@@ -2224,6 +2224,7 @@ let ``Test Project13 all symbols`` () =
                 "type System.IParsable<System.DateTime>";
                 "type System.ISpanFormattable"
                 "type System.ISpanParsable<System.DateTime>"
+                "type System.IUtf8SpanFormattable"
 #endif
                 "type System.Runtime.Serialization.ISerializable"
                 "type System.IComparable<System.DateTime>"
