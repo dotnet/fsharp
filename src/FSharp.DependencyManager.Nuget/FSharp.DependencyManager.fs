@@ -318,7 +318,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
                 if
                     (path.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                    ||  (path.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                    || (path.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
                 then
                     path.Substring(0, path.Length - 1)
                 else
