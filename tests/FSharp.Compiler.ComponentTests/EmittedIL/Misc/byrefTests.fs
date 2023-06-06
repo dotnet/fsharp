@@ -345,6 +345,58 @@ type C() =
         |> ignore
 
     [<Fact>]
+    let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature and generate the - Source contains ReadOnlyAttribute`` () =
+        let src =
+            """
+namespace System.Runtime.CompilerServices
+
+type IsReadOnlyAttribute() =
+    inherit System.Attribute()
+
+type C() =
+    let x = 59
+    member _.X: inref<_> = &x
+            """
+
+        let verifyProperty = """.property instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
+                X()
+        {
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .get instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) System.Runtime.CompilerServices.C::get_X()
+        }"""
+
+        let verifyMethod = """.method public hidebysig specialname instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
+                get_X() cil managed
+        {
+          .param [0]
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+
+        let verifyIsReadOnlyAttribute = """
+.class public auto ansi serializable System.Runtime.CompilerServices.IsReadOnlyAttribute
+       extends [netstandard]System.Attribute
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .method public specialname rtspecialname 
+          instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance void [netstandard]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  pop
+    IL_0008:  ret
+  } 
+
+}"""
+
+        FSharp src
+        |> asNetStandard20
+        |> compile
+        |> verifyIL [verifyProperty;verifyMethod;verifyIsReadOnlyAttribute]
+        |> ignore
+
+    [<Fact>]
     let ``Returning an 'inref<_>' from a generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -365,6 +417,34 @@ type C<'T>() =
         |> compile
         |> verifyIL [verifyMethod]
         |> ignore
+
+    [<Fact>]
+    let ``Returning an 'inref<_>' from a generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature - Source contains ReadOnlyAttribute`` () =
+        let src =
+            """
+namespace System.Runtime.CompilerServices
+
+type IsReadOnlyAttribute() =
+    inherit System.Attribute()
+
+module Test =
+
+    type C<'T>() =
+        let x = Unchecked.defaultof<'T>
+        member _.X<'U>(): inref<'T> = &x
+            """
+
+        let verifyMethod = """.method public hidebysig instance !T& modreq([netstandard]System.Runtime.InteropServices.InAttribute) 
+                X<U>() cil managed
+        {
+          .param [0]
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+        FSharp src
+        |> asLibrary
+        |> asNetStandard20
+        |> compile
+        |> verifyIL [verifyMethod]
+
 
     [<Fact>]
     let ``Returning an 'inref<_>' from an abstract generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
