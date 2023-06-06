@@ -69,6 +69,7 @@ type LanguageFeature =
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -161,6 +162,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedStringInterpolation, previewVersion
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
+                LanguageFeature.DiagnosticForObjInference, previewVersion
 
             ]
 
@@ -285,6 +287,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
+        | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
