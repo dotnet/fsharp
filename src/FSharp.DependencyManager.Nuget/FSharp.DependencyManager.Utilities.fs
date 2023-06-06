@@ -195,8 +195,9 @@ module internal Utilities =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
+
             for varname, value in environment do
-                psi.EnvironmentVariables.Add(varname,value) // Host can sometimes add this, and it can break things
+                psi.EnvironmentVariables.Add(varname, value) // Host can sometimes add this, and it can break things
 
             psi.UseShellExecute <- false
 
@@ -292,7 +293,7 @@ module internal Utilities =
         let args = "nuget list source --format detailed"
 
         let success, stdOut, stdErr =
-            executeTool dotnetHostPath args scriptDirectory ["DOTNET_CLI_UI_LANGUAGE", "en-us"] timeout
+            executeTool dotnetHostPath args scriptDirectory [ "DOTNET_CLI_UI_LANGUAGE", "en-us" ] timeout
 #if DEBUG
         let diagnostics =
             [|
