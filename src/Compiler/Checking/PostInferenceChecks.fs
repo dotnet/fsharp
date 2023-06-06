@@ -830,8 +830,9 @@ and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) (isTailCall:
         if ctxt.Disallow && isByrefLikeTy cenv.g m v.Type then 
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))
 
-    if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No then
-         warning(Error(FSComp.SR.chkNotTailRecursive(v.DisplayName), m))
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+        if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No then
+            warning(Error(FSComp.SR.chkNotTailRecursive(v.DisplayName), m))
 
     if env.isInAppExpr then
         CheckTypePermitAllByrefs cenv env m v.Type // we do checks for byrefs elsewhere
@@ -929,46 +930,47 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                 | _ -> ()
             | _ -> ()
 
-            match f with 
-            | ValUseAtApp (vref, valUseFlags) when env.mustTailCall.Contains vref.Deref ->
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+                match f with 
+                | ValUseAtApp (vref, valUseFlags) when env.mustTailCall.Contains vref.Deref ->
 
-                let canTailCall = 
-                    match isTailCall with 
-                    | IsTailCall.No -> false
-                    | IsTailCall.Yes isVoidRet -> 
-                        if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
-                            let topValInfo = vref.ValReprInfo.Value
-                            let (nowArgs, laterArgs), returnTy = 
-                                let _tps, tau = destTopForallTy g topValInfo _fty
-                                let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau _m
-                                if argsl.Length >= curriedArgInfos.Length then
-                                    (List.splitAfter curriedArgInfos.Length argsl), returnTy
-                                else
-                                    ([], argsl), returnTy
-                            let _,_,isNewObj,isSuperInit,isSelfInit,_,_,_ = GetMemberCallInfo cenv.g (vref,valUseFlags) 
-                            let isCCall = 
-                                match valUseFlags with
-                                | PossibleConstrainedCall _ ->  true
-                                | _ -> false
-                            let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
-                            let mustGenerateUnitAfterCall = (isUnitTy g returnTy && not isVoidRet)
+                    let canTailCall = 
+                        match isTailCall with 
+                        | IsTailCall.No -> false
+                        | IsTailCall.Yes isVoidRet -> 
+                            if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
+                                let topValInfo = vref.ValReprInfo.Value
+                                let (nowArgs, laterArgs), returnTy = 
+                                    let _tps, tau = destTopForallTy g topValInfo _fty
+                                    let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau _m
+                                    if argsl.Length >= curriedArgInfos.Length then
+                                        (List.splitAfter curriedArgInfos.Length argsl), returnTy
+                                    else
+                                        ([], argsl), returnTy
+                                let _,_,isNewObj,isSuperInit,isSelfInit,_,_,_ = GetMemberCallInfo cenv.g (vref,valUseFlags) 
+                                let isCCall = 
+                                    match valUseFlags with
+                                    | PossibleConstrainedCall _ ->  true
+                                    | _ -> false
+                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
+                                let mustGenerateUnitAfterCall = (isUnitTy g returnTy && not isVoidRet)
 
-                            not isNewObj &&
-                            not isSuperInit &&
-                            not isSelfInit  &&
-                            not mustGenerateUnitAfterCall &&
-                            isNil laterArgs && 
-                            not (IsValRefIsDllImport cenv.g vref) &&
-                            not isCCall && 
-                            not hasByrefArg
-                        else 
-                            true
+                                not isNewObj &&
+                                not isSuperInit &&
+                                not isSelfInit  &&
+                                not mustGenerateUnitAfterCall &&
+                                isNil laterArgs && 
+                                not (IsValRefIsDllImport cenv.g vref) &&
+                                not isCCall && 
+                                not hasByrefArg
+                            else 
+                                true
 
-                if not canTailCall then 
-                    warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
-                ()
-            | _ -> ()
-        | _ -> ()
+                    if not canTailCall then 
+                        warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
+                    ()
+                | _ -> ()
+    | _ -> ()
 
 and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnByref = isByrefTy cenv.g returnTy
@@ -2188,28 +2190,29 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind(v, e, _) as bind) =
         if not isLastCompiland && cenv.reportErrors  then 
             errorR(Error(FSComp.SR.chkEntryPointUsage(), v.Range)) 
 
-    match bind.Expr with
-    | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-        let rec checkTailCall (insideSubBinding: bool) expr =
-            match expr with
-            | Expr.Val(valRef, _valUseFlag, m) ->
-                if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
-                    warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
-            | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
-                checkTailCall insideSubBinding funcExpr
-                exprs |> List.iter (checkTailCall insideSubBinding)
-            | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
-            | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-                checkTailCall insideSubBinding bodyExpr
-            | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
-            | Expr.Let(binding, bodyExpr, _range, _frees) ->
-                checkTailCall true binding.Expr
-                checkTailCall insideSubBinding bodyExpr
-            | Expr.Match(_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
-                decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
-            | _ -> ()
-        checkTailCall false bodyExpr
-    | _ -> ()
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+        match bind.Expr with
+        | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
+            let rec checkTailCall (insideSubBinding: bool) expr =
+                match expr with
+                | Expr.Val(valRef, _valUseFlag, m) ->
+                    if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
+                        warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
+                | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
+                    checkTailCall insideSubBinding funcExpr
+                    exprs |> List.iter (checkTailCall insideSubBinding)
+                | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
+                | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
+                    checkTailCall insideSubBinding bodyExpr
+                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
+                | Expr.Let(binding, bodyExpr, _range, _frees) ->
+                    checkTailCall true binding.Expr
+                    checkTailCall insideSubBinding bodyExpr
+                | Expr.Match(_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
+                    decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
+                | _ -> ()
+            checkTailCall false bodyExpr
+        | _ -> ()
     
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition
     if // Mutable values always have fields
