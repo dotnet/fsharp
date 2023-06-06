@@ -83,6 +83,8 @@ Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in 
    8. Ensure that version numbers are bumped for a new branch.
    9. Change needed subscriptions for arcade and SDK:
       1. `darc get-subscriptions --target-repo fsharp`, and then use `darc update-subscription --id <subscription id>` for corresponding channels (e.g. target new VS channel to specific SDK channel, or set up arcade auto-merges to release/* or main branch, depending on the timeline of release/upgrade cycle).
+      2. If new subscription needs to be added, the following command should be used `darc add-subscription --source-repo https://github.com/dotnet/arcade --target-repo https://github.com/dotnet/fsharp --target-branch <target_branch> --channel "<target_channel>" --update-frequency everyDay --standard-automerge
+`
 
 ## Labeling issues on GitHub
 
