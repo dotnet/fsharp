@@ -49,7 +49,7 @@ type FSharpAccessibility =
     /// Indicates the symbol has internal accessibility.
     member IsInternal: bool
 
-    /// Indicates the symbol has protected accessibility.k
+    /// Indicates the symbol has protected accessibility.
     member IsProtected: bool
 
     /// The underlying Accessibility
