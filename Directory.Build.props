@@ -28,8 +28,8 @@
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
-    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net7.0/fslex.dll</FsLexPath>
-    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net7.0/fsyacc.dll</FsYaccPath>
+    <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net8.0/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net8.0/fsyacc.dll</FsYaccPath>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
