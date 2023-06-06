@@ -36,6 +36,16 @@ From here, you can either simply update the error text, or you can use some of t
 
 If you're including data from user code in an error message, it's important to also write a test that verifies the exact error message for a given string of F# code.
 
+Note that the .NET SDK generally follows the policy that new diagnostics are introduced only alongside a language version increment, and F# now tries to follow the same policy (though historically this has not always happened).
+This is true even if your diagnostic is off by default.
+So if you create a new diagnostic by adding it to [FsComp.txt](https://github.com/dotnet/fsharp/blob/main/src/Compiler/FSComp.txt), you should add a new language feature at the same time.
+Concretely, consider following this procedure:
+
+1. Create a pull request that reserves an error message. (That way, you can avoid other people trampling over your change to FSComp.txt while you're implementing the actual feature.) [Here's a historical example.](https://github.com/dotnet/fsharp/pull/14642)
+1. In the same pull request, reserve the new feature. [Here's a historical example](https://github.com/dotnet/fsharp/pull/15315/) (although it would have been better practice to combine this into the previous pull request, and also this pull request [should not have registered the feature](https://github.com/dotnet/fsharp/pull/15315/files#r1220330247) as belonging to a particular language version).
+1. Now you can go ahead and implement the diagnostic. This is the point at which you would register the language feature in some particular language version (likely the preview language version). It is often best practice to introduce it at a lower level than you ultimately intend (e.g. informational rather than warning, or warning rather than error), to permit a more gradual rollout. See the section on "[Enabling a warning or error by default](#enabling-a-warning-or-error-by-default)" for more information.
+1. When the next language version comes along, consider creating another language feature which increases the default diagnostic level, remembering not to change the existing level for people who are pinned to the older language version. [Here's an example](https://github.com/dotnet/fsharp/blob/2133c3404186f3ddcafa10c943e9451358412ab3/src/Compiler/Checking/CheckPatterns.fs#L570).
+
 ## Formatting Typed Tree items in Diagnostics
 
 Diagnostics must often format TAST items as user text. When formatting these, you normally use either
@@ -64,3 +74,12 @@ See [the DEVGUIDE](../DEVGUIDE.md#updating-fscompfs-fscompresx-and-xlf) for more
 ## Enabling a warning or error by default
 
 The file `CompilerDiagnostics.fs` contains the function `IsWarningOrInfoEnabled`, which determines whether a given diagnostic is emitted.
+If you have created a language feature to accompany the diagnostic, and you intend the diagnostic to be on by default in any language version supporting that language feature, you should use `DiagnosticEnabledWithLanguageFeature` to control the diagnostic.
+
+For example:
+
+```fsharp
+// Several contexts give you access to the current language version.
+let supported = g.langVersion.SupportsFeature LanguageFeature.MyLanguageFeature
+informationalWarning(DiagnosticEnabledWithLanguageFeature(FSComp.SR.typrelNeverRefinedAwayFromTop(), m, supported))`
+```
