@@ -94,3 +94,24 @@ let ``Hash should be stable for`` (change:string,codeBefore:string,codeAfter:str
 
     Assert.True((hashBefore = hashAfter), userMessage = change.ToString())
 
+
+
+
+[<InlineDataAttribute("ChildModuleAdded",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:string}"""
+(*AFTER*),"""module MyTest
+type MyRecord = {X:string}
+module  PrivateInnerModule = 
+    let private add a b = a + b""")>]
+
+
+//TODO add a lot more negative tests - in which cases should hash in fact change
+
+[<Theory>]
+let ``Hash should change when`` (change:string,codeBefore:string,codeAfter:string) =  
+    let hashBefore = Fs codeBefore |> getImpliedSignatureHash
+    let hashAfter = Fs codeAfter |> getImpliedSignatureHash
+
+
+    Assert.False((hashBefore = hashAfter), userMessage = change.ToString())
