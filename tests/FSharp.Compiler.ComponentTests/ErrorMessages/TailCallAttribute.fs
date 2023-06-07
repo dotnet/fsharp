@@ -14,7 +14,7 @@ let mul x y = x * y
 let rec fact n acc =
     if n = 0
     then acc
-    else (fact (n-1) (mul n acc)) + 23
+    else (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
         |> withLangVersionPreview
@@ -25,7 +25,7 @@ let rec fact n acc =
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
-                        EndColumn = 33 }
+                        EndColumn = 35 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
@@ -46,7 +46,7 @@ let mul x y = x * y
 let rec fact n acc =
     match n with
     | 0 -> acc
-    | _ -> (fact (n-1) (mul n acc)) + 23
+    | _ -> (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
         |> withLangVersionPreview
@@ -57,7 +57,7 @@ let rec fact n acc =
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
-                        EndColumn = 35 }
+                        EndColumn = 37 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
@@ -79,7 +79,7 @@ let rec fact n acc =
     match n with
     | 0 -> acc
     | _ ->
-        let r = fact (n-1) (mul n acc)
+        let r = fact (n - 1) (mul n acc)
         r + 23
         """
         |> FSharp
@@ -105,7 +105,9 @@ let mul x y = x * y
 let rec fact n acc =
     if n = 0
     then acc
-    else fact (n-1) (mul n acc)
+    else
+        printfn "%A" n
+        fact (n - 1) (mul n acc)
     
 let r = fact 100000 1
 r |> ignore
@@ -188,7 +190,9 @@ type C () =
         """
 type C () =
     [<TailCall>]
-    member this.M1() = this.M1()
+    member this.M1() =
+        printfn "M1 called"
+        this.M1()
         """
         |> FSharp
         |> withLangVersionPreview
@@ -201,10 +205,12 @@ type C () =
 type C () =
     [<TailCall>]
     member this.M1() =
+        printfn "M1 called"
         this.M2()    // ok
 
     [<TailCall>]
     member this.M2() =
+        printfn "M2 called"
         this.M1()     // ok
         """
         |> FSharp
@@ -218,10 +224,12 @@ type C () =
 type F () =
     [<TailCall>]
     member this.M1() =
+        printfn "M1 called"
         this.M2() + 1   // should warn
 
     [<TailCall>]
     member this.M2() =
+        printfn "M2 called"
         this.M1() + 2    // should warn
         """
         |> FSharp
@@ -230,16 +238,16 @@ type F () =
         |> shouldFail
         |> withResults [
             { Error = Warning 3567
-              Range = { StartLine = 5
+              Range = { StartLine = 6
                         StartColumn = 9
-                        EndLine = 5
+                        EndLine = 6
                         EndColumn = 18 }
               Message =
                "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
-              Range = { StartLine = 9
+              Range = { StartLine = 11
                         StartColumn = 9
-                        EndLine = 9
+                        EndLine = 11
                         EndColumn = 18 }
               Message =
                "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
@@ -254,7 +262,9 @@ let mul x y = x * y
 let rec fact n acc =
     if n = 0
     then acc
-    else fact (n-1) (mul n acc)
+    else
+        printfn "%A" n
+        fact (n - 1) (mul n acc)
     
 let f () =
     let r = fact 100000 1
@@ -271,7 +281,7 @@ let f () =
 [<TailCall>]
 let rec f x : seq<int> =
     seq {
-        let r = f (x-1)  // Warning: this call is not tail-recursive
+        let r = f (x - 1)
         let r2 = Seq.map (fun x -> x + 1) r
         yield! r2
 }
@@ -296,7 +306,7 @@ let rec f x : seq<int> =
 [<TailCall>]
 let rec f x : seq<int> =
     seq {
-        yield! f (x-1) |> Seq.map (fun x -> x + 1)
+        yield! f (x - 1) |> Seq.map (fun x -> x + 1)
 }
         """
         |> FSharp
@@ -308,7 +318,7 @@ let rec f x : seq<int> =
               Range = { StartLine = 5
                         StartColumn = 16
                         EndLine = 5
-                        EndColumn = 23 }
+                        EndColumn = 25 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
@@ -324,7 +334,11 @@ let rec f x : seq<int> =
     let ``Don't warn for valid tailcalls in seq expression`` () =
         """
 [<TailCall>]
-let rec f x = seq { yield! f (x-1) }
+let rec f x = seq {
+    let y = x - 1
+    let z = y - 1
+    yield! f (z - 1)
+}
         """
         |> FSharp
         |> withLangVersionPreview
