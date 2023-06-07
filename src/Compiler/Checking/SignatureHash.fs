@@ -41,9 +41,7 @@ module internal HashingPrimitives =
 
         for i in items do
             let valHash = func i
-            // We are calling hashListOrderMatters for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are ommited.
-            if valHash <> 0 then
-                acc <- acc ^^^ valHash
+            acc <- acc ^^^ valHash
 
         acc
 
@@ -477,9 +475,17 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
     and hashSingleModuleOrNamespaceContents x =
         match x with
         | TMDefRec (_, _opens, tycons, mbinds, _) ->
-            mbinds
-            |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
-            |> pipeToHash (TyconDefinitionHash.hashTyconDefns (g, observer) tycons)
+            let mbindsHash = 
+                mbinds
+                |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
+
+            let tyconsHash = TyconDefinitionHash.hashTyconDefns (g, observer) tycons
+
+            if mbindsHash <> 0 || tyconsHash <> 0 then
+                mbindsHash @@ tyconsHash
+            else
+                0
+
         | TMDefLet (bind, _) -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef bind.Var)
         | TMDefOpens _ -> 0 (* empty hash *)
         | TMDefs defs -> defs |> hashListOrderIndependent hashSingleModuleOrNamespaceContents

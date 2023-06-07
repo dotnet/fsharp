@@ -28,6 +28,14 @@ module InnerModule =
     module private PrivateInnerMostModule = 
         let add a b = a + b""")>]
 
+[<InlineDataAttribute("EmptyNonPrivateChildModule",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:string}"""
+(*AFTER*),"""module MyTest
+type MyRecord = {X:string}
+module  PublicInnerModule = 
+    let private add a b = a + b""")>]
+
 [<InlineDataAttribute("OpenSystemAdded",
 (*BEFORE*)"""module MyTest
 type MyRecord = {X:System.IDisposable}"""
@@ -123,7 +131,7 @@ type MyRecord = {X:string}"""
 (*AFTER*),"""module MyTest
 type MyRecord = {X:string}
 module  PrivateInnerModule = 
-    let private add a b = a + b""")>]
+    let add a b = a + b""")>]
 
 [<InlineDataAttribute("FunctionSpecialized",
 (*BEFORE*)"""module MyTest
@@ -148,6 +156,39 @@ let inline mySRTPFunc<'a when 'a:(static member One: unit -> int)> () = 'a.One()
 let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.Zero()"""
 (*AFTER*),"""module MyTest
 let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> byte)> () = 'a.Zero() + 'a.Zero()""")>]
+
+[<InlineDataAttribute("QuotationTypeChanged",
+(*BEFORE*)"""module MyTest
+let foo () = <@ 2 @>"""
+(*AFTER*),"""module MyTest
+let foo () = <@ false @>""")>]
+
+[<InlineDataAttribute("QuotationExpressionChanged",
+(*BEFORE*)"""module MyTest
+let foo () = <@ 2 + 2 @>"""
+(*AFTER*),"""module MyTest
+let foo () = <@ 2 + 3 @>""")>]
+
+[<InlineDataAttribute("UnionReordered",
+(*BEFORE*)"""module MyTest
+type MyDU = 
+    | A 
+    | B """
+(*AFTER*),"""module MyTest
+type MyDU = 
+    | B 
+    | A """)>]
+
+[<InlineDataAttribute("UnionTurnedStruct",
+(*BEFORE*)"""module MyTest
+type MyDU = 
+    | A 
+    | B """
+(*AFTER*),"""module MyTest
+[<Struct>]
+type MyDU = 
+    | A 
+    | B """)>]
 
 //TODO add a lot more negative tests - in which cases should hash in fact change
 

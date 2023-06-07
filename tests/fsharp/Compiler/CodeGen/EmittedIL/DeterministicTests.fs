@@ -614,4 +614,45 @@ let test() =
         // Two compilations with changes only to private code should produce the same MVID
         Assert.AreEqual(mvid1, mvid2)
 
-    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
+    [<Test>] 
+    let ``Reference assemblies should be different when contents of quoted expression change`` () =
+        let inputFilePath = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
+        let src =
+            """
+module ReferenceAssembly
+
+let foo () = <@ 2 + 2 @>
+            """
+
+        File.WriteAllText(inputFilePath, src)
+
+        let mvid1 =
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+
+        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
+        let src2 =
+            """
+module ReferenceAssembly
+
+let foo () = <@ 2 + 3 @>
+            """
+
+        File.WriteAllText(inputFilePath2, src2)
+
+        let mvid2 =
+            FSharpWithInputAndOutputPath src2 inputFilePath2 outputFilePath2
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+        // Two compilations with different quotations should be different.
+        Assert.AreNotEqual(mvid1, mvid2)
+
+
+
+
+// TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
