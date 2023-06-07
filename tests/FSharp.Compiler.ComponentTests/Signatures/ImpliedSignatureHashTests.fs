@@ -97,6 +97,12 @@ type MyEnum =
     | B = 1
     | A = 0""")>]
 
+[<InlineDataAttribute("QuotationExpressionChanged",
+(*BEFORE*)"""module MyTest
+let foo () = <@ 2 + 2 @>"""
+(*AFTER*),"""module MyTest
+let foo () = <@ 2 + 3 @>""")>]
+
 [<InlineDataAttribute("ValueOfBinding",
 (*BEFORE*)"""module MyTest
 let myVal = 42"""
@@ -168,12 +174,6 @@ let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> byte)> () = 'a.Zer
 let foo () = <@ 2 @>"""
 (*AFTER*),"""module MyTest
 let foo () = <@ false @>""")>]
-
-[<InlineDataAttribute("QuotationExpressionChanged",
-(*BEFORE*)"""module MyTest
-let foo () = <@ 2 + 2 @>"""
-(*AFTER*),"""module MyTest
-let foo () = <@ 2 + 3 @>""")>]
 
 [<InlineDataAttribute("UnionReordered",
 (*BEFORE*)"""module MyTest

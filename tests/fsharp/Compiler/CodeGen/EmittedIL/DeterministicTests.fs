@@ -615,7 +615,7 @@ let test() =
         Assert.AreEqual(mvid1, mvid2)
 
     [<Test>] 
-    let ``Reference assemblies should be different when contents of quoted expression change`` () =
+    let ``Reference assemblies should be same when contents of quoted expression change`` () =
         let inputFilePath = CompilerAssert.GenerateFsInputPath()
         let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
@@ -650,7 +650,7 @@ let foo () = <@ 2 + 3 @>
             |> compileGuid
 
         // Two compilations with different quotations should be different.
-        Assert.AreNotEqual(mvid1, mvid2)
+        Assert.AreEqual(mvid1, mvid2)
 
 
 
