@@ -12,7 +12,7 @@ let private getGenericParametersNamesFor
     (additionalFile: SourceCodeFileKind)
     : string array =
     let typeCheckResult =
-        cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject
+        cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject false
 
     assert (Array.isEmpty typeCheckResult.Diagnostics)
 
