@@ -36,6 +36,13 @@ type MyRecord = {X:string}
 module  PublicInnerModule = 
     let private add a b = a + b""")>]
 
+[<InlineDataAttribute("TyparTypingStyle",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:int seq}"""
+(*AFTER*),"""module MyTest
+open System
+type MyRecord = {X:seq<int> }""")>]
+
 [<InlineDataAttribute("OpenSystemAdded",
 (*BEFORE*)"""module MyTest
 type MyRecord = {X:System.IDisposable}"""
@@ -43,19 +50,34 @@ type MyRecord = {X:System.IDisposable}"""
 open System
 type MyRecord = {X:IDisposable}""")>]
 
-[<InlineDataAttribute("DoActionAdded",
+[<InlineDataAttribute("RecModuleWithDoNothing",
+(*BEFORE*)"""module rec Foobar"""
+(*AFTER*),"""module rec Foobar
+do () """)>]
+
+
+[<InlineDataAttribute("DoActionAddedToRecModule",
 (*BEFORE*)"""module MyTest
 type MyRecord = {X:string}"""
 (*AFTER*),"""module MyTest
 type MyRecord = {X:string}
 do printfn "Hello" """)>]
 
-
 [<InlineDataAttribute("NothingChanged",
 (*BEFORE*)"""module MyTest
 type MyRecord = {X:string}"""
 (*AFTER*),"""module MyTest
 type MyRecord = {X:string}""")>]
+
+[<InlineDataAttribute("ClassKeywordAdded",
+(*BEFORE*)"""module Core_access    
+type MyClassPropertyGetters =     
+    class
+        member      x.AnyKindOfProperty= 12   
+    end"""
+(*AFTER*),"""module Core_access    
+type MyClassPropertyGetters =     
+    member      x.AnyKindOfProperty= 12   """)>]
 
 [<InlineDataAttribute("TypeAliasUsed",
 (*BEFORE*)"""module MyTest
@@ -121,6 +143,22 @@ let domeSomething() : System.IDisposable = failwith "TODO" """
 (*AFTER*),"""module MyTest
 let domeSomething() = { new System.IDisposable with member x.Dispose() = () }  """)>]
 
+[<InlineDataAttribute("PrivateFieldRenamed",
+(*BEFORE*)"""module StructPrivateField =
+    [<Struct>]
+    [<NoComparison;NoEquality>]
+    type C =
+        [<DefaultValue>]
+        val mutable private goo : byte []        
+        member this.P with set(x) = this.goo <- x """
+(*AFTER*),"""module StructPrivateField =
+    [<Struct>]
+    [<NoComparison;NoEquality>]
+    type C =
+        [<DefaultValue>]
+        val mutable private boo : byte []        
+        member this.P with set(x) = this.boo <- x  """)>]
+
 let ``Hash should be stable for`` (change:string,codeBefore:string,codeAfter:string) =    
     let hashBefore = Fs codeBefore |> getImpliedSignatureHash
     let hashAfter = Fs codeAfter |> getImpliedSignatureHash
@@ -144,6 +182,26 @@ module  PrivateInnerModule =
 let inline add a b = a + b"""
 (*AFTER*),"""module MyTest
 let inline add (a:int) (b:int) = a + b""")>]
+
+[<InlineDataAttribute("FsharpPrefixedNamespace",
+(*BEFORE*)"""module FSharp.MyLib.MyModule
+let add a b = a + b """
+(*AFTER*),"""module MyLib.MyModule
+let add a b = a + b""")>]
+
+[<InlineDataAttribute("StringTurnedLiteral",
+(*BEFORE*)"""module MyTest
+let A = "A" """
+(*AFTER*),"""module MyTest
+[<Literal>]
+let A = "A" """)>]
+
+[<InlineDataAttribute("NoComparisonAdded",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:string} """
+(*AFTER*),"""module MyTest
+[<NoComparison>]
+type MyRecord = {X:string} """)>]
 
 [<InlineDataAttribute("CurryChangedToTuple",
 (*BEFORE*)"""module MyTest
@@ -195,6 +253,32 @@ type MyDU =
 type MyDU = 
     | A 
     | B """)>]
+
+[<InlineDataAttribute("OrderOfGenericFuncTypars",
+(*BEFORE*)"""module MyTest
+let f<'a, 'b> 
+    (x: 'b)
+    (y: 'a)
+    = printfn "%A %A" x y  """
+(*AFTER*),"""module MyTest
+let f<'b, 'a> 
+    (x: 'b)
+    (y: 'a)
+    = printfn "%A %A" x y  """)>]
+
+[<InlineDataAttribute("AttributeOfFuncArg",
+(*BEFORE*)"""module Foo
+
+type BAttribute() =
+    inherit System.Attribute()
+
+let a (c: int) : int = 0  """
+(*AFTER*),"""module Foo
+
+type BAttribute() =
+    inherit System.Attribute()
+
+let a ([<B>] c: int) : int = 0  """)>]
 
 //TODO add a lot more negative tests - in which cases should hash in fact change
 

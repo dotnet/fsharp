@@ -469,6 +469,7 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
 
     let rec hashModuleOrNameSpaceBinding (monb: ModuleOrNamespaceBinding) =
         match monb with
+        | ModuleOrNamespaceBinding.Binding b when b.Var.LogicalName.StartsWith("doval@") -> 0
         | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef b.Var)
         | ModuleOrNamespaceBinding.Module (moduleInfo, contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo, contents)
 
