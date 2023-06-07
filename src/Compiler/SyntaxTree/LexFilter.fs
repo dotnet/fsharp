@@ -431,6 +431,9 @@ type LexbufState(startPos: Position,
     member _.EndPos = endPos
     member _.PastEOF = pastEOF
 
+    override this.ToString() =
+        $"({this.StartPos}--{this.EndPos})"
+
 /// Used to save the state related to a token
 /// Treat as though this is read-only.
 [<Class>]
@@ -439,13 +442,19 @@ type TokenTup =
     val mutable Token : token
     val mutable LexbufState : LexbufState
     val mutable LastTokenPos: Position
-    new (token, state, lastTokenPos) = { Token=token; LexbufState=state;LastTokenPos=lastTokenPos }
+
+    new (token, state, lastTokenPos) =
+        { Token = token; LexbufState = state;LastTokenPos = lastTokenPos }
 
     /// Returns starting position of the token
     member x.StartPos = x.LexbufState.StartPos
+
     /// Returns end position of the token
     member x.EndPos = x.LexbufState.EndPos
-        
+
+    override this.ToString() =
+        $"{this.Token} ({this.StartPos}--{this.EndPos})"
+
 type TokenTupPool() =
 
     /// Arbitrary.
