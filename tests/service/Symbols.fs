@@ -647,6 +647,24 @@ type Foo() =
 """
             (3, 19, "    member this.Bar (a:int) (b:int) : int = 0", "Bar")
 
+#if NETCOREAPP
+    [<Test>]
+    let ``Signature text for type with generic parameter in path`` () =
+        assertSignature
+            "new: builder: ImmutableArray<'T>.Builder -> ImmutableArrayViaBuilder<'T>"
+            """
+module Telplin
+
+open System
+open System.Collections.Generic
+open System.Collections.Immutable
+
+type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =
+    class end
+"""
+            (8, 29, "type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =", ".ctor")
+#endif
+
     [<Test>]
     let ``Includes attribute for parameter`` () =
         assertSignature
