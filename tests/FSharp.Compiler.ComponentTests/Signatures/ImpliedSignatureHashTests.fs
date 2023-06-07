@@ -139,6 +139,12 @@ let inline add a b = a + b"""
 (*AFTER*),"""module MyTest
 let inline add (a:int) (b:int) = a + b""")>]
 
+[<InlineDataAttribute("CurryChangedToTuple",
+(*BEFORE*)"""module MyTest
+let inline add a b = a + b"""
+(*AFTER*),"""module MyTest
+let inline add (a,b) = a + b""")>]
+
 [<InlineDataAttribute("SRTP_Condition_Added",
 (*BEFORE*)"""module MyTest
 let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.Zero()"""
