@@ -3690,7 +3690,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
 let ChooseTyparSolutionAndSolve css denv tp =
     let g = css.g
     let amap = css.amap
-    let max, m = ChooseTyparSolutionAndRange g amap tp 
+    let max, m = ChooseTyparSolutionAndRange g amap tp
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
