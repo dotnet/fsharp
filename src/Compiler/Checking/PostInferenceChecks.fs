@@ -205,9 +205,9 @@ type IsTailCall =
             isUnitTy g returnTy
         | None -> false
         
-    static member fromVal (g: TcGlobals) (v: Val) = IsTailCall.Yes (IsTailCall.IsVoidRet g v)
+    static member YesFromVal (g: TcGlobals) (v: Val) = IsTailCall.Yes (IsTailCall.IsVoidRet g v)
     
-    static member fromExpr (g: TcGlobals) (expr: Expr) =
+    static member YesFromExpr (g: TcGlobals) (expr: Expr) =
         match expr with
         | Expr.Val(valRef, _valUseFlag, _range) -> IsTailCall.Yes (IsTailCall.IsVoidRet g valRef.Deref)
         | _ -> IsTailCall.Yes false
@@ -1034,7 +1034,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
 
 /// Check call arguments, including the return argument.
 and CheckCall cenv env m returnTy args ctxts ctxt =
-    let limitArgs = CheckExprs cenv env args ctxts
+    let limitArgs = CheckExprs cenv env args ctxts IsTailCall.No
     CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
@@ -1050,7 +1050,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
 
         let receiverLimit = CheckExpr cenv env receiverArg receiverContext IsTailCall.No
         let limitArgs = 
-            let limitArgs = CheckExprs cenv env args ctxts
+            let limitArgs = CheckExprs cenv env args ctxts (IsTailCall.Yes false)
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
@@ -1383,7 +1383,7 @@ and CheckFSharpBaseCall cenv env expr (v, f, _fty, tyargs, baseVal, rest, m) =
         CheckValRef cenv env baseVal m PermitByRefExpr.No IsTailCall.No
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckTypeNoInnerByrefs cenv env m returnTy
-        CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
+        CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f) IsTailCall.No
 
 and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyargs, baseVal, rest, m) = 
     let g = cenv.g
@@ -1662,7 +1662,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         NoLimit
 
     | TOp.Coerce, [tgtTy;srcTy], [x] ->
-        let isTailCall = IsTailCall.fromExpr cenv.g x
+        let isTailCall = IsTailCall.YesFromExpr cenv.g x
         if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
             CheckExpr cenv env x ctxt isTailCall
         else
@@ -1898,11 +1898,11 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
             CheckNoReraise cenv None expr
         limit
 
-and CheckExprs cenv env exprs ctxts : Limit =
+and CheckExprs cenv env exprs ctxts isTailCall : Limit =
     let ctxts = Array.ofList ctxts 
     let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No 
     exprs 
-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i) IsTailCall.No) 
+    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i) isTailCall) 
     |> CombineLimits
 
 and CheckExprsNoByRefLike cenv env exprs : Limit = 
@@ -2155,7 +2155,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         
     | _ -> ()
 
-    let isTailCall = IsTailCall.fromVal g bind.Var
+    let isTailCall = IsTailCall.YesFromVal g bind.Var
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
     // If the method has ResumableCode argument or return type it must be inline
