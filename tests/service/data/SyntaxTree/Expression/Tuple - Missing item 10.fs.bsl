@@ -25,5 +25,5 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,0)-(4,0) parse warning Possible incorrect indentation: this token is offside of context started at position (3:9). Try indenting this token further or using standard formatting conventions.
+(4,0)-(4,0) parse error Possible incorrect indentation: this token is offside of context started at position (3:9). Try indenting this token further or using standard formatting conventions.
 (3,9)-(3,10) parse error Expected an expression after this point
