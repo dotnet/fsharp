@@ -344,3 +344,44 @@ let rec f x = seq {
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for valid tailcalls in async expression`` () =
+        """
+[<TailCall>] 
+let rec f x = async { return! f (x-1) }
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for invalid tailcalls in async expression`` () =
+        """
+[<TailCall>] 
+let rec f x = async { 
+    let! r = f (x - 1)
+    return r
+}
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 4
+                        StartColumn = 14
+                        EndLine = 4
+                        EndColumn = 23 }
+              Message =
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 4
+                        StartColumn = 14
+                        EndLine = 4
+                        EndColumn = 15 }
+              Message =
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
