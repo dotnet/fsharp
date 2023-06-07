@@ -59,6 +59,7 @@ type LanguageFeature =
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
 
 /// LanguageVersion management
 type LanguageVersion =
