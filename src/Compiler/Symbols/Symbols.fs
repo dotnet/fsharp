@@ -2355,6 +2355,35 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> LayoutRender.toArray
             |> Some
     
+    member x.GetValSignatureText (displayContext: FSharpDisplayContext, m: range) =
+        checkIsResolved()
+        let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true }
+
+        let stringValOfMethInfo methInfo =
+            match methInfo with
+            | FSMeth(valRef = vref) -> NicePrint.stringValOrMember displayEnv cenv.infoReader vref
+            | _ -> NicePrint.stringOfMethInfo cenv.infoReader m displayEnv methInfo
+
+        let stringValOfPropInfo (p: PropInfo) =
+            let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+            let withGetSet =
+                if p.HasGetter && p.HasSetter then "with get, set"
+                elif p.HasGetter then "with get"
+                elif p.HasSetter then "with set"
+                else ""
+                
+            $"member val %s{p.DisplayName}: %s{t} %s{withGetSet}"
+
+        match d with
+        | E _ -> None
+        | V v ->
+            NicePrint.stringValOrMember displayEnv cenv.infoReader v
+            |> Some
+        | C methInfo
+        | M methInfo -> stringValOfMethInfo methInfo |> Some
+        | P p -> stringValOfPropInfo p |> Some
+
+
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 
