@@ -475,9 +475,7 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
     and hashSingleModuleOrNamespaceContents x =
         match x with
         | TMDefRec (_, _opens, tycons, mbinds, _) ->
-            let mbindsHash = 
-                mbinds
-                |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
+            let mbindsHash = mbinds |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
 
             let tyconsHash = TyconDefinitionHash.hashTyconDefns (g, observer) tycons
 
