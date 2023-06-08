@@ -2701,3 +2701,7 @@ val tryAddExtensionAttributeIfNotAlreadyPresent:
 
 /// Serialize an entity to a very basic json structure.
 val serializeEntity: path: string -> entity: Entity -> unit
+
+/// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
+/// Meant to be called with the FSharp.Core module spec right after it was unpickled.
+val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
