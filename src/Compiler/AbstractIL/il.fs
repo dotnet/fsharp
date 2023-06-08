@@ -2448,7 +2448,6 @@ type ILFieldDef
     member x.WithFieldMarshal(marshal) =
         x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
 
-
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
