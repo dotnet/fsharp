@@ -194,7 +194,9 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                         ("Interfaces", 8192)
                     |]
 
-                (mkLocalPrivateInt32Enum (g, tref, values)).WithSerializable(true).WithSealed(true))
+                (mkLocalPrivateInt32Enum (g, tref, values))
+                    .WithSerializable(true)
+                    .WithSealed(true))
         )
 
     ILType.Value(mkILNonGenericTySpec (tref))
