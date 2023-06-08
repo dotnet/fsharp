@@ -266,6 +266,6 @@ let _, _ = Thing.Do()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 12, Line 6, Col 22, "The member or object constructor 'Do' takes 1 argument(s) but is here given 0. The required signature is 'static member Thing.Do: i: outref<bool> -> bool'.")
+            (Error 501, Line 6, Col 12, Line 6, Col 22, "The member or object constructor 'Do' takes 1 argument(s) but is here given 0. The required signature is 'static member Thing.Do: [<Optional>] i: outref<bool> -> bool'.")
         ]
 

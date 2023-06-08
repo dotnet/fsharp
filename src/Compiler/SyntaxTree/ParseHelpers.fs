@@ -268,6 +268,7 @@ type LexerStringStyle =
     | Verbatim
     | TripleQuote
     | SingleQuote
+    | ExtendedInterpolated
 
 [<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
@@ -307,7 +308,7 @@ type LexerStringKind =
 
 /// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
 /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range) list
 
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
@@ -323,6 +324,7 @@ type LexerContinuation =
         nesting: LexerInterpolatedStringNesting *
         style: LexerStringStyle *
         kind: LexerStringKind *
+        delimLen: int *
         range: range
     | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
@@ -420,9 +422,9 @@ let (|GetIdent|SetIdent|OtherIdent|) (ident: Ident option) =
 
 let mkSynMemberDefnGetSet
     (parseState: IParseState)
-    (opt_inline: bool)
+    (opt_inline: range option)
     (mWith: range)
-    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
+    (classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
     (mAnd: range option)
     (mWhole: range)
     (propertyNameBindingPat: SynPat)
@@ -441,7 +443,7 @@ let mkSynMemberDefnGetSet
 
     let tryMkSynMemberDefnMember
         (
-            optInline,
+            mOptInline: range option,
             optAttrs: SynAttributeList list,
             (bindingPat, mBindLhs),
             optReturnType,
@@ -449,7 +451,7 @@ let mkSynMemberDefnGetSet
             expr,
             mExpr
         ) : (SynMemberDefn * Ident option) option =
-        let optInline = opt_inline || optInline
+        let optInline = Option.isSome opt_inline || Option.isSome mOptInline
         // optional attributes are only applied to getters and setters
         // the "top level" attrs will be applied to both
         let optAttrs =
@@ -469,6 +471,7 @@ let mkSynMemberDefnGetSet
         let trivia: SynBindingTrivia =
             {
                 LeadingKeyword = leadingKeyword
+                InlineKeyword = mOptInline
                 EqualsRange = mEquals
             }
 
@@ -671,11 +674,13 @@ let mkSynMemberDefnGetSet
                         let args =
                             if id.idText = "set" then
                                 match args with
-                                | [ SynPat.Paren (SynPat.Tuple (false, indexPats, _), indexPatRange); valuePat ] when id.idText = "set" ->
+                                | [ SynPat.Paren (SynPat.Tuple (false, indexPats, commas, _), indexPatRange); valuePat ] when
+                                    id.idText = "set"
+                                    ->
                                     [
-                                        SynPat.Tuple(false, indexPats @ [ valuePat ], unionRanges indexPatRange valuePat.Range)
+                                        SynPat.Tuple(false, indexPats @ [ valuePat ], commas, unionRanges indexPatRange valuePat.Range)
                                     ]
-                                | [ indexPat; valuePat ] -> [ SynPat.Tuple(false, args, unionRanges indexPat.Range valuePat.Range) ]
+                                | [ indexPat; valuePat ] -> [ SynPat.Tuple(false, args, [], unionRanges indexPat.Range valuePat.Range) ]
                                 | [ valuePat ] -> [ valuePat ]
                                 | _ -> raiseParseErrorAt m (FSComp.SR.parsSetSyntax ())
                             else
@@ -729,6 +734,7 @@ let mkSynMemberDefnGetSet
                 if getOrSet.idText = "get" then
                     let trivia =
                         {
+                            InlineKeyword = opt_inline
                             WithKeyword = mWith
                             GetKeyword = Some getOrSet.idRange
                             AndKeyword = None
@@ -739,6 +745,7 @@ let mkSynMemberDefnGetSet
                 else
                     let trivia =
                         {
+                            InlineKeyword = opt_inline
                             WithKeyword = mWith
                             GetKeyword = None
                             AndKeyword = None
@@ -759,6 +766,7 @@ let mkSynMemberDefnGetSet
 
             let trivia =
                 {
+                    InlineKeyword = opt_inline
                     WithKeyword = mWith
                     GetKeyword = Some mGet
                     AndKeyword = mAnd
@@ -772,6 +780,7 @@ let mkSynMemberDefnGetSet
                 match getOrSet with
                 | GetIdent mGet ->
                     {
+                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         GetKeyword = Some mGet
                         AndKeyword = mAnd
@@ -779,6 +788,7 @@ let mkSynMemberDefnGetSet
                     }
                 | SetIdent mSet ->
                     {
+                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         GetKeyword = None
                         AndKeyword = mAnd
@@ -786,6 +796,7 @@ let mkSynMemberDefnGetSet
                     }
                 | OtherIdent ->
                     {
+                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         AndKeyword = mAnd
                         GetKeyword = None
@@ -899,6 +910,7 @@ let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
         DebugPointAtBinding.NoneAtDo,
         {
             LeadingKeyword = SynLeadingKeyword.Do mDo
+            InlineKeyword = None
             EqualsRange = None
         }
     )
@@ -916,19 +928,20 @@ let checkEndOfFileError t =
     match t with
     | LexCont.IfDefSkip (_, _, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf ())
 
-    | LexCont.String (_, _, LexerStringStyle.SingleQuote, kind, m) ->
+    | LexCont.String (_, _, LexerStringStyle.SingleQuote, kind, _, m) ->
         if kind.IsInterpolated then
             reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedString ())
         else
             reportParseErrorAt m (FSComp.SR.parsEofInString ())
 
-    | LexCont.String (_, _, LexerStringStyle.TripleQuote, kind, m) ->
+    | LexCont.String (_, _, LexerStringStyle.ExtendedInterpolated, kind, _, m)
+    | LexCont.String (_, _, LexerStringStyle.TripleQuote, kind, _, m) ->
         if kind.IsInterpolated then
             reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedTripleQuoteString ())
         else
             reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString ())
 
-    | LexCont.String (_, _, LexerStringStyle.Verbatim, kind, m) ->
+    | LexCont.String (_, _, LexerStringStyle.Verbatim, kind, _, m) ->
         if kind.IsInterpolated then
             reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedVerbatimString ())
         else
@@ -943,6 +956,7 @@ let checkEndOfFileError t =
     | LexCont.StringInComment (_, _, LexerStringStyle.Verbatim, _, m) ->
         reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment ())
 
+    | LexCont.StringInComment (_, _, LexerStringStyle.ExtendedInterpolated, _, m)
     | LexCont.StringInComment (_, _, LexerStringStyle.TripleQuote, _, m) ->
         reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment ())
 
@@ -958,7 +972,7 @@ let checkEndOfFileError t =
 
         match nesting with
         | [] -> ()
-        | (_, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
+        | (_, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
 
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 

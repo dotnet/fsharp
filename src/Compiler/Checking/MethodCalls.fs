@@ -236,12 +236,16 @@ type TypeDirectedConversion =
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool * isNullable: bool
     | No
     static member Combine a b =
         match a, b with 
-        | Yes(_,true), _ -> a
-        | _, Yes(_,true) -> b
+        // We want to know which candidates have one or more nullable conversions exclusively
+        // If one of the values is false we flow false for both.
+        | Yes(_, true, false), _ -> a
+        | _, Yes(_, true, false) -> b
+        | Yes(_, true, _), _ -> a
+        | _, Yes(_, true, _) -> b
         | Yes _, _ -> a
         | _, Yes _ -> b
         | No, No -> a
@@ -282,25 +286,25 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> nativeint
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
         let underlyingTy = destNullableTy g reqdTy
         // shortcut
         if typeEquiv g underlyingTy actualTy then
-            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, true), None
         else
             let adjustedTy, _, _ = AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint underlyingTy actualTy m
             if typeEquiv g adjustedTy actualTy then 
-                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, true), None
+                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, true, true), None
             else 
                 reqdTy, TypeDirectedConversionUsed.No, None
     
@@ -308,7 +312,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false), Some eqn
+         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
@@ -1063,7 +1067,7 @@ let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOp
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
         let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
-        let isStruct = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
+        let isStruct = mi.PUntaint((fun c -> (nonNull<ProvidedType> c.DeclaringType).IsValueType), m)
         let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let ilReturnTys = Option.toList (minfo.GetCompiledReturnType(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
@@ -1076,7 +1080,7 @@ let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOp
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
-    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
+    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
@@ -1262,8 +1266,23 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
+            let delFuncArgNamesIfFeatureEnabled =
+                match delFuncExpr with
+                | Expr.Val (valRef = vref) when g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames ->
+                    match vref.ValReprInfo with
+                    | Some repr when repr.ArgNames.Length = delArgTys.Length -> Some repr.ArgNames
+                    | _ -> None
+                | _ -> None
+
             let delArgVals =
-                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+                delArgTys
+                |> List.mapi (fun i argTy ->
+                    let argName =
+                        match delFuncArgNamesIfFeatureEnabled with
+                        | Some argNames -> argNames[i]
+                        | None -> "delegateArg" + string i
+
+                    fst (mkCompGenLocal m argName argTy)) 
 
             let expr = 
                 let args = 
@@ -1802,9 +1821,9 @@ module ProvidedMethodCalls =
              expr: Tainted<ProvidedExpr>) = 
 
         let varConv =
-            // note: using paramVars.Length as assumed initial size, but this might not 
-            // be the optimal value; this wasn't checked before obsoleting Dictionary.ofList
-            let dict = Dictionary.newWithSize paramVars.Length
+            // note: Assuming the size based on paramVars
+            // Doubling to decrease chance of collisions
+            let dict = Dictionary.newWithSize (paramVars.Length*2)
             for v, e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id, m))) (Option.toList thisArg @ allArgs) do
                 dict.Add(v, (None, e))
             dict
@@ -2038,7 +2057,7 @@ module ProvidedMethodCalls =
         let thisArg, paramVars = 
             match objArgs with
             | [objArg] -> 
-                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> mi.DeclaringType), m))
+                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ty.AsProvidedVar("this")), m)
                 Some objArg, Array.append [| thisVar |] paramVars
             | [] -> None, paramVars
@@ -2058,7 +2077,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

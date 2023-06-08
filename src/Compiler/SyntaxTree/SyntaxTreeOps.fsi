@@ -155,7 +155,7 @@ val mkSynAssign: l: SynExpr -> r: SynExpr -> SynExpr
 
 val mkSynDot: mDot: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
 
-val mkSynDotMissing: mDot: range -> m: range -> l: SynExpr -> SynExpr
+val mkSynDotMissing: mDot: range -> m: range -> expr: SynExpr -> SynExpr
 
 val mkSynFunMatchLambdas:
     synArgNameGenerator: SynArgNameGenerator ->
@@ -331,9 +331,7 @@ val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: Sy
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 
-val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
-
-val normalizeTuplePat: pats: SynPat list -> SynPat list
+val normalizeTuplePat: pats: SynPat list -> commas: range list -> SynPat list * range List
 
 val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
 

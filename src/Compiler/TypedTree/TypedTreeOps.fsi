@@ -665,7 +665,7 @@ val isTyparTy: TcGlobals -> TType -> bool
 
 val isAnyParTy: TcGlobals -> TType -> bool
 
-val tryAnyParTy: TcGlobals -> TType -> ValueOption<Typar>
+val tryAnyParTy: TcGlobals -> TType -> Typar voption
 
 val tryAnyParTyOption: TcGlobals -> TType -> Typar option
 
@@ -679,26 +679,26 @@ val isProvenUnionCaseTy: TType -> bool
 
 val isAppTy: TcGlobals -> TType -> bool
 
-val tryAppTy: TcGlobals -> TType -> ValueOption<TyconRef * TypeInst>
+val tryAppTy: TcGlobals -> TType -> (TyconRef * TypeInst) voption
 
 val destAppTy: TcGlobals -> TType -> TyconRef * TypeInst
 
 val tcrefOfAppTy: TcGlobals -> TType -> TyconRef
 
-val tryTcrefOfAppTy: TcGlobals -> TType -> ValueOption<TyconRef>
+val tryTcrefOfAppTy: TcGlobals -> TType -> TyconRef voption
 
-val tryDestTyparTy: TcGlobals -> TType -> ValueOption<Typar>
+val tryDestTyparTy: TcGlobals -> TType -> Typar voption
 
-val tryDestFunTy: TcGlobals -> TType -> ValueOption<TType * TType>
+val tryDestFunTy: TcGlobals -> TType -> (TType * TType) voption
 
-val tryDestAnonRecdTy: TcGlobals -> TType -> ValueOption<AnonRecdTypeInfo * TType list>
+val tryDestAnonRecdTy: TcGlobals -> TType -> (AnonRecdTypeInfo * TType list) voption
 
 val argsOfAppTy: TcGlobals -> TType -> TypeInst
 
 val mkInstForAppTy: TcGlobals -> TType -> TyparInstantiation
 
 /// Try to get a TyconRef for a type without erasing type abbreviations
-val tryNiceEntityRefOfTy: TType -> ValueOption<TyconRef>
+val tryNiceEntityRefOfTy: TType -> TyconRef voption
 
 val tryNiceEntityRefOfTyOption: TType -> TyconRef option
 
@@ -981,6 +981,9 @@ module PrettyTypes =
 
     val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
 
+    /// Assign previously generated pretty names to typars
+    val AssignPrettyTyparNames: Typars -> string list -> unit
+
     val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
 
     val PrettifyInstAndTyparsAndType:
@@ -1089,7 +1092,7 @@ val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
 val fullDisplayTextOfModRef: ModuleOrNamespaceRef -> string
 
-val fullDisplayTextOfParentOfModRef: ModuleOrNamespaceRef -> ValueOption<string>
+val fullDisplayTextOfParentOfModRef: ModuleOrNamespaceRef -> string voption
 
 val fullDisplayTextOfValRef: ValRef -> string
 
@@ -1303,10 +1306,10 @@ val wrapModuleOrNamespaceTypeInNamespace:
 val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
 
 /// Given a namespace, module or type definition, try to produce a reference to that entity.
-val tryRescopeEntity: CcuThunk -> Entity -> ValueOption<EntityRef>
+val tryRescopeEntity: CcuThunk -> Entity -> EntityRef voption
 
 /// Given a value definition, try to produce a reference to that value. Fails for local values.
-val tryRescopeVal: CcuThunk -> Remap -> Val -> ValueOption<ValRef>
+val tryRescopeVal: CcuThunk -> Remap -> Val -> ValRef voption
 
 /// Make the substitution (remapping) table for viewing a module or namespace 'from the outside'
 ///
@@ -1526,7 +1529,7 @@ val isOptionTy: TcGlobals -> TType -> bool
 val destOptionTy: TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
-val tryDestOptionTy: TcGlobals -> TType -> ValueOption<TType>
+val tryDestOptionTy: TcGlobals -> TType -> TType voption
 
 /// Try to take apart an option type
 val destValueOptionTy: TcGlobals -> TType -> TType
@@ -1535,7 +1538,7 @@ val destValueOptionTy: TcGlobals -> TType -> TType
 val isNullableTy: TcGlobals -> TType -> bool
 
 /// Try to take apart a System.Nullable type
-val tryDestNullableTy: TcGlobals -> TType -> ValueOption<TType>
+val tryDestNullableTy: TcGlobals -> TType -> TType voption
 
 /// Take apart a System.Nullable type
 val destNullableTy: TcGlobals -> TType -> TType
@@ -2132,6 +2135,8 @@ val mkCallSeqAppend: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSeqFinally: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallSeqTryWith: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
 val mkCallSeqGenerated: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSeqOfFunctions: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
@@ -2449,6 +2454,8 @@ type Entity with
 
     member HasMember: TcGlobals -> string -> TType list -> bool
 
+    member internal TryGetMember: TcGlobals -> string -> TType list -> ValRef option
+
 type EntityRef with
 
     member HasInterface: TcGlobals -> TType -> bool
@@ -2687,3 +2694,10 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresent:
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
+
+/// Serialize an entity to a very basic json structure.
+val serializeEntity: path: string -> entity: Entity -> unit

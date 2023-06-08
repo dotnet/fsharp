@@ -2,7 +2,9 @@
 
 module internal FSharp.Compiler.CheckBasics
 
+open System.Collections.Concurrent
 open System.Collections.Generic
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
@@ -260,6 +262,13 @@ type TcFileState =
 
         isInternalTestSpanStackReferring: bool
 
+        diagnosticOptions: FSharpDiagnosticOptions
+
+        /// A cache for ArgReprInfos which get created multiple times for the same values
+        /// Since they need to be later mutated with updates from signature files this should make sure
+        /// we're always dealing with the same instance and the updates don't get lost
+        argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+
         // forward call
         TcPat: WarnOnUpperFlag
             -> TcFileState
@@ -319,6 +328,7 @@ type TcFileState =
         tcSink: TcResultsSink *
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
+        diagnosticOptions: FSharpDiagnosticOptions *
         tcPat: (WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv) *
         tcSimplePats: (TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *

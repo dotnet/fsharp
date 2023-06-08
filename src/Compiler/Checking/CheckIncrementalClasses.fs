@@ -4,6 +4,7 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 
 open System
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -135,7 +136,7 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
 
     // Type check arguments by processing them as 'simple' patterns 
     //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
-    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, [], m))
 
     let (TcPatLinearEnv(_, names, _)) = patEnv
         
@@ -165,15 +166,17 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
         let id = ident ("new", m)
 
-        CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g ModuleOrMemberBinding tcref memberFlags false id.idRange
         let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
-        let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+        let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
         let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
         let ctorValScheme = ValScheme(id, prelimTyschemeG, Some varReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
         let paramNames = varReprInfo.ArgNames
-        let xmlDoc = xmlDoc.ToXmlDoc(true, Some paramNames)
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
         ctorValScheme, ctorVal
 

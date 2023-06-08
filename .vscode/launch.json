@@ -3,8 +3,14 @@
     "version": "0.2.0",
     "inputs": [
         {
-            "id": "argsPrompt",
+            "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
+            "default": "",
+            "type": "promptString",
+        },
+        {
+            "id": "fsiArgsPrompt",
+            "description": "Enter arguments for fsi (optional)",
             "default": "",
             "type": "promptString",
         }
@@ -18,6 +24,9 @@
             // "preLaunchTask": "Build (Debug)",
             // If you have changed target frameworks, make sure to update the program p
             "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net7.0/fsi.dll",
+            "args": [
+                "${input:fsiArgsPrompt}"
+            ],
             "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
             "internalConsoleOptions": "neverOpen",
@@ -25,6 +34,7 @@
             "stopAtEntry": false,
             "justMyCode": true,
             "enableStepFiltering": true,
+            "requireExactSource": false,
             "symbolOptions": {
                 "searchMicrosoftSymbolServer": true,
                 "searchNuGetOrgSymbolServer": true
@@ -44,7 +54,7 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
             "args": [
-                "${input:argsPrompt}"
+                "${input:fscArgsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
@@ -53,6 +63,7 @@
             "stopAtEntry": false,
             "justMyCode": true,
             "enableStepFiltering": true,
+            "requireExactSource": false,
             "symbolOptions": {
                 "searchMicrosoftSymbolServer": true,
                 "searchNuGetOrgSymbolServer": true
@@ -75,6 +86,7 @@
             },
             "justMyCode": true,
             "enableStepFiltering": false,
+            "requireExactSource": false
         }
     ]
 }

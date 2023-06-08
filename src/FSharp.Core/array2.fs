@@ -52,12 +52,7 @@ module Array2D =
     [<CompiledName("ZeroCreateBased")>]
     let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) = 
         if base1 = 0 && base2 = 0 then 
-#if NETSTANDARD
-            zeroCreate length1 length2
-#else                
-            // Note: this overload is available on Compact Framework and Silverlight, but not Portable
-            (System.Array.CreateInstance(typeof<'T>, [|length1;length2|]) :?> 'T[,])
-#endif                
+            zeroCreate length1 length2               
         else
             (Array.CreateInstance(typeof<'T>, [|length1;length2|], [|base1;base2|]) :?> 'T[,])
 

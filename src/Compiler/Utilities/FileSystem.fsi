@@ -215,6 +215,9 @@ type public IFileSystem =
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
     abstract IsStableFileHeuristic: fileName: string -> bool
 
+    /// A shim over Path.ChangeExtension
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
     /// Create a default implementation of the file system
@@ -284,6 +287,9 @@ type DefaultFileSystem =
     abstract IsStableFileHeuristic: fileName: string -> bool
     override IsStableFileHeuristic: fileName: string -> bool
 
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+    override ChangeExtensionShim: path: string * extension: string -> string
+
     interface IFileSystem
 
 [<AutoOpen>]
@@ -328,16 +334,27 @@ type internal ByteMemory with
     /// Creates a ByteMemory object that is backed by a byte array.
     static member FromArray: bytes: byte[] -> ByteMemory
 
+    /// Gets a ByteMemory object that is empty
+    static member Empty: ByteMemory
+
 [<Sealed>]
 type internal ByteStream =
+
+    member IsEOF: bool
+
     member ReadByte: unit -> byte
+
     member ReadBytes: int -> ReadOnlyByteMemory
+
     member ReadUtf8String: int -> string
+
     member Position: int
+
     static member FromBytes: ReadOnlyByteMemory * start: int * length: int -> ByteStream
 
 #if LAZY_UNPICKLE
     member CloneAndSeek: int -> ByteStream
+
     member Skip: int -> unit
 #endif
 

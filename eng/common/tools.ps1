@@ -365,8 +365,8 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
 
   # If the version of msbuild is going to be xcopied,
   # use this version. Version matches a package here:
-  # https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-eng&package=RoslynTools.MSBuild&protocolType=NuGet&version=17.2.1&view=overview
-  $defaultXCopyMSBuildVersion = '17.2.1'
+  # https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-eng&package=RoslynTools.MSBuild&protocolType=NuGet&version=17.3.1view=overview
+  $defaultXCopyMSBuildVersion = '17.3.1'
 
   if (!$vsRequirements) {
     if (Get-Member -InputObject $GlobalJson.tools -Name 'vs') {
@@ -497,7 +497,7 @@ function InitializeXCopyMSBuild([string]$packageVersion, [bool]$install) {
 #       Two part minimal VS version, e.g. "15.9", "16.0", etc.
 #   "components": ["componentId1", "componentId2", ...]
 #       Array of ids of workload components that must be available in the VS instance.
-#       See e.g. https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-enterprise?view=vs-2017
+#       See e.g. https://learn.microsoft.com/visualstudio/install/workload-component-id-vs-enterprise?view=vs-2017
 #
 # Returns JSON describing the located VS instance (same format as returned by vswhere),
 # or $null if no instance meeting the requirements is found on the machine.

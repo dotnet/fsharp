@@ -7,11 +7,18 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
+  <!-- If building FCS solution directly, set paths explicitly -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,8 +35,12 @@
     <Compile Include="fsiaux.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
 </Project>

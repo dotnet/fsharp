@@ -1531,8 +1531,8 @@ type F1 =
   static member C: unit -> int
   abstract AAA: int
   abstract BBB: bool with set
-  member D2: int
-  member E: int
+  member D2: int with get, set
+  member E: int with get, set
   abstract ZZZ: int
   static val mutable private sx: F1
   static val mutable private sx2: F1
@@ -2765,7 +2765,7 @@ val ShortName: string = "hi"
 > val list2: int list = [1]
 
 module FSI_0317.
-       C6f6ae524efb4d95b2b2eaa363022f9d4a28c777f788498ca81a55b9ec1aad1a
+       A8a951db8294f99e95ae1d276a7ddaefd93d1548e6bf749bdeae55d2649682b3
 
 {"ImmutableField0":6}
 type R1 =

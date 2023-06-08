@@ -6,6 +6,7 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Security.Cryptography
+open System.Text.RegularExpressions
 open FSDependencyManager
 open Internal.Utilities.FSharpEnvironment
 
@@ -64,7 +65,6 @@ module internal Utilities =
         |> Array.filter (fun r ->
             not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.FullPath))
             && not (equals r.IsNotImplementationReference "true")
-            && File.Exists(r.FullPath)
             && equals r.AssetType "runtime")
         |> Array.map (fun r -> r.FullPath)
         |> Array.distinct
@@ -171,7 +171,7 @@ module internal Utilities =
 
         result |> List.ofSeq |> List.map (fun option -> split option)
 
-    let executeTool pathToExe arguments workingDir timeout =
+    let executeTool pathToExe arguments workingDir environment timeout =
         match pathToExe with
         | Some path ->
             let errorsList = ResizeArray()
@@ -195,6 +195,10 @@ module internal Utilities =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
+
+            for varname, value in environment do
+                psi.EnvironmentVariables.Add(varname, value)
+
             psi.UseShellExecute <- false
 
             use p = new Process()
@@ -240,7 +244,7 @@ module internal Utilities =
         let workingDir = Path.GetDirectoryName projectPath
         let dotnetHostPath = getDotnetHostPath ()
         let args = arguments "msbuild -v:quiet"
-        let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir timeout
+        let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir [] timeout
 
 #if DEBUG
         let diagnostics =
@@ -260,7 +264,12 @@ module internal Utilities =
         let resolutionsFile, resolutions, references, loads, includes =
             if success && File.Exists(outputFile) then
                 let resolutions = getResolutionsFromFile outputFile
-                let references = (findReferencesFromResolutions resolutions) |> Array.toList
+
+                let references =
+                    (findReferencesFromResolutions resolutions)
+                    |> Array.filter (File.Exists)
+                    |> Array.toList
+
                 let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toList
                 (Some outputFile), resolutions, references, loads, includes
@@ -281,10 +290,10 @@ module internal Utilities =
 
     let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
         let dotnetHostPath = getDotnetHostPath ()
-        let args = "nuget list source --format short"
+        let args = "nuget list source --format detailed"
 
         let success, stdOut, stdErr =
-            executeTool dotnetHostPath args scriptDirectory timeout
+            executeTool dotnetHostPath args scriptDirectory [ "DOTNET_CLI_UI_LANGUAGE", "en-us" ] timeout
 #if DEBUG
         let diagnostics =
             [|
@@ -300,17 +309,36 @@ module internal Utilities =
         ignore workingDir
         ignore stdErr
 #endif
-        seq {
-            if success then
-                for source in stdOut do
-                    // String returned by `dotnet nuget list source --format short` is formatted similar to:
-                    // E https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-                    // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
-                    if source.Length > 0 && source.[0] = 'E' then
-                        let pos = source.IndexOf(" ")
+        if success then
+            // String returned by `dotnet nuget list source --format detailed` is formatted similar to:
+            // Registered Sources:
+            //  1.  dotnet-eng [Enabled]
+            //      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json
+            //  2.  dotnet-tools [Enabled]
+            //      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json
+            //  3.  dotnet5 [Enabled]
+            //      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet5/nuget/v3/index.json
+            // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
+            let pattern =
+                @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)$(\s*)(?'uri'\S*)"
 
-                        if pos >= 0 then
-                            "i", source.Substring(pos).Trim()
-        }
+            let regex =
+                new Regex(pattern, RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+
+            let sourcelist = String.concat Environment.NewLine stdOut
+
+            String.concat
+                Environment.NewLine
+                [|
+                    for m in regex.Matches(sourcelist) do
+                        let name = m.Groups["name"].Value
+                        let enabled = m.Groups["enabled"].Value
+                        let uri = m.Groups["uri"].Value
+
+                        if enabled.Length > 0 && enabled[0] = 'E' then
+                            $"""    <add key="{name}" value="{uri}" />"""
+                |]
+        else
+            ""
 
     let computeSha256HashOfBytes (bytes: byte[]) : byte[] = SHA256.Create().ComputeHash(bytes)

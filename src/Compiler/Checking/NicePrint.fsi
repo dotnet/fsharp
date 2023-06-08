@@ -17,6 +17,8 @@ open FSharp.Compiler.TypedTreeOps
 module PrintUtilities =
     val layoutBuiltinAttribute: denv: DisplayEnv -> attrib: BuiltinAttribInfo -> Layout
 
+    val squashToWidth: width: int option -> Layout -> Layout
+
 val layoutTyparConstraint: denv: DisplayEnv -> Typar * TyparConstraint -> Layout
 
 val outputType: denv: DisplayEnv -> os: StringBuilder -> x: TType -> unit
@@ -132,6 +134,8 @@ val stringOfExnDef: denv: DisplayEnv -> infoReader: InfoReader -> x: EntityRef -
 val stringOfFSAttrib: denv: DisplayEnv -> x: Attrib -> string
 
 val stringOfILAttrib: denv: DisplayEnv -> ILType * ILAttribElem list -> string
+
+val fqnOfEntityRef: g: TcGlobals -> x: EntityRef -> string
 
 val layoutImpliedSignatureOfModuleOrNamespace:
     showHeader: bool ->

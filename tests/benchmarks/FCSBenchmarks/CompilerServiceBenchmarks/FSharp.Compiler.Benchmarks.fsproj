@@ -19,6 +19,8 @@
     <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
     <Compile Include="FileCascadeBenchmarks.fs" />
+    <Compile Include="GraphTypeCheckingBenchmarks.fs" />
+    <Compile Include="BackgroundCompilerBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -29,6 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\..\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\BenchmarkComparison\HistoricalBenchmark.fsproj" />
   </ItemGroup>
 

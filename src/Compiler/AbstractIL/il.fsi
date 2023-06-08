@@ -1156,6 +1156,8 @@ type ILMethodDef =
 
     member internal WithAbstract: bool -> ILMethodDef
 
+    member internal WithVirtual: bool -> ILMethodDef
+
     member internal WithAccess: ILMemberAccess -> ILMethodDef
 
     member internal WithNewSlot: ILMethodDef
@@ -1868,6 +1870,10 @@ type internal ILGlobals =
     member primaryAssemblyScopeRef: ILScopeRef
     member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
+    member fsharpCoreAssemblyScopeRef: ILScopeRef
+
+    member typ_Attribute: ILType
+    member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
     member typ_Type: ILType
@@ -1886,9 +1892,8 @@ type internal ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
+    member typ_SealedAttribute: ILType
     member typ_TypedReference: ILType
-
-    member fsharpCoreAssemblyScopeRef: ILScopeRef
 
     /// Is the given assembly possibly a primary assembly?
     /// In practice, a primary assembly is an assembly that contains the System.Object type definition
@@ -2103,6 +2108,7 @@ val internal mkILNonGenericInstanceMethod:
 /// Make field definitions.
 val internal mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
 val internal mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
+val internal mkILStaticLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 val internal mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.

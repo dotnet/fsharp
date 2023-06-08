@@ -109,8 +109,6 @@ let rec instLambdasAux n inst lambdas =
         )
     | Lambdas_return retTy -> Lambdas_return(instILTypeAux n inst retTy)
 
-let instLambdas i t = instLambdasAux 0 i t
-
 type IlxClosureFreeVar =
     {
         fvName: string

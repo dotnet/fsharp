@@ -4,7 +4,9 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Diagnostics
 open System.IO
+open System.Threading
 open System.Collections.Generic
 
 open Internal.Utilities.Collections
@@ -92,13 +94,13 @@ let PrependPathToSpec x (SynModuleOrNamespaceSig (longId, isRecursive, kind, dec
 
 let PrependPathToInput x inp =
     match inp with
-    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e, trivia)) ->
+    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e, trivia, i)) ->
         ParsedInput.ImplFile(
-            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia)
+            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia, i)
         )
 
-    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia)) ->
-        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia))
+    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia, i)) ->
+        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia, i))
 
 let IsValidAnonModuleName (modname: string) =
     modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')
@@ -243,7 +245,8 @@ let PostParseModuleImpls
         isLastCompiland,
         ParsedImplFile (hashDirectives, impls),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list
+        tripleSlashComments: range list,
+        identifiers: Set<string>
     ) =
     let othersWithSameName =
         impls
@@ -283,7 +286,9 @@ let PostParseModuleImpls
             CodeComments = codeComments
         }
 
-    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
+    ParsedInput.ImplFile(
+        ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia, identifiers)
+    )
 
 let PostParseModuleSpecs
     (
@@ -292,7 +297,8 @@ let PostParseModuleSpecs
         isLastCompiland,
         ParsedSigFile (hashDirectives, specs),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list
+        tripleSlashComments: range list,
+        identifiers: Set<string>
     ) =
     let othersWithSameName =
         specs
@@ -331,7 +337,7 @@ let PostParseModuleSpecs
             CodeComments = codeComments
         }
 
-    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, scopedPragmas, hashDirectives, specs, trivia))
+    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, scopedPragmas, hashDirectives, specs, trivia, identifiers))
 
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
@@ -376,26 +382,26 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
     | ParsedInput.ImplFile implFile ->
-        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia)) =
+        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)) =
             implFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let implFileR =
-            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia)
+            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)
 
         let inputR = ParsedInput.ImplFile implFileR
         inputR, moduleNamesDictR
     | ParsedInput.SigFile sigFile ->
-        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia)) =
+        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia, identifiers)) =
             sigFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let sigFileR =
-            ParsedSigFileInput(fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia)
+            ParsedSigFileInput(fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia, identifiers)
 
         let inputT = ParsedInput.SigFile sigFileR
         inputT, moduleNamesDictR
@@ -408,8 +414,20 @@ let ParseInput
         lexbuf: UnicodeLexing.Lexbuf,
         defaultNamespace,
         fileName,
-        isLastCompiland
+        isLastCompiland,
+        identCapture,
+        userOpName
     ) =
+
+    use _ =
+        Activity.start
+            "ParseAndCheckFile.parseFile"
+            [|
+                Activity.Tags.fileName, fileName
+                Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                Activity.Tags.userOpName, userOpName |> Option.defaultValue ""
+            |]
+
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
@@ -426,6 +444,32 @@ let ParseInput
 
     try
         let input =
+            let identStore = HashSet<string>()
+
+            let lexer =
+                if identCapture then
+                    (fun x ->
+                        let token = lexer x
+
+                        match token with
+                        | Parser.token.PERCENT_OP ident
+                        | Parser.token.FUNKY_OPERATOR_NAME ident
+                        | Parser.token.ADJACENT_PREFIX_OP ident
+                        | Parser.token.PLUS_MINUS_OP ident
+                        | Parser.token.INFIX_AMP_OP ident
+                        | Parser.token.INFIX_STAR_DIV_MOD_OP ident
+                        | Parser.token.PREFIX_OP ident
+                        | Parser.token.INFIX_BAR_OP ident
+                        | Parser.token.INFIX_AT_HAT_OP ident
+                        | Parser.token.INFIX_COMPARE_OP ident
+                        | Parser.token.INFIX_STAR_STAR_OP ident
+                        | Parser.token.IDENT ident -> identStore.Add ident |> ignore
+                        | _ -> ()
+
+                        token)
+                else
+                    lexer
+
             if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
@@ -439,14 +483,14 @@ let ParseInput
                 let tripleSlashComments =
                     LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments)
+                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let intfs = Parser.signatureFile lexer lexbuf
 
                 let tripleSlashComments =
                     LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments)
+                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
             else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                 error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
             else
@@ -464,11 +508,10 @@ let ParseInput
 type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
+let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
-        printf "tokenize - getting one token from %s\n" shortFilename
         let t = tokenizer ()
-        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
+        printfn $"{Parser.token_to_string t} {lexbuf.LexemeRange}"
 
         match t with
         | Parser.EOF _ -> exiter.Exit 0
@@ -518,7 +561,8 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 {
                     ConditionalDirectives = []
                     CodeComments = []
-                }
+                },
+                Set.empty
             )
         )
     else
@@ -534,7 +578,8 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 {
                     ConditionalDirectives = []
                     CodeComments = []
-                }
+                },
+                Set.empty
             )
         )
 
@@ -562,9 +607,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 tcConfig.pathMap,
                 tcConfig.applyLineDirectives
             )
-
-        // Set up the initial lexer arguments
-        let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir
 
         let input =
             usingLexbufForParsing (lexbuf, fileName) (fun lexbuf ->
@@ -596,7 +638,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then
-                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf, tcConfig.exiter)
+                    ShowAllTokensAndExit(tokenizer, lexbuf, tcConfig.exiter)
 
                 // Test hook for one of the parser entry points
                 if tcConfig.testInteractionParser then
@@ -611,7 +653,9 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                         lexbuf,
                         None,
                         fileName,
-                        isLastCompiland
+                        isLastCompiland,
+                        tcConfig.captureIdentifiersWhenParsing,
+                        None
                     )
 
                 // Report the statistics for testing purposes
@@ -1108,15 +1152,10 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
         tcsImplicitOpenDeclarations = openDecls0
     }
 
-/// Dummy typed impl file that contains no definitions and is not used for emitting any kind of assembly.
-let CreateEmptyDummyImplFile qualNameOfFile sigTy =
-    CheckedImplFile(qualNameOfFile, [], sigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
-
 let AddCheckResultsToTcState
     (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcImplEnv, qualNameOfFile, implFileSigType)
     (tcState: TcState)
     =
-
     let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
     // Only add it to the environment if it didn't have a signature
@@ -1159,50 +1198,80 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-let AddDummyCheckResultsToTcState
-    (
-        tcGlobals,
-        amap,
-        qualName: QualifiedNameOfFile,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        tcStateForImplFile: TcState,
-        rootSig
-    ) =
-    let hadSig = true
-    let emptyImplFile = CreateEmptyDummyImplFile qualName rootSig
-    let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-    let ccuSigForFile, tcState =
-        AddCheckResultsToTcState (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualName, rootSig) tcState
+/// Returns partial type check result for skipped implementation files.
+let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, tcState, input: ParsedInput) =
+    use _ =
+        Activity.start "ParseAndCheckInputs.SkippedImplFilePlaceholder" [| Activity.Tags.fileName, input.FileName |]
 
-    (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
+    CheckSimulateException tcConfig
 
-/// Typecheck a single file (or interactive entry into F# Interactive)
-let CheckOneInputAux
+    match input with
+    | ParsedInput.ImplFile file ->
+        let qualNameOfFile = file.QualifiedName
+
+        // Check if we've got an interface for this fragment
+        let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+
+        // Check if we've already seen an implementation for this fragment
+        if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), input.Range))
+
+        let hadSig = rootSigOpt.IsSome
+
+        match rootSigOpt with
+        | Some rootSigTy ->
+            // Delay the typecheck the implementation file until the second phase of parallel processing.
+            // Adjust the TcState as if it has been checked, which makes the signature for the file available later
+            // in the compilation order.
+            let tcStateForImplFile = tcState
+            let amap = tcImports.GetImportMap()
+
+            let ccuSigForFile, tcState =
+                AddCheckResultsToTcState
+                    (tcGlobals, amap, hadSig, None, TcResultsSink.NoSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSigTy)
+                    tcState
+
+            let emptyImplFile =
+                CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
+
+            let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
+            Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
+
+        | _ -> None
+    | _ -> None
+
+/// Typecheck a single file (or interactive entry into F# Interactive).
+let CheckOneInput
     (
         checkForErrors,
         tcConfig: TcConfig,
         tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
+        tcGlobals: TcGlobals,
+        prefixPathOpt: LongIdent option,
+        tcSink: TcResultsSink,
         tcState: TcState,
-        inp: ParsedInput,
-        skipImplIfSigExists: bool
-    ) =
-
+        input: ParsedInput
+    ) : Cancellable<PartialResult * TcState> =
     cancellable {
         try
+            use _ =
+                Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
+
             CheckSimulateException tcConfig
 
-            let m = inp.Range
+            let m = input.Range
             let amap = tcImports.GetImportMap()
 
-            match inp with
-            | ParsedInput.SigFile file ->
+            let conditionalDefines =
+                if tcConfig.noConditionalErasure then
+                    None
+                else
+                    Some tcConfig.conditionalDefines
 
+            match input with
+            | ParsedInput.SigFile file ->
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've seen this top module signature before.
@@ -1213,12 +1282,6 @@ let CheckOneInputAux
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                     errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (qualNameOfFile.Text), m))
 
-                let conditionalDefines =
-                    if tcConfig.noConditionalErasure then
-                        None
-                    else
-                        Some tcConfig.conditionalDefines
-
                 // Typecheck the signature file
                 let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
                     CheckOneSigFile
@@ -1228,7 +1291,8 @@ let CheckOneInputAux
                          checkForErrors,
                          conditionalDefines,
                          tcSink,
-                         tcConfig.internalTestSpanStackReferring)
+                         tcConfig.internalTestSpanStackReferring,
+                         tcConfig.diagnosticsOptions)
                         tcState.tcsTcSigEnv
                         file
 
@@ -1253,7 +1317,7 @@ let CheckOneInputAux
                         tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                     }
 
-                return Choice1Of2(tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
+                return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
 
             | ParsedInput.ImplFile file ->
                 let qualNameOfFile = file.QualifiedName
@@ -1265,100 +1329,41 @@ let CheckOneInputAux
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                     errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
 
-                let conditionalDefines =
-                    if tcConfig.noConditionalErasure then
-                        None
-                    else
-                        Some tcConfig.conditionalDefines
-
                 let hadSig = rootSigOpt.IsSome
 
-                match rootSigOpt with
-                | Some rootSig when skipImplIfSigExists ->
-                    // Delay the typecheck the implementation file until the second phase of parallel processing.
-                    // Adjust the TcState as if it has been checked, which makes the signature for the file available later
-                    // in the compilation order.
-                    let tcStateForImplFile = tcState
-                    let qualNameOfFile = file.QualifiedName
-                    let priorErrors = checkForErrors ()
+                // Typecheck the implementation file
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                    CheckOneImplFile(
+                        tcGlobals,
+                        amap,
+                        tcState.tcsCcu,
+                        tcState.tcsImplicitOpenDeclarations,
+                        checkForErrors,
+                        conditionalDefines,
+                        tcSink,
+                        tcConfig.internalTestSpanStackReferring,
+                        tcState.tcsTcImplEnv,
+                        rootSigOpt,
+                        file,
+                        tcConfig.diagnosticsOptions
+                    )
 
-                    let ccuSigForFile, tcState =
-                        AddCheckResultsToTcState
-                            (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSig)
-                            tcState
+                let tcState =
+                    { tcState with
+                        tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                    }
 
-                    let partialResult =
-                        (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile)
+                let ccuSigForFile, tcState =
+                    AddCheckResultsToTcState
+                        (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
+                        tcState
 
-                    return Choice2Of2 partialResult, tcState
-
-                | _ ->
-                    // Typecheck the implementation file
-                    let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                        CheckOneImplFile(
-                            tcGlobals,
-                            amap,
-                            tcState.tcsCcu,
-                            tcState.tcsImplicitOpenDeclarations,
-                            checkForErrors,
-                            conditionalDefines,
-                            tcSink,
-                            tcConfig.internalTestSpanStackReferring,
-                            tcState.tcsTcImplEnv,
-                            rootSigOpt,
-                            file
-                        )
-
-                    let tcState =
-                        { tcState with
-                            tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                        }
-
-                    let ccuSigForFile, tcState =
-                        AddCheckResultsToTcState
-                            (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
-                            tcState
-
-                    let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
-                    return Choice1Of2 result, tcState
+                let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
+                return result, tcState
 
         with e ->
             errorRecovery e range0
-            return Choice1Of2(tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
-    }
-
-/// Typecheck a single file (or interactive entry into F# Interactive). If skipImplIfSigExists is set to true
-/// then implementations with signature files give empty results.
-let CheckOneInput
-    (
-        checkForErrors,
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        input: ParsedInput,
-        skipImplIfSigExists: bool
-    ) =
-    cancellable {
-        let! partialResult, tcState =
-            CheckOneInputAux(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, skipImplIfSigExists)
-
-        match partialResult with
-        | Choice1Of2 result -> return result, tcState
-        | Choice2Of2 (amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, _ccuSigForFile) ->
-            return
-                AddDummyCheckResultsToTcState(
-                    tcGlobals,
-                    amap,
-                    file.QualifiedName,
-                    prefixPathOpt,
-                    tcSink,
-                    tcState,
-                    tcStateForImplFile,
-                    rootSig
-                )
+            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1366,7 +1371,7 @@ let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger
     GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, skipImplIfSigExists) tcState input =
+let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
     // Equip loggers to locally filter w.r.t. scope pragmas in each input
     use _ =
         UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
@@ -1375,7 +1380,7 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
     RequireCompilationThread ctok
 
-    CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input, skipImplIfSigExists)
+    CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
     |> Cancellable.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
@@ -1393,10 +1398,8 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
-        let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
+        let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
-        Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return finishedResult
     }
 
@@ -1415,127 +1418,374 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
 
 let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     (tcState, inputs)
-    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
+    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
 
-/// Use parallel checking of implementation files that have signature files
-let CheckMultipleInputsInParallel
-    (
-        ctok,
-        checkForErrors,
-        tcConfig: TcConfig,
-        tcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcState,
-        eagerFormat,
+open FSharp.Compiler.GraphChecking
+
+type State = TcState * bool
+type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
+/// Auxiliary type for re-using signature information in TcEnvFromImpls.
+///
+/// TcState has two typing environments: TcEnvFromSignatures && TcEnvFromImpls
+/// When type checking a file, depending on the type (implementation or signature), it will use one of these typing environments (TcEnv).
+/// Checking a file will populate the respective TcEnv.
+///
+/// When a file has a dependencies, the information of the signature file in case a pair (implementation file backed by a signature) will suffice to type-check that file.
+/// Example: if `B.fs` has a dependency on `A`, the information of `A.fsi` is enough for `B.fs` to type-check, on condition that information is available in the TcEnvFromImpls.
+/// We introduce a special ArtificialImplFile node in the graph to satisfy this. `B.fs -> [ A.fsi ]` becomes `B.fs -> [ ArtificialImplFile A ].
+/// The `ArtificialImplFile A` node will duplicate the signature information which A.fsi provided earlier.
+/// Processing a `ArtificialImplFile` node will add the information from the TcEnvFromSignatures to the TcEnvFromImpls.
+/// This means `A` will be known in both TcEnvs and therefor `B.fs` can be type-checked.
+/// By doing this, we can speed up the graph processing as type checking a signature file is less expensive than its implementation counterpart.
+///
+/// When we need to actually type-check an implementation file backed by a signature, we cannot have the duplicate information of the signature file present in TcEnvFromImpls.
+/// Example `A.fs -> [ A.fsi ]`. An implementation file always depends on its signature.
+/// Type-checking `A.fs` will add the actual information to TcEnvFromImpls and we do not depend on the `ArtificialImplFile A` for `A.fs`.
+///
+/// In order to deal correctly with the `ArtificialImplFile` logic, we need to transform the resolved graph to contain the additional pair nodes.
+/// After we have type-checked the graph, we exclude the ArtificialImplFile nodes as they are not actual physical files in our project.
+[<RequireQualifiedAccess>]
+type NodeToTypeCheck =
+    /// A real physical file in the current project.
+    /// This can be either an implementation or a signature file.
+    | PhysicalFile of fileIndex: FileIndex
+    /// An artificial node that will add the earlier processed signature information to the TcEnvFromImpls.
+    /// Dependants on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
+    /// Even though the actual implementation file was not type-checked.
+    | ArtificialImplFile of signatureFileIndex: FileIndex
+
+let folder (state: State) (finisher: Finisher<State, FinalFileResult>) : FinalFileResult * State = finisher.Invoke(state)
+
+/// Typecheck a single file (or interactive entry into F# Interactive)
+/// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
+let CheckOneInputWithCallback
+    ((checkForErrors,
+      tcConfig: TcConfig,
+      tcImports: TcImports,
+      tcGlobals,
+      prefixPathOpt,
+      tcSink,
+      tcState: TcState,
+      inp: ParsedInput,
+      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+    : Cancellable<Finisher<TcState, PartialResult>> =
+    cancellable {
+        try
+            CheckSimulateException tcConfig
+
+            let m = inp.Range
+            let amap = tcImports.GetImportMap()
+
+            let conditionalDefines =
+                if tcConfig.noConditionalErasure then
+                    None
+                else
+                    Some tcConfig.conditionalDefines
+
+            match inp with
+            | ParsedInput.SigFile file ->
+                let qualNameOfFile = file.QualifiedName
+
+                // Check if we've seen this top module signature before.
+                if Zmap.mem qualNameOfFile tcState.tcsRootSigs then
+                    errorR (Error(FSComp.SR.buildSignatureAlreadySpecified (qualNameOfFile.Text), m.StartRange))
+
+                // Check if the implementation came first in compilation order
+                if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGivenDetail (qualNameOfFile.Text), m))
+
+                // Typecheck the signature file
+                let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
+                    CheckOneSigFile
+                        (tcGlobals,
+                         amap,
+                         tcState.tcsCcu,
+                         checkForErrors,
+                         conditionalDefines,
+                         tcSink,
+                         tcConfig.internalTestSpanStackReferring,
+                         tcConfig.diagnosticsOptions)
+                        tcState.tcsTcSigEnv
+                        file
+
+                // Open the prefixPath for fsi.exe
+                let tcEnv, _openDecls1 =
+                    match prefixPathOpt with
+                    | None -> tcEnv, []
+                    | Some prefixPath ->
+                        let m = qualNameOfFile.Range
+                        TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
+
+                return
+                    Finisher(fun tcState ->
+                        let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
+
+                        let tcSigEnv =
+                            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+
+                        // Add the signature to the signature env (unless it had an explicit signature)
+                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+
+                        let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
+
+                        let tcState =
+                            { tcState with
+                                tcsTcSigEnv = tcSigEnv
+                                tcsRootSigs = rootSigs
+                                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                            }
+
+                        partialResult, tcState)
+
+            | ParsedInput.ImplFile file ->
+                let qualNameOfFile = file.QualifiedName
+
+                // Check if we've got an interface for this fragment
+                let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+
+                // Typecheck the implementation file
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                    CheckOneImplFile(
+                        tcGlobals,
+                        amap,
+                        tcState.tcsCcu,
+                        tcState.tcsImplicitOpenDeclarations,
+                        checkForErrors,
+                        conditionalDefines,
+                        tcSink,
+                        tcConfig.internalTestSpanStackReferring,
+                        tcState.tcsTcImplEnv,
+                        rootSigOpt,
+                        file,
+                        tcConfig.diagnosticsOptions
+                    )
+
+                return
+                    Finisher(fun tcState ->
+                        // Check if we've already seen an implementation for this fragment
+                        if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+                            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+
+                        let ccuSigForFile, fsTcState =
+                            AddCheckResultsToTcState
+                                (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
+                                tcState
+
+                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+
+                        let tcState =
+                            { fsTcState with
+                                tcsCreatesGeneratedProvidedTypes =
+                                    fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                            }
+
+                        partialResult, tcState)
+
+        with e ->
+            errorRecovery e range0
+            return Finisher(fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState)
+    }
+
+let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
+    let qualNameOfFile = input.QualifiedName
+    let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+
+    match rootSigOpt with
+    | None -> failwithf $"No signature data was found for %s{input.FileName}"
+    | Some rootSig ->
+        fun (tcState: TcState) ->
+            let amap = tcImports.GetImportMap()
+
+            // Add the results of type checking the signature file to the TcEnv of implementation files.
+            let ccuSigForFile, tcState =
+                AddCheckResultsToTcState
+                    (tcGlobals, amap, true, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSig)
+                    tcState
+
+            // This partial result will be discarded in the end of the graph resolution.
+            let partialResult: PartialResult =
+                tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
+
+            partialResult, tcState
+
+/// Constructs a file dependency graph and type-checks the files in parallel where possible.
+let CheckMultipleInputsUsingGraphMode
+    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    : FinalFileResult list * TcState =
+    use cts = new CancellationTokenSource()
+
+    let sourceFiles: FileInProject array =
         inputs
-    ) =
+        |> List.toArray
+        |> Array.mapi (fun idx (input: ParsedInput) ->
+            {
+                Idx = idx
+                FileName = input.FileName
+                ParsedInput = input
+            })
 
+    let filePairs = FilePairMap(sourceFiles)
+
+    let graph, trie =
+        DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
+
+    let nodeGraph =
+        let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
+        let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
+
+        /// Map any signature dependencies to the ArtificialImplFile counterparts,
+        /// unless the signature dependency is the backing file of the current (implementation) file.
+        let mapDependencies idx deps =
+            Array.map
+                (fun dep ->
+                    if filePairs.IsSignature dep then
+                        let implIdx = filePairs.GetImplementationIndex dep
+
+                        if implIdx = idx then
+                            // This is the matching signature for the implementation.
+                            // Retain the direct dependency onto the signature file.
+                            mkPhysicalFile dep
+                        else
+                            mkArtificialImplFile dep
+                    else
+                        mkPhysicalFile dep)
+                deps
+
+        // Transform the graph to include ArtificialImplFile nodes when necessary.
+        graph
+        |> Seq.collect (fun (KeyValue (fileIdx, deps)) ->
+            if filePairs.IsSignature fileIdx then
+                // Add an additional ArtificialImplFile node for the signature file.
+                [|
+                    // Mark the current file as physical and map the dependencies.
+                    mkPhysicalFile fileIdx, mapDependencies fileIdx deps
+                    // Introduce a new node that depends on the signature.
+                    mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
+                |]
+            else
+                [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
+        |> Graph.make
+
+    // Persist the graph to a Mermaid diagram if specified.
+    if tcConfig.typeCheckingConfig.DumpGraph then
+        tcConfig.outputFile
+        |> Option.iter (fun outputFile ->
+            let outputFile = FileSystem.GetFullPathShim(outputFile)
+            let graphFile = FileSystem.ChangeExtensionShim(outputFile, ".graph.md")
+
+            let trieFile = FileSystem.ChangeExtensionShim(outputFile, ".trie.md")
+            TrieMapping.serializeToMermaid trieFile sourceFiles trie
+
+            graph
+            |> Graph.map (fun idx ->
+                let friendlyFileName =
+                    sourceFiles[idx]
+                        .FileName.Replace(tcConfig.implicitIncludeDir, "")
+                        .TrimStart([| '\\'; '/' |])
+
+                (idx, friendlyFileName))
+            |> Graph.serialiseToMermaid graphFile)
+
+    let _ = ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
-    // We create one CapturingDiagnosticLogger for each file we are processing and
-    // ensure the diagnostics are presented in deterministic order.
-    //
-    // eagerFormat is used to format diagnostics as they are emitted, just as they would be in the command-line
-    // compiler. This is necessary because some formatting of diagnostics is dependent on the
-    // type inference state at precisely the time the diagnostic is emitted.
-    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
+    // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
+    // somewhere in the files processed prior to each one, or in the processing of this particular file.
+    let priorErrors = checkForErrors ()
 
+    let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : Finisher<State, PartialResult> =
+        Finisher(fun (state: State) ->
+            let tcState, currentPriorErrors = state
+
+            let f =
+                // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                AddSignatureResultToTcImplEnv(tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, currentTcState, input)
+
+            // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
+            // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
+            let partialResult, nextTcState = f tcState
+            partialResult, (nextTcState, currentPriorErrors))
+
+    let processFile
+        ((input, logger): ParsedInput * DiagnosticsLogger)
+        ((currentTcState, _currentPriorErrors): State)
+        : Finisher<State, PartialResult> =
+        use _ = UseDiagnosticsLogger logger
+        let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+        let tcSink = TcResultsSink.NoSink
+
+        let finisher =
+            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            |> Cancellable.runWithoutCancellation
+
+        Finisher(fun (state: State) ->
+            let tcState, priorErrors = state
+            let (partialResult: PartialResult, tcState) = finisher.Invoke(tcState)
+            let hasErrors = logger.ErrorCount > 0
+            let priorOrCurrentErrors = priorErrors || hasErrors
+            let state: State = tcState, priorOrCurrentErrors
+            partialResult, state)
+
+    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         let inputsWithLoggers =
             inputsWithLoggers
-            |> List.map (fun (input, oldLogger) ->
+            |> List.toArray
+            |> Array.map (fun (input, oldLogger) ->
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
                 input, logger)
 
-        // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
-        // somewhere in the files processed prior to each one, or in the processing of this particular file.
-        let priorErrors = checkForErrors ()
+        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<State, PartialResult> =
+            match node with
+            | NodeToTypeCheck.ArtificialImplFile idx ->
+                let parsedInput, _ = inputsWithLoggers[idx]
+                processArtificialImplFile parsedInput state
+            | NodeToTypeCheck.PhysicalFile idx ->
+                let parsedInput, logger = inputsWithLoggers[idx]
+                processFile (parsedInput, logger) state
 
-        // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
-        // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
-        // checking in parallel.
+        let state: State = tcState, priorErrors
+
+        let finalStateItemChooser node =
+            match node with
+            | NodeToTypeCheck.ArtificialImplFile _ -> None
+            | NodeToTypeCheck.PhysicalFile file -> Some file
+
         let partialResults, (tcState, _) =
-            ((tcState, priorErrors), inputsWithLoggers)
-            ||> List.mapFold (fun (tcState, priorErrors) (input, logger) ->
-                use _ = UseDiagnosticsLogger logger
+            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, FinalFileResult>
+                nodeGraph
+                processFile
+                folder
+                finalStateItemChooser
+                state
+                cts.Token
 
-                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+        let partialResults =
+            partialResults
+            // Bring back the original, index-based file order.
+            |> List.sortBy fst
+            |> List.map snd
 
-                let partialResult, tcState =
-                    CheckOneInputAux(
-                        checkForErrors2,
-                        tcConfig,
-                        tcImports,
-                        tcGlobals,
-                        prefixPathOpt,
-                        TcResultsSink.NoSink,
-                        tcState,
-                        input,
-                        true
-                    )
-                    |> Cancellable.runWithoutCancellation
-
-                let priorErrors = checkForErrors2 ()
-                partialResult, (tcState, priorErrors))
-
-        // Do the parallel phase, checking all implementation files that did have a signature, in parallel.
-        let results, createsGeneratedProvidedTypesFlags =
-
-            List.zip partialResults inputsWithLoggers
-            |> List.toArray
-            |> ArrayParallel.map (fun (partialResult, (_, logger)) ->
-                use _ = UseDiagnosticsLogger logger
-                use _ = UseBuildPhase BuildPhase.TypeCheck
-
-                RequireCompilationThread ctok
-
-                match partialResult with
-                | Choice1Of2 result -> result, false
-                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
-
-                    // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
-                    // somewhere in the files processed prior to this one, including from the first phase, or in the processing
-                    // of this particular file.
-                    let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-
-                    let topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                        CheckOneImplFile(
-                            tcGlobals,
-                            amap,
-                            tcStateForImplFile.tcsCcu,
-                            tcStateForImplFile.tcsImplicitOpenDeclarations,
-                            checkForErrors2,
-                            conditionalDefines,
-                            TcResultsSink.NoSink,
-                            tcConfig.internalTestSpanStackReferring,
-                            tcStateForImplFile.tcsTcImplEnv,
-                            Some rootSig,
-                            file
-                        )
-                        |> Cancellable.runWithoutCancellation
-
-                    let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
-                    result, createsGeneratedProvidedTypes)
-            |> Array.toList
-            |> List.unzip
-
-        let tcState =
-            { tcState with
-                tcsCreatesGeneratedProvidedTypes =
-                    tcState.tcsCreatesGeneratedProvidedTypes
-                    || (createsGeneratedProvidedTypesFlags |> List.exists id)
-            }
-
-        results, tcState)
+        partialResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        if tcConfig.parallelCheckingWithSignatureFiles then
-            CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
-        else
-            CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+        match tcConfig.typeCheckingConfig.Mode with
+        | TypeCheckingMode.Graph when (not tcConfig.isInteractive) ->
+            CheckMultipleInputsUsingGraphMode(
+                ctok,
+                checkForErrors,
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                prefixPathOpt,
+                tcState,
+                eagerFormat,
+                inputs
+            )
+        | _ -> CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
         CheckMultipleInputsFinish(results, tcState)
