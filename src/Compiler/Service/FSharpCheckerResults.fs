@@ -3214,10 +3214,10 @@ type FSharpCheckProjectResults
                 |> Array.ofList
                 |> Array.collect (fun x ->
                     let partialCheckResults = builder.GetCheckResultsForFileInProjectEvenIfStale x
+
                     match partialCheckResults.TryPeekTcInfoWithExtras() with
                     | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
-                    | _ -> [||]
-                )
+                    | _ -> [||])
             | Choice2Of2 tcSymbolUses -> tcSymbolUses.GetUsesOfSymbol symbol.Item
 
         results
@@ -3243,10 +3243,10 @@ type FSharpCheckProjectResults
                 |> Array.ofList
                 |> Array.map (fun x ->
                     let partialCheckResults = builder.GetCheckResultsForFileInProjectEvenIfStale x
+
                     match partialCheckResults.TryPeekTcInfoWithExtras() with
                     | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
-                    | _ -> TcSymbolUses.Empty
-                )
+                    | _ -> TcSymbolUses.Empty)
             | Choice2Of2 tcSymbolUses -> [| tcSymbolUses |]
 
         [|

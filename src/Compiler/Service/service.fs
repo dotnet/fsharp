@@ -699,6 +699,7 @@ type BackgroundCompiler
                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProjectAllowingStaleCachedResults.CacheMiss", fileName)
 
                 let tcPrior = builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName
+
                 match tcPrior.TryPeekTcInfo() with
                 | Some tcInfo ->
                     let! checkResults =
