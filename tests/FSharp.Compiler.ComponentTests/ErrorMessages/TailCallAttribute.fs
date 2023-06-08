@@ -349,7 +349,11 @@ let rec f x = seq {
     let ``Don't warn for valid tailcalls in async expression`` () =
         """
 [<TailCall>] 
-let rec f x = async { return! f (x-1) }
+let rec f x = async {
+    let y = x - 1
+    let z = y - 1
+    return! f (z - 1)
+}
         """
         |> FSharp
         |> withLangVersionPreview
@@ -384,4 +388,70 @@ let rec f x = async {
                         EndColumn = 15 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+        
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for valid tailcalls in rec module`` () =
+        """
+module rec M =
+
+    module M1 =
+        [<TailCall>]
+        let m1func() = M2.m2func()
+
+    module M2 =
+        [<TailCall>]
+        let m2func() = M1.m1func()
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for invalid tailcalls in rec module`` () =
+        """
+module rec M =
+
+    module M1 =
+        [<TailCall>]
+        let m1func() = 1 + M2.m2func()
+
+    module M2 =
+        [<TailCall>]
+        let m2func() = 2 + M1.m1func()
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 6
+                        StartColumn = 28
+                        EndLine = 6
+                        EndColumn = 39 }
+              Message =
+               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 6
+                        StartColumn = 28
+                        EndLine = 6
+                        EndColumn = 37 }
+              Message =
+               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 10
+                        StartColumn = 28
+                        EndLine = 10
+                        EndColumn = 39 }
+              Message =
+               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 10
+                        StartColumn = 28
+                        EndLine = 10
+                        EndColumn = 37 }
+              Message =
+               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
