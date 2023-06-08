@@ -233,10 +233,13 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
+type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
 /// Represents the interim state of checking an assembly
 [<Sealed>]
 type internal PartialCheckResults(
         tcInfo: GraphNode<TcInfo>,
+        diags: GraphNode<SingleFileDiagnostics>,
         tcInfoExtras: GraphNode<TcInfoExtras>,
         timeStamp: DateTime,
         tcConfig,
@@ -244,6 +247,8 @@ type internal PartialCheckResults(
         tcImports
     ) =
     member _.TcInfo = tcInfo
+
+    member _.Diags = diags
 
     /// Max timestamp of the inputs so far.
     member _.TimeStamp = timeStamp
@@ -284,9 +289,10 @@ type internal PartialCheckResults(
         }
 
     member _.Finalize(finalTcInfo) =
-        PartialCheckResults(GraphNode.FromResult finalTcInfo, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
+        PartialCheckResults(GraphNode.FromResult finalTcInfo, GraphNode.FromResult [||], tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
 
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
+
 
 type PartialCheckResultsBuilder(
     tcImports: TcImports,
@@ -301,7 +307,7 @@ type PartialCheckResultsBuilder(
     ) =
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -388,7 +394,7 @@ type PartialCheckResultsBuilder(
                         | _ ->
                             None
                 }
-            return tcInfo, sink, implFile, fileName
+            return tcInfo, sink, implFile, fileName, newErrors
         }
 
     let skippedImplemetationTypeCheck prevTcInfo (syntaxTree: SyntaxTree) =
@@ -413,11 +419,12 @@ type PartialCheckResultsBuilder(
             | _ -> return None
         }
 
-    member _.Create(tcInfo, tcInfoExtras, timeStamp)  = PartialCheckResults(tcInfo, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
+    member _.Create(tcInfo, diags, tcInfoExtras, timeStamp)  =
+        PartialCheckResults(tcInfo, diags, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
 
     /// Return TcInfoExtras node for initial PartialCheckResults.
     member _.DefaultTcInfoExtras(tcInfo) =
-        let defaultTypeCheck = tcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree"
+        let defaultTypeCheck = tcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||]
         getTcInfoExtras (GraphNode.FromResult defaultTypeCheck)
 
     /// Return PartialCheckResults for next file in compilation order.
@@ -428,28 +435,37 @@ type PartialCheckResultsBuilder(
         let timeStamp =
             if syntaxTree.HasSignature then priorCheckresults.TimeStamp else max syntaxTree.TimeStamp priorCheckresults.TimeStamp
 
-        let prevTcInfo = priorCheckresults.TcInfo
-
-        let typeCheckNode = getTypeCheck prevTcInfo syntaxTree |> GraphNode
+        let typeCheckNode = getTypeCheck priorCheckresults.TcInfo syntaxTree |> GraphNode
 
         let tcInfoExtras = getTcInfoExtras typeCheckNode
 
+        let diags =
+            node {
+                let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
+                return diags
+            } |> GraphNode
+
+        let startComputingExtras =
+            node {
+                let! _ = tcInfoExtras.GetOrComputeValue()
+                return! diags.GetOrComputeValue()      
+            }
+
         let tcInfo =
             node {
-                let! prevTcInfo = prevTcInfo.GetOrComputeValue()
+                let! prevTcInfo = priorCheckresults.TcInfo.GetOrComputeValue()
                 match! skippedImplemetationTypeCheck prevTcInfo syntaxTree with
                 | Some tcInfo -> return tcInfo
-                | _ ->
-                    // 
-                    let! tcInfo , _, _, _ = typeCheckNode.GetOrComputeValue()
+                | _ -> 
+                    let! tcInfo , _, _, _, _ = typeCheckNode.GetOrComputeValue()
                     // typeCheckNode holds type check results, which can be big.
                     // We want it to get garbage collected soon, that's why we also start computing extras in parallel here.
                     // Once this is computed, the intermediate type check results can be freed from memory.
-                    tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                    startComputingExtras |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
                     return tcInfo
             } |> GraphNode
 
-        PartialCheckResults(tcInfo, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
+        PartialCheckResults(tcInfo, diags, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
 
 /// Global service state
 type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
@@ -637,7 +653,7 @@ module IncrementalBuilderHelpers =
         tcInfo
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (partialCheckResults: PartialCheckResults seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (initialCheckResults: PartialCheckResults) (partialCheckResults: PartialCheckResults seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
@@ -721,8 +737,12 @@ module IncrementalBuilderHelpers =
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let finalCheckResult = Seq.last partialCheckResults
-        let diagnostics = diagnosticsLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
-        let! finalTcInfo = finalCheckResult.GetOrComputeTcInfo()
+        let! diags =
+            [ initialCheckResults; yield! partialCheckResults ]
+            |> Seq.map (fun result -> result.Diags.GetOrComputeValue())
+            |> NodeCode.Sequential
+        let diagnostics = [ diagnosticsLogger.GetDiagnostics(); yield! diags |> Array.rev ]
+        let! finalTcInfo = finalCheckResult.TcInfo.GetOrComputeValue()
         let finalBoundModelWithErrors = finalCheckResult.Finalize { finalTcInfo with tcDiagnosticsRev = diagnostics; topAttribs = Some topAttrs }
         return finalBoundModelWithErrors, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
     }
@@ -829,7 +849,7 @@ module IncrementalBuilderStateHelpers =
     // Used to thread the status of the build in computeStampedFileNames mapFold.
     type private BuildStatus = Invalidated | Good
 
-    let createFinalizeCheckResultsGraphNode (initialState: IncrementalBuilderInitialState) (partialCheckResults: PartialCheckResults seq) =
+    let createFinalizeCheckResultsGraphNode (initialState: IncrementalBuilderInitialState) initialErrors (partialCheckResults: PartialCheckResults seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             return!
@@ -839,6 +859,7 @@ module IncrementalBuilderStateHelpers =
                     initialState.enablePartialTypeChecking
                     initialState.assemblyName 
                     initialState.outfile
+                    initialErrors
                     partialCheckResults
         })
 
@@ -864,7 +885,7 @@ module IncrementalBuilderStateHelpers =
         let partialCheckResults = slots |> Seq.map (fun s -> s.PartialCheckResults)
         { state with
             boundModels = slots
-            finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults }
+            finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState state.initialCheckResults partialCheckResults }
 
     let computeStampedReferencedAssemblies referencedAssemblies (cache: TimeStampCache) =
         [ for asmInfo in referencedAssemblies -> StampReferencedAssemblyTask cache asmInfo ]
@@ -909,7 +930,7 @@ type IncrementalBuilderState with
                 stampedReferencedAssemblies = stampedReferencedAssemblies
                 partialCheckResultsBuilder = partialCheckResultsBuilder
                 initialCheckResults = initialCheckResults
-                finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults
+                finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState initialCheckResults partialCheckResults
             }
         let state = if initialState.useChangeNotifications then state else checkFileStamps state cache
         let state = computeStampedFileNames initialState state
@@ -1324,7 +1345,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let defaultTcInfoExtras = partialCheckResultsBuilder.DefaultTcInfoExtras(tcInfo)
 
             let initialCheckResults =
-                partialCheckResultsBuilder.Create(GraphNode.FromResult tcInfo, defaultTcInfoExtras, defaultTimeStamp)
+                let diags = tcInfo.TcDiagnostics
+                partialCheckResultsBuilder.Create(GraphNode.FromResult tcInfo, GraphNode.FromResult diags, defaultTcInfoExtras, defaultTimeStamp)
 
             let getFSharpSource fileName =
                 getSource
