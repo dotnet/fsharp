@@ -105,9 +105,9 @@ let TcStaticImplicitCtorInfo_Phase2A(cenv: cenv, env, tcref: TyconRef, m, copyOf
             let cctorTy = mkFunTy g g.unit_ty g.unit_ty
             let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
             let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            CheckForNonAbstractInterface g ModuleOrMemberBinding tcref ClassCtorMemberFlags false id.idRange
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
-            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+            let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
             let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)

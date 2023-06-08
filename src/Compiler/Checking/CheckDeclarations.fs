@@ -898,7 +898,7 @@ module MutRecBindingChecking =
                             let innerState = (None, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AIncrClassCtor (staticCtorInfo, None)], innerState
 
-                        | Some (SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, xmlDoc, m)), ContainerInfo(_, Some memberContainerInfo) ->
+                        | Some (SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(pats=spats), thisIdOpt, xmlDoc, m,_)), ContainerInfo(_, Some memberContainerInfo) ->
 
                             let (MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _)) = memberContainerInfo
 
@@ -1860,7 +1860,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
                   | Some tycon ->
-                        for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
+                        for slot in tycon.FSharpTyconRepresentationData.fsobjmodel_vslots do
                             warning(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
                             
                         for fld in tycon.AllFieldsArray do
@@ -4211,7 +4211,7 @@ module TcDeclarations =
         // Convert auto properties to member bindings in the post-list
         let rec postAutoProps memb =
             match memb with 
-            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeyword = mGetSetOpt }) ->
+            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4222,7 +4222,7 @@ module TcDeclarations =
                 let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
 
                 match propKind, mGetSetOpt with 
-                | SynMemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
+                | SynMemberKind.PropertySet, Some getSetKeywords -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), getSetKeywords.Range))
                 | _ -> ()
        
                 [ 
@@ -4291,7 +4291,7 @@ module TcDeclarations =
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
 
-            let slotsigs = members |> List.choose (function SynMemberDefn.AbstractSlot (x, y, _) -> Some(x, y) | _ -> None)
+            let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
             let members = SplitAutoProps members
 
