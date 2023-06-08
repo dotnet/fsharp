@@ -18,7 +18,7 @@ let ``Basics``() =
 
     let eventLog = ResizeArray()
 
-    let memoize = AsyncMemoize(eventLog.Add)
+    let memoize = AsyncMemoize(fun _ -> eventLog.Add)
 
     let task =
         NodeCode.Parallel(seq {
@@ -53,7 +53,7 @@ let ``We can cancel a job`` () =
     }
 
     let eventLog = ResizeArray()
-    let memoize = AsyncMemoize(eventLog.Add)
+    let memoize = AsyncMemoize(fun _ -> eventLog.Add)
 
     use cts1 = new CancellationTokenSource()
     use cts2 = new CancellationTokenSource()
@@ -96,7 +96,7 @@ let ``Job keeps running even if first requestor cancels`` () =
     }
 
     let eventLog = ResizeArray()
-    let memoize = AsyncMemoize(eventLog.Add)
+    let memoize = AsyncMemoize(fun _ -> eventLog.Add)
 
     use cts1 = new CancellationTokenSource()
     use cts2 = new CancellationTokenSource()

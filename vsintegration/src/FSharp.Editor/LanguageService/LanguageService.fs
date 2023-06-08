@@ -191,7 +191,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     useTransparentCompiler = useTransparentCompiler
                                 )
 
-                            if enableLiveBuffers then
+                            if enableLiveBuffers && not useTransparentCompiler then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
                                         backgroundTask {

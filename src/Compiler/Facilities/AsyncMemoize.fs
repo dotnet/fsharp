@@ -1,13 +1,15 @@
 namespace Internal.Utilities.Collections
 
-open FSharp.Compiler.BuildGraph
-open System.Threading
+open System
 open System.Collections.Generic
+open System.Threading
+
+open FSharp.Compiler.BuildGraph
 
 type internal Action<'TKey, 'TValue> =
     | GetOrCompute of NodeCode<'TValue> * CancellationToken
     | CancelRequest
-    | JobCompleted
+    | JobCompleted of 'TValue
 
 type MemoizeRequest<'TKey, 'TValue> = 'TKey * Action<'TKey, 'TValue> * AsyncReplyChannel<NodeCode<'TValue>>
 
@@ -20,12 +22,13 @@ type internal JobEventType =
     | Finished
     | Canceled
 
-type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobEventType * 'TKey -> unit)) =
+type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (string -> JobEventType * 'TKey -> unit), ?name: string) =
 
+    let name = defaultArg name "N/A"
     let tok = obj ()
 
     let cache =
-        MruCache<_, 'TKey, Job<'TValue>>(keepStrongly = 10, areSame = (fun (x, y) -> x = y))
+        MruCache<_, 'TKey, Job<'TValue>>(keepStrongly = 30, areSame = (fun (x, y) -> x = y))
 
     let requestCounts = Dictionary<'TKey, int>()
 
@@ -39,7 +42,8 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
     let sendAsync (inbox: MailboxProcessor<_>) key msg =
         inbox.PostAndAsyncReply(fun rc -> key, msg, rc) |> Async.Ignore |> Async.Start
 
-    let log event = logEvent |> Option.iter ((|>) event)
+    let log event =
+        logEvent |> Option.iter (fun x -> x name event)
 
     let agent =
         MailboxProcessor.Start(fun (inbox: MailboxProcessor<MemoizeRequest<_, _>>) ->
@@ -48,66 +52,72 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
 
             async {
                 while true do
+                    try
+                        let _name = name
 
-                    let! key, action, replyChannel = inbox.Receive()
+                        let! key, action, replyChannel = inbox.Receive()
 
-                    match action, cache.TryGet(tok, key) with
-                    | GetOrCompute _, Some (Completed job) -> replyChannel.Reply job
-                    | GetOrCompute (_, ct), Some (Running (job, _)) ->
+                        match action, cache.TryGet(tok, key) with
+                        | GetOrCompute _, Some (Completed job) -> replyChannel.Reply job
+                        | GetOrCompute (_, ct), Some (Running (job, _)) ->
+                            incrRequestCount key
+                            replyChannel.Reply job
+                            ct.Register(fun _ -> post key CancelRequest) |> ignore
 
-                        incrRequestCount key
-                        replyChannel.Reply job
-                        ct.Register(fun _ -> post key CancelRequest) |> ignore
+                        | GetOrCompute (computation, ct), None ->
 
-                    | GetOrCompute (computation, ct), None ->
+                            let cts = new CancellationTokenSource()
 
-                        let cts = new CancellationTokenSource()
+                            let startedComputation =
+                                Async.StartAsTask(
+                                    Async.AwaitNodeCode(
+                                        node {
+                                            log (Started, key)
+                                            let! result = computation
+                                            post key (JobCompleted result)
+                                            return result
+                                        }
+                                    ),
+                                    cancellationToken = cts.Token
+                                )
 
-                        let startedComputation =
-                            Async.StartAsTask(
-                                Async.AwaitNodeCode(
-                                    node {
-                                        log (Started, key)
-                                        let! result = computation
-                                        post key JobCompleted
-                                        return result
-                                    }
-                                ),
-                                cancellationToken = cts.Token
-                            )
+                            let job = NodeCode.AwaitTask startedComputation
 
-                        let job = NodeCode.AwaitTask startedComputation
+                            cache.Set(tok, key, (Running(job, cts)))
 
-                        cache.Set(tok, key, (Running(job, cts)))
+                            incrRequestCount key
 
-                        incrRequestCount key
+                            ct.Register(fun _ -> post key CancelRequest) |> ignore
 
-                        ct.Register(fun _ -> post key CancelRequest) |> ignore
+                            replyChannel.Reply job
 
-                        replyChannel.Reply job
+                        | CancelRequest, Some (Running (_, cts)) ->
+                            let requestCount = requestCounts.TryGetValue key |> snd
 
-                    | CancelRequest, Some (Running (_, cts)) ->
-                        let requestCount = requestCounts.TryGetValue key |> snd
+                            if requestCount > 1 then
+                                requestCounts.[key] <- requestCount - 1
 
-                        if requestCount > 1 then
-                            requestCounts.[key] <- requestCount - 1
+                            else
+                                cts.Cancel()
+                                cache.RemoveAnySimilar(tok, key)
+                                requestCounts.Remove key |> ignore
+                                log (Canceled, key)
 
-                        else
-                            cts.Cancel()
-                            cache.RemoveAnySimilar(tok, key)
+                        | CancelRequest, None
+                        | CancelRequest, Some (Completed _) -> ()
+
+                        | JobCompleted result, Some (Running _)
+                        // Job could be evicted from cache while it's running
+                        | JobCompleted result, None ->
+                            cache.Set(tok, key, (Completed(node.Return result)))
                             requestCounts.Remove key |> ignore
-                            log (Canceled, key)
+                            log (Finished, key)
 
-                    | CancelRequest, None
-                    | CancelRequest, Some (Completed _) -> ()
-
-                    | JobCompleted, Some (Running (job, _)) ->
-                        // TODO: should we re-wrap the result?
-                        cache.Set(tok, key, (Completed job))
-                        requestCounts.Remove key |> ignore
-                        log (Finished, key)
-
-                    | JobCompleted, _ -> failwith "If this happens there's a bug"
+                        | JobCompleted _, _ -> failwith "If this happens there's a bug"
+                    with
+                    | :? OperationCanceledException as e ->
+                        System.Diagnostics.Trace.TraceError($"AsyncMemoize OperationCanceledException: {e.Message}")
+                    | ex -> System.Diagnostics.Trace.TraceError($"AsyncMemoize Exception: %A{ex}")
             })
 
     member _.Get(key, computation) =

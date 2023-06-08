@@ -128,28 +128,33 @@ type internal TransparentCompiler
     let cacheEvent = new Event<string * JobEventType * obj>()
     let triggerCacheEvent name (e, k) = cacheEvent.Trigger(name, e, k)
 
-    let ParseFileCache = AsyncMemoize(triggerCacheEvent "ParseFile")
+    let ParseFileCache = AsyncMemoize(triggerCacheEvent, "ParseFile")
 
     let ParseAndCheckFileInProjectCache =
-        AsyncMemoize(triggerCacheEvent "ParseAndCheckFileInProject")
+        AsyncMemoize(triggerCacheEvent, "ParseAndCheckFileInProject")
 
     let ParseAndCheckFullProjectCache =
-        AsyncMemoize(triggerCacheEvent "ParseAndCheckFullProject")
+        AsyncMemoize(triggerCacheEvent, "ParseAndCheckFullProject")
 
-    let FrameworkImportsCache = AsyncMemoize(triggerCacheEvent "FrameworkImports")
-    let BootstrapInfoStaticCache = AsyncMemoize(triggerCacheEvent "BootstrapInfoStatic")
-    let BootstrapInfoCache = AsyncMemoize(triggerCacheEvent "BootstrapInfo")
-    let TcPriorCache = AsyncMemoize(triggerCacheEvent "TcPrior")
-    let TcIntermediateCache = AsyncMemoize(triggerCacheEvent "TcIntermediate")
+    let FrameworkImportsCache = AsyncMemoize(triggerCacheEvent, "FrameworkImports")
 
-    let DependencyGraphCache = AsyncMemoize(triggerCacheEvent "DependencyGraph")
+    let BootstrapInfoStaticCache =
+        AsyncMemoize(triggerCacheEvent, "BootstrapInfoStatic")
 
-    let AssemblyDataCache = AsyncMemoize(triggerCacheEvent "AssemblyData")
+    let BootstrapInfoCache = AsyncMemoize(triggerCacheEvent, "BootstrapInfo")
+
+    let TcPriorCache = AsyncMemoize(triggerCacheEvent, "TcPrior")
+
+    let TcIntermediateCache = AsyncMemoize(triggerCacheEvent, "TcIntermediate")
+
+    let DependencyGraphCache = AsyncMemoize(triggerCacheEvent, "DependencyGraph")
+
+    let AssemblyDataCache = AsyncMemoize(triggerCacheEvent, "AssemblyData")
 
     let SemanticClassificationCache =
-        AsyncMemoize(triggerCacheEvent "SemanticClassification")
+        AsyncMemoize(triggerCacheEvent, "SemanticClassification")
 
-    let ItemKeyStoreCache = AsyncMemoize(triggerCacheEvent "ItemKeyStore")
+    let ItemKeyStoreCache = AsyncMemoize(triggerCacheEvent, "ItemKeyStore")
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -1144,8 +1149,8 @@ type internal TransparentCompiler
 
     member _.ParseFile(fileName, projectSnapshot: FSharpProjectSnapshot, _userOpName) =
         node {
-            use _ =
-                Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            //use _ =
+            //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             match! ComputeBootstrapInfo projectSnapshot with
             | None, creationDiags -> return emptyParseResult fileName creationDiags
