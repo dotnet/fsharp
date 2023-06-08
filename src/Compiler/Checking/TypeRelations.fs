@@ -180,12 +180,12 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              | TyparConstraint.DefaultsTo(_priority, _ty, m) -> 
                  (maxTy, isRefined), m)
 
-    match tp.Kind with
-    | TyparKind.Type ->
-        if not isRefined then
-            let supported = g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference
-            informationalWarning(ErrorEnabledWithLanguageFeature(FSComp.SR.typrelNeverRefinedAwayFromTop(), m, supported))
-    | TyparKind.Measure -> ()
+    if g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference then
+        match tp.Kind with
+        | TyparKind.Type ->
+            if not isRefined then
+                informationalWarning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
+        | TyparKind.Measure -> ()
 
     maxTy, m
 
