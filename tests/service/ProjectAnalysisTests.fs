@@ -5229,6 +5229,7 @@ let ``Test project42 to ensure cached checked results are invalidated`` () =
     match checkedFile2 with
     | _, FSharpCheckFileAnswer.Succeeded(checkedFile2Results) ->
         Assert.IsEmpty(checkedFile2Results.Diagnostics)
+        Async.Sleep(300) |> Async.RunImmediate
         FileSystem.OpenFileForWriteShim(Project42.fileName1).Write("""module File1""")
         try
             let checkedFile2Again = checker.ParseAndCheckFileInProject(Project42.fileName2, text2.GetHashCode(), text2, Project42.options) |> Async.RunImmediate
