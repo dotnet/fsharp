@@ -664,3 +664,17 @@ type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =
 """
             (8, 29, "type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =", ".ctor")
 #endif
+
+    [<Test>]
+    let ``Includes attribute for parameter`` () =
+        assertSignature
+            "val a: [<B>] c: int -> int"
+            """
+module Telplin
+
+type BAttribute() =
+    inherit System.Attribute()
+
+let a ([<B>] c: int) : int = 0
+"""
+            (7, 5, "let a ([<B>] c: int) : int = 0", "a")
