@@ -289,7 +289,7 @@ type internal PartialCheckResults(
         }
 
     member _.Finalize(finalTcInfo) =
-        PartialCheckResults(GraphNode.FromResult finalTcInfo, GraphNode.FromResult [||], tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
+        PartialCheckResults(GraphNode.FromResult finalTcInfo, GraphNode.FromResult [||], tcInfoExtras,  DateTime.UtcNow, tcConfig, tcGlobals, tcImports)
 
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
