@@ -710,7 +710,8 @@ module PrintTypes =
             if Zset.contains typar env.singletons then
                 let tyLayout =
                     match typarConstraintTy with
-                    | TType_app (tyconRef = tc) when not (usePrefix denv tc) ->
+                    | TType_app (tyconRef = tc; typeInstantiation = ti)
+                        when ti.Length > 0 && not (usePrefix denv tc) ->
                         layoutTypeWithInfo denv env typarConstraintTy
                         |> bracketL
                     | _ -> layoutTypeWithInfo denv env typarConstraintTy
