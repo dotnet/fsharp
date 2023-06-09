@@ -1,9 +1,9 @@
-module FSharp.Compiler.ComponentTests.Signatures.HashConstraintTests
+module Signatures.HashConstraintTests
 
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Optional hash constraint`` () =
