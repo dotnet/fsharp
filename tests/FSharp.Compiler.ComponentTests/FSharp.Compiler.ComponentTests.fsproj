@@ -247,9 +247,11 @@
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
+    <Compile Include="Signatures\SeqTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="Signatures\NestedTypeTests.fs" />
+    <Compile Include="Signatures\MissingDiagnostic.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
