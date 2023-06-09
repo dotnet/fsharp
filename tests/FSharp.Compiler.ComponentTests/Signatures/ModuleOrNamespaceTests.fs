@@ -1,9 +1,9 @@
-module FSharp.Compiler.ComponentTests.Signatures.ModuleOrNamespaceTests
+module Signatures.ModuleOrNamespaceTests
 
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Type from shared namespace`` () =

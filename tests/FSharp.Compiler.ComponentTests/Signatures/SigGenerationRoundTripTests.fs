@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.SigGenerationRoundTripTests
+﻿module Signatures.SigGenerationRoundTripTests
 
 open Xunit
 open FSharp.Test

@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+﻿module Signatures.TestHelpers
 
 open System
 open FsUnit

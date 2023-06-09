@@ -1,7 +1,7 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.SeqTests
+﻿module Signatures.SeqTests
 
 open Xunit
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``int seq`` () =
