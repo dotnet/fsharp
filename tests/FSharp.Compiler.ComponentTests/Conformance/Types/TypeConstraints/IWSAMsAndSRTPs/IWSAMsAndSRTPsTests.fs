@@ -752,7 +752,7 @@ let main _ =
             | IsEqual -> failwith "Unexpected result"
             | IsNonEqual -> ()
             """
-        |> withReferences [library]
+        |> withReferences [library2]
         |> withLangVersion70
         |> asExe
         |> compileAndRun
