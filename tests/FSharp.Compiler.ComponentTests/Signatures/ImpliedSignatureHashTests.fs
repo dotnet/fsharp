@@ -15,6 +15,14 @@ type MyRecord = {X:string}"""
 type MyRecord = {X:string}
 module private PrivateInnerModule = 
     let private add a b = a + b""")>]
+    
+[<InlineData("Adding a private let binding",
+(*BEFORE*)"""module Foo
+let a b = b - 1
+"""
+(*AFTER*),"""module Foo
+let a b = b - 1
+let private c = 'd'   """)>]
 
 [<InlineDataAttribute("NestedPrivateModuleAdded",
 (*BEFORE*)"""module MyTest
