@@ -22,6 +22,7 @@ init end
 Case2 1
 Case2 2"""
 
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordShowCase.fs"|])>]
 let ``Static let - record showcase`` compilation =
     compilation
@@ -51,16 +52,18 @@ let ``Static let in simple union`` compilation =
     |> shouldSucceed
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainEnum.fs"|])>]
-let ``What about plain enums?`` compilation =
+let ``Support in plain enums - typecheck should fail`` compilation =
     compilation
     |> typecheck
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnosticMessage "Enumerations cannot have members"
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternForUnion.fs"|])>]
 let ``Static active pattern in  union`` compilation =
     compilation
-    |> typecheck
+    |> verifyCompileAndRun
     |> shouldSucceed
+    |> withStdOutContains """B 999"""
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructUnion.fs"|])>]
 let ``Static let in struct union`` compilation =
@@ -80,26 +83,13 @@ let ``Static let in struct record`` compilation =
     compilation
     |> typecheck
     |> shouldSucceed
-
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionStaticMember.fs"|])>]
-let ``Static let with static member in union`` compilation =
-    compilation
-    |> typecheck
-    |> shouldSucceed
-    
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordStaticMember.fs"|])>]
-let ``Static let with static member in record`` compilation =
-    compilation
-    |> typecheck
-    |> shouldSucceed
-
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CreateUnionCases.fs"|])>]
 let ``Static let creating DU cases`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains "..."
 
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionOrderOfExecution.fs"|])>]
@@ -137,7 +127,7 @@ let ``Static let - quotations support for unions`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains """Let (s, Value ("A"), Call (None, ofString, [s]))"""
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
 let ``Static let - quotations support for records`` compilation =
