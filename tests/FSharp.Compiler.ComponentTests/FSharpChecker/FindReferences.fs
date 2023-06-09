@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.FSharpChecker.FindReferences
+﻿module FSharpChecker.FindReferences
 
 open Xunit
 open FSharp.Compiler.CodeAnalysis
