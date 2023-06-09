@@ -1852,11 +1852,8 @@ let deprecatedFlagsBoth tcConfigB =
         )
     ]
 
-let deprecatedFlagsFsi tcConfigB = 
-    [
-        noFrameworkFlag false tcConfigB
-        yield! deprecatedFlagsBoth tcConfigB
-    ]
+let deprecatedFlagsFsi tcConfigB =
+    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB
