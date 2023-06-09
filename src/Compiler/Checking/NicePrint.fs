@@ -708,7 +708,14 @@ module PrintTypes =
         match Zmap.tryFind typar env.inplaceConstraints with
         | Some typarConstraintTy ->
             if Zset.contains typar env.singletons then
-                leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy
+                let tyLayout =
+                    match typarConstraintTy with
+                    | TType_app (tyconRef = tc) when not (usePrefix denv tc) ->
+                        layoutTypeWithInfo denv env typarConstraintTy
+                        |> bracketL
+                    | _ -> layoutTypeWithInfo denv env typarConstraintTy
+
+                leftL (tagPunctuation "#") ^^ tyLayout
             else
                 (varL ^^ sepL (tagPunctuation ":>") ^^ layoutTypeWithInfo denv env typarConstraintTy) |> bracketL
 
