@@ -137,15 +137,17 @@ let ``We find back-ticked identifiers`` () =
             ])
         }
 
-[<Fact>]
-let ``We find operators`` () =
+[<Theory>]
+[<InlineData("++")>]
+[<InlineData(">=>")>]
+let ``We find operators`` operator =
     SyntheticProject.Create(
-        { sourceFile "First" [] with ExtraSource = "let (++) x y = x - y" },
-        { sourceFile "Second" [] with ExtraSource = """
+        { sourceFile "First" [] with ExtraSource = $"let ({operator}) x y = x - y" },
+        { sourceFile "Second" [] with ExtraSource = $"""
 open ModuleFirst
-let foo x = x ++ 4""" })
+let foo x = x {operator} 4""" })
         .Workflow {
-            placeCursor "Second" 8 16 "let foo x = x ++ 4" ["++"]
+            placeCursor "Second" 8 16 $"let foo x = x {operator} 4" [operator]
             findAllReferences (expectToFind [
                 "FileFirst.fs", 6, 5, 7
                 "FileSecond.fs", 8, 14, 16
