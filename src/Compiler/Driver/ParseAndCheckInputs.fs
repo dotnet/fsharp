@@ -9,6 +9,7 @@ open System.IO
 open System.Threading
 open System.Collections.Generic
 
+open FSharp.Compiler.Parser
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -509,9 +510,23 @@ type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
 let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
+    let mutable indent = 0
+
     while true do
         let t = tokenizer ()
-        printfn $"{Parser.token_to_string t} {lexbuf.LexemeRange}"
+
+        indent <-
+            match t with
+            | OBLOCKEND_IS_HERE -> max (indent - 1) 0
+            | _ -> indent
+
+        let indentStr = String.replicate indent "  "
+        printfn $"{indentStr}{token_to_string t} {lexbuf.LexemeRange}"
+
+        indent <-
+            match t with
+            | OBLOCKBEGIN -> indent + 1
+            | _ -> indent
 
         match t with
         | Parser.EOF _ -> exiter.Exit 0
