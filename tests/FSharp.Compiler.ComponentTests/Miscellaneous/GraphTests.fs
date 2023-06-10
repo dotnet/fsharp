@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Miscellaneous.GraphTests
+﻿module Miscellaneous.GraphTests
 
 open Xunit
 open FSharp.Compiler.GraphChecking

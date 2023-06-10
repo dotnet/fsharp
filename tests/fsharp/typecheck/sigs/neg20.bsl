@@ -70,7 +70,7 @@ The type 'A' does not match the type 'B'
 neg20.fs(80,23,80,39): typecheck error FS0193: Type constraint mismatch. The type 
     'C list'    
 is not compatible with type
-    'seq<B>'    
+    'B seq'    
 
 
 neg20.fs(81,34,81,43): typecheck error FS0001: Type mismatch. Expecting a
