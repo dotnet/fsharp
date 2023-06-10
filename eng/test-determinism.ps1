@@ -380,7 +380,7 @@ try {
   $script:bootstrapTfm = "net472"
 
   if ($script:msbuildEngine -eq "dotnet") {
-    $script.bootstrapTfm = "net7.0"
+    $script.bootstrapTfm = "net8.0"
   }
 
   $bootstrapDir = Make-BootstrapBuild
