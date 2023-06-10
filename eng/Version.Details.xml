@@ -1,21 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.xliff-tasks" Version="1.0.0-beta.21126.1">
-      <Uri>https://github.com/dotnet/xliff-tasks</Uri>
-      <Sha>7e80445ee82adbf9a8e6ae601ac5e239d982afaa</Sha>
-      <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="8.0.0-alpha.1.23302.3">
+      <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
+      <Sha>4a3b4b6b37bdafe501477bf2e564380e1962ce61</Sha>
+      <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <SourceBuild RepoName="msbuild" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="Microsoft.Build" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Framework" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.7.0-preview-23217-02">
+      <Uri>https://github.com/dotnet/msbuild</Uri>
+      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="8.0.0-beta.22554.2">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="8.0.0-beta.23255.2">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>80b6be47e1425ea90c5febffac119250043a0c92</Sha>
+      <Sha>5dff25b814b90abb85c847ed274cf4afb2c1b276</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.DotNet.Helix.Sdk" Version="8.0.0-beta.22554.2">
-      <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>80b6be47e1425ea90c5febffac119250043a0c92</Sha>
+    <Dependency Name="Microsoft.SourceLink.GitHub" Version="8.0.0-beta.23218.3" CoherentParentDependency="Microsoft.DotNet.Arcade.Sdk">
+      <Uri>https://github.com/dotnet/sourcelink</Uri>
+      <Sha>47c52dd2ebf9edfd40abdcff999c13eb461f6ce2</Sha>
+      <SourceBuild RepoName="sourcelink" ManagedOnly="true" />
+    </Dependency>
+    <Dependency Name="Microsoft.DotNet.XliffTasks" Version="1.0.0-beta.23253.1" CoherentParentDependency="Microsoft.DotNet.Arcade.Sdk">
+      <Uri>https://github.com/dotnet/xliff-tasks</Uri>
+      <Sha>513000e77df5ec1f9b86397d8df6e3254703c636</Sha>
+      <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>
