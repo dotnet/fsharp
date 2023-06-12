@@ -61,48 +61,7 @@
     <Compile Include="Conformance\BasicGrammarElements\NullRepresentations\NullRepresentations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags\Diags.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy\Legacy.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\ModuleDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\StaticLet\StaticLetInUnionsAndRecords.fs" />	  
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
-    <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
-    <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
-    <Compile Include="Conformance\DeclarationElements\Events\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\FieldMembers\FieldMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ImportDeclarations\ImportDeclarations.fs" />
-    <Compile Include="Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MemberDefinitions.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
-    <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
-    <Compile Include="Conformance\EntryPoint\EntryPoint.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\StaticLet\StaticLetInUnionsAndRecords.fs" />
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\TypeAbbreviations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
@@ -313,7 +272,27 @@
 
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\**" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\**" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\**" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\**" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\**" />
+    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\**" />
+    <EmbeddedResource Remove="Conformance\ClassTypes\**" />
+    <EmbeddedResource Remove="Conformance\DeclarationElements\**" />
+    <EmbeddedResource Remove="Conformance\DelegateTypes\**" />
+    <EmbeddedResource Remove="Conformance\EntryPoint\**" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\**" />
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\**" />
+    <None Remove="Conformance\ClassTypes\**" />
+    <None Remove="Conformance\DeclarationElements\**" />
+    <None Remove="Conformance\DelegateTypes\**" />
+    <None Remove="Conformance\EntryPoint\**" />
     <None Remove="Signatures\SigGenerationRoundTripTests.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -329,10 +308,6 @@
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Conformance\DelegateTypes\" />
   </ItemGroup>
 
 </Project>
