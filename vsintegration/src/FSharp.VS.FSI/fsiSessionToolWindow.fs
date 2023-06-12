@@ -553,6 +553,7 @@ type internal FsiToolWindow() as this =
 {if dbgBreak then "#dbgbreak" else ""}
 #{topLine} @"{filename}"
 {text.ToString()}
+;;
 #1 "stdin"
 {    show()};;
 """
