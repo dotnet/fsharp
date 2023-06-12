@@ -10633,3 +10633,20 @@ let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
                 )
         )
     )
+
+let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
+    let typarNamesInArguments =
+        argInfos
+        |> List.collect (fun argInfos ->
+                argInfos
+                |> List.choose (fun (ty, _) ->
+                    match ty with
+                    | TType_var (typar = tp) when tp.Id.idText <> unassignedTyparName -> Some tp.Id.idText
+                    | _ -> None
+                ))
+    
+    let typarNamesInDefinition =
+        tps |> List.map (fun (tp: Typar) -> tp.Id.idText)
+
+    typarNamesInArguments.Length = typarNamesInDefinition.Length
+    && typarNamesInArguments <> typarNamesInDefinition
