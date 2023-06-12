@@ -10639,7 +10639,9 @@ let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
         match ty with
         | TType_var (typar = tp) when tp.Id.idText <> unassignedTyparName -> [ tp.Id.idText ]
         | TType_fun(domainType, rangeType, _) -> [ yield! getTyparName domainType; yield! getTyparName rangeType ]
-        | TType_anon(_, fieldTypes) -> List.collect getTyparName fieldTypes
+        | TType_anon(tys = ti)
+        | TType_app (typeInstantiation = ti)
+        | TType_tuple (elementTypes = ti) -> List.collect getTyparName ti 
         | _ -> []
     
     let typarNamesInArguments =
