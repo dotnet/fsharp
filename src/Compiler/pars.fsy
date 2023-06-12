@@ -2712,7 +2712,7 @@ hardwhiteDoBinding:
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator
       { let mDo = rhs parseState 1
         let _, _, mDone = $3
-        let mEnd = mDone |> Option.defaultWith (fun _ -> $2.Range)
+        let mEnd = match mDone with Some m -> m | _ -> $2.Range
         let mAll = unionRanges mDo mEnd
         let seqPt = DebugPointAtBinding.NoneAtDo
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes
