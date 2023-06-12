@@ -137,7 +137,11 @@ let ``Static let - recursive record definitions calling each other`` compilation
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains """Chicken init
+creating firstEggEver
+Egg init
+Omelette init
+1"""
 
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetUnions.fs"|])>]
