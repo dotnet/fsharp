@@ -1597,7 +1597,7 @@ type internal BackgroundCompiler
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             self.ParseAndCheckProject(options, userOpName)
 
-        member _.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, userOpName: string): NodeCode<FSharpCheckProjectResults> =
+        member _.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             self.ParseAndCheckProject(projectSnapshot.ToOptions(), userOpName)
 
         member _.ParseFile

@@ -3331,7 +3331,7 @@ type FSharpCheckProjectResults
         tcConfigOption: TcConfig option,
         keepAssemblyContents: bool,
         diagnostics: FSharpDiagnostic[],
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses seq> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
     ) =
 
     let getDetails () =
@@ -3362,6 +3362,7 @@ type FSharpCheckProjectResults
 
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
+    // TODO: Looks like we don't need this
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then
             invalidOp
@@ -3437,7 +3438,12 @@ type FSharpCheckProjectResults
                         | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
                         | _ -> [||]
                     | _ -> [||])
-            | Choice2Of2 tcSymbolUses -> tcSymbolUses.GetUsesOfSymbol symbol.Item
+                |> Array.toSeq
+            | Choice2Of2 tcSymbolUses ->
+                seq {
+                    for symbolUses in tcSymbolUses do
+                        yield! symbolUses.GetUsesOfSymbol symbol.Item
+                }
 
         results
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
@@ -3467,7 +3473,8 @@ type FSharpCheckProjectResults
                         | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
                         | _ -> TcSymbolUses.Empty
                     | _ -> TcSymbolUses.Empty)
-            | Choice2Of2 tcSymbolUses -> [| tcSymbolUses |]
+                |> Array.toSeq
+            | Choice2Of2 tcSymbolUses -> tcSymbolUses
 
         [|
             for r in tcSymbolUses do
@@ -3600,7 +3607,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcImports,
                  tcFileInfo.ThisCcu,
                  tcFileInfo.CcuSigForFile,
-                 Choice2Of2 tcFileInfo.ScopeSymbolUses,
+                 Choice2Of2(Seq.singleton tcFileInfo.ScopeSymbolUses),
                  None,
                  (fun () -> None),
                  mkSimpleAssemblyRef "stdin",

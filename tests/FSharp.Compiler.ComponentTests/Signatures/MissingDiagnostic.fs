@@ -28,8 +28,8 @@ but here has type
     'char'    ")
 
 [<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
+[<InlineData true>]
+[<InlineData false>]
 let ``Type check project with signature file doesn't get the diagnostic`` useTransparentCompiler =
     Fsi signature
     |> withAdditionalSourceFile (FsSource implementation)
@@ -39,8 +39,8 @@ let ``Type check project with signature file doesn't get the diagnostic`` useTra
         Assert.False (projectResults.Diagnostics |> Array.isEmpty)
 
 [<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
+[<InlineData true>]
+[<InlineData false>]
 let ``Type check project without signature file does get the diagnostic`` useTransparentCompiler =
     Fs implementation
     |> typecheckProject false useTransparentCompiler
@@ -49,8 +49,8 @@ let ``Type check project without signature file does get the diagnostic`` useTra
         Assert.False (projectResults.Diagnostics |> Array.isEmpty)
 
 [<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
+[<InlineData true>]
+[<InlineData false>]
 let ``Enabling enablePartialTypeChecking = true doesn't change the problem`` useTransparentCompiler =
     Fsi signature
     |> withAdditionalSourceFile (FsSource implementation)
