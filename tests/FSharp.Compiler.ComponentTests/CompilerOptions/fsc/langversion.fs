@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -64,7 +64,7 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsc langversion supports full version number - --langversion:5.0``() =
+    let ``fsc langversion supports full version number - --langversion:5_0``() =
         FSharp """
     printfn "Hello, World"
         """
@@ -88,7 +88,7 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsc langversion fails with invalid version number - --langversion:4.1 which never existed``() =
+    let ``fsc langversion fails with invalid version number - --langversion:4_1 which never existed``() =
         FSharp """
     printfn "Hello, World"
         """

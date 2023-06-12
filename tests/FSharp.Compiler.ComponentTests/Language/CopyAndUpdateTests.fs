@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Language.CopyAndUpdateTests
+﻿module Language.CopyAndUpdateTests
 
 open Xunit
 open FSharp.Test.Compiler
