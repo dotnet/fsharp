@@ -13,3 +13,9 @@ let h4<'a, 'b> (x: seq<'b> * array<int * 'a>) = ()
 
 // Avoid duplicate names
 let z<'a, 'z> (z1: 'z) (z2: 'z) (z3: 'a) : 'z = z1
+
+type IMonad<'a> =
+    interface
+        // Hash constraint leads to another type parameter
+        abstract bind : #IMonad<'a> -> ('a -> #IMonad<'b>) -> IMonad<'b>
+    end

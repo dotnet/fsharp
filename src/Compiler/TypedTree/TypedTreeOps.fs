@@ -10643,7 +10643,7 @@ let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
         | TType_app (typeInstantiation = ti)
         | TType_tuple (elementTypes = ti) -> List.collect getTyparName ti 
         | _ -> []
-    
+
     let typarNamesInArguments =
         argInfos
         |> List.collect (fun argInfos ->
@@ -10652,7 +10652,7 @@ let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
         |> List.distinct
 
     let typarNamesInDefinition =
-        tps |> List.map (fun (tp: Typar) -> tp.Id.idText)
+        tps |> List.map (fun (tp: Typar) -> tp.Id.idText) |> List.distinct
 
     typarNamesInArguments.Length = typarNamesInDefinition.Length
     && typarNamesInArguments <> typarNamesInDefinition
