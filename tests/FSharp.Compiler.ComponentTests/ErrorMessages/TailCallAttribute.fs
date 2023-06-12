@@ -193,6 +193,9 @@ type C () =
     member this.M1() =
         printfn "M1 called"
         this.M1()
+
+let c = C()
+c.M1()
         """
         |> FSharp
         |> withLangVersionPreview
@@ -402,6 +405,8 @@ module rec M =
     module M2 =
         [<TailCall>]
         let m2func() = M1.m1func()
+        
+M.M1.m1func()
         """
         |> FSharp
         |> withLangVersionPreview
@@ -454,4 +459,32 @@ module rec M =
                         EndColumn = 37 }
               Message =
                "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+        
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for byref parameters`` () =
+        """
+[<TailCall>]
+let rec foo(x: int byref) = foo(&x)
+let run() = let mutable x = 0 in foo(&x)
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 3
+                        StartColumn = 29
+                        EndLine = 3
+                        EndColumn = 36 }
+              Message =
+               "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 4
+                        StartColumn = 34
+                        EndLine = 4
+                        EndColumn = 41 }
+              Message =
+               "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]

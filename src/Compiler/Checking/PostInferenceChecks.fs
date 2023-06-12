@@ -193,6 +193,14 @@ let CombineLimits limits =
     (NoLimit, limits)
     ||> List.fold CombineTwoLimits
 
+let (|ValUseAtApp|_|) e = 
+     match e with 
+     | InnerExprPat(
+         Expr.App(
+             InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags)),_,_,[],_)
+            | Expr.Val(valRef = vref; flags = valUseFlags)) -> Some (vref, valUseFlags)
+     | _ -> None
+
 type IsTailCall = 
     | Yes of bool // true indicates "has unit return type and must return void"
     | No
@@ -209,7 +217,7 @@ type IsTailCall =
     
     static member YesFromExpr (g: TcGlobals) (expr: Expr) =
         match expr with
-        | Expr.Val(valRef, _valUseFlag, _range) -> IsTailCall.Yes (IsTailCall.IsVoidRet g valRef.Deref)
+        | ValUseAtApp(valRef, _) -> IsTailCall.Yes (IsTailCall.IsVoidRet g valRef.Deref)
         | _ -> IsTailCall.Yes false
 
     member x.AtExprLambda = 
@@ -220,11 +228,6 @@ type IsTailCall =
 
 let IsValRefIsDllImport g (vref:ValRef) = 
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute 
-
-let (|ValUseAtApp|_|) e = 
-     match e with 
-     | InnerExprPat(Expr.App(InnerExprPat(Expr.Val(vref,valUseFlags,_)),_,_,[],_) | Expr.Val(vref,valUseFlags,_)) -> Some (vref, valUseFlags)
-     | _ -> None
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -952,7 +955,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                                     match valUseFlags with
                                     | PossibleConstrainedCall _ ->  true
                                     | _ -> false
-                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
+                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g) // Todo: discuss if this is really enough to render a tail call invalid
                                 let mustGenerateUnitAfterCall = (isUnitTy g returnTy && not isVoidRet)
 
                                 not isNewObj &&
@@ -2693,7 +2696,14 @@ and CheckDefnInModule cenv env mdef =
     | TMDefDo(e, m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e
-        CheckExprNoByrefs cenv env IsTailCall.No e
+        let isTailCall =
+            match stripDebugPoints e with
+            | Expr.App(funcExpr = funcExpr) ->
+                match funcExpr with 
+                | ValUseAtApp (vref, _valUseFlags) -> IsTailCall.YesFromVal cenv.g vref.Deref
+                | _ -> IsTailCall.No
+            | _ -> IsTailCall.No
+        CheckExprNoByrefs cenv env isTailCall e
     | TMDefs defs -> CheckDefnsInModule cenv env defs 
 
 and CheckModuleSpec cenv env isRec mbind =
