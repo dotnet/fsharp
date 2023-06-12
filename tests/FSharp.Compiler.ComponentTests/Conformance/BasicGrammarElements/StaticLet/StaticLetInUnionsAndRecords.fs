@@ -160,7 +160,12 @@ let ``Static let union - executes per generic struct typar`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains """Creating cached val for Int32 * Int32
+sizeof MyUnion<int,int> = 12
+Creating cached val for Int32 * String
+sizeof MyUnion<int,string> = 16
+Creating cached val for String * String
+sizeof MyUnion<string,string> = 24"""
 
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericRecords.fs"|])>]
