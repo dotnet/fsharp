@@ -36,8 +36,10 @@ init R 2
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyType.fs"|])>]
 let ``Static let in empty type`` compilation =
     compilation
-    |> typecheck
+    |> verifyCompileAndRun
     |> shouldSucceed
+    |> withStdOutContains """init
+5"""
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyGenericType.fs"|])>]
 let ``Static let in empty generic type`` compilation =
@@ -134,7 +136,7 @@ let ``Static let - quotations support for records`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains "Let (v1, Value (42), Lambda (r, Call (None, createRecord, [v1, r])))"
 
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericUnion.fs"|])>]
