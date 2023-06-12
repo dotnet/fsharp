@@ -27,28 +27,34 @@ let ``Compile gives errors`` () =
 but here has type
     'char'    ")
 
-[<Fact>]
-let ``Type check project with signature file doesn't get the diagnostic`` () =        
+[<Theory>]
+[<InlineData(true)>]
+[<InlineData(false)>]
+let ``Type check project with signature file doesn't get the diagnostic`` useTransparentCompiler =
     Fsi signature
     |> withAdditionalSourceFile (FsSource implementation)
-    |> typecheckProject false
+    |> typecheckProject false useTransparentCompiler
     |> fun projectResults ->
         projectResults.Diagnostics |> ignore
         Assert.False (projectResults.Diagnostics |> Array.isEmpty)
 
-[<Fact>]
-let ``Type check project without signature file does get the diagnostic`` () =        
+[<Theory>]
+[<InlineData(true)>]
+[<InlineData(false)>]
+let ``Type check project without signature file does get the diagnostic`` useTransparentCompiler =
     Fs implementation
-    |> typecheckProject false
+    |> typecheckProject false useTransparentCompiler
     |> fun projectResults ->
         projectResults.Diagnostics |> ignore
         Assert.False (projectResults.Diagnostics |> Array.isEmpty)
 
-[<Fact>]
-let ``Enabling enablePartialTypeChecking = true doesn't change the problem`` () =        
+[<Theory>]
+[<InlineData(true)>]
+[<InlineData(false)>]
+let ``Enabling enablePartialTypeChecking = true doesn't change the problem`` useTransparentCompiler =
     Fsi signature
     |> withAdditionalSourceFile (FsSource implementation)
-    |> typecheckProject true
+    |> typecheckProject true useTransparentCompiler
     |> fun projectResults ->
         projectResults.Diagnostics |> ignore
         Assert.False (projectResults.Diagnostics |> Array.isEmpty)

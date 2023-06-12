@@ -446,10 +446,16 @@ type FSharpChecker
         backgroundCompiler.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
         |> Async.AwaitNodeCode
 
-    member _.ParseAndCheckProject(options, ?userOpName: string) =
+    member _.ParseAndCheckProject(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
+        |> Async.AwaitNodeCode
+
+    member _.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+
+        backgroundCompiler.ParseAndCheckProject(projectSnapshot, userOpName)
         |> Async.AwaitNodeCode
 
     member _.FindBackgroundReferencesInFile

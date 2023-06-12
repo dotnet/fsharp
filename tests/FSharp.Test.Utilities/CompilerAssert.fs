@@ -858,14 +858,31 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
-        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking, useTransparentCompiler) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking, useTransparentCompiler = useTransparentCompiler)
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
 
-        checker.ParseAndCheckProject(projectOptions)
+        if useTransparentCompiler then
+            let getFileSnapshot _ fileName =
+                async.Return
+                    {
+                        FileName = fileName
+                        Version = "1"
+                        GetSource = fun () -> task {
+                            match! getSourceText fileName with
+                            | Some source -> return source
+                            | None -> return failwith $"couldn't get source for {fileName}"
+                        }
+                    }
+
+            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronously
+
+            checker.ParseAndCheckProject(snapshot)
+        else
+            checker.ParseAndCheckProject(projectOptions)
         |> Async.RunImmediate
-    
+
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then

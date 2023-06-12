@@ -1002,3 +1002,7 @@ type SyntheticProject with
     member this.SaveAndCheck() =
         this.Workflow.Yield() |> Async.RunSynchronously |> ignore
         this.Workflow.Checker
+
+
+let replicateRealProject _projectFilePath =
+    ()

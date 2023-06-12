@@ -133,8 +133,11 @@ type internal TransparentCompiler
     let ParseAndCheckFileInProjectCache =
         AsyncMemoize(triggerCacheEvent, "ParseAndCheckFileInProject")
 
-    let ParseAndCheckFullProjectCache =
+    let ParseAndCheckAllFilesInProjectCache =
         AsyncMemoize(triggerCacheEvent, "ParseAndCheckFullProject")
+
+    let ParseAndCheckProjectCache =
+        AsyncMemoize(triggerCacheEvent, "ParseAndCheckProject")
 
     let FrameworkImportsCache = AsyncMemoize(triggerCacheEvent, "FrameworkImports")
 
@@ -1032,8 +1035,8 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeParseAndCheckFullProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
-        ParseAndCheckFullProjectCache.Get(
+    let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+        ParseAndCheckAllFilesInProjectCache.Get(
             projectSnapshot.Key,
             node {
                 use _ =
@@ -1056,6 +1059,178 @@ type internal TransparentCompiler
                 return tcInfos |> List.rev
             }
         )
+
+    let ComputeGetAssemblyData (projectSnapshot: FSharpProjectSnapshot) =
+        AssemblyDataCache.Get(
+            projectSnapshot.Key,
+            node {
+
+                match! ComputeBootstrapInfo projectSnapshot with
+                | None, _ -> return ProjectAssemblyDataResult.Unavailable true
+                | Some bootstrapInfo, _creationDiags ->
+
+                    let! tcInfos = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+
+                    let assemblyName = bootstrapInfo.AssemblyName
+                    let tcConfig = bootstrapInfo.TcConfig
+                    let tcGlobals = bootstrapInfo.TcGlobals
+
+                    let results =
+                        [
+                            for tcInfo in tcInfos ->
+                                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, None, tcInfo.latestCcuSigForFile
+                        ]
+
+                    // Get the state at the end of the type-checking of the last file
+                    let finalInfo = List.last tcInfos
+
+                    // Finish the checking
+                    let (_tcEnvAtEndOfLastFile, topAttrs, _mimpls, _), tcState =
+                        CheckMultipleInputsFinish(results, finalInfo.tcState)
+
+                    let tcState, _, ccuContents = CheckClosedInputSetFinish([], tcState)
+
+                    let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
+
+                    // Compute the identity of the generated assembly based on attributes, options etc.
+                    // Some of this is duplicated from fsc.fs
+                    let ilAssemRef =
+                        let publicKey =
+                            try
+                                let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
+
+                                match GetStrongNameSigner signingInfo with
+                                | None -> None
+                                | Some s -> Some(PublicKey.KeyAsToken(s.PublicKey))
+                            with exn ->
+                                errorRecoveryNoRange exn
+                                None
+
+                        let locale =
+                            TryFindFSharpStringAttribute
+                                tcGlobals
+                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute")
+                                topAttrs.assemblyAttrs
+
+                        let assemVerFromAttrib =
+                            TryFindFSharpStringAttribute
+                                tcGlobals
+                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute")
+                                topAttrs.assemblyAttrs
+                            |> Option.bind (fun v ->
+                                try
+                                    Some(parseILVersion v)
+                                with _ ->
+                                    None)
+
+                        let ver =
+                            match assemVerFromAttrib with
+                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                            | Some v -> v
+
+                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+
+                    let assemblyDataResult =
+                        try
+                            // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                            // We return 'None' for the assembly portion of the cross-assembly reference
+                            let hasTypeProviderAssemblyAttrib =
+                                topAttrs.assemblyAttrs
+                                |> List.exists (fun (Attrib (tcref, _, _, _, _, _, _)) ->
+                                    let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
+
+                                    nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>
+                                        .FullName)
+
+                            if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
+                                ProjectAssemblyDataResult.Unavailable true
+                            else
+                                ProjectAssemblyDataResult.Available(
+                                    RawFSharpAssemblyDataBackedByLanguageService(
+                                        tcConfig,
+                                        tcGlobals,
+                                        generatedCcu,
+                                        bootstrapInfo.OutFile,
+                                        topAttrs,
+                                        assemblyName,
+                                        ilAssemRef
+                                    )
+                                    :> IRawFSharpAssemblyData
+                                )
+                        with exn ->
+                            errorRecoveryNoRange exn
+                            ProjectAssemblyDataResult.Unavailable true
+
+                    return assemblyDataResult
+            }
+        )
+
+    let ComputeParseAndCheckProject (projectSnapshot: FSharpProjectSnapshot) =
+        ParseAndCheckProjectCache.Get(
+            projectSnapshot.Key,
+            node {
+
+                match! ComputeBootstrapInfo projectSnapshot with
+                | None, creationDiags -> 
+                    return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
+                | Some bootstrapInfo, creationDiags ->
+
+                    let! tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
+
+                    let diagnosticsOptions = tcProj.TcConfig.diagnosticsOptions
+                    let fileName = DummyFileNameForRangesWithoutASpecificLocation
+
+                    // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
+                    let! tcInfo, _tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+
+                    let topAttribs = tcInfo.topAttribs
+                    let tcState = tcInfo.tcState
+                    let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
+                    let tcDiagnostics = tcInfo.TcDiagnostics
+                    let tcDependencyFiles = tcInfo.tcDependencyFiles
+
+                    let tcDiagnostics =
+                        DiagnosticHelpers.CreateDiagnostics(
+                            diagnosticsOptions,
+                            true,
+                            fileName,
+                            tcDiagnostics,
+                            suggestNamesForErrors,
+                            builder.TcConfig.flatErrors
+                        )
+
+                    let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+
+                    let getAssemblyData () =
+                        match tcAssemblyDataOpt with
+                        | ProjectAssemblyDataResult.Available data -> Some data
+                        | _ -> None
+
+                    let details =
+                        (tcProj.TcGlobals,
+                         tcProj.TcImports,
+                         tcState.Ccu,
+                         tcState.CcuSig,
+                         Choice1Of2 builder,
+                         topAttribs,
+                         getAssemblyData,
+                         ilAssemRef,
+                         tcEnvAtEnd.AccessRights,
+                         tcAssemblyExprOpt,
+                         Array.ofList tcDependencyFiles,
+                         options)
+
+                    let results =
+                        FSharpCheckProjectResults(
+                            options.ProjectFileName,
+                            Some tcProj.TcConfig,
+                            keepAssemblyContents,
+                            diagnostics,
+                            Some details
+                        )
+
+                    return results
+            })
 
     let tryGetSink fileName (projectSnapshot: FSharpProjectSnapshot) =
         node {
@@ -1173,109 +1348,7 @@ type internal TransparentCompiler
         }
 
     member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, _userOpName) =
-        AssemblyDataCache.Get(
-            projectSnapshot.Key,
-            node {
-
-                match! ComputeBootstrapInfo projectSnapshot with
-                | None, _ -> return ProjectAssemblyDataResult.Unavailable true
-                | Some bootstrapInfo, _creationDiags ->
-
-                    let! tcInfos = ComputeParseAndCheckFullProject bootstrapInfo projectSnapshot
-
-                    let assemblyName = bootstrapInfo.AssemblyName
-                    let tcConfig = bootstrapInfo.TcConfig
-                    let tcGlobals = bootstrapInfo.TcGlobals
-
-                    let results =
-                        [
-                            for tcInfo in tcInfos ->
-                                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, None, tcInfo.latestCcuSigForFile
-                        ]
-
-                    // Get the state at the end of the type-checking of the last file
-                    let finalInfo = List.last tcInfos
-
-                    // Finish the checking
-                    let (_tcEnvAtEndOfLastFile, topAttrs, _mimpls, _), tcState =
-                        CheckMultipleInputsFinish(results, finalInfo.tcState)
-
-                    let tcState, _, ccuContents = CheckClosedInputSetFinish([], tcState)
-
-                    let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
-
-                    // Compute the identity of the generated assembly based on attributes, options etc.
-                    // Some of this is duplicated from fsc.fs
-                    let ilAssemRef =
-                        let publicKey =
-                            try
-                                let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
-
-                                match GetStrongNameSigner signingInfo with
-                                | None -> None
-                                | Some s -> Some(PublicKey.KeyAsToken(s.PublicKey))
-                            with exn ->
-                                errorRecoveryNoRange exn
-                                None
-
-                        let locale =
-                            TryFindFSharpStringAttribute
-                                tcGlobals
-                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute")
-                                topAttrs.assemblyAttrs
-
-                        let assemVerFromAttrib =
-                            TryFindFSharpStringAttribute
-                                tcGlobals
-                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute")
-                                topAttrs.assemblyAttrs
-                            |> Option.bind (fun v ->
-                                try
-                                    Some(parseILVersion v)
-                                with _ ->
-                                    None)
-
-                        let ver =
-                            match assemVerFromAttrib with
-                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
-                            | Some v -> v
-
-                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
-
-                    let assemblyDataResult =
-                        try
-                            // Assemblies containing type provider components can not successfully be used via cross-assembly references.
-                            // We return 'None' for the assembly portion of the cross-assembly reference
-                            let hasTypeProviderAssemblyAttrib =
-                                topAttrs.assemblyAttrs
-                                |> List.exists (fun (Attrib (tcref, _, _, _, _, _, _)) ->
-                                    let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-
-                                    nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>
-                                        .FullName)
-
-                            if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
-                                ProjectAssemblyDataResult.Unavailable true
-                            else
-                                ProjectAssemblyDataResult.Available(
-                                    RawFSharpAssemblyDataBackedByLanguageService(
-                                        tcConfig,
-                                        tcGlobals,
-                                        generatedCcu,
-                                        bootstrapInfo.OutFile,
-                                        topAttrs,
-                                        assemblyName,
-                                        ilAssemRef
-                                    )
-                                    :> IRawFSharpAssemblyData
-                                )
-                        with exn ->
-                            errorRecoveryNoRange exn
-                            ProjectAssemblyDataResult.Unavailable true
-
-                    return assemblyDataResult
-            }
-        )
+        ComputeGetAssemblyData projectSnapshot
 
     interface IBackgroundCompiler with
 
@@ -1437,6 +1510,11 @@ type internal TransparentCompiler
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             backgroundCompiler.ParseAndCheckProject(options, userOpName)
+
+        member this.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, userOpName: string): NodeCode<FSharpCheckProjectResults> =
+            //this.ParseAndCheckProject(projectSnapshot, userOpName)
+            ignore (projectSnapshot, userOpName)
+            ComputeParseAndCheckProject projectSnapshot
 
         member this.ParseFile(fileName, projectSnapshot, userOpName) =
             this.ParseFile(fileName, projectSnapshot, userOpName)

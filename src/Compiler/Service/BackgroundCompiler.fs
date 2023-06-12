@@ -142,6 +142,8 @@ type internal IBackgroundCompiler =
     /// Parse and typecheck the whole project.
     abstract member ParseAndCheckProject: options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpCheckProjectResults>
 
+    abstract member ParseAndCheckProject: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> NodeCode<FSharpCheckProjectResults>
+
     abstract member ParseFile:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * cache: bool * flatErrors: bool * userOpName: string ->
             Async<FSharpParseFileResults>
@@ -1594,6 +1596,9 @@ type internal BackgroundCompiler
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             self.ParseAndCheckProject(options, userOpName)
+
+        member _.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, userOpName: string): NodeCode<FSharpCheckProjectResults> =
+            self.ParseAndCheckProject(projectSnapshot.ToOptions(), userOpName)
 
         member _.ParseFile
             (
