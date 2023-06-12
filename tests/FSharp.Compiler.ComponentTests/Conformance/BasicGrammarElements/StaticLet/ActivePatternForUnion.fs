@@ -3,10 +3,10 @@ module Test
 type AB = 
     | A
     | B of int
-    static let (|B0Pat|_|) value = if value = 0 then Some (B 999) else None
-    static let b1 = B 1
-    static member ParseUsingActivePattern x = match x with | B0Pat x -> x | _ -> A
-    static member B1 = b1
+
+    static let (|B0PatPrivate|_|) value = if value = 0 then Some (B 999) else None
+    static member ParseUsingActivePattern x = match x with | B0PatPrivate x -> x | _ -> A
+
 
 
 let testThis = AB.ParseUsingActivePattern 0
