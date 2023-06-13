@@ -15,6 +15,8 @@ open CancellableTasks
 type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
+    static let title = SR.ConvertToAnonymousRecord()
+
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 
     interface IFSharpCodeFix with
@@ -39,7 +41,6 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstruct
                         ])
                     |> Option.defaultValue []
 
-                let title = SR.ConvertToAnonymousRecord()
                 return title, changes
             }
 

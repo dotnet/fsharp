@@ -15,10 +15,11 @@ open CancellableTasks
 type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
+    static let title = SR.AddMissingInstanceMemberParameter()
+
     interface IFSharpCodeFix with
         member _.GetChangesAsync _ span =
             cancellableTask {
-                let title = SR.AddMissingInstanceMemberParameter()
                 let changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
                 return title, changes
             }
