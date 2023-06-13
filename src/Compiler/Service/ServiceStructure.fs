@@ -642,8 +642,9 @@ module Structure =
                     rcheck Scope.RecordField Collapse.Below fr fr
                     parseAttributes attrs
 
-            | SynTypeDefnSimpleRepr.Union (_, cases, ur) ->
-                rcheck Scope.UnionDefn Collapse.Same ur ur
+            | SynTypeDefnSimpleRepr.Union (unionCases = cases) ->
+                // We're including the full union scope, so there's no need to add
+                // the representation scope (covering all the cases) separately here.
 
                 for SynUnionCase (attributes = attrs; range = cr) in cases do
                     rcheck Scope.UnionCase Collapse.Below cr cr
