@@ -70,6 +70,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | StaticLetInRecordsDusEmptyTypes
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -163,6 +164,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
                 LanguageFeature.DiagnosticForObjInference, previewVersion
+                LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
 
             ]
 
@@ -288,6 +290,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
+        | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

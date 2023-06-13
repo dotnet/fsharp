@@ -402,6 +402,11 @@
         <target state="translated">padrão de sublinhado simples</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">Membros estáticos em interfaces</target>

@@ -60,6 +60,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | StaticLetInRecordsDusEmptyTypes
 
 /// LanguageVersion management
 type LanguageVersion =

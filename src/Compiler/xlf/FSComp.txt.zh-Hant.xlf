@@ -402,6 +402,11 @@
         <target state="translated">單一底線模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">介面中的靜態成員</target>

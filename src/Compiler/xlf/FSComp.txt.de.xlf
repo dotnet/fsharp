@@ -402,6 +402,11 @@
         <target state="translated">Muster mit einzelnem Unterstrich</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">Statische Member in Schnittstellen</target>

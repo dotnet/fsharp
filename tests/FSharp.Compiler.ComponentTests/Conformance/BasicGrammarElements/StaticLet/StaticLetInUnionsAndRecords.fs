@@ -3,9 +3,30 @@ module Conformance.BasicGrammarElements.StaticLet
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open System.IO
+
+let allTestCases = 
+    Directory.EnumerateFiles(__SOURCE_DIRECTORY__) 
+    |> Seq.toArray 
+    |> Array.map Path.GetFileName
+    |> Array.except [__SOURCE_FILE__;"PlainEnum.fs"] // ALl files in the folder except this one with the tests
+    |> Array.map (fun f -> [|f :> obj|])
+
+
+[<Theory>]
+[<MemberData(nameof(allTestCases))>]
+let ``Should fail in F# 7 and lower`` (implFileName:string) =    
+    let fileContents = File.ReadAllText (Path.Combine(__SOURCE_DIRECTORY__,implFileName))
+
+    Fs fileContents     
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnosticMessageMatches "Static value definitions may only be used in types with a primary constructor."
 
 let verifyCompileAndRun compilation =
     compilation
+    |> withLangVersionPreview
     |> asExe
     |> compileAndRun
 
@@ -44,8 +65,11 @@ let ``Static let in empty type`` compilation =
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyGenericType.fs"|])>]
 let ``Static let in empty generic type`` compilation =
     compilation
-    |> typecheck
+    |> verifyCompileAndRun
     |> shouldSucceed
+    |> withStdOutContains """Accessing name for Int32
+Accessing name for String
+Accessing name for Byte"""
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
 let ``Static let in simple union`` compilation =
@@ -57,7 +81,8 @@ let ``Static let in simple union`` compilation =
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainEnum.fs"|])>]
 let ``Support in plain enums - typecheck should fail`` compilation =
     compilation
-    |> typecheck
+    |> withLangVersionPreview
+    |> typecheck    
     |> shouldFail
     |> withDiagnosticMessage "Enumerations cannot have members"
 
@@ -184,7 +209,6 @@ let ``Static let record - executes per generic typar`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    // Does it HAVE TO execute also for 'Object' ? Why does it do that?
     |> withStdOutContains """Creating cached val for Int32
 2x sizeof<int> = 8
 Creating cached val for String
@@ -197,6 +221,7 @@ Creating cached val for Uri
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericRecordsILtest.fs"|])>]
 let ``Static let record - generics - IL test`` compilation =
     compilation
+    |> withLangVersionPreview
     |> compile
     |> verifyIL ["""        .method private specialname rtspecialname static 
             void  .cctor() cil managed

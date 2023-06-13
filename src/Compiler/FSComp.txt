@@ -1695,4 +1695,5 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 3564,parsMissingUnionCaseName,"Missing union case name"
 3565,parsExpectingType,"Expecting type"
 featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj inferred) at informational level, off by default"
+featureStaticLetInRecordsDusEmptyTypes,"Allow static let bindings in union, record, struct, non-incremental-class types"
 3566,tcMultipleRecdTypeChoice,"Multiple type matches were found:\n%s\nThe type '%s' was used. Due to the overlapping field names\n%s\nconsider using type annotations or change the order of open statements."
