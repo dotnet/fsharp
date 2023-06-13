@@ -19,10 +19,8 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
 
     interface IFSharpCodeFix with
         member _.GetChangesAsync _ span =
-            cancellableTask {
-                let changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
-                return title, changes
-            }
+            let changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
+            CancellableTask.singleton (title, changes)
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0673")
 
