@@ -822,9 +822,14 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
 let callRangeIsInAnyRecRange (env: env) (callingRange: Range) =
     env.mustTailCallRanges.Values |> Seq.exists (fun recRange -> rangeContainsRange recRange callingRange)
 
-let rec allRangesOfModDef mdef = 
+let rec allRangesOfModDef mdef =
+    let abstractSlotRangesOfTycons (tycons: Tycon list) =  
+        abstractSlotValRefsOfTycons tycons 
+        |> List.map (fun v -> v.Deref.Range)
+        
     seq { match mdef with 
-          | TMDefRec(bindings = mbinds) -> 
+          | TMDefRec(tycons = tycons; bindings = mbinds) ->
+              yield! abstractSlotRangesOfTycons tycons
               for mbind in mbinds do 
                 match mbind with 
                 | ModuleOrNamespaceBinding.Binding bind ->
@@ -1504,7 +1509,7 @@ and CheckMatch cenv env ctxt (dtree, targets, m, ty) isTailCall =
 
 and CheckLetRec cenv env (binds, bodyExpr) isTailCall =
     let vals = valsOfBinds binds
-    let exprRanges = List.replicate (List.length binds) None
+    let exprRanges = List.replicate vals.Length None
     BindVals cenv env exprRanges vals
     CheckBindings cenv env binds
     CheckExprNoByrefs cenv env isTailCall bodyExpr
