@@ -272,6 +272,8 @@ let rec fact n acc =
 let f () =
     let r = fact 100000 1
     r |> ignore
+    
+fact 100000 1 |> ignore
         """
         |> FSharp
         |> withLangVersionPreview
@@ -342,6 +344,8 @@ let rec f x = seq {
     let z = y - 1
     yield! f (z - 1)
 }
+
+let a: seq<int> = f 10
         """
         |> FSharp
         |> withLangVersionPreview
@@ -357,6 +361,8 @@ let rec f x = async {
     let z = y - 1
     return! f (z - 1)
 }
+
+let a: Async<int> = f 10
         """
         |> FSharp
         |> withLangVersionPreview
@@ -406,7 +412,11 @@ module rec M =
         [<TailCall>]
         let m2func() = M1.m1func()
         
-M.M1.m1func()
+    let f () =
+        M1.m1func() |> ignore
+
+M.M1.m1func() |> ignore
+M.M2.m2func()
         """
         |> FSharp
         |> withLangVersionPreview
@@ -435,23 +445,9 @@ module rec M =
               Range = { StartLine = 6
                         StartColumn = 28
                         EndLine = 6
-                        EndColumn = 39 }
-              Message =
-               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
-              Range = { StartLine = 6
-                        StartColumn = 28
-                        EndLine = 6
                         EndColumn = 37 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
-              Range = { StartLine = 10
-                        StartColumn = 28
-                        EndLine = 10
-                        EndColumn = 39 }
-              Message =
-               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 10
                         StartColumn = 28
