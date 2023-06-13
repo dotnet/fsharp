@@ -1,9 +1,9 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.TypeTests
+﻿module Signatures.TypeTests
 
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Recursive type with attribute`` () =
