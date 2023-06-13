@@ -1533,8 +1533,13 @@ module InfoMemberPrinting =
                     WordL.keywordNew
                 else
                     let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> wordL) minfo.LogicalName
-                    WordL.keywordMember ^^
-                    PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars
+                    let keywordLayout =
+                        match minfo with
+                        | ILMeth(ilMethInfo = ilMethInfo) when ilMethInfo.IsAbstract ->
+                            WordL.keywordOverride
+                        | _ -> WordL.keywordMember
+
+                    keywordLayout ^^ PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars
 
             let layout = layout ^^ (nameL |> addColonL)
             let layout = layoutXmlDocOfMethInfo denv infoReader minfo layout
@@ -2616,6 +2621,10 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
     buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+
+let stringOfMethInfoFSharpStyle infoReader m denv minfo =
+    InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo
+    |> showL
 
 /// Convert MethInfos to lines separated by newline including a newline as the first character
 let multiLineStringOfMethInfos infoReader m denv minfos =
