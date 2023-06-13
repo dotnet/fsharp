@@ -10637,7 +10637,13 @@ let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
 let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
     let rec getTyparName (ty: TType) : string list =
         match ty with
-        | TType_var (typar = tp) when tp.Id.idText <> unassignedTyparName -> [ tp.Id.idText ]
+        | TType_var (typar = tp) ->
+            if tp.Id.idText <> unassignedTyparName then
+                [ tp.Id.idText ]
+            else
+                match tp.Solution with
+                | None -> []
+                | Some solutionType -> getTyparName solutionType
         | TType_fun(domainType, rangeType, _) -> [ yield! getTyparName domainType; yield! getTyparName rangeType ]
         | TType_anon(tys = ti)
         | TType_app (typeInstantiation = ti)

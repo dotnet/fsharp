@@ -19,3 +19,13 @@ type IMonad<'a> =
         // Hash constraint leads to another type parameter
         abstract bind : #IMonad<'a> -> ('a -> #IMonad<'b>) -> IMonad<'b>
     end
+
+open System.Runtime.InteropServices
+
+type A<'zzz>() =
+  // Process the solution of typar as well
+  static member Foo(argA2: 'a, argB2: 'a -> 'b, argC2: 'b -> 'c, argD: 'c -> 'd, [<Optional>] argZ2: 'zzz) : 'd = argD (argC2( argB2 argA2))
+
+type C<'a>() =
+    // The explicit parameters are required here as well.
+    static member SM5<'b,'c>(y:'a,z:'b) = 2
