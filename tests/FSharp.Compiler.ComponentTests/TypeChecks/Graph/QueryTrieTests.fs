@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.QueryTrieTests
+﻿module TypeChecks.QueryTrieTests
 
 open System.Collections.Generic
 open NUnit.Framework
