@@ -307,4 +307,4 @@ type Foo =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
-                                 """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the call site, or remove parentheses at the abstract method declaration.""")
+                                 """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c').""")
