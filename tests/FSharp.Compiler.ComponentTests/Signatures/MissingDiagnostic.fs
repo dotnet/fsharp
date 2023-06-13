@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.MissingDiagnostic
+﻿module Signatures.MissingDiagnostic
 
 open Xunit
 open FSharp.Test
