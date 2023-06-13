@@ -1,4 +1,4 @@
-module FSharp.Compiler.ComponentTests.Conformance.BasicTypeAndModuleDefinitions.StaticLet
+module Conformance.BasicGrammarElements.StaticLet
 
 open Xunit
 open FSharp.Test
@@ -130,7 +130,14 @@ let ``Static let - recursive DU definitions calling each other`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
-    |> withStdOutContains "TODO put anything meaningful here"
+    |> withStdOutContains """DuA init
+DuA allVals access
+DuB init
+DuB allVals access
+DuC init
+DuC allVals access
+total = 999
+uniq = 2"""
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveRecords.fs"|])>]
 let ``Static let - recursive record definitions calling each other`` compilation =
