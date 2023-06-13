@@ -1,4 +1,4 @@
-﻿module Signatures.SignatureTests
+﻿module Signatures.ArrayTests
 
 open Xunit
 open Signatures.TestHelpers
