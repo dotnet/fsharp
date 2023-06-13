@@ -551,12 +551,13 @@ type internal FsiToolWindow() as this =
 {    hide()}
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
-#{topLine} @"{filename}"
+# {topLine} @"{filename}"
 {text.ToString()}
 ;;
-#1 "stdin"
+# 1 "stdin"
 {    show()};;
 """
+
         executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
