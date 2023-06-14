@@ -88,7 +88,7 @@ type env =
       /// Values in this recursive scope that have been marked [<TailCall>]
       mutable mustTailCall: Zset<Val>
       
-      mutable mustTailCallRanges: Map<string, Range>
+      mutable mustTailCallRanges: Map<Stamp, Range>
 
       /// Are we in a quotation?
       quote : bool 
@@ -345,8 +345,8 @@ let BindVal cenv env (exprRange: Range option) (v: Val) =
     if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
         env.mustTailCall <- Zset.add v env.mustTailCall
         match exprRange with
-        | Some r when not (env.mustTailCallRanges.ContainsKey v.LogicalName) ->
-            env.mustTailCallRanges <- Map.add v.LogicalName r env.mustTailCallRanges
+        | Some r when not (env.mustTailCallRanges.ContainsKey v.Stamp) ->
+            env.mustTailCallRanges <- Map.add v.Stamp r env.mustTailCallRanges
         | _ -> ()
     
     let topLevelBindingHiddenBySignatureFile () =
@@ -1015,7 +1015,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                     if not canTailCall then
                         if not noTailCallBlockers then
                             warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
-                        elif (env.mustTailCallRanges.Item vref.LogicalName |> fun recRange -> rangeContainsRange recRange _m) then
+                        elif (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange _m) then
                             warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
                 | _ -> ()
     | _ -> ()
