@@ -4283,7 +4283,7 @@ module TcDeclarations =
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
     let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
-        let extraMembers, vals_Inherits_Abstractslots = SplitAutoProps extraMembers
+        let extraMembers, extra_vals_Inherits_Abstractslots = SplitAutoProps extraMembers
         let implements1 = extraMembers |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
 
         match trepr with
@@ -4343,7 +4343,7 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, repr, implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isAtOriginalTyconDefn)
 
-            core, members @ vals_Inherits_Abstractslots @ extraMembers 
+            core, members @ extra_vals_Inherits_Abstractslots @ extraMembers 
 
         | SynTypeDefnRepr.Simple(repr, _) -> 
 
