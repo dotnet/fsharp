@@ -22,7 +22,7 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIsAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync document span =
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 

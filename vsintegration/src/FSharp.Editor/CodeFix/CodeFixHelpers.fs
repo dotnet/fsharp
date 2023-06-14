@@ -83,7 +83,7 @@ module internal CodeFixExtensions =
 
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
-                match! codeFix.GetCodeFixIsAppliesAsync ctx.Document ctx.Span with
+                match! codeFix.GetCodeFixIfAppliesAsync ctx.Document ctx.Span with
                 | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
                 | None -> ()
             }

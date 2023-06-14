@@ -15,4 +15,4 @@ type FSharpCodeFix =
     }
 
 type IFSharpCodeFixProvider =
-    abstract member GetCodeFixIsAppliesAsync: document: Document -> span: TextSpan -> CancellableTask<FSharpCodeFix option>
+    abstract member GetCodeFixIfAppliesAsync: document: Document -> span: TextSpan -> CancellableTask<FSharpCodeFix option>

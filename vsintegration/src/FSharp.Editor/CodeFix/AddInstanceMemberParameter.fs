@@ -21,7 +21,7 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIsAppliesAsync _ span =
+        member _.GetCodeFixIfAppliesAsync _ span =
             let codeFix =
                 {
                     Name = CodeFix.AddInstanceMemberParameter
