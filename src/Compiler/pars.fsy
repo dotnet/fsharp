@@ -1811,6 +1811,25 @@ memberCore:
            let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
            [ SynMemberDefn.Member (binding, memberRange) ] }
 
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints recover
+     { let optReturnType = $3
+       let bindingPat, mBindLhs = $2
+       let mEnd =
+           match optReturnType with
+           | Some(_, ty) -> ty.Range.EndRange
+           | _ -> bindingPat.Range.EndRange
+       let expr = arbExpr ("memberCore2", mEnd)
+
+       fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
+           let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword
+           let memberFlags = memFlagsBuilder SynMemberKind.Member
+           let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+           let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $1; EqualsRange = None }
+           let binding = mkSynBinding (xmlDoc, bindingPat) (vis, (Option.isSome $1), false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, mEnd, [], attrs, Some memberFlags, trivia)
+           let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
+           [ SynMemberDefn.Member (binding, memberRange) ] }
+
   /* Properties with explicit get/set, also indexer properties */
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet
      { let mWith, (classDefnMemberGetSetElements, mAnd) = $4
