@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Member/Do 03.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Member/Do 04.fs", false, QualifiedNameOfFile Module, [], [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types
@@ -17,14 +17,13 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None), Const (Unit, (5,11--5,13)), None,
+                                None), Const (Unit, (5,4--5,6)), None,
                              ArbitraryAfterError
-                               ("hardwhiteDoBinding1", (5,13--5,13)),
-                             (5,11--5,13), NoneAtDo,
-                             { LeadingKeyword =
-                                StaticDo ((5,4--5,10), (5,11--5,13))
-                               InlineKeyword = None
-                               EqualsRange = None })], true, false, (5,4--5,13));
+                               ("hardwhiteDoBinding1", (5,6--5,6)), (5,4--5,6),
+                             NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
+                                         InlineKeyword = None
+                                         EqualsRange = None })], false, false,
+                         (5,4--5,6));
                       LetBindings
                         ([SynBinding
                             (None, Do, false, false, [], PreXmlDocEmpty,

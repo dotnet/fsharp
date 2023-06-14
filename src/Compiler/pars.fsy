@@ -2787,6 +2787,12 @@ hardwhiteDoBinding:
         // associated with the module, 'main' function or assembly depending on their target
         BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, $2, mAll)]), mAll), $2 }
 
+  | ODO ODECLEND
+      { let mDo = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let seqPt = DebugPointAtBinding.NoneAtDo
+        let expr = arbExpr ("hardwhiteDoBinding1", mDo.EndRange)
+        BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, expr, mDo)]), mDo), expr }
 
 /* The bindings in a class type definition */
 classDefnBindings:

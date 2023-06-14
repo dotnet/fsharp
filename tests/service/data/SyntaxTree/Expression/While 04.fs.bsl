@@ -13,8 +13,7 @@ ImplFile
                   Wild (3,4--3,5), None,
                   While
                     (Yes (4,4--4,11), Const (Int32 1, (4,10--4,11)),
-                     ArbitraryAfterError
-                       ("typedSequentialExprBlock1", (4,14--4,14)), (4,4--4,14)),
+                     ArbitraryAfterError ("whileBody1", (5,0--5,0)), (4,4--4,14)),
                   (3,4--3,5), NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
                                            InlineKeyword = None
                                            EqualsRange = Some (3,6--3,7) })],
@@ -25,4 +24,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,0)-(5,0) parse error Possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this token further or using standard formatting conventions.
-(5,0)-(5,0) parse error Expecting expression
+(5,0)-(5,0) parse error Incomplete structured construct at or before this point in expression
