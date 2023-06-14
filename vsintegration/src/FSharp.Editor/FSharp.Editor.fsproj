@@ -101,6 +101,7 @@
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
+    <Compile Include="CodeFix\IFSharpCodeFix.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
     <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />

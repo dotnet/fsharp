@@ -3,13 +3,13 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
 open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertToAnonymousRecord); Shared>]
 type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] () =
@@ -19,29 +19,34 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstruct
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let document = context.Document
+    interface IFSharpCodeFix with
+        member _.GetChangesAsync document span =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-            let! parseResults =
-                document.GetFSharpParseResultsAsync(nameof (FSharpConvertToAnonymousRecordCodeFixProvider))
-                |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpConvertToAnonymousRecordCodeFixProvider))
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
-            let errorRange =
-                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+                let errorRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
 
-            let! recordRange = parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
-            let! recordSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, recordRange)
+                let changes =
+                    parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
+                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
+                    |> Option.map (fun span ->
+                        [
+                            TextChange(TextSpan(span.Start + 1, 0), "|")
+                            TextChange(TextSpan(span.End - 1, 0), "|")
+                        ])
+                    |> Option.defaultValue []
 
-            let changes =
-                [
-                    TextChange(TextSpan(recordSpan.Start + 1, 0), "|")
-                    TextChange(TextSpan(recordSpan.End, 0), "|")
-                ]
+                return title, changes
+            }
 
-            context.RegisterFsharpFix(CodeFix.ConvertToAnonymousRecord, title, changes)
+    override this.RegisterCodeFixesAsync context : Task =
+        cancellableTask {
+            let! title, changes = (this :> IFSharpCodeFix).GetChangesAsync context.Document context.Span
+            return context.RegisterFsharpFix(CodeFix.ConvertToAnonymousRecord, title, changes)
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> CancellableTask.startAsTask context.CancellationToken
