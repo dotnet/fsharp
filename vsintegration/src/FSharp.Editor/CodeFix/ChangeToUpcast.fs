@@ -30,19 +30,19 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
                 let isDowncastKeyword = text.Contains("downcast")
 
                 let changes =
-                    Option.guard (
-                        (isDowncastOperator || isDowncastKeyword)
-                        && not (isDowncastOperator && isDowncastKeyword)
-                    )
-                    |> Option.map (fun _ ->
-                        let replacement =
-                            if isDowncastOperator then
-                                text.Replace(":?>", ":>")
-                            else
-                                text.Replace("downcast", "upcast")
+                    [
+                        if
+                            (isDowncastOperator || isDowncastKeyword)
+                            && not (isDowncastOperator && isDowncastKeyword)
+                        then
+                            let replacement =
+                                if isDowncastOperator then
+                                    text.Replace(":?>", ":>")
+                                else
+                                    text.Replace("downcast", "upcast")
 
-                        [ TextChange(span, replacement) ])
-                    |> Option.defaultValue []
+                            TextChange(span, replacement)
+                    ]
 
                 let title =
                     if isDowncastOperator then
