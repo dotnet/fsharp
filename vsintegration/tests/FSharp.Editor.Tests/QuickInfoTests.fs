@@ -299,7 +299,7 @@ module Test =
 """
 
         let quickInfo = GetQuickInfoTextFromCode code
-        let expected = "val methodSeq: seq<(int -> string * int)>"
+        let expected = "val methodSeq: (int -> string * int) seq"
         Assert.Equal(expected, quickInfo)
         ()
 

@@ -3579,7 +3579,13 @@ type FsiStdinLexerProvider
             )
 
         let tokenizer =
-            LexFilter.LexFilter(indentationSyntaxStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
+            LexFilter.LexFilter(
+                indentationSyntaxStatus,
+                tcConfigB.compilingFSharpCore,
+                Lexer.token lexargs skip,
+                lexbuf,
+                tcConfigB.tokenize = TokenizeOption.Debug
+            )
 
         tokenizer
 

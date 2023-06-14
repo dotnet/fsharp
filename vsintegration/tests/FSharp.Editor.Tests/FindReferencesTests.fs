@@ -129,3 +129,44 @@ module FindReferences =
             foundReferences.Count <> 2 // One in signature file, one in Third file
         then
             failwith $"Expected 2 references but found {foundReferences.Count}"
+
+    [<Theory>]
+    [<InlineData(">=>")>]
+    [<InlineData(">++")>]
+    let ``Find references to operators start with >`` operator =
+
+        let project2 =
+            SyntheticProject.Create(
+                { sourceFile "First" [] with
+                    SignatureFile = No
+                    ExtraSource =
+                        "let compose x = fun y -> x - y\n"
+                        + $"let ({operator}) = compose\n"
+                        + $"let test t = t {operator} 5\n"
+                },
+                { sourceFile "Second" [ "First" ] with
+                    ExtraSource = "open ModuleFirst\n" + $"let z = 4 {operator} 5\n"
+                }
+            )
+
+        let solution2, _ = RoslynTestHelpers.CreateSolution project2
+
+        let context, foundDefinitions, foundReferences = getContext ()
+
+        let documentPath = project2.GetFilePath "Second"
+
+        let document =
+            solution2.TryGetDocumentFromPath documentPath
+            |> Option.defaultWith (fun _ -> failwith "Document not found")
+
+        findUsagesService
+            .FindReferencesAsync(document, getPositionOf operator documentPath, context)
+            .Wait()
+
+        // We cannot easily inspect what exactly was found here, but that should be verified
+        // in FSharp.Compiler.ComponentTests.FSharpChecker.FindReferences
+        if foundDefinitions.Count <> 1 then
+            failwith $"Expected 1 definition but found {foundDefinitions.Count}"
+
+        if foundReferences.Count <> 2 then
+            failwith $"Expected 2 reference but found {foundReferences.Count}"

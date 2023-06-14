@@ -1,5 +1,5 @@
 
-neg18.fs(7,13,7,20): typecheck error FS0001: The type 'int' is not compatible with the type 'seq<'a>'
+neg18.fs(7,13,7,20): typecheck error FS0001: The type 'int' is not compatible with the type ''a seq'
 
 neg18.fs(25,21,25,24): typecheck error FS0033: The type 'Test.AmbiguousTypeNameTests.TwoAmbiguousGenericTypes.M.C<_>' expects 1 type argument(s) but is given 0
 

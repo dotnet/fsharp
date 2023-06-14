@@ -280,7 +280,7 @@ Full name: Microsoft.FSharp.Core.Operators.(||>)
 'U is float"
                 mkDesc
                     "let res4 = (1.0,[1]) ||> List.fold"
-                    "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+                    "val fold<'T,'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
 'T is int
 'State is float"
