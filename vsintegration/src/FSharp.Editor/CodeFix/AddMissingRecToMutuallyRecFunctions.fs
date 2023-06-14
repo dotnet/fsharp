@@ -5,16 +5,9 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Immutable
 open System.Composition
-open System.Threading
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingRecToMutuallyRecFunctions); Shared>]
 type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingConstructor>] () =
