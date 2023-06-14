@@ -103,6 +103,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -133,5 +134,6 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         expr
         |> FSharp
         |> withLangVersionPreview
+        |> withOptions ["--warnaserror"]
         |> typecheck
         |> shouldSucceed
