@@ -941,8 +941,11 @@ module MutRecBindingChecking =
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                     errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(), (trimRangeToLine m)))
 
-                            if isStatic && incrCtorInfoOpt.IsNone && not (g.langVersion.SupportsFeature(LanguageFeature.StaticLetInRecordsDusEmptyTypes)) then 
-                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))
+                            if isStatic && isExtrinsic then
+                                errorR(Error(FSComp.SR.tcStaticBindingInExtrinsicAugmentation(), m))
+
+                            elif isStatic && incrCtorInfoOpt.IsNone && not (g.langVersion.SupportsFeature(LanguageFeature.StaticLetInRecordsDusEmptyTypes)) then 
+                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))                                
 
                             // Phase2A: let-bindings - pass through 
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)     
@@ -1833,6 +1836,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
     let tpenv = emptyUnscopedTyparEnv
 
     try
+    
       // Some preliminary checks 
       mutRecDefns |> MutRecShapes.iterTycons (fun tyconData ->
              let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, _, members, m, newslotsOK, _)) = tyconData
@@ -1841,12 +1845,14 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                  error(InternalError("Intrinsic augmentations of types are only permitted in the same file as the definition of the type", m))
              for mem in members do
                     match mem with
+                    | SynMemberDefn.AutoProperty (isStatic=isStatic)
+                    | SynMemberDefn.LetBindings (isStatic=isStatic)  when isStatic -> ()
                     | SynMemberDefn.Member _
                     | SynMemberDefn.GetSetMember _
-                    | SynMemberDefn.AutoProperty _
-                    | SynMemberDefn.LetBindings _  // accept local definitions 
                     | SynMemberDefn.Interface _ -> () 
                     | SynMemberDefn.Open _ 
+                    | SynMemberDefn.AutoProperty _
+                    | SynMemberDefn.LetBindings _  
                     | SynMemberDefn.ImplicitCtor _ // accept implicit ctor pattern, should be first! 
                     | SynMemberDefn.ImplicitInherit _ when newslotsOK = NewSlotsOK -> () // accept implicit ctor pattern, should be first! 
                     // The rest should have been removed by splitting, they belong to "core" (they are "shape" of type, not implementation) 
@@ -1858,8 +1864,8 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
-              let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute tcref.Attribs
-              if isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
+              let isStaticClass = HasFSharpAttribute g g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+              if isStaticClass && g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
                   | Some tycon ->
@@ -4165,10 +4171,12 @@ module TcDeclarations =
             | _ -> ()
 
 
+
+
     /// Split auto-properties into 'let' and 'member' bindings
     let private SplitAutoProps members =
-        let membersIncludingAutoProps = 
-            members |> List.filter (fun memb -> 
+        let membersIncludingAutoProps, vals_Inherits_Abstractslots = 
+            members |> List.partition (fun memb -> 
                 match memb with 
                 | SynMemberDefn.Interface _
                 | SynMemberDefn.Member _
@@ -4265,7 +4273,7 @@ module TcDeclarations =
         let preMembers = membersIncludingAutoProps |> List.collect preAutoProps
         let postMembers = membersIncludingAutoProps |> List.collect postAutoProps
 
-        preMembers @ postMembers
+        preMembers @ postMembers, vals_Inherits_Abstractslots
 
     /// Separates the definition into core (shape) and body.
     ///
@@ -4275,7 +4283,7 @@ module TcDeclarations =
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
     let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
-        let extraMembers = SplitAutoProps extraMembers
+        let extraMembers, vals_Inherits_Abstractslots = SplitAutoProps extraMembers
         let implements1 = extraMembers |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
 
         match trepr with
@@ -4296,7 +4304,7 @@ module TcDeclarations =
 
             let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
-            let members = SplitAutoProps members
+            let members,_vals_Inherits_Abstractslots = SplitAutoProps members
 
             let isConcrete = 
                 members |> List.exists (function 
@@ -4335,7 +4343,7 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, repr, implements2@implements1, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isAtOriginalTyconDefn)
 
-            core, members @ extraMembers
+            core, members @ vals_Inherits_Abstractslots @ extraMembers 
 
         | SynTypeDefnRepr.Simple(repr, _) -> 
 

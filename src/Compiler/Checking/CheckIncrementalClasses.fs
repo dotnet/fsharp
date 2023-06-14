@@ -497,12 +497,13 @@ type IncrClassReprInfo =
         | [] -> ()
         | _ ->
             match tcref.TypeReprInfo with
+            | TILObjectRepr _ -> ()
             | TFSharpTyconRepr info ->
                 let recdFields = Construct.MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
 
                 // Mutate the entity_tycon_repr to publish the fields
                 tcref.Deref.entity_tycon_repr <- TFSharpTyconRepr { info with fsobjmodel_rfields = recdFields}
-            | _ ->
+            | _ -> 
                 errorR(InternalError("unreachable, anything that can have fields should be a TFSharpTyconRepr", tcref.Range))
 
     /// Given localRep saying how locals have been represented, e.g. as fields.

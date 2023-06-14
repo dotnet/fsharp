@@ -5,16 +5,16 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
 
-let allTestCases = 
+let testCasesForFSharp7ErrorMessage = 
     Directory.EnumerateFiles(__SOURCE_DIRECTORY__) 
     |> Seq.toArray 
     |> Array.map Path.GetFileName
-    |> Array.except [__SOURCE_FILE__;"PlainEnum.fs"] // ALl files in the folder except this one with the tests
+    |> Array.except [__SOURCE_FILE__;"PlainEnum.fs";"StaticLetExtensionToBuiltinType.fs"] // ALl files in the folder except this one with the tests
     |> Array.map (fun f -> [|f :> obj|])
 
 
 [<Theory>]
-[<MemberData(nameof(allTestCases))>]
+[<MemberData(nameof(testCasesForFSharp7ErrorMessage))>]
 let ``Should fail in F# 7 and lower`` (implFileName:string) =    
     let fileContents = File.ReadAllText (Path.Combine(__SOURCE_DIRECTORY__,implFileName))
 
@@ -22,7 +22,34 @@ let ``Should fail in F# 7 and lower`` (implFileName:string) =
     |> withLangVersion70
     |> typecheck
     |> shouldFail
-    |> withDiagnosticMessageMatches "Static value definitions may only be used in types with a primary constructor."
+    |> withErrorCode 902
+    |> withDiagnosticMessageMatches "static value definitions may only be used in types with a primary constructor"
+
+[<Theory>]
+[<InlineData("7.0")>]
+[<InlineData("preview")>]
+let ``Member val regression - not allowed without primary constructor``  (langVersion:string) = 
+    Fs """module Test
+type Bad3 = 
+    member val X = 1 + 1   """
+    |> withLangVersion langVersion
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics []
+
+
+[<Theory>]
+[<InlineData("7.0")>]
+[<InlineData("preview")>]
+let ``Type augmentation with abstract slot not allowed`` (langVersion:string) =
+    Fs """module Test
+type System.Random with
+       abstract M : int -> int
+       static member Factory() = 1    """
+    |> withLangVersion langVersion
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 912, Line 3, Col 8, Line 3, Col 31, "This declaration element is not permitted in an augmentation"]
 
 let verifyCompileAndRun compilation =
     compilation
@@ -175,13 +202,20 @@ Egg init
 Omelette init
 1"""
 
-
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetUnions.fs"|])>]
 let ``Static let - quotations support for unions`` compilation =
     compilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Let (s, Value ("A"), Call (None, ofString, [s]))"""
+
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetExtensionToBuiltinType.fs"|])>]
+let ``Static let extension to builtin type`` compilation =
+    compilation
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 3567, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
 let ``Static let - quotations support for records`` compilation =

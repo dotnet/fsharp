@@ -1187,6 +1187,11 @@
         <target state="translated">無法呼叫 '{0}' - 僅初始化屬性的 setter，請改為使用物件初始化。請參閱 https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">此運算式將類型 '{0}' 隱含轉換為類型 '{1}'。請參閱 https://aka.ms/fsharp-implicit-convs。</target>
@@ -4883,8 +4888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">靜態值定義只能用於含有主要建構函式的類型中。請考慮在類型定義加入引數，例如 'type X(args) = ...'。</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">靜態值定義只能用於含有主要建構函式的類型中。請考慮在類型定義加入引數，例如 'type X(args) = ...'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

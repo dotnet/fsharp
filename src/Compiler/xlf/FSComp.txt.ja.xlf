@@ -1187,6 +1187,11 @@
         <target state="translated">'{0}' を呼び出すことはできません。これは init のみのプロパティのセッターなので、代わりにオブジェクトの初期化を使用してください。https://aka.ms/fsharp-assigning-values-to-properties-at-initialization を参照してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">この式は、型 '{0}' を型 '{1}' に暗黙的に変換します。https://aka.ms/fsharp-implicit-convs を参照してください。</target>
@@ -4883,8 +4888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">静的な値の定義は、プライマリ コンストラクターを含む型でのみ使用できます。型定義に引数を追加してください ( たとえば、'type X(args) = ...')。</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">静的な値の定義は、プライマリ コンストラクターを含む型でのみ使用できます。型定義に引数を追加してください ( たとえば、'type X(args) = ...')。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

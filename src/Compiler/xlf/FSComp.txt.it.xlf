@@ -1187,6 +1187,11 @@
         <target state="translated">Non è possibile chiamare '{0}', un setter per la proprietà init-only. Usare invece l'inizializzazione dell'oggetto. Vedere https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Questa espressione converte in modo implicito il tipo '{0}' nel tipo '{1}'. Vedere https://aka.ms/fsharp-implicit-convs.</target>
@@ -4883,8 +4888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Le definizioni di valore statiche possono essere utilizzate solo nei tipi con un costruttore primario. Provare ad aggiungere argomenti alla definizione di tipo, ad esempio 'type X(args) = ...'.</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">Le definizioni di valore statiche possono essere utilizzate solo nei tipi con un costruttore primario. Provare ad aggiungere argomenti alla definizione di tipo, ad esempio 'type X(args) = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

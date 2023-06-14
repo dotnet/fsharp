@@ -1187,6 +1187,11 @@
         <target state="translated">无法调用 "{0}"，它是仅限 init 属性的资源库，请改用对象初始化。请参阅 https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">此表达式将类型“{0}”隐式转换为类型“{1}”。请参阅 https://aka.ms/fsharp-implicit-convs。</target>
@@ -4883,8 +4888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">静态值定义只能在具有主构造函数的类型中使用。请考虑向类型定义添加参数，例如“type X(args) = ...”。</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">静态值定义只能在具有主构造函数的类型中使用。请考虑向类型定义添加参数，例如“type X(args) = ...”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

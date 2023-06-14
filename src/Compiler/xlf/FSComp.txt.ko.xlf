@@ -1187,6 +1187,11 @@
         <target state="translated">init 전용 속성의 setter인 '{0}'을(를) 호출할 수 없습니다. 개체 초기화를 대신 사용하세요. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization를 참조하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">이 식은 암시적으로 '{0}' 형식을 '{1}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조</target>
@@ -4883,8 +4888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

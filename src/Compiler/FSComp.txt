@@ -749,7 +749,7 @@ tcTypeAbbreviationsCheckedAtCompileTime,"As of F# 4.1, the accessibility of type
 897,tcMeasureDeclarationsRequireStaticMembers,"Measure declarations may have only static members"
 tcStructsMayNotContainDoBindings,"Structs cannot contain 'do' bindings because the default constructor for structs would not execute these bindings"
 901,tcStructsMayNotContainLetBindings,"Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type."
-902,tcStaticLetBindingsRequireClassesWithImplicitConstructors,"Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'."
+902,tcStaticLetBindingsRequireClassesWithImplicitConstructors,"For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'."
 904,tcMeasureDeclarationsRequireStaticMembersNotConstructors,"Measure declarations may have only static members: constructors are not available"
 905,tcMemberAndLocalClassBindingHaveSameName,"A member and a local class binding both have the name '%s'"
 906,tcTypeAbbreviationsCannotHaveInterfaceDeclaration,"Type abbreviations cannot have interface declarations"
@@ -1697,3 +1697,4 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj inferred) at informational level, off by default"
 featureStaticLetInRecordsDusEmptyTypes,"Allow static let bindings in union, record, struct, non-incremental-class types"
 3566,tcMultipleRecdTypeChoice,"Multiple type matches were found:\n%s\nThe type '%s' was used. Due to the overlapping field names\n%s\nconsider using type annotations or change the order of open statements."
+3567,tcStaticBindingInExtrinsicAugmentation,"Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."

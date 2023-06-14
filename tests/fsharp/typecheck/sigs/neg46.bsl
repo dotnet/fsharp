@@ -1,13 +1,13 @@
 
 neg46.fs(6,8,6,26): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg46.fs(10,8,10,33): typecheck error FS0912: This declaration element is not permitted in an augmentation
+neg46.fs(10,8,10,40): typecheck error FS3567: Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.
 
-neg46.fs(14,8,14,26): typecheck error FS0912: This declaration element is not permitted in an augmentation
+neg46.fs(14,8,14,26): typecheck error FS3567: Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.
 
-neg46.fs(18,8,19,21): typecheck error FS0912: This declaration element is not permitted in an augmentation
+neg46.fs(18,8,19,21): typecheck error FS3567: Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.
 
-neg46.fs(23,8,23,32): typecheck error FS0912: This declaration element is not permitted in an augmentation
+neg46.fs(23,8,23,32): typecheck error FS3567: Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.
 
 neg46.fs(27,8,27,25): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
