@@ -16,7 +16,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.UnicodeLexing
 
-let debug = false
+let forceDebug = false
 
 let stringOfPos (pos: Position) = sprintf "(%d:%d)" pos.OriginalLine pos.Column
 
@@ -565,7 +565,8 @@ type LexFilterImpl (
     indentationSyntaxStatus: IndentationAwareSyntaxStatus,
     compilingFSharpCore,
     lexer: (Lexbuf -> token),
-    lexbuf: Lexbuf
+    lexbuf: Lexbuf,
+    debug: bool
 ) =
 
     //----------------------------------------------------------------------------
@@ -2564,8 +2565,9 @@ type LexFilterImpl (
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: UnicodeLexing.Lexbuf) =
-    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf)
+type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: Lexbuf, debug) =
+    let debug = debug || forceDebug
+    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf, debug)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.

@@ -1883,7 +1883,7 @@ module FSharpLexerImpl =
 
             if canUseLexFilter then
                 let lexFilter =
-                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf)
+                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf, false)
 
                 (fun _ -> lexFilter.GetToken())
             else
