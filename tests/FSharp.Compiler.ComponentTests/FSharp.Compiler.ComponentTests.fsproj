@@ -25,49 +25,50 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\DelegateTypes\DelegateDefinition.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\EntryPoint\EntryPoint.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\Events\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ExceptionDefinitions\ExceptionDefinitions.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\FieldMembers\FieldMembers.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ImportDeclarations\ImportDeclarations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MethodResolution.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ModuleDefinitions\ModuleDefinitions.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\NullRepresentations\NullRepresentations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags\Diags.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy\Legacy.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\ModuleDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
-    <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
-    <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
-    <Compile Include="Conformance\DeclarationElements\Events\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\FieldMembers\FieldMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ImportDeclarations\ImportDeclarations.fs" />
-    <Compile Include="Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MemberDefinitions.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
-    <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
-    <Compile Include="Conformance\EntryPoint\EntryPoint.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\TypeAbbreviations.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
+    <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
@@ -78,25 +79,24 @@
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
-    <Compile Include="Conformance\LexicalAnalysis\Shift\Generics.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Generics.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
-    <Compile Include="Conformance\MethodResolution\ParametersResolution.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
-    <Compile Include="Conformance\RecordTypes\AnonymousRecords.fs" />
-    <Compile Include="Conformance\RecordTypes\RecordTypes.fs" />
-    <Compile Include="Conformance\StructTypes\StructTypes.fs" />
-    <Compile Include="Conformance\StructTypes\StructActivePatterns.fs" />	  
-    <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
-    <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
-    <Compile Include="Conformance\TypesAndTypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
-    <Compile Include="Conformance\UnionTypes\UnionTypes.fs" />
-    <Compile Include="Conformance\UnionTypes\MultiCaseUnionStructTypes.fs" />
+    <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
+    <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
+    <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
+    <Compile Include="Conformance\Types\StructTypes\StructActivePatterns.fs" />	  
+    <Compile Include="Conformance\Types\TypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
+    <Compile Include="Conformance\Types\TypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
+    <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
+    <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
+    <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
@@ -128,7 +128,7 @@
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
-    <Compile Include="EmittedIL\Misc\byrefTests.fs" />
+    <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
@@ -247,9 +247,12 @@
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
+    <Compile Include="Signatures\SeqTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="Signatures\NestedTypeTests.fs" />
+    <Compile Include="Signatures\MissingDiagnostic.fs" />
+    <Compile Include="Signatures\HashConstraintTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
@@ -286,6 +289,10 @@
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Conformance\DelegateTypes\" />
   </ItemGroup>
 
 </Project>
