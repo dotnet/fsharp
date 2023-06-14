@@ -42,6 +42,6 @@ and isOdd n =
 """
         }
 
-    let actual = failwith "" // codeFix |> fix code diagnostic
+    let actual = codeFix |> fix code diagnostic
 
     Assert.Equal(expected, actual)
