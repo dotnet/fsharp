@@ -2513,7 +2513,7 @@ module InferredSigPrinting =
                     else
                         // OK, this is a nested module, with indentation
                         if isEmptyL basic then 
-                            ((modNameEqualsL ^^ wordL (tagKeyword"begin")) @@* basic) @@ WordL.keywordEnd
+                            modNameEqualsL ^^ wordL (tagKeyword "begin") @@* basic @@* WordL.keywordEnd
                         else
                             modNameEqualsL @@* basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
