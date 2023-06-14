@@ -2,9 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -14,6 +12,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+
+open CancellableTasks
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
@@ -80,3 +80,11 @@ module internal CodeFixExtensions =
 
             let diag = diagnostics |> Option.defaultValue ctx.Diagnostics
             ctx.RegisterCodeFix(codeAction, diag)
+
+        member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
+            cancellableTask {
+                match! codeFix.GetCodeFixIsAppliesAsync ctx.Document ctx.Span with
+                | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
+                | None -> ()
+            }
+            |> CancellableTask.startAsTask ctx.CancellationToken

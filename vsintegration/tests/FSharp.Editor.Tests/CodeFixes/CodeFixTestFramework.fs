@@ -11,7 +11,7 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open FSharp.Editor.Tests.Helpers
 
-type TestCodeFix = { Title: string; FixedCode: string }
+type TestCodeFix = { Message: string; FixedCode: string }
 
 let getRelevantDiagnostic (document: Document) errorNumber =
     cancellableTask {
@@ -23,7 +23,7 @@ let getRelevantDiagnostic (document: Document) errorNumber =
             |> Seq.exactlyOne
     }
 
-let fix (code: string) diagnostic (fixProvider: IFSharpCodeFix) =
+let tryFix (code: string) diagnostic (fixProvider: IFSharpCodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
         let document = RoslynTestHelpers.GetFsDocument code
@@ -33,14 +33,15 @@ let fix (code: string) diagnostic (fixProvider: IFSharpCodeFix) =
         let diagnosticSpan =
             RoslynHelpers.FSharpRangeToTextSpan(sourceText, diagnostic.Range)
 
-        let! title, changes = fixProvider.GetChangesAsync document diagnosticSpan
-        let fixedSourceText = sourceText.WithChanges changes
+        let! result = fixProvider.GetCodeFixIsAppliesAsync document diagnosticSpan
 
         return
-            {
-                Title = title
-                FixedCode = fixedSourceText.ToString()
-            }
+            (result
+             |> Option.map (fun codeFix ->
+                 {
+                     Message = codeFix.Message
+                     FixedCode = (sourceText.WithChanges codeFix.Changes).ToString()
+                 }))
     }
     |> CancellableTask.start CancellationToken.None
     |> fun task -> task.Result

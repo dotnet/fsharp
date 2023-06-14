@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
@@ -17,16 +16,17 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
 
     static let title = SR.AddMissingInstanceMemberParameter()
 
-    interface IFSharpCodeFix with
-        member _.GetChangesAsync _ span =
-            let changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
-            CancellableTask.singleton (title, changes)
-
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0673")
 
-    override this.RegisterCodeFixesAsync context : Task =
-        cancellableTask {
-            let! title, changes = (this :> IFSharpCodeFix).GetChangesAsync context.Document context.Span
-            context.RegisterFsharpFix(CodeFix.AddInstanceMemberParameter, title, changes)
-        }
-        |> CancellableTask.startAsTask context.CancellationToken
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIsAppliesAsync _ span =
+            let codeFix =
+                {
+                    Name = CodeFix.AddInstanceMemberParameter
+                    Message = title
+                    Changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
+                }
+
+            CancellableTask.singleton (Some codeFix)

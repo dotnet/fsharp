@@ -3,13 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 
-open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.Text
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddParentheses); Shared>]
 type internal FSharpWrapExpressionInParenthesesFixProvider() =
@@ -19,13 +18,19 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0597")
 
-    override this.RegisterCodeFixesAsync context : Task =
-        backgroundTask {
-            let changes =
-                [
-                    TextChange(TextSpan(context.Span.Start, 0), "(")
-                    TextChange(TextSpan(context.Span.End + 1, 0), ")")
-                ]
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            context.RegisterFsharpFix(CodeFix.AddParentheses, title, changes)
-        }
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIsAppliesAsync _ span =
+            let codeFix =
+                {
+                    Name = CodeFix.AddParentheses
+                    Message = title
+                    Changes =
+                        [
+                            TextChange(TextSpan(span.Start, 0), "(")
+                            TextChange(TextSpan(span.End, 0), ")")
+                        ]
+                }
+
+            CancellableTask.singleton (Some codeFix)

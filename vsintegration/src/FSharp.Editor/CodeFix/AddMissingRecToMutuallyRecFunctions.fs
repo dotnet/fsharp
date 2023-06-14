@@ -19,11 +19,13 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0576")
 
-    interface IFSharpCodeFix with
-        member _.GetChangesAsync document span =
-            cancellableTask { 
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIsAppliesAsync document span =
+            cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-                
+
                 let! defines, langVersion =
                     document.GetFSharpCompilationDefinesAndLangVersionAsync(
                         nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)
@@ -40,7 +42,7 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
 
                     loop sourceText.[span.End + 1] (span.End + 1)
 
-                let funcLexerSymbol =
+                return
                     Tokenizer.getSymbolAtPosition (
                         document.Id,
                         sourceText,
@@ -53,67 +55,12 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
                         Some langVersion,
                         cancellationToken
                     )
-
-                let funcNameOpt = 
-                    funcLexerSymbol
-                    |> Option.bind (fun symbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbol.Range))
+                    |> Option.bind (fun funcLexerSymbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
                     |> Option.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
-
-                return match funcNameOpt with
-                       | Some funcName -> 
-                            String.Format(titleFormat, funcName), [ TextChange(TextSpan(span.End, 0), " rec") ]
-                       | None ->
-                            "", []
+                    |> Option.map (fun funcName ->
+                        {
+                            Name = CodeFix.AddMissingRecToMutuallyRecFunctions
+                            Message = String.Format(titleFormat, funcName)
+                            Changes = [ TextChange(TextSpan(span.End, 0), " rec") ]
+                        })
             }
-
-    override this.RegisterCodeFixesAsync context =
-        //asyncMaybe {
-        //    let! defines, langVersion =
-        //        context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
-        //            nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)
-        //        )
-        //        |> liftAsync
-
-        //    let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-
-        //    let funcStartPos =
-        //        let rec loop ch pos =
-        //            if not (Char.IsWhiteSpace(ch)) then
-        //                pos
-        //            else
-        //                loop sourceText.[pos + 1] (pos + 1)
-
-        //        loop sourceText.[context.Span.End + 1] (context.Span.End + 1)
-
-        //    let! funcLexerSymbol =
-        //        Tokenizer.getSymbolAtPosition (
-        //            context.Document.Id,
-        //            sourceText,
-        //            funcStartPos,
-        //            context.Document.FilePath,
-        //            defines,
-        //            SymbolLookupKind.Greedy,
-        //            false,
-        //            false,
-        //            Some langVersion,
-        //            context.CancellationToken
-        //        )
-
-        //    let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
-        //    let funcName = sourceText.GetSubText(funcNameSpan).ToString()
-
-        //    do
-        //        context.RegisterFsharpFix(
-        //            CodeFix.AddMissingRecToMutuallyRecFunctions,
-        //            String.Format(titleFormat, funcName),
-        //            [| TextChange(TextSpan(context.Span.End, 0), " rec") |]
-        //        )
-        //}
-        cancellableTask {
-            let! title, changes = (this :> IFSharpCodeFix).GetChangesAsync context.Document context.Span
-            context.RegisterFsharpFix(CodeFix.AddMissingRecToMutuallyRecFunctions, title, changes)
-        }
-        |> CancellableTask.startAsTask context.CancellationToken
-
-        //|> Async.Ignore
-        //|> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

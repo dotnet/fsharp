@@ -24,18 +24,19 @@ let Thing : IFoo = Foo() :?> IFoo
 """
 
     let expected =
-        {
-            Title = "Use ':>' operator"
-            FixedCode =
-                """
+        Some
+            {
+                Message = "Use ':>' operator"
+                FixedCode =
+                    """
 type IFoo = abstract member Bar : unit -> unit
 type Foo() = interface IFoo with member __.Bar () = ()
 
 let Thing : IFoo = Foo() :> IFoo
 """
-        }
+            }
 
-    let actual = codeFix |> fix code diagnostic
+    let actual = codeFix |> tryFix code diagnostic
 
     Assert.Equal(expected, actual)
 
@@ -50,17 +51,35 @@ let Thing : IFoo = downcast Foo()
 """
 
     let expected =
-        {
-            Title = "Use 'upcast'"
-            FixedCode =
-                """
+        Some
+            {
+                Message = "Use 'upcast'"
+                FixedCode =
+                    """
 type IFoo = abstract member Bar : unit -> unit
 type Foo() = interface IFoo with member __.Bar () = ()
 
 let Thing : IFoo = upcast Foo()
 """
-        }
+            }
 
-    let actual = codeFix |> fix code diagnostic
+    let actual = codeFix |> tryFix code diagnostic
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+// TODO: that's a weird thing, we should rather rewrite the code of the code fix
+let ``Doesn't fix FS3198 when both`` () =
+    let code =
+        """
+type IdowncastFoo = abstract member Bar : unit -> unit
+type Foo() = interface IdowncastFoo with member __.Bar () = ()
+
+let Thing : IdowncastFoo = Foo() :?> IdowncastFoo
+"""
+
+    let expected = None
+
+    let actual = codeFix |> tryFix code diagnostic
 
     Assert.Equal(expected, actual)

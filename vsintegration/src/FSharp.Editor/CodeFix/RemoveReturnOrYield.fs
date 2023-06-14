@@ -8,40 +8,44 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveReturnOrYield); Shared>]
 type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0748", "FS0747")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0747", "FS0748")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! parseResults =
-                context.Document.GetFSharpParseResultsAsync(nameof (FSharpRemoveReturnOrYieldCodeFixProvider))
-                |> liftAsync
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIsAppliesAsync document span =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-            let errorRange =
-                RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpRemoveReturnOrYieldCodeFixProvider))
 
-            let! exprRange = parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
-            let! exprSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, exprRange)
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
-            let title =
-                let text = sourceText.GetSubText(context.Span).ToString()
+                let errorRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
 
-                if text.StartsWith("return!") then SR.RemoveReturnBang()
-                elif text.StartsWith("return") then SR.RemoveReturn()
-                elif text.StartsWith("yield!") then SR.RemoveYieldBang()
-                else SR.RemoveYield()
+                return
+                    parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
+                    |> Option.bind (fun exprRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, exprRange))
+                    |> Option.map (fun exprSpan -> [ TextChange(span, sourceText.GetSubText(exprSpan).ToString()) ])
+                    |> Option.map (fun changes ->
+                        let title =
+                            let text = sourceText.GetSubText(span).ToString()
 
-            do
-                context.RegisterFsharpFix(
-                    CodeFix.RemoveReturnOrYield,
-                    title,
-                    [| TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) |]
-                )
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                            if text.StartsWith("return!") then SR.RemoveReturnBang()
+                            elif text.StartsWith("return") then SR.RemoveReturn()
+                            elif text.StartsWith("yield!") then SR.RemoveYieldBang()
+                            else SR.RemoveYield()
+
+                        {
+                            Name = CodeFix.RemoveReturnOrYield
+                            Message = title
+                            Changes = changes
+                        })
+            }

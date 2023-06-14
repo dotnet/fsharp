@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
@@ -19,8 +18,10 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstruct
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 
-    interface IFSharpCodeFix with
-        member _.GetChangesAsync document span =
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIsAppliesAsync document span =
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
@@ -31,22 +32,17 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstruct
                 let errorRange =
                     RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
 
-                let changes =
+                return
                     parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
                     |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
                     |> Option.map (fun span ->
-                        [
-                            TextChange(TextSpan(span.Start + 1, 0), "|")
-                            TextChange(TextSpan(span.End - 1, 0), "|")
-                        ])
-                    |> Option.defaultValue []
-
-                return title, changes
+                        {
+                            Name = CodeFix.ConvertToAnonymousRecord
+                            Message = title
+                            Changes =
+                                [
+                                    TextChange(TextSpan(span.Start + 1, 0), "|")
+                                    TextChange(TextSpan(span.End - 1, 0), "|")
+                                ]
+                        })
             }
-
-    override this.RegisterCodeFixesAsync context : Task =
-        cancellableTask {
-            let! title, changes = (this :> IFSharpCodeFix).GetChangesAsync context.Document context.Span
-            return context.RegisterFsharpFix(CodeFix.ConvertToAnonymousRecord, title, changes)
-        }
-        |> CancellableTask.startAsTask context.CancellationToken
