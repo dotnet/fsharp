@@ -86,12 +86,14 @@ module MyModule =
 let ``DU``() =
     """
 type Color =
-    | Red
+    | Red of
+        opacity: float *
+        animated: bool
     | Green
     | Blue
 """
-    => [ (2, 5, 5, 10), (2, 11, 5, 10)
-         (3, 4, 5, 10), (3, 4, 5, 10) ]
+    => [ (2, 5, 7, 10), (2, 11, 7, 10)
+         (3, 6, 5, 22), (3, 6, 5, 22) ]
 
 [<Test>]
 let ``DU with interface``() =
@@ -106,7 +108,6 @@ type Color =
             (docEventListener :> IDisposable).Dispose()
 """
     => [ (2, 5, 9, 55), (2, 11, 9, 55)
-         (3, 4, 5, 10), (3, 4, 5, 10)
          (7, 4, 9, 55), (7, 25, 9, 55)
          (8, 8, 9, 55), (8, 27, 9, 55)
          (8, 15, 9, 55), (8, 27, 9, 55) ]
