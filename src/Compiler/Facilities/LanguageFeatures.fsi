@@ -61,6 +61,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
 type LanguageVersion =

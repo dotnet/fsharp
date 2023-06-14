@@ -4265,6 +4265,12 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     Normalcall
 
+            if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+                if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute vref.Attribs then
+                    match isTailCall with
+                    | ILTailcall.Normalcall -> warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+                    | ILTailcall.Tailcall -> ()
+
             let useICallVirt =
                 (virtualCall || useCallVirt cenv boxity mspec isBaseCall)
                 && mspec.MethodRef.CallingConv.IsInstance

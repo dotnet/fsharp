@@ -1522,6 +1522,7 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
+  member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
