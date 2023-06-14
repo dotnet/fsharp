@@ -2714,8 +2714,7 @@ hardwhiteDoBinding:
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator
       { let mDo = rhs parseState 1
         let _, _, mDone = $3
-        let mEnd = match mDone with Some m -> m | _ -> $2.Range
-        let mAll = unionRanges mDo mEnd
+        let mAll = unionRanges mDo $2.Range
         let seqPt = DebugPointAtBinding.NoneAtDo
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes
         // associated with the module, 'main' function or assembly depending on their target
@@ -3668,7 +3667,7 @@ declExpr:
 
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
-       SynExpr.Do(e, m) }
+       SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
 
   | anonMatchingExpr %prec expr_function
       { $1 }
