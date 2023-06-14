@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.FileContentMappingTests
+﻿module TypeChecks.FileContentMappingTests
 
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
