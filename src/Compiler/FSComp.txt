@@ -1575,6 +1575,7 @@ featureExtendedStringInterpolation,"Extended string interpolation similar to C# 
 featureWarningWhenMultipleRecdTypeChoice,"Raises warnings when multiple record type matches were found during name resolution because of overlapping field names."
 featureImprovedImpliedArgumentNames,"Improved implied argument names"
 featureStrictIndentation,"Raises errors on incorrect indentation, allows better recovery and analysis during editing"
+featureChkNotTailRecursive,"Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way."
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
@@ -1697,3 +1698,4 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 3565,parsExpectingType,"Expecting type"
 featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj inferred) at informational level, off by default"
 3566,tcMultipleRecdTypeChoice,"Multiple type matches were found:\n%s\nThe type '%s' was used. Due to the overlapping field names\n%s\nconsider using type annotations or change the order of open statements."
+3567,chkNotTailRecursive,"The member or function '%s' has the 'TailCall' attribute, but is not being used in a tail recursive way."

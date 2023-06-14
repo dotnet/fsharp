@@ -102,6 +102,11 @@
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用实例成员。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">"AssemblyKeyNameAttribute" 已被弃用。请改为使用 "AssemblyKeyFileAttribute"。</target>
@@ -205,6 +210,11 @@
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
