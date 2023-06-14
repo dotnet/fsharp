@@ -6,11 +6,11 @@ ImplFile
          ([Module], false, NamedModule,
           [Expr
              (TryWith
-                (ArbitraryAfterError ("typedSequentialExprBlockR", (3,0--3,3)),
+                (ArbitraryAfterError ("try2", (3,3--3,3)),
                  [SynMatchClause
                     (Wild (4,5--4,6), None,
                      ArbitraryAfterError
-                       ("typedSequentialExprBlockR", (4,7--4,9)), (4,5--4,9),
+                       ("typedSequentialExprBlockR1", (4,9--4,9)), (4,5--4,9),
                      Yes, { ArrowRange = Some (4,7--4,9)
                             BarRange = None })], (3,0--4,9), Yes (3,0--3,3),
                  Yes (4,0--4,4), { TryKeyword = (3,0--3,3)
@@ -22,6 +22,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,0)-(4,4) parse error Incomplete structured construct at or before this point in expression
-(5,0)-(5,0) parse warning Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,0) parse error Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
 (5,0)-(5,0) parse error Incomplete structured construct at or before this point in pattern matching
+(4,0)-(4,4) parse error Expecting expression

@@ -20,6 +20,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -164,6 +165,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
                 LanguageFeature.DiagnosticForObjInference, previewVersion
+                LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
 
             ]
@@ -290,6 +292,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
+        | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
     /// Get a version string associated with the given feature.

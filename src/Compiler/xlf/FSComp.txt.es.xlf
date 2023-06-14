@@ -417,6 +417,11 @@
         <target state="translated">Miembros estáticos en interfaces</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
@@ -802,9 +807,9 @@
         <target state="translated">Se esperaba un patrón después de este punto</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">Se espera una expresión</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
