@@ -33,7 +33,7 @@ let tryFix (code: string) diagnostic (fixProvider: IFSharpCodeFixProvider) =
         let diagnosticSpan =
             RoslynHelpers.FSharpRangeToTextSpan(sourceText, diagnostic.Range)
 
-        let! result = fixProvider.GetCodeFixIsAppliesAsync document diagnosticSpan
+        let! result = fixProvider.GetCodeFixIfAppliesAsync document diagnosticSpan
 
         return
             (result
