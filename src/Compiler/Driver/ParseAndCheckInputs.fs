@@ -636,7 +636,8 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                                 indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf
+                                lexbuf,
+                                tcConfig.tokenize = TokenizeOption.Debug
                             )
                             .GetToken,
                         true
@@ -646,7 +647,8 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                                 indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf
+                                lexbuf,
+                                tcConfig.tokenize = TokenizeOption.Debug
                             )
                             .GetToken,
                         false

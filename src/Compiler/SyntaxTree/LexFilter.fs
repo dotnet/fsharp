@@ -16,7 +16,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.UnicodeLexing
 
-let debug = false
+let forceDebug = false
 
 let stringOfPos (pos: Position) = sprintf "(%d:%d)" pos.OriginalLine pos.Column
 
@@ -210,7 +210,7 @@ let rec isIfBlockContinuator token =
     //    end else ...
     | END | RPAREN -> true
     // The following arise during reprocessing of the inserted tokens, e.g. when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isIfBlockContinuator token
     | _ -> false
 
@@ -224,7 +224,7 @@ let rec isMatchBlockContinuator token =
     //         with ...
     | WITH -> true
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isMatchBlockContinuator token
     | _ -> false
 
@@ -237,14 +237,14 @@ let rec isTryBlockContinuator token =
     //         with ...
     | FINALLY | WITH -> true
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isTryBlockContinuator token
     | _ -> false
 
 let rec isThenBlockContinuator token =
     match token with
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isThenBlockContinuator token
     | _ -> false
 
@@ -256,7 +256,7 @@ let rec isDoContinuator token =
     //                             ...
     //                          done *)
     | DONE -> true
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isDoContinuator token
     | _ -> false
 
@@ -267,7 +267,7 @@ let rec isInterfaceContinuator token =
     //                         ...
     //                       end
     | END -> true
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isInterfaceContinuator token
     | _ -> false
 
@@ -304,7 +304,7 @@ let rec isTypeContinuator token =
     | RBRACE _ | WITH | BAR | AND | END -> true
 
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isTypeContinuator token
     | _ -> false
 
@@ -315,7 +315,7 @@ let rec isForLoopContinuator token =
     //                          ...
     //                       done
     | DONE -> true
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true// The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true// The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isForLoopContinuator token
     | _ -> false
 
@@ -326,7 +326,7 @@ let rec isWhileBlockContinuator token =
     //                          ...
     //                       done
     | DONE -> true
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isWhileBlockContinuator token
     | _ -> false
 
@@ -336,7 +336,7 @@ let rec isLetContinuator token =
     //                       let ...
     //                       and ...
     | AND -> true
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isLetContinuator token
     | _ -> false
 
@@ -349,7 +349,7 @@ let rec isTypeSeqBlockElementContinuator token =
     //   member x.M1
     //   member x.M2
     | BAR -> true
-    | OBLOCKBEGIN | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | OBLOCKBEGIN | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ODUMMY token -> isTypeSeqBlockElementContinuator token
     | _ -> false
 
@@ -373,7 +373,7 @@ let rec isSeqBlockElementContinuator token =
     | END | AND | WITH | THEN | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ -> true
 
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
-    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true
+    | ORIGHT_BLOCK_END _ | OBLOCKEND _ | ODECLEND _ -> true
     | ODUMMY token -> isSeqBlockElementContinuator token
     | _ -> false
 
@@ -565,7 +565,8 @@ type LexFilterImpl (
     indentationSyntaxStatus: IndentationAwareSyntaxStatus,
     compilingFSharpCore,
     lexer: (Lexbuf -> token),
-    lexbuf: Lexbuf
+    lexbuf: Lexbuf,
+    debug: bool
 ) =
 
     //----------------------------------------------------------------------------
@@ -1271,6 +1272,10 @@ type LexFilterImpl (
             delayToken tokenTup
             hwTokenFetch false
 
+        let getLastTokenEndRange () =
+            let lastTokenPos = tokenTup.LastTokenPos
+            mkSynRange lastTokenPos lastTokenPos
+
         let insertTokenFromPrevPosToCurrentPos tok =
             delayToken tokenTup
             if debug then dprintf "inserting %+A\n" tok
@@ -1344,18 +1349,17 @@ type LexFilterImpl (
             | CtxtWithAsLet _ ->
                 Some OEND
 
-            | CtxtWithAsAugment _ ->
-                Some ODECLEND
+            | CtxtWithAsAugment _
 
             | CtxtDo _
             | CtxtLetDecl (true, _) ->
-                Some ODECLEND
+                Some (ODECLEND(getLastTokenEndRange ()))
 
             | CtxtSeqBlock(_, _, AddBlockEnd) ->
-                Some OBLOCKEND
+                Some (OBLOCKEND(getLastTokenEndRange ()))
 
             | CtxtSeqBlock(_, _, AddOneSidedBlockEnd) ->
-                Some ORIGHT_BLOCK_END
+                Some (ORIGHT_BLOCK_END(getLastTokenEndRange ()))
 
             | _ ->
                 None
@@ -1426,7 +1430,7 @@ type LexFilterImpl (
                         popCtxt()
                         effectsToDo <- (fun() ->
                             if debug then dprintf "--> because %s is coming, inserting OBLOCKEND\n" keywordName
-                            delayTokenNoProcessing (pool.UseLocation(tokenTup, OBLOCKEND))) :: effectsToDo
+                            delayTokenNoProcessing (pool.UseLocation(tokenTup, OBLOCKEND(getLastTokenEndRange ())))) :: effectsToDo
                     | CtxtSeqBlock(_, _, NoAddBlockEnd) ->
                         if debug then dprintf "--> because %s is coming, popping CtxtSeqBlock\n" keywordName
                         popCtxt()
@@ -1434,7 +1438,7 @@ type LexFilterImpl (
                         popCtxt()
                         effectsToDo <- (fun() ->
                             if debug then dprintf "--> because %s is coming, inserting ORIGHT_BLOCK_END\n" keywordName
-                            delayTokenNoProcessing (pool.UseLocation(tokenTup, ORIGHT_BLOCK_END))) :: effectsToDo
+                            delayTokenNoProcessing (pool.UseLocation(tokenTup, ORIGHT_BLOCK_END(getLastTokenEndRange ())))) :: effectsToDo
                     | CtxtVanilla _ ->
                         if debug then dprintf "--> because %s is coming, popping CtxtVanilla\n" keywordName
                         popCtxt()
@@ -1497,7 +1501,7 @@ type LexFilterImpl (
             popCtxt()
             // Make sure we queue a dummy token at this position to check if any other pop rules apply
             delayToken(pool.UseLocation(tokenTup, ODUMMY token))
-            returnToken tokenLexbufState (if blockLet then ODECLEND else token)
+            returnToken tokenLexbufState (if blockLet then ODECLEND(getLastTokenEndRange ()) else token)
 
         // Balancing rule. Encountering a 'done' balances with a 'do'. i.e. even a non-offside 'done' closes a 'do'
         // The 'DONE' token is thrown away and becomes an ODECLEND
@@ -1505,7 +1509,7 @@ type LexFilterImpl (
             if debug then dprintf "DONE at %a terminates CtxtDo(offsidePos=%a)\n" outputPos tokenStartPos outputPos offsidePos
             popCtxt()
             // reprocess as the DONE may close a DO context
-            delayToken(pool.UseLocation(tokenTup, ODECLEND))
+            delayToken(pool.UseLocation(tokenTup, ODECLEND(mkSynRange tokenTup.StartPos tokenTup.EndPos)))
             pool.Return tokenTup
             hwTokenFetch useBlockRule
 
@@ -1670,8 +1674,8 @@ type LexFilterImpl (
             popCtxt()
             if debug then (match addBlockEnd with AddBlockEnd -> dprintf "end of CtxtSeqBlock, insert OBLOCKEND \n" | _ -> ())
             match addBlockEnd with
-            | AddBlockEnd -> insertToken OBLOCKEND
-            | AddOneSidedBlockEnd -> insertToken ORIGHT_BLOCK_END
+            | AddBlockEnd -> insertToken (OBLOCKEND(getLastTokenEndRange ()))
+            | AddOneSidedBlockEnd -> insertToken (ORIGHT_BLOCK_END(getLastTokenEndRange ()))
             | NoAddBlockEnd -> reprocess()
 
         //  Offside rule for SeqBlock.
@@ -1753,7 +1757,7 @@ type LexFilterImpl (
                         isSemiSemi || (if relaxWhitespace2OffsideRule || isLetContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "token at column %d is offside from LET(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
-            insertToken ODECLEND
+            insertToken (ODECLEND(getLastTokenEndRange ()))
 
         // do ignore (
         //     1
@@ -1763,7 +1767,7 @@ type LexFilterImpl (
                 when isSemiSemi || (if isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
-            insertToken ODECLEND
+            insertToken (ODECLEND(getLastTokenEndRange ()))
 
         // class
         //    interface AAA
@@ -1815,7 +1819,7 @@ type LexFilterImpl (
         | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
-            insertToken ODECLEND
+            insertToken (ODECLEND(getLastTokenEndRange ()))
 
         // Pop CtxtMemberHead when offside
         | _, CtxtMemberHead offsidePos :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
@@ -1839,7 +1843,7 @@ type LexFilterImpl (
                     when isSemiSemi || (if relaxWhitespace2OffsideRule || isWithAugmentBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "offside from CtxtWithAsAugment, isWithAugmentBlockContinuator = %b\n" (isWithAugmentBlockContinuator token)
             popCtxt()
-            insertToken ODECLEND
+            insertToken (ODECLEND(getLastTokenEndRange ()))
 
         | _, CtxtMatch offsidePos :: _
                     when isSemiSemi || (if relaxWhitespace2OffsideRule || relaxWhitespace2 && isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
@@ -2561,8 +2565,9 @@ type LexFilterImpl (
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: UnicodeLexing.Lexbuf) =
-    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf)
+type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: Lexbuf, debug) =
+    let debug = debug || forceDebug
+    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf, debug)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.
@@ -2593,7 +2598,7 @@ type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compiling
         | RPAREN ->
             insertComingSoonTokens RPAREN_COMING_SOON RPAREN_IS_HERE
             lexer.GetToken()
-        | OBLOCKEND ->
+        | OBLOCKEND _ ->
             insertComingSoonTokens OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE
             lexer.GetToken()
         | _ -> token
