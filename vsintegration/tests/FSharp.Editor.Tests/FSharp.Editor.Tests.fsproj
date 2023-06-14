@@ -36,6 +36,7 @@
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
     <Compile Include="CodeFixes\ChangeToUpcastTests.fs" />
+    <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctionsTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />
