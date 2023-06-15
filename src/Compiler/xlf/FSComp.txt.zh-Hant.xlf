@@ -832,6 +832,11 @@
         <target state="translated">不完整的運算子運算式 (範例 a^b) 或限定類型調用 (範例: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="new">Missing union case name</target>
