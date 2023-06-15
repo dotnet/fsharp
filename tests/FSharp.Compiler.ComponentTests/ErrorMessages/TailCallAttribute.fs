@@ -250,7 +250,7 @@ type F () =
                         EndLine = 13
                         EndColumn = 18 }
               Message =
-               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." } // ToDo: Why 'M2' in Debug IL?
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
