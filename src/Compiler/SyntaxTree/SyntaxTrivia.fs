@@ -135,6 +135,13 @@ type SynTypeDefnLeadingKeyword =
     | StaticType of staticRange: range * typeRange: range
     | Synthetic
 
+    member this.Range =
+        match this with
+        | SynTypeDefnLeadingKeyword.Type range
+        | SynTypeDefnLeadingKeyword.And range -> range
+        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> Range.unionRanges staticRange typeRange
+        | SynTypeDefnLeadingKeyword.Synthetic -> failwith "Getting range from synthetic keyword"
+
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
     {

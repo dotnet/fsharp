@@ -8,4 +8,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,1)-(3,2) parse error Unexpected symbol ':' in definition. Expected incomplete structured construct at or before this point or other token.
+(3,1)-(3,2) parse error Unexpected symbol ':' in definition

@@ -1540,7 +1540,8 @@ typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars, lid, fixity, vis = $2
        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
+       let m = match lid with [] -> rhs parseState 2 | _ -> rangeOfLid lid
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, m) }
 
 /* Part of a set of type definitions */
 tyconDefnList:
@@ -2316,6 +2317,9 @@ tyconNameAndTyparDecls:
 
   | opt_access path postfixTyparDecls
       { Some $3, $2.LongIdent, true, $1 }
+
+  | opt_access recover
+      { None, [], false, $1 }
 
 prefixTyparDecls:
   | typar

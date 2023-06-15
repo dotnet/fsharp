@@ -751,6 +751,9 @@ type LexFilterImpl (
             |  CtxtSeqBlock(FirstInSeqBlock, _, _), (CtxtDo _ as limitCtxt) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtModuleBody _) :: _ ->
                 PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
+            |  CtxtSeqBlock(FirstInSeqBlock, _, _), CtxtWithAsAugment _ :: (CtxtTypeDefns _ as limitCtxt) :: _ ->
+                PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
+
             | _, CtxtSeqBlock _ :: rest when not strict -> undentationLimit strict rest
             | _, CtxtParen _ :: rest when not strict -> undentationLimit strict rest
 
@@ -2308,7 +2311,7 @@ type LexFilterImpl (
             if debug then dprintf "WITH\n"
             if debug then dprintf "WITH --> NO MATCH, pushing CtxtWithAsAugment (type augmentation), stack = %A" stack
             pushCtxt tokenTup (CtxtWithAsAugment tokenStartPos)
-            pushCtxtSeqBlock tokenTup AddBlockEnd
+            tryPushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
         | FUNCTION, _ ->

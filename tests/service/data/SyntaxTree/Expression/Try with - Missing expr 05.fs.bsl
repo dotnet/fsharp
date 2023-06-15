@@ -18,4 +18,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,0)-(5,6) parse error Expecting expression
-(5,0)-(5,6) parse error Unexpected keyword 'module' in definition. Expected incomplete structured construct at or before this point or other token.
+(5,0)-(5,6) parse error Unexpected keyword 'module' in definition
