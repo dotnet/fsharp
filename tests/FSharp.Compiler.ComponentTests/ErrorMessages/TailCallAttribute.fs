@@ -23,7 +23,7 @@ let rec fact n acc =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 10
                         StartColumn = 11
                         EndLine = 10
@@ -50,7 +50,7 @@ let rec fact n acc =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 10
                         StartColumn = 13
                         EndLine = 10
@@ -79,7 +79,7 @@ let rec fact n acc =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 11
                         StartColumn = 17
                         EndLine = 11
@@ -144,7 +144,7 @@ and [<TailCall>] baz x =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 15
                         StartColumn = 9
                         EndLine = 15
@@ -167,7 +167,7 @@ type C () =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 6
                         StartColumn = 24
                         EndLine = 6
@@ -237,20 +237,24 @@ type F () =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 9
                         EndLine = 8
                         EndColumn = 18 }
               Message =
                "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 13
                         StartColumn = 9
                         EndLine = 13
                         EndColumn = 18 }
               Message =
-               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." } // ToDo: Why 'M2' in Debug IL?
+#if Debug               
+               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+#else
+               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+#endif
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -297,7 +301,7 @@ let rec f x : seq<int> =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 7
                         StartColumn = 17
                         EndLine = 7
@@ -322,7 +326,7 @@ let rec f x : seq<int> =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 7
                         StartColumn = 16
                         EndLine = 7
@@ -385,7 +389,7 @@ let rec f x = async {
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 6
                         StartColumn = 14
                         EndLine = 6
@@ -440,14 +444,14 @@ module rec M =
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 28
                         EndLine = 8
                         EndColumn = 39 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 12
                         StartColumn = 28
                         EndLine = 12
@@ -470,7 +474,7 @@ let run() = let mutable x = 0 in foo(&x)
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 6
                         StartColumn = 34
                         EndLine = 6
