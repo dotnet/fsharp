@@ -105,6 +105,12 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
         | _ -> UnifyTypes cenv env m ty ctyR
 
         let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+        
+        // Ensure the untyped typar name sticks
+        match cty, ty with
+        | SynType.Var(typar = SynTypar(ident = untypedIdent)), TType_var(typar = typedTp) -> typedTp.SetIdent(untypedIdent)
+        | _ -> ()
+
         TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnvR p
 
     | SynSimplePat.Attrib (p, _, _) ->

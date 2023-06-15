@@ -1727,7 +1727,9 @@ classDefnMembersAtLeastOne:
   | classDefnMember opt_seps classDefnMembers
      { match $1, $3 with
        | [ SynMemberDefn.Interface(members=Some []; range=m) ], nextMember :: _ ->
-           warning(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
+           let strictIndentation = parseState.LexBuffer.SupportsFeature LanguageFeature.StrictIndentation
+           let warnF = if strictIndentation then errorR else warning 
+           warnF(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
        | _ -> ()
        $1 @ $3 }
 
@@ -2712,8 +2714,7 @@ hardwhiteDoBinding:
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator
       { let mDo = rhs parseState 1
         let _, _, mDone = $3
-        let mEnd = match mDone with Some m -> m | _ -> $2.Range
-        let mAll = unionRanges mDo mEnd
+        let mAll = unionRanges mDo $2.Range
         let seqPt = DebugPointAtBinding.NoneAtDo
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes
         // associated with the module, 'main' function or assembly depending on their target
@@ -3531,6 +3532,11 @@ typedSequentialExprBlock:
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileExpression())
         exprFromParseError $2 }
 
+  | OBLOCKBEGIN oblockend
+      { let m = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        arbExpr ("typedSequentialExprBlock1", m.EndRange) }
+
   | typedSequentialExpr
       { $1 }
 
@@ -3538,6 +3544,11 @@ typedSequentialExprBlock:
 declExprBlock:
   | OBLOCKBEGIN typedSequentialExpr oblockend
       { $2 }
+
+  | OBLOCKBEGIN oblockend
+      { let m = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        arbExpr ("declExprBlock1", m.EndRange) }
 
   | declExpr
       { $1 }
@@ -3552,7 +3563,7 @@ typedSequentialExprBlockR:
     { fun _ -> $1 }
 
   | recover
-    { fun mStart -> arbExpr ("typedSequentialExprBlockR", mStart) }
+    { fun (mStart: range) -> arbExpr ("typedSequentialExprBlockR1", mStart.EndRange) }
 
 typedSequentialExpr:
   | sequentialExpr COLON typeWithTypeConstraints
@@ -3656,7 +3667,7 @@ declExpr:
 
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
-       SynExpr.Do(e, m) }
+       SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
 
   | anonMatchingExpr %prec expr_function
       { $1 }
@@ -3719,6 +3730,42 @@ declExpr:
               WithKeyword = mEnd
               WithToEndRange = mWhole }
         SynExpr.TryWith(expr, [], mWhole, spTry, spWith, trivia) }
+
+  | TRY ORIGHT_BLOCK_END %prec expr_try
+      { let mTry = rhs parseState 1
+        let mExpr = mTry.EndRange
+        let expr = arbExpr ("try1", mExpr)
+        let spTry = DebugPointAtTry.Yes mTry
+        let mWith, (clauses, mLast) = mExpr, ([], mExpr)
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let spWith = DebugPointAtWith.Yes mWith
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
+        let mTryToLast = unionRanges mTry mLast
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mTryToWith
+              WithKeyword = mWith
+              WithToEndRange = mWithToLast }
+        SynExpr.TryWith(expr, clauses, mTryToLast, spTry, spWith, trivia) }
+
+  | TRY ORIGHT_BLOCK_END withClauses %prec expr_try
+      { let mTry = rhs parseState 1
+        let mExpr = mTry.EndRange
+        let expr = arbExpr ("try2", mExpr)
+        let spTry = DebugPointAtTry.Yes mTry
+        let mWith, (clauses, mLast) = $3
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let spWith = DebugPointAtWith.Yes mWith
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
+        let mTryToLast = unionRanges mTry mLast
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mTryToWith
+              WithKeyword = mWith
+              WithToEndRange = mWithToLast }
+        SynExpr.TryWith(expr, clauses, mTryToLast, spTry, spWith, trivia) }
 
   | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try
       { let mTry = rhs parseState 1
@@ -4233,6 +4280,11 @@ withClauses:
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWith())
         rhs parseState 1, $2 }
 
+  | OWITH recover
+      { let mWith = rhs parseState 1
+        if not $2 then reportParseErrorAt mWith (FSComp.SR.parsUnexpectedEndOfFileWith ())
+        mWith, ([], mWith.EndRange) }
+
 withPatternClauses:
   | patternClauses
       { $1 None }
@@ -4338,20 +4390,12 @@ ifExprThen:
       { let mThen = rhs parseState 1
         arbExpr ("ifThen1", mThen.EndRange), mThen }
 
-  | OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_if
-      { $3, rhs parseState 1 }
-
-  | OTHEN OBLOCKBEGIN typedSequentialExpr recover %prec prec_then_if
-      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileThen())
-        exprFromParseError $3, rhs parseState 1 }
+  | OTHEN typedSequentialExprBlock %prec prec_then_if
+      { $2, rhs parseState 1 }
 
   | OTHEN recover %prec prec_then_if
       { let mThen = rhs parseState 1
         arbExpr ("ifThen2", mThen.EndRange), mThen }
-
-  | OTHEN OBLOCKBEGIN recover %prec prec_then_if
-      { let mThen = rhs parseState 1
-        arbExpr ("ifThen3", mThen.EndRange), mThen }
 
 ifExprElifs:
   | /* EMPTY */
@@ -4361,14 +4405,9 @@ ifExprElifs:
       { let mElse = rhs parseState 1
         Some mElse, Some $2 }
 
-  | OELSE OBLOCKBEGIN typedSequentialExpr oblockend
+  | OELSE typedSequentialExprBlock
       { let mElse = rhs parseState 1
-        Some mElse, Some $3 }
-
-  | OELSE OBLOCKBEGIN typedSequentialExpr recover
-      { let mElse = rhs parseState 1
-        if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElse())
-        Some mElse, Some(exprFromParseError $3) }
+        Some mElse, Some $2 }
 
   | ELIF declExpr ifExprCases
       { let mElif = rhs parseState 1
@@ -4400,7 +4439,7 @@ tupleExpr:
       { let exprs, commas = $1
         let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         let expr = arbExpr ("tupleExpr2", mComma1.EndRange)
         $4 :: expr :: exprs, (mComma2 :: mComma1 :: commas) }
 
@@ -4408,7 +4447,7 @@ tupleExpr:
       { let exprs, commas = $1
         let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
         let expr1 = arbExpr ("tupleExpr3", mComma1.EndRange)
         let expr2 = arbExpr ("tupleExpr4", mComma2.EndRange)
@@ -4425,7 +4464,7 @@ tupleExpr:
   | declExpr COMMA COMMA ends_coming_soon_or_recover
       { let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
         let expr1 = arbExpr ("tupleExpr6", mComma1.EndRange)
         let expr2 = arbExpr ("tupleExpr7", mComma2.EndRange)
@@ -4434,7 +4473,7 @@ tupleExpr:
   | declExpr COMMA COMMA declExpr
       { let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         let expr = arbExpr ("tupleExpr8", mComma1.EndRange)
         [$4; expr; $1], [mComma2; mComma1] }
 
