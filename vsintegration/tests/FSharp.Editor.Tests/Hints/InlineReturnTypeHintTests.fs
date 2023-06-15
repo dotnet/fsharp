@@ -3,8 +3,11 @@
 module FSharp.Editor.Tests.Hints.InlineReturnTypeHintTests
 
 open Xunit
-open HintTestFramework
+
 open FSharp.Test
+open FSharp.Editor.Tests.Helpers
+
+open HintTestFramework
 
 [<Fact>]
 let ``Hints are shown for let-bound function return types`` () =
@@ -15,7 +18,7 @@ let func2 x = x + 1
 let setConsoleOut = System.Console.SetOut
 """
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -49,7 +52,7 @@ type Answer = { Text: string }
 let getAnswer() = { Text = "42" }
 """
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -72,7 +75,7 @@ type Test() =
     member this.Func() = 3
 """
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -91,7 +94,7 @@ type Test() =
 let ``Hints are shown for generic functions`` () =
     let code = "let func _a = 5"
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -114,7 +117,7 @@ let ``Hints are shown for functions within expressions`` () =
         let func () = 2
 """
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -133,7 +136,7 @@ let ``Hints are shown for functions within expressions`` () =
 let ``Hints are not shown for lambda bindings`` () =
     let code = "let func = fun () -> 3"
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
@@ -145,7 +148,7 @@ let ``Hints are not shown for lambda bindings`` () =
 [<InlineData("let func (a: 'a) : List<'a> = [a]")>]
 let ``Hints are not shown when there's type annotation`` code =
 
-    let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
     let result = getReturnTypeHints document
 
