@@ -8,24 +8,38 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = FSharpConvertToAnonymousRecordCodeFixProvider()
-let private diagnostic = 0039 // The record label is not defined...
+let private diagnostic = 0039 // ... is not defined...
 
 [<Fact>]
-let ``Fixes FS0039`` () =
+let ``Fixes FS0039 for records`` () =
     let code =
         """
 let band = { Name = "The Velvet Underground" }
 """
 
     let expected =
-        {
-            Title = "Convert to Anonymous Record"
-            FixedCode =
-                """
+        Some
+            {
+                Message = "Convert to Anonymous Record"
+                FixedCode =
+                    """
 let band = {| Name = "The Velvet Underground" |}
 """
-        }
+            }
 
-    let actual = codeFix |> fix code diagnostic
+    let actual = codeFix |> tryFix code diagnostic
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Doesn't fix FS0039 for random undefined identifiers`` () =
+    let code =
+        """
+let x = someUndefinedFunction 42
+"""
+
+    let expected = None
+
+    let actual = codeFix |> tryFix code diagnostic
 
     Assert.Equal(expected, actual)

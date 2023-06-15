@@ -7,5 +7,12 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
-type IFSharpCodeFix =
-    abstract member GetChangesAsync: document: Document -> span: TextSpan -> CancellableTask<string * TextChange list>
+type FSharpCodeFix =
+    {
+        Name: string
+        Message: string
+        Changes: TextChange list
+    }
+
+type IFSharpCodeFixProvider =
+    abstract member GetCodeFixIfAppliesAsync: document: Document -> span: TextSpan -> CancellableTask<FSharpCodeFix option>

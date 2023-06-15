@@ -19,15 +19,16 @@ type UsefulTestHarness() =
 """
 
     let expected =
-        {
-            Title = "Add missing instance member parameter"
-            FixedCode =
-                """
+        Some
+            {
+                Message = "Add missing instance member parameter"
+                FixedCode =
+                    """
 type UsefulTestHarness() =
     member x.FortyTwo = 42
 """
-        }
+            }
 
-    let actual = codeFix |> fix code diagnostic
+    let actual = codeFix |> tryFix code diagnostic
 
     Assert.Equal(expected, actual)

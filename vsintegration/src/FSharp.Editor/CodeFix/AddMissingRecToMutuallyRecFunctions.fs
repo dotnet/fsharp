@@ -5,16 +5,11 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Immutable
 open System.Composition
-open System.Threading
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingRecToMutuallyRecFunctions); Shared>]
 type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingConstructor>] () =
@@ -24,48 +19,48 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0576")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! defines, langVersion =
-                context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
-                    nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)
-                )
-                |> liftAsync
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync document span =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-            let funcStartPos =
-                let rec loop ch pos =
-                    if not (Char.IsWhiteSpace(ch)) then
-                        pos
-                    else
-                        loop sourceText.[pos + 1] (pos + 1)
+                let! defines, langVersion =
+                    document.GetFSharpCompilationDefinesAndLangVersionAsync(
+                        nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)
+                    )
 
-                loop sourceText.[context.Span.End + 1] (context.Span.End + 1)
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
-            let! funcLexerSymbol =
-                Tokenizer.getSymbolAtPosition (
-                    context.Document.Id,
-                    sourceText,
-                    funcStartPos,
-                    context.Document.FilePath,
-                    defines,
-                    SymbolLookupKind.Greedy,
-                    false,
-                    false,
-                    Some langVersion,
-                    context.CancellationToken
-                )
+                let funcStartPos =
+                    let rec loop ch pos =
+                        if not (Char.IsWhiteSpace(ch)) then
+                            pos
+                        else
+                            loop sourceText.[pos + 1] (pos + 1)
 
-            let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
-            let funcName = sourceText.GetSubText(funcNameSpan).ToString()
+                    loop sourceText.[span.End + 1] (span.End + 1)
 
-            do
-                context.RegisterFsharpFix(
-                    CodeFix.AddMissingRecToMutuallyRecFunctions,
-                    String.Format(titleFormat, funcName),
-                    [| TextChange(TextSpan(context.Span.End, 0), " rec") |]
-                )
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                return
+                    Tokenizer.getSymbolAtPosition (
+                        document.Id,
+                        sourceText,
+                        funcStartPos,
+                        document.FilePath,
+                        defines,
+                        SymbolLookupKind.Greedy,
+                        false,
+                        false,
+                        Some langVersion,
+                        cancellationToken
+                    )
+                    |> Option.bind (fun funcLexerSymbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
+                    |> Option.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
+                    |> Option.map (fun funcName ->
+                        {
+                            Name = CodeFix.AddMissingRecToMutuallyRecFunctions
+                            Message = String.Format(titleFormat, funcName)
+                            Changes = [ TextChange(TextSpan(span.End, 0), " rec") ]
+                        })
+            }
