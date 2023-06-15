@@ -21,14 +21,14 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
                         EndColumn = 35 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
@@ -53,14 +53,14 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
                         EndColumn = 37 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
@@ -87,7 +87,7 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 9
                         StartColumn = 17
                         EndLine = 9
@@ -148,14 +148,14 @@ and [<TailCall>] baz x =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 13
                         StartColumn = 9
                         EndLine = 13
                         EndColumn = 20 }
               Message =
                "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 13
                         StartColumn = 9
                         EndLine = 13
@@ -176,7 +176,7 @@ type C () =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 4
                         StartColumn = 24
                         EndLine = 4
@@ -240,14 +240,14 @@ type F () =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 6
                         StartColumn = 9
                         EndLine = 6
                         EndColumn = 18 }
               Message =
                "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 11
                         StartColumn = 9
                         EndLine = 11
@@ -296,7 +296,7 @@ let rec f x : seq<int> =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 5
                         StartColumn = 17
                         EndLine = 5
@@ -319,14 +319,14 @@ let rec f x : seq<int> =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 5
                         StartColumn = 16
                         EndLine = 5
                         EndColumn = 25 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 5
                         StartColumn = 16
                         EndLine = 5
@@ -383,14 +383,14 @@ let rec f x = async {
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 4
                         StartColumn = 14
                         EndLine = 4
                         EndColumn = 23 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 4
                         StartColumn = 14
                         EndLine = 4
@@ -441,14 +441,14 @@ module rec M =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 6
                         StartColumn = 28
                         EndLine = 6
                         EndColumn = 37 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 10
                         StartColumn = 28
                         EndLine = 10
@@ -469,14 +469,14 @@ let run() = let mutable x = 0 in foo(&x)
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 3
                         StartColumn = 29
                         EndLine = 3
                         EndColumn = 36 }
               Message =
                "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
+            { Error = Warning 3568
               Range = { StartLine = 4
                         StartColumn = 34
                         EndLine = 4
