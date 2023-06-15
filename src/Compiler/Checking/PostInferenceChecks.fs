@@ -975,12 +975,12 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
-and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) =    
+and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (acc : Limit) : Limit =
     match expr with
     | Expr.Sequential (e1, e2, NormalSeq, _) -> 
         CheckExprNoByrefs cenv env e1
         // tailcall
-        CheckExprLinear cenv env e2 ctxt contf
+        CheckExprLinear cenv env e2 ctxt acc
 
     | Expr.Let (TBind(v, _bindRhs, _) as bind, body, _, _) ->
         let isByRef = isByrefTy cenv.g v.Type
@@ -995,27 +995,27 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf 
         BindVal cenv env v
         LimitVal cenv v { limit with scope = if isByRef then limit.scope else env.returnScope }
         // tailcall
-        CheckExprLinear cenv env body ctxt contf 
+        CheckExprLinear cenv env body ctxt acc
 
     | LinearOpExpr (_op, tyargs, argsHead, argLast, m) ->
         CheckTypeInstNoByrefs cenv env m tyargs
         argsHead |> List.iter (CheckExprNoByrefs cenv env) 
         // tailcall
-        CheckExprLinear cenv env argLast PermitByRefExpr.No (fun _ -> contf NoLimit)
+        CheckExprLinear cenv env argLast PermitByRefExpr.No NoLimit
 
     | LinearMatchExpr (_spMatch, _exprm, dtree, tg1, e2, m, ty) ->
         CheckTypeNoInnerByrefs cenv env m ty 
         CheckDecisionTree cenv env dtree
         let lim1 = CheckDecisionTreeTarget cenv env ctxt tg1
         // tailcall
-        CheckExprLinear cenv env e2 ctxt (fun lim2 -> contf (CombineLimits [ lim1; lim2 ]))
+        CheckExprLinear cenv env e2 ctxt (CombineTwoLimits lim1 acc)
 
     | Expr.DebugPoint (_, innerExpr) -> 
-        CheckExprLinear cenv env innerExpr ctxt contf
+        CheckExprLinear cenv env innerExpr ctxt acc
 
     | _ -> 
         // not a linear expression
-        contf (CheckExpr cenv env expr ctxt)
+        CheckExpr cenv env expr ctxt
 
 /// Check a resumable code expression (the body of a ResumableCode delegate or
 /// the body of the MoveNextMethod for a state machine)
@@ -1143,7 +1143,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
     | Expr.Let _ 
     | Expr.Sequential (_, _, NormalSeq, _)
     | Expr.DebugPoint _ -> 
-        CheckExprLinear cenv env expr ctxt id
+        CheckExprLinear cenv env expr ctxt NoLimit
 
     | Expr.Sequential (e1, e2, ThenDoSeq, _) -> 
         CheckExprNoByrefs cenv env e1
