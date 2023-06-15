@@ -832,6 +832,11 @@
         <target state="translated">Eksik işleç ifadesi (örnek a^b) veya tam tür çağrısı (örnek: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="new">Missing union case name</target>

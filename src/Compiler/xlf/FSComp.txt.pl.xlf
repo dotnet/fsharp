@@ -832,6 +832,11 @@
         <target state="translated">Niekompletne wyrażenie operatora (na przykład a^b) lub wywołanie typu kwalifikowanego (przykład: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
         <target state="new">Missing union case name</target>
