@@ -10,7 +10,7 @@ open FSharp.Editor.Tests.Helpers
 [<Fact>]
 let ``Hint is shown for a let binding`` () =
     let code =
-            """
+        """
 type Song = { Artist: string; Title: string }
 
 let s = { Artist = "Moby"; Title = "Porcelain" }
@@ -34,7 +34,7 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
 [<Fact>]
 let ``Hints are correct for builtin types`` () =
     let code =
-            """
+        """
 let songName = "Happy House"
     """
 
@@ -274,7 +274,7 @@ let _ = [ for x ]
 [<Fact>]
 let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () =
     let code =
-            """
+        """
 do task {
     for x
 

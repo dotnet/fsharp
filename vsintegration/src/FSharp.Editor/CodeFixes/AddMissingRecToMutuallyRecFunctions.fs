@@ -27,9 +27,7 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
                 let! defines, langVersion =
-                    document.GetFSharpCompilationDefinesAndLangVersionAsync(
-                        nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider)
-                    )
+                    document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider))
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
