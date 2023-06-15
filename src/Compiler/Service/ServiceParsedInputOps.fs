@@ -681,6 +681,7 @@ module ParsedInput =
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.StaticConstantExpr (e, _) -> walkExpr e
             | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Intersection (types = types) -> List.tryPick walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.LongIdent _
@@ -1699,6 +1700,7 @@ module ParsedInput =
             | SynType.StaticConstantNamed (ident, value, _) ->
                 walkType ident
                 walkType value
+            | SynType.Intersection (types = types) -> List.iter walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.Var _

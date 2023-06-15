@@ -1117,7 +1117,7 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
-                    | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN
+                    | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

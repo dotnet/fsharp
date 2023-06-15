@@ -261,6 +261,9 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map visit [ lhsType; rhsType ]
             Continuation.concatenate continuations continuation
         | SynType.FromParseError _ -> continuation []
+        | SynType.Intersection (types = types) ->
+            let continuations = List.map visit types
+            Continuation.concatenate continuations continuation
 
     visit t id
 

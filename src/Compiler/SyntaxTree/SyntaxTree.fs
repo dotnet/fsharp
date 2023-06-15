@@ -443,6 +443,8 @@ type SynType =
 
     | FromParseError of range: range
 
+    | Intersection of typar: SynTypar option * types: SynType list * range: range
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -462,6 +464,7 @@ type SynType =
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
         | SynType.Or (range = m)
+        | SynType.Intersection (range = m)
         | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 

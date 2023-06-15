@@ -61,6 +61,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    |ConstraintIntersectionOnFlexibleTypes
 
 /// LanguageVersion management
 type LanguageVersion =

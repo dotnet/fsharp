@@ -4377,6 +4377,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.HashConstraint(synInnerTy, m) ->
         TcTypeHashConstraint cenv env newOk checkConstraints occ tpenv synInnerTy m
 
+    | SynType.Intersection (synTypar, types, m) ->
+        TcIntersectionConstraint cenv env newOk checkConstraints occ tpenv synTypar types m
+
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
 
@@ -4560,6 +4563,33 @@ and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
     let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
+    tp.AsType, tpenv
+
+// (x: 't & #I1 & #I2)
+// (x: #I1 & #I2)
+and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTypar synTys m =
+    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.ConstraintIntersectionOnFlexibleTypes m
+
+    let tp, tpenv =
+        match synTypar with
+        | Some synTypar -> TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv synTypar
+        | _ -> TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m, tpenv
+
+    let typarTy = mkTyparTy tp
+
+    let tpenv =
+        synTys
+        |> List.fold (fun tpenv ty ->
+            match ty with
+            | SynType.HashConstraint (ty, m) ->
+                let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv ty
+                AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty typarTy
+                tpenv
+            | _ ->
+                errorR(Error(FSComp.SR.tcConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
+                tpenv
+        ) tpenv
+
     tp.AsType, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =

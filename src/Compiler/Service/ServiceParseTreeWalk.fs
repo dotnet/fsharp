@@ -844,6 +844,7 @@ module SyntaxTraversal =
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Paren (innerType = t)
                 | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
+                | SynType.Intersection (types = types) -> List.tryPick (traverseSynType path) types
                 | SynType.Anon _
                 | SynType.AnonRecd _
                 | SynType.LongIdent _

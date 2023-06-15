@@ -207,6 +207,11 @@
         <target state="translated">型、モジュールの宣言で暗黙的な拡張属性を許可する</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">既定のインターフェイス メンバーの消費</target>
@@ -980,6 +985,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">属性を型拡張に適用することはできません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

@@ -207,6 +207,11 @@
         <target state="translated">Autoriser l’attribut implicite Extension lors de la déclaration des types, modules</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">consommation par défaut des membres d'interface</target>
@@ -980,6 +985,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

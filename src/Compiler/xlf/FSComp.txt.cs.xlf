@@ -207,6 +207,11 @@
         <target state="translated">Povolit implicitní atribut Extension pro deklarující typy, moduly</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">využití člena výchozího rozhraní</target>
@@ -980,6 +985,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Atributy nejde použít pro rozšíření typů.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
