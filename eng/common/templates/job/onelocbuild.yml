@@ -2,7 +2,7 @@ parameters:
   # Optional: dependencies of the job
   dependsOn: ''
 
-  # Optional: A defined YAML pool - https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
+  # Optional: A defined YAML pool - https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
   pool: ''
     
   CeapexPat: $(dn-bot-ceapex-package-r) # PAT for the loc AzDO instance https://dev.azure.com/ceapex
@@ -14,6 +14,7 @@ parameters:
   ReusePr: true
   UseLfLineEndings: true
   UseCheckedInLocProjectJson: false
+  SkipLocProjectJsonGeneration: false
   LanguageSet: VS_Main_Languages
   LclSource: lclFilesInRepo
   LclPackageId: ''
@@ -56,12 +57,13 @@ jobs:
         demands: ImageOverride -equals windows.vs2019.amd64
 
   steps:
-    - task: Powershell@2
-      inputs:
-        filePath: $(Build.SourcesDirectory)/eng/common/generate-locproject.ps1
-        arguments: $(_GenerateLocProjectArguments)
-      displayName: Generate LocProject.json
-      condition: ${{ parameters.condition }}
+    - ${{ if ne(parameters.SkipLocProjectJsonGeneration, 'true') }}:
+      - task: Powershell@2
+        inputs:
+          filePath: $(Build.SourcesDirectory)/eng/common/generate-locproject.ps1
+          arguments: $(_GenerateLocProjectArguments)
+        displayName: Generate LocProject.json
+        condition: ${{ parameters.condition }}
 
     - task: OneLocBuild@2
       displayName: OneLocBuild
