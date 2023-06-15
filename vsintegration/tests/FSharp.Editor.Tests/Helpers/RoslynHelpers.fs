@@ -337,3 +337,13 @@ type RoslynTestHelpers private () =
         options |> RoslynTestHelpers.SetProjectOptions projId solution
 
         solution, checker
+
+    static member GetFsDocument code =
+        // without this lib some symbols are not loaded
+        let options =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                OtherOptions = [| "--targetprofile:netcore" |]
+            }
+
+        RoslynTestHelpers.CreateSolution(code, options = options)
+        |> RoslynTestHelpers.GetSingleDocument

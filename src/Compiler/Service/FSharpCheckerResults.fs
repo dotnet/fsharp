@@ -2558,7 +2558,7 @@ module internal ParseAndCheckFile =
             )
 
         let tokenizer =
-            LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)
+            LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
 
         (fun _ -> tokenizer.GetToken())
 
