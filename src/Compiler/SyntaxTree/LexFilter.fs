@@ -748,6 +748,9 @@ type LexFilterImpl (
             // ignore Vanilla because a SeqBlock is always coming
             | _, CtxtVanilla _ :: rest -> undentationLimit strict rest
 
+            |  CtxtSeqBlock(FirstInSeqBlock, _, _), (CtxtDo _ as limitCtxt) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtModuleBody _) :: _ ->
+                PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
+
             | _, CtxtSeqBlock _ :: rest when not strict -> undentationLimit strict rest
             | _, CtxtParen _ :: rest when not strict -> undentationLimit strict rest
 
@@ -1587,7 +1590,7 @@ type LexFilterImpl (
                 | _ ->
                     delayToken tokenTup
                     pushCtxt tokenTup (CtxtNamespaceBody namespaceTokenPos)
-                    pushCtxtSeqBlockAt false tokenTup tokenTup AddBlockEnd
+                    pushCtxtSeqBlockAt false false tokenTup tokenTup AddBlockEnd
                     hwTokenFetch false
 
         //  Transition rule. CtxtModuleHead ~~~> push CtxtModuleBody; push CtxtSeqBlock
@@ -2162,7 +2165,7 @@ type LexFilterImpl (
         | (DO | DO_BANG), _ ->
             if debug then dprintf "DO: pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtDo tokenStartPos)
-            pushCtxtSeqBlock tokenTup AddBlockEnd
+            tryPushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState (match token with DO -> ODO | DO_BANG -> ODO_BANG | _ -> failwith "unreachable")
 
         // The r.h.s. of an infix token begins a new block.
@@ -2562,24 +2565,28 @@ type LexFilterImpl (
               false
 
     and pushCtxtSeqBlock fallbackToken addBlockEnd =
-        pushCtxtSeqBlockAt strictIndentation fallbackToken (peekNextTokenTup()) addBlockEnd
+        pushCtxtSeqBlockAt strictIndentation true fallbackToken (peekNextTokenTup ()) addBlockEnd
 
-    and pushCtxtSeqBlockAt strict (fallbackToken: TokenTup) (tokenTup: TokenTup) addBlockEnd =
+    and tryPushCtxtSeqBlock fallbackToken addBlockEnd =
+        pushCtxtSeqBlockAt strictIndentation false fallbackToken (peekNextTokenTup ()) addBlockEnd
+
+    and pushCtxtSeqBlockAt strict (useFallback: bool) (fallbackToken: TokenTup) (tokenTup: TokenTup) addBlockEnd =
          let pushed = tryPushCtxt strict tokenTup (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup tokenTup, addBlockEnd))
-         if not pushed then
+         if not pushed && useFallback then
              // The upcoming token isn't sufficiently indented to start the new context.
              // The parser expects proper contexts structure, so we push a new recovery context at the fallback token position.
              pushCtxt fallbackToken (CtxtSeqBlock(NotFirstInSeqBlock, startPosOfTokenTup fallbackToken, addBlockEnd))
 
-         let addBlockBegin = 
-             match addBlockEnd with
-             | AddBlockEnd -> true
-             | _ -> false
+         if pushed || useFallback then
+             let addBlockBegin =
+                 match addBlockEnd with
+                 | AddBlockEnd -> true
+                 | _ -> false
 
-         if addBlockBegin then
-             if debug then dprintf "--> insert OBLOCKBEGIN \n"
-             let ctxtToken = if pushed then tokenTup else fallbackToken
-             delayToken(pool.UseLocation(ctxtToken, OBLOCKBEGIN))
+             if addBlockBegin then
+                 if debug then dprintf "--> insert OBLOCKBEGIN \n"
+                 let ctxtToken = if pushed then tokenTup else fallbackToken
+                 delayToken(pool.UseLocation(ctxtToken, OBLOCKBEGIN))
 
     let rec swTokenFetch() =
         let tokenTup = popNextTokenTup()

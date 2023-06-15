@@ -12,12 +12,12 @@ ImplFile
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Wild (3,4--3,5), None,
                   Do
-                    (ArbitraryAfterError
-                       ("typedSequentialExprBlock1", (4,6--4,6)), (4,4--4,6)),
-                  (3,4--3,5), Yes (3,0--4,6), { LeadingKeyword = Let (3,0--3,3)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (3,6--3,7) })],
-              (3,0--4,6)); Expr (Const (Int32 1, (6,0--6,1)), (6,0--6,1))],
+                    (ArbitraryAfterError ("hardwhiteDoBinding1", (4,6--4,6)),
+                     (4,4--4,6)), (3,4--3,5), Yes (3,0--4,6),
+                  { LeadingKeyword = Let (3,0--3,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (3,6--3,7) })], (3,0--4,6));
+           Expr (Const (Int32 1, (6,0--6,1)), (6,0--6,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
