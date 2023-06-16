@@ -21,5 +21,11 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync _document _span =
             cancellableTask {
-                return None
+                let codeFix = 
+                    {
+                        Name = CodeFix.ChangeEqualsInFieldTypeToColon
+                        Message = SR.ChangeEqualsInFieldTypeToColon()
+                        Changes = []
+                    }
+                return (Some codeFix)
             }

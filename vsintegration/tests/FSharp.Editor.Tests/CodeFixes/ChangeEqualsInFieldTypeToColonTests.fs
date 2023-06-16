@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix : IFSharpCodeFixProvider = failwith "" // AddInstanceMemberParameterCodeFixProvider()
+let private codeFix = ChangeEqualsInFieldTypeToColonCodeFixProvider()
 let private diagnostic = 0010 // Unexpected symbol...
 
 [<Fact>]
