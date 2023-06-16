@@ -333,3 +333,96 @@ type TransparentCompilerBenchmark() =
     [<GlobalCleanup>]
     member this.Cleanup() =
         benchmark.DeleteProjectDir()
+
+
+[<MemoryDiagnoser>]
+[<ThreadingDiagnoser>]
+[<BenchmarkCategory(FSharpCategory)>]
+[<SimpleJob(warmupCount=1,targetCount=8)>]
+type TransparentCompilerGiraffeBenchmark() =
+
+    let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
+
+    let rng = System.Random()
+
+    let modify (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = $"{sourceFile.Source}\n// {rng.NextDouble()}" }
+
+    let break' (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = $"/{sourceFile.Source}\n// {rng.NextDouble()}" }
+
+    let fix (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = sourceFile.Source.Substring(1) }
+
+    [<ParamsAllValues>]
+    member val UseTransparentCompiler = true with get,set
+
+    member this.Project =
+        let project = SyntheticProject.CreateFromRealProject (__SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ ".." ++ "Giraffe/src/Giraffe")
+        { project with OtherOptions = "--nowarn:FS3520"::project.OtherOptions }
+
+    [<GlobalSetup>]
+    member this.Setup() =
+        benchmark <-
+            ProjectWorkflowBuilder(
+            this.Project,
+            useGetSource = true,
+            useChangeNotifications = true,
+            useTransparentCompiler = this.UseTransparentCompiler,
+             runTimeout = 15_000).CreateBenchmarkBuilder()
+
+    [<Benchmark>]
+    member this.ChangeFirstCheckLast() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile this.Project.SourceFiles.Head.Id modify
+            checkFile (this.Project.SourceFiles |> List.last).Id expectOk
+        }
+
+    [<Benchmark>]
+    member this.ChangeSecondCheckLast() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile this.Project.SourceFiles[1].Id modify
+            checkFile (this.Project.SourceFiles |> List.last).Id expectOk
+        }
+
+    [<Benchmark>]
+    member this.SomeWorkflow() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile "Json" modify
+            checkFile "Json" expectOk
+            checkFile "ModelValidation" expectOk
+            updateFile "ModelValidation" modify
+            checkFile "ModelValidation" expectOk
+            updateFile "Xml" modify
+            checkFile "Xml" expectOk
+            updateFile "ModelValidation" modify
+            checkFile "ModelValidation" expectOk
+
+            updateFile "Core" break'
+            checkFile "Core" expectErrors
+            checkFile "Routing" expectErrors
+            updateFile "Routing" modify
+            checkFile "Streaming" expectErrors
+            checkFile "EndpointRouting" expectErrors
+
+            updateFile "Core" fix
+            checkFile "Core" expectOk
+            checkFile "Routing" expectOk
+            checkFile "Streaming" expectOk
+            checkFile "EndpointRouting" expectOk
+        }
