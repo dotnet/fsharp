@@ -58,5 +58,5 @@ let y (f: #seq<int> & System.IDisposable) = ()
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        Error 3568, Line 2, Col 23, Line 2, Col 41, "Constraint intersection syntax may only be used with flexible types."
+        Error 3568, Line 2, Col 23, Line 2, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
     ]
