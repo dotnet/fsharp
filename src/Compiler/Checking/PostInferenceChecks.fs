@@ -124,71 +124,74 @@ let BindTypars g env (tps: Typar list) =
 let BindArgVals env (vs: Val list) = 
     { env with argVals = ValMap.OfList (List.map (fun v -> (v, ())) vs) }
 
-/// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
-[<Flags>]
-type LimitFlags =
-    | None                          = 0b00000
-    | ByRef                         = 0b00001
-    | ByRefOfSpanLike               = 0b00011
-    | ByRefOfStackReferringSpanLike = 0b00101
-    | SpanLike                      = 0b01000
-    | StackReferringSpanLike        = 0b10000
+[<AutoOpen>]
+module Limit =
 
-[<Struct>]
-type Limit =
-    {
-        scope: int
-        flags: LimitFlags
-    }
+    /// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
+    [<Flags>]
+    type LimitFlags =
+        | None                          = 0b00000
+        | ByRef                         = 0b00001
+        | ByRefOfSpanLike               = 0b00011
+        | ByRefOfStackReferringSpanLike = 0b00101
+        | SpanLike                      = 0b01000
+        | StackReferringSpanLike        = 0b10000
 
-    member this.IsLocal = this.scope >= 1
+    [<Struct>]
+    type Limit =
+        {
+            scope: int
+            flags: LimitFlags
+        }
 
-/// Check if the limit has the target limit.
-let inline HasLimitFlag targetLimit (limit: Limit) =
-    limit.flags &&& targetLimit = targetLimit
+        member this.IsLocal = this.scope >= 1
 
-let NoLimit = { scope = 0; flags = LimitFlags.None }
+    /// Check if the limit has the target limit.
+    let inline HasLimitFlag targetLimit (limit: Limit) =
+        limit.flags &&& targetLimit = targetLimit
 
-// Combining two limits will result in both limit flags merged.
-// If none of the limits are limited by a by-ref or a stack referring span-like
-//   the scope will be 0.
-let CombineTwoLimits limit1 limit2 = 
-    let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
-    let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
-    let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
-    let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
-    let isLimited1 = isByRef1 || isStackSpan1
-    let isLimited2 = isByRef2 || isStackSpan2
+    let NoLimit = { scope = 0; flags = LimitFlags.None }
 
-    // A limit that has a stack referring span-like but not a by-ref, 
-    //   we force the scope to 1. This is to handle call sites
-    //   that return a by-ref and have stack referring span-likes as arguments.
-    //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
-    let limit1 =
-        if isStackSpan1 && not isByRef1 then
-            { limit1 with scope = 1 }
-        else
-            limit1
+    // Combining two limits will result in both limit flags merged.
+    // If none of the limits are limited by a by-ref or a stack referring span-like
+    //   the scope will be 0.
+    let CombineTwoLimits limit1 limit2 =
+        let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
+        let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
+        let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
+        let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+        let isLimited1 = isByRef1 || isStackSpan1
+        let isLimited2 = isByRef2 || isStackSpan2
 
-    let limit2 =
-        if isStackSpan2 && not isByRef2 then
-            { limit2 with scope = 1 }
-        else
-            limit2
+        // A limit that has a stack referring span-like but not a by-ref,
+        //   we force the scope to 1. This is to handle call sites
+        //   that return a by-ref and have stack referring span-likes as arguments.
+        //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
+        let limit1 =
+            if isStackSpan1 && not isByRef1 then
+                { limit1 with scope = 1 }
+            else
+                limit1
 
-    match isLimited1, isLimited2 with
-    | false, false ->
-        { scope = 0; flags = limit1.flags ||| limit2.flags }
-    | true, true ->
-        { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
-    | true, false ->
-        { limit1 with flags = limit1.flags ||| limit2.flags }
-    | false, true ->
-        { limit2 with flags = limit1.flags ||| limit2.flags }
+        let limit2 =
+            if isStackSpan2 && not isByRef2 then
+                { limit2 with scope = 1 }
+            else
+                limit2
 
-let CombineLimits limits =
-    (NoLimit, limits)
-    ||> List.fold CombineTwoLimits
+        match isLimited1, isLimited2 with
+        | false, false ->
+            { scope = 0; flags = limit1.flags ||| limit2.flags }
+        | true, true ->
+            { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
+        | true, false ->
+            { limit1 with flags = limit1.flags ||| limit2.flags }
+        | false, true ->
+            { limit2 with flags = limit1.flags ||| limit2.flags }
+
+    let CombineLimits limits =
+        (NoLimit, limits)
+        ||> List.fold CombineTwoLimits
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set

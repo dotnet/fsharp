@@ -26,3 +26,19 @@ val CheckImplFile:
     (bool * bool) *
     isInternalTestSpanStackReferring: bool ->
         bool * StampMap<AnonRecdTypeInfo>
+
+module Limit =
+    [<System.Flags>]
+    type LimitFlags =
+        | None = 0b00000
+        | ByRef = 0b00001
+        | ByRefOfSpanLike = 0b00011
+        | ByRefOfStackReferringSpanLike = 0b00101
+        | SpanLike = 0b01000
+        | StackReferringSpanLike = 0b10000
+
+    [<Struct>]
+    type Limit = { scope: int; flags: LimitFlags }
+
+    val NoLimit: Limit
+    val CombineTwoLimits: Limit -> Limit -> Limit
