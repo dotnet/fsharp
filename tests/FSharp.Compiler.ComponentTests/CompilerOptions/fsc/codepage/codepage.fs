@@ -203,5 +203,5 @@ Parameter name: codepage")
         |> withDiagnostics [
             (Error 10, Line 7, Col 10, Line 7, Col 11, "Unexpected character '�' in type name")
             (Error 552, Line 7, Col 10, Line 8, Col 33, "Only class types may take value arguments")
-            (Error 10, Line 9, Col 14, Line 9, Col 17, "Unexpected keyword 'end' in implementation file")
+            (Error 10, Line 9, Col 14, Line 9, Col 17, "Unexpected keyword 'end' in implementation file. Expected incomplete structured construct at or before this point or other token.")
         ]
