@@ -27,6 +27,8 @@ val CheckImplFile:
     isInternalTestSpanStackReferring: bool ->
         bool * StampMap<AnonRecdTypeInfo>
 
+/// It's unlikely you want to use this module except within
+/// PostInferenceChecks. It's exposed to allow testing.
 module Limit =
     [<System.Flags>]
     type LimitFlags =
@@ -37,8 +39,29 @@ module Limit =
         | SpanLike = 0b01000
         | StackReferringSpanLike = 0b10000
 
+    /// A "limit" here is some combination of restrictions on a Val.
     [<Struct>]
-    type Limit = { scope: int; flags: LimitFlags }
+    type Limit =
+        {
+            /// The scope of this Limit, i.e. "to which scope can a Val safely escape?".
+            /// Some values are not allowed to escape their scope.
+            /// For example, a top-level function is allowed to return a byref type, but inner functions are not.
+            /// This `scope` field is the information that lets us track that.
+            /// (Recall that in general scopes are counted starting from 0 indicating the top-level scope, and
+            /// increasing by 1 essentially for every nested `let`-binding, method, or module.)
+            ///
+            /// Some specific values which are often used:
+            /// * the value 0 is used in NoLimit, since it indicates "this Val can safely escape to all scopes";
+            /// * the value 1 is a "top-level local scope", allowing us to express the restriction "this cannot appear
+            ///   at the top level" (for example, `let x = &y` cannot appear at the top level).
+            scope: int
+            /// The combinations of limits which apply.
+            flags: LimitFlags
+        }
 
+    /// Indicates that no limit applies to some Val. It can appear at the top level or within a `let`-binding,
+    /// and the Val does not have any byref- or span-related restrictions.
     val NoLimit: Limit
+
+    /// Construct a Limit which expresses "this Val must obey the first Limit and the second Limit simultaneously".
     val CombineTwoLimits: Limit -> Limit -> Limit

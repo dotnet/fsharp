@@ -127,7 +127,6 @@ let BindArgVals env (vs: Val list) =
 [<AutoOpen>]
 module Limit =
 
-    /// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
     [<Flags>]
     type LimitFlags =
         | None                          = 0b00000
@@ -1768,7 +1767,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
         let freesOpt = CheckEscapes cenv memInfo.IsSome m syntacticArgs body
 
         //  no reraise under lambda expression
-        CheckNoReraise cenv freesOpt body 
+        CheckNoReraise cenv freesOpt body
 
         // Check the body of the lambda
         if isTop && not g.compilingFSharpCore && isByrefLikeTy g m bodyTy then
