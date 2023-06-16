@@ -381,3 +381,6 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }
+
+[<NoEquality; NoComparison>]
+type SynTypeIntersectionTrivia = { AmpersandRanges: range list }

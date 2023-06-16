@@ -8435,6 +8435,8 @@ FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Syntax.SynType ge
 FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Syntax.SynType innerType
 FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynType+Intersection: FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia get_trivia()
+FSharp.Compiler.Syntax.SynType+Intersection: FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia trivia
 FSharp.Compiler.Syntax.SynType+Intersection: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+Intersection: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+Intersection: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] get_types()
@@ -8582,7 +8584,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewArray(Int32, F
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewFromParseError(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewFun(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewHashConstraint(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewIntersection(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTypar], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewIntersection(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynTypar], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewLongIdent(FSharp.Compiler.Syntax.SynLongIdent)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewLongIdentApp(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynLongIdent, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewMeasurePower(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynRationalConst, FSharp.Compiler.Text.Range)
@@ -9852,6 +9854,10 @@ FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: FSharp.Compiler.Text.Range ArrowR
 FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: FSharp.Compiler.Text.Range get_ArrowRange()
 FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] AmpersandRanges
+FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_AmpersandRanges()
+FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynTypeIntersectionTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range OrKeyword
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range get_OrKeyword()
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: System.String ToString()

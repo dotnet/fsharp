@@ -501,3 +501,11 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia
+
+/// Represents additional information for SynType.Intersection
+[<NoEquality; NoComparison>]
+type SynTypeIntersectionTrivia =
+    {
+        /// The syntax ranges of the `&` tokens
+        AmpersandRanges: range list
+    }

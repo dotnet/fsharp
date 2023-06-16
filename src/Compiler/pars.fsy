@@ -2382,10 +2382,11 @@ typeConstraints:
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionConstraints:
   | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings // todo precedence
-      { $3 :: $1 }
+      { let constraints, mAmpersands = $1
+        ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
   | atomType
-      { [ $1 ] }
+      { [ $1 ], [] }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -5677,10 +5678,12 @@ tupleOrQuotTypeElements:
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionType:
   | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
-      { SynType.Intersection(Some $1, $3, lhs parseState) }
+    { let constraints, mAmpersands = $3
+      SynType.Intersection(Some $1, List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
   | atomType AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
-    { SynType.Intersection(None, $1 :: $3, lhs parseState) }
+    { let constraints, mAmpersands = $3
+      SynType.Intersection(None, $1 :: List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
 appTypeCon:
   | path %prec prec_atomtyp_path

@@ -4377,8 +4377,8 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.HashConstraint(synInnerTy, m) ->
         TcTypeHashConstraint cenv env newOk checkConstraints occ tpenv synInnerTy m
 
-    | SynType.Intersection (synTypar, types, m) ->
-        TcIntersectionConstraint cenv env newOk checkConstraints occ tpenv synTypar types m
+    | SynType.Intersection (tp, tys, m, _) ->
+        TcIntersectionConstraint cenv env newOk checkConstraints occ tpenv tp tys m
 
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
