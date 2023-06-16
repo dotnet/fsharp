@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpAddInstanceMemberParameterCodeFixProvider()
+let private codeFix = AddInstanceMemberParameterCodeFixProvider()
 let private diagnostic = 0673 // This instance member needs a parameter to represent the object being invoked...
 
 [<Fact>]

@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpChangeToUpcastCodeFixProvider()
+let private codeFix = ChangeToUpcastCodeFixProvider()
 let private diagnostic = 3198 // The conversion is an upcast, not a downcast...
 
 // Test cases are taken from the original PR:
