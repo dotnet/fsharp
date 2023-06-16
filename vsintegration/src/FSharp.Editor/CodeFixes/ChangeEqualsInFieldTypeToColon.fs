@@ -19,13 +19,13 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync _document _span =
+        member _.GetCodeFixIfAppliesAsync _ span =
             cancellableTask {
                 let codeFix = 
                     {
                         Name = CodeFix.ChangeEqualsInFieldTypeToColon
                         Message = SR.ChangeEqualsInFieldTypeToColon()
-                        Changes = []
+                        Changes = [ TextChange(TextSpan(span.Start, 1), ":")]
                     }
                 return (Some codeFix)
             }
