@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpRemoveReturnOrYieldCodeFixProvider()
+let private codeFix = RemoveReturnOrYieldCodeFixProvider()
 let private yieldDiagnostic = 0747 // This construct may only be used within list, array and sequence expressions...
 let private returnDiagnostic = 0748 // This construct may only be used with computation expressions...
 
