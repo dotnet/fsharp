@@ -527,12 +527,21 @@ moduleIntro:
         let mModule = rhs parseState 1
         mModule, $4, [], $3, $2 }
 
+  | moduleKeyword opt_attributes opt_access opt_rec recover
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
 
 /* The start of a namespace declaration */
 namespaceIntro:
   | NAMESPACE opt_rec path
       { let mNamespace = rhs parseState 1
         mNamespace, $2, $3.LongIdent, grabXmlDoc(parseState, [], 1) }
+
+  | NAMESPACE opt_rec recover
+      { let mNamespace = rhs parseState 1
+        mNamespace, $2, [], grabXmlDoc(parseState, [], 1) }
 
 
 /* The contents of a signature file */
@@ -1138,8 +1147,8 @@ fileModuleImpl:
   | moduleDefnsOrExprPossiblyEmptyOrBlock
     { let m = (rhs parseState 1)
       (fun (mNamespaceOpt, isRec, path, xml) ->
-        match path with
-        | [] -> ParsedImplFileFragment.AnonModule($1, m)
+        match path, mNamespaceOpt with
+        | [], None -> ParsedImplFileFragment.AnonModule($1, m)
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
