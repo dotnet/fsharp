@@ -1467,8 +1467,8 @@ type Exception with
                     ctxt.ShiftTokens
                     |> List.map Parser.tokenTagToTokenId
                     |> List.filter (function
-                        | EndOfStructuredConstructToken
                         | Parser.TOKEN_error
+                        | Parser.TOKEN_OBLOCKSEP
                         | Parser.TOKEN_EOF -> false
                         | _ -> true)
                     |> List.map tokenIdToText
