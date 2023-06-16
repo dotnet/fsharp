@@ -197,7 +197,7 @@ module internal Utilities =
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
 
             for varname, value in environment do
-                psi.EnvironmentVariables[varname] <- value
+                psi.EnvironmentVariables[ varname ] <- value
 
             psi.UseShellExecute <- false
 

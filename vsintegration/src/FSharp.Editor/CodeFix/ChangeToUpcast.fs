@@ -3,11 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeToUpcast); Shared>]
 type internal FSharpChangeToUpcastCodeFixProvider() =
@@ -15,34 +16,46 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS3198")
 
-    override this.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let text = sourceText.GetSubText(context.Span).ToString()
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            // Only works if it's one or the other
-            let isDowncastOperator = text.Contains(":?>")
-            let isDowncastKeyword = text.Contains("downcast")
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync document span =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-            do!
-                Option.guard (
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let text = sourceText.GetSubText(span).ToString()
+
+                // Only works if it's one or the other
+                let isDowncastOperator = text.Contains(":?>")
+                let isDowncastKeyword = text.Contains("downcast")
+
+                if
                     (isDowncastOperator || isDowncastKeyword)
                     && not (isDowncastOperator && isDowncastKeyword)
-                )
+                then
+                    let replacement =
+                        if isDowncastOperator then
+                            text.Replace(":?>", ":>")
+                        else
+                            text.Replace("downcast", "upcast")
 
-            let replacement =
-                if isDowncastOperator then
-                    text.Replace(":?>", ":>")
+                    let changes = [ TextChange(span, replacement) ]
+
+                    let title =
+                        if isDowncastOperator then
+                            SR.UseUpcastOperator()
+                        else
+                            SR.UseUpcastKeyword()
+
+                    let codeFix =
+                        {
+                            Name = CodeFix.ChangeToUpcast
+                            Message = title
+                            Changes = changes
+                        }
+
+                    return Some codeFix
                 else
-                    text.Replace("downcast", "upcast")
-
-            let title =
-                if isDowncastOperator then
-                    SR.UseUpcastOperator()
-                else
-                    SR.UseUpcastKeyword()
-
-            do context.RegisterFsharpFix(CodeFix.ChangeToUpcast, title, [| TextChange(context.Span, replacement) |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    return None
+            }
