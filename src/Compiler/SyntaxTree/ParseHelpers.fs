@@ -764,6 +764,14 @@ let mkSynMemberDefnGetSet
         | Some (SynMemberDefn.Member (setBinding, m1), SetIdent mSet), Some (SynMemberDefn.Member (getBinding, m2), GetIdent mGet) ->
             let range = unionRanges m1 m2
 
+            match propertyNameBindingPat, getBinding, setBinding with
+            | SynPat.LongIdent(accessibility = None),
+              SynBinding(headPat = SynPat.LongIdent (accessibility = getVis)),
+              SynBinding(headPat = SynPat.LongIdent (accessibility = setVis)) ->
+                if getVis <> setVis then
+                    errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), setBinding.RangeOfBindingWithoutRhs))
+            | _ -> ()
+
             let trivia =
                 {
                     InlineKeyword = opt_inline
