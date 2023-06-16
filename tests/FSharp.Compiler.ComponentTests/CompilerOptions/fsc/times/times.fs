@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions.fsc
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -13,7 +13,7 @@ module times =
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--Times'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
-    let ``times - error_01.fs - --Times`` compilation =
+    let ``times - error_01_fs - --Times`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--Times"]
@@ -26,7 +26,7 @@ module times =
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--times-'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_02.fs"|])>]
-    let ``times - error_02.fs - --times-`` compilation =
+    let ``times - error_02_fs - --times-`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--times-"]
@@ -39,7 +39,7 @@ module times =
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--times\+'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_03.fs"|])>]
-    let ``times - error_03.fs - --times+`` compilation =
+    let ``times - error_03_fs - --times+`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--times+"]
@@ -83,4 +83,3 @@ module times =
         Assert.Contains("Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId",csvContents[0])
         Assert.Contains(csvContents, fun row -> row.Contains("Typecheck"))
         Assert.Contains(csvContents, fun row -> row.Contains("Parse inputs"))
-

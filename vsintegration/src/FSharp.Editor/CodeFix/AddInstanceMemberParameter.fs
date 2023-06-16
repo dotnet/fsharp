@@ -9,17 +9,24 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddInstanceMemberParameter); Shared>]
 type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
     static let title = SR.AddMissingInstanceMemberParameter()
 
+    interface IFSharpCodeFix with
+        member _.GetChangesAsync _ span =
+            let changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
+            CancellableTask.singleton (title, changes)
+
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0673")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            do context.RegisterFsharpFix(CodeFix.AddInstanceMemberParameter, title, [| TextChange(TextSpan(context.Span.Start, 0), "x.") |])
+    override this.RegisterCodeFixesAsync context : Task =
+        cancellableTask {
+            let! title, changes = (this :> IFSharpCodeFix).GetChangesAsync context.Document context.Span
+            context.RegisterFsharpFix(CodeFix.AddInstanceMemberParameter, title, changes)
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> CancellableTask.startAsTask context.CancellationToken

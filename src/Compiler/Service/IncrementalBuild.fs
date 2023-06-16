@@ -234,7 +234,8 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
+type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
 type BoundModel private (
@@ -299,7 +300,7 @@ type BoundModel private (
                         | _ ->
                             None
                 }
-            return tcInfo, sink, implFile, fileName
+            return tcInfo, sink, implFile, fileName, newErrors
         }
 
     let skippedImplemetationTypeCheck =
@@ -322,13 +323,13 @@ type BoundModel private (
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! tcInfo , _, _, _ = typeCheck.GetOrComputeValue()
+            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
             return tcInfo
         } |> GraphNode
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -365,21 +366,35 @@ type BoundModel private (
                 }
         } |> GraphNode
 
+    let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
+    let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
+    let tcInfoExtras = getTcInfoExtras typeCheckNode
+    let diagnostics  =
+        node {
+            let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
+            return diags
+        } |> GraphNode
+
+    let startComputingFullTypeCheck =
+        node {
+            let! _ = tcInfoExtras.GetOrComputeValue()
+            return! diagnostics.GetOrComputeValue()
+        }
+
     let tcInfo, tcInfoExtras =
-        let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree" }
-        let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
         match tcStateOpt with
         | Some tcState -> tcState
         | _ ->
             match skippedImplemetationTypeCheck with
-            | Some info ->
+            | Some tcInfo ->
                 // For skipped implementation sources do full type check only when requested.
-                GraphNode.FromResult info, getTcInfoExtras typeCheckNode
+                GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
-                let tcInfoExtras = getTcInfoExtras typeCheckNode
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
+
+    member val Diagnostics = diagnostics
 
     member val TcInfo = tcInfo
 
@@ -633,7 +648,7 @@ module IncrementalBuilderHelpers =
 #if !NO_TYPEPROVIDERS
         ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
-        ) : NodeCode<BoundModel> =
+        ) : NodeCode<BoundModel * SingleFileDiagnostics> =
 
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
@@ -706,11 +721,11 @@ module IncrementalBuilderHelpers =
                 fileChecked,
                 tcInfo,
                 None
-            )
+            ), initialErrors
       }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (initialErrors: SingleFileDiagnostics) (boundModels: GraphNode<BoundModel> seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
@@ -796,7 +811,18 @@ module IncrementalBuilderHelpers =
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let finalBoundModel = Array.last computedBoundModels
-        let diagnostics = diagnosticsLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
+
+        // Collect diagnostics. This will type check in parallel any implementation files skipped so far.
+        let! partialDiagnostics =
+            computedBoundModels
+            |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
+            |> NodeCode.Parallel
+        let diagnostics = [
+            diagnosticsLogger.GetDiagnostics()
+            yield! partialDiagnostics |> Seq.rev
+            initialErrors
+        ]
+
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
@@ -805,6 +831,7 @@ module IncrementalBuilderHelpers =
 type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
+        initialErrors: SingleFileDiagnostics
         tcGlobals: TcGlobals
         referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
@@ -830,6 +857,7 @@ type IncrementalBuilderInitialState =
     static member Create
         (
             initialBoundModel: BoundModel,
+            initialErrors: SingleFileDiagnostics,
             tcGlobals,
             nonFrameworkAssemblyInputs,
             tcConfig: TcConfig,
@@ -852,6 +880,7 @@ type IncrementalBuilderInitialState =
         let initialState =
             {
                 initialBoundModel = initialBoundModel
+                initialErrors = initialErrors
                 tcGlobals = tcGlobals
                 referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
                 tcConfig = tcConfig
@@ -920,6 +949,7 @@ module IncrementalBuilderStateHelpers =
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
+            let! initialErrors = initialState.initialBoundModel.Diagnostics.GetOrComputeValue()
             let! result = 
                 FinalizeTypeCheckTask 
                     initialState.tcConfig 
@@ -927,6 +957,7 @@ module IncrementalBuilderStateHelpers =
                     initialState.enablePartialTypeChecking
                     initialState.assemblyName 
                     initialState.outfile 
+                    initialErrors
                     boundModels
             return result, DateTime.UtcNow
         })
@@ -1532,7 +1563,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let defaultTimeStamp = DateTime.UtcNow
 
-            let! initialBoundModel = 
+            let! initialBoundModel, initialErrors = 
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,
@@ -1572,6 +1603,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let initialState =
                 IncrementalBuilderInitialState.Create(
                     initialBoundModel,
+                    initialErrors,
                     tcGlobals,
                     nonFrameworkAssemblyInputs,
                     tcConfig,

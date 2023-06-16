@@ -361,7 +361,7 @@ module internal Tokenizer =
     type FSharpTokenInfo with
 
         member token.IsIdentifier = (token.CharClass = FSharpTokenCharKind.Identifier)
-        member token.IsOperator = (token.ColorClass = FSharpTokenColorKind.Operator)
+        member token.IsOperator = (token.CharClass = FSharpTokenCharKind.Operator)
         member token.IsPunctuation = (token.ColorClass = FSharpTokenColorKind.Punctuation)
         member token.IsString = (token.ColorClass = FSharpTokenColorKind.String)
         member token.IsComment = (token.ColorClass = FSharpTokenColorKind.Comment)

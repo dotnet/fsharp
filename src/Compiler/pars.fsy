@@ -134,11 +134,12 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
                         */
 %token OBLOCKSEP        /* LexFilter #light inserts when transforming CtxtSeqBlock(NotFirstInSeqBlock, _, AddBlockEnd) to CtxtSeqBlock(FirstInSeqBlock, _, AddBlockEnd) on exact alignment */
 
-/*    REVIEW: merge OEND, ODECLEND, OBLOCKEND and ORIGHT_BLOCK_END into one token */
-%token OEND             /* LexFilter #light inserts when closing CtxtFun, CtxtMatchClauses, CtxtWithAsLet _ */
-%token ODECLEND         /* LexFilter #light inserts when closing CtxtDo and CtxtLetDecl(block) */
-%token ORIGHT_BLOCK_END /* LexFilter #light inserts when closing CtxtSeqBlock(_, _, AddOneSidedBlockEnd) */
-%token OBLOCKEND OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE       /* LexFilter #light inserts when closing CtxtSeqBlock(_, _, AddBlockEnd) */
+/* LexFilter #light inserts these tokens when closing offside contexts */
+%token OEND                                    // CtxtFun, CtxtMatchClauses, CtxtWithAsLet _
+%token <range> ODECLEND                        // CtxtDo and CtxtLetDecl(block)
+%token <range> ORIGHT_BLOCK_END                // CtxtSeqBlock(_, _, AddOneSidedBlockEnd)
+%token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
+%token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
 
 %token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
 %token FIXED
@@ -1726,7 +1727,9 @@ classDefnMembersAtLeastOne:
   | classDefnMember opt_seps classDefnMembers
      { match $1, $3 with
        | [ SynMemberDefn.Interface(members=Some []; range=m) ], nextMember :: _ ->
-           warning(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
+           let strictIndentation = parseState.LexBuffer.SupportsFeature LanguageFeature.StrictIndentation
+           let warnF = if strictIndentation then errorR else warning 
+           warnF(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
        | _ -> ()
        $1 @ $3 }
 
@@ -2682,7 +2685,7 @@ hardwhiteLetBindings:
             else
                 SynLeadingKeyword.Let(mLetKwd)
 
-        let report, mIn = $4
+        let report, mIn, _ = $4
         report (if isUse then "use" else "let") mLetKwd // report unterminated error
 
         let localBindingsLastRangeOpt, localBindingsBuilder = $3
@@ -2709,12 +2712,13 @@ hardwhiteLetBindings:
 /* A 'do ...' statement */
 hardwhiteDoBinding:
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator
-      { let mDoKwd = rhs parseState 1
-        let bindingSetRange = unionRanges mDoKwd $2.Range
+      { let mDo = rhs parseState 1
+        let _, _, mDone = $3
+        let mAll = unionRanges mDo $2.Range
         let seqPt = DebugPointAtBinding.NoneAtDo
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes
         // associated with the module, 'main' function or assembly depending on their target
-        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDoKwd, $2, bindingSetRange)]), bindingSetRange), $2 }
+        BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, $2, mAll)]), mAll), $2 }
 
 
 /* The bindings in a class type definition */
@@ -2739,7 +2743,7 @@ hardwhiteDefnBindingsTerminator:
      { let mToken = rhs parseState 1
        // In LexFilter.fs the IN token could have been transformed to an ODECLEND one.
        let mIn = if (mToken.EndColumn - mToken.StartColumn) = 2 then Some mToken else None
-       (fun _ m -> ()), mIn }
+       (fun _ m -> ()), mIn, Some $1 }
 
   | recover
      { (fun kwd m ->
@@ -2749,7 +2753,7 @@ hardwhiteDefnBindingsTerminator:
              | "use!" -> FSComp.SR.parsUnmatchedUseBang()
              | "use" -> FSComp.SR.parsUnmatchedUse()
              | _ (*"let" *) -> FSComp.SR.parsUnmatchedLet()
-         reportParseErrorAt m msg), None }
+         reportParseErrorAt m msg), None, None }
 
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype:
@@ -3528,6 +3532,11 @@ typedSequentialExprBlock:
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileExpression())
         exprFromParseError $2 }
 
+  | OBLOCKBEGIN oblockend
+      { let m = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        arbExpr ("typedSequentialExprBlock1", m.EndRange) }
+
   | typedSequentialExpr
       { $1 }
 
@@ -3535,6 +3544,11 @@ typedSequentialExprBlock:
 declExprBlock:
   | OBLOCKBEGIN typedSequentialExpr oblockend
       { $2 }
+
+  | OBLOCKBEGIN oblockend
+      { let m = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        arbExpr ("declExprBlock1", m.EndRange) }
 
   | declExpr
       { $1 }
@@ -3549,7 +3563,7 @@ typedSequentialExprBlockR:
     { fun _ -> $1 }
 
   | recover
-    { fun mStart -> arbExpr ("typedSequentialExprBlockR", mStart) }
+    { fun (mStart: range) -> arbExpr ("typedSequentialExprBlockR1", mStart.EndRange) }
 
 typedSequentialExpr:
   | sequentialExpr COLON typeWithTypeConstraints
@@ -3611,7 +3625,7 @@ moreBinders:
        SynExprAndBang(spBind, $1, true, $2, $4, m, { EqualsRange = mEquals; InKeyword = Some mIn }) :: $6 }
 
   | OAND_BANG headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
-     { let report, mIn = $5
+     { let report, mIn, _ = $5
        report "and!" (rhs parseState 1)  // report unterminated error
        let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
@@ -3652,7 +3666,7 @@ declExpr:
        mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, mIn, arbExpr ("declExpr3", (rhs parseState 3))) }
 
   | hardwhiteDoBinding %prec expr_let
-     { let e = snd $1
+     { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
        SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
 
   | anonMatchingExpr %prec expr_function
@@ -3717,6 +3731,42 @@ declExpr:
               WithToEndRange = mWhole }
         SynExpr.TryWith(expr, [], mWhole, spTry, spWith, trivia) }
 
+  | TRY ORIGHT_BLOCK_END %prec expr_try
+      { let mTry = rhs parseState 1
+        let mExpr = mTry.EndRange
+        let expr = arbExpr ("try1", mExpr)
+        let spTry = DebugPointAtTry.Yes mTry
+        let mWith, (clauses, mLast) = mExpr, ([], mExpr)
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let spWith = DebugPointAtWith.Yes mWith
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
+        let mTryToLast = unionRanges mTry mLast
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mTryToWith
+              WithKeyword = mWith
+              WithToEndRange = mWithToLast }
+        SynExpr.TryWith(expr, clauses, mTryToLast, spTry, spWith, trivia) }
+
+  | TRY ORIGHT_BLOCK_END withClauses %prec expr_try
+      { let mTry = rhs parseState 1
+        let mExpr = mTry.EndRange
+        let expr = arbExpr ("try2", mExpr)
+        let spTry = DebugPointAtTry.Yes mTry
+        let mWith, (clauses, mLast) = $3
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let spWith = DebugPointAtWith.Yes mWith
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
+        let mTryToLast = unionRanges mTry mLast
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mTryToWith
+              WithKeyword = mWith
+              WithToEndRange = mWithToLast }
+        SynExpr.TryWith(expr, clauses, mTryToLast, spTry, spWith, trivia) }
+
   | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try
       { let mTry = rhs parseState 1
         let tryExpr = $2 mTry
@@ -3769,143 +3819,143 @@ declExpr:
       { raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsAssertIsNotFirstClassValue()) }
 
   | WHILE declExpr doToken typedSequentialExprBlock doneDeclEnd
-      { let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+      { let mWhile = rhs parseState 1
+        let mWhileHeader = unionRanges mWhile $2.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader
-        let mWhileAll = unionRanges (rhs parseState 1) $4.Range
-        SynExpr.While(spWhile, $2, $4, mWhileAll) }
+        SynExpr.While(spWhile, $2, $4, unionRanges mWhile $5) }
 
   | WHILE declExpr doToken typedSequentialExprBlock recover
-      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWhile())
-        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+      { let mWhile = rhs parseState 1
+        if not $5 then reportParseErrorAt mWhile (FSComp.SR.parsUnexpectedEndOfFileWhile ())
+        let mWhileHeader = unionRanges mWhile $2.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader
-        let mWhileAll = unionRanges (rhs parseState 1) $4.Range
-        exprFromParseError (SynExpr.While(spWhile, $2, $4, mWhileAll)) }
+        let mWhileAll = unionRanges mWhile $4.Range
+        SynExpr.While(spWhile, $2, $4, mWhileAll) }
 
   | WHILE declExpr doToken error doneDeclEnd
-      { // silent recovery
-        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+      { let mWhile = rhs parseState 1
+        let mExpr = $2.Range
+        let mWhileHeader = unionRanges mWhile mExpr
         let spWhile = DebugPointAtWhile.Yes mWhileHeader
-        let mWhileBodyArb = unionRanges (rhs parseState 4) (rhs parseState 5)
-        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 5)
-        SynExpr.While(spWhile, $2, arbExpr ("whileBody1", mWhileBodyArb), mWhileAll) }
+        let mWhileBodyArb = rhs parseState 4
+        SynExpr.While(spWhile, $2, arbExpr ("whileBody1", mWhileBodyArb), unionRanges mWhile $5) }
 
   | WHILE declExpr recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsWhileDoExpected())
-        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+      { let mWhile = rhs parseState 1
+        reportParseErrorAt mWhile (FSComp.SR.parsWhileDoExpected ())
+        let mExpr = $2.Range
+        let mWhileHeader = unionRanges mWhile mExpr
         let spWhile = DebugPointAtWhile.Yes mWhileHeader
-        let mWhileBodyArb = rhs parseState 3
-        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 3)
-        exprFromParseError (SynExpr.While(spWhile, $2, arbExpr ("whileBody2", mWhileBodyArb), mWhileAll)) }
+        SynExpr.While(spWhile, $2, arbExpr ("whileBody2", mExpr.EndRange), mWhileHeader) }
 
   | WHILE recover
-      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWhile())
-        arbExpr ("whileLoop1", rhs parseState 1) }
+      { let mWhile = rhs parseState 1
+        if not $2 then reportParseErrorAt mWhile (FSComp.SR.parsUnexpectedEndOfFileWhile ())
+        let spWhile = DebugPointAtWhile.Yes mWhile
+        let expr1 = arbExpr ("whileLoop1", mWhile.EndRange)
+        let expr2 = arbExpr ("whileLoop2", mWhile.EndRange)
+        SynExpr.While(spWhile, expr1, expr2, mWhile) }
 
   | WHILE error doneDeclEnd
-      { //silent recovery
-        let mWhileHeader = rhs parseState 1
-        let spWhile = DebugPointAtWhile.Yes mWhileHeader
-        let mWhileBodyArb = rhs parseState 3
-        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 3)
-        exprFromParseError (SynExpr.While(spWhile, arbExpr ("whileGuard1", mWhileHeader), arbExpr ("whileBody3", mWhileBodyArb), mWhileAll)) }
+      { let mWhile = rhs parseState 1
+        let spWhile = DebugPointAtWhile.Yes mWhile
+        let mWhileBodyArb = rhs parseState 2
+        let expr1 = arbExpr ("whileGuard1", mWhile.EndRange)
+        let expr2 = arbExpr ("whileBody3", mWhileBodyArb.EndRange)
+        SynExpr.While(spWhile, expr1, expr2, unionRanges mWhile $3) }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock doneDeclEnd
       { let mFor = rhs parseState 1
         let mDo = rhs parseState 3
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, _, spIn) = $2
-        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
+        let (pat, expr, _, spIn) = $2
+        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, pat, expr, $4, unionRanges mFor $5) }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock ends_coming_soon_or_recover
-      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        if not $5 then reportParseErrorAt mFor (FSComp.SR.parsUnexpectedEndOfFileFor ())
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, _, spIn) = $2
-        let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, a, b, $4, mForLoopAll) }
+        let (pat, expr, _, spIn) = $2
+        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, pat, expr, $4, unionRanges mFor $4.Range) }
 
   | FOR forLoopBinder doToken error doneDeclEnd
-      { // Silent recovery
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, _, spIn) = $2
-        let mForLoopBodyArb = rhs parseState 5
-        let mForLoopAll = rhs2 parseState 1 5
-        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, a, b, arbExpr ("forLoopBody2a", mForLoopBodyArb), mForLoopAll) }
+        let (pat, expr, _, spIn) = $2
+        let bodyExpr = arbExpr ("forLoopBody2a", rhs parseState 4)
+        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, pat, expr, bodyExpr, unionRanges mFor $5) }
 
   | FOR forLoopBinder doToken ends_coming_soon_or_recover
-      { if not $4 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectedExpressionAfterToken())
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        if not $4 then reportParseErrorAt mFor (FSComp.SR.parsExpectedExpressionAfterToken ())
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, _, spIn) = $2
-        let mForLoopBodyArb = rhs parseState 3
-        let mForLoopAll = rhs2 parseState 1 3
-        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, a, b, arbExpr ("forLoopBody2", mForLoopBodyArb), mForLoopAll) }
+        let (pat, expr, _, spIn) = $2
+        let mDo = rhs parseState 3
+        let bodyExpr = arbExpr ("forLoopBody2", mDo.EndRange)
+        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, pat, expr, bodyExpr, unionRanges mFor mDo) }
 
   | FOR forLoopBinder ends_coming_soon_or_recover
-      { let (a, b, ok, spIn) = $2
-        if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsForDoExpected())
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        let (pat, expr, ok, spIn) = $2
+        if not $3 then reportParseErrorAt mFor (FSComp.SR.parsForDoExpected ())
         let spFor = DebugPointAtFor.Yes mFor
-        let mForLoopBodyArb = rhs parseState 3
-        let mForLoopAll = rhs2 parseState 1 3
-        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, a, b, arbExpr ("forLoopBody1", mForLoopBodyArb), mForLoopAll) }
+        let mExpr = expr.Range
+        let mForLoopBodyArb = mExpr.EndRange
+        let bodyExpr = arbExpr ("forLoopBody1", mForLoopBodyArb)
+        SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, pat, expr, bodyExpr, unionRanges mFor mForLoopBodyArb) }
 
   | FOR forLoopBinder opt_OBLOCKSEP arrowThenExprR %prec expr_let
-     { let spFor = DebugPointAtFor.Yes(rhs parseState 1)
-       let (a, b, _, spIn) = $2
-       SynExpr.ForEach(spFor, spIn, SeqExprOnly true, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
+     { let mFor = rhs parseState 1
+       let spFor = DebugPointAtFor.Yes mFor
+       let (pat, expr, _, spIn) = $2
+       SynExpr.ForEach(spFor, spIn, SeqExprOnly true, true, pat, expr, $4, unionRanges mFor $4.Range) }
 
   | FOR forLoopRange doToken typedSequentialExprBlock doneDeclEnd
       { let mFor = rhs parseState 1
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, c, d, e, spTo) = $2
-        let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        SynExpr.For(spFor, spTo, a, b, c, d, e, $4, mForLoopAll) }
+        let (a, b, c, d, exprTo, spTo) = $2
+        SynExpr.For(spFor, spTo, a, b, c, d, exprTo, $4, unionRanges mFor $5) }
 
   | FOR forLoopRange doToken typedSequentialExprBlock recover
-      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        // Still produce an expression
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        if not $5 then reportParseErrorAt mFor (FSComp.SR.parsUnexpectedEndOfFileFor ())
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, c, d, e, spTo) = $2
-        let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        exprFromParseError (SynExpr.For(spFor, spTo, a, b, c, d, e, $4, mForLoopAll)) }
+        let (a, b, c, d, exprTo, spTo) = $2
+        SynExpr.For(spFor, spTo, a, b, c, d, exprTo, $4, unionRanges mFor $4.Range) }
 
   | FOR forLoopRange doToken error doneDeclEnd
-      { // silent recovery
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, c, d, e, spTo) = $2
-        let mForLoopBodyArb = rhs parseState 5
-        let mForLoopAll = rhs2 parseState 1 5
-        SynExpr.For(spFor, spTo, a, b, c, d, e, arbExpr ("declExpr11", mForLoopBodyArb), mForLoopAll) }
+        let (a, b, c, d, exprTo, spTo) = $2
+        let mForLoopBodyArb = rhs parseState 4
+        let bodyExpr = arbExpr ("declExpr11", mForLoopBodyArb)
+        SynExpr.For(spFor, spTo, a, b, c, d, exprTo, bodyExpr, unionRanges mFor $5) }
 
   | FOR forLoopRange doToken recover
-      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        if not $4 then reportParseErrorAt mFor (FSComp.SR.parsUnexpectedEndOfFileFor ())
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, c, d, e, spTo) = $2
-        let mForLoopBodyArb = rhs parseState 3
-        let mForLoopAll = rhs2 parseState 1 3
-        exprFromParseError (SynExpr.For(spFor, spTo, a, b, c, d, e, arbExpr ("declExpr11", mForLoopBodyArb), mForLoopAll)) }
+        let (a, b, c, d, exprTo, spTo) = $2
+        let mDo = rhs parseState 3
+        let bodyExpr = arbExpr ("declExpr11", mDo.EndRange)
+        SynExpr.For(spFor, spTo, a, b, c, d, exprTo, bodyExpr, rhs2 parseState 1 3) }
 
   | FOR forLoopRange recover
-      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
+        if not $3 then reportParseErrorAt mFor (FSComp.SR.parsUnexpectedEndOfFileFor ())
         let spFor = DebugPointAtFor.Yes mFor
-        let (a, b, c, d, e, spTo) = $2
-        let mForLoopBodyArb = (rhs parseState 2).EndRange
-        let mForLoopAll = rhs2 parseState 1 2
-        exprFromParseError (SynExpr.For(spFor, spTo, a, b, c, d, e, arbExpr ("declExpr11", mForLoopBodyArb), mForLoopAll)) }
+        let (a, b, c, d, exprTo, spTo) = $2
+        let mExpr = exprTo.Range
+        let bodyExpr = arbExpr ("declExpr11", mExpr.EndRange)
+        SynExpr.For(spFor, spTo, a, b, c, d, exprTo, bodyExpr, unionRanges mFor mExpr) }
 
   | FOR error doToken typedSequentialExprBlock doneDeclEnd
-      { // silent recovery
-        let mFor = rhs parseState 1
+      { let mFor = rhs parseState 1
         let spToFake = DebugPointAtInOrTo.Yes mFor
-        let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
         let spFor = DebugPointAtFor.Yes mFor
-        SynExpr.For(spFor, spToFake, mkSynId mFor "_loopVar", None, arbExpr ("startLoopRange1", mFor), true, arbExpr ("endLoopRange1", rhs parseState 3), $4, mForLoopAll) }
+        let expr1 = arbExpr ("startLoopRange1", mFor)
+        let expr2 = arbExpr ("endLoopRange1", rhs parseState 3)
+        SynExpr.For(spFor, spToFake, mkSynId mFor "_loopVar", None, expr1, true, expr2, $4, unionRanges mFor $4.Range) }
 
   | FOR ends_coming_soon_or_recover
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsIdentifierExpected())
@@ -3952,7 +4002,7 @@ declExpr:
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { let report, mIn = $5
+     { let report, mIn, _ = $5
        report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
@@ -4230,6 +4280,11 @@ withClauses:
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWith())
         rhs parseState 1, $2 }
 
+  | OWITH recover
+      { let mWith = rhs parseState 1
+        if not $2 then reportParseErrorAt mWith (FSComp.SR.parsUnexpectedEndOfFileWith ())
+        mWith, ([], mWith.EndRange) }
+
 withPatternClauses:
   | patternClauses
       { $1 None }
@@ -4335,20 +4390,12 @@ ifExprThen:
       { let mThen = rhs parseState 1
         arbExpr ("ifThen1", mThen.EndRange), mThen }
 
-  | OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_if
-      { $3, rhs parseState 1 }
-
-  | OTHEN OBLOCKBEGIN typedSequentialExpr recover %prec prec_then_if
-      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileThen())
-        exprFromParseError $3, rhs parseState 1 }
+  | OTHEN typedSequentialExprBlock %prec prec_then_if
+      { $2, rhs parseState 1 }
 
   | OTHEN recover %prec prec_then_if
       { let mThen = rhs parseState 1
         arbExpr ("ifThen2", mThen.EndRange), mThen }
-
-  | OTHEN OBLOCKBEGIN recover %prec prec_then_if
-      { let mThen = rhs parseState 1
-        arbExpr ("ifThen3", mThen.EndRange), mThen }
 
 ifExprElifs:
   | /* EMPTY */
@@ -4358,14 +4405,9 @@ ifExprElifs:
       { let mElse = rhs parseState 1
         Some mElse, Some $2 }
 
-  | OELSE OBLOCKBEGIN typedSequentialExpr oblockend
+  | OELSE typedSequentialExprBlock
       { let mElse = rhs parseState 1
-        Some mElse, Some $3 }
-
-  | OELSE OBLOCKBEGIN typedSequentialExpr recover
-      { let mElse = rhs parseState 1
-        if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElse())
-        Some mElse, Some(exprFromParseError $3) }
+        Some mElse, Some $2 }
 
   | ELIF declExpr ifExprCases
       { let mElif = rhs parseState 1
@@ -4397,7 +4439,7 @@ tupleExpr:
       { let exprs, commas = $1
         let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         let expr = arbExpr ("tupleExpr2", mComma1.EndRange)
         $4 :: expr :: exprs, (mComma2 :: mComma1 :: commas) }
 
@@ -4405,7 +4447,7 @@ tupleExpr:
       { let exprs, commas = $1
         let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
         let expr1 = arbExpr ("tupleExpr3", mComma1.EndRange)
         let expr2 = arbExpr ("tupleExpr4", mComma2.EndRange)
@@ -4422,7 +4464,7 @@ tupleExpr:
   | declExpr COMMA COMMA ends_coming_soon_or_recover
       { let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
         let expr1 = arbExpr ("tupleExpr6", mComma1.EndRange)
         let expr2 = arbExpr ("tupleExpr7", mComma2.EndRange)
@@ -4431,7 +4473,7 @@ tupleExpr:
   | declExpr COMMA COMMA declExpr
       { let mComma1 = rhs parseState 2
         let mComma2 = rhs parseState 3
-        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpression ())
         let expr = arbExpr ("tupleExpr8", mComma1.EndRange)
         [$4; expr; $1], [mComma2; mComma1] }
 
@@ -4881,15 +4923,17 @@ arrowThenExprR:
 
 forLoopBinder:
   | parenPattern IN declExpr
-     { ($1, $3, true, DebugPointAtInOrTo.Yes(rhs parseState 2)) }
+     { $1, $3, true, DebugPointAtInOrTo.Yes(rhs parseState 2) }
 
   | parenPattern IN ends_coming_soon_or_recover
-     { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
-       ($1, arbExpr ("forLoopBinder", (rhs parseState 2)), false, DebugPointAtInOrTo.Yes(rhs parseState 2)) }
+     { let mIn = rhs parseState 2
+       if not $3 then reportParseErrorAt mIn (FSComp.SR.parsExpectedExpressionAfterToken ())
+       $1, arbExpr ("forLoopBinder1", mIn.EndRange), false, DebugPointAtInOrTo.Yes mIn }
 
   | parenPattern ends_coming_soon_or_recover
-     { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInOrEqualExpected())
-       ($1, arbExpr ("forLoopBinder2", (rhs parseState 1).EndRange), false, DebugPointAtInOrTo.Yes(rhs parseState 2)) }
+     { let mPat = rhs parseState 1
+       if not $2 then reportParseErrorAt mPat (FSComp.SR.parsInOrEqualExpected ())
+       $1, arbExpr ("forLoopBinder2", mPat.EndRange), false, DebugPointAtInOrTo.Yes(rhs parseState 2) }
 
 forLoopRange:
   | parenPattern EQUALS declExpr forLoopDirection declExpr
@@ -6239,8 +6283,10 @@ doToken:
   | ODO { }
 
 doneDeclEnd:
-  | DONE { }
-  | ODECLEND { }  /* DONE gets thrown away by the lexfilter in favour of ODECLEND */
+  | DONE
+      { rhs parseState 1 }
+  | ODECLEND
+      { $1 }
 
 structOrBegin:
   | STRUCT
