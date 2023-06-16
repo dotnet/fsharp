@@ -179,6 +179,7 @@ type SynLeadingKeyword =
     | OverrideVal of overrideRange: range * valRange: range
     | Abstract of abstractRange: range
     | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
     | StaticMember of staticRange: range * memberRange: range
     | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
     | StaticAbstract of staticRange: range * abstractRange: range
@@ -206,7 +207,8 @@ type SynLeadingKeyword =
         | Default m
         | Val m
         | New m
-        | Do m -> m
+        | Do m
+        | Static m -> m
         | LetRec (m1, m2)
         | UseRec (m1, m2)
         | AbstractMember (m1, m2)
