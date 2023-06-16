@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpConvertToAnonymousRecordCodeFixProvider()
+let private codeFix = ConvertToAnonymousRecordCodeFixProvider()
 let private diagnostic = 0039 // ... is not defined...
 
 [<Fact>]
