@@ -35,7 +35,7 @@ type Bad3 =
     |> withLangVersion langVersion
     |> typecheck
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics [Error 3133, Line 3, Col 5, Line 3, Col 25, "'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'."]
 
 
 [<Theory>]

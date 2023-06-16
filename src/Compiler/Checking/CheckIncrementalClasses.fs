@@ -722,37 +722,41 @@ let MakeCtorForIncrClassConstructionPhase2C(
                     | DebugPointAtBinding.Yes m, _ -> m 
                     | _ -> v.Range
 
-            let assignExpr = reps.MakeValueAssign thisValOpt thisTyInst NoSafeInitInfo v rhsExpr m
+            if isStatic = false && thisValOpt.IsNone then
+                (isPriorToSuperInit, id), []
+            else
+                let assignExpr = reps.MakeValueAssign thisValOpt thisTyInst NoSafeInitInfo v rhsExpr m
 
-            let adjustSafeInitFieldExprOpt = 
-                if isStatic then 
-                    match safeStaticInitInfo with 
-                    | SafeInitField (rfref, _) -> 
-                        let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt g m idx, m)
-                        let setExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt NoSafeInitInfo thisTyInst setExpr
-                        Some setExpr
-                    | NoSafeInitInfo -> 
+                let adjustSafeInitFieldExprOpt = 
+                    if isStatic then 
+                        match safeStaticInitInfo with 
+                        | SafeInitField (rfref, _) -> 
+                            let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt g m idx, m)
+                            let setExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt NoSafeInitInfo thisTyInst setExpr
+                            Some setExpr
+                        | NoSafeInitInfo -> 
+                            None
+                    else
                         None
-                else
-                    None
 
-            (isPriorToSuperInit, (fun e -> 
-                    let e =
-                        match adjustSafeInitFieldExprOpt with
-                        | None -> e
-                        | Some adjustExpr -> mkCompGenSequential m adjustExpr e
+                (isPriorToSuperInit, (fun e -> 
+                        let e =
+                            match adjustSafeInitFieldExprOpt with
+                            | None -> e
+                            | Some adjustExpr -> mkCompGenSequential m adjustExpr e
 
-                    let assignExpr =
-                        match spBind with
-                        | DebugPointAtBinding.Yes _ -> mkDebugPoint m assignExpr
-                        | _ -> assignExpr
+                        let assignExpr =
+                            match spBind with
+                            | DebugPointAtBinding.Yes _ -> mkDebugPoint m assignExpr
+                            | _ -> assignExpr
 
-                    mkSequential m assignExpr e)), []
+                        mkSequential m assignExpr e)), []
 
     /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
     /// binding in the implicit class construction sequence 
     let TransTrueDec isCtorArg (reps: IncrClassReprInfo) dec = 
             match dec with 
+            // Pokud to neni staticke, a zaroven to nema construktor info, tak zkusit vyhnout se TransBind mozna?
             | IncrClassBindingGroup(binds, isStatic, isRec) ->
                 let actions, reps, methodBinds = 
                     let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind)) // extend
