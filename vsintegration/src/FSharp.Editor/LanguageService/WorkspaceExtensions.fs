@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open CancellableTasks
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -230,8 +231,9 @@ type Document with
         }
 
     /// Find F# references in the given F# document.
-    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
-        async {
+    member inline this.FindFSharpReferencesAsync(symbol, [<InlineIfLambda>] onFound, userOpName) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
@@ -243,8 +245,14 @@ type Document with
                     fastCheck = this.Project.IsFastFindReferencesEnabled
                 )
 
-            for symbolUse in symbolUses do
-                do! onFound symbolUse
+            let tasks =
+                [|
+                    for symbolUse in symbolUses do
+                        yield CancellableTask.startAsTask cancellationToken (onFound symbolUse)
+                |]
+
+            do!
+                Task.WhenAll(tasks)
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -272,8 +280,8 @@ type Document with
 type Project with
 
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, ct) : Task =
-        backgroundTask {
+    member inline this.FindFSharpReferencesAsync(symbol: FSharpSymbol, [<InlineIfLambda>] onFound, userOpName) : CancellableTask<unit> =
+        cancellableTask {
 
             let declarationLocation =
                 symbol.SignatureLocation
@@ -283,45 +291,51 @@ type Project with
             let declarationDocument =
                 declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
 
+            // Can we skip documents, which are above current, since they can't contain symbols from current one.
             let! canSkipDocuments =
                 match declarationDocument with
                 | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
-                    backgroundTask {
+                    cancellableTask {
+                        let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                         let! _, _, _, options =
                             document.GetFSharpCompilationOptionsAsync(userOpName)
-                            |> RoslynHelpers.StartAsyncAsTask ct
+                            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
                         let signatureFile =
                             if not (document.FilePath |> isSignatureFile) then
-                                $"{document.FilePath}i"
+                                document.FilePath + "i"
                             else
                                 null
 
                         return
+                            
                             options.SourceFiles
                             |> Seq.takeWhile ((<>) document.FilePath)
                             |> Seq.filter ((<>) signatureFile)
                             |> Set
                     }
-                | _ -> Task.FromResult Set.empty
+                | _ -> CancellableTask.singleton Set.empty
 
             let documents =
                 this.Documents
                 |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
             if this.IsFastFindReferencesEnabled then
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let tasks =
+                    [|
+                        for doc in documents do
+                            yield 
+                                cancellableTask {
+                                    return! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
+                                } |> CancellableTask.startAsTask cancellationToken
+                    |]
                 do!
-                    documents
-                    |> Seq.map (fun doc ->
-                        Task.Run(fun () ->
-                            doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                            |> RoslynHelpers.StartAsyncUnitAsTask ct))
-                    |> Task.WhenAll
+                    Task.WhenAll tasks
             else
                 for doc in documents do
                     do!
                         doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                        |> RoslynHelpers.StartAsyncAsTask ct
         }
 
     member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =

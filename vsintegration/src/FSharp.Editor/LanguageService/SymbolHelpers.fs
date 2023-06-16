@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open CancellableTasks
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
@@ -64,11 +65,10 @@ module internal SymbolHelpers =
         (
             symbol: FSharpSymbol,
             projects: Project list,
-            onFound: Document -> range -> Async<unit>,
-            ct: CancellationToken
+            onFound: Document -> range -> CancellableTask<unit>
         ) =
         match projects with
-        | [] -> Task.CompletedTask
+        | [] -> CancellableTask.singleton ()
         | firstProject :: _ ->
             let isFastFindReferencesEnabled = firstProject.IsFastFindReferencesEnabled
 
@@ -76,28 +76,38 @@ module internal SymbolHelpers =
             let props =
                 [| nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj |]
 
-            backgroundTask {
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
+                let tasks =
+                    [|
+                        for project in projects do
+                            yield CancellableTask.startAsTask cancellationToken (project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
+                    |]
+
                 do!
-                    projects
-                    |> Seq.map (fun project ->
-                        Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
-                    |> Task.WhenAll
+                    Task.WhenAll(tasks)
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
-    let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) onFound =
-        async {
+    let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) (onFound: Document -> range -> CancellableTask<unit>) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
             match symbolUse.GetSymbolScope currentDocument with
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
 
-                for symbolUse in symbolUses do
-                    do! onFound currentDocument symbolUse.Range
+                let tasks =
+                    [|
+                        for symbolUse in symbolUses do
+                            yield CancellableTask.startAsTask cancellationToken (onFound currentDocument symbolUse.Range)
+                    |]
+                do!
+                    Task.WhenAll(tasks)
 
             | Some SymbolScope.SignatureAndImplementation ->
                 let otherFile = getOtherFile currentDocument.FilePath
@@ -105,11 +115,11 @@ module internal SymbolHelpers =
                 let! otherFileCheckResults =
                     match currentDocument.Project.Solution.TryGetDocumentFromPath otherFile with
                     | Some doc ->
-                        async {
+                        cancellableTask {
                             let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
                             return [ checkFileResults, doc ]
                         }
-                    | None -> async.Return []
+                    | None -> CancellableTask.singleton []
 
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults
@@ -117,8 +127,13 @@ module internal SymbolHelpers =
                         checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
-                for document, range in symbolUses do
-                    do! onFound document range
+                let tasks =
+                    [|
+                        for document, range in symbolUses do
+                            yield CancellableTask.startAsTask cancellationToken (onFound document range)
+                    |]
+                do!
+                    Task.WhenAll tasks
 
             | scope ->
                 let projectsToCheck =
@@ -135,17 +150,14 @@ module internal SymbolHelpers =
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList currentDocument.Project.Solution.Projects
 
-                let! ct = Async.CancellationToken
-
                 do!
-                    getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound, ct)
-                    |> Async.AwaitTask
+                    getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
         }
 
     let getSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) =
         async {
             let symbolUses = ConcurrentBag()
-            let onFound = fun document range -> async { symbolUses.Add(document, range) }
+            let onFound = fun document range -> cancellableTask { symbolUses.Add(document, range) }
 
             do! findSymbolUses symbolUse currentDocument checkFileResults onFound
 
