@@ -273,28 +273,7 @@
 
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\**" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\**" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\**" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\**" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\**" />
-    <EmbeddedResource Remove="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\**" />
-    <EmbeddedResource Remove="Conformance\ClassTypes\**" />
-    <EmbeddedResource Remove="Conformance\DeclarationElements\**" />
-    <EmbeddedResource Remove="Conformance\DelegateTypes\**" />
-    <EmbeddedResource Remove="Conformance\EntryPoint\**" />
     <EmbeddedResource Remove="Properties\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\**" />
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\**" />
-    <None Remove="Conformance\ClassTypes\**" />
-    <None Remove="Conformance\DeclarationElements\**" />
-    <None Remove="Conformance\DelegateTypes\**" />
-    <None Remove="Conformance\EntryPoint\**" />
-    <None Remove="Signatures\SigGenerationRoundTripTests.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
@@ -310,5 +289,5 @@
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
-
+	
 </Project>
