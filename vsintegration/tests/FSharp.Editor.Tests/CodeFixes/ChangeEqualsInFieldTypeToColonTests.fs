@@ -11,7 +11,7 @@ let private codeFix = ChangeEqualsInFieldTypeToColonCodeFixProvider()
 let private diagnostic = 0010 // Unexpected symbol...
 
 [<Fact>]
-let ``Fixes FS0010`` () =
+let ``Fixes FS0010 for = in types`` () =
     let code = 
         """
 type Band = { Name = string }
@@ -25,6 +25,19 @@ type Band = { Name = string }
 type Band = { Name : string }
 """
             }
+
+    let actual = codeFix |> tryFix code diagnostic
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0010 for random unexpected symbols`` () =
+    let code = 
+        """
+type Band = { Name := string }
+"""
+
+    let expected = None
 
     let actual = codeFix |> tryFix code diagnostic
 
