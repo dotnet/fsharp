@@ -1700,4 +1700,3 @@ featureStaticLetInRecordsDusEmptyTypes,"Allow static let bindings in union, reco
 3566,tcMultipleRecdTypeChoice,"Multiple type matches were found:\n%s\nThe type '%s' was used. Due to the overlapping field names\n%s\nconsider using type annotations or change the order of open statements."
 3567,parsMissingMemberBody,"Expecting member body"
 3568,tcStaticBindingInExtrinsicAugmentation,"Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."
-
