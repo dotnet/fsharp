@@ -3,7 +3,7 @@ module Program
 open System
 open System.Text
 open System.Collections.Generic
-open FSharp.Compiler.ComponentTests.EmittedIL.StringEncoding.NormalizationForm
+open EmittedIL.StringEncoding.NormalizationForm
 
 let csharpValues1 = (NormalizationFormKDCSharp_0000.Values()).GetEnumerator()
 let csharpValues2 = (NormalizationFormKDCSharp_0080.Values()).GetEnumerator()
