@@ -4350,12 +4350,12 @@ module TcDeclarations =
             let members = []
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, repr, implements1, false, false, isAtOriginalTyconDefn)
-            core, members @ extraMembers
+            core, members @ extra_vals_Inherits_Abstractslots @ extraMembers
 
         | SynTypeDefnRepr.Exception r -> 
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
-            core, extraMembers
+            core, extra_vals_Inherits_Abstractslots @ extraMembers
 
     //-------------------------------------------------------------------------
 
