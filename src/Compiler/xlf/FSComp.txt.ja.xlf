@@ -767,6 +767,11 @@
         <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">補間された文字列が無効です。この補間された文字列式の塗りつぶしが空です。式が必要です。</target>
@@ -985,11 +990,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">属性を型拡張に適用することはできません。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
-        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
-        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

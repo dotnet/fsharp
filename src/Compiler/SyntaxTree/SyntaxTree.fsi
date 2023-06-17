@@ -374,7 +374,7 @@ type SynBindingKind =
 
 /// Represents the explicit declaration of a type parameter
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
 
 /// The unchecked abstract syntax tree of F# type constraints
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

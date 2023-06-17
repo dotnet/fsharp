@@ -280,7 +280,8 @@ let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
     | SynTyparDecls.PrefixList (decls = decls) -> List.collect visitSynTyparDecl decls
     | SynTyparDecls.SinglePrefix (decl = decl) -> visitSynTyparDecl decl
 
-let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
+let visitSynTyparDecl (SynTyparDecl (attributes = attributes; intersectionConstraints = constraints)) =
+    visitSynAttributes attributes @ List.collect visitSynType constraints
 
 let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     [

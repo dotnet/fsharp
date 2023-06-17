@@ -767,6 +767,11 @@
         <target state="translated">O recurso 'gerenciamento de pacotes' requer a versão 5.0 ou superior do idioma</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Cadeia de caracteres interpolada inválida. O preenchimento dessa expressão de cadeia de caracteres interpolada está vazio. Era esperada uma expressão.</target>
@@ -985,11 +990,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
-        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
-        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

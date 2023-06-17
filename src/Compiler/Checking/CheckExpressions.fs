@@ -4300,8 +4300,8 @@ and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
 
 and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let g = cenv.g
-    let (SynTyparDecl(Attributes synAttrs, synTypar)) = synTyparDecl
-    let (SynTypar(id, _, _)) = synTypar
+    let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
+    let (SynTypar (ident = id)) = synTypar
 
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
@@ -4568,8 +4568,6 @@ and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy
 // (x: 't & #I1 & #I2)
 // (x: #I1 & #I2)
 and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTypar synTys m =
-    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.ConstraintIntersectionOnFlexibleTypes m
-
     let tp, tpenv =
         match synTypar with
         | Some synTypar -> TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv synTypar
@@ -4585,9 +4583,7 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
                 let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv ty
                 AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty typarTy
                 tpenv
-            | _ ->
-                errorR(Error(FSComp.SR.tcConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
-                tpenv
+            | _ -> tpenv
         ) tpenv
 
     tp.AsType, tpenv

@@ -767,6 +767,11 @@
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0 или более поздняя</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Недопустимая интерполированная строка. Выражение этой интерполированной строки является пустым. Ожидается выражение.</target>
@@ -985,11 +990,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Атрибуты не могут быть применены к расширениям типа.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConstraintIntersectionSyntaxUsedWithNonFlexibleType">
-        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
-        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

@@ -599,10 +599,12 @@ module ParsedInput =
             ifPosInRange ident.idRange (fun _ -> Some EntityKind.Type)
 
         and walkTyparDecl typarDecl =
-            let (SynTyparDecl (Attributes attrs, typar)) = typarDecl
+            let (SynTyparDecl (Attributes attrs, typar, intersectionContraints, _)) = typarDecl
 
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
+            |> Option.orElseWith (fun () ->
+                intersectionContraints |> List.tryPick walkType)
 
         and walkTypeConstraint cx =
             match cx with
@@ -1610,9 +1612,10 @@ module ParsedInput =
             addLongIdentWithDots attr.TypeName
             walkExpr attr.ArgExpr
 
-        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar)) =
+        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar, intersectionConstraints, _)) =
             List.iter walkAttribute attrs
             walkTypar typar
+            List.iter walkType intersectionConstraints
 
         and walkTypeConstraint cx =
             match cx with

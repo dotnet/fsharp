@@ -384,3 +384,11 @@ type SynMemberSigMemberTrivia =
 
 [<NoEquality; NoComparison>]
 type SynTypeIntersectionTrivia = { AmpersandRanges: range list }
+
+[<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia = { AmpersandRanges = [] }

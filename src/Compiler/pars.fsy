@@ -2313,7 +2313,7 @@ tyconNameAndTyparDecls:
 
 prefixTyparDecls:
   | typar
-      { SynTyparDecls.SinglePrefix(SynTyparDecl([], $1), rhs parseState 1) }
+      { SynTyparDecls.SinglePrefix(SynTyparDecl([], $1, [], SynTyparDeclTrivia.Zero), rhs parseState 1) }
 
   | LPAREN typarDeclList rparen
       { SynTyparDecls.PrefixList(List.rev $2, rhs2 parseState 1 3) }
@@ -2322,9 +2322,14 @@ typarDeclList:
   | typarDeclList COMMA typarDecl { $3 :: $1 }
   | typarDecl { [$1] }
 
-typarDecl :
+typarDecl:
   | opt_attributes typar
-      { SynTyparDecl($1, $2) }
+      { SynTyparDecl($1, $2, [], SynTyparDeclTrivia.Zero) }
+
+  | opt_attributes typar AMP intersectionConstraints
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 3 4)
+        let constraints, mAmpersands = $4
+        SynTyparDecl($1, $2, List.rev constraints, { AmpersandRanges = rhs parseState 3 :: List.rev mAmpersands }) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -2383,10 +2388,19 @@ typeConstraints:
 intersectionConstraints:
   | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings // todo precedence
       { let constraints, mAmpersands = $1
+
+        match $3 with
+        | SynType.HashConstraint _ -> ()
+        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
+
         ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
   | atomType
-      { [ $1 ], [] }
+      { match $1 with
+        | SynType.HashConstraint _ -> ()
+        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
+
+        [ $1 ], [] }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -5674,8 +5688,6 @@ tupleOrQuotTypeElements:
   | appType %prec prec_tuptyptail_prefix
       { [ SynTupleTypeSegment.Type $1 ] }
 
-/* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
-/* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionType:
   | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
     { let constraints, mAmpersands = $3
@@ -5724,7 +5736,8 @@ appType:
       { $1 }
 
   | intersectionType
-      { $1 }
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (lhs parseState)
+        $1 }
 
   | typar COLON_GREATER typ
       { let tp, typ = $1, $3

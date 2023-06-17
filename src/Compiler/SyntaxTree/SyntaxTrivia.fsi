@@ -509,3 +509,13 @@ type SynTypeIntersectionTrivia =
         /// The syntax ranges of the `&` tokens
         AmpersandRanges: range list
     }
+
+/// Represents additional information for SynTyparDecl
+[<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        /// The syntax ranges of the `&` tokens
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia

@@ -5,7 +5,7 @@ open FSharp.Test.Compiler
 open StructuredResultsAsserts
 
 [<Fact>]
-let ``Constraint intersection works in lang preview``() =
+let ``Constraint intersection (appType) works in lang preview``() =
     FSharp """
 open System
 open System.Threading.Tasks
@@ -35,12 +35,14 @@ let x (f: 't & #I) =
     f.h (new E ())
     ResizeArray<'t> ()
 
-let y (f: 't & #I & #IDisposable) =
+let y (f: 't & #I & #IDisposable, name: string) =
+    printfn "%s" name
     f.g ()
     f.Dispose ()
     ResizeArray<'t> ()
 
-let z (f: #I & #IDisposable & #Task<int> & #seq<string>) =
+let z (f: #I & #IDisposable & #Task<int> & #seq<string>, name: string) =
+    printfn "%s" name
     f.g ()
     f.Result |> ignore<int>
     f.Dispose ()
@@ -50,13 +52,36 @@ let z (f: #I & #IDisposable & #Task<int> & #seq<string>) =
     |> shouldSucceed
 
 [<Fact>]
+let ``Constraint intersection (typarDecl) works in lang preview``() =
+    FSharp """
+open System
+
+type C<'t & #seq<int> & #IDisposable, 'y & #seq<'t>> =
+    member _.G (x: 't, y: 'y) =
+        for x in x do
+            printfn "%d" x
+
+        x.Dispose ()
+        
+        for xs in y do
+            for x in xs do
+                printfn "%d" x
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
 let ``Constraint intersection does not work with non-flexible types``() =
     FSharp """
+type C<'t & #seq<int> & System.IDisposable, 'y & #seq<'t>> = class end
+
 let y (f: #seq<int> & System.IDisposable) = ()
     """
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        Error 3568, Line 2, Col 23, Line 2, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
+        Error 3568, Line 2, Col 25, Line 2, Col 43, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
+        Error 3568, Line 4, Col 23, Line 4, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
     ]

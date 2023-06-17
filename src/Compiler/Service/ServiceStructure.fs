@@ -62,7 +62,7 @@ module Structure =
         | [] -> other
         | ls ->
             ls
-            |> List.map (fun (SynTyparDecl (_, typarg)) -> typarg.Range)
+            |> List.map (fun (SynTyparDecl (typar = typarg)) -> typarg.Range)
             |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
