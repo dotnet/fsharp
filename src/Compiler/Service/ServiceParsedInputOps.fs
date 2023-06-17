@@ -603,8 +603,7 @@ module ParsedInput =
 
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
-            |> Option.orElseWith (fun () ->
-                intersectionContraints |> List.tryPick walkType)
+            |> Option.orElseWith (fun () -> intersectionContraints |> List.tryPick walkType)
 
         and walkTypeConstraint cx =
             match cx with

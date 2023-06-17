@@ -309,7 +309,8 @@ type SynBindingKind =
     | Do
 
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
+type SynTyparDecl =
+    | SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeConstraint =
@@ -380,7 +381,7 @@ type SynTyparDecls =
                             | SynType.HashConstraint (ty, _) -> ty
                             | _ -> ty
 
-                        SynTypeConstraint.WhereTyparSubtypeOfType (tp, ty, ty.Range)))
+                        SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, ty.Range)))
 
             List.append intersectionConstraints constraints
         | _ -> []
