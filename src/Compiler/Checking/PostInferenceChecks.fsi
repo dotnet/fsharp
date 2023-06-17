@@ -51,7 +51,7 @@ module Limit =
             /// increasing by 1 essentially for every nested `let`-binding, method, or module.)
             ///
             /// Some specific values which are often used:
-            /// * the value 0 is used in NoLimit, since it indicates "this Val can safely escape to all scopes";
+            /// * the value 0 is used in NoLimit and other situations which don't limit where the Val can escape;
             /// * the value 1 is a "top-level local scope", allowing us to express the restriction "this cannot appear
             ///   at the top level" (for example, `let x = &y` cannot appear at the top level).
             scope: int

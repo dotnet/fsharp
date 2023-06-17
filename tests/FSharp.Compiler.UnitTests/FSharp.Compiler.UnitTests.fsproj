@@ -27,6 +27,7 @@
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
+    <Compile Include="PostInferenceChecksTests.fs" />
     <Compile Include="..\..\tests\service\FsUnit.fs">
       <Link>CompilerService\FsUnit.fs</Link>
     </Compile>
