@@ -1,22 +1,26 @@
 ﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
+open System
+open System.Collections.Concurrent
+open System.Collections.Generic
+open System.Runtime.CompilerServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
+open Internal.Utilities.Library
 
 /// <summary>Find a path in the Trie.</summary>
 /// <remarks>This function could be cached in future if performance is an issue.</remarks>
+[<MethodImpl(MethodImplOptions.AggressiveInlining)>]
 let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
     let rec visit (currentNode: TrieNode) (path: LongIdentifier) =
         match path with
-        | [] -> failwith "path should not be empty"
-        | [ lastNodeFromPath ] ->
-            match currentNode.Children.TryGetValue(lastNodeFromPath) with
-            | false, _ -> QueryTrieNodeResult.NodeDoesNotExist
-            | true, childNode ->
-                if Set.isEmpty childNode.Files then
-                    QueryTrieNodeResult.NodeDoesNotExposeData
-                else
-                    QueryTrieNodeResult.NodeExposesData(childNode.Files)
+        // When we get through all partial identifiers, we've reached the node the full path points to.
+        | [] ->
+            if Set.isEmpty currentNode.Files then
+                QueryTrieNodeResult.NodeDoesNotExposeData
+            else
+                QueryTrieNodeResult.NodeExposesData(currentNode.Files)
+        // More segments to get through
         | currentPath :: restPath ->
             match currentNode.Children.TryGetValue(currentPath) with
             | false, _ -> QueryTrieNodeResult.NodeDoesNotExist
@@ -24,8 +28,22 @@ let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
 
     visit trie path
 
+[<MethodImpl(MethodImplOptions.AggressiveInlining)>]
 let queryTrieMemoized (trie: TrieNode) : QueryTrie =
-    Internal.Utilities.Library.Tables.memoize (queryTrie trie)
+    
+    let queryTrie = queryTrie trie
+    
+    // Here we use concatenated identifier segments as cache keys for faster GetHashCode and Equals
+    let cache = ConcurrentDictionary<string, _>(Environment.ProcessorCount, capacity=1000)
+
+    fun (id : LongIdentifier) ->
+        let str = id |> LongIdentifier.toSingleString
+        match cache.TryGetValue str with
+        | true, res -> res
+        | _ ->
+            let res = queryTrie id
+            cache[str] <- res
+            res
 
 /// Process namespace declaration.
 let processNamespaceDeclaration (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
@@ -74,7 +92,7 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
         // Both cases need to be processed.
         let stateAfterFullOpenPath = processOpenPath queryTrie path state
 
-        // Any existing open statement could be extended with the current path (if that node where to exists in the trie)
+        // Any existing open statement could be extended with the current path (if that node were to exists in the trie)
         // The extended path could add a new link (in case of a module or namespace with types)
         // It might also not add anything at all (in case it the extended path is still a partial one)
         (stateAfterFullOpenPath, state.OpenNamespaces)
@@ -90,12 +108,10 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             (state, [| 1 .. path.Length |])
             ||> Array.fold (fun state takeParts ->
                 let path = List.take takeParts path
-                // process the name was if it were a FQN
-                let stateAfterFullIdentifier = processIdentifier queryTrie path state
-
-                // Process the name in combination with the existing open namespaces
-                (stateAfterFullIdentifier, state.OpenNamespaces)
-                ||> Set.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc))
+                // Process the name as a FQN and in combination with existing open namespaces 
+                let openNamespaces = seq { yield []; yield! state.OpenNamespaces}
+                (state, openNamespaces)
+                ||> Seq.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc))
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
@@ -176,7 +192,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
         files
         |> Array.Parallel.map (fun file ->
             if file.Idx = 0 then
-                List.empty
+                ImmutableArray.empty
             else
                 FileContentMapping.mkFileContent file)
 
@@ -204,7 +220,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
         else
             let fileContent = fileContents[file.Idx]
 
-            let knownFiles = [ 0 .. (file.Idx - 1) ] |> set
+            let knownFiles = [| 0 .. (file.Idx - 1) |] |> set
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
             let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
             // Start by listing root-level dependencies.
@@ -214,7 +230,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             let depsResult =
                 initialDepsResult
                 // Seq is faster than List in this case.
-                ||> Seq.fold (processStateEntry queryTrie)
+                ||> ImmutableArray.fold (processStateEntry queryTrie)
 
             // Add missing links for cases where an unused open namespace did not create a link.
             let ghostDependencies = collectGhostDependencies file.Idx trie queryTrie depsResult
