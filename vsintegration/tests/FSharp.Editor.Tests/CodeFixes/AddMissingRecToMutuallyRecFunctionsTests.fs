@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider()
+let private codeFix = AddMissingRecToMutuallyRecFunctionsCodeFixProvider()
 let private diagnostic = 0576 // The declaration form 'let ... and ...' for non-recursive bindings is not used in F# code...
 
 // TODO: write some negative test cases here

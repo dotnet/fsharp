@@ -706,7 +706,7 @@ moduleSpfn:
         SynModuleSigDecl.Exception(synExnDefn, mWhole) }
 
   | openDecl
-      { SynModuleSigDecl.Open($1, (rhs parseState 1)) }
+      { SynModuleSigDecl.Open $1 }
 
 valSpfn:
   | opt_attributes opt_access VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
@@ -1320,15 +1320,26 @@ moduleDefn:
 
   /* 'open' declarations */
   | openDecl
-      { [ SynModuleDecl.Open($1, (rhs parseState 1)) ] }
+      { [ SynModuleDecl.Open $1 ] }
 
 openDecl:
-  /* 'open' declarations */
   | OPEN path
-      { SynOpenDeclTarget.ModuleOrNamespace($2, (rhs parseState 2)) }
+      { let mOpen = rhs parseState 1
+        let mPath = $2.Range
+        SynOpenDeclTarget.ModuleOrNamespace($2, mPath), unionRanges mOpen mPath }
+
+  | OPEN recover
+      { let mOpen = rhs parseState 1
+        SynOpenDeclTarget.ModuleOrNamespace(SynLongIdent([], [], []), mOpen.EndRange), mOpen }
 
   | OPEN typeKeyword appType
-      { SynOpenDeclTarget.Type($3, (rhs parseState 3)) }
+      { let mOpen = rhs parseState 1
+        let mPath = $3.Range
+        SynOpenDeclTarget.Type($3, mPath), unionRanges mOpen mPath }
+
+  | OPEN typeKeyword recover
+      { let m = rhs2 parseState 1 2
+        SynOpenDeclTarget.ModuleOrNamespace(SynLongIdent([], [], []), m.EndRange), m }
 
 /* The right-hand-side of a module abbreviation definition */
 /* This occurs on the right of a module abbreviation (#light encloses the r.h.s. with OBLOCKBEGIN/OBLOCKEND) */
