@@ -180,6 +180,23 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             else
                 FileContentMapping.mkFileContent file)
 
+    // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
+    let fsharpCoreImplicitDependency =
+        let filename = "prim-types-prelude.fsi"
+
+        let implicitDepIdx =
+            files
+            |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
+
+        if compilingFSharpCore then
+            match implicitDepIdx with
+            | Some idx -> Some idx
+            | None ->
+                exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
+                |> raise
+        else
+            None
+    
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then
             // First file cannot have any dependencies.
@@ -208,31 +225,17 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
-            // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
-            let fsharpCoreImplicitDependencies =
-                let filename = "prim-types-prelude.fsi"
-
-                let implicitDepIdx =
-                    files
-                    |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
-
-                [|
-                    if compilingFSharpCore then
-                        match implicitDepIdx with
-                        | Some idx ->
-                            if file.Idx > idx then
-                                yield idx
-                        | None ->
-                            exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
-                            |> raise
-                |]
-
+            let fsharpCoreImplicitDependencyForThisFile =
+                match fsharpCoreImplicitDependency with
+                | Some depIdx when file.Idx > depIdx -> [|depIdx|]
+                | _ -> [||]
+            
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
-                    yield! fsharpCoreImplicitDependencies
+                    yield! fsharpCoreImplicitDependencyForThisFile
                 |]
                 |> Array.distinct
 
