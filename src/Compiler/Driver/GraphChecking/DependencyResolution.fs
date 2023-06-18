@@ -1,9 +1,5 @@
 ﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
-open System
-open System.Collections.Concurrent
-open System.Collections.Generic
-open System.Runtime.CompilerServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 open Internal.Utilities.Library
@@ -185,13 +181,13 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
     // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
     let fsharpCoreImplicitDependency =
-        let filename = "prim-types-prelude.fsi"
-
-        let implicitDepIdx =
-            files
-            |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
-
         if compilingFSharpCore then
+            let filename = "prim-types-prelude.fsi"
+
+            let implicitDepIdx =
+                files
+                |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
+                
             match implicitDepIdx with
             | Some idx -> Some idx
             | None ->
