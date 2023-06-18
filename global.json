@@ -1,11 +1,11 @@
 {
   "sdk": {
-    "version": "7.0.203",
+    "version": "7.0.202",
     "allowPrerelease": true,
     "rollForward": "latestPatch"
   },
   "tools": {
-    "dotnet": "7.0.203",
+    "dotnet": "7.0.202",
     "vs": {
       "version": "17.5",
       "components": ["Microsoft.VisualStudio.Component.FSharp"]

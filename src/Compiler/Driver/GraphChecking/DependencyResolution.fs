@@ -187,7 +187,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             let implicitDepIdx =
                 files
                 |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
-                
+
             match implicitDepIdx with
             | Some idx -> Some idx
             | None ->
@@ -195,7 +195,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
                 |> raise
         else
             None
-    
+
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then
             // First file cannot have any dependencies.
@@ -226,9 +226,9 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
             let fsharpCoreImplicitDependencyForThisFile =
                 match fsharpCoreImplicitDependency with
-                | Some depIdx when file.Idx > depIdx -> [|depIdx|]
+                | Some depIdx when file.Idx > depIdx -> [| depIdx |]
                 | _ -> [||]
-            
+
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies

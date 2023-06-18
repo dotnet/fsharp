@@ -439,23 +439,56 @@ module OldStyleMessages =
 
     do FSComp.SR.RunStartupValidation()
     let SeeAlsoE () = Message("SeeAlso", "%s")
-    let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
-    let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
-    let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-    let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
-    let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
-    let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
-    let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
-    let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
-    let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
-    let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
-    let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
-    let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
-    let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
+
+    let ConstraintSolverTupleDiffLengthsE () =
+        Message("ConstraintSolverTupleDiffLengths", "%d%d")
+
+    let ConstraintSolverInfiniteTypesE () =
+        Message("ConstraintSolverInfiniteTypes", "%s%s")
+
+    let ConstraintSolverMissingConstraintE () =
+        Message("ConstraintSolverMissingConstraint", "%s")
+
+    let ConstraintSolverTypesNotInEqualityRelation1E () =
+        Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+
+    let ConstraintSolverTypesNotInEqualityRelation2E () =
+        Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
+
+    let ConstraintSolverTypesNotInSubsumptionRelationE () =
+        Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
+
+    let ErrorFromAddingTypeEquation1E () =
+        Message("ErrorFromAddingTypeEquation1", "%s%s%s")
+
+    let ErrorFromAddingTypeEquation2E () =
+        Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+
+    let ErrorFromAddingTypeEquationTuplesE () =
+        Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
+
+    let ErrorFromApplyingDefault1E () =
+        Message("ErrorFromApplyingDefault1", "%s")
+
+    let ErrorFromApplyingDefault2E () =
+        Message("ErrorFromApplyingDefault2", "")
+
+    let ErrorsFromAddingSubsumptionConstraintE () =
+        Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
+
+    let UpperCaseIdentifierInPatternE () =
+        Message("UpperCaseIdentifierInPattern", "")
+
     let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
-    let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
+
+    let NotUpperCaseConstructorWithoutRQAE () =
+        Message("NotUpperCaseConstructorWithoutRQA", "")
+
     let FunctionExpectedE () = Message("FunctionExpected", "")
-    let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
+
+    let BakedInMemberConstraintNameE () =
+        Message("BakedInMemberConstraintName", "%s")
+
     let BadEventTransformationE () = Message("BadEventTransformation", "")
     let ParameterlessStructCtorE () = Message("ParameterlessStructCtor", "")
     let InterfaceNotRevealedE () = Message("InterfaceNotRevealed", "%s")
@@ -467,13 +500,25 @@ module OldStyleMessages =
     let Duplicate2E () = Message("Duplicate2", "%s%s")
     let UndefinedName2E () = Message("UndefinedName2", "")
     let FieldNotMutableE () = Message("FieldNotMutable", "")
-    let FieldsFromDifferentTypesE () = Message("FieldsFromDifferentTypes", "%s%s")
+
+    let FieldsFromDifferentTypesE () =
+        Message("FieldsFromDifferentTypes", "%s%s")
+
     let VarBoundTwiceE () = Message("VarBoundTwice", "%s")
     let RecursionE () = Message("Recursion", "%s%s%s%s")
-    let InvalidRuntimeCoercionE () = Message("InvalidRuntimeCoercion", "%s%s%s")
-    let IndeterminateRuntimeCoercionE () = Message("IndeterminateRuntimeCoercion", "%s%s")
-    let IndeterminateStaticCoercionE () = Message("IndeterminateStaticCoercion", "%s%s")
-    let StaticCoercionShouldUseBoxE () = Message("StaticCoercionShouldUseBox", "%s%s")
+
+    let InvalidRuntimeCoercionE () =
+        Message("InvalidRuntimeCoercion", "%s%s%s")
+
+    let IndeterminateRuntimeCoercionE () =
+        Message("IndeterminateRuntimeCoercion", "%s%s")
+
+    let IndeterminateStaticCoercionE () =
+        Message("IndeterminateStaticCoercion", "%s%s")
+
+    let StaticCoercionShouldUseBoxE () =
+        Message("StaticCoercionShouldUseBox", "%s%s")
+
     let TypeIsImplicitlyAbstractE () = Message("TypeIsImplicitlyAbstract", "")
     let NonRigidTypar1E () = Message("NonRigidTypar1", "%s%s")
     let NonRigidTypar2E () = Message("NonRigidTypar2", "%s%s")
@@ -486,16 +531,25 @@ module OldStyleMessages =
     let NONTERM_fieldDeclE () = Message("NONTERM.fieldDecl", "")
     let NONTERM_unionCaseReprE () = Message("NONTERM.unionCaseRepr", "")
     let NONTERM_localBindingE () = Message("NONTERM.localBinding", "")
-    let NONTERM_hardwhiteLetBindingsE () = Message("NONTERM.hardwhiteLetBindings", "")
+
+    let NONTERM_hardwhiteLetBindingsE () =
+        Message("NONTERM.hardwhiteLetBindings", "")
+
     let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
     let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
     let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
     let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
     let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
     let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
-    let NONTERM_attrUnionCaseDeclE () = Message("NONTERM.attrUnionCaseDecl", "")
+
+    let NONTERM_attrUnionCaseDeclE () =
+        Message("NONTERM.attrUnionCaseDecl", "")
+
     let NONTERM_cPrototypeE () = Message("NONTERM.cPrototype", "")
-    let NONTERM_objectImplementationMembersE () = Message("NONTERM.objectImplementationMembers", "")
+
+    let NONTERM_objectImplementationMembersE () =
+        Message("NONTERM.objectImplementationMembers", "")
+
     let NONTERM_ifExprCasesE () = Message("NONTERM.ifExprCases", "")
     let NONTERM_openDeclE () = Message("NONTERM.openDecl", "")
     let NONTERM_fileModuleSpecE () = Message("NONTERM.fileModuleSpec", "")
@@ -508,51 +562,112 @@ module OldStyleMessages =
     let NONTERM_attributeListE () = Message("NONTERM.attributeList", "")
     let NONTERM_quoteExprE () = Message("NONTERM.quoteExpr", "")
     let NONTERM_typeConstraintE () = Message("NONTERM.typeConstraint", "")
-    let NONTERM_Category_ImplementationFileE () = Message("NONTERM.Category.ImplementationFile", "")
-    let NONTERM_Category_DefinitionE () = Message("NONTERM.Category.Definition", "")
-    let NONTERM_Category_SignatureFileE () = Message("NONTERM.Category.SignatureFile", "")
+
+    let NONTERM_Category_ImplementationFileE () =
+        Message("NONTERM.Category.ImplementationFile", "")
+
+    let NONTERM_Category_DefinitionE () =
+        Message("NONTERM.Category.Definition", "")
+
+    let NONTERM_Category_SignatureFileE () =
+        Message("NONTERM.Category.SignatureFile", "")
+
     let NONTERM_Category_PatternE () = Message("NONTERM.Category.Pattern", "")
     let NONTERM_Category_ExprE () = Message("NONTERM.Category.Expr", "")
     let NONTERM_Category_TypeE () = Message("NONTERM.Category.Type", "")
     let NONTERM_typeArgsActualE () = Message("NONTERM.typeArgsActual", "")
     let TokenName1E () = Message("TokenName1", "%s")
     let TokenName1TokenName2E () = Message("TokenName1TokenName2", "%s%s")
-    let TokenName1TokenName2TokenName3E () = Message("TokenName1TokenName2TokenName3", "%s%s%s")
-    let RuntimeCoercionSourceSealed1E () = Message("RuntimeCoercionSourceSealed1", "%s")
-    let RuntimeCoercionSourceSealed2E () = Message("RuntimeCoercionSourceSealed2", "%s")
+
+    let TokenName1TokenName2TokenName3E () =
+        Message("TokenName1TokenName2TokenName3", "%s%s%s")
+
+    let RuntimeCoercionSourceSealed1E () =
+        Message("RuntimeCoercionSourceSealed1", "%s")
+
+    let RuntimeCoercionSourceSealed2E () =
+        Message("RuntimeCoercionSourceSealed2", "%s")
+
     let CoercionTargetSealedE () = Message("CoercionTargetSealed", "%s")
     let UpcastUnnecessaryE () = Message("UpcastUnnecessary", "")
     let TypeTestUnnecessaryE () = Message("TypeTestUnnecessary", "")
-    let OverrideDoesntOverride1E () = Message("OverrideDoesntOverride1", "%s")
-    let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
-    let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
-    let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
-    let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
-    let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
-    let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
+
+    let OverrideDoesntOverride1E () =
+        Message("OverrideDoesntOverride1", "%s")
+
+    let OverrideDoesntOverride2E () =
+        Message("OverrideDoesntOverride2", "%s")
+
+    let OverrideDoesntOverride3E () =
+        Message("OverrideDoesntOverride3", "%s")
+
+    let OverrideDoesntOverride4E () =
+        Message("OverrideDoesntOverride4", "%s")
+
+    let UnionCaseWrongArgumentsE () =
+        Message("UnionCaseWrongArguments", "%d%d")
+
+    let UnionPatternsBindDifferentNamesE () =
+        Message("UnionPatternsBindDifferentNames", "")
+
+    let RequiredButNotSpecifiedE () =
+        Message("RequiredButNotSpecified", "%s%s%s")
+
     let UseOfAddressOfOperatorE () = Message("UseOfAddressOfOperator", "")
     let DefensiveCopyWarningE () = Message("DefensiveCopyWarning", "%s")
-    let DeprecatedThreadStaticBindingWarningE () = Message("DeprecatedThreadStaticBindingWarning", "")
-    let FunctionValueUnexpectedE () = Message("FunctionValueUnexpected", "%s")
+
+    let DeprecatedThreadStaticBindingWarningE () =
+        Message("DeprecatedThreadStaticBindingWarning", "")
+
+    let FunctionValueUnexpectedE () =
+        Message("FunctionValueUnexpected", "%s")
+
     let UnitTypeExpectedE () = Message("UnitTypeExpected", "%s")
-    let UnitTypeExpectedWithEqualityE () = Message("UnitTypeExpectedWithEquality", "%s")
-    let UnitTypeExpectedWithPossiblePropertySetterE () = Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
-    let UnitTypeExpectedWithPossibleAssignmentE () = Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
-    let UnitTypeExpectedWithPossibleAssignmentToMutableE () = Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
-    let RecursiveUseCheckedAtRuntimeE () = Message("RecursiveUseCheckedAtRuntime", "")
+
+    let UnitTypeExpectedWithEqualityE () =
+        Message("UnitTypeExpectedWithEquality", "%s")
+
+    let UnitTypeExpectedWithPossiblePropertySetterE () =
+        Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+
+    let UnitTypeExpectedWithPossibleAssignmentE () =
+        Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+
+    let UnitTypeExpectedWithPossibleAssignmentToMutableE () =
+        Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
+
+    let RecursiveUseCheckedAtRuntimeE () =
+        Message("RecursiveUseCheckedAtRuntime", "")
+
     let LetRecUnsound1E () = Message("LetRecUnsound1", "%s")
     let LetRecUnsound2E () = Message("LetRecUnsound2", "%s%s")
     let LetRecUnsoundInnerE () = Message("LetRecUnsoundInner", "%s")
-    let LetRecEvaluatedOutOfOrderE () = Message("LetRecEvaluatedOutOfOrder", "")
+
+    let LetRecEvaluatedOutOfOrderE () =
+        Message("LetRecEvaluatedOutOfOrder", "")
+
     let LetRecCheckedAtRuntimeE () = Message("LetRecCheckedAtRuntime", "")
     let SelfRefObjCtor1E () = Message("SelfRefObjCtor1", "")
     let SelfRefObjCtor2E () = Message("SelfRefObjCtor2", "")
-    let VirtualAugmentationOnNullValuedTypeE () = Message("VirtualAugmentationOnNullValuedType", "")
-    let NonVirtualAugmentationOnNullValuedTypeE () = Message("NonVirtualAugmentationOnNullValuedType", "")
-    let NonUniqueInferredAbstractSlot1E () = Message("NonUniqueInferredAbstractSlot1", "%s")
-    let NonUniqueInferredAbstractSlot2E () = Message("NonUniqueInferredAbstractSlot2", "")
-    let NonUniqueInferredAbstractSlot3E () = Message("NonUniqueInferredAbstractSlot3", "%s%s")
-    let NonUniqueInferredAbstractSlot4E () = Message("NonUniqueInferredAbstractSlot4", "")
+
+    let VirtualAugmentationOnNullValuedTypeE () =
+        Message("VirtualAugmentationOnNullValuedType", "")
+
+    let NonVirtualAugmentationOnNullValuedTypeE () =
+        Message("NonVirtualAugmentationOnNullValuedType", "")
+
+    let NonUniqueInferredAbstractSlot1E () =
+        Message("NonUniqueInferredAbstractSlot1", "%s")
+
+    let NonUniqueInferredAbstractSlot2E () =
+        Message("NonUniqueInferredAbstractSlot2", "")
+
+    let NonUniqueInferredAbstractSlot3E () =
+        Message("NonUniqueInferredAbstractSlot3", "%s%s")
+
+    let NonUniqueInferredAbstractSlot4E () =
+        Message("NonUniqueInferredAbstractSlot4", "")
+
     let Failure3E () = Message("Failure3", "%s")
     let Failure4E () = Message("Failure4", "%s")
     let MatchIncomplete1E () = Message("MatchIncomplete1", "")
@@ -578,26 +693,63 @@ module OldStyleMessages =
     let RecoverableParseErrorE () = Message("RecoverableParseError", "")
     let ReservedKeywordE () = Message("ReservedKeyword", "%s")
     let IndentationProblemE () = Message("IndentationProblem", "%s")
-    let OverrideInIntrinsicAugmentationE () = Message("OverrideInIntrinsicAugmentation", "")
-    let OverrideInExtrinsicAugmentationE () = Message("OverrideInExtrinsicAugmentation", "")
-    let IntfImplInIntrinsicAugmentationE () = Message("IntfImplInIntrinsicAugmentation", "")
-    let IntfImplInExtrinsicAugmentationE () = Message("IntfImplInExtrinsicAugmentation", "")
-    let UnresolvedReferenceNoRangeE () = Message("UnresolvedReferenceNoRange", "%s")
-    let UnresolvedPathReferenceNoRangeE () = Message("UnresolvedPathReferenceNoRange", "%s%s")
-    let HashIncludeNotAllowedInNonScriptE () = Message("HashIncludeNotAllowedInNonScript", "")
-    let HashReferenceNotAllowedInNonScriptE () = Message("HashReferenceNotAllowedInNonScript", "")
-    let HashDirectiveNotAllowedInNonScriptE () = Message("HashDirectiveNotAllowedInNonScript", "")
+
+    let OverrideInIntrinsicAugmentationE () =
+        Message("OverrideInIntrinsicAugmentation", "")
+
+    let OverrideInExtrinsicAugmentationE () =
+        Message("OverrideInExtrinsicAugmentation", "")
+
+    let IntfImplInIntrinsicAugmentationE () =
+        Message("IntfImplInIntrinsicAugmentation", "")
+
+    let IntfImplInExtrinsicAugmentationE () =
+        Message("IntfImplInExtrinsicAugmentation", "")
+
+    let UnresolvedReferenceNoRangeE () =
+        Message("UnresolvedReferenceNoRange", "%s")
+
+    let UnresolvedPathReferenceNoRangeE () =
+        Message("UnresolvedPathReferenceNoRange", "%s%s")
+
+    let HashIncludeNotAllowedInNonScriptE () =
+        Message("HashIncludeNotAllowedInNonScript", "")
+
+    let HashReferenceNotAllowedInNonScriptE () =
+        Message("HashReferenceNotAllowedInNonScript", "")
+
+    let HashDirectiveNotAllowedInNonScriptE () =
+        Message("HashDirectiveNotAllowedInNonScript", "")
+
     let FileNameNotResolvedE () = Message("FileNameNotResolved", "%s%s")
     let AssemblyNotResolvedE () = Message("AssemblyNotResolved", "%s")
-    let HashLoadedSourceHasIssues0E () = Message("HashLoadedSourceHasIssues0", "")
-    let HashLoadedSourceHasIssues1E () = Message("HashLoadedSourceHasIssues1", "")
-    let HashLoadedSourceHasIssues2E () = Message("HashLoadedSourceHasIssues2", "")
-    let HashLoadedScriptConsideredSourceE () = Message("HashLoadedScriptConsideredSource", "")
-    let InvalidInternalsVisibleToAssemblyName1E () = Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
-    let InvalidInternalsVisibleToAssemblyName2E () = Message("InvalidInternalsVisibleToAssemblyName2", "%s")
-    let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
-    let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
-    let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+
+    let HashLoadedSourceHasIssues0E () =
+        Message("HashLoadedSourceHasIssues0", "")
+
+    let HashLoadedSourceHasIssues1E () =
+        Message("HashLoadedSourceHasIssues1", "")
+
+    let HashLoadedSourceHasIssues2E () =
+        Message("HashLoadedSourceHasIssues2", "")
+
+    let HashLoadedScriptConsideredSourceE () =
+        Message("HashLoadedScriptConsideredSource", "")
+
+    let InvalidInternalsVisibleToAssemblyName1E () =
+        Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
+
+    let InvalidInternalsVisibleToAssemblyName2E () =
+        Message("InvalidInternalsVisibleToAssemblyName2", "%s")
+
+    let LoadedSourceNotFoundIgnoringE () =
+        Message("LoadedSourceNotFoundIgnoring", "%s")
+
+    let MSBuildReferenceResolutionErrorE () =
+        Message("MSBuildReferenceResolutionError", "%s%s")
+
+    let TargetInvocationExceptionWrapperE () =
+        Message("TargetInvocationExceptionWrapper", "%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
