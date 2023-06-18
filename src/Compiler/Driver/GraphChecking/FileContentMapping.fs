@@ -1,6 +1,5 @@
 ﻿module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
 
-open System.Collections.Immutable
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
@@ -618,8 +617,8 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.ValField (field, _) -> visitSynField field
     | SynMemberSig.NestedType _ -> []
 
-let mkFileContent (f: FileInProject) : ImmutableArray<FileContentEntry> =
-    [|
+let mkFileContent (f: FileInProject) : FileContentEntry list =
+    [
         match f.ParsedInput with
         | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
             for SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
@@ -647,5 +646,4 @@ let mkFileContent (f: FileInProject) : ImmutableArray<FileContentEntry> =
                 | SynModuleOrNamespaceKind.NamedModule ->
                     let path = longIdentToPath true longId
                     yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-    |]
-    |> ImmutableArray.CreateRange
+    ]

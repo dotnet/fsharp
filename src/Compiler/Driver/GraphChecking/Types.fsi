@@ -1,6 +1,5 @@
 namespace FSharp.Compiler.GraphChecking
 
-open System
 open System.Collections.Generic
 open FSharp.Compiler.Syntax
 
@@ -17,17 +16,6 @@ type internal Identifier = string
 /// Represents one or more identifiers in the syntax tree.
 /// For example, `[ "X"; "Y"; "Z" ]` in `open X.Y.Z`
 type internal LongIdentifier = Identifier list
-
-[<Struct>]
-type internal LongIdentifier2 =
-    private | LongIdentifier2 of string[]
-        
-    member Value : string[]
-    member Length : int
-    member ToOld : unit -> LongIdentifier
-    static member Create : LongIdentifier -> LongIdentifier2
-    static member Create : string[] -> LongIdentifier2
-
 
 /// Combines the file name, index and parsed syntax tree of a file in a project.
 type internal FileInProject =
@@ -113,14 +101,8 @@ type internal QueryTrieNodeResult =
     /// A node was found with one or more files that contain relevant definitions required for type-checking.
     | NodeExposesData of Set<FileIndex>
 
-module LongIdentifier =
-    val toSingleString : LongIdentifier -> string
-    
-type internal LongIdentifierSpan = ReadOnlySpan<Identifier>
-
 /// A function for querying a Trie (the Trie is defined within the function's context)
 type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
-type internal QueryTrie2 = LongIdentifierSpan -> QueryTrieNodeResult
 
 /// Helper class for mapping signature files to implementation files and vice versa.
 type internal FilePairMap =

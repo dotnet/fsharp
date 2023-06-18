@@ -1,8 +1,6 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
-open System
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open FSharp.Compiler.Syntax
 
 /// The index of a file inside a project.
@@ -18,26 +16,6 @@ type internal Identifier = string
 /// Represents one or more identifiers in the syntax tree.
 /// For example, `[ "X"; "Y"; "Z" ]` in `open X.Y.Z`
 type internal LongIdentifier = string list
-
-module LongIdentifier =
-    let toSingleString (id : LongIdentifier) : string = String.Join(".", id)
-
-[<Struct>]
-type internal LongIdentifier2 =
-    | LongIdentifier2 of string[]
-    
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member private this.GetValue() = match this with LongIdentifier2 path -> path
-    member this.Value with get() = this.GetValue()
-    
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member private this.GetLength() = this.GetValue().Length
-    member this.Length = this.GetLength()
-    
-    member this.ToOld() = this.GetValue() |> Array.toList
-    
-    static member Create(id : LongIdentifier) = LongIdentifier2 (id |> List.toArray)
-    static member Create(id : string[]) = LongIdentifier2 id
 
 /// Combines the file name, index and parsed syntax tree of a file in a project.
 type internal FileInProject =
@@ -155,10 +133,7 @@ type internal QueryTrieNodeResult =
     /// A node was found with one or more file links
     | NodeExposesData of Set<FileIndex>
 
-type internal LongIdentifierSpan = ReadOnlySpan<Identifier>
-
 type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
-type internal QueryTrie2 = LongIdentifierSpan -> QueryTrieNodeResult
 
 /// Helper class to help map signature files to implementation files and vice versa.
 type internal FilePairMap(files: FileInProject array) =
