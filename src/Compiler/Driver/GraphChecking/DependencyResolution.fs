@@ -17,21 +17,19 @@ let queryTriePartial (trie: TrieNode) (path: LongIdentifier) : TrieNode option =
 
     visit trie path
 
-let mapNodeToQueryResult (node : TrieNode option) : QueryTrieNodeResult =
+let mapNodeToQueryResult (node: TrieNode option) : QueryTrieNodeResult =
     match node with
     | Some finalNode ->
         if Set.isEmpty finalNode.Files then
             QueryTrieNodeResult.NodeDoesNotExposeData
         else
             QueryTrieNodeResult.NodeExposesData(finalNode.Files)
-    | None ->
-        QueryTrieNodeResult.NodeDoesNotExist
+    | None -> QueryTrieNodeResult.NodeDoesNotExist
 
 /// <summary>Find a path in the Trie.</summary>
 let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
-    queryTriePartial trie path
-    |> mapNodeToQueryResult
-    
+    queryTriePartial trie path |> mapNodeToQueryResult
+
 /// <summary>Same as 'queryTrie' but allows passing in a path combined from two parts, avoiding list allocation.</summary>
 let queryTrieDual (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
     match queryTriePartial trie path1 with
@@ -59,7 +57,7 @@ let processOpenPath (trie: TrieNode) (path: LongIdentifier) (state: FileContentQ
     | QueryTrieNodeResult.NodeExposesData files -> state.AddOpenNamespace(path, files)
 
 /// Process an identifier.
-let processIdentifier (queryResult : QueryTrieNodeResult) (state: FileContentQueryState) : FileContentQueryState =
+let processIdentifier (queryResult: QueryTrieNodeResult) (state: FileContentQueryState) : FileContentQueryState =
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
     | QueryTrieNodeResult.NodeDoesNotExposeData ->
