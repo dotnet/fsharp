@@ -520,15 +520,12 @@ module Structure =
                     parseExpr attr.ArgExpr
 
         and parseBinding binding =
-            let (SynBinding (kind = kind; attributes = attrs; valData = valData; expr = expr; range = br)) =
-                binding
-
+            let (SynBinding (kind = kind; attributes = attrs; valData = valData; expr = expr; range = br)) = binding
             let (SynValData (memberFlags = memberFlags)) = valData
 
             match kind with
             | SynBindingKind.Normal ->
-                let collapse =
-                    Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
+                let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
 
                 match memberFlags with
                 | Some {
@@ -549,9 +546,7 @@ module Structure =
                 parseBinding bind
 
         and parseExprInterface intf =
-            let (SynInterfaceImpl (interfaceTy = synType; bindings = bindings; range = range)) =
-                intf
-
+            let (SynInterfaceImpl (interfaceTy = synType; bindings = bindings; range = range)) = intf
             let collapse = Range.endToEnd synType.Range range |> Range.modEnd -1
             rcheck Scope.Interface Collapse.Below range collapse
             parseBindings bindings
@@ -580,8 +575,7 @@ module Structure =
                                    },
                               _,
                               _) ->
-                    let range =
-                        mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
+                    let range = mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
 
                     let collapse =
                         match synPat with
@@ -977,8 +971,7 @@ module Structure =
             | _ -> ()
 
         and parseTypeDefnSig typeDefn =
-            let (SynTypeDefnSig (typeInfo = typeInfo; typeRepr = objectModel; members = memberSigs)) =
-                typeDefn
+            let (SynTypeDefnSig (typeInfo = typeInfo; typeRepr = objectModel; members = memberSigs)) = typeDefn
 
             let (SynComponentInfo (attributes = attribs; typeParams = TyparDecls typeArgs; longId = longId; range = r)) =
                 typeInfo
@@ -1084,9 +1077,7 @@ module Structure =
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
             | SynModuleSigDecl.Val (valSig, r) ->
-                let (SynValSig (attributes = attrs; ident = SynIdent (ident, _); range = valrange)) =
-                    valSig
-
+                let (SynValSig (attributes = attrs; ident = SynIdent (ident, _); range = valrange)) = valSig
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs
@@ -1108,9 +1099,7 @@ module Structure =
             | _ -> ()
 
         let parseModuleOrNamespaceSigs moduleSig =
-            let (SynModuleOrNamespaceSig (longId, _, kind, decls, _, attribs, _, r, _)) =
-                moduleSig
-
+            let (SynModuleOrNamespaceSig (longId, _, kind, decls, _, attribs, _, r, _)) = moduleSig
             parseAttributes attribs
             let rangeEnd = lastModuleSigDeclRangeElse r decls
             let idrange = longIdentRange longId
