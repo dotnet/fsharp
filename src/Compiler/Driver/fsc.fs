@@ -1191,6 +1191,16 @@ let CompileFromCommandLineArguments
                 with _ ->
                     ()
         }
+    
+    let prefetchParsingTable = Environment.GetEnvironmentVariable("FSC_PrefetchParsingTable") = "1"
+    if prefetchParsingTable then
+        printfn "Prefetching parsing tables"
+        async {
+            Parser.prefetchTables ()
+        }
+        |> Async.Start
+    else
+        printfn "NOT prefetching parsing tables"
 
     main1 (
         ctok,
