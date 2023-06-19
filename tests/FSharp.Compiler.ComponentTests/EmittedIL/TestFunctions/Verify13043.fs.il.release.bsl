@@ -43,82 +43,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit matchResult@38
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field static assembly initonly class assembly/matchResult@38 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  call       bool assembly::condition(int32)
-      IL_0006:  ret
-    } 
-
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/matchResult@38::.ctor()
-      IL_0005:  stsfld     class assembly/matchResult@38 assembly/matchResult@38::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit functionResult@43
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field static assembly initonly class assembly/functionResult@43 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  call       bool assembly::condition(int32)
-      IL_0006:  ret
-    } 
-
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/functionResult@43::.ctor()
-      IL_0005:  stsfld     class assembly/functionResult@43 assembly/functionResult@43::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
   .class auto ansi serializable sealed nested assembly beforefieldinit f@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>
   {
@@ -249,6 +173,82 @@
       IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
       IL_003d:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit matchResult@38
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+  {
+    .field static assembly initonly class assembly/matchResult@38 @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance bool 
+            Invoke(int32 n) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  call       bool assembly::condition(int32)
+      IL_0006:  ret
+    } 
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/matchResult@38::.ctor()
+      IL_0005:  stsfld     class assembly/matchResult@38 assembly/matchResult@38::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit functionResult@43
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+  {
+    .field static assembly initonly class assembly/functionResult@43 @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance bool 
+            Invoke(int32 n) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  call       bool assembly::condition(int32)
+      IL_0006:  ret
+    } 
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/functionResult@43::.ctor()
+      IL_0005:  stsfld     class assembly/functionResult@43 assembly/functionResult@43::@_instance
+      IL_000a:  ret
     } 
 
   } 
