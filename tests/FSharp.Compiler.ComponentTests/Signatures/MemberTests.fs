@@ -27,3 +27,26 @@ type Foo =
   member internal X: key1: obj * key2: obj -> bool with get
 
   member X: key1: obj * key2: obj -> obj with set"""
+
+[<Fact>]
+let ``Getter should have explicit with get suffix`` () =
+    FSharp
+        """
+module Foo
+
+type Foo() =
+    member f.Y with public get () = 'y' and internal set y = ignore<char> y
+"""
+    |> printSignatures
+    |> should
+        equal
+        """
+module Foo
+
+type Foo =
+
+  new: unit -> Foo
+
+  member Y: char with get
+
+  member internal Y: char with set"""

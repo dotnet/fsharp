@@ -1820,8 +1820,9 @@ module TastDefinitionPrinting =
         | Some vref ->
             match pinfo with
             | MixedAccessibilityGetterAndSetter(getValRef, setValRef) ->
+                let getSuffix = if pinfo.IsIndexer then emptyL else wordL (tagKeyword "with") ^^ wordL (tagText "get")
                 [
-                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef ^^ getSuffix
                     PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader setValRef
                 ]
             | _ ->
