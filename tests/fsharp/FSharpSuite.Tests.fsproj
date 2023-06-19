@@ -108,6 +108,8 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj" Condition="'$(TargetFramework)' == 'net472'">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\fsc\fscProject\fsc.fsproj" />
+    <ProjectReference Include="..\..\src\fsi\fsiProject\fsi.fsproj" />
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->

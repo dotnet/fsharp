@@ -884,7 +884,7 @@ module MutRecBindingChecking =
                             // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
                             error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(), (trimRangeToLine m)))
 
-                        if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) then 
+                        if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) && classMemberDef.IsSome then 
                             // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
