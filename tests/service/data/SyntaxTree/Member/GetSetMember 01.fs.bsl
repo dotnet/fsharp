@@ -205,5 +205,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,57)-(4,87) parse error Multiple accessibilities given for property getter or setter
-(5,57)-(5,87) parse error Multiple accessibilities given for property getter or setter
+(5,57)-(5,87) parse error When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.
