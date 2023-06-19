@@ -5,6 +5,8 @@
   <PropertyGroup Condition="'$(BUILD_PROTO)' != 'true'">
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net7.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
     <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>
   </PropertyGroup>
@@ -12,6 +14,7 @@
   <PropertyGroup Condition="'$(BUILD_PROTO)' == 'true'">
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>
 
