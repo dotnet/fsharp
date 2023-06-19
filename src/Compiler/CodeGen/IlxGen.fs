@@ -330,6 +330,9 @@ type cenv =
         /// Guard the stack and move to a new one if necessary
         mutable stackGuard: StackGuard
 
+        /// Recursive ranges to help deciding on TailRec warnings
+        mutable recRanges: Map<Stamp, range>
+
     }
 
     member cenv.options =
@@ -4268,7 +4271,21 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
                 if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute vref.Attribs then
                     match isTailCall with
-                    | ILTailcall.Normalcall -> warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+                    | ILTailcall.Normalcall ->
+                        let recRange = cenv.recRanges.TryFind(vref.Stamp)
+
+                        match recRange with
+                        | Some rR when rangeContainsRange rR m -> warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+                        | _ ->
+                            let hasStructObjArg = (boxity = AsValue) && takesInstanceArg
+                            let hasByrefArg = mspec.FormalArgTypes |> List.exists IsILTypeByref
+                            let isDllImport = IsValRefIsDllImport g vref
+
+                            let hasTailCallBlockersInArgs =
+                                hasStructObjArg || hasByrefArg || isDllImport || isSelfInit
+
+                            if hasTailCallBlockersInArgs then
+                                warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
                     | ILTailcall.Tailcall -> ()
 
             let useICallVirt =
@@ -11527,10 +11544,39 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
         let tdef = tdef.WithSerializable(true)
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
+let getRecRanges (implFile: CheckedImplFileAfterOptimization) =
+    let rec traverse (contents: ModuleOrNamespaceContents) =
+        seq {
+            match contents with
+            | TMDefs moduleOrNamespaceContentsList ->
+                for c in moduleOrNamespaceContentsList do
+                    yield! traverse c
+            | TMDefLet (_binding, _range) -> ()
+            | TMDefDo (_binding, _range) -> ()
+            | TMDefRec (false, _openDeclarations, _entities, moduleOrNamespaceBindings, _range) ->
+                for b in moduleOrNamespaceBindings do
+                    match b with
+                    | ModuleOrNamespaceBinding.Binding _binding -> ()
+                    | ModuleOrNamespaceBinding.Module (_moduleOrNamespace, moduleOrNamespaceContents) ->
+                        yield! traverse moduleOrNamespaceContents
+            | TMDefRec (true, _openDeclarations, _entities, moduleOrNamespaceBindings, range) ->
+                for b in moduleOrNamespaceBindings do
+                    match b with
+                    | ModuleOrNamespaceBinding.Binding binding -> yield (binding.Var.Stamp, range) // Todo trim down range for objects...
+                    | ModuleOrNamespaceBinding.Module (_moduleOrNamespace, moduleOrNamespaceContents) ->
+                        yield! traverse moduleOrNamespaceContents
+            | TMDefOpens _openDeclarations -> ()
+        }
+
+    traverse implFile.ImplFile.Contents
+
 let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some (firstImplFiles, lastImplFile) ->
+
+        let recRanges = implFiles |> Seq.collect getRecRanges |> Map.ofSeq
+        cenv.recRanges <- recRanges
 
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
@@ -11858,6 +11904,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
             optimizeDuringCodeGen = (fun _flag expr -> expr)
             stackGuard = getEmptyStackGuard ()
             delayedGenMethods = Queue()
+            recRanges = Map.empty
         }
 
     /// Register a set of referenced assemblies with the ILX code generator
