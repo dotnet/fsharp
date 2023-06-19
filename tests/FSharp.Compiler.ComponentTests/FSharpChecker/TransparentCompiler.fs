@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.FSharpChecker.TransparentCompiler
+﻿module FSharpChecker.TransparentCompiler
 
 open System.Collections.Concurrent
 open System.Diagnostics
@@ -139,7 +139,7 @@ let ``Signature update`` () =
 
     let project = SyntheticProject.Create(
         { sourceFile "First" [] with
-            Source = "let f x = x"
+            Source = "let f (x: int) = x"
             SignatureFile = Custom "val f: x: int -> int" },
         { sourceFile "Second" ["First"] with
             Source = "let a x = ModuleFirst.f x" })

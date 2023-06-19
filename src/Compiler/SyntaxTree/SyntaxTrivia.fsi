@@ -271,6 +271,7 @@ type SynLeadingKeyword =
     | OverrideVal of overrideRange: range * valRange: range
     | Abstract of abstractRange: range
     | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
     | StaticMember of staticRange: range * memberRange: range
     | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
     | StaticAbstract of staticRange: range * abstractRange: range
