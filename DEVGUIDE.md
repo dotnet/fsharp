@@ -147,6 +147,12 @@ If you are on a Mac, you can run this command from the root of the repository:
 sh build.sh -c Release
 ```
 
+Or if you are on Linux:
+
+```shell
+./build.sh -c Release
+```
+
 ## Updating baselines in tests
 
 Some tests use "baseline" (.bsl) files.  There is sometimes a way to update these baselines en-masse in your local build,
