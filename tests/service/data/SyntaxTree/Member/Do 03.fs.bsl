@@ -19,7 +19,7 @@ ImplFile
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 None), Const (Unit, (5,11--5,13)), None,
                              ArbitraryAfterError
-                               ("typedSequentialExprBlock1", (5,13--5,13)),
+                               ("hardwhiteDoBinding1", (5,13--5,13)),
                              (5,11--5,13), NoneAtDo,
                              { LeadingKeyword =
                                 StaticDo ((5,4--5,10), (5,11--5,13))
