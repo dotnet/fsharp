@@ -521,6 +521,12 @@ moduleIntro:
         let mModule = rhs parseState 1
         mModule, $4, $5.LongIdent, $3, $2 }
 
+  | moduleKeyword opt_attributes opt_access opt_rec OBLOCKSEP
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
+
 
 /* The start of a namespace declaration */
 namespaceIntro:
