@@ -130,7 +130,7 @@ To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to y
 
 ```xml
 <PropertyGroup>
-    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net7.0\fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net8.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
 ```
 
