@@ -296,7 +296,6 @@ type LanguageVersion(versionText) =
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
 
-
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
         match features.TryGetValue feature with
