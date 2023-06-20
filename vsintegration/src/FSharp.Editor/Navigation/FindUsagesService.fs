@@ -56,17 +56,19 @@ module FSharpFindUsagesService =
                 let tasks =
                     [|
                         for documentId in documentIds do
-                            cancellableTask {
-                                let doc = solution.GetDocument(documentId)
-                                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-                                let! sourceText = doc.GetTextAsync(cancellationToken)
+                            let t = 
+                                cancellableTask {
+                                    let doc = solution.GetDocument(documentId)
+                                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                                    let! sourceText = doc.GetTextAsync(cancellationToken)
 
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
-                                | Some span ->
-                                    let span = Tokenizer.fixupSpan (sourceText, span)
-                                    return Some(FSharpDocumentSpan(doc, span))
-                                | None -> return None
-                            } |> CancellableTask.start cancellationToken
+                                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+                                    | Some span ->
+                                        let span = Tokenizer.fixupSpan (sourceText, span)
+                                        return Some(FSharpDocumentSpan(doc, span))
+                                    | None -> return None
+                                }
+                            CancellableTask.start cancellationToken t
                     |]
 
                 let! spans = Task.WhenAll tasks
