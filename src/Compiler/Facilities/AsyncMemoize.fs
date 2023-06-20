@@ -28,9 +28,15 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (stri
     let tok = obj ()
 
     let cache =
-        MruCache<_, 'TKey, Job<'TValue>>(keepStrongly = 30, keepMax = 200,
+        MruCache<_, 'TKey, Job<'TValue>>(
+            keepStrongly = 30,
+            keepMax = 200,
             areSame = (fun (x, y) -> x = y),
-            requiredToKeep = function Running _ -> true | _ -> false)
+            requiredToKeep =
+                function
+                | Running _ -> true
+                | _ -> false
+        )
 
     let requestCounts = Dictionary<'TKey, int>()
 
