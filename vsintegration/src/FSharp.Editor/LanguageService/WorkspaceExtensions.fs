@@ -251,8 +251,7 @@ type Document with
                         yield CancellableTask.startAsTask cancellationToken (onFound symbolUse)
                 |]
 
-            do!
-                Task.WhenAll(tasks)
+            do! Task.WhenAll(tasks)
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -297,6 +296,7 @@ type Project with
                 | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
                     cancellableTask {
                         let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
                         let! _, _, _, options =
                             document.GetFSharpCompilationOptionsAsync(userOpName)
                             |> RoslynHelpers.StartAsyncAsTask cancellationToken
@@ -308,7 +308,7 @@ type Project with
                                 null
 
                         return
-                            
+
                             options.SourceFiles
                             |> Seq.takeWhile ((<>) document.FilePath)
                             |> Seq.filter ((<>) signatureFile)
@@ -322,20 +322,21 @@ type Project with
 
             if this.IsFastFindReferencesEnabled then
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
                 let tasks =
                     [|
                         for doc in documents do
-                            yield 
+                            yield
                                 cancellableTask {
                                     return! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                                } |> CancellableTask.startAsTask cancellationToken
+                                }
+                                |> CancellableTask.startAsTask cancellationToken
                     |]
-                do!
-                    Task.WhenAll tasks
+
+                do! Task.WhenAll tasks
             else
                 for doc in documents do
-                    do!
-                        doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
+                    do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
         }
 
     member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =

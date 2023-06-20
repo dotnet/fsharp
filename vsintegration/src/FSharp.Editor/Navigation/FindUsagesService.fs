@@ -17,7 +17,16 @@ open CancellableTasks
 
 module FSharpFindUsagesService =
 
-    let onSymbolFound allReferences declarationRange externalDefinitionItem definitionItems isExternal (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task) (doc: Document) (symbolUse: range) =
+    let onSymbolFound
+        allReferences
+        declarationRange
+        externalDefinitionItem
+        definitionItems
+        isExternal
+        (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
+        (doc: Document)
+        (symbolUse: range)
+        =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
             let! sourceText = doc.GetTextAsync(cancellationToken)
@@ -49,14 +58,15 @@ module FSharpFindUsagesService =
     let rangeToDocumentSpans (solution: Solution, range: range) =
         if range.Start = range.End then
             CancellableTask.singleton [||]
-        else 
+        else
             cancellableTask {
                 let documentIds = solution.GetDocumentIdsWithFilePath(range.FileName)
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
                 let tasks =
                     [|
                         for documentId in documentIds do
-                            let t = 
+                            let t =
                                 cancellableTask {
                                     let doc = solution.GetDocument(documentId)
                                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
@@ -68,6 +78,7 @@ module FSharpFindUsagesService =
                                         return Some(FSharpDocumentSpan(doc, span))
                                     | None -> return None
                                 }
+
                             CancellableTask.start cancellationToken t
                     |]
 
@@ -97,6 +108,7 @@ module FSharpFindUsagesService =
             | None -> ()
             | Some symbol ->
                 let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOp)
+
                 let symbolUse =
                     checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
 
@@ -117,12 +129,9 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> 
-                            cancellableTask {
-                                return! rangeToDocumentSpans (document.Project.Solution, range)
-                            }
+                        | Some range -> cancellableTask { return! rangeToDocumentSpans (document.Project.Solution, range) }
                         | None -> CancellableTask.singleton [||]
-                    
+
                     let isExternal = declarationSpans |> Array.isEmpty
 
                     let displayParts =
@@ -147,13 +156,19 @@ module FSharpFindUsagesService =
                     do! Task.WhenAll(tasks)
 
                     if isExternal then
-                        do!
-                            context.OnDefinitionFoundAsync(externalDefinitionItem)
+                        do! context.OnDefinitionFoundAsync(externalDefinitionItem)
 
-                    let onFound = onSymbolFound allReferences declarationRange externalDefinitionItem definitionItems isExternal context.OnReferenceFoundAsync
-                    
+                    let onFound =
+                        onSymbolFound
+                            allReferences
+                            declarationRange
+                            externalDefinitionItem
+                            definitionItems
+                            isExternal
+                            context.OnReferenceFoundAsync
+
                     do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound
-                        
+
         }
 
 open FSharpFindUsagesService
@@ -162,9 +177,9 @@ open FSharpFindUsagesService
 type internal FSharpFindUsagesService [<ImportingConstructor>] () =
     interface IFSharpFindUsagesService with
         member _.FindReferencesAsync(document, position, context) =
-            findReferencedSymbolsAsync (document, position, context, true, nameof(FSharpFindUsagesService))
+            findReferencedSymbolsAsync (document, position, context, true, nameof (FSharpFindUsagesService))
             |> CancellableTask.startAsTask context.CancellationToken
 
         member _.FindImplementationsAsync(document, position, context) =
-            findReferencedSymbolsAsync (document, position, context, false, nameof(FSharpFindUsagesService))
+            findReferencedSymbolsAsync (document, position, context, false, nameof (FSharpFindUsagesService))
             |> CancellableTask.startAsTask context.CancellationToken
