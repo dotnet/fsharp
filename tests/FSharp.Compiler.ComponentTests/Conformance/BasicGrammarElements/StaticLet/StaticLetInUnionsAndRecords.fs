@@ -92,6 +92,13 @@ init R 2
 1
 2"""
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseDuTest.fs"|])>]
+let ``Static let - lowercase DU`` compilation =
+    compilation
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldSucceed    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyType.fs"|])>]
 let ``Static let in empty type`` compilation =
     compilation
@@ -303,4 +310,69 @@ let ``Static let record - generics - IL test`` compilation =
       IL_0011:  ldsfld     string class Test/MyRecord`1<!T>::cachedVal
       IL_0016:  ret
     } """]
+
+
+[<Fact>]
+let ``Static let in DU in penultimate file`` () =
+    // This file is included in the compilation, but its types are not access => statics are not executed
+    let firstFile = """
+module TypesWhichAreNotAccessed
+
+do printfn "TypesWhichAreNotAccessed module 'do'"
+
+type NotAccessedType =
+    | Case19
+    | Case40 of int
+
+    static do printfn "NotAccessedType 'do'"
+
+
+"""
+
+    let types =
+        """
+module MyTypes
+
+do printfn "MyTypes module 'do'"
+
+type U =
+    | Case1
+    | Case2 of int
+
+    static do printfn "MyTypes.U 'do'"
+    static let u1 = 
+        do printfn "creating MyTypes.U.u1 now"
+        Case2 1
+    static member U1 = u1
+
+
+do printfn "MyTypes module 'do' no. 2"
+
+module InnerModuleNotAccess = 
+    do printfn "InnerModuleNotAccess 'do'"
+    let someVal = ""
+        """
+
+    let program =
+        """
+module Test
+
+[<EntryPoint>]
+let main _ = 
+    do printfn "Before static access"
+    let u1 = MyTypes.U.U1
+    printfn "%A" u1
+    0
+        """
+
+    FSharp firstFile
+    |> withAdditionalSourceFiles [SourceCodeFileKind.Create("types.fs", types);SourceCodeFileKind.Create("program.fs", program)]
+    |> verifyCompileAndRun
+    |> withStdOutContains """Before static access
+MyTypes module 'do'
+MyTypes.U 'do'
+creating MyTypes.U.u1 now
+MyTypes module 'do' no. 2
+InnerModuleNotAccess 'do'
+Case2 1"""
    
