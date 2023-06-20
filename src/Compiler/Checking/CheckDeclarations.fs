@@ -2556,8 +2556,9 @@ module EstablishTypeDefinitionCores =
                 | SynModuleDecl.Types (typeSpecs, _) -> 
                     for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=synTypars; longId=ids); typeRepr=trepr) in typeSpecs do 
                         if TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then
-                            match trepr with 
-                            | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> ()
+                            match trepr, ids with 
+                            | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _), _ -> ()
+                            | _, [] -> ()
                             | _ -> yield (List.last ids).idText
                 | _ -> () ]
             |> set
@@ -4831,7 +4832,8 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let defn = TMDefRec(true, [], [decl], binds |> List.map ModuleOrNamespaceBinding.Binding, m)
               return ([defn], [], []), env, env
 
-      | SynModuleDecl.Types (typeDefs, m) -> 
+      | SynModuleDecl.Types (typeDefs, m) ->
+          let typeDefs = typeDefs |> List.filter (function (SynTypeDefn(typeInfo = SynComponentInfo(longId = []))) -> false | _ -> true)
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
