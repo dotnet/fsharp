@@ -27,17 +27,14 @@ module private CheckerExtensions =
 
             let getFileSnapshot (options: FSharpProjectOptions) path =
                 async {
-                    let project =
-                        projects.TryFind options.ProjectFileName
+                    let project = projects.TryFind options.ProjectFileName
 
                     if project.IsNone then
                         Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
 
-                    let documentOpt =
-                        project
-                        |> Option.bind (Map.tryFind path)
+                    let documentOpt = project |> Option.bind (Map.tryFind path)
 
-                    let! version, getSource = 
+                    let! version, getSource =
                         match documentOpt with
                         | Some document ->
                             async {
@@ -49,6 +46,7 @@ module private CheckerExtensions =
                                         let! sourceText = document.GetTextAsync()
                                         return sourceText.ToFSharpSourceText()
                                     }
+
                                 return version.ToString(), getSource
 
                             }
@@ -57,10 +55,11 @@ module private CheckerExtensions =
 
                             // Fall back to file system, although this is already suspicious
                             let version = System.IO.File.GetLastWriteTimeUtc(path)
+
                             let getSource () =
                                 task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
 
-                            async.Return (version.ToString(), getSource)
+                            async.Return(version.ToString(), getSource)
 
                     return
                         {
