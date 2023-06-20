@@ -1464,8 +1464,8 @@ type ILLocalDebugInfo =
     }
 
     override x.ToString() =
-        let firstLabel,secondLabel = x.Range
-        sprintf "%i-%i" firstLabel secondLabel      
+        let firstLabel, secondLabel = x.Range
+        sprintf "%i-%i" firstLabel secondLabel
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILCode =
