@@ -895,7 +895,6 @@ module CancellableTasks =
         /// <returns>A CancellableTask with the item as the result.</returns>
         let inline singleton (item: 'item) : CancellableTask<'item> = fun _ -> Task.FromResult(item)
 
-
         /// <summary>Allows chaining of CancellableTasks.</summary>
         /// <param name="binder">The continuation.</param>
         /// <param name="cTask">The value.</param>
