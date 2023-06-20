@@ -1549,7 +1549,8 @@ typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars, lid, fixity, vis = $2
        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
+       let m = match lid with [] -> rhs parseState 2 | _ -> rangeOfLid lid
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, m) }
 
 /* Part of a set of type definitions */
 tyconDefnList:
@@ -1613,7 +1614,8 @@ tyconDefn:
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, rangeOfLid lid, { AsKeyword = Option.map fst az })
+       let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
        let tcDefRepr =
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel(k, memberCtorPattern :: cspec, m)
@@ -2325,6 +2327,9 @@ tyconNameAndTyparDecls:
 
   | opt_access path postfixTyparDecls
       { Some $3, $2.LongIdent, true, $1 }
+
+  | opt_access recover
+      { None, [], false, $1 }
 
 prefixTyparDecls:
   | typar
