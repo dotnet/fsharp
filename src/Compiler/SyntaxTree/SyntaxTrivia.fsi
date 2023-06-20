@@ -219,10 +219,16 @@ type SynPatListConsTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnLeadingKeyword =
     | Type of range
+
     | And of range
-    // Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
+
+    /// Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
     | StaticType of staticRange: range * typeRange: range
+
+    /// Produced during type checking, should not be used in actual parsed trees.
     | Synthetic
+
+    member Range: range
 
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]

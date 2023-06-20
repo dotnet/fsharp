@@ -7,7 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = FSharpAddInstanceMemberParameterCodeFixProvider()
+let private codeFix = AddInstanceMemberParameterCodeFixProvider()
 let private diagnostic = 0673 // This instance member needs a parameter to represent the object being invoked...
 
 [<Fact>]
@@ -19,15 +19,16 @@ type UsefulTestHarness() =
 """
 
     let expected =
-        {
-            Title = "Add missing instance member parameter"
-            FixedCode =
-                """
+        Some
+            {
+                Message = "Add missing instance member parameter"
+                FixedCode =
+                    """
 type UsefulTestHarness() =
     member x.FortyTwo = 42
 """
-        }
+            }
 
-    let actual = codeFix |> fix code diagnostic
+    let actual = codeFix |> tryFix code diagnostic
 
     Assert.Equal(expected, actual)
