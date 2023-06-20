@@ -1519,7 +1519,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3302,packageManagementRequiresVFive,"The 'package management' feature requires language version 5.0 or above"
 3303,fromEndSlicingRequiresVFive,"The 'from the end slicing' feature requires language version 'preview'."
 3304,poundiNotSupportedByRegisteredDependencyManagers,"#i is not supported by the registered PackageManagers"
-3343,tcRequireMergeSourcesOrBindN,"The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '%s' method or appropriate 'MergeSource' and 'Bind' methods"
+3343,tcRequireMergeSourcesOrBindN,"The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '%s' method or appropriate 'MergeSources' and 'Bind' methods"
 3344,tcAndBangNotSupported,"This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature."
 3345,tcInvalidUseBangBindingNoAndBangs,"use! may not be combined with and!"
 3350,chkFeatureNotLanguageSupported,"Feature '%s' is not available in F# %s. Please use language version %s or greater."
