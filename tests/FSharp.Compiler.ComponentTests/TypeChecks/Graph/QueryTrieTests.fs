@@ -807,7 +807,7 @@ let ``ProcessOpenStatement full path match`` () =
             Set.empty
 
     let result =
-        processOpenPath (queryTrie fantomasCoreTrie) [ "Fantomas"; "Core"; "AstExtensions" ] state
+        processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
     Assert.AreEqual(indexOf "AstExtensions.fsi", dep)
