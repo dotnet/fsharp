@@ -12,16 +12,17 @@ let private diagnostic = 0010 // Unexpected symbol...
 
 [<Fact>]
 let ``Fixes FS0010 for = in types`` () =
-    let code = 
+    let code =
         """
 type Band = { Name = string }
 """
 
-    let expected = 
-        Some 
+    let expected =
+        Some
             {
                 Message = "Use ':' for type in field declaration"
-                FixedCode = """
+                FixedCode =
+                    """
 type Band = { Name : string }
 """
             }
@@ -31,12 +32,31 @@ type Band = { Name : string }
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0010 for random unexpected symbols`` () =
-    let code = 
+let ``Doesn't fix FS0010 for random unexpected symbols`` () =
+    let code =
         """
-type Band = { Name := string }
+type Band = { Name open string }
 """
 
+    let expected = None
+
+    let actual = codeFix |> tryFix code diagnostic
+
+    Assert.Equal(expected, actual)
+
+[<Theory>]
+[<InlineData("""
+=
+""")>]
+[<InlineData("""
+type Band = { Name: string }
+
+= open
+""")>]
+[<InlineData("""
+type Band = { Name: string = }
+""")>]
+let ``Doesn't fix FS0010 for = in places other than within record field definitions`` code =
     let expected = None
 
     let actual = codeFix |> tryFix code diagnostic
