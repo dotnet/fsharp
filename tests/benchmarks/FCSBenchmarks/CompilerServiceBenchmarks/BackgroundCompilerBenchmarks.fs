@@ -369,7 +369,7 @@ type TransparentCompilerGiraffeBenchmark() =
             useGetSource = true,
             useChangeNotifications = true,
             useTransparentCompiler = this.UseTransparentCompiler,
-             runTimeout = 15_000).CreateBenchmarkBuilder()
+            runTimeout = 15_000).CreateBenchmarkBuilder()
 
     [<Benchmark>]
     member this.ChangeFirstCheckLast() =

@@ -9,6 +9,8 @@ open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open System.Diagnostics
+open Microsoft.VisualStudio.FSharp.Editor
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -25,20 +27,45 @@ module private CheckerExtensions =
 
             let getFileSnapshot (options: FSharpProjectOptions) path =
                 async {
-                    let project = projects[options.ProjectFileName]
-                    let document = project[path]
-                    let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+                    let project =
+                        projects.TryFind options.ProjectFileName
 
-                    let getSource () =
-                        task {
-                            let! sourceText = document.GetTextAsync()
-                            return sourceText.ToFSharpSourceText()
-                        }
+                    if project.IsNone then
+                        Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+
+                    let documentOpt =
+                        project
+                        |> Option.bind (Map.tryFind path)
+
+                    let! version, getSource = 
+                        match documentOpt with
+                        | Some document ->
+                            async {
+
+                                let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                                let getSource () =
+                                    task {
+                                        let! sourceText = document.GetTextAsync()
+                                        return sourceText.ToFSharpSourceText()
+                                    }
+                                return version.ToString(), getSource
+
+                            }
+                        | None ->
+                            Trace.TraceError("Could not find document {0} in project {1}", path, options.ProjectFileName)
+
+                            // Fall back to file system, although this is already suspicious
+                            let version = System.IO.File.GetLastWriteTimeUtc(path)
+                            let getSource () =
+                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
+
+                            async.Return (version.ToString(), getSource)
 
                     return
                         {
                             FileName = path
-                            Version = version.ToString()
+                            Version = version
                             GetSource = getSource
                         }
                 }

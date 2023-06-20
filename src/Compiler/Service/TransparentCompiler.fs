@@ -504,7 +504,7 @@ type internal TransparentCompiler
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-                // TODO: might need to put something like this somewhere
+                // TODO: might need to put something like this somewhere, probably FSharpProjectSnapshot?
                 //// Get the names and time stamps of all the non-framework referenced assemblies, which will act
                 //// as inputs to one of the nodes in the build.
                 ////
