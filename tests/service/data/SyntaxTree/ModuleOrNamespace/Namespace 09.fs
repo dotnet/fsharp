@@ -1,0 +1,7 @@
+namespace
+
+()
+
+namespace Ns2
+
+()
