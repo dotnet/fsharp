@@ -745,7 +745,7 @@ module MutRecBindingChecking =
 
     /// Represents one element in a type definition, after the first phase    
     type TyconBindingPhase2A =
-      /// An entry corresponding to the definition of the implicit constructor for a class
+      /// An entry corresponding to the definition of the static constructor of a class and optional of the incremental constructor (if one exists)
       | Phase2AIncrClassCtor of StaticCtorInfo * IncrClassCtorInfo option
 
       /// An 'inherit' declaration in an incremental class
