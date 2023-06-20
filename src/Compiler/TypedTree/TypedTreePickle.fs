@@ -1812,9 +1812,15 @@ let rec p_tycon_repr x st =
         false
 
     // Unions with static fields, added to format
-    | TFSharpTyconRepr ({ fsobjmodel_cases = x; fsobjmodel_kind = TFSharpUnion } as r) ->
+    | TFSharpTyconRepr ({ fsobjmodel_cases = cases; fsobjmodel_kind = TFSharpUnion } as r) ->
+        if st.oglobals.compilingFSharpCore then
+            let fields = r.fsobjmodel_rfields.FieldsByIndex
+            let firstFieldRange = fields[0].DefinitionRange
+            let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
+            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
+           
         p_byte 2 st
-        p_array p_unioncase_spec x.CasesTable.CasesByIndex st
+        p_array p_unioncase_spec cases.CasesTable.CasesByIndex st
         p_tycon_objmodel_data r st
         false
 
@@ -1989,8 +1995,14 @@ and p_tycon_objmodel_kind x st =
     | TFSharpStruct      -> p_byte 2 st
     | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TFSharpEnum        -> p_byte 4 st
-    | TFSharpUnion       -> p_byte 5 st
-    | TFSharpRecord      -> p_byte 6 st
+    | TFSharpUnion       -> 
+        if st.oglobals.compilingFSharpCore then
+            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 5 st
+    | TFSharpRecord      -> 
+        if st.oglobals.compilingFSharpCore then
+            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 6 st
 
 and p_vrefFlags x st =
     match x with
