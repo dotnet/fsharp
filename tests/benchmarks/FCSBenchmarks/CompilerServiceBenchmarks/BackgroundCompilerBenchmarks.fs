@@ -346,19 +346,42 @@ type TransparentCompilerGiraffeBenchmark() =
     let rng = System.Random()
 
     let modify (sourceFile: SyntheticSourceFile) =
-        { sourceFile with Source = $"{sourceFile.Source}\n// {rng.NextDouble()}" }
+        { sourceFile with
+            Source = $"{sourceFile.Source}\n// {rng.NextDouble()}"
+            SignatureFile =
+                match sourceFile.SignatureFile with
+                | Custom signature -> Custom $"{signature}\n// {rng.NextDouble().ToString()}"
+                | x -> x
+            }
 
     let break' (sourceFile: SyntheticSourceFile) =
-        { sourceFile with Source = $"/{sourceFile.Source}\n// {rng.NextDouble()}" }
+        { sourceFile with
+            Source = $"/{sourceFile.Source}\n// {rng.NextDouble()}"
+            SignatureFile =
+                match sourceFile.SignatureFile with
+                | Custom signature -> Custom $"/{signature}\n// {rng.NextDouble().ToString()}"
+                | x -> x
+            }
 
     let fix (sourceFile: SyntheticSourceFile) =
-        { sourceFile with Source = sourceFile.Source.Substring(1) }
+        { sourceFile with
+            Source = sourceFile.Source.Substring 1
+            SignatureFile =
+                match sourceFile.SignatureFile with
+                | Custom signature -> Custom (signature.Substring 1)
+                | x -> x
+            }
 
     [<ParamsAllValues>]
     member val UseTransparentCompiler = true with get,set
 
+    [<ParamsAllValues>]
+    member val SignatureFiles = true with get,set
+
     member this.Project =
-        let project = SyntheticProject.CreateFromRealProject (__SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ ".." ++ "Giraffe/src/Giraffe")
+        let projectDir = if this.SignatureFiles then "Giraffe-signatures" else "Giraffe"
+
+        let project = SyntheticProject.CreateFromRealProject (__SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ ".." ++ projectDir ++ "src/Giraffe")
         { project with OtherOptions = "--nowarn:FS3520"::project.OtherOptions }
 
     [<GlobalSetup>]
@@ -371,7 +394,7 @@ type TransparentCompilerGiraffeBenchmark() =
             useTransparentCompiler = this.UseTransparentCompiler,
             runTimeout = 15_000).CreateBenchmarkBuilder()
 
-    [<Benchmark>]
+    //[<Benchmark>]
     member this.ChangeFirstCheckLast() =
 
         use _ = Activity.start "Benchmark" [
@@ -383,7 +406,7 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile (this.Project.SourceFiles |> List.last).Id expectOk
         }
 
-    [<Benchmark>]
+    //[<Benchmark>]
     member this.ChangeSecondCheckLast() =
 
         use _ = Activity.start "Benchmark" [
@@ -414,6 +437,7 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile "ModelValidation" expectOk
 
             updateFile "Core" break'
+            saveAll
             checkFile "Core" expectErrors
             checkFile "Routing" expectErrors
             updateFile "Routing" modify
@@ -421,6 +445,7 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile "EndpointRouting" expectErrors
 
             updateFile "Core" fix
+            saveAll
             checkFile "Core" expectOk
             checkFile "Routing" expectOk
             checkFile "Streaming" expectOk

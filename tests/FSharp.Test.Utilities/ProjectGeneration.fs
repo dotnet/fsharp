@@ -374,14 +374,14 @@ let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
             f.Source
         else
             renderNamespaceModule project f
-            for p in project.DependsOn do
+            for p in project.DependsOn |> set do
                 $"open {p.Name}"
 
             $"type {f.TypeName}<'a> = T{f.Id} of 'a"
 
             $"let {f.FunctionName} x ="
 
-            for dep in f.DependsOn do
+            for dep in f.DependsOn |> set do
                 $"    Module{dep}.{defaultFunctionName} x,"
 
             $"    T{f.Id} x"
@@ -404,7 +404,11 @@ let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
 
 let renderCustomSignatureFile (project: SyntheticProject) (f: SyntheticSourceFile) =
     match f.SignatureFile with
-    | Custom signature -> $"{renderNamespaceModule project f}\n{signature}"
+    | Custom signature ->
+        if project.AutoAddModules then
+            $"{renderNamespaceModule project f}\n{signature}"
+        else
+            signature
     | _ -> failwith $"File {f.FileName} does not have a custom signature file."
 
 let private renderFsProj (p: SyntheticProject) =
@@ -783,12 +787,14 @@ type ProjectWorkflowBuilder
         ?useChangeNotifications,
         ?useSyntaxTreeCache,
         ?useTransparentCompiler,
-        ?runTimeout
+        ?runTimeout,
+        ?autoStart
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler false
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
+    let autoStart = defaultArg autoStart true
 
     let mutable latestProject = initialProject
     let mutable activity = None
@@ -857,9 +863,9 @@ type ProjectWorkflowBuilder
         if Directory.Exists initialProject.ProjectDir then
             Directory.Delete(initialProject.ProjectDir, true)
 
-    member this.Run(workflow: Async<WorkflowContext>) =
+    member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 60_000)
+            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 600_000)
         finally
             if initialContext.IsNone then
                 this.DeleteProjectDir()
@@ -867,6 +873,12 @@ type ProjectWorkflowBuilder
             tracerProvider |> Option.iter (fun x ->
                 x.ForceFlush() |> ignore
                 x.Dispose())
+
+    member this.Run(workflow: Async<WorkflowContext>) =
+        if autoStart then
+            this.Execute(workflow) |> async.Return
+        else
+            workflow
 
     [<CustomOperation "withProject">]
     member this.WithProject(workflow: Async<WorkflowContext>, f) =
@@ -907,6 +919,8 @@ type ProjectWorkflowBuilder
                     let project, file = project.FindInAllProjects fileId
                     let filePath = project.ProjectDir ++ file.FileName
                     do! checker.NotifyFileChanged(filePath, project.GetProjectOptions checker)
+                    if (project.Find fileId).SignatureFile <> No then
+                        do! checker.NotifyFileChanged($"{filePath}i", project.GetProjectOptions checker)
 
                 return project
             })
@@ -1192,9 +1206,11 @@ type SyntheticProject with
         let fsproj = XmlDocument()
         do fsproj.Load projectFile
 
-        let sourceFiles =
-            [| for node in fsproj.DocumentElement.SelectNodes("//Compile") ->
-                   projectDir ++ node.Attributes["Include"].InnerText |]
+        let signatureFiles, sourceFiles =
+            [ for node in fsproj.DocumentElement.SelectNodes("//Compile") ->
+                  projectDir ++ node.Attributes["Include"].InnerText ]
+            |> List.partition (fun path -> path.EndsWith ".fsi")
+        let signatureFiles = set signatureFiles
 
         let parseReferences refType =
             [ for node in fsproj.DocumentElement.SelectNodes($"//{refType}") do
@@ -1211,7 +1227,9 @@ type SyntheticProject with
               name,
               [| for f in sourceFiles do
                      { sourceFile (Path.GetFileNameWithoutExtension f) [] with
-                         Source = File.ReadAllText f } |]
+                         Source = File.ReadAllText f
+                         SignatureFile = if signatureFiles.Contains $"{f}i" then Custom (File.ReadAllText $"{f}i") else No
+                         } |]
           ) with
             AutoAddModules = false
             NugetReferences = parseReferences "PackageReference"
