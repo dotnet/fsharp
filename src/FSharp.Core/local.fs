@@ -480,17 +480,57 @@ module internal List =
             else
                 filterToFreshConsTail cons f t
 
-    let rec filter predicate l =
-        match l with
-        | [] -> l
-        | h :: ([] as nil) -> if predicate h then l else nil
-        | h :: t ->
-            if predicate h then
-                let cons = freshConsNoTail h
-                filterToFreshConsTail cons predicate t
-                cons
-            else
-                filter predicate t
+    [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+    let invalidStateOfEmptyList () = raise (System.Exception "logic error; list should not be empty")
+
+    /// optimized filter if filtered items are all at the end of the list then that list is returned
+    /// the function entryToFilterToFreshConsTail was the original version of filter, and is used
+    /// in the case of there being multiple segments in the data
+    let filter predicate originalList =
+        let rec entryToFilterToFreshConsTail lst =
+            match lst with
+            | [] -> []
+            | hd :: tl when predicate hd ->
+                match tl with 
+                | [] -> lst
+                | _ -> 
+                    let cons = freshConsNoTail hd
+                    filterToFreshConsTail cons predicate tl
+                    cons
+            | _ :: tl -> entryToFilterToFreshConsTail tl
+
+        let rec prependFirstSegmentItems exclusiveFirstSegmentEnd firstSegmentPtr newListWithNoTail =
+            match firstSegmentPtr with
+            | [] -> invalidStateOfEmptyList ()
+            | _ when obj.ReferenceEquals (firstSegmentPtr, exclusiveFirstSegmentEnd) -> newListWithNoTail
+            | hd :: tl ->
+                let nextElement = freshConsNoTail hd
+                setFreshConsTail newListWithNoTail nextElement
+                prependFirstSegmentItems exclusiveFirstSegmentEnd tl nextElement
+
+        let handleMultipleSegements inclusiveFirstSegementStart exclusiveFirstSegmentEnd remaining =
+            let filteredTail = entryToFilterToFreshConsTail remaining
+            match inclusiveFirstSegementStart with
+            | [] -> invalidStateOfEmptyList ()
+            | firstElement::remainingFirstSegmentElements ->
+                let firstItem = freshConsNoTail firstElement
+                let lastItemWithNoTail = prependFirstSegmentItems exclusiveFirstSegmentEnd remainingFirstSegmentElements firstItem
+                setFreshConsTail lastItemWithNoTail filteredTail
+                firstItem
+
+        let rec inFirstSegment startFirstSegment current =
+            match current with
+            | [] -> startFirstSegment
+            | hd::tl when predicate hd -> inFirstSegment startFirstSegment tl
+            | _::tl -> handleMultipleSegements startFirstSegment current tl
+
+        let rec preFirstSegement lst =
+            match lst with
+            | [] -> []
+            | hd::tl when predicate hd -> inFirstSegment lst tl
+            | _::tl -> preFirstSegement tl 
+
+        preFirstSegement originalList
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
