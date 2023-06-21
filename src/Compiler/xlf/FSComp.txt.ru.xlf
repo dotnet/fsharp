@@ -1153,8 +1153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">Конструкцию "let! ... and! ..." можно использовать только в том случае, если построитель выражений с вычислениями определяет либо метод "{0}", либо соответствующие методы "MergeSource" и "Bind"</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="needs-review-translation">Конструкцию "let! ... and! ..." можно использовать только в том случае, если построитель выражений с вычислениями определяет либо метод "{0}", либо соответствующие методы "MergeSource" и "Bind"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -3283,8 +3283,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Задано несколько модификаторов доступности для метода получения или задания свойства</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">Задано несколько модификаторов доступности для метода получения или задания свойства</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
