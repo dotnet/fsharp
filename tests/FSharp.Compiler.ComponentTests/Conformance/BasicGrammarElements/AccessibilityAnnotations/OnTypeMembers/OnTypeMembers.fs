@@ -85,8 +85,8 @@ module AccessibilityAnnotations_OnTypeMembers =
         |> withDiagnostics [
             (Error 10, Line 15, Col 49, Line 15, Col 50, "Unexpected symbol ')' in pattern")
             (Error 1244, Line 15, Col 48, Line 15, Col 50, "Attempted to parse this as an operator name, but failed")
-            (Error 558, Line 16, Col 36, Line 16, Col 50, "Multiple accessibilities given for property getter or setter")
-            (Error 558, Line 19, Col 35, Line 19, Col 56, "Multiple accessibilities given for property getter or setter")
+            (Error 558, Line 16, Col 36, Line 16, Col 50, "When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.")
+            (Error 558, Line 19, Col 35, Line 19, Col 56, "When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.")
             (Error 10, Line 20, Col 49, Line 20, Col 50, "Unexpected identifier in pattern")
             (Error 1244, Line 20, Col 48, Line 20, Col 57, "Attempted to parse this as an operator name, but failed")
             (Error 10, Line 23, Col 36, Line 23, Col 42, "Unexpected keyword 'public' in member definition")

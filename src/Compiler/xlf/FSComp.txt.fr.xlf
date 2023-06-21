@@ -3298,8 +3298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Plusieurs accessibilités fournies pour la méthode getter ou setter de la propriété</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">Plusieurs accessibilités fournies pour la méthode getter ou setter de la propriété</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
