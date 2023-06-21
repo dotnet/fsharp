@@ -422,7 +422,6 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile "ModelValidation" expectOk
 
             updateFile "Core" break'
-            saveAll
             checkFile "Core" expectErrors
             checkFile "Routing" (if this.SignatureFiles then expectOk else expectErrors)
             updateFile "Routing" modify
@@ -430,7 +429,6 @@ type TransparentCompilerGiraffeBenchmark() =
             checkFile "EndpointRouting" (if this.SignatureFiles then expectOk else expectErrors)
 
             updateFile "Core" fix
-            saveAll
             checkFile "Core" expectOk
             checkFile "Routing" expectOk
             checkFile "Streaming" expectOk
