@@ -5879,10 +5879,7 @@ atomTypeOrAnonRecdType:
            flds |> List.choose (function
              | (SynField([], false, Some id, ty, false, _xmldoc, None, _m, _trivia)) -> Some(id, ty)
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
-
-       match flds2 with
-       | [] -> SynType.FromParseError(rhs parseState 1)
-       | _ -> SynType.AnonRecd(isStruct, flds2, rhs parseState 1) }
+       SynType.AnonRecd(isStruct, flds2, rhs parseState 1) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
