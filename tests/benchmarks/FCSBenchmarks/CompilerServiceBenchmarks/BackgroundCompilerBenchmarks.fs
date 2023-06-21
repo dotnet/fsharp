@@ -345,32 +345,17 @@ type TransparentCompilerGiraffeBenchmark() =
 
     let rng = System.Random()
 
+    let addComment s = $"{s}\n// {rng.NextDouble().ToString()}"
+    let prependSlash s = $"/{s}\n// {rng.NextDouble()}"
+
     let modify (sourceFile: SyntheticSourceFile) =
-        { sourceFile with
-            Source = $"{sourceFile.Source}\n// {rng.NextDouble()}"
-            SignatureFile =
-                match sourceFile.SignatureFile with
-                | Custom signature -> Custom $"{signature}\n// {rng.NextDouble().ToString()}"
-                | x -> x
-            }
+        { sourceFile with Source = addComment sourceFile.Source }
 
     let break' (sourceFile: SyntheticSourceFile) =
-        { sourceFile with
-            Source = $"/{sourceFile.Source}\n// {rng.NextDouble()}"
-            SignatureFile =
-                match sourceFile.SignatureFile with
-                | Custom signature -> Custom $"/{signature}\n// {rng.NextDouble().ToString()}"
-                | x -> x
-            }
+        { sourceFile with Source = prependSlash sourceFile.Source }
 
     let fix (sourceFile: SyntheticSourceFile) =
-        { sourceFile with
-            Source = sourceFile.Source.Substring 1
-            SignatureFile =
-                match sourceFile.SignatureFile with
-                | Custom signature -> Custom (signature.Substring 1)
-                | x -> x
-            }
+        { sourceFile with Source = sourceFile.Source.Substring 1 }
 
     [<ParamsAllValues>]
     member val UseTransparentCompiler = true with get,set
@@ -439,10 +424,10 @@ type TransparentCompilerGiraffeBenchmark() =
             updateFile "Core" break'
             saveAll
             checkFile "Core" expectErrors
-            checkFile "Routing" expectErrors
+            checkFile "Routing" (if this.SignatureFiles then expectOk else expectErrors)
             updateFile "Routing" modify
-            checkFile "Streaming" expectErrors
-            checkFile "EndpointRouting" expectErrors
+            checkFile "Streaming" (if this.SignatureFiles then expectOk else expectErrors)
+            checkFile "EndpointRouting" (if this.SignatureFiles then expectOk else expectErrors)
 
             updateFile "Core" fix
             saveAll
