@@ -4985,10 +4985,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let enclosingNamespacePath, defs =
               if kind.IsModule then
                   let nsp, modName =
-                      if not longId.IsEmpty then
-                        List.frontAndBack longId
-                      else
-                           [], mkSynId m.EndRange ""
+                      match longId with
+                      | [] -> [], mkSynId m.EndRange ""
+                      | _ -> List.frontAndBack longId
                   let modDecl = [SynModuleDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, defs, true, m, SynModuleDeclNestedModuleTrivia.Zero)] 
                   nsp, modDecl
               else 
