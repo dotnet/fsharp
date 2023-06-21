@@ -554,6 +554,11 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         Some true
                     else
                         None
+
+                override _.VisitTypeAbbrev(_, synType, range) =
+                    match synType with
+                    | SynType.AnonRecd _ when pos |> isWithin range.Start range.End -> Some true
+                    | _ -> None
             }
 
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
