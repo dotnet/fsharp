@@ -25,7 +25,19 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0010")
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+    override this.RegisterCodeFixesAsync context =
+        // This is a performance shortcut.
+        // Since FS0010 fires all too often, we're just stopping any handling of it
+        // in case when there is the message doesn't have a notion of symbols in question.
+        // The code fix logic itself still has this logic and implements it more reliably.
+        if
+            context.Diagnostics
+            |> Seq.map (fun d -> $"{d.Descriptor.MessageFormat}")
+            |> Seq.exists (fun d -> d.Contains "=" && d.Contains ":")
+        then
+            context.RegisterFsharpFix(this)
+        else
+            task { return () }
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync document span =
