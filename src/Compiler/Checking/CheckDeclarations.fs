@@ -914,7 +914,10 @@ module MutRecBindingChecking =
                             // Phase2A: let-bindings - pass through 
                             let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)     
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
-                              
+
+                        | SynMemberDefn.Member(SynBinding(headPat = SynPat.FromParseError(SynPat.Wild _, _)), _), _ ->
+                            [], innerState
+
                         | SynMemberDefn.Member (bind, m), _ ->
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
                             let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
@@ -4882,6 +4885,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.HashDirective _ -> 
           return ([], [], []), env, env
 
+      | SynModuleDecl.NestedModule(moduleInfo = (SynComponentInfo(longId = []))) ->
+          return ([], [], []), env, env
+
       | SynModuleDecl.NestedModule(compInfo, isRec, moduleDefs, isContinuingModule, m, trivia) ->
 
           // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
@@ -4976,9 +4982,13 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           // to 
           //    namespace [rec] A.B
           //      module M = ...
-          let enclosingNamespacePath, defs = 
-              if kind.IsModule then 
-                  let nsp, modName = List.frontAndBack longId
+          let enclosingNamespacePath, defs =
+              if kind.IsModule then
+                  let nsp, modName =
+                      if not longId.IsEmpty then
+                        List.frontAndBack longId
+                      else
+                           [], mkSynId m.EndRange ""
                   let modDecl = [SynModuleDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, defs, true, m, SynModuleDeclNestedModuleTrivia.Zero)] 
                   nsp, modDecl
               else 
@@ -5078,6 +5088,9 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                           if letrec then [MutRecShape.Lets binds]
                           else List.map (List.singleton >> MutRecShape.Lets) binds
                   binds, (false, false, attrs)
+
+              | SynModuleDecl.NestedModule(moduleInfo = (SynComponentInfo(longId = []))) ->
+                  [], (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.NestedModule(moduleInfo=compInfo; isRecursive=isRec; decls=synDefs; range=moduleRange) -> 
                   if isRec then warning(Error(FSComp.SR.tcRecImplied(), compInfo.Range))
