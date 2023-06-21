@@ -1266,8 +1266,21 @@ module PrintTastMemberOrVals =
                 layoutTyconRef denv vref.MemberApparentEntity ^^ SepL.dot ^^ nameL
             else
                 nameL
+
+        let memberHasSameTyparNameAsParentTypeTypars =
+            let parentTyparNames =
+                vref.DeclaringEntity.TyparsNoRange
+                |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
+                |> set
+            niceMethodTypars
+            |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
+
         let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
-        let nameL = if denv.showTyparBinding || typarOrderMismatch then layoutTyparDecls denv nameL true niceMethodTypars else nameL
+        let nameL =
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+                layoutTyparDecls denv nameL true niceMethodTypars
+            else
+                nameL
         let nameL = layoutAccessibility denv vref.Accessibility nameL
         nameL
 
