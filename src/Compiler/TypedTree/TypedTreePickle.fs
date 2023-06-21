@@ -1796,6 +1796,7 @@ let u_cpath st =
 
 let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
+
     match x with
     // Records
     | TFSharpTyconRepr { fsobjmodel_rfields = fs; fsobjmodel_kind = TFSharpRecord } ->
@@ -1817,7 +1818,7 @@ let rec p_tycon_repr x st =
             let fields = r.fsobjmodel_rfields.FieldsByIndex
             let firstFieldRange = fields[0].DefinitionRange
             let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
-            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
            
         p_byte 2 st
         p_array p_unioncase_spec cases.CasesTable.CasesByIndex st
@@ -1997,11 +1998,11 @@ and p_tycon_objmodel_kind x st =
     | TFSharpEnum        -> p_byte 4 st
     | TFSharpUnion       -> 
         if st.oglobals.compilingFSharpCore then
-            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
         p_byte 5 st
     | TFSharpRecord      -> 
         if st.oglobals.compilingFSharpCore then
-            errorR(Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
         p_byte 6 st
 
 and p_vrefFlags x st =
