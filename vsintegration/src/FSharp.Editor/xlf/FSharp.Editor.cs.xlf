@@ -38,18 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="needs-review-translation">Vodítka struktury bloků; 
-
-Zobrazit pokyny pro strukturu kódu F#;
-Osnova;
-Zobrazit sbalitelné a sbalitelné uzly pro kód F#;
-Vložené tipy;
-Zobrazovat pomocné parametry vloženého typu (Preview);
-Zobrazit pomocné parametry návratového typu (Preview);
-Zobrazit vložené nápovědy k názvům parametrů (Preview); Pivo;
- 
-Živé vyrovnávací paměti;
-Pro kontrolu použijte živé (neuložené) vyrovnávací paměti.</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
