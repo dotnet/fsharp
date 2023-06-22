@@ -989,6 +989,10 @@ module CancellableTasks =
 
         let inline startAsTask ct ([<InlineIfLambda>] ctask: CancellableTask<_>) = (ctask ct) :> Task
 
+        let inline runSyncronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+            let task = ctask ct
+            task.GetAwaiter().GetResult()
+
     /// <exclude />
     [<AutoOpen>]
     module MergeSourcesExtensions =
