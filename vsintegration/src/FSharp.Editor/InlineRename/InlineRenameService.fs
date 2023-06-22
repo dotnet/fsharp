@@ -88,9 +88,8 @@ type internal InlineRenameInfo
 
     let getDocumentText (document: Document) =
         match document.TryGetText() with
-        | true, text -> 
-            CancellableTask.singleton text
-        | _ -> 
+        | true, text -> CancellableTask.singleton text
+        | _ ->
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 return! document.GetTextAsync(cancellationToken)
@@ -119,7 +118,7 @@ type internal InlineRenameInfo
         ImmutableArray.Create(new FSharpInlineRenameLocation(document, triggerSpan))
 
     override _.GetReferenceEditSpan(location, cancellationToken) =
-        
+
         let text =
             if location.Document = document then
                 sourceText
@@ -169,22 +168,24 @@ type internal InlineRenameInfo
                                             | None -> ()
                                     |]
                             }
+
                         yield CancellableTask.start cancellationToken t
                 |]
 
             let! results = Task.WhenAll locationTasks
-            
+
             let locations = Array.concat results
 
             return
                 InlineRenameLocationSet(locations, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol)
                 :> FSharpInlineRenameLocationSet
-        } |> CancellableTask.start cancellationToken
+        }
+        |> CancellableTask.start cancellationToken
 
 [<Export(typeof<FSharpInlineRenameServiceImplementation>); Shared>]
 type internal InlineRenameService [<ImportingConstructor>] () =
 
-    inherit FSharpInlineRenameServiceImplementation()        
+    inherit FSharpInlineRenameServiceImplementation()
 
     override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
         cancellableTask {
@@ -201,9 +202,8 @@ type internal InlineRenameService [<ImportingConstructor>] () =
             match symbol with
             | None -> return Unchecked.defaultof<_>
             | Some symbol ->
-                let! _, checkFileResults =
-                    document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
-                    
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
+
                 let symbolUse =
                     checkFileResults.GetSymbolUseAtLocation(
                         fcsTextLineNumber,
@@ -216,11 +216,14 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                 | None -> return Unchecked.defaultof<_>
                 | Some symbolUse ->
                     let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-                    
-                    match span with 
-                    | None -> return  Unchecked.defaultof<_>
+
+                    match span with
+                    | None -> return Unchecked.defaultof<_>
                     | Some span ->
                         let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
 
-                        return InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct) :> FSharpInlineRenameInfo
-        } |> CancellableTask.start cancellationToken
+                        return
+                            InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
+                            :> FSharpInlineRenameInfo
+        }
+        |> CancellableTask.start cancellationToken
