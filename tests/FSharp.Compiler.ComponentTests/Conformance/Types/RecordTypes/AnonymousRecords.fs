@@ -43,3 +43,25 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withErrorCode 3523
+
+    [<Fact>]
+    let ``Anonymous record types with parser errors or no fields do not produce overlapping diagnostics`` () =
+        FSharp """
+module AnonRecd
+
+type ContactMethod =
+    | Address of {| Line1 : string; Line 2 : string; Postcode : string |}
+
+let (x: {| |}) = ()
+
+type ErrorResponse =
+    { error: {| type : string
+                message : string |} }
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 10, Line 5, Col 42, Line 5, Col 43, "Unexpected integer literal in field declaration. Expected ':' or other token."
+            Error 10, Line 7, Col 12, Line 7, Col 14, "Unexpected symbol '|}' in field declaration. Expected identifier or other token."
+            Error 10, Line 10, Col 17, Line 10, Col 21, "Incomplete structured construct at or before this point in field declaration. Expected identifier or other token."
+        ]
