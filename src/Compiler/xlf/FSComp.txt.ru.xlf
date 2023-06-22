@@ -827,6 +827,11 @@
         <target state="translated">Неполное выражение оператора (например, a^b) или вызов квалифицированного типа (например, ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
         <target state="new">Expecting member body</target>
