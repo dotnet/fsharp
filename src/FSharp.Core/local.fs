@@ -480,14 +480,14 @@ module internal List =
             else
                 filterToFreshConsTail cons f t
 
-    [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
-    let invalidStateOfEmptyList () = raise (System.Exception "logic error; list should not be empty")
+    module FilterOptimization = 
+        /// This stops the F# compiler from inlining this function, as well as the JIT. This funciton should never
+        /// be executed, as it is only invoked under precondtions which should never be valid. Hence the lack
+        /// of inlining is just so that in calling code this just remains as a call stub.
+        [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+        let private invalidStateOfEmptyList () = raise (System.Exception "logic error; list should not be empty")
 
-    /// optimized filter if filtered items are all at the end of the list then that list is returned
-    /// the function entryToFilterToFreshConsTail was the original version of filter, and is used
-    /// in the case of there being multiple segments in the data
-    let filter predicate originalList =
-        let rec entryToFilterToFreshConsTail lst =
+        let rec private entryToFilterToFreshConsTail predicate lst =
             match lst with
             | [] -> []
             | hd :: tl when predicate hd ->
@@ -497,9 +497,9 @@ module internal List =
                     let cons = freshConsNoTail hd
                     filterToFreshConsTail cons predicate tl
                     cons
-            | _ :: tl -> entryToFilterToFreshConsTail tl
+            | _ :: tl -> entryToFilterToFreshConsTail predicate tl
 
-        let rec prependFirstSegmentItems exclusiveFirstSegmentEnd firstSegmentPtr newListWithNoTail =
+        let rec private prependFirstSegmentItems exclusiveFirstSegmentEnd firstSegmentPtr newListWithNoTail =
             match firstSegmentPtr with
             | [] -> invalidStateOfEmptyList ()
             | _ when obj.ReferenceEquals (firstSegmentPtr, exclusiveFirstSegmentEnd) -> newListWithNoTail
@@ -508,8 +508,8 @@ module internal List =
                 setFreshConsTail newListWithNoTail nextElement
                 prependFirstSegmentItems exclusiveFirstSegmentEnd tl nextElement
 
-        let handleMultipleSegements inclusiveFirstSegementStart exclusiveFirstSegmentEnd remaining =
-            let filteredTail = entryToFilterToFreshConsTail remaining
+        let private handleMultipleSegements predicate inclusiveFirstSegementStart exclusiveFirstSegmentEnd remaining =
+            let filteredTail = entryToFilterToFreshConsTail predicate remaining
             match inclusiveFirstSegementStart with
             | [] -> invalidStateOfEmptyList ()
             | firstElement::remainingFirstSegmentElements ->
@@ -518,19 +518,26 @@ module internal List =
                 setFreshConsTail lastItemWithNoTail filteredTail
                 firstItem
 
-        let rec inFirstSegment startFirstSegment current =
+        let rec private inFirstSegment predicate startFirstSegment current =
             match current with
             | [] -> startFirstSegment
-            | hd::tl when predicate hd -> inFirstSegment startFirstSegment tl
-            | _::tl -> handleMultipleSegements startFirstSegment current tl
+            | hd::tl when predicate hd -> inFirstSegment predicate startFirstSegment tl
+            | _::tl -> handleMultipleSegements predicate startFirstSegment current tl
 
-        let rec preFirstSegement lst =
+        let rec private preFirstSegement predicate lst =
             match lst with
             | [] -> []
-            | hd::tl when predicate hd -> inFirstSegment lst tl
-            | _::tl -> preFirstSegement tl 
+            | hd::tl when predicate hd -> inFirstSegment predicate lst tl
+            | _::tl -> preFirstSegement predicate tl 
 
-        preFirstSegement originalList
+        /// optimized filter if filtered items are all at the end of the list then that list is returned
+        /// the function entryToFilterToFreshConsTail was the original version of filter, and is used
+        /// in the case of there being multiple segments in the data
+        let invoke predicate originalList =
+            preFirstSegement predicate originalList
+
+    let filter predicate originalList =
+        FilterOptimization.invoke predicate originalList
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
