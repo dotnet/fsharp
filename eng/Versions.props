@@ -13,9 +13,9 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>7</FSMajorVersion>
+    <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>300</FSBuildVersion>
+    <FSBuildVersion>100</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -32,7 +32,7 @@
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>7</FCSMinorVersion>
+    <FCSMinorVersion>8</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -47,8 +47,7 @@
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
-
-    <FSToolsMinorVersion>5</FSToolsMinorVersion>
+    <FSToolsMinorVersion>8</FSToolsMinorVersion>
     <FSToolsBuildVersion>0</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
@@ -57,7 +56,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>6</VSMinorVersion>
+    <VSMinorVersion>7</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -85,32 +84,31 @@
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json;
-      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7-transport/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8-transport/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk-archived/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl-archived/nuget/v3/index.json;
-  
     </RestoreSources>
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
-    <SystemCollectionsImmutableVersion>6.0.0</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>7.0.0</SystemCollectionsImmutableVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>7.0.0</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>7.0.2</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>6.0.1</SystemReflectionMetadataVersion>
-    <SystemThreadingTasksDataflow>4.11.1</SystemThreadingTasksDataflow>
+    <SystemReflectionMetadataVersion>7.0.0</SystemReflectionMetadataVersion>
+    <SystemThreadingTasksDataflow>7.0.0</SystemThreadingTasksDataflow>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
     <RoslynVersion>4.6.0-2.23126.2</RoslynVersion>
-    <VisualStudioEditorPackagesVersion>17.5.274-preview</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioShellPackagesVersion>17.5.0-preview-2-33117-317</MicrosoftVisualStudioShellPackagesVersion>
-    <VisualStudioProjectSystemPackagesVersion>17.5.202-pre-g89e17c9f72</VisualStudioProjectSystemPackagesVersion>
-    <MicrosoftVisualStudioThreadingPackagesVersion>17.5.10-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildOverallPackagesVersion>17.5.0</MicrosoftBuildOverallPackagesVersion>
+    <VisualStudioEditorPackagesVersion>17.7.25-preview</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioShellPackagesVersion>17.7.35338-preview.1</MicrosoftVisualStudioShellPackagesVersion>
+    <VisualStudioProjectSystemPackagesVersion>17.7.58-pre</VisualStudioProjectSystemPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>17.7.5-preview</MicrosoftVisualStudioThreadingPackagesVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -143,10 +141,10 @@
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
-    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildVersion>17.7.0-preview-23217-02</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>17.7.0-preview-23217-02</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildUtilitiesCoreVersion>
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
@@ -170,10 +168,9 @@
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
-    <MicrosoftVisualStudioRpcContractsVersion>17.5.17-alpha</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>17.7.3-preview</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <MicrosoftVisualStudioValidationVersion>17.0.71</MicrosoftVisualStudioValidationVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
+    <MicrosoftVisualStudioValidationVersion>17.6.11</MicrosoftVisualStudioValidationVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
     <VSSDKVSLangProjVersion>7.0.4</VSSDKVSLangProjVersion>
     <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
@@ -188,20 +185,21 @@
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
-    <SystemComponentModelCompositionVersion>6.0.0</SystemComponentModelCompositionVersion>
+    <SystemComponentModelCompositionVersion>7.0.0</SystemComponentModelCompositionVersion>
+    <SystemCompositionVersion>7.0.0</SystemCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>17.4.0</MicrosoftNETTestSdkVersion>
-    <NewtonsoftJsonVersion>13.0.2</NewtonsoftJsonVersion>
+    <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <NUnitVersion>3.13.2</NUnitVersion>
     <NUnit3TestAdapterVersion>4.1.0</NUnit3TestAdapterVersion>
     <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
     <NunitXmlTestLoggerVersion>2.1.80</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
-    <StreamJsonRpcVersion>2.14.20</StreamJsonRpcVersion>
+    <StreamJsonRpcVersion>2.16.8-preview</StreamJsonRpcVersion>
     <NerdbankStreamsVersion>2.9.112</NerdbankStreamsVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
     <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
