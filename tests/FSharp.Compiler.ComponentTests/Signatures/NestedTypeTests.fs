@@ -1,10 +1,10 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.NestedTypeTests
+﻿module Signatures.NestedTypeTests
 
 open Xunit
 open FsUnit
 open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Nested type with generics`` () =
@@ -81,7 +81,7 @@ module Sample
 val f: g: Lib.Root<System.TimeSpan,System.TimeSpan,System.TimeSpan,System.TimeSpan,System.TimeSpan>.Foo<int,float,string,System.DateTime>.Bar<char,int,string> -> unit"""
 
 [<FactForNETCOREAPP>]
-let ``ImmutableArray<'T>.Builder roundtrip`` () =
+let ``ImmutableArray<'T> Builder roundtrip`` () =
     let impl =
         """
 module Library

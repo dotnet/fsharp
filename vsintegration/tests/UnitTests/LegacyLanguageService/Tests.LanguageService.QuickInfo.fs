@@ -268,7 +268,7 @@ type Async =
   static member AwaitWaitHandle: waitHandle: WaitHandle * ?millisecondsTimeout: int -> Async<bool>
   static member CancelDefaultToken: unit -> unit
   static member Catch: computation: Async<'T> -> Async<Choice<'T,exn>>
-  static member Choice: computations: seq<Async<'T option>> -> Async<'T option>
+  static member Choice: computations: Async<'T option> seq -> Async<'T option>
   static member FromBeginEnd: beginAction: (AsyncCallback * obj -> IAsyncResult) * endAction: (IAsyncResult -> 'T) * ?cancelAction: (unit -> unit) -> Async<'T> + 3 overloads
   static member FromContinuations: callback: (('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
@@ -2475,7 +2475,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_3*)", "Full name: Microsoft.FSharp.Core.float")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker2_1*)","type seq<'T> = System.Collections.Generic.IEnumerable<'T>")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker2_1*)","Full name: Microsoft.FSharp.Collections.seq<_>")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "val seq: seq<'T> -> seq<'T>")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "val seq: 'T seq -> 'T seq")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "Full name: Microsoft.FSharp.Core.Operators.seq")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker3_1*)","type Set<'T (requires comparison)> =")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker3_1*)","Full name: Microsoft.FSharp.Collections.Set")
@@ -2679,7 +2679,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_1*)", "type MyInt = int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_2*)", "val myInt: MyInt")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_1*)", "type PairOfFloat = float * float")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "val MySeq: seq<PairOfFloat>")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "val MySeq: PairOfFloat seq")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_1*)", "type IA =")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_2*)", "type ClassIA =")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "type GenericClass<'a (requires 'a :> IA)> =")

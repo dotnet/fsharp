@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions.fsc
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -202,5 +202,6 @@ Parameter name: codepage")
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 7, Col 10, Line 7, Col 11, "Unexpected character '�' in type name")
-            (Error 10, Line 9, Col 14, Line 9, Col 17, "Unexpected keyword 'end' in implementation file")
+            (Error 552, Line 7, Col 10, Line 8, Col 33, "Only class types may take value arguments")
+            (Error 10, Line 9, Col 14, Line 9, Col 17, "Unexpected keyword 'end' in implementation file. Expected incomplete structured construct at or before this point or other token.")
         ]

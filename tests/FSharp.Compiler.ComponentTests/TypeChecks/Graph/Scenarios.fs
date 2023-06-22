@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.Scenarios
+﻿module TypeChecks.Scenarios
 
 open TestUtils
 

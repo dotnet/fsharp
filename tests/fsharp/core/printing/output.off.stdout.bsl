@@ -44,9 +44,9 @@ val x9: Lazy<string>
 type ClassInFile2 =
   new: unit -> ClassInFile2
 
-> val x1: seq<string>
-val x2: seq<string>
-val x3: seq<string>
+> val x1: string seq
+val x2: string seq
+val x3: string seq
 val f1: System.Windows.Forms.Form
 val fs: System.Windows.Forms.Form array
 val xs: string list
@@ -79,7 +79,7 @@ val sxs0: Set<string>
 > module M =
   val a: string
   val b:
-    (seq<string> * seq<string> * seq<string> * System.Windows.Forms.Form) option *
+    (string seq * string seq * string seq * System.Windows.Forms.Form) option *
     (string list * string list * string array2d) option
 type T =
   new: a: int * b: int -> T
@@ -489,7 +489,7 @@ module internal PrivateM =
   type private T14 =
     new: unit -> T14
 
-> val it: seq<int * string * int> =
+> val it: (int * string * int) seq =
   seq
     [(43, "10/28/2008", 1); (46, "11/18/2008", 1); (56, "1/27/2009", 2);
      (58, "2/10/2009", 1)]
@@ -522,7 +522,7 @@ module Test4343d =
   val xString: string
   val xOption: int option
   val xArray2: (int * int) array2d
-  val xSeq: seq<int>
+  val xSeq: int seq
 module Test4343e =
   type C =
     new: x: int -> C

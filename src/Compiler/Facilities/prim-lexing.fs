@@ -154,6 +154,8 @@ type internal Position =
     member x.ApplyLineDirective(fileIdx, line) =
         Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
 
+    override p.ToString() = $"({p.Line},{p.Column})"
+
     static member Empty = Position()
 
     static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0, 0)

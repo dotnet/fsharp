@@ -390,7 +390,7 @@ module Keywords =
             (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
-            FSHARP, "__token_ODECLEND", ODECLEND
+            FSHARP, "__token_ODECLEND", ODECLEND range0
             FSHARP, "__token_OTHEN", OTHEN
             FSHARP, "__token_OELSE", OELSE
             FSHARP, "__token_OEND", OEND

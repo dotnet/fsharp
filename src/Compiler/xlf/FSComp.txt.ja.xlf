@@ -407,6 +407,11 @@
         <target state="translated">インターフェイス内の静的メンバー</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">文字列の補間</target>
@@ -792,9 +797,9 @@
         <target state="translated">このポイントの後にパターンが必要です</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">式を指定してください</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
@@ -815,6 +820,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">不完全な演算子式 (例 a^b) または修飾型の呼び出し (例: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
@@ -1143,8 +1153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">'let! ... and! ...' コンストラクトは、コンピュテーション式ビルダーが '{0}' メソッドまたは適切な 'MergeSource' および 'Bind' メソッドのいずれかを定義している場合にのみ使用できます</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="needs-review-translation">'let! ... and! ...' コンストラクトは、コンピュテーション式ビルダーが '{0}' メソッドまたは適切な 'MergeSource' および 'Bind' メソッドのいずれかを定義している場合にのみ使用できます</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -3273,8 +3283,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">プロパティのゲッターまたはセッターに指定されたアクセシビリティが複数あります</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">プロパティのゲッターまたはセッターに指定されたアクセシビリティが複数あります</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">

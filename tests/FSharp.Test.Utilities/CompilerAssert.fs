@@ -858,8 +858,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText) : FSharpCheckProjectResults =
-        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText)
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
 

@@ -1,6 +1,6 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.DependencyResolutionTests
+﻿module TypeChecks.DependencyResolutionTests
 
-open FSharp.Compiler.ComponentTests.TypeChecks.Graph.TestUtils
+open TypeChecks.TestUtils
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
 open Scenarios

@@ -1,9 +1,10 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.TypeTests
+﻿module Signatures.TypeTests
 
+open FSharp.Compiler.Symbols
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Recursive type with attribute`` () =
@@ -131,4 +132,55 @@ module Extensions
 type System.Collections.Concurrent.ConcurrentDictionary<'key,'value> with
 
   member TryFind: key: 'key -> 'value option"""
-  
+
+[<Fact>]
+let ``ValText for C# abstract member override`` () =
+    let csharp = CSharp """
+namespace CSharp.Library
+{
+    using System;
+    using System.Globalization;
+    using System.Runtime.CompilerServices;
+    using System.Diagnostics.CodeAnalysis;
+    
+    public abstract class JsonConverter
+    {
+        public abstract void WriteJson(object writer, object? value, object serializer);
+        public abstract object? ReadJson(object reader, Type objectType, object? existingValue, object serializer);
+        public abstract bool CanConvert(Type objectType);
+        public virtual bool CanRead => true;
+        public virtual bool CanWrite => true;
+    }
+}
+"""
+
+    FSharp """
+module F    
+
+open CSharp.Library
+
+[<Sealed>]
+type EConverter () =
+    inherit JsonConverter ()
+
+    override this.WriteJson(writer, value, serializer) = failwith "todo"
+    override this.ReadJson(reader, objectType, existingValue, serializer) = failwith "todo"
+    override this.CanConvert(objectType) = failwith "todo"
+    override this.CanRead = true
+"""
+    |> withReferences [ csharp ]
+    |> typecheckResults
+    |> fun results ->
+        let writeJsonSymbolUse = results.GetSymbolUseAtLocation(10, 27, "    override this.WriteJson(writer, value, serializer) = failwith \"todo\"", [ "WriteJson" ]).Value
+        match writeJsonSymbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let valText = mfv.GetValSignatureText(writeJsonSymbolUse.DisplayContext, writeJsonSymbolUse.Range).Value
+            Assert.Equal("override WriteJson: writer: obj * value: obj * serializer: obj -> unit", valText)
+        | _ -> ()
+
+        let canReadSymbolUse = results.GetSymbolUseAtLocation(13, 25, "    override this.CanRead = true", [ "CanRead" ]).Value
+        match canReadSymbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            let valText = mfv.GetValSignatureText(canReadSymbolUse.DisplayContext, canReadSymbolUse.Range).Value
+            Assert.Equal("override CanRead: bool", valText)
+        | _ -> ()

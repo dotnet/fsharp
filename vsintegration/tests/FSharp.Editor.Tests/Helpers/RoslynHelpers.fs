@@ -337,3 +337,29 @@ type RoslynTestHelpers private () =
         options |> RoslynTestHelpers.SetProjectOptions projId solution
 
         solution, checker
+
+    static member GetFsDocument code =
+        // without this lib some symbols are not loaded
+        let options =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                OtherOptions = [| "--targetprofile:netcore" |]
+            }
+
+        RoslynTestHelpers.CreateSolution(code, options = options)
+        |> RoslynTestHelpers.GetSingleDocument
+
+    static member GetFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
+        let projectId = ProjectId.CreateNewId()
+        let projFilePath = "C:\\test.fsproj"
+
+        let fsiDocInfo =
+            RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
+
+        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
+
+        let projInfo =
+            RoslynTestHelpers.CreateProjectInfo projectId projFilePath [ fsiDocInfo; fsDocInfo ]
+
+        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+        let project = solution.Projects |> Seq.exactlyOne
+        project.Documents

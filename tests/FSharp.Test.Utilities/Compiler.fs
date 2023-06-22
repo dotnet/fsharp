@@ -917,7 +917,7 @@ module rec Compiler =
             CompilerAssert.TypeCheck(options, fileName, source)
         | _ -> failwith "Typecheck only supports F#"
 
-    let typecheckProject (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
+    let typecheckProject enablePartialTypeChecking (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
         match cUnit with
         | FS fsSource ->
             let options = fsSource.Options |> Array.ofList
@@ -935,7 +935,7 @@ module rec Compiler =
                     |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
-            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)
+            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText, enablePartialTypeChecking)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: CompilationResult) : CompilationResult =

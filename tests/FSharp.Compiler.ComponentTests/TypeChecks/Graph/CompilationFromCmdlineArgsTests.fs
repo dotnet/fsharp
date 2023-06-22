@@ -1,56 +1,58 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.CompilationFromCmdlineArgsTests
+﻿namespace TypeChecks
 
-open System
-open System.IO
-open FSharp.Compiler.CodeAnalysis
-open NUnit.Framework
-open CompilationTests
+module CompilationFromCmdlineArgsTests =
 
-// Point to a generated args.txt file.
-// Use scrape.fsx to generate an args.txt from a binary log file.
-// The path needs to be absolute.
-let localProjects: string list =
-    [
-        @"C:\Projects\fantomas\src\Fantomas.Core\Fantomas.Core.args.txt"
-        @"C:\Projects\FsAutoComplete\src\FsAutoComplete\FsAutoComplete.args.txt"
-        @"C:\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.args.txt"
-        @"C:\Projects\fsharp\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.args.txt"
-    ]
+    open System
+    open System.IO
+    open FSharp.Compiler.CodeAnalysis
+    open NUnit.Framework
+    open CompilationTests
 
-let checker = FSharpChecker.Create()
+    // Point to a generated args.txt file.
+    // Use scrape.fsx to generate an args.txt from a binary log file.
+    // The path needs to be absolute.
+    let localProjects: string list =
+        [
+            @"C:\Projects\fantomas\src\Fantomas.Core\Fantomas.Core.args.txt"
+            @"C:\Projects\FsAutoComplete\src\FsAutoComplete\FsAutoComplete.args.txt"
+            @"C:\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.args.txt"
+            @"C:\Projects\fsharp\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.args.txt"
+        ]
 
-let testCompilerFromArgs (method: Method) (projectArgumentsFilePath: string) : unit =
-    let oldWorkDir = Environment.CurrentDirectory
+    let checker = FSharpChecker.Create()
 
-    try
-        Environment.CurrentDirectory <- FileInfo(projectArgumentsFilePath).Directory.FullName
+    let testCompilerFromArgs (method: Method) (projectArgumentsFilePath: string) : unit =
+        let oldWorkDir = Environment.CurrentDirectory
 
-        let args =
-            let argsFromFile = File.ReadAllLines(projectArgumentsFilePath)
+        try
+            Environment.CurrentDirectory <- FileInfo(projectArgumentsFilePath).Directory.FullName
 
-            [|
-                yield "fsc.exe"
-                yield! argsFromFile
-                if not (Array.contains "--times" argsFromFile) then
-                    yield "--times"
-                yield! methodOptions method
-            |]
+            let args =
+                let argsFromFile = File.ReadAllLines(projectArgumentsFilePath)
 
-        let diagnostics, exitCode = checker.Compile(args) |> Async.RunSynchronously
+                [|
+                    yield "fsc.exe"
+                    yield! argsFromFile
+                    if not (Array.contains "--times" argsFromFile) then
+                        yield "--times"
+                    yield! methodOptions method
+                |]
 
-        for diag in diagnostics do
-            printfn "%A" diag
+            let diagnostics, exitCode = checker.Compile(args) |> Async.RunSynchronously
 
-        Assert.That(exitCode, Is.Zero)
-    finally
-        Environment.CurrentDirectory <- oldWorkDir
+            for diag in diagnostics do
+                printfn "%A" diag
 
-[<TestCaseSource(nameof localProjects)>]
-[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
-let ``Test sequential type-checking`` (projectArgumentsFilePath: string) =
-    testCompilerFromArgs Method.Sequential projectArgumentsFilePath
+            Assert.That(exitCode, Is.Zero)
+        finally
+            Environment.CurrentDirectory <- oldWorkDir
 
-[<TestCaseSource(nameof localProjects)>]
-[<Explicit("This only runs with the explicitly mentioned projects above")>]
-let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) =
-    testCompilerFromArgs Method.Graph projectArgumentsFilePath
+    [<TestCaseSource(nameof localProjects)>]
+    [<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
+    let ``Test sequential type-checking`` (projectArgumentsFilePath: string) =
+        testCompilerFromArgs Method.Sequential projectArgumentsFilePath
+
+    [<TestCaseSource(nameof localProjects)>]
+    [<Explicit("This only runs with the explicitly mentioned projects above")>]
+    let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) =
+        testCompilerFromArgs Method.Graph projectArgumentsFilePath

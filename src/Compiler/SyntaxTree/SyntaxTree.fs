@@ -1331,7 +1331,12 @@ type SynArgInfo =
 type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canInfer: bool
 
 [<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+type SynReturnInfo =
+    | SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+    member this.Range =
+        match this with
+        | SynReturnInfo (range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynExceptionDefnRepr =

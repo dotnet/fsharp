@@ -407,6 +407,11 @@
         <target state="translated">Membri statici nelle interfacce</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolazione di stringhe</target>
@@ -792,9 +797,9 @@
         <target state="translated">Previsto un criterio dopo questa posizione</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">Prevista espressione.</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
@@ -815,6 +820,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Espressione operatore incompleta (ad esempio a^b) o chiamata di tipo qualificato (ad esempio: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
@@ -1143,8 +1153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">È possibile usare il costrutto 'let! ... and! ...' solo se il generatore di espressioni di calcolo definisce un metodo '{0}' o metodi 'MergeSource' e 'Bind' appropriati</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="needs-review-translation">È possibile usare il costrutto 'let! ... and! ...' solo se il generatore di espressioni di calcolo definisce un metodo '{0}' o metodi 'MergeSource' e 'Bind' appropriati</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -3273,8 +3283,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Sono state assegnate più accessibilità per il getter o il setter della proprietà</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">Sono state assegnate più accessibilità per il getter o il setter della proprietà</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">

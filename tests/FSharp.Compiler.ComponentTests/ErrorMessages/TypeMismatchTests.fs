@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.ErrorMessages
+namespace ErrorMessages
 
 open Xunit
 open FSharp.Test.Compiler
@@ -293,3 +293,45 @@ type Derived3() =
                 (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]
+
+    [<Fact>]
+    let ``Elements in computed lists, arrays and sequences``() =
+        FSharp """
+let f1 =
+    [|
+        if true then
+            1
+        "wrong" 
+    |]
+
+let f2: int list =
+    [
+        if true then
+            "a"
+        yield! [ 3; 4 ] 
+    ]
+
+let f3 =
+    [
+        if true then
+            "a"
+            "b"
+        yield! [ 3; 4 ] 
+    ]
+
+let f4 =
+    seq {
+        1L
+        let _ = ()
+        2.5
+        3L
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193,   Line 6,  Col 9,  Line 6,  Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
+            (Error 193,   Line 12, Col 13, Line 12, Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
+            (Error 193,   Line 21, Col 9,  Line 21, Col 24, "Type constraint mismatch. The type \n    'int list'    \nis not compatible with type\n    'string seq'    \n")
+            (Error 193,   Line 28, Col 9,  Line 28, Col 12, "Type constraint mismatch. The type \n    'float'    \nis not compatible with type\n    'int64'    \n")
+        ]

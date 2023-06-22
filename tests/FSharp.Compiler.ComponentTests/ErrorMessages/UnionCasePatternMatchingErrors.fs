@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.ErrorMessages.UnionCasePatternMatchingErrors
+﻿module ErrorMessages.UnionCasePatternMatchingErrors
 
 open Xunit
 open FSharp.Test.Compiler
