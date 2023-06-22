@@ -8,38 +8,57 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
+
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpLambdaToFSharpLambda); Shared>]
 type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
     static let title = SR.UseFSharpLambda()
 
+    let tryGetSpans (parseResults: FSharpParseFileResults) (range: range) sourceText =
+        let bind3 options =
+            match options with
+            | Some (Some a, Some b, Some c) -> Some(a, b, c)
+            | _ -> None
+
+        parseResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage range.Start
+        |> Option.map (fun (fullParenRange, lambdaArgRange, lambdaBodyRange) ->
+            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, fullParenRange),
+            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaArgRange),
+            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaBodyRange))
+        |> bind3
+
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! parseResults =
-                context.Document.GetFSharpParseResultsAsync(nameof (ConvertCSharpLambdaToFSharpLambdaCodeFixProvider))
-                |> liftAsync
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync document span =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-            let errorRange =
-                RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (ConvertCSharpLambdaToFSharpLambdaCodeFixProvider))
 
-            let! fullParenRange, lambdaArgRange, lambdaBodyRange =
-                parseResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage errorRange.Start
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
-            let! fullParenSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, fullParenRange)
-            let! lambdaArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaArgRange)
-            let! lambdaBodySpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaBodyRange)
+                let errorRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
 
-            let replacement =
-                let argText = sourceText.GetSubText(lambdaArgSpan).ToString()
-                let bodyText = sourceText.GetSubText(lambdaBodySpan).ToString()
-                TextChange(fullParenSpan, "fun " + argText + " -> " + bodyText)
+                return
+                    tryGetSpans parseResults errorRange sourceText
+                    |> Option.map (fun (fullParenSpan, lambdaArgSpan, lambdaBodySpan) ->
+                        let replacement =
+                            let argText = sourceText.GetSubText(lambdaArgSpan).ToString()
+                            let bodyText = sourceText.GetSubText(lambdaBodySpan).ToString()
+                            TextChange(fullParenSpan, "fun " + argText + " -> " + bodyText)
 
-            do context.RegisterFsharpFix(CodeFix.ConvertCSharpLambdaToFSharpLambda, title, [| replacement |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        {
+                            Name = CodeFix.ConvertCSharpLambdaToFSharpLambda
+                            Message = title
+                            Changes = [ replacement ]
+                        })
+            }
