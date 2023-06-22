@@ -1700,4 +1700,3 @@ featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj infer
 3567,parsMissingMemberBody,"Expecting member body"
 3570,tcAmbiguousDiscardDotLambda,"Discard is ambiguous"
 featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only function"
-

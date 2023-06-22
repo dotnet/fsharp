@@ -5526,7 +5526,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let unaryArg = mkSynId m (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
         let pushedExpr = pushUnaryArg synExpr unaryArg
-        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], m), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
+        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ],[], m), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv lambda
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
