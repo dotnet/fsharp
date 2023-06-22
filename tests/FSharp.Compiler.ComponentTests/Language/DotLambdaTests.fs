@@ -8,14 +8,14 @@ open FSharp.Test.Compiler
 module DotLambdaTests =
 
     [<Fact>]
-    let ``Script: _.ToString()`` () =
+    let ``ToString with preview version`` () =
         Fsx "_.ToString()"
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
     [<Fact>]
-    let ``Script: _.ToString(), old lang version`` () =
+    let ``ToString with old lang version`` () =
         Fsx "_.ToString()"
         |> withLangVersion70
         |> typecheck
