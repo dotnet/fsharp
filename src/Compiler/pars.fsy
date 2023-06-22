@@ -521,12 +521,27 @@ moduleIntro:
         let mModule = rhs parseState 1
         mModule, $4, $5.LongIdent, $3, $2 }
 
+  | moduleKeyword opt_attributes opt_access opt_rec OBLOCKSEP
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
+
+  | moduleKeyword opt_attributes opt_access opt_rec recover
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
 
 /* The start of a namespace declaration */
 namespaceIntro:
   | NAMESPACE opt_rec path
       { let mNamespace = rhs parseState 1
         mNamespace, $2, $3.LongIdent, grabXmlDoc(parseState, [], 1) }
+
+  | NAMESPACE opt_rec recover
+      { let mNamespace = rhs parseState 1
+        mNamespace, $2, [], grabXmlDoc(parseState, [], 1) }
 
 
 /* The contents of a signature file */
@@ -1132,8 +1147,8 @@ fileModuleImpl:
   | moduleDefnsOrExprPossiblyEmptyOrBlock
     { let m = (rhs parseState 1)
       (fun (mNamespaceOpt, isRec, path, xml) ->
-        match path with
-        | [] -> ParsedImplFileFragment.AnonModule($1, m)
+        match path, mNamespaceOpt with
+        | [], None -> ParsedImplFileFragment.AnonModule($1, m)
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
@@ -1534,7 +1549,8 @@ typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars, lid, fixity, vis = $2
        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
+       let m = match lid with [] -> rhs parseState 2 | _ -> rangeOfLid lid
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, m) }
 
 /* Part of a set of type definitions */
 tyconDefnList:
@@ -1598,7 +1614,8 @@ tyconDefn:
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, rangeOfLid lid, { AsKeyword = Option.map fst az })
+       let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
        let tcDefRepr =
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel(k, memberCtorPattern :: cspec, m)
@@ -2310,6 +2327,9 @@ tyconNameAndTyparDecls:
 
   | opt_access path postfixTyparDecls
       { Some $3, $2.LongIdent, true, $1 }
+
+  | opt_access recover
+      { None, [], false, $1 }
 
 prefixTyparDecls:
   | typar
