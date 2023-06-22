@@ -4353,8 +4353,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.Tuple(isStruct, segments, m) ->
         TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct segments m
 
-    | SynType.AnonRecd(_, [],m) ->
-        error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
+    | SynType.AnonRecd(fields = []) ->
+        // The parser takes care of error messages
+        NewErrorType(), tpenv
 
     | SynType.AnonRecd(isStruct, args, m) ->
         TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m
