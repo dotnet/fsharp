@@ -758,7 +758,10 @@ let SaveAndCheckProject project checker =
 
         do! saveProject project true checker
 
-        let! results = checker.ParseAndCheckProject(project.GetProjectOptions checker)
+        let options = project.GetProjectOptions checker
+        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
+
+        let! results = checker.ParseAndCheckProject(snapshot)
 
         if not (Array.isEmpty results.Diagnostics) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
