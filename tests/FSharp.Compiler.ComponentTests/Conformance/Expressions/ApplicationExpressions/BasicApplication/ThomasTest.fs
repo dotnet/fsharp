@@ -30,7 +30,7 @@ let c = _.ToString().Length
 let ``Regression with an underscore using pattern match`` () =
             Fsx """
 type MyDU = A | B
-let process x = 
+let getnumberOutOfDU x = 
     match x with
     | A -> 42
     | _ -> 43""" 
