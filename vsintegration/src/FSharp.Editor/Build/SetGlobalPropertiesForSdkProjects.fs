@@ -15,12 +15,8 @@ open Microsoft.VisualStudio.ProjectSystem.Build
 [<AppliesTo("FSharp&LanguageService")>]
 [<ExportBuildGlobalPropertiesProvider(designTimeBuildProperties = true)>]
 [<ExportBuildGlobalPropertiesProvider(designTimeBuildProperties = false)>]
-type internal SetGlobalPropertiesForSdkProjects
-    [<ImportingConstructor>]
-    (
-        projectService: IProjectService
-    ) =
+type internal SetGlobalPropertiesForSdkProjects [<ImportingConstructor>] (projectService: IProjectService) =
     inherit StaticGlobalPropertiesProviderBase(projectService.Services)
 
-    override _.GetGlobalPropertiesAsync(_cancellationToken: CancellationToken): Task<IImmutableDictionary<string, string>> =
+    override _.GetGlobalPropertiesAsync(_cancellationToken: CancellationToken) : Task<IImmutableDictionary<string, string>> =
         Task.FromResult<IImmutableDictionary<string, string>>(Empty.PropertiesMap)

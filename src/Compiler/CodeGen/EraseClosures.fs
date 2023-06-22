@@ -103,16 +103,6 @@ let stripSupportedAbstraction lambdas =
         tys, [], rest
     | rest -> [], [], rest
 
-// This must correspond to stripSupportedAbstraction
-let isSupportedDirectCall apps =
-    match apps with
-    | Apps_app (_, Apps_done _) -> true
-    | Apps_app (_, Apps_app (_, Apps_done _)) -> true
-    | Apps_app (_, Apps_app (_, Apps_app (_, Apps_done _))) -> true
-    | Apps_app (_, Apps_app (_, Apps_app (_, Apps_app (_, Apps_done _)))) -> true
-    | Apps_tyapp _ -> false
-    | _ -> false
-
 // --------------------------------------------------------------------
 // Prelude for function types.  Only use System.Func for now, prepare
 // for more refined types later.
@@ -225,17 +215,6 @@ let mkCallBlockForMultiValueApp cenv doTailCall (argTys, retTy) =
          else
              I_call(doTailCall, mr, None))
     ]
-
-let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) =
-    let tyargsl, argTys, rstruct = stripSupportedAbstraction clospec.FormalLambdas
-
-    if not (isNil tyargsl) then
-        failwith "mkMethSpecForClosureCall: internal error"
-
-    let retTyR = mkTyOfLambdas cenv rstruct
-    let argTysR = typesOfILParams argTys
-    let minstR = clospec.GenericArgs
-    mkILInstanceMethSpecInTy (clospec.ILType, "Invoke", argTysR, retTyR, minstR)
 
 // --------------------------------------------------------------------
 // Translate instructions....

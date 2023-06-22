@@ -517,6 +517,9 @@ type MethInfo =
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
 
+    /// Get the parameter names of a MethInfo
+    member GetParamNames: unit -> string option list list
+
     /// Get the parameter types of a method info
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
 
@@ -1008,6 +1011,9 @@ type EventInfo =
 
     /// Get the delegate type associated with the event.
     member GetDelegateType: amap: ImportMap * m: range -> TType
+
+    /// Get custom attributes for events (only applicable for IL events)
+    member GetCustomAttrs: unit -> ILAttributes
 
 /// An exception type used to raise an error using the old error system.
 ///

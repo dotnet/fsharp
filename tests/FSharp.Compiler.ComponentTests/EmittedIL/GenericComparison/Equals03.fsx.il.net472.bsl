@@ -1,69 +1,60 @@
 
-//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
-// Metadata version: v4.0.30319
-.assembly extern mscorlib
-{
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
-}
-.assembly extern FSharp.Core
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
-}
+
+.assembly extern runtime { }
+.assembly extern FSharp.Core { }
 .assembly extern netstandard
 {
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
   .ver 2:0:0:0
 }
-.assembly Equals03
+.assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
-  // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  
+  
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.Equals03
+.mresource public FSharpSignatureData.assembly
 {
-  // Offset: 0x00000000 Length: 0x0000026A
-  // WARNING: managed resource file FSharpSignatureData.Equals03 created
+  
+  
 }
-.mresource public FSharpOptimizationData.Equals03
+.mresource public FSharpOptimizationData.assembly
 {
-  // Offset: 0x00000270 Length: 0x000000B6
-  // WARNING: managed resource file FSharpOptimizationData.Equals03 created
+  
+  
 }
-.module Equals03.exe
-// MVID: {624FC1D8-EB3D-648B-A745-0383D8C14F62}
-.imagebase 0x00400000
+.module assembly.exe
+
+.imagebase {value}
 .file alignment 0x00000200
 .stackreserve 0x00100000
-.subsystem 0x0003       // WINDOWS_CUI
-.corflags 0x00000001    //  ILONLY
-// Image base: 0x03C20000
+.subsystem 0x0003       
+.corflags 0x00000001    
 
 
-// =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Equals03
-       extends [mscorlib]System.Object
+
+
+.class public abstract auto ansi sealed assembly
+       extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class abstract auto ansi sealed nested public EqualsMicroPerfAndCodeGenerationTests
-         extends [mscorlib]System.Object
+         extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static bool  f4_tuple5() cil managed
     {
-      // Code size       66 (0x42)
+      
       .maxstack  4
       .locals init (bool V_0,
                int32 V_1)
@@ -101,27 +92,27 @@
 
       IL_0040:  ldloc.0
       IL_0041:  ret
-    } // end of method EqualsMicroPerfAndCodeGenerationTests::f4_tuple5
+    } 
 
-  } // end of class EqualsMicroPerfAndCodeGenerationTests
+  } 
 
-} // end of class Equals03
+} 
 
-.class private abstract auto ansi sealed '<StartupCode$Equals03>'.$Equals03$fsx
-       extends [mscorlib]System.Object
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly$fsx
+       extends [runtime]System.Object
 {
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       1 (0x1)
+    
     .maxstack  8
     IL_0000:  ret
-  } // end of method $Equals03$fsx::main@
+  } 
 
-} // end of class '<StartupCode$Equals03>'.$Equals03$fsx
+} 
 
 
-// =============================================================
 
-// *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\GenericComparison\Equals03_fsx\Equals03.res
+
+
+

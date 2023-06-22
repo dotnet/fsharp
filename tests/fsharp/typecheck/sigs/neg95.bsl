@@ -14,9 +14,3 @@ neg95.fs(39,7,39,18): typecheck error FS3200: In a recursive declaration group, 
 neg95.fs(45,10,45,22): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 
 neg95.fs(52,10,52,21): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
-
-neg95.fs(55,10,55,22): typecheck error FS3204: If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.
-
-neg95.fs(58,10,58,22): typecheck error FS3204: If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.
-
-neg95.fs(61,10,61,22): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation

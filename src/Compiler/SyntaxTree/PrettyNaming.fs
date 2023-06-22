@@ -224,6 +224,7 @@ let keywordsWithDescription: (string * string) list =
         "rec", FSComp.SR.keywordDescriptionRec ()
         "return", FSComp.SR.keywordDescriptionReturn ()
         "return!", FSComp.SR.keywordDescriptionReturnBang ()
+        "sig", FSComp.SR.keywordDescriptionSig ()
         "static", FSComp.SR.keywordDescriptionStatic ()
         "struct", FSComp.SR.keywordDescriptionStruct ()
         "then", FSComp.SR.keywordDescriptionThen ()
@@ -1075,13 +1076,6 @@ let mkExceptionFieldName =
 let FsiDynamicModulePrefix = "FSI_"
 
 [<RequireQualifiedAccess>]
-module FSharpLib =
-    let Root = "Microsoft.FSharp"
-    let RootPath = IL.splitNamespace Root
-    let Core = Root + ".Core"
-    let CorePath = IL.splitNamespace Core
-
-[<RequireQualifiedAccess>]
 module CustomOperations =
     [<Literal>]
     let Into = "into"
@@ -1099,6 +1093,7 @@ let GetLongNameFromString x = SplitNamesForILPath x
 
 // Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 // Compressed OptimizationData/SignatureData name for embedded resource

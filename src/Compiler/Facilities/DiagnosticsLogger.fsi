@@ -44,6 +44,13 @@ val StopProcessing<'T> : exn
 /// Represents a diagnostic exeption whose text comes via SR.*
 exception DiagnosticWithText of number: int * message: string * range: range
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of
+    number: int *
+    message: string *
+    range: range *
+    enabledByLangFeature: bool
+
 /// Creates a diagnostic exeption whose text comes via SR.*
 val Error: (int * string) * range -> exn
 
@@ -76,6 +83,9 @@ exception DiagnosticWithSuggestions of
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
+
+/// Creates a DiagnosticEnabledWithLanguageFeature whose text comes via SR.*
+val ErrorEnabledWithLanguageFeature: (int * string) * range * bool -> exn
 
 val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 
@@ -414,6 +424,13 @@ val NewlineifyErrorString: message: string -> string
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'),
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text: string -> string
+
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type SuppressLanguageFeatureCheck =
+    | Yes
+    | No
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 

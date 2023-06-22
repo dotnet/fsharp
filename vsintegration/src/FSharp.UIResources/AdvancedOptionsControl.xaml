@@ -24,6 +24,24 @@
                     <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Inline_Hints}">
+                    <StackPanel>
+                        <CheckBox x:Name="toggleInlineTypeHints" IsChecked="{Binding IsInlineTypeHintsEnabled}"
+                                  Content="{x:Static local:Strings.Show_Inline_Type_Hints}"/>
+                        <CheckBox x:Name="toggleReturnTypeHints" IsChecked="{Binding IsInlineReturnTypeHintsEnabled}"
+                                  Content="{x:Static local:Strings.Show_Return_Type_Hints}"/>
+                        <CheckBox x:Name="toggleParameterNameHints" IsChecked="{Binding IsInlineParameterNameHintsEnabled}"
+                                  Content="{x:Static local:Strings.Show_Inline_Parameter_Name_Hints}"/>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.LiveBuffers}">
+                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
+                              Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
+                    <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"
+                              Content="{x:Static local:Strings.Send_Additional_Telemetry}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

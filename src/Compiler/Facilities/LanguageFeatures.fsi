@@ -10,6 +10,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -45,6 +46,22 @@ type LanguageFeature =
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | AccessorFunctionShorthand
+    | MatchNotAllowedForUnionCaseWithNoData
+    | CSharpExtensionAttributeNotRequired
+    | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
+    | ErrorReportingOnStaticClasses
+    | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
+    | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
 
 /// LanguageVersion management
 type LanguageVersion =

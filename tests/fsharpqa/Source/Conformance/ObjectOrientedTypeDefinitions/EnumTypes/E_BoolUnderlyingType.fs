@@ -3,7 +3,7 @@
 // Test errors related to enums of invalid primitive/built-in types
 
 
-//<Expects id="FS0010" status="error">Unexpected keyword 'true' in union case</Expects>
+//<Expects id="FS0951" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
 
 type EnumOfBool = 
     | A = true

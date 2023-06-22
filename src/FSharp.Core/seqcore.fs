@@ -210,9 +210,6 @@ module RuntimeHelpers =
     let Generate openf compute closef =
         mkSeq (fun () -> new IEnumerator.GeneratedEnumerable<_,_>(openf, compute, closef) :> IEnumerator<'T>)
 
-    let GenerateUsing (openf : unit -> ('U :> System.IDisposable)) compute =
-        Generate openf compute (fun (s:'U) -> s.Dispose())
-
     let EnumerateFromFunctions create moveNext current =
         Generate
             create
@@ -389,6 +386,70 @@ module RuntimeHelpers =
 
     let EnumerateThenFinally (source: seq<'T>) (compensation: unit -> unit)  =
         (FinallyEnumerable(compensation, (fun () -> source)) :> seq<_>)
+
+
+    let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
+        let originalSource = lazy(source.GetEnumerator())
+        let mutable shouldDisposeOriginalAtTheEnd = true
+        let mutable exceptionalSource : IEnumerator<'T> option = None     
+
+        let current() =
+            match exceptionalSource with
+            | Some es -> es.Current
+            | None -> originalSource.Value.Current
+
+        let disposeOriginal() =
+            if shouldDisposeOriginalAtTheEnd = true then
+                shouldDisposeOriginalAtTheEnd <- false
+                originalSource.Value.Dispose() 
+
+        let moveExceptionHandler(exn) = 
+            exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
+            exceptionalSource.Value.MoveNext()
+
+        let tryIfDisposalLeadsToExceptionHandlerSeq() =
+            try 
+                disposeOriginal() 
+                false
+            with
+            | e when exceptionFilter e = 1 -> moveExceptionHandler(e)
+
+        (mkSeq (fun () ->
+            { new IEnumerator<_> with
+                    member x.Current = current()
+
+                interface IEnumerator with
+                    member x.Current = box (current())
+
+                    [<DebuggerStepThrough>]
+                    member x.MoveNext() =
+                        match exceptionalSource with
+                        | Some es -> es.MoveNext()
+                        | None ->
+                            try
+                                let hasNext = originalSource.Value.MoveNext()
+                                if not hasNext then   
+                                    // What if Moving does not fail, but Disposing does?
+                                    // In that case, the 'when' guards could actually produce new elements to by yielded
+                                    // Let's try it. If the Dispose() call below fails and gets caught by the guards, enumeration might continue
+                                    disposeOriginal()                                 
+                                hasNext
+                            with 
+                            // Try .Dispose() original. If that fails && also matches with guards, let's use the exn from. Dispose() call for next enumeration
+                            | _ when tryIfDisposalLeadsToExceptionHandlerSeq() -> true     
+                            // We go here when either original's disposal not fail, or failed but with an unmatched exception
+                            | e when exceptionFilter e = 1 ->  moveExceptionHandler(e)
+
+                    member x.Reset() = IEnumerator.noReset()
+
+                interface System.IDisposable with
+                    member x.Dispose() = 
+                        match exceptionalSource with
+                        | Some es -> es.Dispose()
+                        // We are no longer at a phase where anyone should be calling .MoveNext()
+                        // This will only happen if someone is doing MoveNext()+Dispose() calls manually and decides to .Dispose() before
+                        // Enumeration has finished. In this case, we do NOT invoke the exception handlers for the .Dispose() call
+                        | None -> disposeOriginal()}))
 
     let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
         { new obj() with

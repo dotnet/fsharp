@@ -116,9 +116,6 @@ module StateMachineHelpers =
 
 module ResumableCode =
 
-    let inline SetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) f =
-        sm.ResumptionDynamicInfo.ResumptionFunc <- f
-
     let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
         sm.ResumptionDynamicInfo.ResumptionFunc
 

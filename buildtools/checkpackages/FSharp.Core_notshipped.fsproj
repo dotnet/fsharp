@@ -14,4 +14,12 @@
     <PackageReference Include="FSharp.Core" Version="[$(FSCorePackageVersionValue)]" />
   </ItemGroup>
 
+  <Target Name="WritePackageVersion" BeforeTargets="Restore">
+      <WriteLinesToFile
+          File="Version.txt"
+          Lines="FSharp.Core=$(FSCorePackageVersionValue)"
+          Overwrite="true"
+          Encoding="Unicode"/>
+  </Target>
+
 </Project>

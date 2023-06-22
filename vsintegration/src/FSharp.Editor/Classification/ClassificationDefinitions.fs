@@ -17,19 +17,30 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
 [<RequireQualifiedAccess>]
 module internal FSharpClassificationTypes =
-    let [<Literal>] Function = "FSharp.Function"
-    let [<Literal>] MutableVar = "FSharp.MutableVar"
-    let [<Literal>] DisposableType = "FSharp.DisposableType"
-    let [<Literal>] Printf = "FSharp.Printf"
-    let [<Literal>] DisposableLocalValue = "FSharp.DisposableLocalValue"
-    let [<Literal>] DisposableTopLevelValue = "FSharp.DisposableTopLevelValue"
+    [<Literal>]
+    let Function = "FSharp.Function"
 
-    let getClassificationTypeName = function
+    [<Literal>]
+    let MutableVar = "FSharp.MutableVar"
+
+    [<Literal>]
+    let DisposableType = "FSharp.DisposableType"
+
+    [<Literal>]
+    let Printf = "FSharp.Printf"
+
+    [<Literal>]
+    let DisposableLocalValue = "FSharp.DisposableLocalValue"
+
+    [<Literal>]
+    let DisposableTopLevelValue = "FSharp.DisposableTopLevelValue"
+
+    let getClassificationTypeName =
+        function
         | SemanticClassificationType.MutableRecordField
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.DisposableType -> DisposableType
@@ -73,67 +84,104 @@ module internal ClassificationDefinitions =
 
     [<Export>]
     [<Export(typeof<ISetThemeColors>)>]
-    type internal ThemeColors
-        [<ImportingConstructor>]
+    type internal ThemeColors [<ImportingConstructor>]
         (
             classificationformatMapService: IClassificationFormatMapService,
             classificationTypeRegistry: IClassificationTypeRegistryService,
             [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
         ) =
 
-        let (| LightTheme | DarkTheme | UnknownTheme |) id =
-            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue || id = Guids.blueHighContrastThemeId then LightTheme 
-            elif id = KnownColorThemes.Dark then DarkTheme
-            else UnknownTheme
-    
-        let getCurrentThemeId() =
-            let themeService = serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
+        let (|LightTheme|DarkTheme|UnknownTheme|) id =
+            if
+                id = KnownColorThemes.Light
+                || id = KnownColorThemes.Blue
+                || id = Guids.blueHighContrastThemeId
+            then
+                LightTheme
+            elif id = KnownColorThemes.Dark then
+                DarkTheme
+            else
+                UnknownTheme
+
+        let getCurrentThemeId () =
+            let themeService =
+                serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
+
             themeService.CurrentTheme.ThemeId
 
         let customColorData =
             [
-                {| ClassificationName = FSharpClassificationTypes.MutableVar
-                   LightThemeColor = Color.FromRgb(160uy, 128uy, 0uy)
-                   DarkThemeColor = Color.FromRgb(255uy, 210uy, 28uy) |}
-                {| ClassificationName = FSharpClassificationTypes.DisposableLocalValue
-                   LightThemeColor = Color.FromRgb(31uy, 55uy, 127uy)
-                   DarkThemeColor = Color.FromRgb(156uy, 220uy, 254uy) |}
-                {| ClassificationName = FSharpClassificationTypes.DisposableTopLevelValue
-                   LightThemeColor = Colors.Black
-                   DarkThemeColor = Color.FromRgb(220uy, 220uy, 220uy) |}
-                {| ClassificationName = FSharpClassificationTypes.DisposableType
-                   LightThemeColor = Color.FromRgb(43uy, 145uy, 175uy)
-                   DarkThemeColor = Color.FromRgb(78uy, 220uy, 176uy) |}
-                {| ClassificationName = FSharpClassificationTypes.Function
-                   LightThemeColor = Color.FromRgb(116uy, 83uy, 31uy)
-                   DarkThemeColor = Color.FromRgb(220uy, 220uy, 170uy) |}
-                {| ClassificationName = FSharpClassificationTypes.Printf
-                   LightThemeColor = Color.FromRgb(43uy, 145uy, 175uy)
-                   DarkThemeColor = Color.FromRgb(78uy, 220uy, 176uy) |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.MutableVar
+                    LightThemeColor = Color.FromRgb(160uy, 128uy, 0uy)
+                    DarkThemeColor = Color.FromRgb(255uy, 210uy, 28uy)
+                |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.DisposableLocalValue
+                    LightThemeColor = Color.FromRgb(31uy, 55uy, 127uy)
+                    DarkThemeColor = Color.FromRgb(156uy, 220uy, 254uy)
+                |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.DisposableTopLevelValue
+                    LightThemeColor = Colors.Black
+                    DarkThemeColor = Color.FromRgb(220uy, 220uy, 220uy)
+                |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.DisposableType
+                    LightThemeColor = Color.FromRgb(43uy, 145uy, 175uy)
+                    DarkThemeColor = Color.FromRgb(78uy, 220uy, 176uy)
+                |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.Function
+                    LightThemeColor = Color.FromRgb(116uy, 83uy, 31uy)
+                    DarkThemeColor = Color.FromRgb(220uy, 220uy, 170uy)
+                |}
+                {|
+                    ClassificationName = FSharpClassificationTypes.Printf
+                    LightThemeColor = Color.FromRgb(43uy, 145uy, 175uy)
+                    DarkThemeColor = Color.FromRgb(78uy, 220uy, 176uy)
+                |}
             ]
 
         let setColors _ =
-            let fontAndColorStorage = serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
-            let fontAndColorCacheManager = serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager
-            fontAndColorCacheManager.CheckCache(ref DefGuidList.guidTextEditorFontCategory) |> ignore
-            fontAndColorStorage.OpenCategory(ref DefGuidList.guidTextEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY) |> ignore
+            let fontAndColorStorage =
+                serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
 
-            let formatMap = classificationformatMapService.GetClassificationFormatMap(category = "text")
-            try 
+            let fontAndColorCacheManager =
+                serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager
+
+            fontAndColorCacheManager.CheckCache(ref DefGuidList.guidTextEditorFontCategory)
+            |> ignore
+
+            fontAndColorStorage.OpenCategory(ref DefGuidList.guidTextEditorFontCategory, uint32 __FCSTORAGEFLAGS.FCSF_READONLY)
+            |> ignore
+
+            let formatMap =
+                classificationformatMapService.GetClassificationFormatMap(category = "text")
+
+            try
                 formatMap.BeginBatchUpdate()
+
                 for item in customColorData do
                     // we don't touch the changes made by the user
-                    if fontAndColorStorage.GetItem(item.ClassificationName, Array.zeroCreate 1) <> VSConstants.S_OK  then
+                    if
+                        fontAndColorStorage.GetItem(item.ClassificationName, Array.zeroCreate 1)
+                        <> VSConstants.S_OK
+                    then
                         let ict = classificationTypeRegistry.GetClassificationType(item.ClassificationName)
                         let oldProps = formatMap.GetTextProperties(ict)
+
                         let newProps =
-                            match getCurrentThemeId() with
+                            match getCurrentThemeId () with
                             | LightTheme -> oldProps.SetForeground item.LightThemeColor
                             | DarkTheme -> oldProps.SetForeground item.DarkThemeColor
                             | UnknownTheme -> oldProps
+
                         formatMap.SetTextProperties(ict, newProps)
+
                 fontAndColorStorage.CloseCategory() |> ignore
-            finally formatMap.EndBatchUpdate()
+            finally
+                formatMap.EndBatchUpdate()
 
         let handler = ThemeChangedEventHandler setColors
 
@@ -143,43 +191,46 @@ module internal ClassificationDefinitions =
             match customColorData |> List.tryFind (fun item -> item.ClassificationName = ctype) with
             | Some item ->
                 let light, dark = item.LightThemeColor, item.DarkThemeColor
-                match getCurrentThemeId() with
+
+                match getCurrentThemeId () with
                 | LightTheme -> Nullable light
                 | DarkTheme -> Nullable dark
                 | UnknownTheme -> Nullable()
-            | None ->
-                Nullable()
+            | None -> Nullable()
 
         interface ISetThemeColors with
-            member _.SetColors() = setColors()
-        
+            member _.SetColors() = setColors ()
+
         interface IDisposable with
-            member _.Dispose() = VSColorTheme.remove_ThemeChanged handler
+            member _.Dispose() =
+                VSColorTheme.remove_ThemeChanged handler
 
     [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpMutableVarClassificationType : ClassificationTypeDefinition = null
+    let FSharpMutableVarClassificationType: ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.DisposableType); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
-    
+    let FSharpDisposableClassificationType: ClassificationTypeDefinition = null
+
     [<Export; Name(FSharpClassificationTypes.DisposableLocalValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableLocalValueClassificationType : ClassificationTypeDefinition = null
+    let FSharpDisposableLocalValueClassificationType: ClassificationTypeDefinition =
+        null
 
     [<Export; Name(FSharpClassificationTypes.DisposableTopLevelValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableTopLevelValueClassificationType : ClassificationTypeDefinition = null
+    let FSharpDisposableTopLevelValueClassificationType: ClassificationTypeDefinition =
+        null
 
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
+    let FSharpFunctionClassificationType: ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
+    let FSharpPrintfClassificationType: ClassificationTypeDefinition = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]
     [<Name(FSharpClassificationTypes.Function)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpFunctionTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpFunctionTypeFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do
@@ -191,7 +242,7 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.MutableVar)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpMutableVarTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpMutableVarTypeFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do
@@ -203,9 +254,9 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.Printf)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.String)>]
-    type internal FSharpPrintfTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpPrintfTypeFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
-    
+
         do
             self.DisplayName <- SR.FSharpPrintfFormatClassificationType()
             self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Printf
@@ -215,7 +266,7 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.DisposableType)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpDisposableFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpDisposableFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do
@@ -227,7 +278,7 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.DisposableLocalValue)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpDisposableLocalValueFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpDisposableLocalValueFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do
@@ -239,7 +290,7 @@ module internal ClassificationDefinitions =
     [<Name(FSharpClassificationTypes.DisposableTopLevelValue)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpDisposableTopLevelValueFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpDisposableTopLevelValueFormat [<ImportingConstructor>] (theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do

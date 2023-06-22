@@ -15,6 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
+      <Link>LegacyResolver.txt</Link>
+    </EmbeddedText>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
@@ -22,6 +27,12 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCoreVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
   </ItemGroup>
 
 </Project>

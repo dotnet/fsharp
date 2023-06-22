@@ -11,7 +11,7 @@ type public XmlDocable = XmlDocable of line: int * indent: int * paramNames: str
 module public XmlDocComment =
 
     /// if it's a blank XML comment with trailing "<", returns Some (index of the "<"), otherwise returns None
-    val IsBlank: string -> int option
+    val inline IsBlank: string -> int option
 
 module public XmlDocParser =
 

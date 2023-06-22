@@ -13,7 +13,7 @@ parameters:
   # Optional: Include PublishBuildArtifacts task
   enablePublishBuildArtifacts: false
 
-  # Optional: A defined YAML pool - https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
+  # Optional: A defined YAML pool - https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
   pool: {}
 
   # Optional: should run as a public build even in the internal project
@@ -40,9 +40,8 @@ jobs:
   ${{ else }}:
     displayName: Publish to Build Asset Registry
 
-  pool: ${{ parameters.pool }}
-
   variables:
+  - template: /eng/common/templates/variables/pool-providers.yml
   - ${{ if and(eq(parameters.runAsPublic, 'false'), ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
     - group: Publish-Build-Assets
     - group: AzureDevOps-Artifact-Feeds-Pats
@@ -50,6 +49,16 @@ jobs:
       value: false
     - ${{ if eq(parameters.publishAssetsImmediately, 'true') }}:
       - template: /eng/common/templates/post-build/common-variables.yml
+
+  pool:
+    # We don't use the collection uri here because it might vary (.visualstudio.com vs. dev.azure.com)
+    ${{ if eq(variables['System.TeamProject'], 'DevDiv') }}:
+      name: VSEngSS-MicroBuild2022-1ES
+      demands: Cmd
+    # If it's not devdiv, it's dnceng
+    ${{ if ne(variables['System.TeamProject'], 'DevDiv') }}:
+      name: $(DncEngInternalBuildPool)
+      demands: ImageOverride -equals windows.vs2019.amd64
 
   steps:
   - ${{ if and(eq(parameters.runAsPublic, 'false'), ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:

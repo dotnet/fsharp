@@ -22,7 +22,7 @@ type public FSharpParseFileResults =
     member FindNoteworthyParamInfoLocations: pos: pos -> FSharpNoteworthyParamInfoLocations option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// Determines if the expression or pattern at the given position has a type annotation
     member IsTypeAnnotationGivenAtPosition: pos -> bool

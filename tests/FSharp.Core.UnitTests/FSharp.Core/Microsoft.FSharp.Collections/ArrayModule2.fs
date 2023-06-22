@@ -443,9 +443,30 @@ type ArrayModule2() =
         // null array
         let nullArr = null:string[]      
         CheckThrowsArgumentNullException (fun () -> Array.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)   
-        
-        ()
 
+    [<Fact>]
+    member this.ParallelReduce() =
+        let assertSameBehavior reduction arr = 
+            Assert.AreEqual(Array.reduce reduction arr, Array.Parallel.reduce reduction arr)
+
+        [|5;4;3;2;1|] |> assertSameBehavior (fun x y -> x+y)
+        [|"A"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x y -> if x < y then x else y)
+
+        CheckThrowsArgumentException (fun () -> Array.Parallel.reduce (fun x y -> x/y)  [||] |> ignore)     
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)  
+
+    [<Fact>]
+    member this.ParallelReduceBy() =
+        let assertSameBehavior projection reduction arr = 
+            Assert.AreEqual(arr |> Array.map projection |> Array.reduce reduction, Array.Parallel.reduceBy projection reduction arr)
+
+        [|5;4;3;2;1|] |> assertSameBehavior (fun x -> x * 2)(fun x y -> x+y)
+        [|"ABCD"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x -> x.Length) (Operators.Checked.(+))
+
+        CheckThrowsArgumentException (fun () -> Array.Parallel.reduceBy id (fun x y -> x/y)  [||] |> ignore)     
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.reduceBy id (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)  
         
     [<Fact>]
     member this.ReduceBack() =
@@ -644,7 +665,57 @@ type ArrayModule2() =
         Assert.AreEqual([|8;8;8|], eights)
         
         ()   
+
+
+    member private _.MultiplyArray(template:_[],repetitions:int) = 
+        Array.zeroCreate repetitions |> Array.collect (fun _ -> template)     
+
+    member private _.CompareTwoMethods<'TIn,'TOut when 'TOut: equality> (regularArrayFunc:'TIn[]->'TOut[]) (arrayParaFunc:'TIn[]->'TOut[]) (initialData:'TIn[]) = 
+        let first,second = initialData, Array.copy initialData
+        let whenSequential = regularArrayFunc second
+        let whenParallel = arrayParaFunc first
+
+        if(whenSequential <> whenParallel) then
+            Assert.AreEqual(whenSequential.Length, whenParallel.Length, "Lengths are different")
+            let diffsAt = 
+                Array.zip whenSequential whenParallel
+                |> Array.mapi (fun idx (a,b) -> if(a <> b) then Some(idx,(a,b)) else None)
+                |> Array.choose id
+                |> dict
+            
+            Assert.Empty(diffsAt)
+            Assert.Equal<'TOut>(whenSequential, whenParallel)
+
+    [<Fact>]
+    member this.sortInPlaceWithParallel() =      
+
+        let tee f x = f x; x
+        // integer array  
+        this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
+
+        // Sort backwards
+        this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith (fun a b -> -1 * compare a b))) (tee (Array.Parallel.sortInPlaceWith (fun a b -> -1 * compare a b)))
         
+        // string array
+        let strArr = [|"Lists"; "are"; "a"; "commonly"; "used"; "data"; "structure"|]    
+        this.MultiplyArray(strArr,1_000) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
+        
+        // empty array
+        [| |]
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))       
+        
+        // null array
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.sortInPlaceWith compare nullArr  |> ignore)  
+
+        // Equal elements              
+        this.MultiplyArray([|8; 8;8|],1_000) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
+        
+        ()           
 
     [<Fact>]
     member this.sortInPlaceBy() =
@@ -674,6 +745,31 @@ type ArrayModule2() =
         if len2Arr <> [|3;8|] then Assert.Fail()  
         Assert.AreEqual([|3;8|],len2Arr)  
         
+        () 
+
+    [<Fact>]
+    member this.sortInPlaceByParallel() =
+        let tee f x = f x; x
+
+        // integer array  
+        this.MultiplyArray([|3;5;7;2;4;8|],50) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy int)) (tee (Array.Parallel.sortInPlaceBy int))
+        
+        // string array
+        let strArr = [|"Lists"; "are"; "a"; "commonly"; "used"; "datastructure"|]    
+        this.MultiplyArray(strArr,1_000) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy (fun (x:string) -> x.Length))) (tee (Array.Parallel.sortInPlaceBy (fun (x:string) -> x.Length)))
+        
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        Array.Parallel.sortInPlaceBy int emptyArr
+        if emptyArr <> [||] then Assert.Fail()
+        
+        // null array
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.sortInPlaceBy (fun (x:string) -> x.Length) nullArr |> ignore)  
+
         () 
         
     [<Fact>]
@@ -709,6 +805,40 @@ type ArrayModule2() =
         let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
         let resultFloat = Array.sortDescending floatArr
         Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
+
+        () 
+
+    [<Fact>]
+    member this.SortDescendingParallel() =
+        // integer array  
+        this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
+        
+        // string array
+        this.MultiplyArray([|"Z";"a";"d"; ""; "Y"; null; "c";"b";"X"|]  ,1_000) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.Parallel.sortDescending emptyArr
+        if resultEmpty <> [||] then Assert.Fail()
+        
+        // tuple array
+        let tupArr = [|(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")|]   
+        this.MultiplyArray(tupArr,1_000) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)       
+
+        // date array
+        let dateArr = [|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|]       
+        this.MultiplyArray(dateArr,1_000) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)    
+        Assert.AreEqual([|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|], dateArr)
+
+        // float array
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        this.MultiplyArray(floatArr,1_000) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending) 
 
         () 
         
@@ -750,6 +880,46 @@ type ArrayModule2() =
         Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
 
         ()  
+
+    [<Fact>]
+    member this.SortByDescendingParallel() =
+        // integer array  
+        let intArr = [|3;5;7;2;4;8|]
+        this.MultiplyArray(intArr,1_000)
+        |> this.CompareTwoMethods(Array.sortByDescending int) (Array.Parallel.sortByDescending int)      
+        Assert.AreEqual([|3;5;7;2;4;8|], intArr)
+
+                
+        // string array
+        let strArr = [|".."; ""; "..."; "."; "...."|]    
+        this.MultiplyArray(strArr,1_000)
+        |> this.CompareTwoMethods(Array.sortByDescending (fun (x:string) -> x.Length)) (Array.Parallel.sortByDescending (fun (x:string) -> x.Length))    
+        Assert.AreEqual([|".."; ""; "..."; "."; "...."|], strArr)
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.Parallel.sortByDescending int emptyArr        
+        if resultEmpty <> [||] then Assert.Fail()    
+        
+        // tuple array
+        let tupArr = [|(2,"a");(1,"d");(1,"b");(2,"x")|]
+        this.MultiplyArray(tupArr,1_000)
+        |> this.CompareTwoMethods(Array.sortByDescending snd) (Array.Parallel.sortByDescending snd)       
+        Assert.AreEqual( [|(2,"a");(1,"d");(1,"b");(2,"x")|] , tupArr)  
+        
+        // date array
+        let dateArr = [|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|]
+        this.MultiplyArray(dateArr,1_000)
+        |> this.CompareTwoMethods(Array.sortByDescending (fun (d:DateTime) -> d.Month)) (Array.Parallel.sortByDescending (fun (d:DateTime) -> d.Month))         
+        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|], dateArr)     
+
+        // float array
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        this.MultiplyArray(floatArr,1_000)
+        |> this.CompareTwoMethods(Array.sortByDescending id) (Array.Parallel.sortByDescending id)
+
+        () 
          
     [<Fact>]
     member this.Sub() =
@@ -865,6 +1035,76 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException (fun () -> Array.sumBy float32 nullArr |> ignore)
         ()
 
+    member private _.TestOperation opName (actual:'T) (expected:'T) = 
+        Assert.AreEqual(expected, actual, sprintf "%s: should be %A but is %A" opName expected actual)
+
+    [<Fact>]
+    member this.ParallelSum() =
+        this.TestOperation "sum empty" (Array.Parallel.sum [||]) (0)
+        this.TestOperation "sum single" (Array.Parallel.sum [|42|]) (42)
+        this.TestOperation "sum two" (Array.Parallel.sum [|42;-21|]) (21)
+        this.TestOperation "sum many" (Array.Parallel.sum [|1..1000|]) ((1000*1001) / 2)
+        this.TestOperation "sum floats" (Array.Parallel.sum [|1.;2.;3.|]) (6.)
+        this.TestOperation "sum infinity" (Array.Parallel.sum [|1.;2.;infinity;3.|]) (infinity)
+        this.TestOperation "sum nan" (Array.Parallel.sum [|infinity;nan|] |> Double.IsNaN) (true)
+
+    [<Fact>]
+    member this.ParallelSumBy() = 
+        this.TestOperation "sum_by empty" (Array.Parallel.sumBy int [||]) (0)
+        this.TestOperation "sum_by single" (Array.Parallel.sumBy int [|42|]) (42)
+        this.TestOperation "sum_by two" (Array.Parallel.sumBy int [|42;-21|]) (21)
+        this.TestOperation "sum_by many" (Array.Parallel.sumBy int [|1..1000|]) ((1000*1001) / 2)
+        this.TestOperation "sum_by floats" (Array.Parallel.sumBy float [|1.;2.;3.|]) (6.)
+        this.TestOperation "sum_by infinity" (Array.Parallel.sumBy float [|1.;2.;infinity;3.|]) (infinity)
+        this.TestOperation "sum_by abs" (Array.Parallel.sumBy abs [|1; -2; 3; -4|]) (10)
+        this.TestOperation "sum_by string.Length" (Array.Parallel.sumBy String.length [|"abcd";"efg";"hi";"j";""|]) (10)
+
+    [<Fact>]
+    member this.ParallelAverage() =
+        CheckThrowsArgumentException (fun () -> Array.Parallel.average<float32> [||] |> ignore)
+        this.TestOperation "average of 0" (Array.Parallel.average [|0.|]) (0.)
+        this.TestOperation "average of single" (Array.Parallel.average [|4.|]) (4.)
+        this.TestOperation "average of two" (Array.Parallel.average [|4.;6.|]) (5.)
+
+    [<Fact>]
+    member this.ParallelAverageBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.averageBy float [||] |> ignore)
+        this.TestOperation "average_by of 0" (Array.Parallel.averageBy id [|0.|]) (0.)
+        this.TestOperation "average_by of single" (Array.Parallel.averageBy id [|4.|]) (4.)
+        this.TestOperation "average_by of two" (Array.Parallel.averageBy id [|4.;6.|]) (5.)
+        this.TestOperation "average_by int>float" (Array.Parallel.averageBy float [|0..1000|]) (500.)
+        this.TestOperation "average_by string.Length" (Array.Parallel.averageBy (String.length >> float) [|"ab";"cdef"|]) (3.)
+
+    [<Fact>]
+    member this.ParallelMin() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.min [||] |> ignore)
+        this.TestOperation "min single" (Array.Parallel.min [|42|]) (42)
+        this.TestOperation "min many" (Array.Parallel.min [|1..100|]) (1)
+        this.TestOperation "min floats" (Array.Parallel.min [|1.0;-1.0;nan;infinity;-infinity|]) (-infinity)
+
+    [<Fact>]
+    member this.ParallelMax() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.max [||] |> ignore)
+        this.TestOperation "max single" (Array.Parallel.max [|42|]) (42)
+        this.TestOperation "max many" (Array.Parallel.max [|1..100|]) (100)
+        this.TestOperation "max floats" (Array.Parallel.max [|1.0;-1.0;nan;infinity;-infinity|]) (infinity)
+
+    [<Fact>]
+    member this.ParallelMinBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.minBy string [||] |> ignore)
+        this.TestOperation "minBy single" (Array.Parallel.minBy string [|42|]) (42)
+        this.TestOperation "minBy int->string" (Array.Parallel.minBy string [|5..25|]) (10)
+        this.TestOperation "minBy many" (Array.Parallel.minBy (fun x -> -x) [|1..100|]) (100)
+        this.TestOperation "minBy floats" (Array.Parallel.minBy (fun x -> 1./float x) [|1..100|]) (100)
+
+    [<Fact>]
+    member this.ParallelMaxBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.maxBy int [||] |> ignore)
+        this.TestOperation "maxBy single" (Array.Parallel.maxBy string [|42|]) (42)
+        this.TestOperation "maxBy many" (Array.Parallel.maxBy (fun x -> -x) [|1..100|]) (1)
+        this.TestOperation "maxBy floats" (Array.Parallel.maxBy (fun x -> 1./float x) [|1..100|]) (1)
+
+
     [<Fact>]
     member this.Tl() =
         // integer array  
@@ -972,25 +1212,31 @@ type ArrayModule2() =
 
         ()
 
-    [<Fact>]
-    member this.TryFind() =
+    member private _.TryFindTester tryFindInts tryFindStrings =
         // integer array  
-        let resultInt = [|1..10|] |> Array.tryFind (fun x -> x%7 = 0)  
+        let resultInt = [|1..10|] |> tryFindInts (fun x -> x%7 = 0)  
         if resultInt <> Some 7 then Assert.Fail()
         
         // string array    
-        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFind (fun (x:string) -> x.Length > 4)
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> tryFindStrings (fun (x:string) -> x.Length > 4)
         if resultStr <> Some "Lists" then Assert.Fail()
         
         // empty array     
-        let resultEpt =[||] |> Array.tryFind  (fun x -> x%7 = 0)  
+        let resultEpt =[||] |> tryFindInts (fun x -> x%7 = 0)  
         if resultEpt <> None  then Assert.Fail()
 
         // null array
         let nullArr = null:string[]      
-        CheckThrowsArgumentNullException (fun () -> Array.tryFind (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryFindStrings (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.TryFind() = this.TryFindTester Array.tryFind Array.tryFind
+
+    [<Fact>]
+    member this.ParallelTryFind() = this.TryFindTester Array.Parallel.tryFind Array.Parallel.tryFind
+      
         
     [<Fact>]
     member this.TryFindBack() =
@@ -1016,26 +1262,30 @@ type ArrayModule2() =
 
         ()
 
-    [<Fact>]
-    member this.TryFindIndex() =
+    member private _.TryFindIndexTester tryFindIdxInt tryFindIdxString =
         // integer array  
-        let resultInt = [|1..10|] |> Array.tryFindIndex (fun x -> x%7 = 0)  
+        let resultInt = [|1..10|] |> tryFindIdxInt (fun x -> x%7 = 0)  
         if resultInt <> Some 6 then Assert.Fail()
         
         // string array    
-        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindIndex (fun (x:string) -> x.Length > 4)
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> tryFindIdxString (fun (x:string) -> x.Length > 4)
         if resultStr <> Some 0 then Assert.Fail()
         
         // empty array     
-        let resultEpt =[||] |> Array.tryFindIndex  (fun x -> x % 7 = 0)  
+        let resultEpt =[||] |> tryFindIdxInt  (fun x -> x % 7 = 0)  
         if resultEpt <> None  then Assert.Fail()
 
         // null array
         let nullArr = null:string[]      
-        CheckThrowsArgumentNullException (fun () -> Array.tryFindIndex (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryFindIdxString (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
 
+    [<Fact>]
+    member this.TryFindIndex() = this.TryFindIndexTester Array.tryFindIndex Array.tryFindIndex
+
+    [<Fact>]
+    member this.ParallelTryFindIndex() = this.TryFindIndexTester Array.Parallel.tryFindIndex Array.Parallel.tryFindIndex
     [<Fact>]
     member this.TryFindIndexBack() =
         // integer array
@@ -1249,7 +1499,22 @@ type ArrayModule2() =
         // len1 <> len2
         CheckThrowsArgumentException(fun () -> Array.zip [|1..10|] [|2..20|] |> ignore)
         
-        ()
+    [<Fact>]
+    member this.ParallelZip() =
+        let assertSameBehaviour arr1 arr2 =
+            let sequentialZip = Array.zip arr1 arr2
+            let paraZip = Array.Parallel.zip arr1 arr2
+            Assert.AreEqual(sequentialZip, paraZip)
+      
+        assertSameBehaviour [|1..3|] [|2..2..6|] 
+        assertSameBehaviour[|"A"; "B";  "C" ; "D" |] [|"a";"b";"c";"d"|]
+        assertSameBehaviour[||] [||]   
+
+        // null array
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.zip nullArr   nullArr  |> ignore)          
+        // len1 <> len2
+        CheckThrowsArgumentException(fun () -> Array.Parallel.zip [|1..10|] [|2..20|] |> ignore)
 
     [<Fact>]
     member this.Zip3() =

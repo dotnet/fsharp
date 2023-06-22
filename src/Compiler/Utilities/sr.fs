@@ -29,7 +29,6 @@ module internal DiagnosticMessage =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys[0], tys[1]), impl)
 
     let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition ()
-    let mkFunTy a b = funTyC.MakeGenericType([| a; b |])
 
     let isNamedType (ty: System.Type) =
         not (ty.IsArray || ty.IsByRef || ty.IsPointer)
@@ -37,7 +36,7 @@ module internal DiagnosticMessage =
     let isFunctionType (ty1: System.Type) =
         isNamedType (ty1)
         && ty1.IsGenericType
-        && (ty1.GetGenericTypeDefinition()).Equals(funTyC)
+        && System.Type.op_Equality (ty1.GetGenericTypeDefinition(), funTyC)
 
     let rec destFunTy (ty: System.Type) =
         if isFunctionType ty then

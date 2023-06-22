@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.XmlComments
+namespace XmlComments
 
 open Xunit
 open FSharp.Test.Compiler
@@ -48,6 +48,17 @@ module M =
                 [ (Warning 3390, Line 2, Col 5, Line 3, Col 48,
                    "This XML comment is invalid: unknown parameter 'b'");
                 ]
+
+    [<Fact>]
+    let ``diagnostic is not reported when disabled`` () =
+        Fsx"""
+    /// <summary> F </summary>
+    /// <param name="x"> the parameter </param>
+    let f a = a
+        """
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
 
     [<Fact>]
     let ``invalid parameter name is reported`` () =
@@ -206,4 +217,28 @@ module M =
          |> ignoreWarnings
          |> compile
          |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``Union field - unnamed 01`` () =
+        Fsx"""
+        type A =
+            /// <summary>A</summary>
+            /// <param name="Item">Item</param>
+            | A of int
+        """
+         |> withXmlCommentChecking
+         |> compile
+         |> withDiagnostics [ Warning 3390, Line 3, Col 13, Line 4, Col 48, "This XML comment is invalid: unknown parameter 'Item'" ]
+
+    [<Fact>]
+    let ``Union field - unnamed 02`` () =
+        Fsx"""
+        type A =
+            /// <summary>A</summary>
+            /// <param name="a">a</param>
+            | A of int * a: int
+        """
+         |> withXmlCommentChecking
+         |> compile
          |> withDiagnostics [ ]

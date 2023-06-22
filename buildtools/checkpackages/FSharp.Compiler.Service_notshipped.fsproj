@@ -20,4 +20,12 @@
     <PackageReference Include="FSharp.Compiler.Service" Version="[$(FSharpCompilerServicePackageVersion)]" />
   </ItemGroup>
 
+  <Target Name="WritePackageVersion" BeforeTargets="Restore">
+      <WriteLinesToFile
+          File="Version.txt"
+          Lines="FSharp.Compiler.Service=$(FSharpCompilerServicePackageVersion)"
+          Overwrite="true"
+          Encoding="Unicode"/>
+  </Target>
+
 </Project>

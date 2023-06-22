@@ -94,8 +94,6 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          Default - mscorlib
 --clearResultsCache                      Clear the package manager results
                                          cache
---noframework                            Do not reference the default CLI
-                                         assemblies by default
 --exec                                   Exit fsi after loading the files or
                                          running the .fsx script given on the
                                          command line
@@ -107,5 +105,5 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --quotations-debug[+|-]                  Emit debug information in quotations
 --shadowcopyreferences[+|-]              Prevents references from being
                                          locked by the F# Interactive process
---multiemit[+|-]                         Emit multiple assemblies (off by
-                                         default for .NET Framework)
+--multiemit[+|-]                         Emit multiple assemblies (on by
+                                         default)

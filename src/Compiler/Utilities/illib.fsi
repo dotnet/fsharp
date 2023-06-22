@@ -26,8 +26,8 @@ module internal PervasiveAutoOpens =
     /// Returns true if the argument is non-null.
     val inline isNotNull: x: 'T -> bool when 'T: null
 
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?' for example for future FS-1060.
+    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
+    /// replacement for 'string?' to align with FS-1060.
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
     /// Asserts the argument is non-null and raises an exception if it is
@@ -44,11 +44,11 @@ module internal PervasiveAutoOpens =
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
-    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     val LOH_SIZE_THRESHOLD_BYTES: int
 
-    val reportTime: (bool -> string -> unit)
+    val reportTime: (string -> unit)
 
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
@@ -438,6 +438,17 @@ type internal MemoizationTable<'T, 'U> =
 
     member Apply: x: 'T -> 'U
 
+/// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
+type internal StampedDictionary<'T, 'U> =
+
+    new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
+
+    member Add: key: 'T * value: 'U -> unit
+
+    member UpdateIfExists: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
+
+    member GetAll: unit -> seq<'T * (int * 'U)>
+
 exception internal UndefinedException
 
 type internal LazyWithContextFailure =
@@ -592,7 +603,7 @@ module internal MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member Values: 'Value list
 #endif
 

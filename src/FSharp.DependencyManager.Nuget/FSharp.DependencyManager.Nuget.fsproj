@@ -10,12 +10,18 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <NoOptimizationData>true</NoOptimizationData>
     <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
@@ -48,7 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />

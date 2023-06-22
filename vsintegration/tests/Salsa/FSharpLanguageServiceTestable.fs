@@ -212,7 +212,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     let fileName = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
                     let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, fileName, this.FSharpChecker)
-                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName))
+                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName), None)
                     sourceTokenizer.CreateLineTokenizer(source))
 
             let colorizer = new FSharpColorizer_DEPRECATED(this.CloseColorizer, buffer, scanner) 

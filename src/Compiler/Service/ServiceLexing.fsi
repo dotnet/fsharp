@@ -6,6 +6,7 @@ open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
+open FSharp.Compiler.Features
 
 #nowarn "57"
 
@@ -325,7 +326,7 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
 
     /// Create a tokenizer for a source file.
-    new: conditionalDefines: string list * fileName: string option -> FSharpSourceTokenizer
+    new: conditionalDefines: string list * fileName: string option * langVersion: string option -> FSharpSourceTokenizer
 
     /// Create a tokenizer for a line of this source file
     member CreateLineTokenizer: lineText: string -> FSharpLineTokenizer
@@ -343,6 +344,9 @@ module FSharpKeywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription: (string * string) list
+
+    /// A lookup from keywords to their descriptions
+    val internal KeywordsDescriptionLookup: (string -> string option)
 
     /// All the keywords in the F# language
     val KeywordNames: string list

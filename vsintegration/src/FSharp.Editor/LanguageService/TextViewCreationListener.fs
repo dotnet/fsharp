@@ -2,7 +2,7 @@
 
 open System
 open System.Runtime.InteropServices
-open System.ComponentModel.Composition;
+open System.ComponentModel.Composition
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Shell
@@ -33,7 +33,7 @@ type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEdit
                 os.GetSite(ref typeof<IServiceProvider>.GUID, &unkSite)
                 let sp = Marshal.GetObjectForIUnknown(unkSite) :?> IServiceProvider
 
-                sp.QueryService(ref typeof<SVsWindowFrame>.GUID, ref typeof<IVsWindowFrame>.GUID, &unkFrame) 
+                sp.QueryService(ref typeof<SVsWindowFrame>.GUID, ref typeof<IVsWindowFrame>.GUID, &unkFrame)
                 |> ignore
 
                 //When calling Peek Definition, the editor creates an IVsTextView within another view.
@@ -42,18 +42,20 @@ type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEdit
                 //parent IVsTextView will have already set this value during its creation.
                 if unkFrame <> IntPtr.Zero then
                     let frame = Marshal.GetObjectForIUnknown(unkFrame) :?> IVsWindowFrame
-                    frame.SetGuidProperty(LanguagePrimitives.EnumToValue __VSFPROPID.VSFPROPID_InheritKeyBindings, ref VSConstants.GUID_TextEditorFactory)
+
+                    frame.SetGuidProperty(
+                        LanguagePrimitives.EnumToValue __VSFPROPID.VSFPROPID_InheritKeyBindings,
+                        ref VSConstants.GUID_TextEditorFactory
+                    )
                     |> ignore
 
             finally
                 if unkSite <> IntPtr.Zero then
-                    Marshal.Release(unkSite)
-                    |> ignore
+                    Marshal.Release(unkSite) |> ignore
 
                 if unkFrame <> IntPtr.Zero then
-                    Marshal.Release(unkFrame)
-                    |> ignore
-                    
+                    Marshal.Release(unkFrame) |> ignore
+
         | _ -> ()
 
     interface IVsTextViewCreationListener with

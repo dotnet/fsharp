@@ -7,7 +7,6 @@ Where this guide mentions the command `build` it means either `build.cmd` in the
 * [Quick start: Running Tests](#quick-start-running-tests)
 * [Prerequisites](#prerequisites)
 * [Test Suites](#test-suites)
-* [More details](#more-details)
 * [Other Tips and gotchas](#other-tips-and-gotchas)
 * [Solving common errors](#solving-common-errors)
 * [Approximate running times](#approximate-running-times)
@@ -42,6 +41,7 @@ build -testAll -c Release
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |
 | testAll       | Windows | Runs all above tests |
+| testAllButIntegration       | Windows | Runs all minus integration tests |
 
 Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
 
@@ -92,7 +92,7 @@ The prerequisites are the same as for building the `FSharp.sln`, plus, at a mini
   * Between switching git branches
   * When merging with latest `main` upstream branch.
 
-## More Details
+## Test suites
 
 The F# tests are split as follows:
 
@@ -106,8 +106,9 @@ The F# tests are split as follows:
 
 * [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
 
-* [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
-  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
+* [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Validation of a wide range of behaviors in the F# Visual Studio project system and language service (including the legacy one).
+
+* [FSharp.Editor.Tests](vsintegration/tests/FSharp.Editor.Tests) - Visual F# Tools IDE Test Suite.
 
 ### FSharp Suite
 
@@ -120,7 +121,7 @@ This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsha
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed. 
 
-There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" files.
+There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" (.bsl) files.
 
 ### FSharpQA Suite
 
@@ -148,9 +149,9 @@ Tags are in the left column, paths to to corresponding test folders are in the r
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
 
-### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests
+### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests, FSharp.Editor.Tests
 
-These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner
+These are all currently NUnit tests (we hope to migrate them to xUnit). You can execute these tests individually via the Visual Studio NUnit3 runner
 extension or the command line via `nunit3-console.exe`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process,
@@ -227,7 +228,7 @@ When you switch branches, certain temporary files, as well as the .NET version (
 git clean -xdf -e .vs
 ```
 
-If you get "file in use" errors during cleaning, make sure to close Visual Studio and any running `dotnet.exe` and `VBCSCompiler.exe`, esp those that show up at the bottom of [Process Explorer](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) without parent process.
+If you get "file in use" errors during cleaning, make sure to close Visual Studio and any running `dotnet.exe` and `VBCSCompiler.exe`, esp those that show up at the bottom of [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) without parent process.
 
 #### Running tests on release/dev16.6 etc branches
 
@@ -249,7 +250,7 @@ The following are common errors that users have encountered while running tests 
 
 ### Error that a file cannot be accessed
 
-The build often leaves dangling processes like `HostedCompilerServer.exe`, `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes. A typical error looks like and contains the process IDs (here 23152, 25252 and 24704):
+The build often leaves dangling processes like `HostedCompilerServer.exe`, `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes. A typical error looks like and contains the process IDs (here 23152, 25252 and 24704):
 
 > C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(4364,5): error MSB3026: Could not copy "D:\Projects\FSharp\artifacts\bin\FSharp.Core\Debug\net45\FSharp.Core.dll" to "D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll". Beginning retry 1 in 1000ms. The process cannot access the file 'D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll' because it is being used by another process. The file is locked by: "HostedCompilerServer (23152), HostedCompilerServer (25252), HostedCompilerServer (24704)" [D:\Projects\OpenSource\FSharp\tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj]
 

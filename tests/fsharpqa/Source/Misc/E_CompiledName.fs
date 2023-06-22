@@ -1,8 +1,8 @@
 // #Regression #Misc
 // Regression test for FSHARP1.0:5936 
 // This test ensures that you can't apply the CompiledName attribute more than once to a property
-//<Expects status="error" span="(29,16-29,28)" id="FS0429">The attribute type 'CompiledNameAttribute' has 'AllowMultiple=false'\. Multiple instances of this attribute cannot be attached to a single language element\.$</Expects>
-//<Expects status="error" span="(30,15-30,27)" id="FS0429">The attribute type 'CompiledNameAttribute' has 'AllowMultiple=false'\. Multiple instances of this attribute cannot be attached to a single language element\.$</Expects>
+//<Expects status="error" span="(29,16-29,39)" id="FS0429">The attribute type 'CompiledNameAttribute' has 'AllowMultiple=false'\. Multiple instances of this attribute cannot be attached to a single language element\.$</Expects>
+//<Expects status="error" span="(30,15-30,38)" id="FS0429">The attribute type 'CompiledNameAttribute' has 'AllowMultiple=false'\. Multiple instances of this attribute cannot be attached to a single language element\.$</Expects>
 
 module M
 type T() = 

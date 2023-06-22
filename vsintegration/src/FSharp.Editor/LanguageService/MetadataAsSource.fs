@@ -40,52 +40,74 @@ module internal MetadataAsSource =
         let projectId = ProjectId.CreateNewId()
 
         let generatedDocumentId = DocumentId.CreateNewId(projectId)
-        let documentInfo = 
+
+        let documentInfo =
             DocumentInfo.Create(
                 generatedDocumentId,
                 Path.GetFileName(temporaryFilePath),
                 filePath = temporaryFilePath,
-                loader = FileTextLoader(temporaryFilePath, Encoding.UTF8))
+                loader = FileTextLoader(temporaryFilePath, Encoding.UTF8)
+            )
 
-        let projectInfo = 
+        let projectInfo =
             ProjectInfo.Create(
                 projectId,
                 VersionStamp.Default,
                 name = FSharpConstants.FSharpMetadataName + " - " + asmIdentity.Name,
                 assemblyName = asmIdentity.Name,
                 language = LanguageNames.FSharp,
-                documents = [|documentInfo|],
-                metadataReferences = metadataReferences)
+                documents = [| documentInfo |],
+                metadataReferences = metadataReferences
+            )
 
         (projectInfo, documentInfo)
 
     let showDocument (filePath, name, serviceProvider: IServiceProvider) =
-        let vsRunningDocumentTable4 = serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
+        let vsRunningDocumentTable4 =
+            serviceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable4>()
+
         let fileAlreadyOpen = vsRunningDocumentTable4.IsMonikerValid(filePath)
 
-        let openDocumentService = serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
+        let openDocumentService =
+            serviceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>()
 
-        let (_, _, _, _, windowFrame) = openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid)
+        let (_, _, _, _, windowFrame) =
+            openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid)
 
         let componentModel = serviceProvider.GetService<SComponentModel, IComponentModel>()
-        let editorAdaptersFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>()
+
+        let editorAdaptersFactory =
+            componentModel.GetService<IVsEditorAdaptersFactoryService>()
+
         let documentCookie = vsRunningDocumentTable4.GetDocumentCookie(filePath)
-        let vsTextBuffer = vsRunningDocumentTable4.GetDocumentData(documentCookie) :?> IVsTextBuffer
+
+        let vsTextBuffer =
+            vsRunningDocumentTable4.GetDocumentData(documentCookie) :?> IVsTextBuffer
+
         let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)
 
         if not fileAlreadyOpen then
-            ErrorHandler.ThrowOnFailure(vsTextBuffer.SetStateFlags(uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY)) |> ignore
-            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true)) |> ignore
-            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, name)) |> ignore
-            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name)) |> ignore
+            ErrorHandler.ThrowOnFailure(vsTextBuffer.SetStateFlags(uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY))
+            |> ignore
+
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_IsProvisional, true))
+            |> ignore
+
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideCaption, name))
+            |> ignore
+
+            ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name))
+            |> ignore
 
         windowFrame.Show() |> ignore
 
         let textContainer = textBuffer.AsTextContainer()
         let mutable workspace = Unchecked.defaultof<_>
+
         if Workspace.TryGetWorkspace(textContainer, &workspace) then
             let solution = workspace.CurrentSolution
             let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
+
             match box documentId with
             | null -> None
             | _ -> solution.GetDocument(documentId) |> Some
@@ -94,58 +116,63 @@ module internal MetadataAsSource =
 
 [<Sealed>]
 [<Export(typeof<FSharpMetadataAsSourceService>); Composition.Shared>]
-type internal FSharpMetadataAsSourceService() =
+type FSharpMetadataAsSourceService() =
 
     let serviceProvider = ServiceProvider.GlobalProvider
-    let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IFSharpWorkspaceProjectContext>()
 
-    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
-        let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
-        let projectContextFactory = componentModel.GetService<IFSharpWorkspaceProjectContextFactory>()
+    let projs =
+        System.Collections.Concurrent.ConcurrentDictionary<string, IFSharpWorkspaceProjectContext>()
 
-        let projectContext = projectContextFactory.CreateProjectContext(projInfo.FilePath, projInfo.Id.ToString())
+    let createMetadataProjectContext (projFilePath: string) (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let componentModel =
+            Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+
+        let projectContextFactory =
+            componentModel.GetService<FSharpWorkspaceProjectContextFactory>()
+
+        let projectContext =
+            projectContextFactory.CreateProjectContext(projFilePath, projInfo.Id.ToString())
+
         projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, SourceCodeKind.Regular)
 
         for metaRef in projInfo.MetadataReferences do
             match metaRef with
-            | :? PortableExecutableReference as peRef ->
-                projectContext.AddMetadataReference(peRef.FilePath)
-            | _ ->
-                ()
+            | :? PortableExecutableReference as peRef -> projectContext.AddMetadataReference(peRef.FilePath)
+            | _ -> ()
 
         projectContext
 
     let clear filePath (projectContext: IFSharpWorkspaceProjectContext) =
         projs.TryRemove(filePath) |> ignore
         projectContext.Dispose()
+
         try
             File.Delete filePath |> ignore
-        with
-        | _ -> ()
+        with _ ->
+            ()
 
     member _.ClearGeneratedFiles() =
         let projsArr = projs.ToArray()
-        projsArr
-        |> Array.iter (fun pair ->
-            clear pair.Key pair.Value
-        )
+        projsArr |> Array.iter (fun pair -> clear pair.Key pair.Value)
 
     member _.ShowDocument(projInfo: ProjectInfo, filePath: string, text: Text.SourceText) =
         match projInfo.Documents |> Seq.tryFind (fun doc -> doc.FilePath = filePath) with
         | Some document ->
             let _ =
                 let directoryName = Path.GetDirectoryName(filePath)
+
                 if Directory.Exists(directoryName) |> not then
                     Directory.CreateDirectory(directoryName) |> ignore
+
                 use fileStream = new FileStream(filePath, IO.FileMode.Create)
                 use writer = new StreamWriter(fileStream)
                 text.Write(writer)
 
-            let projectContext = createMetadataProjectContext projInfo document
+            let projectFile = Path.ChangeExtension(filePath, "fsproj")
+            let projectContext = createMetadataProjectContext projectFile projInfo document
 
             projs.[filePath] <- projectContext
 
-            MetadataAsSource.showDocument(filePath, Path.GetFileName(filePath), serviceProvider)
-        | _ ->
-            None
+            MetadataAsSource.showDocument (filePath, Path.GetFileName(filePath), serviceProvider)
+        | _ -> None

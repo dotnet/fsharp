@@ -232,6 +232,11 @@ let getSingleParenInnerExpr expr =
     | SynModuleDecl.Expr(SynExpr.Paren(expr, _, _, _), _) -> expr
     | _ -> failwith "Unexpected tree"
 
+let getLetDeclHeadPattern (moduleDecl: SynModuleDecl) =
+    match moduleDecl with
+    | SynModuleDecl.Let(_, [SynBinding(headPat = pat)], _) -> pat
+    | _ -> failwith "Unexpected tree"
+
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
 
@@ -367,7 +372,7 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
             e.Message.Split('\n')
             |> Array.map (fun s -> s.Trim())
             |> String.concat " "
-        sprintf "%s: %s" (e.Range.ToShortString()) message)
+        sprintf "%s: %s" (e.Range.ToString()) message)
     |> List.ofArray
 
 let getSymbolUses (results: FSharpCheckFileResults) =
@@ -458,7 +463,7 @@ let coreLibAssemblyName =
     "mscorlib"
 #endif
 
-let getRange (e: SynExpr) = e.Range
+let inline getRange (node: ^T) = (^T: (member Range: range) node)
 
 let assertRange
     (expectedStartLine: int, expectedStartColumn: int)
