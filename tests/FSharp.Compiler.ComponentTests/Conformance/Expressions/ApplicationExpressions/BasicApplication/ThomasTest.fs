@@ -34,6 +34,7 @@ let getnumberOutOfDU x =
     match x with
     | A -> 42
     | _ -> 43""" 
+            |> withLangVersionPreview
             |> typecheck 
             |> shouldSucceed       
         

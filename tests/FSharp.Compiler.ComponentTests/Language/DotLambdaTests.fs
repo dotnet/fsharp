@@ -8,14 +8,29 @@ open FSharp.Test.Compiler
 module DotLambdaTests =
 
     [<Fact>]
+    let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
+        Fsx "let inline myFunc x = x |> _.WhatANiceProperty"
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")] 
+
+    [<Fact>]
+    let ``DotLambda does allow member based SRTP if labelled explicitely`` () =
+        Fsx "let inline myFunc<'a when 'a:(member WhatANiceProperty: int)> (x: 'a) = x |> _.WhatANiceProperty "
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed    
+
+    [<Fact>]
     let ``ToString with preview version`` () =
-        Fsx "_.ToString()"
+        Fsx "let myFunc = _.ToString()"
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
     [<Fact>]
-    let ``ToString with old lang version`` () =
+    let ``ToString with F# 7`` () =
         Fsx "_.ToString()"
         |> withLangVersion70
         |> typecheck
