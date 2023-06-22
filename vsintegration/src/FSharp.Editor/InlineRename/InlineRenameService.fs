@@ -12,7 +12,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler
@@ -20,7 +19,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
-open Symbols
 open CancellableTasks
 
 type internal InlineRenameReplacementInfo(newSolution: Solution, replacementTextValid: bool, documentIds: IEnumerable<DocumentId>) =
@@ -38,26 +36,29 @@ type internal InlineRenameLocationSet
         symbolKind: LexerSymbolKind,
         symbol: FSharpSymbol
     ) =
+
     inherit FSharpInlineRenameLocationSet()
+
+    static let rec applyChanges replacementText (solution: Solution) (locationsByDocument: (Document * FSharpInlineRenameLocation list) list) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            match locationsByDocument with
+            | [] -> return solution
+            | (document, locations) :: rest ->
+                let! oldSource = document.GetTextAsync(cancellationToken)
+
+                let newSource =
+                    oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
+
+                return! applyChanges replacementText (solution.WithDocumentText(document.Id, newSource)) rest
+        }
 
     override _.Locations = upcast locations.ToList()
 
     override _.GetReplacementsAsync(replacementText, cancellationToken) : Task<FSharpInlineRenameReplacementInfo> =
-        let rec applyChanges (solution: Solution) (locationsByDocument: (Document * FSharpInlineRenameLocation list) list) =
-            async {
-                match locationsByDocument with
-                | [] -> return solution
-                | (document, locations) :: rest ->
-                    let! oldSource = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
 
-                    let newSource =
-                        oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
-
-                    return! applyChanges (solution.WithDocumentText(document.Id, newSource)) rest
-            }
-
-        async {
-            let! newSolution = applyChanges originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
+        cancellableTask {
+            let! newSolution = applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
 
             let replacementText =
                 match symbolKind with
@@ -71,7 +72,7 @@ type internal InlineRenameLocationSet
             let documentIds = locations |> Seq.map (fun doc -> doc.Document.Id) |> Seq.distinct
             return new InlineRenameReplacementInfo(newSolution, replacementTextValid, documentIds) :> FSharpInlineRenameReplacementInfo
         }
-        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+        |> CancellableTask.start cancellationToken
 
 type internal InlineRenameInfo
     (
