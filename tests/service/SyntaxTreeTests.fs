@@ -6,6 +6,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Test
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
@@ -197,3 +198,6 @@ let ParseFile fileName =
         File.Delete(actualPath)
 
     Assert.AreEqual(expected, actual)
+
+    // Run type checker to assert that it doesn't fail with the tree produced by the parser
+    CompilerAssert.ParseAndTypeCheck([|"--langversion:preview"|], fileName, contents) |> ignore

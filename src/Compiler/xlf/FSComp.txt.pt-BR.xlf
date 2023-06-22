@@ -822,6 +822,11 @@
         <target state="translated">Expressão de operador incompleta (exemplo a^b) ou invocação de tipo qualificado (exemplo: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
         <target state="new">Expecting member body</target>
@@ -1153,8 +1158,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">O constructo 'let! ... and! ...' só pode ser usado se o construtor de expressões de computação definir um método '{0}' ou um método 'MergeSource' ou 'Bind' apropriado</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="needs-review-translation">O constructo 'let! ... and! ...' só pode ser usado se o construtor de expressões de computação definir um método '{0}' ou um método 'MergeSource' ou 'Bind' apropriado</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -3283,8 +3288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Acessibilidades múltiplas fornecidas para getter ou setter de propriedade</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">Acessibilidades múltiplas fornecidas para getter ou setter de propriedade</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
