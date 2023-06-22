@@ -239,4 +239,11 @@ val rangeOfLongIdent: lid: LongIdent -> range
 
 val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword
 
-val mkSynUnionCase: attributes: SynAttributes -> access: SynAccess option -> id: SynIdent -> kind: SynUnionCaseKind -> mDecl: range -> (PreXmlDoc * range) -> SynUnionCase
+val mkSynUnionCase:
+    attributes: SynAttributes ->
+    access: SynAccess option ->
+    id: SynIdent ->
+    kind: SynUnionCaseKind ->
+    mDecl: range ->
+    (PreXmlDoc * range) ->
+        SynUnionCase

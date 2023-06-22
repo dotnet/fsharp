@@ -1093,9 +1093,9 @@ let appendValToLeadingKeyword mVal leadingKeyword =
 
 let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
     match access with
-    | Some access -> errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), access.Range))
+    | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
     | _ -> ()
 
     let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
     let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-    SynUnionCase (attributes, id, kind, xmlDoc, None, mDecl, trivia)
+    SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
