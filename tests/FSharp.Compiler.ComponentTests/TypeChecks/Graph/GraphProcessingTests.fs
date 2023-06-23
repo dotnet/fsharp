@@ -4,8 +4,6 @@ open System.Threading
 open FSharp.Compiler.GraphChecking.GraphProcessing
 open NUnit.Framework
 
-type Node = int
-
 [<Test>]
 let ``When processing a node throws an exception, an exception is raised with the original exception included`` () =
     let graph = [1, [|2|]; 2, [||]] |> readOnlyDict
