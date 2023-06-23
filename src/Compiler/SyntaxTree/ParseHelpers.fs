@@ -1090,3 +1090,12 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
     | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
+
+let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
+    match access with
+    | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
+    | _ -> ()
+
+    let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+    let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+    SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
