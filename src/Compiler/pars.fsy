@@ -2633,9 +2633,14 @@ recdFieldDecl:
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl:
   | opt_mutable opt_access ident COLON typ
-     { fun attrs stat mWhole leadingKeyword ->
-           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, mWhole)
-           SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
+     { mkSynField parseState (Some $3) $5 $1 $2 }
+  | opt_mutable opt_access ident COLON recover
+     { let mColon = rhs parseState 4
+       let t = SynType.FromParseError(mColon.EndRange)
+       mkSynField parseState (Some $3) t $1 $2 }
+  | opt_mutable opt_access ident recover
+     { let t = SynType.FromParseError($3.idRange.EndRange)
+       mkSynField parseState (Some $3) t $1 $2 }
 
 /* An exception definition */
 exconDefn:

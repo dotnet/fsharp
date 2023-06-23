@@ -1099,3 +1099,7 @@ let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, 
     let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
     let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
     SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
+
+let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
