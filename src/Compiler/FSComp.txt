@@ -1700,4 +1700,3 @@ featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj infer
 3567,parsMissingMemberBody,"Expecting member body"
 3568,parsMissingKeyword,"Missing keyword '%s'"
 3577,tcOverrideUsesMultipleArgumentsInsteadOfTuple,"This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c')."
-
