@@ -1259,14 +1259,28 @@ module PrintTastMemberOrVals =
         else 
             nameL
 
-    let layoutMemberName (denv: DisplayEnv) (vref: ValRef) niceMethodTypars tagFunction name =
+    let layoutMemberName (denv: DisplayEnv) (vref: ValRef) niceMethodTypars argInfos tagFunction name =
         let nameL = ConvertValLogicalNameToDisplayLayout vref.IsBaseVal (tagFunction >> mkNav vref.DefinitionRange >> wordL) name
         let nameL =
             if denv.showMemberContainers then 
                 layoutTyconRef denv vref.MemberApparentEntity ^^ SepL.dot ^^ nameL
             else
                 nameL
-        let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
+
+        let memberHasSameTyparNameAsParentTypeTypars =
+            let parentTyparNames =
+                vref.DeclaringEntity.TyparsNoRange
+                |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
+                |> set
+            niceMethodTypars
+            |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
+
+        let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
+        let nameL =
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+                layoutTyparDecls denv nameL true niceMethodTypars
+            else
+                nameL
         let nameL = layoutAccessibility denv vref.Accessibility nameL
         nameL
 
@@ -1289,7 +1303,7 @@ module PrintTastMemberOrVals =
                 let resL =
                     if short then tauL
                     else
-                        let nameL = layoutMemberName denv vref niceMethodTypars tagMember vref.DisplayNameCoreMangled
+                        let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagMember vref.DisplayNameCoreMangled
                         let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                         stat --- ((nameL  |> addColonL) ^^ tauL)
                 prettyTyparInst, resL
@@ -1311,7 +1325,7 @@ module PrintTastMemberOrVals =
                 if isNil argInfos then
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), vref.Id.idRange))
-                    let nameL = layoutMemberName denv vref [] tagProperty vref.DisplayNameCoreMangled
+                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
                     let resL =
                         if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
                         else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
@@ -1327,7 +1341,7 @@ module PrintTastMemberOrVals =
                             if isNil argInfos then tauL
                             else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars tagProperty vref.DisplayNameCoreMangled
+                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled
                             stat --- ((nameL  |> addColonL) ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
                     prettyTyparInst, resL
 
@@ -1335,17 +1349,18 @@ module PrintTastMemberOrVals =
                 if argInfos.Length <> 1 || isNil argInfos.Head then
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), vref.Id.idRange))
-                    let nameL = layoutMemberName denv vref [] tagProperty vref.DisplayNameCoreMangled
+                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
                     let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
                     emptyTyparInst, resL
                 else
+                    let curriedArgInfos = argInfos
                     let argInfos, valueInfo = List.frontAndBack argInfos.Head
                     let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv vref typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
                     let resL =
                         if short then
                             (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars tagProperty vref.DisplayNameCoreMangled
+                            let nameL = layoutMemberName denv vref niceMethodTypars curriedArgInfos tagProperty vref.DisplayNameCoreMangled
                             stat --- ((nameL |> addColonL) ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
                     prettyTyparInst, resL
 
@@ -1412,9 +1427,11 @@ module PrintTastMemberOrVals =
         let nameL = mkInlineL denv v nameL
 
         let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
-        let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests 
+        let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests
+        let typarOrderMismatch = isTyparOrderMismatch tps argInfos
+
         let typarBindingsL = 
-            if isTyFunction || isOverGeneric || denv.showTyparBinding then 
+            if isTyFunction || isOverGeneric || denv.showTyparBinding || typarOrderMismatch then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
@@ -1533,8 +1550,13 @@ module InfoMemberPrinting =
                     WordL.keywordNew
                 else
                     let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> wordL) minfo.LogicalName
-                    WordL.keywordMember ^^
-                    PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars
+                    let keywordLayout =
+                        match minfo with
+                        | ILMeth(ilMethInfo = ilMethInfo) when ilMethInfo.IsAbstract ->
+                            WordL.keywordOverride
+                        | _ -> WordL.keywordMember
+
+                    keywordLayout ^^ PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars
 
             let layout = layout ^^ (nameL |> addColonL)
             let layout = layoutXmlDocOfMethInfo denv infoReader minfo layout
@@ -1786,7 +1808,7 @@ module TastDefinitionPrinting =
         let overallL = staticL ^^ WordL.keywordMember ^^ (nameL |> addColonL) ^^ typL
         layoutXmlDocOfEventInfo denv infoReader einfo overallL
 
-    let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) =
+    let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) : Layout list =
         let amap = infoReader.amap
 
         let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
@@ -1795,13 +1817,33 @@ module TastDefinitionPrinting =
             | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
             | _ -> false
 
+        let (|MixedAccessibilityGetterAndSetter|_|) (pinfo: PropInfo) =
+            if not (pinfo.HasGetter && pinfo.HasSetter) then
+                None
+            else
+                match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
+                | Some getValRef, Some setValRef ->
+                    if getValRef.Accessibility = setValRef.Accessibility then
+                        None
+                    else
+                        Some (getValRef, setValRef)
+                | _ -> None
+        
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
-                propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
-            else
-                propL
+            match pinfo with
+            | MixedAccessibilityGetterAndSetter(getValRef, setValRef) ->
+                let getSuffix = if pinfo.IsIndexer then emptyL else wordL (tagKeyword "with") ^^ wordL (tagText "get")
+                [
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef ^^ getSuffix
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader setValRef
+                ]
+            | _ ->
+                let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+                if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
+                    [ propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set") ]
+                else
+                    [ propL ]
         | None ->
 
             let modifierAndMember =
@@ -1813,7 +1855,7 @@ module TastDefinitionPrinting =
             let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
             let typL = layoutType denv (pinfo.GetPropertyType(amap, m))
             let overallL = modifierAndMember ^^ (nameL |> addColonL) ^^ typL
-            layoutXmlDocOfPropInfo denv infoReader pinfo overallL
+            [ layoutXmlDocOfPropInfo denv infoReader pinfo overallL ]
 
     let layoutTyconDefn (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
         let g = denv.g
@@ -1984,7 +2026,9 @@ module TastDefinitionPrinting =
     
         let propLs =
             props
-            |> List.map (fun x -> (true, x.IsStatic, x.PropertyName, 0, 0), layoutPropInfo denv infoReader m x)
+            |> List.collect (fun x ->
+                layoutPropInfo denv infoReader m x
+                |> List.map (fun layout -> (true, x.IsStatic, x.PropertyName, 0, 0), layout))
             |> List.sortBy fst
             |> List.map snd
 
@@ -2502,7 +2546,7 @@ module InferredSigPrinting =
                     else
                         // OK, this is a nested module, with indentation
                         if isEmptyL basic then 
-                            ((modNameEqualsL ^^ wordL (tagKeyword"begin")) @@* basic) @@ WordL.keywordEnd
+                            modNameEqualsL ^^ wordL (tagKeyword "begin") @@* basic @@* WordL.keywordEnd
                         else
                             modNameEqualsL @@* basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
@@ -2616,6 +2660,10 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d =
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
     buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+
+let stringOfMethInfoFSharpStyle infoReader m denv minfo =
+    InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv minfo
+    |> showL
 
 /// Convert MethInfos to lines separated by newline including a newline as the first character
 let multiLineStringOfMethInfos infoReader m denv minfos =

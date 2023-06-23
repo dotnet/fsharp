@@ -308,3 +308,46 @@ type Foo =
         |> shouldFail
         |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
                                  """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c').""")
+
+    [<Fact>]
+    let ``Elements in computed lists, arrays and sequences``() =
+        FSharp """
+let f1 =
+    [|
+        if true then
+            1
+        "wrong" 
+    |]
+
+let f2: int list =
+    [
+        if true then
+            "a"
+        yield! [ 3; 4 ] 
+    ]
+
+let f3 =
+    [
+        if true then
+            "a"
+            "b"
+        yield! [ 3; 4 ] 
+    ]
+
+let f4 =
+    seq {
+        1L
+        let _ = ()
+        2.5
+        3L
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193,   Line 6,  Col 9,  Line 6,  Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
+            (Error 193,   Line 12, Col 13, Line 12, Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
+            (Error 193,   Line 21, Col 9,  Line 21, Col 24, "Type constraint mismatch. The type \n    'int list'    \nis not compatible with type\n    'string seq'    \n")
+            (Error 193,   Line 28, Col 9,  Line 28, Col 12, "Type constraint mismatch. The type \n    'float'    \nis not compatible with type\n    'int64'    \n")
+        ]
+

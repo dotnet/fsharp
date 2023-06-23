@@ -2359,10 +2359,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         checkIsResolved()
         let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true }
 
-        let stringValOfMethInfo methInfo =
+        let stringValOfMethInfo (methInfo: MethInfo) =
             match methInfo with
             | FSMeth(valRef = vref) -> NicePrint.stringValOrMember displayEnv cenv.infoReader vref
-            | _ -> NicePrint.stringOfMethInfo cenv.infoReader m displayEnv methInfo
+            | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
 
         let stringValOfPropInfo (p: PropInfo) =
             let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
