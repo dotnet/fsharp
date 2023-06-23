@@ -114,7 +114,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 let! res = async { processNode node } |> Async.Catch
 
                 match res with
-                | Choice1Of2 () -> raiseExn (Some(node.Info.Item, exn "foo"))
+                | Choice1Of2 () -> ()
                 | Choice2Of2 ex -> raiseExn (Some(node.Info.Item, ex))
             },
             cts.Token
