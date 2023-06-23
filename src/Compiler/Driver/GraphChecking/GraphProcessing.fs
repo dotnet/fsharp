@@ -91,9 +91,10 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     /// Only the first exception encountered is stored - this can cause non-deterministic errors if more than one item fails.
     let raiseExn, getExn =
         let mutable exn: ('Item * System.Exception) option = None
+        let lockObj : obj = obj()
         // Only set the exception if it hasn't been set already
         let setExn newExn =
-            lock exn (fun () ->
+            lock lockObj (fun () ->
                 match exn with
                 | Some _ -> ()
                 | None -> exn <- newExn
@@ -113,7 +114,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 let! res = async { processNode node } |> Async.Catch
 
                 match res with
-                | Choice1Of2 () -> ()
+                | Choice1Of2 () -> raiseExn (Some(node.Info.Item, exn "foo"))
                 | Choice2Of2 ex -> raiseExn (Some(node.Info.Item, ex))
             },
             cts.Token
