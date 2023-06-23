@@ -38,16 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="needs-review-translation">Guías de estructura de bloques;
-Mostrar guías de estructura para código F#;
-Esquema;
-Mostrar contorno y nodos colapsables para código F#;
-Sugerencias inline;
-Mostrar sugerencias de tipo en línea (vista previa);
-Mostrar sugerencias de tipo retorno (vista previa);
-Mostrar sugerencias de nombres de parámetros en línea (vista previa); Beer;
-Búferes activos;
-Usar buffers vivos (no guardados) para comprobar</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
