@@ -65,7 +65,7 @@ let mkSynCompGenSimplePatVar id =
 
 let (|SynSingleIdent|_|) x =
     match x with
-    | SynLongIdent ([ id ], _, _) -> Some id
+    | SynLongIdent (id = [ id ]) -> Some id
     | _ -> None
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
@@ -105,13 +105,13 @@ let (|SynPipeRight|_|) input =
 
 let (|SynPipeRight2|_|) input =
     match input with
-    | SynBinOp (synId, SynExpr.Paren (SynExpr.Tuple (false, [ x1a; x1b ], _, _), _, _, _), x2) when synId.idText = "op_PipeRight2" ->
+    | SynBinOp (synId, SynExpr.Paren (expr = SynExpr.Tuple (isStruct = false; exprs = [ x1a; x1b ])), x2) when synId.idText = "op_PipeRight2" ->
         Some(x1a, x1b, x2)
     | _ -> None
 
 let (|SynPipeRight3|_|) input =
     match input with
-    | SynBinOp (synId, SynExpr.Paren (SynExpr.Tuple (false, [ x1a; x1b; x1c ], _, _), _, _, _), x2) when synId.idText = "op_PipeRight3" ->
+    | SynBinOp (synId, SynExpr.Paren (expr = SynExpr.Tuple (isStruct = false; exprs = [ x1a; x1b; x1c ])), x2) when synId.idText = "op_PipeRight3" ->
         Some(x1a, x1b, x1c, x2)
     | _ -> None
 
@@ -138,7 +138,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
-    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
+    | SynExpr.App (funcExpr = SynExpr.Ident _; argExpr = SynExpr.ComputationExpr _)
     | SynExpr.IfThenElse _
     | SynExpr.LetOrUseBang _
     | SynExpr.Match _
@@ -147,7 +147,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.For _
     | SynExpr.ForEach _
     | SynExpr.While _ -> true
-    | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
+    | SynExpr.Typed (expr = e) -> IsControlFlowExpression e
     | _ -> false
 
 // The syntactic criteria for when a debug point for a 'let' is extended to include
@@ -257,7 +257,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
             | SynPat.Named (SynIdent (ident, _), _, _, _)
-            | SynPat.As (_, SynPat.Named (SynIdent (ident, _), _, _, _), _) ->
+            | SynPat.As (rhsPat = SynPat.Named (ident = SynIdent (ident, _))) ->
                 // named pats should be referred to as their name in docs, tooltips, etc.
                 let item = mkSynIdGet m ident.idText
                 false, None, ident, item
@@ -423,11 +423,11 @@ let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
 let mkSynDotParenGet mLhs mDot a b =
     match b with
-    | SynExpr.Tuple (false, [ _; _ ], _, _) ->
+    | SynExpr.Tuple (isStruct = false; exprs = [ _; _ ]) ->
         errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
         SynExpr.Const(SynConst.Unit, mLhs)
 
-    | SynExpr.Tuple (false, [ _; _; _ ], _, _) ->
+    | SynExpr.Tuple (isStruct = false; exprs = [ _; _; _ ]) ->
         errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
         SynExpr.Const(SynConst.Unit, mLhs)
 
@@ -447,13 +447,13 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     match l with
     //| SynExpr.Paren (l2, m2)  -> mkSynAssign m l2 r
     | LongOrSingleIdent (false, v, None, _) -> SynExpr.LongIdentSet(v, r, m)
-    | SynExpr.DotGet (e, _, v, _) -> SynExpr.DotSet(e, v, r, m)
+    | SynExpr.DotGet (expr = e; longDotId = v) -> SynExpr.DotSet(e, v, r, m)
     | SynExpr.DotIndexedGet (e1, e2, mDot, mLeft) -> SynExpr.DotIndexedSet(e1, e2, r, mLeft, mDot, m)
     | SynExpr.LibraryOnlyUnionCaseFieldGet (x, y, z, _) -> SynExpr.LibraryOnlyUnionCaseFieldSet(x, y, z, r, m)
-    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent nm, a, _), b, _) when nm.idText = opNameQMark -> mkSynQMarkSet m a b r
-    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent nm, a, _), b, _) when nm.idText = opNameParenGet -> mkSynDotParenSet m a b r
-    | SynExpr.App (_, _, SynExpr.LongIdent (false, v, None, _), x, _) -> SynExpr.NamedIndexedPropertySet(v, x, r, m)
-    | SynExpr.App (_, _, SynExpr.DotGet (e, _, v, _), x, _) -> SynExpr.DotNamedIndexedPropertySet(e, v, x, r, m)
+    | SynExpr.App (funcExpr = SynExpr.App (funcExpr = SingleIdent nm; argExpr = a); argExpr = b) when nm.idText = opNameQMark -> mkSynQMarkSet m a b r
+    | SynExpr.App (funcExpr = SynExpr.App (funcExpr = SingleIdent nm; argExpr = a); argExpr = b) when nm.idText = opNameParenGet -> mkSynDotParenSet m a b r
+    | SynExpr.App (funcExpr = SynExpr.LongIdent (false, v, None, _); argExpr = x) -> SynExpr.NamedIndexedPropertySet(v, x, r, m)
+    | SynExpr.App (funcExpr = SynExpr.DotGet (expr = e; longDotId = v); argExpr = x) -> SynExpr.DotNamedIndexedPropertySet(e, v, x, r, m)
     | l -> SynExpr.Set(l, r, m)
 
 let mkSynDot mDot m l (SynIdent (r, rTrivia)) =
@@ -566,13 +566,13 @@ module SynInfo =
     let AritiesOfArgs (SynValInfo (args, _)) = List.map List.length args
 
     /// Get the argument attributes from the syntactic information for an argument.
-    let AttribsOfArgData (SynArgInfo (Attributes attribs, _, _)) = attribs
+    let AttribsOfArgData (SynArgInfo (attributes = Attributes attribs)) = attribs
 
     /// Infer the syntactic argument info for a single argument from a simple pattern.
     let rec InferSynArgInfoFromSimplePat attribs p =
         match p with
-        | SynSimplePat.Id (nm, _, isCompGen, _, isOpt, _) -> SynArgInfo(attribs, isOpt, (if isCompGen then None else Some nm))
-        | SynSimplePat.Typed (a, _, _) -> InferSynArgInfoFromSimplePat attribs a
+        | SynSimplePat.Id (ident = nm; isCompilerGenerated = isCompGen; isOptional = isOpt) -> SynArgInfo(attribs, isOpt, (if isCompGen then None else Some nm))
+        | SynSimplePat.Typed (pat = a) -> InferSynArgInfoFromSimplePat attribs a
         | SynSimplePat.Attrib (a, attribs2, _) -> InferSynArgInfoFromSimplePat (attribs @ attribs2) a
 
     /// Infer the syntactic argument info for one or more arguments one or more simple patterns.
@@ -802,40 +802,40 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Const _
         | SynExpr.Dynamic _ -> false
 
-        | SynExpr.TypeTest (e, _, _)
-        | SynExpr.Upcast (e, _, _)
-        | SynExpr.AddressOf (_, e, _, _)
-        | SynExpr.ComputationExpr (_, e, _)
-        | SynExpr.ArrayOrListComputed (_, e, _)
-        | SynExpr.Typed (e, _, _)
-        | SynExpr.Do (e, _)
-        | SynExpr.Assert (e, _)
-        | SynExpr.DotGet (e, _, _, _)
-        | SynExpr.LongIdentSet (_, e, _)
-        | SynExpr.New (_, _, e, _)
-        | SynExpr.TypeApp (e, _, _, _, _, _, _)
-        | SynExpr.LibraryOnlyUnionCaseFieldGet (e, _, _, _)
-        | SynExpr.Downcast (e, _, _)
-        | SynExpr.InferredUpcast (e, _)
-        | SynExpr.InferredDowncast (e, _)
-        | SynExpr.Lazy (e, _)
-        | SynExpr.TraitCall (_, _, e, _)
-        | SynExpr.YieldOrReturn (_, e, _)
-        | SynExpr.YieldOrReturnFrom (_, e, _)
-        | SynExpr.DoBang (e, _)
-        | SynExpr.Fixed (e, _)
-        | SynExpr.DebugPoint (_, _, e)
-        | SynExpr.Paren (e, _, _, _) -> walkExpr e
+        | SynExpr.TypeTest (expr = e)
+        | SynExpr.Upcast (expr = e)
+        | SynExpr.AddressOf (expr = e)
+        | SynExpr.ComputationExpr (expr = e)
+        | SynExpr.ArrayOrListComputed (expr = e)
+        | SynExpr.Typed (expr = e)
+        | SynExpr.Do (expr = e)
+        | SynExpr.Assert (expr = e)
+        | SynExpr.DotGet (expr = e)
+        | SynExpr.LongIdentSet (expr = e)
+        | SynExpr.New (expr = e)
+        | SynExpr.TypeApp (expr = e)
+        | SynExpr.LibraryOnlyUnionCaseFieldGet (expr = e)
+        | SynExpr.Downcast (expr = e)
+        | SynExpr.InferredUpcast (expr = e)
+        | SynExpr.InferredDowncast (expr = e)
+        | SynExpr.Lazy (expr = e)
+        | SynExpr.TraitCall (argExpr = e)
+        | SynExpr.YieldOrReturn (expr = e)
+        | SynExpr.YieldOrReturnFrom (expr = e)
+        | SynExpr.DoBang (expr = e)
+        | SynExpr.Fixed (expr = e)
+        | SynExpr.DebugPoint (innerExpr = e)
+        | SynExpr.Paren (expr = e) -> walkExpr e
 
-        | SynExpr.NamedIndexedPropertySet (_, e1, e2, _)
-        | SynExpr.DotSet (e1, _, e2, _)
-        | SynExpr.Set (e1, e2, _)
-        | SynExpr.LibraryOnlyUnionCaseFieldSet (e1, _, _, e2, _)
-        | SynExpr.JoinIn (e1, _, e2, _)
-        | SynExpr.App (_, _, e1, e2, _) -> walkExpr e1 || walkExpr e2
+        | SynExpr.NamedIndexedPropertySet (expr1 = e1; expr2 = e2)
+        | SynExpr.DotSet (targetExpr = e1; rhsExpr = e2)
+        | SynExpr.Set (targetExpr = e1; rhsExpr = e2)
+        | SynExpr.LibraryOnlyUnionCaseFieldSet (expr = e1; rhsExpr = e2)
+        | SynExpr.JoinIn (lhsExpr = e1; rhsExpr = e2)
+        | SynExpr.App (funcExpr = e1; argExpr = e2) -> walkExpr e1 || walkExpr e2
 
-        | SynExpr.ArrayOrList (_, es, _)
-        | SynExpr.Tuple (_, es, _, _) -> walkExprs es
+        | SynExpr.ArrayOrList (exprs = es)
+        | SynExpr.Tuple (exprs = es) -> walkExprs es
 
         | SynExpr.AnonRecd (copyInfo = origExpr; recordFields = flds) ->
             (match origExpr with
@@ -861,12 +861,12 @@ let rec synExprContainsError inpExpr =
 
             walkBinds bs || walkBinds binds
 
-        | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
-        | SynExpr.While (_, e1, e2, _) -> walkExpr e1 || walkExpr e2
+        | SynExpr.ForEach (enumExpr = e1; bodyExpr = e2)
+        | SynExpr.While (whileExpr = e1; doExpr = e2) -> walkExpr e1 || walkExpr e2
 
         | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
 
-        | SynExpr.MatchLambda (_, _, cl, _, _) -> walkMatchClauses cl
+        | SynExpr.MatchLambda (matchClauses = cl) -> walkMatchClauses cl
 
         | SynExpr.Lambda (body = e) -> walkExpr e
 
@@ -880,7 +880,7 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.Sequential (_, _, e1, e2, _) -> walkExpr e1 || walkExpr e2
 
-        | SynExpr.SequentialOrImplicitYield (_, e1, e2, _, _) -> walkExpr e1 || walkExpr e2
+        | SynExpr.SequentialOrImplicitYield (expr1 = e1; expr2 = e2) -> walkExpr e1 || walkExpr e2
 
         | SynExpr.IfThenElse (ifExpr = e1; thenExpr = e2; elseExpr = e3opt) -> walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 

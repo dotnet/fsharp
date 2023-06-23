@@ -13,10 +13,12 @@ module CompilationFromCmdlineArgsTests =
     // The path needs to be absolute.
     let localProjects: string list =
         [
-            @"C:\Projects\fantomas\src\Fantomas.Core\Fantomas.Core.args.txt"
-            @"C:\Projects\FsAutoComplete\src\FsAutoComplete\FsAutoComplete.args.txt"
-            @"C:\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.args.txt"
-            @"C:\Projects\fsharp\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.args.txt"
+            // @"C:\Projects\fantomas\src\Fantomas.Core\Fantomas.Core.args.txt"
+            // @"C:\Projects\FsAutoComplete\src\FsAutoComplete\FsAutoComplete.args.txt"
+            // @"C:\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.args.txt"
+            // @"C:\Projects\fsharp\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.args.txt"
+            @"C:\Users\nojaf\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.rsp"
+            @"C:\Users\nojaf\Projects\fsharp\src\Compiler\Trimmed.rsp"
         ]
 
     let checker = FSharpChecker.Create()
@@ -36,6 +38,7 @@ module CompilationFromCmdlineArgsTests =
                     if not (Array.contains "--times" argsFromFile) then
                         yield "--times"
                     yield! methodOptions method
+                    yield "--deterministic-"
                 |]
 
             let diagnostics, exitCode = checker.Compile(args) |> Async.RunSynchronously
