@@ -1030,7 +1030,7 @@ type internal BackgroundCompiler
                         tcProj.TcConfig,
                         tcProj.TcGlobals,
                         options.IsIncompleteTypeCheckEnvironment,
-                        builder,
+                        Some builder,
                         options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,

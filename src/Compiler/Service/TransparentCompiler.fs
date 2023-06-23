@@ -87,7 +87,7 @@ type internal TcIntermediate =
         tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
-
+        
         sink: TcResultsSinkImpl
     }
 
@@ -989,7 +989,7 @@ type internal TransparentCompiler
         let parseTree = EmptyParsedInput(fileName, (false, false))
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
 
-    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeParseAndCheckFileInProject' (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         let key = fileName, projectSnapshot.Key
 
         ParseAndCheckFileInProjectCache.Get(
@@ -1036,6 +1036,93 @@ type internal TransparentCompiler
                     return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
             }
         )
+
+    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
+        let key = fileName, projectSnapshot.Key
+
+        ParseAndCheckFileInProjectCache.Get(
+            key,
+            node {
+
+                use _ =
+                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+
+                match! ComputeBootstrapInfo projectSnapshot with
+                | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
+
+                | Some bootstrapInfo, creationDiags ->
+
+                    let file = bootstrapInfo.GetFile fileName
+                    
+                    let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
+                    let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags fileName
+
+                    let! priorTcInfo, graph = ComputeTcPrior file bootstrapInfo projectSnapshot
+                    
+                    let fileIndex = projectSnapshot.IndexOf fileName
+                    let! tcIntermediate = ComputeTcIntermediate projectSnapshot graph fileIndex (parseTree, parseDiagnostics) bootstrapInfo priorTcInfo
+
+                    let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile), tcState =
+                        priorTcInfo.tcState |> tcIntermediate.finisher.Invoke
+
+                    let sink = tcIntermediate.sink
+
+                    let tcResolutions = sink.GetResolutions()
+                    let tcSymbolUses = sink.GetSymbolUses()
+                    let tcOpenDeclarations = sink.GetOpenDeclarations()
+                    
+                    let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
+                    let tcDiagnostics = seq {                    
+                        yield! priorTcInfo.TcDiagnostics 
+                        for x in tcIntermediate.tcDiagnosticsRev
+                            do yield! x }
+
+                    let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
+
+                    let tcDiagnostics =
+                        DiagnosticHelpers.CreateDiagnostics(
+                            diagnosticsOptions,
+                            false,
+                            fileName,
+                            tcDiagnostics,
+                            suggestNamesForErrors,
+                            bootstrapInfo.TcConfig.flatErrors
+                        )
+
+                    let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+
+                    let loadClosure = None // TODO: script support
+
+                    let typedResults =
+                        FSharpCheckFileResults.Make(
+                            fileName,
+                            projectSnapshot.ProjectFileName,
+                            bootstrapInfo.TcConfig,
+                            bootstrapInfo.TcGlobals,
+                            projectSnapshot.IsIncompleteTypeCheckEnvironment,
+                            None,
+                            projectSnapshot.ToOptions(),
+                            Array.ofList tcDependencyFiles,
+                            creationDiags,
+                            parseResults.Diagnostics,
+                            tcDiagnostics,
+                            keepAssemblyContents,
+                            ccuSigForFile,
+                            tcState.Ccu,
+                            bootstrapInfo.TcImports,
+                            tcEnv.AccessRights,
+                            tcResolutions,
+                            tcSymbolUses,
+                            tcEnv.NameEnv,
+                            loadClosure,
+                            checkedImplFileOpt,
+                            tcOpenDeclarations
+                        )
+
+                    return (parseResults, FSharpCheckFileAnswer.Succeeded typedResults)
+            }
+        )
+
 
     let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         ParseAndCheckAllFilesInProjectCache.Get(

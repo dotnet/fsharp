@@ -564,7 +564,7 @@ type public FSharpCheckFileResults =
         tcConfig: TcConfig *
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *

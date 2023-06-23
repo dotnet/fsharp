@@ -3231,7 +3231,7 @@ type FSharpCheckFileResults
             tcConfig,
             tcGlobals,
             isIncompleteTypeCheckEnvironment: bool,
-            builder: IncrementalBuilder,
+            builder: IncrementalBuilder option,
             projectOptions,
             dependencyFiles,
             creationErrors: FSharpDiagnostic[],
@@ -3272,7 +3272,7 @@ type FSharpCheckFileResults
         let errors =
             FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
 
-        FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+        FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
     static member CheckOneFile
         (
