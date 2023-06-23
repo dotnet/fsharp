@@ -1108,15 +1108,40 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
     let memberFlags: SynMemberFlags = flags SynMemberKind.Member
     let memberFlagsForSet = flags SynMemberKind.PropertySet
     let isStatic = not memberFlags.IsInstance
-    let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = mEquals; GetSetKeywords = getSetOpt }
-    SynMemberDefn.AutoProperty(attribs, isStatic, ident, typ, getSet, memberFlags, memberFlagsForSet, xmlDoc, access, expr, memberRange, trivia)
+
+    let trivia =
+        {
+            LeadingKeyword = leadingKeyword
+            WithKeyword = mWith
+            EqualsRange = mEquals
+            GetSetKeywords = getSetOpt
+        }
+
+    SynMemberDefn.AutoProperty(
+        attribs,
+        isStatic,
+        ident,
+        typ,
+        getSet,
+        memberFlags,
+        memberFlagsForSet,
+        xmlDoc,
+        access,
+        expr,
+        memberRange,
+        trivia
+    )
 
 let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attribs mStaticOpt =
     let isStatic = Option.isSome mStaticOpt
     let mValDecl = unionRanges rangeStart typ.Range |> unionRangeWithXmlDoc xmlDoc
+
     let leadingKeyword =
         match mStaticOpt with
         | None -> SynLeadingKeyword.Val mVal
         | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
-    let fld = SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
+
+    let fld =
+        SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
+
     SynMemberDefn.ValField(fld, mValDecl)
