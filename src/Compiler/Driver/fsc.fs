@@ -894,9 +894,8 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
-    let refAssemblySignatureHash = 
-        refAssemblySignatureHash
-        |> Option.map (fun h -> h ^^^ (hash optHash))
+    let refAssemblySignatureHash =
+        refAssemblySignatureHash |> Option.map (fun h -> h ^^^ (hash optHash))
 
     // Pass on only the minimum information required for the next phase
     Args(
