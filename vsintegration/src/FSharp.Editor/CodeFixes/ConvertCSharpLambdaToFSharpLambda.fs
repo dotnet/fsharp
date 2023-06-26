@@ -32,7 +32,7 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
             RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaBodyRange))
         |> bind3
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
