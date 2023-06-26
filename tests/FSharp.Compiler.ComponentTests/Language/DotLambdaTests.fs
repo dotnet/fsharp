@@ -28,6 +28,22 @@ module DotLambdaTests =
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Regression in neg typecheck hole as left arg`` () =
+        Fsx """
+let a = ( upcast _ ) : obj
+let b = ( _ :> _ ) : obj
+let c = ( _ :> obj) """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 10, Line 2, Col 20, Line 2, Col 21, "Unexpected symbol ')' in expression. Expected '.' or other token."
+            Error 10, Line 3, Col 13, Line 3, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
+            Error 583, Line 3, Col 9, Line 3, Col 10, "Unmatched '('"
+            Error 10, Line 4, Col 13, Line 4, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
+            Error 583, Line 4, Col 9, Line 4, Col 10, "Unmatched '('"]
         
     [<Fact>]
     let ``ToString with F# 7`` () =
