@@ -9,52 +9,63 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
+
     static let title = SR.AddMissingFunKeyword()
+
+    let adjustPosition (sourceText: SourceText) (span: TextSpan) =
+        let rec loop ch pos =
+            if not (Char.IsWhiteSpace(ch)) then
+                pos
+            else
+                loop sourceText.[pos] (pos - 1)
+
+        loop (sourceText.[span.Start - 1]) span.Start
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0010")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let document = context.Document
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let textOfError = sourceText.GetSubText(context.Span).ToString()
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
-            // Only trigger when failing to parse `->`, which arises when `fun` is missing
-            do! Option.guard (textOfError = "->")
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! textOfError = context.GetSquigglyTextAsync()
 
-            let! defines, langVersion =
-                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingFunKeywordCodeFixProvider))
-                |> liftAsync
+                if textOfError <> "->" then
+                    return None
+                else
+                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let document = context.Document
 
-            let adjustedPosition =
-                let rec loop ch pos =
-                    if not (Char.IsWhiteSpace(ch)) then
-                        pos
-                    else
-                        loop sourceText.[pos] (pos - 1)
+                    let! defines, langVersion =
+                        document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingFunKeywordCodeFixProvider))
 
-                loop sourceText.[context.Span.Start - 1] context.Span.Start
+                    let! sourceText = context.GetSourceTextAsync()
+                    let adjustedPosition = adjustPosition sourceText context.Span
 
-            let! intendedArgLexerSymbol =
-                Tokenizer.getSymbolAtPosition (
-                    document.Id,
-                    sourceText,
-                    adjustedPosition,
-                    document.FilePath,
-                    defines,
-                    SymbolLookupKind.Greedy,
-                    false,
-                    false,
-                    Some langVersion,
-                    context.CancellationToken
-                )
-
-            let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)
-
-            do context.RegisterFsharpFix(CodeFix.AddMissingFunKeyword, title, [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    return
+                        Tokenizer.getSymbolAtPosition (
+                            document.Id,
+                            sourceText,
+                            adjustedPosition,
+                            document.FilePath,
+                            defines,
+                            SymbolLookupKind.Greedy,
+                            false,
+                            false,
+                            Some langVersion,
+                            cancellationToken
+                        )
+                        |> Option.bind (fun intendedArgLexerSymbol ->
+                            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range))
+                        |> Option.map (fun intendedArgSpan ->
+                            {
+                                Name = CodeFix.AddMissingFunKeyword
+                                Message = title
+                                Changes = [ TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") ]
+                            })
+            }
