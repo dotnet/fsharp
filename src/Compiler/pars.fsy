@@ -167,6 +167,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynExpr> argExpr
 %type <SynExpr> declExprBlock
 %type <SynPat> headBindingPattern
+%type <SynType> atomTypeNonAtomicDeprecated
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
@@ -974,8 +975,14 @@ classMemberSpfn:
        SynMemberSig.Interface($4, unionRanges (rhs parseState 3) ($4).Range) }
 
   | opt_attributes opt_access INHERIT appType
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       SynMemberSig.Inherit($4, unionRanges (rhs parseState 3) ($4).Range) }
+     { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       SynMemberSig.Inherit($4, unionRanges (rhs parseState 1) $4.Range) }
+
+  | opt_attributes opt_access INHERIT recover
+     { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       let mInherit = rhs parseState 3
+       let ty = SynType.FromParseError(mInherit.EndRange)
+       SynMemberSig.Inherit(ty, unionRanges (rhs parseState 1) mInherit) }
 
   | opt_attributes opt_access VAL fieldDecl
      { let mWhole = rhs2 parseState 1 4
@@ -2134,7 +2141,7 @@ opt_classDefn:
 /* An 'inherits' definition in an object type definition */
 inheritsDefn:
   | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
-     { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range
+     { let mDecl = unionRanges (rhs parseState 1) $2.Range
        SynMemberDefn.Inherit($2, $3, mDecl) }
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
@@ -2143,7 +2150,7 @@ inheritsDefn:
 
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)
-       if not $2 then errorR(Error(FSComp.SR.parsTypeNameCannotBeEmpty(), mDecl))
+       if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mDecl))
        SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
 
 optAsSpec:

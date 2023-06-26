@@ -11101,13 +11101,27 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                      []
 
-                 | slots ->
+                 | slot :: _ as slots ->
                      match dispatchSlotsArityMatch with
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
-                         let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
-                         []
+                         let raiseGenericArityMismatch() =
+                              let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
+                              errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
+                              []
+                         
+                         match slot with
+                         | FSMeth (_, _, valRef, _) ->
+                             match valRef.TauType with
+                             // https://github.com/dotnet/fsharp/issues/15307
+                             // check if abstract method expects tuple, give better error message
+                             | TType_fun(_,TType_fun(TType_tuple _,_,_),_) ->
+                                 if not slot.NumArgs.IsEmpty && slot.NumArgs.Head = 1 then 
+                                     errorR(Error(FSComp.SR.tcOverrideUsesMultipleArgumentsInsteadOfTuple(), memberId.idRange))
+                                     []
+                                 else raiseGenericArityMismatch()
+                             | _ -> raiseGenericArityMismatch()
+                         | _ -> raiseGenericArityMismatch()
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 
