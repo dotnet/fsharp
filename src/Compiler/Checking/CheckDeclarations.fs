@@ -4142,7 +4142,9 @@ module TcDeclarations =
 
                 // Convert auto properties to let bindings in the pre-list
                 let rec preAutoProps memb =
-                    match memb with 
+                    match memb with
+                    | SynMemberDefn.AutoProperty(ident = id) when id.idText = "" -> []
+
                     | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; xmlDoc=xmlDoc; synExpr=synExpr; range=mWholeAutoProp) -> 
                         // Only the keep the field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
@@ -4169,7 +4171,9 @@ module TcDeclarations =
 
                 // Convert auto properties to member bindings in the post-list
                 let rec postAutoProps memb =
-                    match memb with 
+                    match memb with
+                    | SynMemberDefn.AutoProperty(ident = id) when id.idText = "" -> []
+
                     | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
