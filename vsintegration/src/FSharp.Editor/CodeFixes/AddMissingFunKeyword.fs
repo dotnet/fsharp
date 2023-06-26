@@ -41,7 +41,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                     let document = context.Document
 
-                    let! defines, langVersion =
+                    let! defines, langVersion, strictIndentation =
                         document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof AddMissingFunKeywordCodeFixProvider)
 
                     let! sourceText = context.GetSourceTextAsync()
@@ -58,6 +58,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                             false,
                             false,
                             Some langVersion,
+                            strictIndentation,
                             cancellationToken
                         )
                         |> Option.bind (fun intendedArgLexerSymbol ->

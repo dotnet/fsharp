@@ -26,7 +26,7 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let! defines, langVersion =
+                let! defines, langVersion, strictIndentation =
                     context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
                         nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider)
                     )
@@ -53,6 +53,7 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                         false,
                         false,
                         Some langVersion,
+                        strictIndentation,
                         cancellationToken
                     )
                     |> Option.bind (fun funcLexerSymbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))

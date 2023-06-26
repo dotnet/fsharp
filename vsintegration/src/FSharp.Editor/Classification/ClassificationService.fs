@@ -139,7 +139,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+                let defines, langVersion, strictIndentation = document.GetFSharpQuickDefinesAndLangVersion()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // For closed documents, only get classification for the text within the span.
@@ -172,6 +172,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             Some(document.FilePath),
                             defines,
                             Some langVersion,
+                            strictIndentation,
                             cancellationToken
                         )
                     )

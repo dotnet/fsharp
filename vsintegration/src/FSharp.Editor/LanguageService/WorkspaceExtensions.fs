@@ -172,7 +172,7 @@ type Document with
     member this.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName) =
         async {
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText, parsingOptions.StrictIndentation
         }
 
     /// Get the instance of the FSharpChecker from the workspace by the given F# document.
@@ -200,7 +200,8 @@ type Document with
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
-        this.GetFSharpQuickDefinesAndLangVersion() |> fst
+        match this.GetFSharpQuickDefinesAndLangVersion() with
+        | defines, _, _ -> defines
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
@@ -250,7 +251,7 @@ type Document with
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
         async {
-            let! defines, langVersion = this.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName)
+            let! defines, langVersion, strictIndentation = this.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
 
@@ -265,6 +266,7 @@ type Document with
                     wholeActivePattern,
                     allowStringToken,
                     Some langVersion,
+                    strictIndentation,
                     ct
                 )
         }
