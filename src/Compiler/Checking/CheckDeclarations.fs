@@ -4661,7 +4661,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                         match TryStripPrefixPath g enclosingNamespacePath with 
                         | Some(p, _) -> TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap m.EndRange env ([p], m.EndRange)
                         | None -> env, []
-                    
+
                     // Publish the combined module type
                     env.eModuleOrNamespaceTypeAccumulator.Value <- 
                         CombineCcuContentFragments [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
