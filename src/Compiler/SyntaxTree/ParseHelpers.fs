@@ -1145,3 +1145,7 @@ let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attri
         SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
 
     SynMemberDefn.ValField(fld, mValDecl)
+
+let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })

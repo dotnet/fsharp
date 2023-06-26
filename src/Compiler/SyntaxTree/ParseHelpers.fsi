@@ -274,3 +274,15 @@ val mkValField:
     SynAttributes ->
     range option ->
         SynMemberDefn
+
+val mkSynField:
+    parseState: IParseState ->
+    idOpt: Ident option ->
+    t: SynType ->
+    isMutable: bool ->
+    vis: SynAccess option ->
+    attributes: SynAttributeList list ->
+    isStatic: bool ->
+    mWhole: range ->
+    leadingKeyword: SynLeadingKeyword option ->
+        SynField
