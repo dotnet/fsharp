@@ -105,7 +105,16 @@ module internal CompletionUtils =
         let triggerLine = textLines.GetLineFromPosition triggerPosition
 
         let classifiedSpans =
-            Tokenizer.getClassifiedSpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, langVersion, strictIndentation, ct)
+            Tokenizer.getClassifiedSpans (
+                documentId,
+                sourceText,
+                triggerLine.Span,
+                Some filePath,
+                defines,
+                langVersion,
+                strictIndentation,
+                ct
+            )
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all

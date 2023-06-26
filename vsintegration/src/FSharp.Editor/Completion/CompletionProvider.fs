@@ -299,7 +299,10 @@ type internal FSharpCompletionProvider
         let getInfo () =
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines, langVersion, strictIndentation = document.GetFSharpQuickDefinesAndLangVersion()
+
+            let defines, langVersion, strictIndentation =
+                document.GetFSharpQuickDefinesAndLangVersion()
+
             (documentId, document.FilePath, defines, Some langVersion, strictIndentation)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(
@@ -330,7 +333,9 @@ type internal FSharpCompletionProvider
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
 
             let! sourceText = context.Document.GetTextAsync(ct)
-            let defines, langVersion, strictIndentation = document.GetFSharpQuickDefinesAndLangVersion()
+
+            let defines, langVersion, strictIndentation =
+                document.GetFSharpQuickDefinesAndLangVersion()
 
             let shouldProvideCompetion =
                 CompletionUtils.shouldProvideCompletion (

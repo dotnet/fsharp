@@ -111,7 +111,16 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, None, CancellationToken.None)
+            CompletionUtils.getDefaultCompletionListSpan (
+                sourceText,
+                caretPosition,
+                documentId,
+                filePath,
+                [],
+                None,
+                None,
+                CancellationToken.None
+            )
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
