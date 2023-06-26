@@ -727,6 +727,11 @@
         <target state="translated">F# インターフェイス情報を含めます。既定値は file です。ライブラリの配布に不可欠です。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Use strict indentation rules</source>
+        <target state="new">Use strict indentation rules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">サポートされる言語バージョン:</target>

@@ -727,6 +727,11 @@
         <target state="translated">包含 F# 介面資訊，預設值為檔案。發佈程式庫的基本功能。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Use strict indentation rules</source>
+        <target state="new">Use strict indentation rules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">支援的語言版本:</target>

@@ -727,6 +727,11 @@
         <target state="translated">Schließen Sie F#-Schnittstelleninformationen ein, der Standardwert ist „file“. Wesentlich für die Verteilung von Bibliotheken.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Use strict indentation rules</source>
+        <target state="new">Use strict indentation rules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Unterstützte Sprachversionen:</target>
