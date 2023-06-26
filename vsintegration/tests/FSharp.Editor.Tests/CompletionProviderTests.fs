@@ -1450,3 +1450,13 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
             "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
             [ "B"; "C" ]
         )
+
+    [<Fact>]
+    let ``Anonymous record fields have higher priority than methods`` () =
+        let fileContents =
+            """
+let x = [ {| Goo = 1; Foo = "foo" |} ]
+x[0].
+"""
+
+        VerifyCompletionListExactly(fileContents, "x[0].", [ "Foo"; "Goo"; "Equals"; "GetHashCode"; "GetType"; "ToString" ])

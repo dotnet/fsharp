@@ -167,6 +167,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynExpr> argExpr
 %type <SynExpr> declExprBlock
 %type <SynPat> headBindingPattern
+%type <SynType> atomTypeNonAtomicDeprecated
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
@@ -521,12 +522,27 @@ moduleIntro:
         let mModule = rhs parseState 1
         mModule, $4, $5.LongIdent, $3, $2 }
 
+  | moduleKeyword opt_attributes opt_access opt_rec OBLOCKSEP
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
+
+  | moduleKeyword opt_attributes opt_access opt_rec recover
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let mModule = rhs parseState 1
+        mModule, $4, [], $3, $2 }
 
 /* The start of a namespace declaration */
 namespaceIntro:
   | NAMESPACE opt_rec path
       { let mNamespace = rhs parseState 1
         mNamespace, $2, $3.LongIdent, grabXmlDoc(parseState, [], 1) }
+
+  | NAMESPACE opt_rec recover
+      { let mNamespace = rhs parseState 1
+        mNamespace, $2, [], grabXmlDoc(parseState, [], 1) }
 
 
 /* The contents of a signature file */
@@ -706,7 +722,7 @@ moduleSpfn:
         SynModuleSigDecl.Exception(synExnDefn, mWhole) }
 
   | openDecl
-      { SynModuleSigDecl.Open($1, (rhs parseState 1)) }
+      { SynModuleSigDecl.Open $1 }
 
 valSpfn:
   | opt_attributes opt_access VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
@@ -958,8 +974,14 @@ classMemberSpfn:
        SynMemberSig.Interface($4, unionRanges (rhs parseState 3) ($4).Range) }
 
   | opt_attributes opt_access INHERIT appType
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       SynMemberSig.Inherit($4, unionRanges (rhs parseState 3) ($4).Range) }
+     { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       SynMemberSig.Inherit($4, unionRanges (rhs parseState 1) $4.Range) }
+
+  | opt_attributes opt_access INHERIT recover
+     { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       let mInherit = rhs parseState 3
+       let ty = SynType.FromParseError(mInherit.EndRange)
+       SynMemberSig.Inherit(ty, unionRanges (rhs parseState 1) mInherit) }
 
   | opt_attributes opt_access VAL fieldDecl
      { let mWhole = rhs2 parseState 1 4
@@ -1132,8 +1154,8 @@ fileModuleImpl:
   | moduleDefnsOrExprPossiblyEmptyOrBlock
     { let m = (rhs parseState 1)
       (fun (mNamespaceOpt, isRec, path, xml) ->
-        match path with
-        | [] -> ParsedImplFileFragment.AnonModule($1, m)
+        match path, mNamespaceOpt with
+        | [], None -> ParsedImplFileFragment.AnonModule($1, m)
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
@@ -1320,15 +1342,26 @@ moduleDefn:
 
   /* 'open' declarations */
   | openDecl
-      { [ SynModuleDecl.Open($1, (rhs parseState 1)) ] }
+      { [ SynModuleDecl.Open $1 ] }
 
 openDecl:
-  /* 'open' declarations */
   | OPEN path
-      { SynOpenDeclTarget.ModuleOrNamespace($2, (rhs parseState 2)) }
+      { let mOpen = rhs parseState 1
+        let mPath = $2.Range
+        SynOpenDeclTarget.ModuleOrNamespace($2, mPath), unionRanges mOpen mPath }
+
+  | OPEN recover
+      { let mOpen = rhs parseState 1
+        SynOpenDeclTarget.ModuleOrNamespace(SynLongIdent([], [], []), mOpen.EndRange), mOpen }
 
   | OPEN typeKeyword appType
-      { SynOpenDeclTarget.Type($3, (rhs parseState 3)) }
+      { let mOpen = rhs parseState 1
+        let mPath = $3.Range
+        SynOpenDeclTarget.Type($3, mPath), unionRanges mOpen mPath }
+
+  | OPEN typeKeyword recover
+      { let m = rhs2 parseState 1 2
+        SynOpenDeclTarget.ModuleOrNamespace(SynLongIdent([], [], []), m.EndRange), m }
 
 /* The right-hand-side of a module abbreviation definition */
 /* This occurs on the right of a module abbreviation (#light encloses the r.h.s. with OBLOCKBEGIN/OBLOCKEND) */
@@ -1499,23 +1532,32 @@ memberFlags:
   | STATIC MEMBER
       { let mStatic = rhs parseState 1
         let mMember = rhs parseState 2
-        StaticMemberFlags, (SynLeadingKeyword.StaticMember(mStatic, mMember)) }
+        StaticMemberFlags, SynLeadingKeyword.StaticMember(mStatic, mMember) }
+
+ | STATIC
+      { let mStatic = rhs parseState 1
+        // todo: it should be possible to make it work better for both `abstract` and `member` in the type checker
+        StaticMemberFlags, SynLeadingKeyword.Static(mStatic) }
+
   | MEMBER
       { let mMember = rhs parseState 1
-        NonVirtualMemberFlags, (SynLeadingKeyword.Member mMember) }
+        NonVirtualMemberFlags, SynLeadingKeyword.Member mMember }
+
   | OVERRIDE
       { let mOverride = rhs parseState 1
-        OverrideMemberFlags, (SynLeadingKeyword.Override mOverride) }
+        OverrideMemberFlags, SynLeadingKeyword.Override mOverride }
+
   | DEFAULT
       { let mDefault = rhs parseState 1
-        OverrideMemberFlags, (SynLeadingKeyword.Default mDefault) }
+        OverrideMemberFlags, SynLeadingKeyword.Default mDefault }
 
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars, lid, fixity, vis = $2
        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
+       let m = match lid with [] -> rhs parseState 2 | _ -> rangeOfLid lid
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, m) }
 
 /* Part of a set of type definitions */
 tyconDefnList:
@@ -1579,7 +1621,8 @@ tyconDefn:
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, rangeOfLid lid, { AsKeyword = Option.map fst az })
+       let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.map snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
        let tcDefRepr =
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel(k, memberCtorPattern :: cspec, m)
@@ -1783,6 +1826,45 @@ memberCore:
             let memberRange = unionRanges rangeStart mRhs |> unionRangeWithXmlDoc xmlDoc
             [ SynMemberDefn.Member(binding, memberRange) ]) }
 
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints OBLOCKSEP
+     { let optReturnType = $3
+       let bindingPat, mBindLhs = $2
+       let mEnd =
+           match optReturnType with
+           | Some(_, ty) -> ty.Range.EndRange
+           | _ -> bindingPat.Range.EndRange
+       let expr = arbExpr ("memberCore1", mEnd)
+       errorR (Error(FSComp.SR.parsMissingMemberBody(), rhs parseState 4))
+
+       fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
+           let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword
+           let memberFlags = memFlagsBuilder SynMemberKind.Member
+           let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+           let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $1; EqualsRange = None }
+           let binding = mkSynBinding (xmlDoc, bindingPat) (vis, (Option.isSome $1), false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, mEnd, [], attrs, Some memberFlags, trivia)
+           let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
+           [ SynMemberDefn.Member (binding, memberRange) ] }
+
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints recover
+     { let optReturnType = $3
+       let bindingPat, mBindLhs = $2
+       let mEnd =
+           match optReturnType with
+           | Some(_, ty) -> ty.Range.EndRange
+           | _ -> bindingPat.Range.EndRange
+       let expr = arbExpr ("memberCore2", mEnd)
+
+       fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
+           let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword
+           let memberFlags = memFlagsBuilder SynMemberKind.Member
+           let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+           let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $1; EqualsRange = None }
+           let binding = mkSynBinding (xmlDoc, bindingPat) (vis, (Option.isSome $1), false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, mEnd, [], attrs, Some memberFlags, trivia)
+           let memberRange = unionRanges rangeStart mEnd |> unionRangeWithXmlDoc xmlDoc
+           [ SynMemberDefn.Member (binding, memberRange) ] }
+
   /* Properties with explicit get/set, also indexer properties */
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet
      { let mWith, (classDefnMemberGetSetElements, mAnd) = $4
@@ -1845,6 +1927,26 @@ classDefnMember:
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let flags = $3
        $4 $2 flags $1 rangeStart }
+
+  | opt_attributes opt_access memberFlags recover
+      { let rangeStart = rhs parseState 1
+        if Option.isSome $2 then
+            errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+        let memFlagsBuilder, leadingKeyword = $3
+        let flags = Some(memFlagsBuilder SynMemberKind.Member)
+        let xmlDoc = grabXmlDocAtRangeStart (parseState, $1, rangeStart)
+        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = None; EqualsRange = None }
+        let mMember = rhs parseState 3
+        let mEnd = mMember.EndRange
+        let bindingPat = patFromParseError (SynPat.Wild(mEnd))
+        let expr = arbExpr ("classDefnMember1", mEnd)
+        let mWhole = rhs2 parseState 1 3
+        let binding =
+            mkSynBinding
+                (xmlDoc, bindingPat)
+                ($2, (Option.isSome $2), false, mWhole, DebugPointAtBinding.NoneAtInvisible, None, expr, mEnd, [], $1, flags, trivia)
+
+        [SynMemberDefn.Member(binding, mWhole)] }
 
   | opt_attributes opt_access interfaceMember appType opt_interfaceImplDefn
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
@@ -2038,7 +2140,7 @@ opt_classDefn:
 /* An 'inherits' definition in an object type definition */
 inheritsDefn:
   | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
-     { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range
+     { let mDecl = unionRanges (rhs parseState 1) $2.Range
        SynMemberDefn.Inherit($2, $3, mDecl) }
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
@@ -2047,7 +2149,7 @@ inheritsDefn:
 
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)
-       if not $2 then errorR(Error(FSComp.SR.parsTypeNameCannotBeEmpty(), mDecl))
+       if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mDecl))
        SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
 
 optAsSpec:
@@ -2233,6 +2335,9 @@ tyconNameAndTyparDecls:
   | opt_access path postfixTyparDecls
       { Some $3, $2.LongIdent, true, $1 }
 
+  | opt_access recover
+      { None, [], false, $1 }
+
 prefixTyparDecls:
   | typar
       { SynTyparDecls.SinglePrefix(SynTyparDecl([], $1), rhs parseState 1) }
@@ -2387,69 +2492,36 @@ attrUnionCaseDecls:
 /* The core of a union case definition */
 attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        let mDecl = rhs parseState 3
-        (fun (xmlDoc, mBar) ->
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2 (SynUnionCase ($1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
+      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 3) >> Choice2Of2 }
 
   | opt_attributes opt_access recover
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        (fun (xmlDoc, mBar) ->
-            let id = SynIdent(mkSynId mBar.EndRange "", None)
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mBar
-            Choice2Of2 (SynUnionCase ($1, id, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
+      { fun (xmlDoc, mBar) -> mkSynUnionCase $1 $2 (SynIdent(mkSynId mBar.EndRange "", None)) (SynUnionCaseKind.Fields []) mBar (xmlDoc, mBar) |> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName OF unionCaseRepr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        let mDecl = rhs2 parseState 1 5
-        (fun (xmlDoc, mBar) ->
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2 (SynUnionCase ($1, $3, SynUnionCaseKind.Fields $5, xmlDoc, None, mDecl, trivia))) }
+      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields $5) (rhs2 parseState 1 5) >> Choice2Of2 }
+
+  | opt_attributes opt_access unionCaseName unionCaseRepr
+      { errorR (Error(FSComp.SR.parsMissingKeyword("of"), rhs2 parseState 3 4))
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields $4) (rhs2 parseState 1 4) >> Choice2Of2 }
 
   | opt_attributes opt_access OF unionCaseRepr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        let mOf = rhs parseState 3
+      { let mOf = rhs parseState 3
         let mId = mOf.StartRange
         errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
-        let mDecl = rhs2 parseState 1 4
-        (fun (xmlDoc, mBar) ->
-            let id = SynIdent(mkSynId mId "", None)
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields $4, xmlDoc, None, mDecl, trivia))) }
+        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields $4) (rhs2 parseState 1 4) >> Choice2Of2 }
 
   | opt_attributes opt_access OF recover
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        let mOf = rhs parseState 3
+      { let mOf = rhs parseState 3
         let mId = mOf.StartRange
         errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
-        let mDecl = rhs2 parseState 1 3
-        (fun (xmlDoc, mBar) ->
-            let id = SynIdent(mkSynId mId "", None)
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
+        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields []) (rhs2 parseState 1 3) >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName OF recover
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        let mDecl = rhs2 parseState 1 4
-        (fun (xmlDoc, mBar) ->
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2 (SynUnionCase ($1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
+      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName COLON topType
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
-        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
-        let mDecl = rhs2 parseState 1 5
-        (fun (xmlDoc, mBar) ->
-            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
-            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2 (SynUnionCase ($1, $3, SynUnionCaseKind.FullType $5, xmlDoc, None, mDecl, trivia))) }
+      { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) (rhs2 parseState 1 5) >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName EQUALS atomicExpr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
@@ -2720,6 +2792,12 @@ hardwhiteDoBinding:
         // associated with the module, 'main' function or assembly depending on their target
         BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, $2, mAll)]), mAll), $2 }
 
+  | ODO ODECLEND
+      { let mDo = rhs parseState 1
+        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let seqPt = DebugPointAtBinding.NoneAtDo
+        let expr = arbExpr ("hardwhiteDoBinding1", mDo.EndRange)
+        BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, expr, mDo)]), mDo), expr }
 
 /* The bindings in a class type definition */
 classDefnBindings:
