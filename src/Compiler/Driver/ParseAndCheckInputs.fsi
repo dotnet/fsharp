@@ -186,6 +186,7 @@ val CheckOneInput:
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 val CheckOneInputWithCallback:
+    node: NodeToTypeCheck ->
     checkForErrors: (unit -> bool) *
     tcConfig: TcConfig *
     tcImports: TcImports *
@@ -195,7 +196,7 @@ val CheckOneInputWithCallback:
     tcState: TcState *
     input: ParsedInput *
     _skipImplIfSigExists: bool ->
-        Cancellable<Finisher<TcState, PartialResult>>
+         Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>>
 
 val AddCheckResultsToTcState:
     tcGlobals: TcGlobals *

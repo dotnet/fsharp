@@ -77,7 +77,7 @@ type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFil
 [<NoEquality; NoComparison>]
 type internal TcIntermediate =
     {
-        finisher: Finisher<TcState, PartialResult>
+        finisher:  Finisher<NodeToTypeCheck, TcState, PartialResult>
         //tcEnvAtEndOfFile: TcEnv
 
         /// Disambiguation table for module names
@@ -815,8 +815,9 @@ type internal TransparentCompiler
                 let input, moduleNamesDict =
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
+                let node = NodeToTypeCheck.PhysicalFile fileIndex // TODO: is this correct?
                 let! finisher =
-                    CheckOneInputWithCallback(
+                    CheckOneInputWithCallback node (
                         (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                         tcConfig,
                         tcImports,
@@ -845,13 +846,14 @@ type internal TransparentCompiler
             }
         )
 
-    let mergeIntermediateResults =
+    let mergeIntermediateResults  x y =
         Array.fold (fun (tcInfos: TcInfo list) (tcIntermediate: TcIntermediate) ->
             match tcInfos with
             | [] -> failwith "need initial tcInfo"
             | tcInfo :: rest ->
+                let Finisher(finisher = finisher) = tcIntermediate.finisher
                 let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
-                    tcInfo.tcState |> tcIntermediate.finisher.Invoke
+                    tcInfo.tcState |> finisher
 
                 let tcEnvAtEndOfFile =
                     if keepAllBackgroundResolutions then
@@ -867,7 +869,7 @@ type internal TransparentCompiler
                     tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
                     latestCcuSigForFile = Some ccuSigForFile
                 }
-                :: tcInfo :: rest)
+                :: tcInfo :: rest) x y
 
     let typeCheckLayers bootstrapInfo projectSnapshot (parsedInputs: array<_>) graph layers =
         let rec processLayer (layers: Set<NodeToTypeCheck> list) tcInfos =
@@ -902,7 +904,7 @@ type internal TransparentCompiler
 
                                 let tcIntermediate =
                                     {
-                                        finisher = finisher
+                                        finisher = Finisher(fileNode, finisher)
                                         moduleNamesDict = tcInfo.moduleNamesDict
                                         tcDiagnosticsRev = []
                                         tcDependencyFiles = []
@@ -912,7 +914,16 @@ type internal TransparentCompiler
                                 node.Return(tcIntermediate))
                         |> NodeCode.Parallel
 
-                    return! processLayer rest (mergeIntermediateResults tcInfos results)
+                    return!
+                        results
+                        |> Array.filter (
+                            function 
+                            | {finisher = Finisher(node=NodeToTypeCheck.ArtificialImplFile idx)} -> 
+                                // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results 
+                                not (layer.Contains (NodeToTypeCheck.PhysicalFile (idx + 1)))
+                            | _ -> true)
+                        |> mergeIntermediateResults tcInfos
+                        |> processLayer rest
             }
 
         node {
@@ -1062,8 +1073,9 @@ type internal TransparentCompiler
                     let fileIndex = projectSnapshot.IndexOf fileName
                     let! tcIntermediate = ComputeTcIntermediate projectSnapshot graph fileIndex (parseTree, parseDiagnostics) bootstrapInfo priorTcInfo
 
+                    let Finisher(finisher = finisher) = tcIntermediate.finisher
                     let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile), tcState =
-                        priorTcInfo.tcState |> tcIntermediate.finisher.Invoke
+                        priorTcInfo.tcState |> finisher
 
                     let sink = tcIntermediate.sink
 

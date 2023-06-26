@@ -52,9 +52,10 @@ let ``Parallel processing`` () =
         sourceFile "D" ["A"],
         sourceFile "E" ["B"; "C"; "D"])
 
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+    ProjectWorkflowBuilder(project, useTransparentCompiler = false) {
         checkFile "E" expectOk
         updateFile "A" updatePublicSurface
+        saveFile "A"
         checkFile "E" expectSignatureChanged
     }
 
@@ -332,26 +333,22 @@ let ``Multi-project`` signatureFiles =
         { sourceFile "LibA" [] 
             with 
                 Source = "let f (x: int) = x"
-                SignatureFile = sigFile }
-        //,
-        //{ sourceFile "LibB" ["LibA"] with SignatureFile = sigFile },
-        //{ sourceFile "LibC" ["LibA"] with SignatureFile = sigFile },
-        //{ sourceFile "LibD" ["LibB"; "LibC"] with SignatureFile = sigFile }
-        )
+                SignatureFile = sigFile },
+        { sourceFile "LibB" ["LibA"] with SignatureFile = sigFile },
+        { sourceFile "LibC" ["LibA"] with SignatureFile = sigFile },
+        { sourceFile "LibD" ["LibB"; "LibC"] with SignatureFile = sigFile })
 
     let project =
         { SyntheticProject.Create("app",
-            sourceFile "A" ["LibA"]
-            //,
-            //sourceFile "B" ["A"; "LibB"],
-            //sourceFile "C" ["A"; "LibC"],
-            //sourceFile "D" ["A"; "LibD"]
-            )
+            sourceFile "A" ["LibA"],
+            sourceFile "B" ["A"; "LibB"],
+            sourceFile "C" ["A"; "LibC"],
+            sourceFile "D" ["A"; "LibD"])
           with DependsOn = [library] }
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        //updateFile "LibA" updatePublicSurface
-        checkFile "A" expectOk
+        updateFile "LibA" updatePublicSurface
+        checkFile "D" expectOk
     }
 
 
