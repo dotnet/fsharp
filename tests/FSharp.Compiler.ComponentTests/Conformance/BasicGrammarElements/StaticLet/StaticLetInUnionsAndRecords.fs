@@ -234,7 +234,7 @@ let ``Static let extension to builtin type`` compilation =
     compilation
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [Error 3568, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
+    |> withDiagnostics [Error 3570, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
 let ``Static let - quotations support for records`` compilation =
