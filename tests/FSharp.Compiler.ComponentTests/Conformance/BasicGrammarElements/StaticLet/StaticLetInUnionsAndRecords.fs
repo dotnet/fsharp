@@ -376,3 +376,186 @@ MyTypes module 'do' no. 2
 InnerModuleNotAccess 'do'
 Case2 1"""
    
+
+[<Fact>]
+let ``Static let IL init single file test`` () = 
+    FSharp """
+module Test
+open System
+
+do Console.WriteLine("module before type")
+[<NoEquality;NoComparison>]
+type X =
+    static do Console.WriteLine("from type")
+do Console.WriteLine("module after type")
+"""
+    |> withLangVersionPreview
+    |> compile
+    |> shouldSucceed
+    |> verifyIL ["""
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public X
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Test
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static 
+          void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldstr      "module before type"
+    IL_0005:  call       void [runtime]System.Console::WriteLine(string)
+    IL_000a:  ldstr      "from type"
+    IL_000f:  call       void [runtime]System.Console::WriteLine(string)
+    IL_0014:  ldstr      "module after type"
+    IL_0019:  call       void [runtime]System.Console::WriteLine(string)
+    IL_001e:  ret
+  } 
+
+}"""]
+
+[<Fact>]
+let ``Static let in penultimate file IL test`` () =
+    let types = """
+namespace MyTypes
+open System
+
+[<NoEquality;NoComparison>]
+type X =
+    static do Console.WriteLine("from type")
+    static let mutable x_value = 42
+    static member GetX = x_value
+
+"""
+
+    let program = """
+module ProgramMain
+open System
+Console.Write(MyTypes.X.GetX)
+"""
+
+    FSharp types
+    |> withAdditionalSourceFiles [SourceCodeFileKind.Create("program.fs", program)]
+    |> withLangVersionPreview
+    |> compile
+    |> shouldSucceed
+    |> verifyIL ["""
+.class public auto ansi serializable MyTypes.X
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .field static assembly int32 x_value
+  .field static assembly int32 init@6
+  .method public specialname static int32 
+          get_GetX() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  volatile.
+    IL_0002:  ldsfld     int32 MyTypes.X::init@6
+    IL_0007:  ldc.i4.0
+    IL_0008:  bge.s      IL_0011
+
+    IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+    IL_000f:  br.s       IL_0011
+
+    IL_0011:  ldsfld     int32 MyTypes.X::x_value
+    IL_0016:  ret
+  } 
+
+  .method private specialname rtspecialname static 
+          void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Test::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .property int32 GetX()
+  {
+    .get int32 MyTypes.X::get_GetX()
+  } 
+} 
+
+.class public abstract auto ansi sealed ProgramMain
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$ProgramMain
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static 
+          void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       int32 MyTypes.X::get_GetX()
+    IL_0005:  call       void [runtime]System.Console::Write(int32)
+    IL_000a:  ret
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Test
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static 
+          void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldstr      "from type"
+    IL_0005:  call       void [runtime]System.Console::WriteLine(string)
+    IL_000a:  ldc.i4.s   42
+    IL_000c:  stsfld     int32 MyTypes.X::x_value
+    IL_0011:  ldc.i4.0
+    IL_0012:  volatile.
+    IL_0014:  stsfld     int32 MyTypes.X::init@6
+    IL_0019:  ret
+  } 
+
+}"""]
