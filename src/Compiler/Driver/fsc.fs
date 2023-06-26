@@ -866,7 +866,7 @@ let main3
             | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
             | _ -> ""
 
-    let optimizedImpls, optDataResources =
+    let optimizedImpls, (optDataResources, optHash) =
         // Perform optimization
         use _ = UseBuildPhase BuildPhase.Optimize
 
@@ -893,6 +893,10 @@ let main3
         ReportTime tcConfig ("Encoding OptData")
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+
+    let refAssemblySignatureHash = 
+        refAssemblySignatureHash
+        |> Option.map (fun h -> h ^^^ (hash optHash))
 
     // Pass on only the minimum information required for the next phase
     Args(

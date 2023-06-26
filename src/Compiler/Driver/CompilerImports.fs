@@ -220,11 +220,21 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
             else
                 data
 
+        let ilResource = WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
+
+        let optHash = 
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.None -> Array.empty
+            | MetadataAssemblyGeneration.ReferenceOnly
+            | MetadataAssemblyGeneration.ReferenceOut _ ->
+                use s = ilResource.GetBytes().AsStream()
+                let sha256 = System.Security.Cryptography.SHA256.Create()
+                sha256.ComputeHash s
         [
-            WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
-        ]
+            ilResource
+        ], optHash
     else
-        []
+        [], Array.empty
 
 exception AssemblyNotResolved of originalName: string * range: range
 
