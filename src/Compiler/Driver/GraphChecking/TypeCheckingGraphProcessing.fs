@@ -20,10 +20,10 @@ open System.Threading
 /// </remarks>
 let combineResults
     (emptyState: 'State)
-    (deps: ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>[])
-    (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>[])
+    (deps: ProcessedNode<'Item, 'State * Finisher<'Item, 'State, 'FinalFileResult>>[])
+    (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'Item, 'State, 'FinalFileResult>>[])
     (sortResultsToAdd: 'Item -> 'Item -> int)
-    (folder: 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult> -> 'State)
+    (folder: 'State -> Finisher<'Item, 'State, 'FinalFileResult> -> 'State)
     : 'State =
     match deps with
     | [||] -> emptyState
@@ -66,9 +66,9 @@ let combineResults
 /// </summary>
 let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when 'Item: equality and 'Item: comparison>
     (graph: Graph<'Item>)
-    (work: 'Item -> 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult>)
+    (work: 'Item -> 'State -> Finisher<'Item, 'State, 'FinalFileResult>)
     (sortResultsToAdd: 'Item -> 'Item -> int)
-    (folder: 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult> -> 'FinalFileResult * 'State)
+    (folder: 'State -> Finisher<'Item, 'State, 'FinalFileResult> -> 'FinalFileResult * 'State)
     // Decides whether a result for an item should be included in the final state, and how to map the item if it should.
     (finalStateChooser: 'Item -> 'ChosenItem option)
     (emptyState: 'State)
@@ -76,9 +76,9 @@ let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when '
     : ('ChosenItem * 'FinalFileResult) list * 'State =
 
     let workWrapper
-        (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>)
+        (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * Finisher<'Item, 'State, 'FinalFileResult>>)
         (node: NodeInfo<'Item>)
-        : 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult> =
+        : 'State * Finisher<'Item, 'State, 'FinalFileResult> =
         let folder x y = folder x y |> snd
         let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
 
