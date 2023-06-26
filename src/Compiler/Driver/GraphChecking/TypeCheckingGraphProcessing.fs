@@ -14,14 +14,16 @@ open System.Threading
 /// <param name="deps">Direct dependencies of a node</param>
 /// <param name="transitiveDeps">Transitive dependencies of a node</param>
 /// <param name="folder">A way to fold a single result into existing state</param>
+/// <param name="sortResultsToAdd">...</param>
 /// <remarks>
 /// Similar to 'processFileGraph', this function is generic yet specific to the type-checking process.
 /// </remarks>
 let combineResults
     (emptyState: 'State)
-    (deps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])
-    (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])
-    (folder: 'State -> Finisher<'State, 'FinalFileResult> -> 'State)
+    (deps: ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>[])
+    (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>[])
+    (sortResultsToAdd: 'Item -> 'Item -> int)
+    (folder: 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult> -> 'State)
     : 'State =
     match deps with
     | [||] -> emptyState
@@ -49,6 +51,7 @@ let combineResults
             transitiveDeps
             |> Array.filter (fun dep -> itemsPresent.Contains dep.Info.Item = false)
             |> Array.distinctBy (fun dep -> dep.Info.Item)
+            |> Array.sortWith (fun a b -> sortResultsToAdd a.Info.Item b.Info.Item)
             |> Array.map (fun dep -> dep.Result |> snd)
 
         // Fold results not already included and produce the final state
@@ -63,8 +66,9 @@ let combineResults
 /// </summary>
 let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when 'Item: equality and 'Item: comparison>
     (graph: Graph<'Item>)
-    (work: 'Item -> 'State -> Finisher<'State, 'FinalFileResult>)
-    (folder: 'State -> Finisher<'State, 'FinalFileResult> -> 'FinalFileResult * 'State)
+    (work: 'Item -> 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult>)
+    (sortResultsToAdd: 'Item -> 'Item -> int)
+    (folder: 'State -> Finisher<'ChosenItem, 'State, 'FinalFileResult> -> 'FinalFileResult * 'State)
     // Decides whether a result for an item should be included in the final state, and how to map the item if it should.
     (finalStateChooser: 'Item -> 'ChosenItem option)
     (emptyState: 'State)
@@ -72,9 +76,9 @@ let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when '
     : ('ChosenItem * 'FinalFileResult) list * 'State =
 
     let workWrapper
-        (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>)
+        (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult>>)
         (node: NodeInfo<'Item>)
-        : 'State * Finisher<'State, 'FinalFileResult> =
+        : 'State * Finisher<'ChosenItem, 'State, 'FinalFileResult> =
         let folder x y = folder x y |> snd
         let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
 
@@ -83,7 +87,9 @@ let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when '
             |> Array.except [| node.Item |]
             |> Array.map getProcessedNode
 
-        let inputState = combineResults emptyState deps transitiveDeps folder
+        let inputState =
+            combineResults emptyState deps transitiveDeps sortResultsToAdd folder
+
         let singleRes = work node.Item inputState
         let state = folder inputState singleRes
         state, singleRes
