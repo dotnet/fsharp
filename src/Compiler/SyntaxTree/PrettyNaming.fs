@@ -10,6 +10,7 @@ open System.Collections.Concurrent
 open System.Globalization
 open System.Text
 
+open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout

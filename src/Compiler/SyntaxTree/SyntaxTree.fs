@@ -4,7 +4,7 @@ namespace rec FSharp.Compiler.Syntax
 
 open System
 open System.Diagnostics
-// open Internal.Utilities.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
