@@ -9,8 +9,9 @@ open System.Threading
 /// </summary>
 val processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when 'Item: equality and 'Item: comparison> :
     graph: Graph<'Item> ->
-    work: ('Item -> 'State -> Finisher<'State, 'FinalFileResult>) ->
-    folder: ('State -> Finisher<'State, 'FinalFileResult> -> 'FinalFileResult * 'State) ->
+    work: ('Item -> 'State -> Finisher<'Item, 'State, 'FinalFileResult>) ->
+    sortResultsToAdd: ('Item -> 'Item -> int) ->
+    folder: ('State -> Finisher<'Item, 'State, 'FinalFileResult> -> 'FinalFileResult * 'State) ->
     finalStateChooser: ('Item -> 'ChosenItem option) ->
     emptyState: 'State ->
     ct: CancellationToken ->
