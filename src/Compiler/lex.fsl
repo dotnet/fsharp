@@ -194,8 +194,8 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 
-let evalIfDefExpression startPos reportLibraryOnlyFeatures langVersion args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, lexed.ToCharArray ())
+let evalIfDefExpression startPos reportLibraryOnlyFeatures langVersion strictIndentation args (lookup: string -> bool) (lexed: string) =
+    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, strictIndentation, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
@@ -985,7 +985,7 @@ rule token (args: LexArgs) (skip: bool) = parse
    { let m = lexbuf.LexemeRange
      let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
-     let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
+     let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
      LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
 
@@ -1062,7 +1062,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
      else
        let lexed = lexeme lexbuf
        let lookup id = List.contains id args.conditionalDefines
-       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
        LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
        if not skip then tok else endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf }

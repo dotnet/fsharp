@@ -151,14 +151,24 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
 val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
 
 val ParseAssemblyCodeType:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILType
 
 val reportParseErrorAt: range -> (int * string) -> unit
 

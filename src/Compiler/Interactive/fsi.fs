@@ -3512,6 +3512,7 @@ type FsiStdinLexerProvider
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
+            tcConfigB.strictIndentation,
             (fun (buf: char[], start, len) ->
                 //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
                 let inputOption =
@@ -3604,12 +3605,16 @@ type FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer(sourceFileName, reader, diagnosticsLogger) =
-        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, reader)
+        let lexbuf =
+            UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, reader)
+
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
     // Create a new lexer to read a string
     member _.CreateStringLexer(sourceFileName, source, diagnosticsLogger) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, source)
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, source)
+
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
     member _.ConsoleInput = fsiConsoleInput
@@ -4224,7 +4229,9 @@ type FsiInteractionProcessor
         use _ = UseBuildPhase BuildPhase.Interactive
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
+
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -4244,7 +4251,9 @@ type FsiInteractionProcessor
         use _unwind1 = UseBuildPhase BuildPhase.Interactive
         use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
+
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, sourceText)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)

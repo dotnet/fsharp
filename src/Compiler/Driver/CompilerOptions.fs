@@ -1333,6 +1333,13 @@ let advancedFlagsFsc tcConfigB =
             Some(FSComp.SR.optsEmitDebugInfoInQuotations ())
         )
 
+        CompilerOption(
+            "strict-indentation",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
+            None,
+            Some(FSComp.SR.optsStrictIndentation ())
+        )
     ]
 
 // OptionBlock: Internal options (test use only)
