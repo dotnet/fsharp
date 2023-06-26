@@ -173,11 +173,7 @@ module internal TokenClassifications =
         match token with
         | HASH_IDENT s
         | IDENT s ->
-            if s.Length <= 0 then
-                System.Diagnostics.Debug.Assert(false, "BUG: Received zero length IDENT token.")
-                // This is related to 4783. Recover by treating as lower case identifier.
-                (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
-            else if Char.ToUpperInvariant s[0] = s[0] then
+            if s.Length > 0 && Char.ToUpperInvariant s[0] = s[0] then
                 (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
