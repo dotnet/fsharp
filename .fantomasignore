@@ -39,6 +39,7 @@ src/Compiler/Checking/PatternMatchCompilation.fs
 src/Compiler/Checking/PostInferenceChecks.fs
 src/Compiler/Checking/QuotationTranslator.fs
 src/Compiler/Checking/SignatureConformance.fs
+src/Compiler/Checking/TailCallChecks.fs
 src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
