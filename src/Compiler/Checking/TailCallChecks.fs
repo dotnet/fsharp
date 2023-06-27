@@ -97,72 +97,6 @@ let BindTypars g env (tps: Typar list) =
 let BindArgVals env (vs: Val list) = 
     { env with argVals = ValMap.OfList (List.map (fun v -> (v, ())) vs) }
 
-/// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
-[<Flags>]
-type LimitFlags =
-    | None                          = 0b00000
-    | ByRef                         = 0b00001
-    | ByRefOfSpanLike               = 0b00011
-    | ByRefOfStackReferringSpanLike = 0b00101
-    | SpanLike                      = 0b01000
-    | StackReferringSpanLike        = 0b10000
-
-[<Struct>]
-type Limit =
-    {
-        scope: int
-        flags: LimitFlags
-    }
-
-    member this.IsLocal = this.scope >= 1
-
-/// Check if the limit has the target limit.
-let inline HasLimitFlag targetLimit (limit: Limit) =
-    limit.flags &&& targetLimit = targetLimit
-
-let NoLimit = { scope = 0; flags = LimitFlags.None }
-
-// Combining two limits will result in both limit flags merged.
-// If none of the limits are limited by a by-ref or a stack referring span-like
-//   the scope will be 0.
-let CombineTwoLimits limit1 limit2 = 
-    let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
-    let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
-    let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
-    let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
-    let isLimited1 = isByRef1 || isStackSpan1
-    let isLimited2 = isByRef2 || isStackSpan2
-
-    // A limit that has a stack referring span-like but not a by-ref, 
-    //   we force the scope to 1. This is to handle call sites
-    //   that return a by-ref and have stack referring span-likes as arguments.
-    //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
-    let limit1 =
-        if isStackSpan1 && not isByRef1 then
-            { limit1 with scope = 1 }
-        else
-            limit1
-
-    let limit2 =
-        if isStackSpan2 && not isByRef2 then
-            { limit2 with scope = 1 }
-        else
-            limit2
-
-    match isLimited1, isLimited2 with
-    | false, false ->
-        { scope = 0; flags = limit1.flags ||| limit2.flags }
-    | true, true ->
-        { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
-    | true, false ->
-        { limit1 with flags = limit1.flags ||| limit2.flags }
-    | false, true ->
-        { limit2 with flags = limit1.flags ||| limit2.flags }
-
-let CombineLimits limits =
-    (NoLimit, limits)
-    ||> List.fold CombineTwoLimits
-
 let (|ValUseAtApp|_|) e = 
      match e with 
      | InnerExprPat(
@@ -201,8 +135,6 @@ let IsValRefIsDllImport g (vref:ValRef) =
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
-
-      limitVals: Dictionary<Stamp, Limit>
 
       mutable potentialUnboundUsesOfVals: StampMap<range> 
 
@@ -246,10 +178,6 @@ let IsValArgument env (v: Val) =
 /// Check if the value is a local, not an argument of a function.
 let IsValLocal env (v: Val) =
     v.ValReprInfo.IsNone && not (IsValArgument env v)
-
-let LimitVal cenv (v: Val) limit = 
-    if not v.IgnoresByrefScope then
-        cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (exprRange: Range option) (v: Val) = 
     cenv.boundVals[v.Stamp] <- 1
@@ -442,49 +370,6 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                 | _ -> ()
     | _ -> ()
 
-and CheckCallLimitArgs cenv _env m returnTy limitArgs (_ctxt: PermitByRefExpr) =
-    let isReturnByref = isByrefTy cenv.g returnTy
-    let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
-
-    // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
-    let isReturnLimitedByRef = 
-        isReturnByref && 
-        (HasLimitFlag LimitFlags.ByRef limitArgs || 
-         HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs)
-
-    // If return is a byref, and being used as a return, then a single argument cannot be a stack referring span-like or a local-byref of a stack referring span-like.
-    let isReturnLimitedSpanLike = 
-        isReturnSpanLike && 
-        (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
-
-    if isReturnLimitedByRef then
-        if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
-            let isStackReferring =
-                HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-                HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs
-            if isStackReferring then
-                { limitArgs with flags = LimitFlags.ByRefOfStackReferringSpanLike }
-            else
-                { limitArgs with flags = LimitFlags.ByRefOfSpanLike }
-        else
-            { limitArgs with flags = LimitFlags.ByRef }
-
-    elif isReturnLimitedSpanLike then
-        { scope = 1; flags = LimitFlags.StackReferringSpanLike }
-
-    elif isReturnByref then
-        if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
-            { limitArgs with flags = LimitFlags.ByRefOfSpanLike }
-        else
-            { limitArgs with flags = LimitFlags.ByRef }
-
-    elif isReturnSpanLike then
-        { scope = 1; flags = LimitFlags.SpanLike }
-
-    else
-        { scope = 1; flags = LimitFlags.None }
-
 /// Check call arguments, including the return argument.
 and CheckCall cenv env _m _returnTy args ctxts _ctxt =
     CheckExprs cenv env args ctxts IsTailCall.No
@@ -503,12 +388,12 @@ and CheckCallWithReceiver cenv env _m _returnTy args ctxts _ctxt =
         CheckExpr cenv env receiverArg receiverContext IsTailCall.No
         CheckExprs cenv env args ctxts (IsTailCall.Yes false)
 
-and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) (isTailCall: IsTailCall) : unit =    
+and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (isTailCall: IsTailCall) : unit =    
     match expr with
     | Expr.Sequential (e1, e2, NormalSeq, _) -> 
         CheckExprNoByrefs cenv env IsTailCall.No e1
         // tailcall
-        CheckExprLinear cenv env e2 ctxt contf isTailCall
+        CheckExprLinear cenv env e2 ctxt isTailCall
 
     | Expr.Let (TBind(v, _bindRhs, _) as bind, body, _, _) ->
         let isByRef = isByrefTy cenv.g v.Type
@@ -522,21 +407,21 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf 
         CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
         BindVal cenv env None v
         // tailcall
-        CheckExprLinear cenv env body ctxt contf isTailCall
+        CheckExprLinear cenv env body ctxt isTailCall
 
     | LinearOpExpr (_op, _tyargs, argsHead, argLast, _m) ->
         argsHead |> List.iter (CheckExprNoByrefs cenv env isTailCall) 
         // tailcall
-        CheckExprLinear cenv env argLast PermitByRefExpr.No (fun _ -> contf NoLimit) isTailCall
+        CheckExprLinear cenv env argLast PermitByRefExpr.No isTailCall
 
     | LinearMatchExpr (_spMatch, _exprm, dtree, tg1, e2, _m, _ty) ->
         CheckDecisionTree cenv env dtree
         CheckDecisionTreeTarget cenv env isTailCall ctxt tg1
         // tailcall
-        CheckExprLinear cenv env e2 ctxt id isTailCall
+        CheckExprLinear cenv env e2 ctxt isTailCall
 
     | Expr.DebugPoint (_, innerExpr) -> 
-        CheckExprLinear cenv env innerExpr ctxt contf isTailCall
+        CheckExprLinear cenv env innerExpr ctxt isTailCall
 
     | _ -> 
         // not a linear expression
@@ -664,7 +549,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
     | Expr.Let _ 
     | Expr.Sequential (_, _, NormalSeq, _)
     | Expr.DebugPoint _ -> 
-        CheckExprLinear cenv env expr ctxt id isTailCall
+        CheckExprLinear cenv env expr ctxt isTailCall
 
     | Expr.Sequential (e1, e2, ThenDoSeq, _) -> 
         CheckExprNoByrefs cenv env IsTailCall.No e1
@@ -985,9 +870,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr : unit =
 
         | [ I_ldelema (_, _isNativePtr, _, _) ], lhsArray :: indices ->
             // permit byref for lhs lvalue 
-            let limit = CheckExprPermitByRefLike cenv env lhsArray
+            CheckExprPermitByRefLike cenv env lhsArray
             CheckExprsNoByRefLike cenv env indices |> ignore
-            limit
 
         | [ AI_conv _ ], _ ->
             // permit byref for args to conv 
@@ -1275,7 +1159,6 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
         { g = g  
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           potentialUnboundUsesOfVals = Map.empty 
           anonRecdTypes = StampMap.Empty
