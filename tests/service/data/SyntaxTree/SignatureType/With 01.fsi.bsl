@@ -1,30 +1,28 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/SignatureType/SynTypeDefnSigShouldContainsTheRangeOfTheWithKeyword.fsi",
-      QualifiedNameOfFile SynTypeDefnSigShouldContainsTheRangeOfTheWithKeyword,
-      [], [],
+     ("/root/SignatureType/With 01.fsi", QualifiedNameOfFile With 01, [], [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (4,5--4,8)),
-                  Simple (None (4,5--5,25), (4,5--5,25)),
+                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, (3,5--3,8)),
+                  Simple (None (3,5--4,28), (3,5--4,28)),
                   [Member
                      (SynValSig
                         ([], SynIdent (Meh, None), SynValTyparDecls (None, true),
                          Fun
                            (LongIdent (SynLongIdent ([unit], [], [None])),
                             LongIdent (SynLongIdent ([unit], [], [None])),
-                            (5,13--5,25), { ArrowRange = (5,18--5,20) }),
+                            (4,16--4,28), { ArrowRange = (4,21--4,23) }),
                          SynValInfo
                            ([[SynArgInfo ([], false, None)]],
                             SynArgInfo ([], false, None)), false, false,
-                         PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, None, (5,0--5,25),
-                         { LeadingKeyword = Member (5,0--5,6)
+                         PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         None, None, (4,4--4,28),
+                         { LeadingKeyword = Member (4,4--4,10)
                            InlineKeyword = None
                            WithKeyword = None
                            EqualsRange = None }),
@@ -33,12 +31,12 @@ SigFile
                         IsOverrideOrExplicitImpl = false
                         IsFinal = false
                         GetterOrSetterIsCompilerGenerated = false
-                        MemberKind = Member }, (5,0--5,25),
-                      { GetSetKeywords = None })], (4,5--5,25),
-                  { LeadingKeyword = Type (4,0--4,4)
+                        MemberKind = Member }, (4,4--4,28),
+                      { GetSetKeywords = None })], (3,5--4,28),
+                  { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = None
-                    WithKeyword = Some (4,9--4,13) })], (4,0--5,25))],
-          PreXmlDocEmpty, [], None, (2,0--5,25),
-          { LeadingKeyword = Namespace (2,0--2,9) })],
+                    WithKeyword = Some (3,9--3,13) })], (3,0--4,28))],
+          PreXmlDocEmpty, [], None, (1,0--4,28),
+          { LeadingKeyword = Namespace (1,0--1,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

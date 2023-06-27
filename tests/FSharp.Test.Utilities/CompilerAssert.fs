@@ -336,6 +336,9 @@ module rec CompilerAssertHelpers =
             Stamp = None
         }
 
+    let defaultProjectOptionsForFilePath path (targetFramework: TargetFramework) =
+        { defaultProjectOptions targetFramework with SourceFiles = [| path |] }
+
     let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) =
         let args =
             [|
@@ -804,7 +807,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     /// Parses and type checks the given source. Fails if type checker is aborted.
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
-            let defaultOptions = defaultProjectOptions TargetFramework.Current
+            let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
             checker.ParseAndCheckFileInProject(
                 name,
                 0,
