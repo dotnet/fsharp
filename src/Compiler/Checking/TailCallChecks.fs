@@ -4,7 +4,6 @@
 /// is complete.
 module internal FSharp.Compiler.TailCallChecks
 
-open System
 open System.Collections.Generic
 
 open Internal.Utilities.Collections
@@ -170,14 +169,6 @@ type cenv =
       tcVal: ConstraintSolver.TcValF }
 
     override x.ToString() = "<cenv>"
-
-/// Check if the value is an argument of a function
-let IsValArgument env (v: Val) =
-    env.argVals.ContainsVal v
-
-/// Check if the value is a local, not an argument of a function.
-let IsValLocal env (v: Val) =
-    v.ValReprInfo.IsNone && not (IsValArgument env v)
 
 let BindVal cenv env (exprRange: Range option) (v: Val) = 
     cenv.boundVals[v.Stamp] <- 1
