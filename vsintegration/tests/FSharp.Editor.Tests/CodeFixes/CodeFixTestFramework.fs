@@ -20,7 +20,7 @@ let getRelevantDiagnostic (document: Document) errorNumber =
         return
             checkFileResults.Diagnostics
             |> Seq.where (fun d -> d.ErrorNumber = errorNumber)
-            |> Seq.exactlyOne
+            |> Seq.head
     }
 
 let tryFix (code: string) diagnostic (fixProvider: IFSharpCodeFixProvider) =
