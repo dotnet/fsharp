@@ -1003,37 +1003,6 @@ and CheckDecisionTreeTest cenv env _m discrim =
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> CheckExprNoByrefs cenv env IsTailCall.No exp
     | _ -> ()
 
-and CheckAttrib cenv env (Attrib(_tcref, _, args, props, _, _, _m)) =
-    props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)
-    args |> List.iter (CheckAttribExpr cenv env)
-
-and CheckAttribExpr cenv env (AttribExpr(expr, vexpr)) = 
-    CheckExprNoByrefs cenv env IsTailCall.No expr
-    CheckExprNoByrefs cenv env IsTailCall.No vexpr
-    CheckAttribArgExpr cenv env vexpr
-
-and CheckAttribArgExpr cenv env expr = 
-    let g = cenv.g
-    match expr with 
-
-    // Detect standard constants 
-    | Expr.Const (_c, _m, _) ->
-        ()
-    | Expr.Op (TOp.Array, [_elemTy], args, _m) -> 
-        List.iter (CheckAttribArgExpr cenv env) args
-    | TypeOfExpr g _ -> 
-        ()
-    | TypeDefOfExpr g _ -> 
-        ()
-    | Expr.Op (TOp.Coerce, _, [arg], _) -> 
-        CheckAttribArgExpr cenv env arg
-    | EnumExpr g arg1 -> 
-        CheckAttribArgExpr cenv env arg1
-    | AttribBitwiseOrExpr g (arg1, arg2) ->
-        CheckAttribArgExpr cenv env arg1
-        CheckAttribArgExpr cenv env arg2
-    | _ -> () 
-  
 and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) : unit =
     let g = cenv.g
     let isTop = Option.isSome bind.Var.ValReprInfo
