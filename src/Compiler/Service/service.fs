@@ -243,23 +243,23 @@ type BackgroundCompiler
                         <> GetFSharpCoreLibraryName()
                     then
                         { new IProjectReference with
-                            member x.EvaluateRawContents() =
+                            member _.EvaluateRawContents() =
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
                                     return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
                                 }
 
-                            member x.TryGetLogicalTimeStamp(cache) =
+                            member _.TryGetLogicalTimeStamp(cache) =
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
 
-                            member x.FileName = nm
+                            member _.FileName = nm
                         }
 
                 | FSharpReferencedProject.PEReference (getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             node {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -419,7 +419,7 @@ type BackgroundCompiler
 
     let createAndGetBuilder (options, userOpName) =
         node {
-            let! ct = NodeCode.CancellationToken
+            let! ct = NodeCode.getCurrentCancellationToken ()
             let getBuilderNode = createBuilderNode (options, userOpName, ct)
             return! getBuilderNode.GetOrComputeValue()
         }
@@ -634,7 +634,6 @@ type BackgroundCompiler
                     keepAssemblyContents,
                     suggestNamesForErrors
                 )
-                |> NodeCode.FromCancellable
 
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.ProjectTimeStamp)
@@ -1061,7 +1060,7 @@ type BackgroundCompiler
                 return results
         }
 
-    member _.GetAssemblyData(options, userOpName) =
+    member _.GetAssemblyData(options, userOpName) : NodeCode<ProjectAssemblyDataResult> =
         node {
             use _ =
                 Activity.start
