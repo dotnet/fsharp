@@ -74,7 +74,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
 
             let! defines, langVersion, strictIndentation =
-                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddOpenCodeFixProvider))
+                document.GetFsharpParsingOptionsAsync(nameof (AddOpenCodeFixProvider))
                 |> liftAsync
 
             let! symbol =

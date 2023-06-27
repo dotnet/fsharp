@@ -27,7 +27,7 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
                 let! defines, langVersion, strictIndentation =
-                    context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
+                    context.Document.GetFsharpParsingOptionsAsync(
                         nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider)
                     )
 

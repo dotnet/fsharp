@@ -301,7 +301,7 @@ type internal FSharpCompletionProvider
             let document = workspace.CurrentSolution.GetDocument(documentId)
 
             let defines, langVersion, strictIndentation =
-                document.GetFSharpQuickDefinesAndLangVersion()
+                document.GetFsharpParsingOptions()
 
             (documentId, document.FilePath, defines, Some langVersion, strictIndentation)
 
@@ -335,7 +335,7 @@ type internal FSharpCompletionProvider
             let! sourceText = context.Document.GetTextAsync(ct)
 
             let defines, langVersion, strictIndentation =
-                document.GetFSharpQuickDefinesAndLangVersion()
+                document.GetFsharpParsingOptions()
 
             let shouldProvideCompetion =
                 CompletionUtils.shouldProvideCompletion (
