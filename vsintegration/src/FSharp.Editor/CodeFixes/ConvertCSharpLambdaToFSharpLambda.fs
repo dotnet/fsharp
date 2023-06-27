@@ -32,21 +32,18 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
             RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaBodyRange))
         |> flatten3
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0039"
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (ConvertCSharpLambdaToFSharpLambdaCodeFixProvider))
-
-                let! sourceText = document.GetTextAsync(cancellationToken)
-
-                let errorRange =
-                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+                let! parseResults = context.GetParseResultsAsync(nameof ConvertCSharpLambdaToFSharpLambdaCodeFixProvider)
+                let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                let! errorRange = context.GetErrorRangeAsync()
 
                 return
                     tryGetSpans parseResults errorRange sourceText
@@ -54,7 +51,7 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
                         let replacement =
                             let argText = sourceText.GetSubText(lambdaArgSpan).ToString()
                             let bodyText = sourceText.GetSubText(lambdaBodySpan).ToString()
-                            TextChange(fullParenSpan, "fun " + argText + " -> " + bodyText)
+                            TextChange(fullParenSpan, $"fun {argText} -> {bodyText}")
 
                         {
                             Name = CodeFix.ConvertCSharpLambdaToFSharpLambda
