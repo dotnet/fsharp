@@ -223,7 +223,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -513,7 +513,7 @@ stages:
               regular:
                 _experimental_flag: ''
               experimental_features:
-                _experimental_flag: 1
+                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
