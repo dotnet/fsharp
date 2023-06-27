@@ -238,3 +238,12 @@ val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a 
 val rangeOfLongIdent: lid: LongIdent -> range
 
 val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword
+
+val mkSynUnionCase:
+    attributes: SynAttributes ->
+    access: SynAccess option ->
+    id: SynIdent ->
+    kind: SynUnionCaseKind ->
+    mDecl: range ->
+    (PreXmlDoc * range) ->
+        SynUnionCase

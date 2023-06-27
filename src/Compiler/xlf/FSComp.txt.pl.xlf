@@ -822,6 +822,11 @@
         <target state="translated">Niekompletne wyrażenie operatora (na przykład a^b) lub wywołanie typu kwalifikowanego (przykład: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
         <target state="new">Expecting member body</target>
@@ -1140,6 +1145,11 @@
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">Składnia wyrażenia „expr1[expr2]” jest teraz zarezerwowana do indeksowania i jest niejednoznaczna, gdy jest używana jako argument. Zobacz: https://aka.ms/fsharp-index-notation. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction expr1 [expr2]”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
