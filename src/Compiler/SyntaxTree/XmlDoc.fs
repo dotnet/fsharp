@@ -13,7 +13,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]

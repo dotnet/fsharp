@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.Xml
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<Class>]
