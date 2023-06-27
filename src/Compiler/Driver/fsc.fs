@@ -847,13 +847,18 @@ let main3
         | MetadataAssemblyGeneration.None -> None
         | MetadataAssemblyGeneration.ReferenceOnly
         | MetadataAssemblyGeneration.ReferenceOut _ ->
-            let hasIvt = TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs |> Option.isSome
-            let observer = if hasIvt then Fsharp.Compiler.SignatureHash.PublicAndInternal else Fsharp.Compiler.SignatureHash.PublicOnly
+            let hasIvt =
+                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
+                |> Option.isSome
+
+            let observer =
+                if hasIvt then
+                    Fsharp.Compiler.SignatureHash.PublicAndInternal
+                else
+                    Fsharp.Compiler.SignatureHash.PublicOnly
+
             try
-                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles
-                    typedImplFiles
-                    tcGlobals
-                    observer
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
                 + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
                 |> Some
             with e ->

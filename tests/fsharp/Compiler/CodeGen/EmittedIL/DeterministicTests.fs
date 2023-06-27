@@ -7,13 +7,34 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open NUnit.Framework
 
+
 [<TestFixture>]
 module DeterministicTests =
 
-    let commonOptions = ["--refonly";"--deterministic"]//;"--nooptimizationdata"]
+    let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]
     let inputPath = CompilerAssert.GenerateFsInputPath()
     let outputPath = CompilerAssert.GenerateDllOutputPath()
 
+    [<Literal>]
+    let ivtSnippet = """
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleToAttribute("Assembly.Name")>]
+do() 
+"""
+
+    [<Literal>]
+    let basicCodeSnippet = """
+module ReferenceAssembly
+
+open System
+
+//PLACEHOLDER
+
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
+let test() =
+    privTest()
+    Console.WriteLine("Hello World!")"""
 
 
     let getMvid codeSnippet compileOptions =
@@ -26,25 +47,18 @@ module DeterministicTests =
 
         mvid1
 
+    let commonOptionsBasicMvid = lazy(getMvid basicCodeSnippet commonOptions)
+
     let calculateRefAssMvids referenceCodeSnippet codeAfterChangeIsDone = 
 
-        let mvid1 = getMvid referenceCodeSnippet commonOptions
+        let mvid1 = 
+            if referenceCodeSnippet = basicCodeSnippet then
+                commonOptionsBasicMvid.Value
+            else
+                getMvid referenceCodeSnippet commonOptions
+
         let mvid2 = getMvid codeAfterChangeIsDone commonOptions
-
         mvid1 , mvid2
-
-    [<Literal>]
-    let basicCodeSnippet = """
-module ReferenceAssembly
-
-open System
-
-let private privTest() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest()
-    Console.WriteLine("Hello World!")"""
 
 
     [<Test>]
@@ -53,7 +67,7 @@ let test() =
 
         let getMvid() =
             FSharpWithInputAndOutputPath basicCodeSnippet inputPath outputPath
-            |> withOptions ["--deterministic";"--nooptimizationdata"]
+            |> withOptions ["--deterministic"]
             |> compileGuid
 
         // Two identical compilations should produce the same MVID
@@ -107,18 +121,6 @@ let test() =
         
     [<Test>] 
     let ``Reference assemblies should be deterministic when only private function return type is different`` () =
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest1() : string = "Private Hello World!"
-
-let test() =
-    privTest1() |> ignore
-    Console.WriteLine()            """
-
 
         let src2 =
             """
@@ -126,13 +128,13 @@ module ReferenceAssembly
 
 open System
 
-let private privTest1() : int = 0
+let private privTest() : int = 0
 
 let test() =
-    privTest1() |> ignore
+    privTest() |> ignore
     Console.WriteLine()
             """
-        let mvid1, mvid2 = calculateRefAssMvids src src2
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreEqual(mvid1, mvid2)
      
     [<Test>] 
@@ -315,3 +317,20 @@ let inline myFunc x y = x + y"""
 let inline myFunc x y = x - y"""       
         let mvid1, mvid2 = calculateRefAssMvids codeBefore codeBefore
         Assert.AreEqual(mvid1,mvid2)
+
+
+    [<TestCase(ivtSnippet, false)>] // If IVT provided -> MVID must reflect internal binding
+    [<TestCase("", true )>] // No IVT => internal binding can be ignored for mvid purposes
+    let ``Reference assemblies MVID when having internal binding``(additionalSnippet:string, shouldBeStable:bool) =
+        let codeAfter = 
+            basicCodeSnippet
+                .Replace("private","internal")
+                .Replace("//PLACEHOLDER", additionalSnippet)
+
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet codeAfter
+
+        if shouldBeStable then
+            Assert.AreEqual(mvid1,mvid2)
+        else
+            Assert.AreNotEqual(mvid1,mvid2)
+
