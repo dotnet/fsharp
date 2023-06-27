@@ -822,6 +822,11 @@
         <target state="translated">Neúplný výraz operátoru (například^b) nebo volání kvalifikovaného typu (příklad: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
         <target state="new">Expecting member body</target>
@@ -1140,6 +1145,11 @@
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
