@@ -693,8 +693,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) =
             asyncMaybe {
-                let defines, langVersion, strictIndentation =
-                    document.GetFsharpParsingOptions()
+                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
                 let triggerTypedChar =
                     if

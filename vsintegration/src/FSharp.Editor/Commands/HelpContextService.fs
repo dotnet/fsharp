@@ -112,8 +112,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
-                let defines, langVersion, strictIndentation =
-                    document.GetFsharpParsingOptions()
+                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
