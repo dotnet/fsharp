@@ -1563,9 +1563,11 @@ type LexFilterImpl (
             | INTERP_STRING_PART _ ->
                 pushCtxt tokenTup (CtxtParen (token, tokenTup.LexbufState.EndPos))
                 pushCtxtSeqBlock tokenTup NoAddBlockEnd
+            | INTERP_STRING_END _ -> ()
             | _ ->
                 // Queue a dummy token at this position to check if any closing rules apply
                 delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+
             returnToken tokenLexbufState token
 
         // Balancing rule. Encountering a 'end' can balance with a 'with' but only when not offside
