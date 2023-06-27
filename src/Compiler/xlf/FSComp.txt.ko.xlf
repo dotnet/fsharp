@@ -558,8 +558,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
-        <source>This is not a valid identifier.</source>
-        <target state="new">This is not a valid identifier.</target>
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
