@@ -67,7 +67,6 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                     nameof (FSharpDocumentHighlightsService.GetDocumentHighlights)
                 )
 
-
             match symbol with
             | None -> return Array.empty
             | Some symbol ->
@@ -78,8 +77,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                 let textLinePos = sourceText.Lines.GetLinePosition(position)
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-                let! _, checkFileResults =
-                    document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
 
                 let symbolUse =
                     checkFileResults.GetSymbolUseAtLocation(
@@ -92,8 +90,9 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                 match symbolUse with
                 | None -> return Array.empty
                 | Some symbolUse ->
-                
+
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, ct)
+
                     return
                         [|
                             for symbolUse in symbolUses do
@@ -118,9 +117,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                 cancellationToken
             ) : Task<ImmutableArray<FSharpDocumentHighlights>> =
             cancellableTask {
-                let! spans =
-                    FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
-                    
+                let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
+
                 let highlightSpans =
                     spans
                     |> Array.map (fun span ->

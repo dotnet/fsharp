@@ -39,9 +39,14 @@ type internal InlineRenameLocationSet
 
     inherit FSharpInlineRenameLocationSet()
 
-    static let rec applyChanges replacementText (solution: Solution) (locationsByDocument: (Document * FSharpInlineRenameLocation list) list) =
+    static let rec applyChanges
+        replacementText
+        (solution: Solution)
+        (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
+        =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
             match locationsByDocument with
             | [] -> return solution
             | (document, locations) :: rest ->
@@ -58,7 +63,8 @@ type internal InlineRenameLocationSet
     override _.GetReplacementsAsync(replacementText, cancellationToken) : Task<FSharpInlineRenameReplacementInfo> =
 
         cancellableTask {
-            let! newSolution = applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
+            let! newSolution =
+                applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
 
             let replacementText =
                 match symbolKind with

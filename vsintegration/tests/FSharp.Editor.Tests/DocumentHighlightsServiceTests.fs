@@ -24,6 +24,7 @@ module DocumentHighlightsServiceTests =
         let task =
             FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
             |> CancellableTask.start CancellationToken.None
+
         task.Result
 
     let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
