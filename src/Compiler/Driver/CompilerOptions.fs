@@ -1142,8 +1142,18 @@ let languageFlags tcConfigB =
             None,
             Some(FSComp.SR.optsChecked ())
         )
+
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
+
         mlCompatibilityFlag tcConfigB
+
+        CompilerOption(
+            "strict-indentation",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
+            None,
+            Some(FSComp.SR.optsStrictIndentation ())
+        )
     ]
 
 // OptionBlock: Advanced user options
@@ -1331,14 +1341,6 @@ let advancedFlagsFsc tcConfigB =
             OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),
             None,
             Some(FSComp.SR.optsEmitDebugInfoInQuotations ())
-        )
-
-        CompilerOption(
-            "strict-indentation",
-            tagNone,
-            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
-            None,
-            Some(FSComp.SR.optsStrictIndentation ())
         )
     ]
 

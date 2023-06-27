@@ -728,8 +728,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
-        <source>Use strict indentation rules</source>
-        <target state="new">Use strict indentation rules</target>
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
