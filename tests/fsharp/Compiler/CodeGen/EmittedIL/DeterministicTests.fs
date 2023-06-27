@@ -10,18 +10,17 @@ open NUnit.Framework
 [<TestFixture>]
 module DeterministicTests =
 
-    let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]
+    let commonOptions = ["--refonly";"--deterministic"]//;"--nooptimizationdata"]
+    let inputPath = CompilerAssert.GenerateFsInputPath()
+    let outputPath = CompilerAssert.GenerateDllOutputPath()
 
-    let getInOutPaths() = 
-        CompilerAssert.GenerateFsInputPath(),
-        CompilerAssert.GenerateDllOutputPath()
+
 
     let getMvid codeSnippet compileOptions =
-        let inputFilePath,outputFilePath = getInOutPaths()
-        File.WriteAllText(inputFilePath, codeSnippet)
+        File.WriteAllText(inputPath, codeSnippet)
 
         let mvid1 =
-            FSharpWithInputAndOutputPath codeSnippet inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath codeSnippet inputPath outputPath
             |> withOptions compileOptions
             |> compileGuid
 
@@ -49,12 +48,11 @@ let test() =
 
 
     [<Test>]
-    let ``Simple assembly should be deterministic``() =
-        let inputFilePath,outputFilePath = getInOutPaths()
-        File.WriteAllText(inputFilePath, basicCodeSnippet)
+    let ``Simple assembly should be deterministic``() =  
+        File.WriteAllText(inputPath, basicCodeSnippet)
 
         let getMvid() =
-            FSharpWithInputAndOutputPath basicCodeSnippet inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath basicCodeSnippet inputPath outputPath
             |> withOptions ["--deterministic";"--nooptimizationdata"]
             |> compileGuid
 
@@ -302,3 +300,18 @@ let foo () = <@ 2 + 3 @>
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.AreEqual(mvid1, mvid2)
+
+    [<Test>]
+    let ``Reference assemblies must change when a must-inline function changes body`` () =
+        let codeBefore = """module ReferenceAssembly
+let inline myFunc x y = x + y"""
+        let codeAfter = codeBefore.Replace("+","-")
+        let mvid1, mvid2 = calculateRefAssMvids codeBefore codeAfter
+        Assert.AreNotEqual(mvid1,mvid2)
+
+    [<Test>]
+    let ``Reference assemblies must not change when a must-inline function does not change`` () =
+        let codeBefore = """module ReferenceAssembly
+let inline myFunc x y = x - y"""       
+        let mvid1, mvid2 = calculateRefAssMvids codeBefore codeBefore
+        Assert.AreEqual(mvid1,mvid2)
