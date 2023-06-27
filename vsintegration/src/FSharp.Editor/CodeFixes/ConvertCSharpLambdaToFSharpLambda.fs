@@ -20,7 +20,7 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
     static let title = SR.UseFSharpLambda()
 
     let tryGetSpans (parseResults: FSharpParseFileResults) (range: range) sourceText =
-        let bind3 options =
+        let flatten3 options =
             match options with
             | Some (Some a, Some b, Some c) -> Some(a, b, c)
             | _ -> None
@@ -30,7 +30,7 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
             RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, fullParenRange),
             RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaArgRange),
             RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaBodyRange))
-        |> bind3
+        |> flatten3
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 

@@ -15,7 +15,7 @@ let private diagnostic = 0039 // Something is not defined
 let ``Fixes FS0039 for lambdas`` () =
     let code =
         """
-let id = x => x
+let incAll = List.map (n => n + 1)
 """
 
     let expected =
@@ -24,7 +24,7 @@ let id = x => x
                 Message = "Use F# lambda syntax"
                 FixedCode =
                     """
-let id = fun x -> x
+let incAll = List.map (fun n -> n + 1)
 """
             }
 
@@ -36,7 +36,7 @@ let id = fun x -> x
 let ``Doesn't fix FS0039 for random undefined stuff`` () =
     let code =
         """
-let test = x = x
+let f = g
 """
 
     let expected = None
