@@ -196,7 +196,7 @@ val CheckOneInputWithCallback:
     tcState: TcState *
     input: ParsedInput *
     _skipImplIfSigExists: bool ->
-         Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>>
+        Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>>
 
 val AddCheckResultsToTcState:
     tcGlobals: TcGlobals *

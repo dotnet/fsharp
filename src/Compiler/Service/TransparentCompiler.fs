@@ -17,6 +17,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
@@ -49,6 +50,49 @@ type internal FSharpFile =
         IsExe: bool
     }
 
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type internal TcInfo =
+    {
+        tcState: TcState
+        tcEnvAtEndOfFile: TcEnv
+
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
+
+        topAttribs: TopAttribs option
+
+        latestCcuSigForFile: ModuleOrNamespaceType option
+
+        /// Accumulated diagnostics, last file first
+        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+
+        tcDependencyFiles: string list
+
+        sigNameOpt: (string * QualifiedNameOfFile) option
+
+        graphNode: NodeToTypeCheck option
+    }
+
+    member x.TcDiagnostics = Array.concat (List.rev x.tcDiagnosticsRev)
+
+[<NoEquality; NoComparison>]
+type internal TcIntermediate =
+    {
+        finisher: Finisher<NodeToTypeCheck, TcState, PartialResult>
+        //tcEnvAtEndOfFile: TcEnv
+
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
+
+        /// Accumulated diagnostics, last file first
+        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+
+        tcDependencyFiles: string list
+
+        sink: TcResultsSinkImpl
+    }
+
 /// Things we need to start parsing and checking files for a given project snapshot
 type internal BootstrapInfo =
     {
@@ -72,24 +116,6 @@ type internal BootstrapInfo =
             ))
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
-
-/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
-[<NoEquality; NoComparison>]
-type internal TcIntermediate =
-    {
-        finisher:  Finisher<NodeToTypeCheck, TcState, PartialResult>
-        //tcEnvAtEndOfFile: TcEnv
-
-        /// Disambiguation table for module names
-        moduleNamesDict: ModuleNamesDict
-
-        /// Accumulated diagnostics, last file first
-        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
-
-        tcDependencyFiles: string list
-        
-        sink: TcResultsSinkImpl
-    }
 
 [<RequireQualifiedAccess>]
 type internal DependencyGraphType =
@@ -312,6 +338,7 @@ type internal TransparentCompiler
                     moduleNamesDict = Map.empty
                     tcDependencyFiles = basicDependencies
                     sigNameOpt = None
+                    graphNode = None
                 }
 
             return tcImports, tcInfo
@@ -816,18 +843,19 @@ type internal TransparentCompiler
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
                 let node = NodeToTypeCheck.PhysicalFile fileIndex // TODO: is this correct?
+
                 let! finisher =
-                    CheckOneInputWithCallback node (
-                        (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
-                        tcConfig,
-                        tcImports,
-                        tcGlobals,
-                        None,
-                        TcResultsSink.WithSink sink,
-                        prevTcInfo.tcState,
-                        input,
-                        false
-                    )
+                    CheckOneInputWithCallback
+                        node
+                        ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                         tcConfig,
+                         tcImports,
+                         tcGlobals,
+                         None,
+                         TcResultsSink.WithSink sink,
+                         prevTcInfo.tcState,
+                         input,
+                         false)
                     |> NodeCode.FromCancellable
 
                 //fileChecked.Trigger fileName
@@ -846,12 +874,13 @@ type internal TransparentCompiler
             }
         )
 
-    let mergeIntermediateResults  x y =
+    let mergeIntermediateResults =
         Array.fold (fun (tcInfos: TcInfo list) (tcIntermediate: TcIntermediate) ->
             match tcInfos with
             | [] -> failwith "need initial tcInfo"
             | tcInfo :: rest ->
-                let Finisher(finisher = finisher) = tcIntermediate.finisher
+                let (Finisher (node = node; finisher = finisher)) = tcIntermediate.finisher
+
                 let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
                     tcInfo.tcState |> finisher
 
@@ -868,8 +897,9 @@ type internal TransparentCompiler
                     tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
                     tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
                     latestCcuSigForFile = Some ccuSigForFile
+                    graphNode = Some node
                 }
-                :: tcInfo :: rest) x y
+                :: tcInfo :: rest)
 
     let typeCheckLayers bootstrapInfo projectSnapshot (parsedInputs: array<_>) graph layers =
         let rec processLayer (layers: Set<NodeToTypeCheck> list) tcInfos =
@@ -916,11 +946,12 @@ type internal TransparentCompiler
 
                     return!
                         results
-                        |> Array.filter (
-                            function 
-                            | {finisher = Finisher(node=NodeToTypeCheck.ArtificialImplFile idx)} -> 
-                                // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results 
-                                not (layer.Contains (NodeToTypeCheck.PhysicalFile (idx + 1)))
+                        |> Array.filter (function
+                            | {
+                                  finisher = Finisher(node = NodeToTypeCheck.ArtificialImplFile idx)
+                              } ->
+                                // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results
+                                not (layer.Contains(NodeToTypeCheck.PhysicalFile(idx + 1)))
                             | _ -> true)
                         |> mergeIntermediateResults tcInfos
                         |> processLayer rest
@@ -1064,16 +1095,19 @@ type internal TransparentCompiler
                 | Some bootstrapInfo, creationDiags ->
 
                     let file = bootstrapInfo.GetFile fileName
-                    
+
                     let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
                     let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags fileName
 
                     let! priorTcInfo, graph = ComputeTcPrior file bootstrapInfo projectSnapshot
-                    
-                    let fileIndex = projectSnapshot.IndexOf fileName
-                    let! tcIntermediate = ComputeTcIntermediate projectSnapshot graph fileIndex (parseTree, parseDiagnostics) bootstrapInfo priorTcInfo
 
-                    let Finisher(finisher = finisher) = tcIntermediate.finisher
+                    let fileIndex = projectSnapshot.IndexOf fileName
+
+                    let! tcIntermediate =
+                        ComputeTcIntermediate projectSnapshot graph fileIndex (parseTree, parseDiagnostics) bootstrapInfo priorTcInfo
+
+                    let (Finisher (finisher = finisher)) = tcIntermediate.finisher
+
                     let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile), tcState =
                         priorTcInfo.tcState |> finisher
 
@@ -1082,12 +1116,16 @@ type internal TransparentCompiler
                     let tcResolutions = sink.GetResolutions()
                     let tcSymbolUses = sink.GetSymbolUses()
                     let tcOpenDeclarations = sink.GetOpenDeclarations()
-                    
+
                     let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
-                    let tcDiagnostics = seq {                    
-                        yield! priorTcInfo.TcDiagnostics 
-                        for x in tcIntermediate.tcDiagnosticsRev
-                            do yield! x }
+
+                    let tcDiagnostics =
+                        seq {
+                            yield! priorTcInfo.TcDiagnostics
+
+                            for x in tcIntermediate.tcDiagnosticsRev do
+                                yield! x
+                        }
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
 
@@ -1135,7 +1173,6 @@ type internal TransparentCompiler
             }
         )
 
-
     let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         ParseAndCheckAllFilesInProjectCache.Get(
             projectSnapshot.Key,
@@ -1157,7 +1194,15 @@ type internal TransparentCompiler
                 let layers = Graph.leafSequence graph |> Seq.toList
 
                 let! tcInfos, _ = typeCheckLayers bootstrapInfo projectSnapshot parsedInputs dependencyFiles layers
-                return tcInfos |> List.rev
+
+                return
+                    tcInfos
+                    |> List.filter (function
+                        | {
+                              graphNode = Some (NodeToTypeCheck.PhysicalFile _)
+                          } -> true
+                        | _ -> false)
+                    |> List.rev
             }
         )
 
