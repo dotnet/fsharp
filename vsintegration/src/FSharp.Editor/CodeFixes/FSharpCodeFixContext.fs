@@ -7,7 +7,7 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
-[<Struct>]
+[<NoEquality; NoComparison; Struct>]
 type FSharpCodeFixContext(document: Document, span: TextSpan) =
     member _.Document = document
     member _.Span = span
