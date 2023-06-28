@@ -12,6 +12,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 open CancellableTasks
+open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpLambdaToFSharpLambda); Shared>]
 type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstructor>] () =
@@ -41,9 +42,9 @@ type internal ConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstr
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let! parseResults = context.GetParseResultsAsync(nameof ConvertCSharpLambdaToFSharpLambdaCodeFixProvider)
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ConvertCSharpLambdaToFSharpLambdaCodeFixProvider)
                 let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                let! errorRange = context.GetErrorRangeAsync()
+                let! errorRange = getErrorRangeAsync context
 
                 return
                     tryGetSpans parseResults errorRange sourceText

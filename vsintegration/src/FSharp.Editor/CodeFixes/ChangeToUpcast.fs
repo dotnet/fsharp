@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
+open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeToUpcast); Shared>]
 type internal ChangeToUpcastCodeFixProvider() =
@@ -21,7 +22,7 @@ type internal ChangeToUpcastCodeFixProvider() =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! text = context.GetSquigglyTextAsync()
+                let! text = getSquigglyTextAsync context
 
                 // Only works if it's one or the other
                 let isDowncastOperator = text.Contains(":?>")

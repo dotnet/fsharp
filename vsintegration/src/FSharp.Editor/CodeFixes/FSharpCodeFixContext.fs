@@ -7,27 +7,26 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
+[<Struct>]
 type FSharpCodeFixContext(document: Document, span: TextSpan) =
-
     member _.Document = document
     member _.Span = span
 
-    member _.GetSourceTextAsync() =
+module internal FSharpCodeFixContextHelpers =
+    let getSourceTextAsync (context: FSharpCodeFixContext) =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-            return! (document.GetTextAsync cancellationToken)
+            return! (context.Document.GetTextAsync cancellationToken)
         }
 
-    member this.GetSquigglyTextAsync() =
+    let getSquigglyTextAsync context =
         cancellableTask {
-            let! sourceText = this.GetSourceTextAsync()
-            return sourceText.GetSubText(span).ToString()
+            let! sourceText = getSourceTextAsync context
+            return sourceText.GetSubText(context.Span).ToString()
         }
 
-    member this.GetErrorRangeAsync() =
+    let getErrorRangeAsync context =
         cancellableTask {
-            let! sourceText = this.GetSourceTextAsync()
-            return RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+            let! sourceText = getSourceTextAsync context
+            return RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
         }
-
-    member this.GetParseResultsAsync = this.Document.GetFSharpParseResultsAsync

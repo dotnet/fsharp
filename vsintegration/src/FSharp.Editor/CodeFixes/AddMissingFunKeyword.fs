@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
+open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
@@ -33,7 +34,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! textOfError = context.GetSquigglyTextAsync()
+                let! textOfError = getSquigglyTextAsync context
 
                 if textOfError <> "->" then
                     return None
@@ -44,7 +45,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                     let! defines, langVersion =
                         document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingFunKeywordCodeFixProvider))
 
-                    let! sourceText = context.GetSourceTextAsync()
+                    let! sourceText = getSourceTextAsync context
                     let adjustedPosition = adjustPosition sourceText context.Span
 
                     return
