@@ -33,5 +33,5 @@ type FSharpCodeFixContext(document: Document, span: TextSpan) =
             return RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
         }
 
-    member this.GetParseResultsAsync userOpName =
-        cancellableTask { return! this.Document.GetFSharpParseResultsAsync userOpName }
+    member this.GetParseResultsAsync =
+        this.Document.GetFSharpParseResultsAsync
