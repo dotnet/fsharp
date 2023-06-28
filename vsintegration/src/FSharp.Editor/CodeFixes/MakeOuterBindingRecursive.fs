@@ -26,7 +26,7 @@ type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] 
                 let! sourceText = context.GetSourceTextAsync()
                 let! diagnosticRange = context.GetErrorRangeAsync()
 
-                if parseResults.IsPosContainedInApplication diagnosticRange.Start then
+                if not <| parseResults.IsPosContainedInApplication diagnosticRange.Start then
                     return None
                 else
                     return
