@@ -26,21 +26,23 @@ type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] 
                 let! sourceText = context.GetSourceTextAsync()
                 let! diagnosticRange = context.GetErrorRangeAsync()
 
-                if parseResults.IsPosContainedInApplication diagnosticRange.Start then return None
+                if parseResults.IsPosContainedInApplication diagnosticRange.Start then
+                    return None
                 else
-                    return parseResults.TryRangeOfNameOfNearestOuterBindingContainingPos diagnosticRange.Start
-                    |> Option.bind (fun bindingRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, bindingRange))
-                    |> Option.filter (fun bindingSpan ->
-                        sourceText
-                            .GetSubText(bindingSpan)
-                            .ContentEquals(sourceText.GetSubText context.Span))
-                    |> Option.map (fun bindingSpan ->
-                        let title =
-                            String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(bindingSpan).ToString())
+                    return
+                        parseResults.TryRangeOfNameOfNearestOuterBindingContainingPos diagnosticRange.Start
+                        |> Option.bind (fun bindingRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, bindingRange))
+                        |> Option.filter (fun bindingSpan ->
+                            sourceText
+                                .GetSubText(bindingSpan)
+                                .ContentEquals(sourceText.GetSubText context.Span))
+                        |> Option.map (fun bindingSpan ->
+                            let title =
+                                String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(bindingSpan).ToString())
 
-                        {
-                            Name = CodeFix.MakeOuterBindingRecursive
-                            Message = title
-                            Changes = [ TextChange(TextSpan(bindingSpan.Start, 0), "rec ") ]
-                        })
+                            {
+                                Name = CodeFix.MakeOuterBindingRecursive
+                                Message = title
+                                Changes = [ TextChange(TextSpan(bindingSpan.Start, 0), "rec ") ]
+                            })
             }
