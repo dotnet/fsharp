@@ -940,7 +940,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
 
     // Some things are more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
     match expr with
-    | Expr.App (f, _fty, _tyargs, argsl, _m) ->
+    | Expr.App (f, _fty, _tyargs, argsl, m) ->
 
         if cenv.reportErrors then
 
@@ -977,16 +977,16 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                 match f with 
                 | ValUseAtApp (vref, valUseFlags) when env.mustTailCall.Contains vref.Deref ->
 
-                    let canTailCall, noTailCallBlockers = 
+                    let canTailCall = 
                         match isTailCall with 
                         | IsTailCall.No ->
-                            false, true
+                            false
                         | IsTailCall.Yes isVoidRet -> 
                             if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
                                 let topValInfo = vref.ValReprInfo.Value
                                 let (nowArgs, laterArgs), returnTy = 
                                     let _tps, tau = destTopForallTy g topValInfo _fty
-                                    let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau _m
+                                    let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau m
                                     if argsl.Length >= curriedArgInfos.Length then
                                         (List.splitAfter curriedArgInfos.Length argsl), returnTy
                                     else
@@ -996,7 +996,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                                     match valUseFlags with
                                     | PossibleConstrainedCall _ ->  true
                                     | _ -> false
-                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g) // Todo: discuss if this is really enough to render a tail call invalid
+                                let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
                                 let mustGenerateUnitAfterCall = (isUnitTy g returnTy && not isVoidRet)
 
                                 let noTailCallBlockers =
@@ -1008,15 +1008,12 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                                     not (IsValRefIsDllImport cenv.g vref) &&
                                     not isCCall && 
                                     not hasByrefArg
-                                noTailCallBlockers, noTailCallBlockers
+                                noTailCallBlockers
                             else 
-                                true, true
+                                true
 
-                    if not canTailCall then
-                        if not noTailCallBlockers then
-                            warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
-                        elif (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange _m) then
-                            warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
+                    if not canTailCall && (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange m) then
+                        warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), m))
                 | _ -> ()
     | _ -> ()
 
