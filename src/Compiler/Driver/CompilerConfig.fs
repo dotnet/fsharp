@@ -7,6 +7,7 @@ open System
 open System.Collections.Concurrent
 open System.Runtime.InteropServices
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Internal.Utilities.Library
@@ -322,6 +323,7 @@ type LStatus =
 type TokenizeOption =
     | AndCompile
     | Only
+    | Debug
     | Unfiltered
 
 type PackageManagerLine =
@@ -392,6 +394,18 @@ type MetadataAssemblyGeneration =
 type ParallelReferenceResolution =
     | On
     | Off
+
+[<RequireQualifiedAccess>]
+type TypeCheckingMode =
+    | Sequential
+    | Graph
+
+[<RequireQualifiedAccess>]
+type TypeCheckingConfig =
+    {
+        Mode: TypeCheckingMode
+        DumpGraph: bool
+    }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -507,7 +521,6 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
-        mutable parallelCheckingWithSignatureFiles: bool
         mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
@@ -591,6 +604,10 @@ type TcConfigBuilder =
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
         mutable captureIdentifiersWhenParsing: bool
+
+        mutable typeCheckingConfig: TypeCheckingConfig
+
+        mutable dumpSignatureData: bool
     }
 
     // Directories to start probing in
@@ -733,11 +750,17 @@ type TcConfigBuilder =
             doTLR = false
             doFinalSimplify = false
             optsOn = false
-            optSettings = Optimizer.OptimizationSettings.Defaults
+            optSettings =
+                { OptimizationSettings.Defaults with
+                    processingMode =
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
+                            OptimizationProcessingMode.Parallel
+                        else
+                            OptimizationProcessingMode.Sequential
+                }
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelCheckingWithSignatureFiles = FSharpExperimentalFeaturesEnabledAutomatically
             parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
@@ -782,6 +805,16 @@ type TcConfigBuilder =
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
             captureIdentifiersWhenParsing = false
+            typeCheckingConfig =
+                {
+                    TypeCheckingConfig.Mode =
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
+                            TypeCheckingMode.Graph
+                        else
+                            TypeCheckingMode.Sequential
+                    DumpGraph = false
+                }
+            dumpSignatureData = false
         }
 
     member tcConfigB.FxResolver =
@@ -1286,7 +1319,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
-    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
     member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
@@ -1322,6 +1354,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
+    member _.typeCheckingConfig = data.typeCheckingConfig
+    member _.dumpSignatureData = data.dumpSignatureData
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

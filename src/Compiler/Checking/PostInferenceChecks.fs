@@ -116,9 +116,7 @@ let BindTypars g env (tps: Typar list) =
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms    
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -2597,6 +2595,7 @@ and CheckModuleSpec cenv env mbind =
 let CheckImplFileContents cenv env implFileTy implFileContents  = 
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+    UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
     
 let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =

@@ -52,6 +52,10 @@ type public FSharpParseFileResults =
     /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
     member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
 
+    /// Gets the range of where a return type hint could be placed for a function binding. This will be right in front of the equals sign.
+    /// Returns None if type annotation is present.
+    member TryRangeOfReturnTypeHint: symbolUseStart: pos * ?skipLambdas: bool -> range option
+
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos: pos -> ParameterLocations option
 

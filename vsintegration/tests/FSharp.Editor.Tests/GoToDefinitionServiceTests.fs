@@ -14,7 +14,14 @@ module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
 
-    let private findDefinition (document: Document, sourceText: SourceText, position: int, defines: string list) : range option =
+    let private findDefinition
+        (
+            document: Document,
+            sourceText: SourceText,
+            position: int,
+            defines: string list,
+            langVersion: string option
+        ) : range option =
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -29,7 +36,9 @@ module GoToDefinitionServiceTests =
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    langVersion,
+                    System.Threading.CancellationToken.None
                 )
 
             let _, checkFileResults =
@@ -55,12 +64,13 @@ module GoToDefinitionServiceTests =
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
 
         let sourceText = SourceText.From(fileContents)
+
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            findDefinition (document, sourceText, caretPosition, [])
+            findDefinition (document, sourceText, caretPosition, [], None)
             |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then

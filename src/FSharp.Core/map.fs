@@ -542,7 +542,7 @@ module MapTree =
         else
             acc
 
-    let ofArray comparer (arr: array<'Key * 'Value>) =
+    let ofArray comparer (arr: ('Key * 'Value) array) =
         let mutable res = empty
 
         for (x, y) in arr do

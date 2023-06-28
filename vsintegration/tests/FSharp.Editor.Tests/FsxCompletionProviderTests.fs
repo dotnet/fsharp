@@ -4,10 +4,12 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Generic
+open System.Threading
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 // AppDomain helper
 type Worker() =
@@ -17,7 +19,11 @@ type Worker() =
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let options = { RoslynTestHelpers.DefaultProjectOptions with SourceFiles = [|filePath|] }
+        let options =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                SourceFiles = [| filePath |]
+            }
+
         let document =
             RoslynTestHelpers.CreateSolution(fileContents, options = options)
             |> RoslynTestHelpers.GetSingleDocument
@@ -27,10 +33,9 @@ type Worker() =
         let actual =
             let x =
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
-                |> Async.RunSynchronously
+                |> CancellableTask.start CancellationToken.None
 
-            x
-            |> Option.defaultValue (ResizeArray())
+            x.Result
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`
             |> List.sortBy (fun x -> x.SortText)
@@ -49,7 +54,7 @@ module FsxCompletionProviderTests =
     let getWorker () = Worker()
 
 #if RELEASE
-    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif

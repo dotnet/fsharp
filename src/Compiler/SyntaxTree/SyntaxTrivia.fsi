@@ -161,6 +161,14 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.AnonRecd
+[<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia =
+    {
+        /// The syntax range of the `{|` token.
+        OpeningBraceRange: range
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -213,10 +221,16 @@ type SynPatListConsTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnLeadingKeyword =
     | Type of range
+
     | And of range
-    // Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
+
+    /// Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
     | StaticType of staticRange: range * typeRange: range
+
+    /// Produced during type checking, should not be used in actual parsed trees.
     | Synthetic
+
+    member Range: range
 
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
@@ -265,6 +279,7 @@ type SynLeadingKeyword =
     | OverrideVal of overrideRange: range * valRange: range
     | Abstract of abstractRange: range
     | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
     | StaticMember of staticRange: range * memberRange: range
     | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
     | StaticAbstract of staticRange: range * abstractRange: range

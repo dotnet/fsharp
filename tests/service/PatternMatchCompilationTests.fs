@@ -15,7 +15,7 @@ match () with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(3,2--3,4): This expression was expected to have type 'unit' but here has type 'string'"
+        "(3,2--3,4): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'string'"
     ]
 
 [<Test>]
@@ -28,11 +28,10 @@ let ("": unit), (x: int) = let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(2,5--2,7): This expression was expected to have type 'unit' but here has type 'string'"
-        "(2,41--2,43): This expression was expected to have type 'unit * int' but here has type 'unit'"
+        "(2,5--2,7): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'string'";
+        "(2,41--2,43): This expression was expected to have type\u001d    'unit * int'    \u001dbut here has type\u001d    'unit'";
         "(2,4--2,24): Incomplete pattern matches on this expression."
     ]
-
 
 [<Test>]
 #if !NETCOREAPP
@@ -96,7 +95,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'"
+        "(7,5--7,12): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    ''a * 'b * 'c'";
         "(6,6--6,7): Incomplete pattern matches on this expression."
     ]
 
@@ -301,11 +300,11 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,21): The two sides of this 'or' pattern bind different sets of variables"
-        "(7,19--7,20): This expression was expected to have type 'int' but here has type 'string'"
+        "(7,2--7,21): The two sides of this 'or' pattern bind different sets of variables";
+        "(7,19--7,20): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'string'";
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
-    
+
 [<Test>]
 let ``As 01 - names and wildcards`` () =
     let _, checkResults = getParseAndCheckResults70 """
@@ -362,7 +361,7 @@ match Unchecked.defaultof<System.ValueType> with
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(5,21--5,27): Type constraint mismatch. The type 'int' is not compatible with type 'System.Enum' "
+        "(5,21--5,27): Type constraint mismatch. The type \u001d    'int'    \u001dis not compatible with type\u001d    'System.Enum'"
     ]
 
 [<Test>]
@@ -582,24 +581,24 @@ let x as () = y
 let z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,9--10,10): Unexpected symbol ',' in binding"
-        "(11,9--11,10): Unexpected symbol ':' in binding"
-        "(12,9--12,11): Unexpected symbol '::' in binding"
-        "(13,9--13,10): Unexpected symbol '&' in binding"
-        "(14,9--14,10): Unexpected symbol '|' in binding"
-        "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token."
-        "(15,9--15,10): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
-        "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token."
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding"
-        "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'"
-        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
-        "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'"
-        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
-        "(5,9--5,15): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(6,9--6,15): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
-        "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(10,9--10,10): Unexpected symbol ',' in binding";
+        "(11,9--11,10): Unexpected symbol ':' in binding";
+        "(12,9--12,11): Unexpected symbol '::' in binding";
+        "(13,9--13,10): Unexpected symbol '&' in binding";
+        "(14,9--14,10): Unexpected symbol '|' in binding";
+        "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token.";
+        "(15,9--15,10): Unmatched '('";
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions.";
+        "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token.";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding";
+        "(3,13--3,17): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'bool'";
+        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
+        "(4,16--4,17): This expression was expected to have type\u001d    'bool'    \u001dbut here has type\u001d    'int'";
+        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s).";
+        "(5,9--5,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,9--6,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(18,14--18,15): The value or constructor 'y' is not defined."
     ]
 
@@ -718,30 +717,30 @@ let () as x = y
 let z as =
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,7--10,9): Unexpected keyword 'as' in binding"
-        "(10,5--10,6): Expecting pattern"
-        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
-        "(12,9--12,11): Unexpected keyword 'as' in binding"
-        "(13,8--13,10): Unexpected keyword 'as' in binding"
-        "(14,8--14,10): Unexpected keyword 'as' in binding"
-        "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token."
-        "(15,6--15,7): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
-        "(16,0--16,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token."
-        "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword."
-        "(17,0--17,3): Incomplete structured construct at or before this point in implementation file"
-        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
-        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
-        "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'"
-        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
-        "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'"
-        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
-        "(5,4--5,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
-        "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
-        "(10,14--10,15): This expression was expected to have type ''a * 'b' but here has type 'int'"
-        "(15,4--15,5): The pattern discriminator 'r' is not defined."
+        "(10,7--10,9): Unexpected keyword 'as' in binding";
+        "(10,5--10,6): Expecting pattern";
+        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
+        "(12,9--12,11): Unexpected keyword 'as' in binding";
+        "(13,8--13,10): Unexpected keyword 'as' in binding";
+        "(14,8--14,10): Unexpected keyword 'as' in binding";
+        "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
+        "(15,6--15,7): Unmatched '('";
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions.";
+        "(16,0--16,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token.";
+        "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
+        "(17,0--17,3): Incomplete structured construct at or before this point in implementation file";
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions.";
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions.";
+        "(3,13--3,17): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'bool'";
+        "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
+        "(4,16--4,17): This expression was expected to have type\u001d    'bool'    \u001dbut here has type\u001d    'int'";
+        "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s).";
+        "(5,4--5,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,4--6,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(10,14--10,15): This expression was expected to have type\u001d    ''a * 'b'    \u001dbut here has type\u001d    'int'";
+        "(15,4--15,5): The pattern discriminator 'r' is not defined.";
         "(15,4--15,12): Incomplete pattern matches on this expression."
     ]
 
@@ -795,17 +794,17 @@ Some x |> eq<obj>
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(11,25--11,26): This expression was expected to have type 'int' but here has type 'obj'"
-        "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,21): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s)."
-        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(11,25--11,26): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'obj'";
+        "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(20,6--20,21): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s).";
+        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
     
@@ -914,34 +913,34 @@ let :? x as () = y
 let :? z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,12--10,13): Unexpected symbol ',' in binding"
-        "(11,12--11,13): Unexpected symbol ':' in binding"
-        "(12,12--12,14): Unexpected symbol '::' in binding"
-        "(13,12--13,13): Unexpected symbol '&' in binding"
-        "(14,12--14,13): Unexpected symbol '|' in binding"
-        "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token."
-        "(15,12--15,13): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
-        "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token."
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding"
-        "(3,7--3,8): The type 'a' is not defined."
-        "(3,4--3,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(4,7--4,8): The type 'b' is not defined."
-        "(4,4--4,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(5,7--5,8): The type 'c' is not defined."
-        "(5,4--5,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(6,7--6,8): The type 'd' is not defined."
-        "(6,4--6,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(7,7--7,8): The type 'e' is not defined."
-        "(7,4--7,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(8,7--8,8): The type 'f' is not defined."
-        "(8,4--8,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(9,7--9,8): The type 'g' is not defined."
-        "(9,4--9,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(15,7--15,8): The type 'r' is not defined."
-        "(15,4--15,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(18,7--18,8): The type 'x' is not defined."
-        "(18,4--18,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(10,12--10,13): Unexpected symbol ',' in binding";
+        "(11,12--11,13): Unexpected symbol ':' in binding";
+        "(12,12--12,14): Unexpected symbol '::' in binding";
+        "(13,12--13,13): Unexpected symbol '&' in binding";
+        "(14,12--14,13): Unexpected symbol '|' in binding";
+        "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token.";
+        "(15,12--15,13): Unmatched '('";
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions.";
+        "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token.";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding";
+        "(3,7--3,8): The type 'a' is not defined.";
+        "(3,4--3,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(4,7--4,8): The type 'b' is not defined.";
+        "(4,4--4,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(5,7--5,8): The type 'c' is not defined.";
+        "(5,4--5,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,7--6,8): The type 'd' is not defined.";
+        "(6,4--6,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(7,7--7,8): The type 'e' is not defined.";
+        "(7,4--7,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(8,7--8,8): The type 'f' is not defined.";
+        "(8,4--8,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(9,7--9,8): The type 'g' is not defined.";
+        "(9,4--9,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(15,7--15,8): The type 'r' is not defined.";
+        "(15,4--15,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(18,7--18,8): The type 'x' is not defined.";
+        "(18,4--18,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
     ]
 
 [<Test>]
@@ -987,20 +986,20 @@ Some "" |> eq<int> // No more type checks after the above line?
 """
     assertHasSymbolUsages (Set.toList validSet) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(27,2--27,14): This expression was expected to have type 'obj' but here has type 'struct ('a * 'b)'"
-        "(52,2--52,13): This expression was expected to have type 'obj' but here has type 'AAA'"
-        "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s)."
-        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(27,2--27,14): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'struct ('a * 'b)'";
+        "(52,2--52,13): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'AAA'";
+        "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(20,6--20,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s).";
+        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
-    
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -1072,26 +1071,26 @@ Some "" |> eq<int>
 """
     assertHasSymbolUsages (set ['a'..'y'] - set [ 'm'..'r' ] |> Set.map string |> Set.toList) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(19,2--19,4): This expression was expected to have type 'obj' but here has type 'int'"
-        "(21,2--21,7): This expression was expected to have type 'obj' but here has type 'bool'"
-        "(23,2--23,6): This expression was expected to have type 'obj' but here has type 'bool'"
-        "(28,28--28,29): The type 'obj' does not match the type 'int'"
-        "(41,5--41,6): The value or constructor 'm' is not defined."
-        "(42,5--42,6): The value or constructor 'n' is not defined."
-        "(43,5--43,6): The value or constructor 'o' is not defined."
-        "(44,5--44,6): The value or constructor 'p' is not defined."
-        "(45,5--45,6): The value or constructor 'q' is not defined."
-        "(46,5--46,6): The value or constructor 'r' is not defined."
-        "(55,12--55,31): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(26,6--26,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,15): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
-        "(16,6--16,11): Incomplete pattern matches on this expression."
-        "(14,6--14,11): Incomplete pattern matches on this expression."
-        "(12,6--12,11): Incomplete pattern matches on this expression."
-        "(10,6--10,11): Incomplete pattern matches on this expression."
+        "(19,2--19,4): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'int'";
+        "(21,2--21,7): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'bool'";
+        "(23,2--23,6): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'bool'";
+        "(28,28--28,29): The type 'obj' does not match the type 'int'";
+        "(41,5--41,6): The value or constructor 'm' is not defined.";
+        "(42,5--42,6): The value or constructor 'n' is not defined.";
+        "(43,5--43,6): The value or constructor 'o' is not defined.";
+        "(44,5--44,6): The value or constructor 'p' is not defined.";
+        "(45,5--45,6): The value or constructor 'q' is not defined.";
+        "(46,5--46,6): The value or constructor 'r' is not defined.";
+        "(55,12--55,31): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(26,6--26,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(24,6--24,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(22,6--22,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(20,6--20,15): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(18,6--18,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
+        "(16,6--16,11): Incomplete pattern matches on this expression.";
+        "(14,6--14,11): Incomplete pattern matches on this expression.";
+        "(12,6--12,11): Incomplete pattern matches on this expression.";
+        "(10,6--10,11): Incomplete pattern matches on this expression.";
         "(8,6--8,20): Incomplete pattern matches on this expression. For example, the value '[``some-other-subtype``]' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -1121,40 +1120,40 @@ let () as :? x = y
 let as :? z =
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,7--10,9): Unexpected keyword 'as' in binding"
-        "(10,5--10,6): Expecting pattern"
-        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
-        "(12,9--12,11): Unexpected keyword 'as' in binding"
-        "(13,8--13,10): Unexpected keyword 'as' in binding"
-        "(14,8--14,10): Unexpected keyword 'as' in binding"
-        "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token."
-        "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token."
-        "(16,6--16,7): Unmatched '('"
-        "(17,0--17,3): Possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this token further or using standard formatting conventions."
-        "(17,0--17,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token."
-        "(16,0--16,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword."
-        "(17,8--17,10): Unexpected keyword 'as' in pattern. Expected ']' or other token."
-        "(18,0--18,3): Possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this token further or using standard formatting conventions."
-        "(19,0--19,3): Possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this token further or using standard formatting conventions."
-        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
-        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
-        "(3,12--3,13): The type 'a' is not defined."
-        "(3,9--3,13): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(4,15--4,16): The type 'b' is not defined."
-        "(4,12--4,16): The type 'bool' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(5,4--5,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(7,27--7,28): The type 'e' is not defined."
-        "(7,24--7,28): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
-        "(8,28--8,29): The type 'f' is not defined."
-        "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(9,25--9,26): The type 'g' is not defined."
-        "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(10,13--10,14): The type 'i' is not defined."
-        "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(16,4--16,5): The pattern discriminator 't' is not defined."
-        "(16,14--16,15): The type 'u' is not defined."
-        "(16,11--16,15): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(10,7--10,9): Unexpected keyword 'as' in binding";
+        "(10,5--10,6): Expecting pattern";
+        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
+        "(12,9--12,11): Unexpected keyword 'as' in binding";
+        "(13,8--13,10): Unexpected keyword 'as' in binding";
+        "(14,8--14,10): Unexpected keyword 'as' in binding";
+        "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token.";
+        "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
+        "(16,6--16,7): Unmatched '('";
+        "(17,0--17,3): Possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this token further or using standard formatting conventions.";
+        "(17,0--17,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token.";
+        "(16,0--16,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
+        "(17,8--17,10): Unexpected keyword 'as' in pattern. Expected ']' or other token.";
+        "(18,0--18,3): Possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this token further or using standard formatting conventions.";
+        "(19,0--19,3): Possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this token further or using standard formatting conventions.";
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions.";
+        "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions.";
+        "(3,12--3,13): The type 'a' is not defined.";
+        "(3,9--3,13): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(4,15--4,16): The type 'b' is not defined.";
+        "(4,12--4,16): The type 'bool' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(5,4--5,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,4--6,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(7,27--7,28): The type 'e' is not defined.";
+        "(7,24--7,28): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(8,28--8,29): The type 'f' is not defined.";
+        "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(9,25--9,26): The type 'g' is not defined.";
+        "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(10,13--10,14): The type 'i' is not defined.";
+        "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
+        "(16,4--16,5): The pattern discriminator 't' is not defined.";
+        "(16,14--16,15): The type 'u' is not defined.";
+        "(16,11--16,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
     ]
 
 [<Test>]

@@ -24,12 +24,17 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Abstrakcyjne deklaracje elementów członkowskich są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
         <target state="translated">Jeśli typ używa obu [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;] atrybutów, oznacza to, że jest statyczny. Konstruktor jest również niedozwolony.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="translated">Element FSharp.Core.AutoOpenAttribute nie powinien mieć aliasu.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
@@ -44,7 +49,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Jawne deklaracje pól są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -64,7 +69,7 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Wdrażanie interfejsów jest niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -89,7 +94,7 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Połączenia let wystąpienia są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
@@ -183,8 +188,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
-        <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Zezwalaj na operacje arytmetyczne i logiczne w literałach</target>
+        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
+        <target state="translated">Operacje arytmetyczne i logiczne w literałach, definicjach wyliczeń i atrybutach</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -247,6 +252,11 @@
         <target state="translated">więcej typów obsługuje jednostki miary</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="new">Extended string interpolation similar to C# raw string literals.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">część o stałym indeksie 3d/4d</target>
@@ -262,9 +272,19 @@
         <target state="translated">niejawne słowo kluczowe yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="new">Improved implied argument names</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">notacja wyrażenia expr[idx] do indeksowania i fragmentowania</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="new">Diagnostic 3559 (warn when obj inferred) at informational level, off by default</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -300,6 +320,16 @@
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNestedCopyAndUpdate">
+        <source>Nested record field copy-and-update</source>
+        <target state="translated">Kopiowanie i aktualizowanie zagnieżdżonego pól rekordu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="translated">Wartości ciągów oznaczone jako literały i stałe IL jako format printf</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
@@ -372,6 +402,16 @@
         <target state="translated">wzorzec z pojedynczym podkreśleniem</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticMembersInInterfaces">
+        <source>Static members in interfaces</source>
+        <target state="translated">Statyczne składowe w interfejsach</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolacja ciągu</target>
@@ -382,22 +422,24 @@
         <target state="translated">reprezentacja struktury aktywnych wzorców</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
-        <target state="new">Support for try-with in sequence expressions</target>
+        <target state="translated">Obsługa instrukcji try-with w wyrażeniach sekwencji</target>
         <note />
       </trans-unit>
-
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <target state="translated">Zgłasza ostrzeżenia, gdy wyrażenie rekordu kopiowania i aktualizacji zmieni wszystkie pola rekordu.</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Zgłasza ostrzeżenia, gdy element „let inline ... =” jest używany razem z atrybutem [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Funkcja nie jest wstawiana.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -490,6 +532,11 @@
         <target state="translated">Słowo kluczowe na potrzeby określania literału stałej jako argumentu parametru typu w przypadku dostawców typów.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionSig">
+        <source>Keyword reserved for ML-compatibility.</source>
+        <target state="translated">Słowo kluczowe zarezerwowane na potrzeby zgodności uczenia maszynowego.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">Służy do sprawdzania, czy obiekt jest danego typu we wzorcu lub powiązaniu.</target>
@@ -505,9 +552,19 @@
         <target state="translated">ciąg bajtowy nie może być interpolowany</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">Regiony IF-FSHARP/IF-CAML nie są już obsługiwane</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -520,9 +577,24 @@
         <target state="translated">Nieprawidłowy ciąg interpolowany. Literały z pojedynczymi cudzysłowami lub literały ciągów dosłownych nie mogą być używane w wyrażeniach interpolowanych w ciągach z pojedynczymi cudzysłowami lub ciągach dosłownych. Rozważ użycie jawnego powiązania „let” dla wyrażenia interpolacji lub użycie ciągu z potrójnymi cudzysłowami jako zewnętrznego literału ciągu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Nieprawidłowy ciąg interpolowany. Literały ciągów z potrójnymi cudzysłowami nie mogą być używane w wyrażeniach interpolowanych. Rozważ użycie jawnego powiązania „let” dla wyrażenia interpolacji.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="new">The interpolated string contains unmatched closing braces.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -730,14 +802,19 @@
         <target state="translated">Oczekiwano wzorca po tym punkcie</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">Oczekiwanie na wyrażenie</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
         <target state="translated">Oczekiwano wzorca</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -750,9 +827,29 @@
         <target state="translated">Niekompletne wyrażenie operatora (na przykład a^b) lub wywołanie typu kwalifikowanego (przykład: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Dostęp tego elementu członkowskiego jest niejednoznaczny. W celu utworzenia obiektu użyj nawiasów, na przykład „(nowy SomeType(args)).MemberName”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedEndOfFileElif">
+        <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „else” wyrażenia warunkowego. Oczekiwano konstrukcji „elif &lt;expr&gt; then &lt;expr&gt;” lub „else if &lt;expr&gt; then &lt;expr&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -768,6 +865,11 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="translated">Algorytm „{0}” nie jest obsługiwany</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
+        <source>A constrained generic construct occured in the resumable code specification</source>
+        <target state="translated">W specyfikacji kodu z możliwością wznowienia wystąpiła ograniczona konstrukcja ogólna</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -892,7 +994,7 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <target state="translated">To wyrażenie rekordu kopiowania i aktualizacji zmienia wszystkie pola typu rekordu „{0}”. Zamiast tego rozważ użycie składni konstrukcji rekordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1010,6 +1112,11 @@
         <target state="translated">Następujące wymagane właściwości muszą zostać zainicjowane:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">Używanie metod z atrybutem "NoEagerConstraintApplicationAttribute" wymaga parametru /langversion:6.0 lub nowszego</target>
@@ -1045,6 +1152,11 @@
         <target state="translated">Składnia wyrażenia „expr1[expr2]” jest teraz zarezerwowana do indeksowania i jest niejednoznaczna, gdy jest używana jako argument. Zobacz: https://aka.ms/fsharp-index-notation. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Składnia wyrażenia „(expr1)[expr2]” jest niejednoznaczna, gdy jest używana jako argument. Zobacz https://aka.ms/fsharp-index-notation. Jeśli zamierzasz indeksować lub fragmentować, to w pozycji argumentu musi być użyte wyrażenie „(expr1).[expr2]”. Jeśli wywołujesz funkcję z wieloma argumentami typu curried, dodaj spację między nimi, np. „someFunction (expr1) [expr2]”.</target>
@@ -1056,8 +1168,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">Konstrukcji „let! ... and! ...” można użyć tylko wtedy, gdy konstruktor wyrażeń obliczeniowych definiuje metodę „{0}” lub odpowiednie metody „MergeSource” i „Bind”</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="needs-review-translation">Konstrukcji „let! ... and! ...” można użyć tylko wtedy, gdy konstruktor wyrażeń obliczeniowych definiuje metodę „{0}” lub odpowiednie metody „MergeSource” i „Bind”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1162,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <target state="translated">Typ został niejawnie wywnioskowany jako „obj”, co może być niezamierzone. Rozważ dodanie jawnych adnotacji typu. Możesz wyłączyć to ostrzeżenie, używając polecenia „#nowarn \"3559\"” lub „--nowarn:3559”.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1531,8 +1643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Nierozpoznana opcja: „{0}”</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="needs-review-translation">Nierozpoznana opcja: „{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3186,8 +3298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Podano wiele dostępności dla metody ustawiającej lub metody pobierającej właściwość</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="needs-review-translation">Podano wiele dostępności dla metody ustawiającej lub metody pobierającej właściwość</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -4631,8 +4743,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Interfejsy nie mogą zawierać definicji konkretnych elementów członkowskich. Może być konieczne zdefiniowanie konstruktora w typie, aby określić, że typ to klasa.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="translated">Interfejsy nie mogą zawierać definicji konkretnych elementów członkowskich wystąpienia. Może być konieczne zdefiniowanie konstruktora w przypadku typu, aby określić, że dany typ to klasa.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

@@ -10,7 +10,7 @@ open Microsoft.FSharp.Collections
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.list`1"/>.</summary>
 ///
 /// <namespacedoc><summary>Operations for collections such as lists, arrays, sets, maps and sequences. See also 
-///    <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/fsharp-collection-types">F# Collection Types</a> in the F# Language Guide.
+///    <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-collection-types">F# Collection Types</a> in the F# Language Guide.
 /// </summary></namespacedoc>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
@@ -739,6 +739,8 @@ module List =
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
     ///
+    /// let isEven x = 0 = x % 2
+    ///
     /// let isComingFromStarTrek (x,_) = isEven x
     /// 
     /// input |> List.filter isComingFromStarTrek
@@ -817,7 +819,7 @@ module List =
     ///     match (input1, input2) with
     ///     | Head, Head -> acc + 1
     ///     | Tails, Tails -> acc + 1
-    ///     | _ -> acc - 1)
+    ///     | _ -> acc)
     /// </code>
     /// Evaluates to <c>1</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
@@ -1206,7 +1208,7 @@ module List =
     /// let inputs1 = [ "a"; "b"; "c" ]
     /// let inputs2 = [ "banana"; "pear"; "apple" ]
     ///
-    /// (inputs1, inputs2) ||> List.iteri2 (fun i s1 s2 -> printfn "Index {i}: {s1} - {s2}")
+    /// (inputs1, inputs2) ||> List.iteri2 (fun i s1 s2 -> printfn "Index %d: %s - %s" i s1 s2)
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code lang="fsharp">
@@ -1358,8 +1360,8 @@ module List =
     ///
     /// <returns>The list of transformed elements, and the final accumulated value.</returns>
     ///
-    /// <example id="mapfold-1">
-    /// <code lang="fsharp">Accumulate the charges, and double them as well
+    /// <example id="mapfold-1">Accumulate the charges, and double them as well
+    /// <code lang="fsharp">
     /// type Charge =
     ///     | In of int
     ///     | Out of int
@@ -2582,7 +2584,7 @@ module List =
     /// let names = ["one"; "two"]
     /// let roman = ["I"; "II"]
     ///
-    /// Array.zip3 numbers names roman
+    /// List.zip3 numbers names roman
     /// </code>
     /// Evaluates to <c>[(1, "one", "I"); (2, "two", "II")]</c>.
     /// </example>

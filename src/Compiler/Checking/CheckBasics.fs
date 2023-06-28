@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckBasics
 
+open System.Collections.Concurrent
 open System.Collections.Generic
 
 open FSharp.Compiler.Diagnostics
@@ -313,6 +314,8 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
+      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -362,6 +365,7 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
+          argInfoCache = ConcurrentDictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry

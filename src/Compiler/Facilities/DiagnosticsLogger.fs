@@ -130,23 +130,23 @@ let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
 
 let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
-    DiagnosticEnabledWithLanguageFeature (n, message, m, enabledByLangFeature)
+    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
 
-let inline protectAssemblyExploration dflt f =
+let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange _ -> dflt
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationF dflt f =
+let inline protectAssemblyExplorationF dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange (asmName, path) -> dflt (asmName, path)
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f =
+let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f) =
     try
         f ()
     with
@@ -186,7 +186,7 @@ type StopProcessingExiter() =
     member val ExitCode = 0 with get, set
 
     interface Exiter with
-        member exiter.Exit n = 
+        member exiter.Exit n =
             exiter.ExitCode <- n
             raise StopProcessing
 
@@ -518,7 +518,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     }
 
 let UseDiagnosticsLogger newLogger =
-    UseTransformedDiagnosticsLogger (fun _ -> newLogger)
+    UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -809,6 +809,13 @@ let NormalizeErrorString (text: string MaybeNull) =
         i <- i + delta
 
     buf.ToString()
+
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type internal SuppressLanguageFeatureCheck =
+    | Yes
+    | No
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then

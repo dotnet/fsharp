@@ -56,7 +56,6 @@ module internal FSharpEnvironment =
         else
             None
 
-
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
     //     - location of design-time copies of FSharp.Core.dll and FSharp.Compiler.Interactive.Settings.dll for the default assumed environment for scripts
@@ -187,7 +186,9 @@ module internal FSharpEnvironment =
 
                 for p in searchToolPaths path compilerToolPaths do
                     let fileName = Path.Combine(p, assemblyName)
-                    if File.Exists fileName then yield fileName
+
+                    if File.Exists fileName then
+                        yield fileName
             }
 
         let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =

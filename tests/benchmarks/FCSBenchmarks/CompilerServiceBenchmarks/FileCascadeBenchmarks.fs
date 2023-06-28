@@ -95,8 +95,6 @@ type FileCascadeBenchmarks() =
     [<ParamsAllValues>]
     member val PartialCheck = true with get,set
     [<ParamsAllValues>]
-    member val ParaChecking = true with get,set
-    [<ParamsAllValues>]
     member val GenerateFSI = true with get,set
 
     member val Checker = Unchecked.defaultof<FSharpChecker> with get, set
@@ -104,11 +102,10 @@ type FileCascadeBenchmarks() =
         
     [<GlobalSetup>]
     member this.Setup() =
-        printfn $"Running Setup(). Partial = {this.PartialCheck}, Para = {this.ParaChecking}, FSIGen = {this.GenerateFSI}"
+        printfn $"Running Setup(). Partial = {this.PartialCheck}, FSIGen = {this.GenerateFSI}"
         this.Checker <- FSharpChecker.Create(
                 projectCacheSize = 5, 
-                enablePartialTypeChecking = this.PartialCheck,
-                enableParallelCheckingWithSignatureFiles = this.ParaChecking)
+                enablePartialTypeChecking = this.PartialCheck)
 
 
         let projectFolder = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(),"CascadeBenchmarkProject"))                    

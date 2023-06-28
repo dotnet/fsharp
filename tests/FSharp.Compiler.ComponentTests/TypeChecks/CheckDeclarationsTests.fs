@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CheckDeclarationsTests
+namespace TypeChecks
 
 open Xunit
 open FSharp.Test
@@ -95,7 +95,7 @@ namespace FSharpTest
         |> ignore
 
     [<Fact>]
-    let ``CheckingExceptionDeclarations - SynMemberDefn.GetSetMember`` () =
+    let ``CheckingExceptionDeclarations - SynMemberDefn GetSetMember`` () =
         FSharp """
 namespace FSharpTest
 

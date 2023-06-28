@@ -43,9 +43,9 @@ namespace CSharpTest
                 |> Some
 
         let stamp = DateTime.UtcNow
-        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", (fun () -> stamp), getStream)
+        let csRefProj = FSharpReferencedProject.PEReference((fun () -> stamp), DelayedILModuleReader("""Z:\csharp_test.dll""", getStream))
 
-        let fsOptions = CompilerAssert.DefaultProjectOptions
+        let fsOptions = CompilerAssert.DefaultProjectOptions TargetFramework.Current
         let fsOptions =
             { fsOptions with 
                 ProjectId = Some(Guid.NewGuid().ToString())
@@ -155,7 +155,7 @@ let x = Script1.x
                 """
         
         try
-            let fsOptions1 = CompilerAssert.DefaultProjectOptions
+            let fsOptions1 = CompilerAssert.DefaultProjectOptions TargetFramework.Current
             let fsOptions1 =
                 { fsOptions1 with 
                     ProjectId = Some(Guid.NewGuid().ToString())

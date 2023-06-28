@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Language.SequenceExpressionTests
+module Language.SequenceExpressionTests
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.ScriptHelpers
 
 
-
-let fsiSession = getSessionForEval()
+let fsiSession = getSessionForEval [||] LangVersion.Preview
 
 let runCode = evalInSharedSession fsiSession
 
 [<Fact>]
-let ``Basic recursive case uses tail. recursion``() =
+let ``Basic recursive case uses tail recursion``() =
     Fsx """
 let rec f () = seq {
     try 

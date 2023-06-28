@@ -1,127 +1,118 @@
 
-//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
-// Metadata version: v4.0.30319
-.assembly extern mscorlib
-{
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
-}
-.assembly extern FSharp.Core
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
-}
-.assembly IfThenElse01
+
+.assembly extern runtime { }
+.assembly extern FSharp.Core { }
+.assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
-  // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  
+  
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.IfThenElse01
+.mresource public FSharpSignatureData.assembly
 {
-  // Offset: 0x00000000 Length: 0x00000273
-  // WARNING: managed resource file FSharpSignatureData.IfThenElse01 created
+  
+  
 }
-.mresource public FSharpOptimizationData.IfThenElse01
+.mresource public FSharpOptimizationData.assembly
 {
-  // Offset: 0x00000278 Length: 0x00000092
-  // WARNING: managed resource file FSharpOptimizationData.IfThenElse01 created
+  
+  
 }
-.module IfThenElse01.exe
-// MVID: {624E1220-A4B0-91C2-A745-038320124E62}
-.imagebase 0x00400000
+.module assembly.exe
+
+.imagebase {value}
 .file alignment 0x00000200
 .stackreserve 0x00100000
-.subsystem 0x0003       // WINDOWS_CUI
-.corflags 0x00000001    //  ILONLY
-// Image base: 0x04FA0000
+.subsystem 0x0003       
+.corflags 0x00000001    
 
 
-// =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed IfThenElse01
-       extends [mscorlib]System.Object
+
+
+.class public abstract auto ansi sealed assembly
+       extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class abstract auto ansi sealed nested public M
-         extends [mscorlib]System.Object
+         extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .class auto ansi serializable sealed nested assembly beforefieldinit f5@5
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
-      .field static assembly initonly class IfThenElse01/M/f5@5 @_instance
+      .field static assembly initonly class assembly/M/f5@5 @_instance
       .method assembly specialname rtspecialname 
               instance void  .ctor() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       7 (0x7)
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  call       instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc::.ctor()
         IL_0006:  ret
-      } // end of method f5@5::.ctor
+      } 
 
       .method public strict virtual instance object 
               Specialize<a>() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       12 (0xc)
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  newobj     instance void class IfThenElse01/M/f5@5T<!!a>::.ctor(class IfThenElse01/M/f5@5)
+        IL_0001:  newobj     instance void class assembly/M/f5@5T<!!a>::.ctor(class assembly/M/f5@5)
         IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!a>>>>
         IL_000b:  ret
-      } // end of method f5@5::Specialize
+      } 
 
       .method private specialname rtspecialname static 
               void  .cctor() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       11 (0xb)
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
         .maxstack  10
-        IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
-        IL_0005:  stsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
+        IL_0000:  newobj     instance void assembly/M/f5@5::.ctor()
+        IL_0005:  stsfld     class assembly/M/f5@5 assembly/M/f5@5::@_instance
         IL_000a:  ret
-      } // end of method f5@5::.cctor
+      } 
 
-    } // end of class f5@5
+    } 
 
     .class auto ansi serializable sealed nested assembly beforefieldinit f5@5T<a>
            extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`5<int32,int32,!a,!a,!a>
     {
-      .field public class IfThenElse01/M/f5@5 self0@
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .field public class assembly/M/f5@5 self0@
+      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .method assembly specialname rtspecialname 
-              instance void  .ctor(class IfThenElse01/M/f5@5 self0@) cil managed
+              instance void  .ctor(class assembly/M/f5@5 self0@) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       14 (0xe)
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`5<int32,int32,!a,!a,!a>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      class IfThenElse01/M/f5@5 class IfThenElse01/M/f5@5T<!a>::self0@
+        IL_0008:  stfld      class assembly/M/f5@5 class assembly/M/f5@5T<!a>::self0@
         IL_000d:  ret
-      } // end of method f5@5T::.ctor
+      } 
 
       .method public strict virtual instance !a 
               Invoke(int32 x,
@@ -129,11 +120,11 @@
                      !a z,
                      !a w) cil managed
       {
-        // Code size       17 (0x11)
+        
         .maxstack  7
-        .locals init (class IfThenElse01/M/f5@5 V_0)
+        .locals init (class assembly/M/f5@5 V_0)
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      class IfThenElse01/M/f5@5 class IfThenElse01/M/f5@5T<!a>::self0@
+        IL_0001:  ldfld      class assembly/M/f5@5 class assembly/M/f5@5T<!a>::self0@
         IL_0006:  stloc.0
         IL_0007:  nop
         IL_0008:  ldarg.1
@@ -145,20 +136,20 @@
 
         IL_000e:  ldarg.s    w
         IL_0010:  ret
-      } // end of method f5@5T::Invoke
+      } 
 
-    } // end of class f5@5T
+    } 
 
     .method public static char  m() cil managed
     {
-      // Code size       43 (0x2b)
+      
       .maxstack  7
       .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc V_0,
                char V_1,
                char V_2,
                int32 V_3,
                int32 V_4)
-      IL_0000:  ldsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
+      IL_0000:  ldsfld     class assembly/M/f5@5 assembly/M/f5@5::@_instance
       IL_0005:  stloc.0
       IL_0006:  ldloc.0
       IL_0007:  ldc.i4.s   10
@@ -182,33 +173,33 @@
                                                                                                                               !!0,
                                                                                                                               !!1)
       IL_002a:  ret
-    } // end of method M::m
+    } 
 
-  } // end of class M
+  } 
 
-} // end of class IfThenElse01
+} 
 
-.class private abstract auto ansi sealed '<StartupCode$IfThenElse01>'.$IfThenElse01
-       extends [mscorlib]System.Object
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
+       extends [runtime]System.Object
 {
   .field static assembly int32 init@
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       7 (0x7)
+    
     .maxstack  8
-    IL_0000:  call       char IfThenElse01/M::m()
+    IL_0000:  call       char assembly/M::m()
     IL_0005:  pop
     IL_0006:  ret
-  } // end of method $IfThenElse01::main@
+  } 
 
-} // end of class '<StartupCode$IfThenElse01>'.$IfThenElse01
+} 
 
 
-// =============================================================
 
-// *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\kevinransom\fsharp\tests\FSharp.Compiler.ComponentTests\EmittedIL\Misc\IfThenElse01_fs\IfThenElse01.res
+
+
+

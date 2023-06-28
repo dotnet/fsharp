@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
-        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
+        <target state="translated">小文字で区別される和集合のケースは、RequireQualifiedAccess 属性を使用する場合にのみ許可されます</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">

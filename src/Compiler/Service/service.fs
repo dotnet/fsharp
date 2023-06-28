@@ -52,7 +52,7 @@ module EnvMisc =
 [<RequireQualifiedAccess>]
 type DocumentSource =
     | FileSystem
-    | Custom of (string -> ISourceText option)
+    | Custom of (string -> Async<ISourceText option>)
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -99,14 +99,14 @@ module Helpers =
         | _ -> false
 
 module CompileHelpers =
-    let mkCompilationDiagnosticsHandlers () =
+    let mkCompilationDiagnosticsHandlers (flatErrors) =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
                 member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -137,7 +137,8 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers ()
+        let diagnostics, diagnosticsLogger, loggerProvider =
+            mkCompilationDiagnosticsHandlers (argv |> Array.contains "--flaterrors")
 
         let result =
             tryCompile diagnosticsLogger (fun exiter ->
@@ -192,11 +193,11 @@ type BackgroundCompiler
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
-        getSource: (string -> ISourceText option) option,
-        useChangeNotifications
+        getSource: (string -> Async<ISourceText option>) option,
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -254,7 +255,7 @@ type BackgroundCompiler
                             member x.FileName = nm
                         }
 
-                | FSharpReferencedProject.PEReference (nm, getStamp, delayedReader) ->
+                | FSharpReferencedProject.PEReference (getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             node {
@@ -272,7 +273,7 @@ type BackgroundCompiler
                             }
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
-                        member x.FileName = nm
+                        member x.FileName = delayedReader.OutputFile
                     }
 
                 | FSharpReferencedProject.ILModuleReference (nm, getStamp, getReader) ->
@@ -326,12 +327,12 @@ type BackgroundCompiler
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    enableParallelCheckingWithSignatureFiles,
                     dependencyProvider,
                     parallelReferenceResolution,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    useSyntaxTreeCache
                 )
 
             match builderOpt with
@@ -410,7 +411,7 @@ type BackgroundCompiler
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
-                GraphNode(node.Return(None, [||]))
+                GraphNode.FromResult(None, [||])
             else
                 let getBuilderNode = GraphNode(CreateOneIncrementalBuilder(options, userOpName))
                 incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
@@ -487,7 +488,7 @@ type BackgroundCompiler
                 checkFileInProjectCache.Set(ltok, key, res)
                 res)
 
-    member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
+    member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string) =
         async {
             use _ =
                 Activity.start
@@ -507,14 +508,22 @@ type BackgroundCompiler
                     Interlocked.Increment(&actualParseFileCount) |> ignore
 
                     let parseDiagnostics, parseTree, anyErrors =
-                        ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, suggestNamesForErrors, captureIdentifiersWhenParsing)
+                        ParseAndCheckFile.parseFile (
+                            sourceText,
+                            fileName,
+                            options,
+                            userOpName,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            captureIdentifiersWhenParsing
+                        )
 
                     let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
                 let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, captureIdentifiersWhenParsing)
+                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing)
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
@@ -537,7 +546,14 @@ type BackgroundCompiler
                 let parseTree, _, _, parseDiagnostics = builder.GetParseResultsForFile fileName
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(builder.TcConfig.diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        builder.TcConfig.diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
@@ -638,9 +654,6 @@ type BackgroundCompiler
         ) =
 
         node {
-            if useChangeNotifications then
-                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
-
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
@@ -770,6 +783,7 @@ type BackgroundCompiler
                             parsingOptions,
                             userOpName,
                             suggestNamesForErrors,
+                            builder.TcConfig.flatErrors,
                             captureIdentifiersWhenParsing
                         )
 
@@ -838,12 +852,26 @@ type BackgroundCompiler
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -997,7 +1025,14 @@ type BackgroundCompiler
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        true,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -1086,8 +1121,6 @@ type BackgroundCompiler
                 [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
 
         cancellable {
-            use diagnostics = new DiagnosticsScope()
-
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             let useSdkRefs = defaultArg useSdkRefs true
@@ -1104,6 +1137,8 @@ type BackgroundCompiler
                     [||]
 
             let otherFlags = defaultArg otherFlags extraFlags
+
+            use diagnostics = new DiagnosticsScope(otherFlags |> Array.contains "--flaterrors")
 
             let useSimpleResolution = otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 
@@ -1162,7 +1197,8 @@ type BackgroundCompiler
 
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+                |> List.map (fun (exn, isError) ->
+                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors"))
 
             return options, (diags @ diagnostics.Diagnostics)
         }
@@ -1262,11 +1298,11 @@ type FSharpChecker
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource,
-        useChangeNotifications
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) =
 
     let backgroundCompiler =
@@ -1280,11 +1316,11 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1326,10 +1362,10 @@ type FSharpChecker
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
-            ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
-            ?documentSource: DocumentSource
+            ?documentSource: DocumentSource,
+            ?useSyntaxTreeCache: bool
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1350,13 +1386,14 @@ type FSharpChecker
             defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
-        let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
         let captureIdentifiersWhenParsing = defaultArg captureIdentifiersWhenParsing false
 
         let useChangeNotifications =
             match documentSource with
             | Some (DocumentSource.Custom _) -> true
             | _ -> false
+
+        let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1373,13 +1410,13 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             (match documentSource with
              | Some (DocumentSource.Custom f) -> Some f
              | _ -> None),
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
@@ -1416,7 +1453,7 @@ type FSharpChecker
     member _.ParseFile(fileName, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, userOpName)
+        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, false, userOpName)
 
     member ic.ParseFileInProject(fileName, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
@@ -1652,7 +1689,7 @@ type FSharpChecker
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new DiagnosticsScope()
+        use errorScope = new DiagnosticsScope(argv |> List.contains "--flaterrors")
 
         let tcConfigB =
             TcConfigBuilder.CreateNew(
@@ -1701,7 +1738,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None)
+        let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

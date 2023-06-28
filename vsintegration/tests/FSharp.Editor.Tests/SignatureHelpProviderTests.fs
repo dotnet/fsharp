@@ -23,7 +23,6 @@ module SignatureHelpProvider =
 
     let filePath = "C:\\test.fs"
 
-
     let GetSignatureHelp (project: FSharpProject) (fileName: string) (caretPosition: int) =
         async {
             let triggerChar = None
@@ -146,6 +145,7 @@ module SignatureHelpProvider =
         let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
 
         let sourceText = SourceText.From(fileContents)
+
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
@@ -169,6 +169,7 @@ module SignatureHelpProvider =
                 checkFileResults,
                 document.Id,
                 [],
+                None,
                 DefaultDocumentationProvider,
                 sourceText,
                 caretPosition,
@@ -371,7 +372,7 @@ let _ = System.DateTime(1L,
         assertSignatureHelpForMethodCalls fileContents marker (Some("[10..31)", 1, 2, None))
 
 #if RELEASE
-    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif
@@ -486,6 +487,7 @@ M.f
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let sourceText = SourceText.From(fileContents)
+
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
@@ -509,6 +511,7 @@ M.f
                 checkFileResults,
                 document.Id,
                 [],
+                None,
                 DefaultDocumentationProvider,
                 sourceText,
                 caretPosition,
@@ -617,6 +620,6 @@ let f (derp: int -> int -> int) x = derp x
 
     </Projects>
     "
-        
+
         let expected = [| [| "System.Int32"; "System.Int32" |] |]
         Assert.Equal<string array array>(expected, completionNames)

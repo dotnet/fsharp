@@ -7,6 +7,7 @@ module internal FSharp.Compiler.CompilerOptions
 open System
 open System.Diagnostics
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
@@ -331,25 +332,25 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     let rec processArg args =
         match args with
         | [] -> ()
-        | rsp: string :: t when rsp.StartsWithOrdinal("@") ->
+        | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
                 let fullpath =
                     try
-                        Some(rsp.TrimStart('@') |> FileSystem.GetFullPathShim)
+                        Some(opt.TrimStart('@') |> FileSystem.GetFullPathShim)
                     with _ ->
                         None
 
                 match fullpath with
                 | None ->
-                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid rsp, rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid opt, rangeCmdArgs))
                     []
                 | Some path when not (FileSystem.FileExistsShim path) ->
-                    errorR (Error(FSComp.SR.optsResponseFileNotFound (rsp, path), rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNotFound (opt, path), rangeCmdArgs))
                     []
                 | Some path ->
                     match ResponseFile.parseFile path with
                     | Choice2Of2 _ ->
-                        errorR (Error(FSComp.SR.optsInvalidResponseFile (rsp, path), rangeCmdArgs))
+                        errorR (Error(FSComp.SR.optsInvalidResponseFile (opt, path), rangeCmdArgs))
                         []
                     | Choice1Of2 rspData ->
                         let onlyOptions l =
@@ -1232,9 +1233,10 @@ let noFrameworkFlag isFsc tcConfigB =
         "noframework",
         tagNone,
         OptionUnit(fun () ->
-            tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-
+            // When the compilation is not fsi do nothing.
+            // It is just not a usefull option when running fsi on the coreclr or the desktop framework really.
             if isFsc then
+                tcConfigB.implicitlyReferenceDotNetAssemblies <- false
                 tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
@@ -1250,7 +1252,6 @@ let advancedFlagsFsi tcConfigB =
             None,
             Some(FSComp.SR.optsClearResultsCache ())
         )
-        noFrameworkFlag false tcConfigB
     ]
 
 let advancedFlagsFsc tcConfigB =
@@ -1372,8 +1373,23 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
             | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
+            | "GraphBasedChecking" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        Mode = TypeCheckingMode.Graph
+                    }
+            | "DumpCheckingGraph" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        DumpGraph = true
+                    }
+            | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
+            | "ParallelOptimization" ->
+                tcConfigB.optSettings <-
+                    { tcConfigB.optSettings with
+                        processingMode = OptimizationProcessingMode.Parallel
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1542,6 +1558,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Only),
             Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "tokenize-debug",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Debug),
+            Some(InternalCommandLineOption("--tokenize-debug", rangeCmdArgs)),
             None
         )
 
@@ -1836,7 +1860,8 @@ let deprecatedFlagsBoth tcConfigB =
         )
     ]
 
-let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
+let deprecatedFlagsFsi tcConfigB =
+    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB

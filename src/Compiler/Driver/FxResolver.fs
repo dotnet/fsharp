@@ -759,6 +759,7 @@ type internal FxResolver
                 "System.Runtime.Serialization.Xml"
                 "System.Security"
                 "System.Security.Claims"
+                "System.Security.Cryptography"
                 "System.Security.Cryptography.Algorithms"
                 "System.Security.Cryptography.Cng"
                 "System.Security.Cryptography.Csp"
@@ -853,7 +854,7 @@ type internal FxResolver
             //      System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
             // On Desktop framework compile it using osplatform+processarch+
             // Computer valid dotnet-rids for this environment:
-            //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+            //      https://learn.microsoft.com/dotnet/core/rid-catalog
             //
             // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
             let runningRid =

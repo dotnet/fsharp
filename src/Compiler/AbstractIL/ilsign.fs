@@ -40,7 +40,7 @@ let getResourceString (_, str) = str
 [<Struct; StructLayout(LayoutKind.Explicit)>]
 type ByteArrayUnion =
     [<FieldOffset(0)>]
-    val UnderlyingArray: byte[]
+    val UnderlyingArray: byte array
 
     [<FieldOffset(0)>]
     val ImmutableArray: ImmutableArray<byte>
@@ -73,7 +73,7 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
         peHeaderOffset + peHeaderSize + int peHeaders.CoffHeader.NumberOfSections * 0x28 // sizeof(IMAGE_SECTION_HEADER)
 
     let allHeaders =
-        let array: byte[] = Array.zeroCreate<byte> allHeadersSize
+        let array = Array.zeroCreate<byte> allHeadersSize
         peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize)
         array
 
@@ -121,9 +121,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     hashAlgorithm.GetHashAndReset()
 
 type BlobReader =
-    val mutable _blob: byte[]
+    val mutable _blob: byte array
     val mutable _offset: int
-    new(blob: byte[]) = { _blob = blob; _offset = 0 }
+    new(blob: byte array) = { _blob = blob; _offset = 0 }
 
     member x.ReadInt32() : int =
         let offset = x._offset
@@ -134,13 +134,13 @@ type BlobReader =
         ||| (int x._blob[offset + 2] <<< 16)
         ||| (int x._blob[offset + 3] <<< 24)
 
-    member x.ReadBigInteger(length: int) : byte[] =
-        let arr: byte[] = Array.zeroCreate<byte> length
+    member x.ReadBigInteger(length: int) : byte array =
+        let arr = Array.zeroCreate<byte> length
         Array.Copy(x._blob, x._offset, arr, 0, length)
         x._offset <- x._offset + length
         arr |> Array.rev
 
-let RSAParamatersFromBlob (blob: byte[]) keyType =
+let RSAParamatersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
     if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
@@ -169,14 +169,14 @@ let RSAParamatersFromBlob (blob: byte[]) keyType =
     key.D <- reader.ReadBigInteger byteLen
     key
 
-let validateRSAField (field: byte[] MaybeNull) expected (name: string) =
+let validateRSAField (field: byte array MaybeNull) expected (name: string) =
     match field with
     | Null -> ()
     | NonNull field ->
         if field.Length <> expected then
             raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), name)))
 
-let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
+let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
     // The original FCall this helper emulates supports other algId's - however, the only algid we need to support is CALG_RSA_KEYX. We will not port the codepaths dealing with other algid's.
     if algId <> CALG_RSA_KEYX then
@@ -249,7 +249,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
 
     key
 
-let createSignature (hash: byte[]) (keyBlob: byte[]) keyType =
+let createSignature hash keyBlob keyType =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
 
@@ -258,7 +258,7 @@ let createSignature (hash: byte[]) (keyBlob: byte[]) keyType =
 
     signature |> Array.rev
 
-let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte[]) =
+let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
     let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
 
@@ -289,7 +289,7 @@ let signStream stream keyBlob =
     let signature = createSignature hash keyBlob KeyType.KeyPair
     patchSignature stream peReader signature
 
-let signatureSize (pk: byte[]) =
+let signatureSize (pk: byte array) =
     if pk.Length < 25 then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
 
@@ -313,9 +313,9 @@ let getPublicKeyForKeyPair keyBlob =
 
 // Key signing
 type keyContainerName = string
-type keyPair = byte[]
-type pubkey = byte[]
-type pubkeyOptions = byte[] * bool
+type keyPair = byte array
+type pubkey = byte array
+type pubkeyOptions = byte array * bool
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 

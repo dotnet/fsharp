@@ -11,8 +11,9 @@ open System.Threading
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Test.ScriptHelpers
 open FSharp.DependencyManager.Nuget
+open FSharp.Test.ScriptHelpers
+open FSharp.Test.Utilities
 
 open Internal.Utilities
 

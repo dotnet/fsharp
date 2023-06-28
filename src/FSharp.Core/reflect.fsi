@@ -6,6 +6,7 @@ namespace Microsoft.FSharp.Reflection
 
 open System
 open System.Reflection
+open System.Diagnostics.CodeAnalysis
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Primitives.Basics
 open Microsoft.FSharp.Collections
@@ -14,7 +15,7 @@ open Microsoft.FSharp.Collections
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for accessing additional information about F# types and F# values at
-///   runtime, augmenting that available through <a href="https://docs.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
+///   runtime, augmenting that available through <a href="https://learn.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
 /// </summary></namespacedoc>
 [<Sealed>]
 type UnionCaseInfo =
@@ -110,7 +111,7 @@ type UnionCaseInfo =
     ///                      TypeId = FSI_0147+Signal;}|]|]
     /// </code>
     /// </example>
-    member GetCustomAttributes: attributeType: System.Type -> obj[]
+    member GetCustomAttributes: attributeType: Type -> obj[]
 
     /// <summary>Returns the custom attributes data associated with the case.</summary>
     /// <returns>An list of custom attribute data items.</returns>
@@ -240,7 +241,11 @@ type FSharpValue =
     /// <returns>The created record.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeRecord: recordType: Type * values: obj[] * ?bindingFlags: BindingFlags -> obj
+    static member MakeRecord:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+        values: obj[] *
+        ?bindingFlags: BindingFlags ->
+            obj
 
     /// <summary>Reads all the fields from a record value.</summary>
     ///
@@ -274,7 +279,10 @@ type FSharpValue =
     /// <returns>An optimized reader for the given record type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeRecordReader: recordType: Type * ?bindingFlags: BindingFlags -> (obj -> obj[])
+    static member PreComputeRecordReader:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+        ?bindingFlags: BindingFlags ->
+            (obj -> obj[])
 
     /// <summary>Precompute a function for constructing a record value. </summary>
     ///
@@ -289,7 +297,10 @@ type FSharpValue =
     /// <returns>A function to construct records of the given type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeRecordConstructor: recordType: Type * ?bindingFlags: BindingFlags -> (obj[] -> obj)
+    static member PreComputeRecordConstructor:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+        ?bindingFlags: BindingFlags ->
+            (obj[] -> obj)
 
     /// <summary>Get a ConstructorInfo for a record type</summary>
     ///
@@ -299,7 +310,10 @@ type FSharpValue =
     /// <returns>A ConstructorInfo for the given record type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeRecordConstructorInfo: recordType: Type * ?bindingFlags: BindingFlags -> ConstructorInfo
+    static member PreComputeRecordConstructorInfo:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+        ?bindingFlags: BindingFlags ->
+            ConstructorInfo
 
     /// <summary>Create a union case value.</summary>
     ///
@@ -328,7 +342,11 @@ type FSharpValue =
     /// <returns>The description of the union case and its fields.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetUnionFields: value: obj * unionType: Type * ?bindingFlags: BindingFlags -> UnionCaseInfo * obj[]
+    static member GetUnionFields:
+        value: obj *
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type *
+        ?bindingFlags: BindingFlags ->
+            UnionCaseInfo * obj[]
 
     /// <summary>Assumes the given type is a union type.
     /// If not, <see cref="T:System.ArgumentException" /> is raised during pre-computation.</summary>
@@ -343,7 +361,9 @@ type FSharpValue =
     /// <returns>An optimized function to read the tags of the given union type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeUnionTagReader: unionType: Type * ?bindingFlags: BindingFlags -> (obj -> int)
+    static member PreComputeUnionTagReader:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type * ?bindingFlags: BindingFlags ->
+            (obj -> int)
 
     /// <summary>Precompute a property or static method for reading an integer representing the case tag of a union type.</summary>
     ///
@@ -353,7 +373,9 @@ type FSharpValue =
     /// <returns>The description of the union case reader.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeUnionTagMemberInfo: unionType: Type * ?bindingFlags: BindingFlags -> MemberInfo
+    static member PreComputeUnionTagMemberInfo:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type * ?bindingFlags: BindingFlags ->
+            MemberInfo
 
     /// <summary>Precompute a function for reading all the fields for a particular discriminator case of a union type</summary>
     ///
@@ -452,7 +474,8 @@ type FSharpValue =
     /// <returns>A function to read values of the given tuple type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeTupleReader: tupleType: Type -> (obj -> obj[])
+    static member PreComputeTupleReader:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type -> (obj -> obj[])
 
     /// <summary>Gets information that indicates how to read a field of a tuple</summary>
     ///
@@ -462,7 +485,9 @@ type FSharpValue =
     /// <returns>The description of the tuple element and an optional type and index if the tuple is big.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeTuplePropertyInfo: tupleType: Type * index: int -> PropertyInfo * (Type * int) option
+    static member PreComputeTuplePropertyInfo:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type * index: int ->
+            PropertyInfo * (Type * int) option
 
     /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
@@ -476,7 +501,8 @@ type FSharpValue =
     /// <returns>A function to read a particular tuple type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeTupleConstructor: tupleType: Type -> (obj[] -> obj)
+    static member PreComputeTupleConstructor:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type -> (obj[] -> obj)
 
     /// <summary>Gets a method that constructs objects of the given tuple type.
     /// For small tuples, no additional type will be returned.</summary>
@@ -494,7 +520,9 @@ type FSharpValue =
     /// for large tuples.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeTupleConstructorInfo: tupleType: Type -> ConstructorInfo * Type option
+    static member PreComputeTupleConstructorInfo:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type ->
+            ConstructorInfo * Type option
 
     /// <summary>Builds a typed function from object from a dynamic function implementation</summary>
     ///
@@ -504,7 +532,10 @@ type FSharpValue =
     /// <returns>A typed function from the given dynamic implementation.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeFunction: functionType: Type * implementation: (obj -> obj) -> obj
+    static member MakeFunction:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] functionType: Type *
+        implementation: (obj -> obj) ->
+            obj
 
 /// <summary>Contains operations associated with constructing and analyzing F# types such as records, unions and tuples</summary>
 [<AbstractClass; Sealed>]
@@ -520,7 +551,10 @@ type FSharpType =
     /// <returns>An array of descriptions of the properties of the record type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetRecordFields: recordType: Type * ?bindingFlags: BindingFlags -> PropertyInfo[]
+    static member GetRecordFields:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+        ?bindingFlags: BindingFlags ->
+            PropertyInfo[]
 
     /// <summary>Gets the cases of a union type.</summary>
     ///
@@ -534,7 +568,9 @@ type FSharpType =
     /// <returns>An array of descriptions of the cases of the given union type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetUnionCases: unionType: Type * ?bindingFlags: BindingFlags -> UnionCaseInfo[]
+    static member GetUnionCases:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type * ?bindingFlags: BindingFlags ->
+            UnionCaseInfo[]
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# record type </summary>
     ///
@@ -544,7 +580,9 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsRecord: typ: Type * ?bindingFlags: BindingFlags -> bool
+    static member IsRecord:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type * ?bindingFlags: BindingFlags ->
+            bool
 
     /// <summary>Returns true if the <c>typ</c> is a representation of an F# union type or the runtime type of a value of that type</summary>
     ///
@@ -554,7 +592,9 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsUnion: typ: Type * ?bindingFlags: BindingFlags -> bool
+    static member IsUnion:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type * ?bindingFlags: BindingFlags ->
+            bool
 
     /// <summary>Reads all the fields from an F# exception declaration, in declaration order</summary>
     ///
@@ -568,7 +608,10 @@ type FSharpType =
     /// <returns>An array containing the PropertyInfo of each field in the exception.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetExceptionFields: exceptionType: Type * ?bindingFlags: BindingFlags -> PropertyInfo[]
+    static member GetExceptionFields:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] exceptionType: Type *
+        ?bindingFlags: BindingFlags ->
+            PropertyInfo[]
 
     /// <summary>Returns true if the <c>typ</c> is a representation of an F# exception declaration</summary>
     ///
@@ -578,7 +621,10 @@ type FSharpType =
     /// <returns>True if the type check is an F# exception.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsExceptionRepresentation: exceptionType: Type * ?bindingFlags: BindingFlags -> bool
+    static member IsExceptionRepresentation:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] exceptionType: Type *
+        ?bindingFlags: BindingFlags ->
+            bool
 
     /// <summary>Returns a <see cref="T:System.Type"/> representing the F# function type with the given domain and range</summary>
     ///
@@ -588,7 +634,10 @@ type FSharpType =
     /// <returns>The function type with the given domain and range.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeFunctionType: domain: Type * range: Type -> Type
+    static member MakeFunctionType:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] domain: Type *
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] range: Type ->
+            Type
 
     /// <summary>Returns a <see cref="T:System.Type"/> representing an F# tuple type with the given element types</summary>
     ///
@@ -635,7 +684,7 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsTuple: typ: Type -> bool
+    static member IsTuple: [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type -> bool
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# function type or the runtime type of a closure implementing an F# function type</summary>
     ///
@@ -644,7 +693,7 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsFunction: typ: Type -> bool
+    static member IsFunction: [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type -> bool
 
     /// <summary>Return true if the <c>typ</c> is a <see cref="T:System.Type"/> value corresponding to the compiled form of an F# module </summary>
     ///
@@ -653,7 +702,7 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member IsModule: typ: Type -> bool
+    static member IsModule: [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type -> bool
 
     /// <summary>Gets the tuple elements from the representation of an F# tuple type.</summary>
     ///
@@ -662,7 +711,8 @@ type FSharpType =
     /// <returns>An array of the types contained in the given tuple type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetTupleElements: tupleType: Type -> Type[]
+    static member GetTupleElements:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type -> Type[]
 
     /// <summary>Gets the domain and range types from an F# function type  or from the runtime type of a closure implementing an F# type</summary>
     ///
@@ -671,7 +721,8 @@ type FSharpType =
     /// <returns>A tuple of the domain and range types of the input function.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member GetFunctionElements: functionType: Type -> Type * Type
+    static member GetFunctionElements:
+        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] functionType: Type -> Type * Type
 
 /// <summary>Defines further accessing additional information about F# types and F# values at runtime.</summary>
 [<AutoOpen>]
@@ -691,7 +742,11 @@ module FSharpReflectionExtensions =
         /// <returns>The created record.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member MakeRecord: recordType: Type * values: obj[] * ?allowAccessToPrivateRepresentation: bool -> obj
+        static member MakeRecord:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+            values: obj[] *
+            ?allowAccessToPrivateRepresentation: bool ->
+                obj
 
         /// <summary>Reads all the fields from a record value.</summary>
         ///
@@ -705,7 +760,10 @@ module FSharpReflectionExtensions =
         /// <returns>The array of fields from the record.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member GetRecordFields: record: obj * ?allowAccessToPrivateRepresentation: bool -> obj[]
+        static member GetRecordFields:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] record: obj *
+            ?allowAccessToPrivateRepresentation: bool ->
+                obj[]
 
         /// <summary>Precompute a function for reading all the fields from a record. The fields are returned in the
         /// same order as the fields reported by a call to Microsoft.FSharp.Reflection.Type.GetInfo for
@@ -727,7 +785,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member PreComputeRecordReader:
-            recordType: Type * ?allowAccessToPrivateRepresentation: bool -> (obj -> obj[])
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                (obj -> obj[])
 
         /// <summary>Precompute a function for constructing a record value. </summary>
         ///
@@ -743,7 +803,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member PreComputeRecordConstructor:
-            recordType: Type * ?allowAccessToPrivateRepresentation: bool -> (obj[] -> obj)
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                (obj[] -> obj)
 
         /// <summary>Get a ConstructorInfo for a record type</summary>
         ///
@@ -754,7 +816,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member PreComputeRecordConstructorInfo:
-            recordType: Type * ?allowAccessToPrivateRepresentation: bool -> ConstructorInfo
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                ConstructorInfo
 
         /// <summary>Create a union case value.</summary>
         ///
@@ -786,7 +850,10 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member GetUnionFields:
-            value: obj * unionType: Type * ?allowAccessToPrivateRepresentation: bool -> UnionCaseInfo * obj[]
+            value: obj *
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                UnionCaseInfo * obj[]
 
         /// <summary>Assumes the given type is a union type.
         /// If not, <see cref="T:System.ArgumentException" /> is raised during pre-computation.</summary>
@@ -802,7 +869,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member PreComputeUnionTagReader:
-            unionType: Type * ?allowAccessToPrivateRepresentation: bool -> (obj -> int)
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                (obj -> int)
 
         /// <summary>Precompute a property or static method for reading an integer representing the case tag of a union type.</summary>
         ///
@@ -813,7 +882,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member PreComputeUnionTagMemberInfo:
-            unionType: Type * ?allowAccessToPrivateRepresentation: bool -> MemberInfo
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                MemberInfo
 
         /// <summary>Precompute a function for reading all the fields for a particular discriminator case of a union type</summary>
         ///
@@ -876,7 +947,10 @@ module FSharpReflectionExtensions =
         /// <returns>An array of descriptions of the properties of the record type.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member GetRecordFields: recordType: Type * ?allowAccessToPrivateRepresentation: bool -> PropertyInfo[]
+        static member GetRecordFields:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] recordType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                PropertyInfo[]
 
         /// <summary>Gets the cases of a union type.</summary>
         ///
@@ -890,7 +964,10 @@ module FSharpReflectionExtensions =
         /// <returns>An array of descriptions of the cases of the given union type.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member GetUnionCases: unionType: Type * ?allowAccessToPrivateRepresentation: bool -> UnionCaseInfo[]
+        static member GetUnionCases:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] unionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                UnionCaseInfo[]
 
         /// <summary>Return true if the <c>typ</c> is a representation of an F# record type </summary>
         ///
@@ -900,7 +977,10 @@ module FSharpReflectionExtensions =
         /// <returns>True if the type check succeeds.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member IsRecord: typ: Type * ?allowAccessToPrivateRepresentation: bool -> bool
+        static member IsRecord:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                bool
 
         /// <summary>Returns true if the <c>typ</c> is a representation of an F# union type or the runtime type of a value of that type</summary>
         ///
@@ -910,7 +990,10 @@ module FSharpReflectionExtensions =
         /// <returns>True if the type check succeeds.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member IsUnion: typ: Type * ?allowAccessToPrivateRepresentation: bool -> bool
+        static member IsUnion:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] typ: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                bool
 
         /// <summary>Reads all the fields from an F# exception declaration, in declaration order</summary>
         ///
@@ -925,7 +1008,9 @@ module FSharpReflectionExtensions =
         ///
         /// <example-tbd></example-tbd>
         static member GetExceptionFields:
-            exceptionType: Type * ?allowAccessToPrivateRepresentation: bool -> PropertyInfo[]
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] exceptionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                PropertyInfo[]
 
         /// <summary>Returns true if the <c>exceptionType</c> is a representation of an F# exception declaration</summary>
         ///
@@ -935,7 +1020,10 @@ module FSharpReflectionExtensions =
         /// <returns>True if the type check is an F# exception.</returns>
         ///
         /// <example-tbd></example-tbd>
-        static member IsExceptionRepresentation: exceptionType: Type * ?allowAccessToPrivateRepresentation: bool -> bool
+        static member IsExceptionRepresentation:
+            [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] exceptionType: Type *
+            ?allowAccessToPrivateRepresentation: bool ->
+                bool
 
 module internal ReflectionUtils =
     type BindingFlags = System.Reflection.BindingFlags

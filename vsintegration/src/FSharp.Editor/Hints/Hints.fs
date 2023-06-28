@@ -2,17 +2,29 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
+open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module Hints =
-    
-    type HintKind = 
+
+    [<RequireQualifiedAccess>]
+    type HintKind =
         | TypeHint
         | ParameterNameHint
+        | ReturnTypeHint
 
     // Relatively convenient for testing
-    type NativeHint = {
-        Kind: HintKind
-        Range: range
-        Parts: TaggedText list
-    }
+    type NativeHint =
+        {
+            Kind: HintKind
+            Range: range
+            Parts: TaggedText list
+            GetTooltip: Document -> CancellableTask<TaggedText list>
+        }
+
+    let inline serialize kind =
+        match kind with
+        | HintKind.TypeHint -> "type"
+        | HintKind.ParameterNameHint -> "parameterName"
+        | HintKind.ReturnTypeHint -> "returnType"

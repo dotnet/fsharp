@@ -437,9 +437,7 @@ module Structure =
                 parseExpr e
 
             | SynExpr.Lambda (args = pats; body = e; range = r) ->
-                match pats with
-                | SynSimplePats.SimplePats (_, pr)
-                | SynSimplePats.Typed (_, _, pr) -> rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
+                rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pats.Range r)
 
                 parseExpr e
 
@@ -851,7 +849,7 @@ module Structure =
             elif line.StartsWithOrdinal("//") then Some SingleLine
             else None
 
-        let getCommentRanges (lines: string[]) =
+        let getCommentRanges trivia (lines: string[]) =
             let rec loop (lastLineNum, currentComment, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
@@ -904,6 +902,18 @@ module Structure =
                     CollapseRange = range
                 })
             |> acc.AddRange
+
+            for trivia in trivia do
+                match trivia with
+                | CommentTrivia.BlockComment m when m.StartLine <> m.EndLine ->
+                    {
+                        Scope = Scope.Comment
+                        Collapse = Collapse.Same
+                        Range = m
+                        CollapseRange = m
+                    }
+                    |> acc.Add
+                | _ -> ()
 
         //=======================================//
         //     Signature File AST Traversal      //
@@ -1108,10 +1118,10 @@ module Structure =
         | ParsedInput.ImplFile file ->
             file.Contents |> List.iter parseModuleOrNamespace
             collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
-            getCommentRanges sourceLines
+            getCommentRanges file.Trivia.CodeComments sourceLines
         | ParsedInput.SigFile file ->
             file.Contents |> List.iter parseModuleOrNamespaceSigs
             collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
-            getCommentRanges sourceLines
+            getCommentRanges file.Trivia.CodeComments sourceLines
 
         acc :> seq<_>

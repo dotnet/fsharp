@@ -7,22 +7,27 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
     let getDiagnostics (fileContents: string) =
-        async {
-            let document =
-                RoslynTestHelpers.CreateSolution(fileContents)
-                |> RoslynTestHelpers.GetSingleDocument
+        let task =
+            cancellableTask {
+                let document =
+                    RoslynTestHelpers.CreateSolution(fileContents)
+                    |> RoslynTestHelpers.GetSingleDocument
 
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-            return syntacticDiagnostics.AddRange(semanticDiagnostics)
-        }
-        |> Async.RunSynchronously
+                let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+                let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                return syntacticDiagnostics.AddRange(semanticDiagnostics)
+            }
+            |> CancellableTask.start CancellationToken.None
+
+        task.Result
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
         let errors = getDiagnostics fileContents
@@ -36,17 +41,25 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
-        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+        errors.Length
+        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+
         let actualError = errors.[0]
 
         if expectedMessage.IsSome then
-            actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
+            actualError.GetMessage()
+            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
 
         Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
         let expectedStart = fileContents.IndexOf(expectedMarker)
-        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
         let expectedEnd = expectedStart + expectedMarker.Length
-        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers
         (
@@ -59,14 +72,24 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
-        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+        errors.Length
+        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+
         let actualError = errors.[0]
         Assert.Equal(expectedSeverity, actualError.Severity)
-        actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
+
+        actualError.GetMessage()
+        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
+
         let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
         let expectedEnd = fileContents.IndexOf(endMarker)
-        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
@@ -104,16 +127,6 @@ let b =
 (*start*)type(*end*)
                 """,
             expectedMessage = "Incomplete structured construct at or before this point in binding"
-        )
-
-    [<Fact>]
-    member public this.Error_Type_WithoutName() =
-        this.VerifyErrorBetweenMarkers(
-            fileContents =
-                """
-type (*start*)=(*end*)
-                """,
-            expectedMessage = "Unexpected symbol '=' in type name"
         )
 
     [<Fact>]

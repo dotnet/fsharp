@@ -6,13 +6,18 @@
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net7.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
-    <Configurations>Debug;Release;Proto</Configurations>
+    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILD_PROTO)' == 'true'">
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />

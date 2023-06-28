@@ -367,6 +367,12 @@ open Printf
     // END BOILERPLATE
 "
 
+    let StringBoilerPlateSignature =
+        "    // BEGIN BOILERPLATE
+    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
+    static member SwallowResourceText: bool with get, set
+    // END BOILERPLATE"
+
     let generateResxAndSource (fileName: string) =
         try
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
@@ -383,6 +389,7 @@ open Printf
                 )
 
             let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
+            let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
             let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
 
             let condition1 = File.Exists(outFileName)
@@ -400,7 +407,7 @@ open Printf
             if condition5 then
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
 
-                Some(fileName, outFileName, outXmlFileName)
+                Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
             else
                 printMessage
                     "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
@@ -464,12 +471,20 @@ open Printf
                 printMessage "Generating %s" outFileName
                 use outStream = File.Create outFileName
                 use out = new StreamWriter(outStream)
+                use outSignatureStream = File.Create outFileSignatureName
+                use outSignature = new StreamWriter(outSignatureStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
+                fprintfn outSignature "// This is a generated file; the original input is '%s'" fileName
                 fprintfn out "namespace %s" justFileName
+                fprintfn outSignature "namespace %s" justFileName
                 fprintfn out "%s" stringBoilerPlatePrefix
+                fprintfn outSignature "%s" stringBoilerPlatePrefix
                 fprintfn out "type internal SR private() ="
+                fprintfn outSignature "type internal SR ="
+                fprintfn outSignature "    private new: unit -> SR"
                 let theResourceName = justFileName
                 fprintfn out "%s" (StringBoilerPlate theResourceName)
+                fprintfn outSignature "%s" StringBoilerPlateSignature
 
                 printMessage "Generating resource methods for %s" outFileName
                 // gen each resource method
@@ -494,7 +509,9 @@ open Printf
 
                     formalArgs.Append ")" |> ignore
                     fprintfn out "    /// %s" str
+                    fprintfn outSignature "    /// %s" str
                     fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
+                    fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
 
                     let justPercentsFromFormatString =
                         (holes
@@ -523,7 +540,23 @@ open Printf
                         errPrefix
                         ident
                         justPercentsFromFormatString
-                        (actualArgs.ToString()))
+                        (actualArgs.ToString())
+
+                    let signatureMember =
+                        let returnType =
+                            match optErrNum with
+                            | None -> "string"
+                            | Some _ -> "int * string"
+
+                        if Array.isEmpty holes then
+                            sprintf "    static member %s: unit -> %s" ident returnType
+                        else
+                            holes
+                            |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx holeType)
+                            |> String.concat " * "
+                            |> fun parameters -> sprintf "    static member %s: %s -> %s" ident parameters returnType
+
+                    fprintfn outSignature "%s" signatureMember)
 
                 printMessage "Generating .resx for %s" outFileName
                 fprintfn out ""
@@ -531,6 +564,7 @@ open Printf
                 fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
 
                 fprintfn out "    static member RunStartupValidation() ="
+                fprintfn outSignature "    static member RunStartupValidation: unit -> unit"
 
                 stringInfos
                 |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
@@ -554,7 +588,7 @@ open Printf
                 use outXmlStream = File.Create outXmlFileName
                 xd.Save outXmlStream
                 printMessage "Done %s" outFileName
-                Some(fileName, outFileName, outXmlFileName)
+                Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
         with e ->
             PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
             None
@@ -584,7 +618,14 @@ open Printf
 
             let generatedSource, generatedResx =
                 [|
-                    for (textFile, source, resx) in generatedFiles do
+                    for (textFile, signature, source, resx) in generatedFiles do
+                        let signatureItem =
+                            let item = TaskItem(signature)
+                            item.SetMetadata("AutoGen", "true")
+                            item.SetMetadata("DesignTime", "true")
+                            item.SetMetadata("DependentUpon", resx)
+                            item :> ITaskItem
+
                         let sourceItem =
                             let item = TaskItem(source)
                             item.SetMetadata("AutoGen", "true")
@@ -598,13 +639,13 @@ open Printf
                             item.SetMetadata("SourceDocumentPath", textFile)
                             item :> ITaskItem
 
-                        yield (sourceItem, resxItem)
+                        yield ([| signatureItem; sourceItem |], resxItem)
                 |]
                 |> Array.unzip
 
             let generatedResult = (generatedFiles.Length = this.EmbeddedText.Length)
 
-            _generatedSource <- generatedSource
+            _generatedSource <- Array.collect id generatedSource
             _generatedResx <- generatedResx
             generatedResult && not this.Log.HasLoggedErrors
         with TaskFailed ->

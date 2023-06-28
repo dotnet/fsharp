@@ -157,4 +157,13 @@ type CompletionTests() =
         Assert.Equal(1, matchingCompletions.Length)
         Assert.Equal("A", matchingCompletions.[0].NameInCode)
 
-
+    [<Fact>]
+    member _.``Completions for record field with backticks`` () =
+        use script = new FSharpScript()
+        let lines = [ "type MyRec = { ``field.field``  : string }"
+                      "let a = {``field.field`` = \"\"}"
+                      "a." ]
+        let completions = script.GetCompletionItems(String.Join("\n", lines), 3, 2) |> Async.RunSynchronously
+        let matchingCompletions = completions |> Array.filter (fun d -> d.NameInList = "field.field")
+        Assert.Equal(1, matchingCompletions.Length)
+        Assert.Equal("``field.field``", matchingCompletions.[0].NameInCode)

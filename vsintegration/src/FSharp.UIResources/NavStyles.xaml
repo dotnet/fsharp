@@ -8,43 +8,43 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <SolidColorBrush x:Key="inherited_brush" Color="{Binding Path=Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Underline}}" />
-            <SolidColorBrush x:Key="inherited_semi_brush" Opacity="0.28" Color="{Binding Path=Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Underline}}" />
-            <DashStyle x:Key="dash_dashstyle" Dashes="5 5"/>
-            <DashStyle x:Key="dot_dashstyle" Dashes="1 5"/>
-            <Pen x:Key="dot_pen" DashStyle="{StaticResource dot_dashstyle}" Brush="{StaticResource inherited_brush}"/>
-            <Pen x:Key="solid_pen" Brush="{StaticResource inherited_semi_brush}"/>
-            <Pen x:Key="mouseover_pen" Brush="{StaticResource inherited_brush}"/>
-            <Pen x:Key="dash_pen" DashStyle="{StaticResource dash_dashstyle}" Brush="{StaticResource inherited_semi_brush}"/>
-            <TextDecorationCollection x:Key="solid_deco">
-                <TextDecoration PenOffset="1" Pen="{StaticResource solid_pen}"/>
-            </TextDecorationCollection>
-            <TextDecorationCollection x:Key="dash_deco">
-                <TextDecoration PenOffset="1" Pen="{StaticResource dash_pen}"/>
-            </TextDecorationCollection>
-            <TextDecorationCollection x:Key="dot_deco">
-                <TextDecoration PenOffset="1" Pen="{StaticResource dot_pen}"/>
-            </TextDecorationCollection>
-            <TextDecorationCollection x:Key="full_deco">
-                <TextDecoration PenOffset="1" Pen="{StaticResource mouseover_pen}" />
-            </TextDecorationCollection>
-            <Style x:Key="base_sourcelink" TargetType="Underline" >
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="true">
-                        <Setter Property="TextDecorations" Value="{StaticResource full_deco}"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-            <Style x:Key="solid_underline" TargetType="Underline" BasedOn="{StaticResource base_sourcelink}">
-                <Setter Property="TextDecorations" Value="{StaticResource solid_deco}"/>
-            </Style>
-            <Style x:Key="dash_underline" TargetType="Underline" BasedOn="{StaticResource base_sourcelink}">
-                <Setter Property="TextDecorations" Value="{StaticResource dash_deco}"/>
-            </Style>
-            <Style x:Key="dot_underline" TargetType="Underline" BasedOn="{StaticResource base_sourcelink}">
-                <Setter Property="TextDecorations" Value="{StaticResource dot_deco}"/>
-            </Style>
-        <Style x:Key="no_underline" TargetType="Underline" BasedOn="{StaticResource base_sourcelink}">
+        <SolidColorBrush x:Key="inherited_brush" Color="{Binding Path=Inlines.FirstInline.Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
+        <SolidColorBrush x:Key="inherited_semi_brush" Opacity="0.3" Color="{Binding Path=Inlines.FirstInline.Foreground.Color, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Hyperlink}}"/>
+        <DashStyle x:Key="dash_dashstyle" Dashes="5 5"/>
+        <DashStyle x:Key="dot_dashstyle" Dashes="1 5"/>
+        <Pen x:Key="dot_pen" DashStyle="{StaticResource dot_dashstyle}" Brush="{StaticResource inherited_brush}"/>
+        <Pen x:Key="solid_pen" Brush="{StaticResource inherited_semi_brush}"/>
+        <Pen x:Key="mouseover_pen" Brush="{StaticResource inherited_brush}"/>
+        <Pen x:Key="dash_pen" DashStyle="{StaticResource  dash_dashstyle}" Brush="{StaticResource inherited_semi_brush}"/>
+        <TextDecorationCollection x:Key="solid_deco">
+            <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource solid_pen}"/>
+        </TextDecorationCollection>
+        <TextDecorationCollection x:Key="dash_deco">
+            <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource dash_pen}"/>
+        </TextDecorationCollection>
+        <TextDecorationCollection x:Key="dot_deco">
+            <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource dot_pen}"/>
+        </TextDecorationCollection>
+        <TextDecorationCollection x:Key="full_deco">
+            <TextDecoration Location="Underline" PenOffset="1" Pen="{StaticResource mouseover_pen}" />
+        </TextDecorationCollection>
+        <Style x:Key="hyperlink_mouse_over" TargetType="Hyperlink">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter Property="TextDecorations" Value="{StaticResource full_deco}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="solid_underline" TargetType="Hyperlink" BasedOn="{StaticResource hyperlink_mouse_over}">
+            <Setter Property="TextDecorations" Value="{StaticResource solid_deco}"/>
+        </Style>
+        <Style x:Key="dash_underline" TargetType="Hyperlink" BasedOn="{StaticResource hyperlink_mouse_over}">
+            <Setter Property="TextDecorations" Value="{StaticResource dash_deco}"/>
+        </Style>
+        <Style x:Key="dot_underline" TargetType="Hyperlink" BasedOn="{StaticResource hyperlink_mouse_over}">
+            <Setter Property="TextDecorations" Value="{StaticResource dot_deco}"/>
+        </Style>
+        <Style x:Key="no_underline" TargetType="Hyperlink" BasedOn="{StaticResource hyperlink_mouse_over}">
             <Setter Property="TextDecorations" Value="{x:Null}"/>
         </Style>
     </UserControl.Resources>
