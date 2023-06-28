@@ -822,14 +822,14 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
 let callRangeIsInAnyRecRange (env: env) (callingRange: Range) =
     env.mustTailCallRanges.Values |> Seq.exists (fun recRange -> rangeContainsRange recRange callingRange)
 
-let rec allRangesOfModDef mdef =
-    let abstractSlotRangesOfTycons (tycons: Tycon list) =  
+let rec allValsAndRangesOfModDef mdef =
+    let abstractSlotValsAndRangesOfTycons (tycons: Tycon list) =  
         abstractSlotValRefsOfTycons tycons 
-        |> List.map (fun v -> v.Deref.Range)
+        |> List.map (fun v -> v.Deref, v.Deref.Range)
         
     seq { match mdef with 
           | TMDefRec(tycons = tycons; bindings = mbinds) ->
-              yield! abstractSlotRangesOfTycons tycons
+              yield! abstractSlotValsAndRangesOfTycons tycons
               for mbind in mbinds do 
                 match mbind with 
                 | ModuleOrNamespaceBinding.Binding bind ->
@@ -838,16 +838,16 @@ let rec allRangesOfModDef mdef =
                         | Expr.Lambda _ -> bind.Expr.Range
                         | Expr.TyLambda(bodyExpr = bodyExpr) -> bodyExpr.Range
                         | e -> e.Range
-                    yield r
-                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allRangesOfModDef def
+                    yield bind.Var, r
+                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndRangesOfModDef def
           | TMDefLet(binding = bind) ->
               let e = stripExpr bind.Expr
-              yield e.Range
+              yield bind.Var, e.Range
           | TMDefDo _ -> ()
           | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
-                  yield! allRangesOfModDef def
+                  yield! allValsAndRangesOfModDef def
     }
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
@@ -2735,8 +2735,8 @@ and CheckDefnInModule cenv env mdef =
     | TMDefRec(isRec, _opens, tycons, mspecs, m) -> 
         CheckNothingAfterEntryPoint cenv m
         if isRec then
-            let ranges = allRangesOfModDef mdef |> Seq.toList |> List.map Some
-            BindVals cenv env ranges (allValsOfModDef mdef |> Seq.toList)
+            let valls, ranges = allValsAndRangesOfModDef mdef |> Seq.toList |> List.unzip
+            BindVals cenv env (ranges |> List.map Some) valls
         CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env isRec) mspecs
     | TMDefLet(bind, m)  -> 
