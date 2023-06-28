@@ -5507,12 +5507,10 @@ let CheckOneImplFile
                             env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
                             implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                             isInternalTestSpanStackReferring)
-                    TailCallChecks.CheckImplFile 
-                       (g, cenv.amap, reportErrors, cenv.infoReader, 
-                        env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
-                        implFileTy, implFileContents, extraAttribs, isLastCompiland, 
-                        isInternalTestSpanStackReferring)
-                    |> ignore
+                    TailCallChecks.CheckImplFile
+                       (g, cenv.amap, reportErrors,
+                        implFileContents, extraAttribs)
+
                     hasExplicitEntryPoint, anonRecdTypes
 
                 with exn -> 

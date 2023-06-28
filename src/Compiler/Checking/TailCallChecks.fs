@@ -13,7 +13,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -43,14 +42,8 @@ type env =
       /// The bound type parameter names in scope
       boundTyparNames: string list 
       
-      /// The bound type parameters in scope
-      boundTypars: TyparMap<unit>
-
       /// The set of arguments to this method/function
       argVals: ValMap<unit>
-
-      /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
-      sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
       /// Values in this recursive scope that have been marked [<TailCall>]
       mutable mustTailCall: Zset<Val>
@@ -77,19 +70,6 @@ type env =
     } 
 
     override _.ToString() = "<env>"
-
-let BindTypar env (tp: Typar) = 
-    { env with 
-         boundTyparNames = tp.Name :: env.boundTyparNames
-         boundTypars = env.boundTypars.Add (tp, ()) } 
-
-let BindTypars g env (tps: Typar list) = 
-    let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
-    if isNil tps then env else
-    // Here we mutate to provide better names for generalized type parameters 
-    let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
-    PrettyTypes.AssignPrettyTyparNames tps nms    
-    List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
 /// byref arguments as byref returns.
@@ -135,38 +115,16 @@ let IsValRefIsDllImport g (vref:ValRef) =
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
 
-      mutable potentialUnboundUsesOfVals: StampMap<range> 
-
-      mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
-
       stackGuard: StackGuard
 
       g: TcGlobals 
 
       amap: Import.ImportMap 
 
-      /// For reading metadata
-      infoReader: InfoReader
-
-      internalsVisibleToPaths : CompilationPath list
-
-      denv: DisplayEnv 
-
-      viewCcu : CcuThunk
-
       reportErrors: bool
 
-      isLastCompiland : bool*bool
-
-      isInternalTestSpanStackReferring: bool
-
       // outputs
-      mutable usesQuotations: bool
-
-      mutable entryPointGiven: bool 
-      
-      /// Callback required for quotation generation
-      tcVal: ConstraintSolver.TcValF }
+      mutable usesQuotations: bool }
 
     override x.ToString() = "<cenv>"
 
@@ -598,8 +556,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
     | Expr.TyLambda (_, tps, _, m, bodyTy)  -> 
         CheckTyLambda cenv env expr (tps, m, bodyTy) isTailCall
 
-    | Expr.TyChoose (tps, e1, _)  -> 
-        let env = BindTypars g env tps 
+    | Expr.TyChoose (_tps, e1, _)  -> 
         CheckExprNoByrefs cenv env isTailCall e1
 
     | Expr.Match (_, _, dtree, targets, m, ty) -> 
@@ -704,8 +661,7 @@ and CheckStaticOptimization cenv env (_constraints, e2, e3, _m) =
 and CheckMethods cenv env baseValOpt (ty, methods) = 
     methods |> List.iter (CheckMethod cenv env baseValOpt ty) 
 
-and CheckMethod cenv env _baseValOpt ty (TObjExprMethod(_, _, tps, vs, body, _m)) = 
-    let env = BindTypars cenv.g env tps 
+and CheckMethod cenv env _baseValOpt ty (TObjExprMethod(_, _, _tps, vs, body, _m)) = 
     let vs = List.concat vs
     let env = BindArgVals env vs
     let env =
@@ -873,11 +829,9 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr : unit =
         CheckExprsPermitByRefLike cenv env args
         
     | TOp.Recd _, _, _ ->
-        // CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsPermitByRefLike cenv env args
 
     | _ -> 
-        // CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env args 
 
 and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isTailCall: IsTailCall) alwaysCheckNoReraise expr mOrig ety ctxt : unit =
@@ -887,14 +841,12 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
     // The valReprInfo here says we are _guaranteeing_ to compile a function value 
     // as a .NET method with precisely the corresponding argument counts. 
     match stripDebugPoints expr with
-    | Expr.TyChoose (tps, e1, m)  -> 
-        let env = BindTypars g env tps
+    | Expr.TyChoose (_tps, e1, m)  -> 
         CheckLambdas isTop memberVal cenv env inlined valReprInfo isTailCall alwaysCheckNoReraise e1 m ety ctxt
 
     | Expr.Lambda (_, _, _, _, _, m, _)  
     | Expr.TyLambda (_, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
-        let env = BindTypars g env tps 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
@@ -1105,44 +1057,28 @@ and CheckModuleSpec cenv env isRec mbind =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckImplFileContents cenv env implFileTy implFileContents  = 
-    let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
-    let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+let CheckImplFileContents cenv env implFileContents  = 
     CheckDefnInModule cenv env implFileContents
     
-let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, _extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
     let cenv = 
         { g = g  
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
-          potentialUnboundUsesOfVals = Map.empty 
-          anonRecdTypes = StampMap.Empty
           usesQuotations = false 
-          infoReader = infoReader 
-          internalsVisibleToPaths = internalsVisibleToPaths
-          amap = amap 
-          denv = denv 
-          viewCcu = viewCcu
-          isLastCompiland = isLastCompiland
-          isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          tcVal = tcValF
-          entryPointGiven = false }
+          amap = amap }
     
     let env = 
-        { sigToImplRemapInfo=[]
-          quote=false
+        { quote=false
           boundTyparNames=[]
           argVals = ValMap.Empty
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
-          boundTypars= TyparMap.Empty
           reflect=false
           external=false 
           returnScope = 0
           isInAppExpr = false
           resumableCode = Resumable.None }
 
-    CheckImplFileContents cenv env implFileTy implFileContents
-
-    cenv.entryPointGiven, cenv.anonRecdTypes
+    CheckImplFileContents cenv env implFileContents
