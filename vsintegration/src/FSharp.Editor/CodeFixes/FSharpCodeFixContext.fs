@@ -9,17 +9,14 @@ open CancellableTasks
 
 type FSharpCodeFixContext(document: Document, span: TextSpan) =
 
-    let sourceText =
-        lazy
-            (cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-                return! (document.GetTextAsync cancellationToken)
-            })
-
     member _.Document = document
     member _.Span = span
 
-    member _.GetSourceTextAsync() = sourceText.Value
+    member _.GetSourceTextAsync() = 
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            return! (document.GetTextAsync cancellationToken)
+        }
 
     member this.GetSquigglyTextAsync() =
         cancellableTask {
