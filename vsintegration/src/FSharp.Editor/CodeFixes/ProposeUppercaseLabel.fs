@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 
@@ -30,7 +31,7 @@ type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
                 if errorText.StartsWith "exception " then
                     return None
                 else
-                    let upperCased = $"{errorText[0]}".ToUpper() + errorText.Substring(1)
+                    let upperCased = string (Char.ToUpper errorText[0]) + errorText.Substring(1)
 
                     let title =
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion upperCased)
