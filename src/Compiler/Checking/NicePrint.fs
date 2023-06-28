@@ -1266,8 +1266,21 @@ module PrintTastMemberOrVals =
                 layoutTyconRef denv vref.MemberApparentEntity ^^ SepL.dot ^^ nameL
             else
                 nameL
+
+        let memberHasSameTyparNameAsParentTypeTypars =
+            let parentTyparNames =
+                vref.DeclaringEntity.TyparsNoRange
+                |> Seq.choose (fun tp -> if tp.typar_id.idText = unassignedTyparName then None else Some tp.typar_id.idText)
+                |> set
+            niceMethodTypars
+            |> Seq.exists (fun tp -> parentTyparNames.Contains tp.typar_id.idText)
+
         let typarOrderMismatch = isTyparOrderMismatch niceMethodTypars argInfos
-        let nameL = if denv.showTyparBinding || typarOrderMismatch then layoutTyparDecls denv nameL true niceMethodTypars else nameL
+        let nameL =
+            if denv.showTyparBinding || typarOrderMismatch || memberHasSameTyparNameAsParentTypeTypars then
+                layoutTyparDecls denv nameL true niceMethodTypars
+            else
+                nameL
         let nameL = layoutAccessibility denv vref.Accessibility nameL
         nameL
 
@@ -1795,7 +1808,7 @@ module TastDefinitionPrinting =
         let overallL = staticL ^^ WordL.keywordMember ^^ (nameL |> addColonL) ^^ typL
         layoutXmlDocOfEventInfo denv infoReader einfo overallL
 
-    let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) =
+    let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) : Layout list =
         let amap = infoReader.amap
 
         let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
@@ -1804,13 +1817,33 @@ module TastDefinitionPrinting =
             | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
             | _ -> false
 
+        let (|MixedAccessibilityGetterAndSetter|_|) (pinfo: PropInfo) =
+            if not (pinfo.HasGetter && pinfo.HasSetter) then
+                None
+            else
+                match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
+                | Some getValRef, Some setValRef ->
+                    if getValRef.Accessibility = setValRef.Accessibility then
+                        None
+                    else
+                        Some (getValRef, setValRef)
+                | _ -> None
+        
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
-                propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
-            else
-                propL
+            match pinfo with
+            | MixedAccessibilityGetterAndSetter(getValRef, setValRef) ->
+                let getSuffix = if pinfo.IsIndexer then emptyL else wordL (tagKeyword "with") ^^ wordL (tagText "get")
+                [
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef ^^ getSuffix
+                    PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader setValRef
+                ]
+            | _ ->
+                let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+                if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
+                    [ propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set") ]
+                else
+                    [ propL ]
         | None ->
 
             let modifierAndMember =
@@ -1822,7 +1855,7 @@ module TastDefinitionPrinting =
             let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
             let typL = layoutType denv (pinfo.GetPropertyType(amap, m))
             let overallL = modifierAndMember ^^ (nameL |> addColonL) ^^ typL
-            layoutXmlDocOfPropInfo denv infoReader pinfo overallL
+            [ layoutXmlDocOfPropInfo denv infoReader pinfo overallL ]
 
     let layoutTyconDefn (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
         let g = denv.g
@@ -1993,7 +2026,9 @@ module TastDefinitionPrinting =
     
         let propLs =
             props
-            |> List.map (fun x -> (true, x.IsStatic, x.PropertyName, 0, 0), layoutPropInfo denv infoReader m x)
+            |> List.collect (fun x ->
+                layoutPropInfo denv infoReader m x
+                |> List.map (fun layout -> (true, x.IsStatic, x.PropertyName, 0, 0), layout))
             |> List.sortBy fst
             |> List.map snd
 

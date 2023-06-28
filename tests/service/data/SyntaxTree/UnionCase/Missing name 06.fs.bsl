@@ -35,5 +35,5 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,4)-(6,5) parse error Unexpected symbol '|' in union case
-(5,6)-(5,14) parse error Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.
 (5,15)-(5,17) parse error Missing union case name
+(5,6)-(5,14) parse error Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.

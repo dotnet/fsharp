@@ -59,7 +59,21 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 ## Per-build NuGet packages
 
-Per-build [versions](https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-tools&view=versions&package=FSharp.Compiler.Service&protocolType=NuGet) of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json`
+### 7.0.40x series
+
+[FSharp.Compiler.Service 43.7.400-preview](https://dev.azure.com/dnceng/public/_artifacts/feed/dotnet7/NuGet/FSharp.Compiler.Service/versions/)
+
+```xml
+<add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json" />
+```
+
+### 8.0.10x series
+
+[FSharp.Compiler.Service 43.8.100-preview](https://dev.azure.com/dnceng/public/_artifacts/feed/dotnet8/NuGet/FSharp.Compiler.Service/versions/)
+
+```xml
+<add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json" />
+```
 
 ## Branches
 
