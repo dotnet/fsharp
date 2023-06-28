@@ -12,7 +12,7 @@ type FSharpCodeFixContext(document: Document, span: TextSpan) =
     member _.Document = document
     member _.Span = span
 
-    member _.GetSourceTextAsync() = 
+    member _.GetSourceTextAsync() =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
             return! (document.GetTextAsync cancellationToken)
