@@ -1,28 +1,27 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/ObjectExpr 01.fs", false,
-      QualifiedNameOfFile ObjectExpr 01, [], [],
+     ("/root/Expression/ObjectExpr 01.fs", false, QualifiedNameOfFile V, [], [],
       [SynModuleOrNamespace
-         ([ObjectExpr 01], false, AnonModule,
+         ([V], false, NamedModule,
           [Let
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent ([create], [], [None]), None, None,
-                     Pats [Paren (Const (Unit, (1,11--1,13)), (1,11--1,13))],
-                     None, (1,4--1,13)), None,
+                     Pats [Paren (Const (Unit, (3,11--3,13)), (3,11--3,13))],
+                     None, (3,4--3,13)), None,
                   ObjExpr
                     (LongIdent (SynLongIdent ([Object], [], [None])),
-                     Some (Const (Unit, (2,16--2,18)), None), Some (2,19--2,23),
+                     Some (Const (Unit, (4,16--4,18)), None), Some (4,19--4,23),
                      [],
                      [Member
                         (SynBinding
                            (None, Normal, false, false, [],
-                            PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((5,8), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = true
                                       IsDispatchSlot = false
@@ -35,25 +34,25 @@ ImplFile
                                   SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
-                                 ([_; ToString], [(3,18--3,19)], [None; None]),
+                                 ([_; ToString], [(5,18--5,19)], [None; None]),
                                None, None,
                                Pats
                                  [Paren
-                                    (Const (Unit, (3,27--3,29)), (3,27--3,29))],
-                               None, (3,17--3,29)), None,
+                                    (Const (Unit, (5,27--5,29)), (5,27--5,29))],
+                               None, (5,17--5,29)), None,
                             Const
-                              (String ("", Regular, (3,32--3,34)), (3,32--3,34)),
-                            (3,17--3,29), NoneAtInvisible,
-                            { LeadingKeyword = Override (3,8--3,16)
+                              (String ("", Regular, (5,32--5,34)), (5,32--5,34)),
+                            (5,17--5,29), NoneAtInvisible,
+                            { LeadingKeyword = Override (5,8--5,16)
                               InlineKeyword = None
-                              EqualsRange = Some (3,30--3,31) }), (3,8--3,34))],
+                              EqualsRange = Some (5,30--5,31) }), (5,8--5,34))],
                      [SynInterfaceImpl
                         (LongIdent (SynLongIdent ([Interface1], [], [None])),
-                         Some (4,27--4,31), [],
+                         Some (6,27--6,31), [],
                          [Member
                             (SynBinding
                                (None, Normal, false, false, [],
-                                PreXmlDoc ((5,10), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((7,10), FSharp.Compiler.Xml.XmlDocCollector),
                                 SynValData
                                   (Some
                                      { IsInstance = true
@@ -68,24 +67,24 @@ ImplFile
                                       SynArgInfo ([], false, None)), None),
                                 LongIdent
                                   (SynLongIdent
-                                     ([_; Foo1], [(5,18--5,19)], [None; None]),
+                                     ([_; Foo1], [(7,18--7,19)], [None; None]),
                                    None, None,
                                    Pats
                                      [Named
                                         (SynIdent (s, None), false, None,
-                                         (5,24--5,25))], None, (5,17--5,25)),
-                                None, Ident s, (5,17--5,25), NoneAtInvisible,
-                                { LeadingKeyword = Member (5,10--5,16)
+                                         (7,24--7,25))], None, (7,17--7,25)),
+                                None, Ident s, (7,17--7,25), NoneAtInvisible,
+                                { LeadingKeyword = Member (7,10--7,16)
                                   InlineKeyword = None
-                                  EqualsRange = Some (5,26--5,27) }),
-                             (5,10--5,29))], (4,6--5,29));
+                                  EqualsRange = Some (7,26--7,27) }),
+                             (7,10--7,29))], (6,6--7,29));
                       SynInterfaceImpl
                         (LongIdent (SynLongIdent ([Interface2], [], [None])),
-                         Some (7,27--7,31), [],
+                         Some (9,27--9,31), [],
                          [Member
                             (SynBinding
                                (None, Normal, false, false, [],
-                                PreXmlDoc ((8,10), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((10,10), FSharp.Compiler.Xml.XmlDocCollector),
                                 SynValData
                                   (Some
                                      { IsInstance = true
@@ -100,23 +99,22 @@ ImplFile
                                       SynArgInfo ([], false, None)), None),
                                 LongIdent
                                   (SynLongIdent
-                                     ([_; Foo2], [(8,18--8,19)], [None; None]),
+                                     ([_; Foo2], [(10,18--10,19)], [None; None]),
                                    None, None,
                                    Pats
                                      [Named
                                         (SynIdent (s, None), false, None,
-                                         (8,24--8,25))], None, (8,17--8,25)),
-                                None, Ident s, (8,17--8,25), NoneAtInvisible,
-                                { LeadingKeyword = Member (8,10--8,16)
+                                         (10,24--10,25))], None, (10,17--10,25)),
+                                None, Ident s, (10,17--10,25), NoneAtInvisible,
+                                { LeadingKeyword = Member (10,10--10,16)
                                   InlineKeyword = None
-                                  EqualsRange = Some (8,26--8,27) }),
-                             (8,10--8,29))], (7,6--8,29))], (2,6--2,18),
-                     (2,4--8,31)), (1,4--1,13), NoneAtLet,
-                  { LeadingKeyword = Let (1,0--1,3)
+                                  EqualsRange = Some (10,26--10,27) }),
+                             (10,10--10,29))], (9,6--10,29))], (4,6--4,18),
+                     (4,4--10,31)), (3,4--3,13), NoneAtLet,
+                  { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (1,14--1,15) })], (1,0--8,31))],
-          PreXmlDocEmpty, [], None, (1,0--9,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
-
-(1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'ObjectExpr 01' based on the file name 'ObjectExpr 01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
+                    EqualsRange = Some (3,14--3,15) })], (3,0--10,31))],
+          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
+          (1,0--10,31), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))
