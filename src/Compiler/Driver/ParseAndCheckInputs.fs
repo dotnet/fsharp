@@ -1472,8 +1472,6 @@ type NodeToTypeCheck =
     /// Even though the actual implementation file was not type-checked.
     | ArtificialImplFile of signatureFileIndex: FileIndex
 
-let folder (state: State) (Finisher (finisher = finisher)) : FinalFileResult * State = finisher state
-
 /// Typecheck a single file (or interactive entry into F# Interactive)
 /// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
 let CheckOneInputWithCallback
@@ -1539,10 +1537,6 @@ let CheckOneInputWithCallback
                     Finisher(
                         node,
                         (fun tcState ->
-                            if tcState.tcsRootSigs.ContainsKey qualNameOfFile then
-                                printfn $"{qualNameOfFile} already part of root sigs?"
-                                ()
-
                             let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
                             let tcSigEnv =
@@ -1637,6 +1631,106 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
                 tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
 
             partialResult, tcState
+
+module private TypeCheckingGraphProcessing =
+    open FSharp.Compiler.GraphChecking.GraphProcessing
+
+    // TODO Do we need to suppress some error logging if we
+    // TODO apply the same partial results multiple times?
+    // TODO Maybe we can enable logging only for the final fold
+    /// <summary>
+    /// Combine type-checking results of dependencies needed to type-check a 'higher' node in the graph
+    /// </summary>
+    /// <param name="emptyState">Initial state</param>
+    /// <param name="deps">Direct dependencies of a node</param>
+    /// <param name="transitiveDeps">Transitive dependencies of a node</param>
+    /// <param name="folder">A way to fold a single result into existing state</param>
+    let private combineResults
+        (emptyState: State)
+        (deps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (transitiveDeps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (folder: State -> Finisher<NodeToTypeCheck, State, FinalFileResult> -> State)
+        : State =
+        match deps with
+        | [||] -> emptyState
+        | _ ->
+            // Instead of starting with empty state,
+            // reuse state produced by the dependency with the biggest number of transitive dependencies.
+            // This is to reduce the number of folds required to achieve the final state.
+            let biggestDependency =
+                let sizeMetric (node: ProcessedNode<_, _>) = node.Info.TransitiveDeps.Length
+                deps |> Array.maxBy sizeMetric
+
+            let firstState = biggestDependency.Result |> fst
+
+            // Find items not already included in the state.
+            let itemsPresent =
+                set
+                    [|
+                        yield! biggestDependency.Info.TransitiveDeps
+                        yield biggestDependency.Info.Item
+                    |]
+
+            let resultsToAdd =
+                transitiveDeps
+                |> Array.filter (fun dep -> itemsPresent.Contains dep.Info.Item = false)
+                |> Array.distinctBy (fun dep -> dep.Info.Item)
+                |> Array.sortWith (fun a b ->
+                    // We preserve the order in which items are folded to the state.
+                    match a.Info.Item, b.Info.Item with
+                    | NodeToTypeCheck.PhysicalFile aIdx, NodeToTypeCheck.PhysicalFile bIdx
+                    | NodeToTypeCheck.ArtificialImplFile aIdx, NodeToTypeCheck.ArtificialImplFile bIdx -> aIdx.CompareTo bIdx
+                    | NodeToTypeCheck.PhysicalFile _, NodeToTypeCheck.ArtificialImplFile _ -> -1
+                    | NodeToTypeCheck.ArtificialImplFile _, NodeToTypeCheck.PhysicalFile _ -> 1)
+                |> Array.map (fun dep -> dep.Result |> snd)
+
+            // Fold results not already included and produce the final state
+            let state = Array.fold folder firstState resultsToAdd
+            state
+
+    /// <summary>
+    /// Process a graph of items.
+    /// A version of 'GraphProcessing.processGraph' with a signature specific to type-checking.
+    /// </summary>
+    let processTypeCheckingGraph
+        (graph: Graph<NodeToTypeCheck>)
+        (work: NodeToTypeCheck -> State -> Finisher<NodeToTypeCheck, State, FinalFileResult>)
+        (emptyState: State)
+        (ct: CancellationToken)
+        : (int * FinalFileResult) list * State =
+
+        let workWrapper
+            (getProcessedNode: NodeToTypeCheck -> ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>>)
+            (node: NodeInfo<NodeToTypeCheck>)
+            : State * Finisher<NodeToTypeCheck, State, FinalFileResult> =
+            let folder (state: State) (Finisher (finisher = finisher)) : State = finisher state |> snd
+            let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
+
+            let transitiveDeps =
+                node.TransitiveDeps
+                |> Array.except [| node.Item |]
+                |> Array.map getProcessedNode
+
+            let inputState = combineResults emptyState deps transitiveDeps folder
+
+            let singleRes = work node.Item inputState
+            let state = folder inputState singleRes
+            state, singleRes
+
+        let results = processGraph graph workWrapper ct
+
+        let finalFileResults, state: (int * FinalFileResult) list * State =
+            (([], emptyState),
+             results
+             |> Array.choose (fun (item, res) ->
+                 match item with
+                 | NodeToTypeCheck.ArtificialImplFile _ -> None
+                 | NodeToTypeCheck.PhysicalFile file -> Some(file, res)))
+            ||> Array.fold (fun (fileResults, state) (item, (_, Finisher (finisher = finisher))) ->
+                let fileResult, state = finisher state
+                (item, fileResult) :: fileResults, state)
+
+        finalFileResults, state
 
 let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
     let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
@@ -1763,7 +1857,6 @@ let CheckMultipleInputsUsingGraphMode
         Finisher(
             node,
             (fun (state: State) ->
-                printfn "Finisher for %s" input.FileName
                 let tcState, priorErrors = state
                 let (partialResult: PartialResult, tcState) = finisher tcState
                 let hasErrors = logger.ErrorCount > 0
@@ -1792,27 +1885,8 @@ let CheckMultipleInputsUsingGraphMode
 
         let state: State = tcState, priorErrors
 
-        let finalStateItemChooser node =
-            match node with
-            | NodeToTypeCheck.ArtificialImplFile _ -> None
-            | NodeToTypeCheck.PhysicalFile file -> Some file
-
-        let sortFn (a: NodeToTypeCheck) (b: NodeToTypeCheck) : int =
-            match a, b with
-            | NodeToTypeCheck.PhysicalFile aIdx, NodeToTypeCheck.PhysicalFile bIdx
-            | NodeToTypeCheck.ArtificialImplFile aIdx, NodeToTypeCheck.ArtificialImplFile bIdx -> aIdx.CompareTo bIdx
-            | NodeToTypeCheck.PhysicalFile _, NodeToTypeCheck.ArtificialImplFile _ -> -1
-            | NodeToTypeCheck.ArtificialImplFile _, NodeToTypeCheck.PhysicalFile _ -> 1
-
         let partialResults, (tcState, _) =
-            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, FinalFileResult>
-                nodeGraph
-                processFile
-                sortFn
-                folder
-                finalStateItemChooser
-                state
-                cts.Token
+            TypeCheckingGraphProcessing.processTypeCheckingGraph nodeGraph processFile state cts.Token
 
         let partialResults =
             partialResults
