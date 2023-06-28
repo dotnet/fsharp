@@ -476,11 +476,4 @@ let run() = let mutable x = 0 in foo(&x)
                         EndColumn = 36 }
               Message =
                "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
-              Range = { StartLine = 4
-                        StartColumn = 34
-                        EndLine = 4
-                        EndColumn = 41 }
-              Message =
-               "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]

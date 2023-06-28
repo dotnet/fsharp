@@ -45,10 +45,11 @@ type env =
       /// The set of arguments to this method/function
       argVals: ValMap<unit>
 
-      /// Values in this recursive scope that have been marked [<TailCall>]
-      mutable mustTailCall: Zset<Val>
+      /// Values in module that have been marked [<TailCall>]
+      mutable mustTailCall: Zset<Val> // mutable as this is updated in loops
       
-      mutable mustTailCallRanges: Map<Stamp, Range>
+      /// Recursive scopes of [<TailCall>] attributed values
+      mutable mustTailCallRanges: Map<Stamp, Range> // mutable as this is updated in loops
 
       /// Are we in a quotation?
       quote : bool 
@@ -251,7 +252,9 @@ let rec CheckExprNoByrefs cenv env (isTailCall: IsTailCall) expr =
 
 /// Check a value
 and CheckValRef (cenv: cenv) (env: env) (v: ValRef) m (_ctxt: PermitByRefExpr) (isTailCall: IsTailCall) = 
-
+    // To warn for mutually recursive calls like in the following tests:
+    // ``Warn for invalid tailcalls in rec module``
+    // ``Warn successfully for invalid tailcalls in type methods``
     if cenv.reportErrors then 
         if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
             if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No && callRangeIsInAnyRecRange env m then
@@ -269,23 +272,23 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
 
     // Some things are more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
     match expr with
-    | Expr.App (f, _fty, _tyargs, argsl, _m) ->
+    | Expr.App (f, _fty, _tyargs, argsl, m) ->
 
         if cenv.reportErrors then
             if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
                 match f with 
                 | ValUseAtApp (vref, valUseFlags) when env.mustTailCall.Contains vref.Deref ->
 
-                    let canTailCall, noTailCallBlockers = 
+                    let canTailCall = 
                         match isTailCall with 
-                        | IsTailCall.No ->
-                            false, true
+                        | IsTailCall.No ->  // an upper level has already decided that this is not in a tailcall position
+                            false
                         | IsTailCall.Yes isVoidRet -> 
                             if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
                                 let topValInfo = vref.ValReprInfo.Value
                                 let (nowArgs, laterArgs), returnTy = 
                                     let _tps, tau = destTopForallTy g topValInfo _fty
-                                    let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau _m
+                                    let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau m
                                     if argsl.Length >= curriedArgInfos.Length then
                                         (List.splitAfter curriedArgInfos.Length argsl), returnTy
                                     else
@@ -307,15 +310,15 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                                     not (IsValRefIsDllImport cenv.g vref) &&
                                     not isCCall && 
                                     not hasByrefArg
-                                noTailCallBlockers, noTailCallBlockers
+                                noTailCallBlockers  // blockers that will prevent the IL level from emmiting a tail instruction
                             else 
-                                true, true
+                                true
 
-                    if not canTailCall then
-                        if not noTailCallBlockers then
-                            warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
-                        elif (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange _m) then
-                            warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m))
+                    // warn if we call inside of recursive scope in non-tail-call manner or with tail blockers. See
+                    // ``Warn successfully in match clause``
+                    // ``Warn for byref parameters``
+                    if not canTailCall && (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange m) then
+                        warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), m))
                 | _ -> ()
     | _ -> ()
 
@@ -991,6 +994,9 @@ and CheckBindings cenv env binds =
 
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (isRec: bool) (TBind(_v, _e, _) as bind) =
+    // Check that a let binding to the result of a rec expression is not inside the rec expression
+    // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
+    // see test ``Warn successfully for rec call in binding`` for an example
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match bind.Expr with
         | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
