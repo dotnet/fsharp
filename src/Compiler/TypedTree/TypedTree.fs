@@ -4280,7 +4280,8 @@ type AnonRecdTypeInfo =
                    match tupInfo with 
                    | TupInfo.Const b -> yield (if b then 0uy else 1uy)
                    for id in sortedIds do 
-                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
+                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
+                       yield 0uy |]
         let sortedNames = Array.map textOfId sortedIds
         { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames }
 
