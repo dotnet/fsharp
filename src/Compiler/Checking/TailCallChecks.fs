@@ -496,7 +496,6 @@ and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : boo
         
         // LetRec bindings may not appear as part of resumable code (more careful work is needed to make them compilable)
         | Expr.LetRec(_bindings, bodyExpr, _range, _frees) when allowed -> 
-            errorR(Error(FSComp.SR.tcResumableCodeContainsLetRec(), expr.Range))
             CheckExprNoByrefs cenv env isTailCall bodyExpr
             true
 
@@ -768,10 +767,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr : unit =
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->           
         match ctxt with 
-        | PermitByRefExpr.YesTupleOfArgs nArity -> 
-            if cenv.reportErrors then 
-                if args.Length <> nArity then 
-                    errorR(InternalError("Tuple arity does not correspond to planned function argument arity", m))
+        | PermitByRefExpr.YesTupleOfArgs _nArity -> 
             // This tuple should not be generated. The known function arity 
             // means it just bundles arguments. 
             CheckExprsPermitByRefLike cenv env args
