@@ -5441,7 +5441,13 @@ opt_objExprInterfaces:
 objExprInterface:
   | interfaceMember appType opt_objExprBindings opt_declEnd opt_OBLOCKSEP
     { let mWithKwd, bindings, members = $3
-      SynInterfaceImpl($2, mWithKwd, bindings, members, lhs parseState) }
+      let m =
+          match List.tryLast members with
+          | None -> lhs parseState
+          | Some ms -> 
+              let mInterface = rhs parseState 1
+              mkFileIndexRange mInterface.FileIndex mInterface.Start ms.Range.End
+      SynInterfaceImpl($2, mWithKwd, bindings, members, m) }
 
 braceBarExpr:
   | STRUCT braceBarExprCore

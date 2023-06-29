@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
-        <target state="needs-review-translation">La construction 'let! ... and! ...' peut uniquement être utilisée si le générateur d'expressions de calcul définit une méthode '{0}' ou les méthodes 'MergeSource' et 'Bind' appropriées</target>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1649,7 +1649,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
-        <target state="needs-review-translation">Option non reconnue : '{0}'</target>
+        <target state="new">Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3304,7 +3304,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
-        <target state="needs-review-translation">Plusieurs accessibilités fournies pour la méthode getter ou setter de la propriété</target>
+        <target state="new">When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
