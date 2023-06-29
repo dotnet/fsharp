@@ -30,9 +30,6 @@ let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChec
 
 type env = 
     { 
-      /// The set of arguments to this method/function
-      argVals: ValMap<unit>
-
       /// Values in module that have been marked [<TailCall>]
       mutable mustTailCall: Zset<Val> // mutable as this is updated in loops
       
@@ -47,11 +44,6 @@ type env =
     } 
 
     override _.ToString() = "<env>"
-
-/// Set the set of vals which are arguments in the active lambda. We are allowed to return 
-/// byref arguments as byref returns.
-let BindArgVals env (vs: Val list) = 
-    { env with argVals = ValMap.OfList (List.map (fun v -> (v, ())) vs) }
 
 let (|ValUseAtApp|_|) e = 
      match e with 
@@ -535,9 +527,7 @@ and CheckStaticOptimization cenv env (_constraints, e2, e3, _m) =
 and CheckMethods cenv env baseValOpt (ty, methods) = 
     methods |> List.iter (CheckMethod cenv env baseValOpt ty) 
 
-and CheckMethod cenv env _baseValOpt _ty (TObjExprMethod(_, _, _tps, vs, body, _m)) = 
-    let vs = List.concat vs
-    let env = BindArgVals env vs
+and CheckMethod cenv env _baseValOpt _ty (TObjExprMethod(_, _, _tps, _vs, body, _m)) = 
     CheckExpr cenv env body PermitByRefExpr.YesReturnableNonLocal IsTailCall.No |> ignore
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
@@ -718,7 +708,6 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
-        let env = BindArgVals env restArgs
 
         match memInfo with 
         | None -> ()
@@ -933,7 +922,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
     
     let env = 
         { quote=false
-          argVals = ValMap.Empty
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
           reflect=false }
