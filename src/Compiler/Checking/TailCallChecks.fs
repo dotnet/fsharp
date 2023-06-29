@@ -50,9 +50,6 @@ type env =
 
       /// Current return scope of the expr.
       returnScope : int 
-      
-      /// Are we in an app expression (Expr.App)?
-      isInAppExpr: bool
     } 
 
     override _.ToString() = "<env>"
@@ -488,8 +485,6 @@ and CheckFSharpBaseCall cenv env _expr (v, f, _fty, _tyargs, baseVal, rest, m) :
     if memberInfo.MemberFlags.IsDispatchSlot then
         ()
     else         
-        let env = { env with isInAppExpr = true }
-
         CheckValRef cenv env v m PermitByRefExpr.No IsTailCall.No
         CheckValRef cenv env baseVal m PermitByRefExpr.No IsTailCall.No
         CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f) IsTailCall.No
@@ -505,9 +500,6 @@ and CheckApplication cenv env expr (f, _tyargs, argsl, m) ctxt (isTailCall: IsTa
     let g = cenv.g
 
     let returnTy = tyOfExpr g expr
-
-    let env = { env with isInAppExpr = true }
-
     CheckExprNoByrefs cenv env isTailCall f
 
     let hasReceiver =
@@ -952,7 +944,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
           reflect=false
-          returnScope = 0
-          isInAppExpr = false }
+          returnScope = 0 }
 
     CheckImplFileContents cenv env implFileContents
