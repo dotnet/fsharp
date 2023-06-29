@@ -27,10 +27,10 @@ let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChec
 type env = 
     { 
       /// Values in module that have been marked [<TailCall>]
-      mutable mustTailCall: Zset<Val> // mutable as this is updated in loops
+      mustTailCall: Zset<Val>
       
-      /// Recursive scopes of [<TailCall>] attributed values
-      mutable mustTailCallExprs: Map<Stamp, Expr> // mutable as this is updated in loops
+      /// Recursive expressions of [<TailCall>] attributed values
+      mustTailCallExprs: Map<Stamp, Expr>
     } 
 
     override _.ToString() = "<env>"
@@ -807,54 +807,64 @@ and CheckModuleSpec cenv env isRec mbind =
     | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
         CheckDefnInModule cenv env rhs 
 
-let rec CollectCheckDefnsInModule cenv env mdefs = 
-    for mdef in mdefs do
-        CollectCheckDefnInModule cenv env mdef
-
-and CollectCheckDefnInModule cenv env mdef = 
+let rec CollectCheckDefnsInModule cenv mdefs mustTailCall mustTailCallExpr =
+    List.fold (fun (mustTailCall, mustTailCallExpr) mdef ->
+        CollectCheckDefnInModule cenv mdef mustTailCall mustTailCallExpr
+    ) (mustTailCall, mustTailCallExpr) mdefs
+    
+and CollectCheckDefnInModule cenv mdef (mustTailCall: Zset<Val>) (mustTailCallExpr: Map<Stamp, Expr>) = 
     match mdef with 
-    | TMDefRec(isRec, _opens, _tycons, mspecs, _m) -> 
-        if isRec then
-            let vallsAndExprs = allValsAndExprsOfModDef mdef
-            for (v, e) in vallsAndExprs do
-                if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
-                    env.mustTailCall <- Zset.add v env.mustTailCall
-                    env.mustTailCallExprs <- Map.add v.Stamp e env.mustTailCallExprs
-        List.iter (CollectCheckModuleSpec cenv env isRec) mspecs
+    | TMDefRec(isRec, _opens, _tycons, mspecs, _m) ->
+        let mustTailCall'', mustTailCallExprs'' =
+            if isRec then
+                let vallsAndExprs = allValsAndExprsOfModDef mdef
+                
+                let mustTailCall', mustTailCallExpr' =
+                    Seq.fold (fun (mustTailCall, mustTailCallExpr) (v: Val, e) ->
+                        if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                            let newSet = Zset.add v mustTailCall
+                            let newMap = Map.add v.Stamp e mustTailCallExpr
+                            (newSet, newMap)
+                        else
+                            (mustTailCall, mustTailCallExpr)
+                    ) (mustTailCall, mustTailCallExpr) vallsAndExprs
+                    
+                mustTailCall', mustTailCallExpr'
+            else
+                mustTailCall, mustTailCallExpr
+        
+        List.fold (fun (mustTailCall, mustTailCallExpr) mspec ->
+            CollectCheckModuleSpec cenv mspec mustTailCall mustTailCallExpr
+        ) (mustTailCall'', mustTailCallExprs'') mspecs
     | TMDefLet(_bind, _m)  ->
-        ()
+        mustTailCall, mustTailCallExpr
     | TMDefOpens _ ->
-        ()
+        mustTailCall, mustTailCallExpr
     | TMDefDo(_e, _m)  ->
-        () 
-    | TMDefs defs -> CollectCheckDefnsInModule cenv env defs 
+        mustTailCall, mustTailCallExpr
+    | TMDefs defs -> CollectCheckDefnsInModule cenv defs mustTailCall mustTailCallExpr
 
-and CollectCheckModuleSpec cenv env _isRec mbind =
+and CollectCheckModuleSpec cenv mbind mustTailCall mustTailCallExpr =
     match mbind with 
     | ModuleOrNamespaceBinding.Binding _bind ->
-        ()
+        mustTailCall, mustTailCallExpr
     | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
-        CollectCheckDefnInModule cenv env rhs 
+        CollectCheckDefnInModule cenv rhs mustTailCall mustTailCallExpr
 
-let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
+let CheckImplFile (g, amap, reportErrors, implFileContents) =
     let cenv = 
         { g = g  
           reportErrors = reportErrors 
           stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           amap = amap }
     
+    let mustTailCall, mustTailCallExprs = CollectCheckDefnInModule cenv implFileContents (Zset.empty valOrder) Map.Empty
+    
     let env = 
-        { mustTailCall = Zset.empty valOrder
-          mustTailCallExprs = Map<string, Expr>.Empty }
-
-    CollectCheckDefnInModule cenv env implFileContents
+        { mustTailCall = mustTailCall
+          mustTailCallExprs = mustTailCallExprs }
     
     for v in env.mustTailCall do
-        let exprOfV = env.mustTailCallExprs[v.Stamp]
-        let freshCenv = 
-            { g = g  
-              reportErrors = reportErrors 
-              stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
-              amap = amap }
-        let binding = Binding.TBind(v, exprOfV, DebugPointAtBinding.NoneAtLet)
-        CheckModuleBinding freshCenv env true binding
+        let expr = env.mustTailCallExprs[v.Stamp]
+        let binding = Binding.TBind(v, expr, DebugPointAtBinding.NoneAtLet)
+        CheckModuleBinding cenv env true binding

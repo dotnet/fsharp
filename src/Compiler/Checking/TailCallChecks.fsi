@@ -8,6 +8,5 @@ val CheckImplFile:
     g: TcGlobals *
     amap: Import.ImportMap *
     reportErrors: bool *
-    implFileContents: ModuleOrNamespaceContents *
-    _extraAttribs: 'a ->
+    implFileContents: ModuleOrNamespaceContents ->
         unit
