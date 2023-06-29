@@ -1015,7 +1015,7 @@ module NodeCode =
         }
 
 type NodeCodeBuilderBase with
-    member inline _.Source(Cancellable(cancellable): Cancellable<'T>)  =
+    member _.Source(Cancellable(cancellable): Cancellable<'T>)  =
         fun (ct: CancellationToken) ->
             let task =
                 node {
