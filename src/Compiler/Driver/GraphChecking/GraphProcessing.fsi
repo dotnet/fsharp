@@ -33,3 +33,9 @@ val processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison> :
     work: (('Item -> ProcessedNode<'Item, 'Result>) -> NodeInfo<'Item> -> 'Result) ->
     parentCt: CancellationToken ->
         ('Item * 'Result)[]
+
+
+val processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison> :
+    graph: Graph<'Item> ->
+    work: (('Item -> ProcessedNode<'Item, 'Result>) -> NodeInfo<'Item> -> Async<'Result>) ->
+        Async<('Item * 'Result)[]>

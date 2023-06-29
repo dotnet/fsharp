@@ -335,23 +335,23 @@ let ``Multi-project`` signatureFiles =
             with
                 Source = "let f (x: int) = x"
                 SignatureFile = sigFile },
-        { sourceFile "LibB" ["LibA"] with SignatureFile = sigFile }//,
-        //{ sourceFile "LibC" ["LibA"] with SignatureFile = sigFile },
-        //{ sourceFile "LibD" ["LibB"; "LibC"] with SignatureFile = sigFile }
+        { sourceFile "LibB" ["LibA"] with SignatureFile = sigFile },
+        { sourceFile "LibC" ["LibA"] with SignatureFile = sigFile },
+        { sourceFile "LibD" ["LibB"; "LibC"] with SignatureFile = sigFile }
         )
 
     let project =
         { SyntheticProject.Create("app",
-            sourceFile "A" ["LibB"]//,
-            //sourceFile "B" ["A"; "LibB"],
-            //sourceFile "C" ["A"; "LibC"],
-            //sourceFile "D" ["A"; "LibD"]
+            sourceFile "A" ["LibB"],
+            sourceFile "B" ["A"; "LibB"],
+            sourceFile "C" ["A"; "LibC"],
+            sourceFile "D" ["A"; "LibD"]
             )
           with DependsOn = [library] }
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "LibA" updatePublicSurface
-        checkFile "A" expectOk
+        checkFile "D" expectOk
     }
 
 

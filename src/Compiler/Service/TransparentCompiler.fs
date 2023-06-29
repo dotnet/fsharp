@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Diagnostics
 open System.IO
+open System.Threading
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -131,6 +132,111 @@ type internal Extensions =
     [<Extension>]
     static member Key(fileSnapshots: FSharpFileSnapshot list) =
         fileSnapshots |> List.map (fun f -> f.Key)
+
+
+module private TypeCheckingGraphProcessing =
+    open FSharp.Compiler.GraphChecking.GraphProcessing
+
+    // TODO Do we need to suppress some error logging if we
+    // TODO apply the same partial results multiple times?
+    // TODO Maybe we can enable logging only for the final fold
+    /// <summary>
+    /// Combine type-checking results of dependencies needed to type-check a 'higher' node in the graph
+    /// </summary>
+    /// <param name="emptyState">Initial state</param>
+    /// <param name="deps">Direct dependencies of a node</param>
+    /// <param name="transitiveDeps">Transitive dependencies of a node</param>
+    /// <param name="folder">A way to fold a single result into existing state</param>
+    let private combineResults
+        (emptyState: TcInfo)
+        (deps: ProcessedNode<NodeToTypeCheck, TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>> array)
+        (transitiveDeps: ProcessedNode<NodeToTypeCheck, TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>> array)
+        (folder: TcInfo -> Finisher<NodeToTypeCheck, TcInfo, PartialResult> -> TcInfo)
+        : TcInfo =
+        match deps with
+        | [||] -> emptyState
+        | _ ->
+            // Instead of starting with empty state,
+            // reuse state produced by the dependency with the biggest number of transitive dependencies.
+            // This is to reduce the number of folds required to achieve the final state.
+            let biggestDependency =
+                let sizeMetric (node: ProcessedNode<_, _>) = node.Info.TransitiveDeps.Length
+                deps |> Array.maxBy sizeMetric
+
+            let firstState = biggestDependency.Result |> fst
+
+            // Find items not already included in the state.
+            let itemsPresent =
+                set
+                    [|
+                        yield! biggestDependency.Info.TransitiveDeps
+                        yield biggestDependency.Info.Item
+                    |]
+
+            let resultsToAdd =
+                transitiveDeps
+                |> Array.filter (fun dep -> itemsPresent.Contains dep.Info.Item = false)
+                |> Array.distinctBy (fun dep -> dep.Info.Item)
+                |> Array.sortWith (fun a b ->
+                    // We preserve the order in which items are folded to the state.
+                    match a.Info.Item, b.Info.Item with
+                    | NodeToTypeCheck.PhysicalFile aIdx, NodeToTypeCheck.PhysicalFile bIdx
+                    | NodeToTypeCheck.ArtificialImplFile aIdx, NodeToTypeCheck.ArtificialImplFile bIdx -> aIdx.CompareTo bIdx
+                    | NodeToTypeCheck.PhysicalFile _, NodeToTypeCheck.ArtificialImplFile _ -> -1
+                    | NodeToTypeCheck.ArtificialImplFile _, NodeToTypeCheck.PhysicalFile _ -> 1)
+                |> Array.map (fun dep -> dep.Result |> snd)
+
+            // Fold results not already included and produce the final state
+            let state = Array.fold folder firstState resultsToAdd
+            state
+
+    /// <summary>
+    /// Process a graph of items.
+    /// A version of 'GraphProcessing.processGraph' with a signature specific to type-checking.
+    /// </summary>
+    let processTypeCheckingGraph
+        (graph: Graph<NodeToTypeCheck>)
+        (work: NodeToTypeCheck -> TcInfo -> NodeCode<Finisher<NodeToTypeCheck, TcInfo, PartialResult>>)
+        (emptyState: TcInfo)
+        : NodeCode<(int * PartialResult) list * TcInfo> = node {
+
+        let workWrapper
+            (getProcessedNode: NodeToTypeCheck -> ProcessedNode<NodeToTypeCheck, TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>>)
+            (node: NodeInfo<NodeToTypeCheck>)
+            : Async<TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>> = async {
+            let folder (state: TcInfo) (Finisher (finisher = finisher)) : TcInfo = finisher state |> snd
+            let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
+
+            let transitiveDeps =
+                node.TransitiveDeps
+                |> Array.except [| node.Item |]
+                |> Array.map getProcessedNode
+
+            let inputState = combineResults emptyState deps transitiveDeps folder
+
+            let! singleRes = work node.Item inputState |> Async.AwaitNodeCode
+            let state = folder inputState singleRes
+            return state, singleRes
+        }
+
+        let! results = processGraphAsync graph workWrapper |> NodeCode.AwaitAsync
+
+        let finalFileResults, state: (int * PartialResult) list * TcInfo =
+            (([], emptyState),
+             results
+             |> Array.choose (fun (item, res) ->
+                 match item with
+                 | NodeToTypeCheck.ArtificialImplFile _ -> None
+                 | NodeToTypeCheck.PhysicalFile file -> Some(file, res)))
+            ||> Array.fold (fun (fileResults, state) (item, (_, Finisher (finisher = finisher))) ->
+                let fileResult, state = finisher state
+                (item, fileResult) :: fileResults, state)
+
+        return finalFileResults, state
+    }
+
+open TypeCheckingGraphProcessing
+
 
 type internal TransparentCompiler
     (
@@ -886,7 +992,7 @@ type internal TransparentCompiler
                 when tcInfo.stateContainsNodes.Contains (NodeToTypeCheck.PhysicalFile (idx + 1)) -> 
                     Trace.TraceInformation $"Filtering out {node}"
                     tcInfos
-            | tcInfo :: rest, _ ->                
+            | tcInfo :: rest, _ ->
                 let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
                     tcInfo.tcState |> finisher
 
@@ -980,7 +1086,7 @@ type internal TransparentCompiler
         }
 
     // Type check everything that is needed to check given file
-    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeTcPrior' (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
 
         let priorSnapshot = projectSnapshot.UpTo file.Source.FileName
         let key = priorSnapshot.Key
@@ -1012,6 +1118,111 @@ type internal TransparentCompiler
                 let! tcInfos, graph = typeCheckLayers bootstrapInfo priorSnapshot parsedInputs dependencyFiles layers
 
                 return tcInfos.Head, graph
+            }
+        )
+
+    let processGraphNode projectSnapshot bootstrapInfo (parsedInputs: _ array) dependencyFiles (fileNode: NodeToTypeCheck) tcInfo = node {
+
+        match fileNode with
+        | NodeToTypeCheck.PhysicalFile index ->
+            let input, parseErrors, _ = parsedInputs[index]
+            let! tcIntermediate = ComputeTcIntermediate projectSnapshot dependencyFiles index (input, parseErrors) bootstrapInfo tcInfo
+            let (Finisher(node=node; finisher=finisher)) = tcIntermediate.finisher
+            return
+                Finisher(
+                    node,
+                    (fun tcInfo ->
+                        let partialResult, tcState = finisher tcInfo.tcState
+
+                        let tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile = partialResult
+
+                        let tcEnvAtEndOfFile =
+                            if keepAllBackgroundResolutions then
+                                tcEnv
+                            else
+                                tcState.TcEnvFromImpls
+
+                        partialResult,
+                        { tcInfo with
+                            tcState = tcState
+                            tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                            topAttribs = Some topAttribs
+                            tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
+                            tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
+                            latestCcuSigForFile = Some ccuSigForFile
+                            graphNode = Some node
+                            stateContainsNodes = tcInfo.stateContainsNodes |> Set.add node
+                        } ))
+
+        | NodeToTypeCheck.ArtificialImplFile index ->
+            return
+                Finisher(
+                    fileNode,
+                    (fun tcInfo ->
+
+                        let parsedInput, _parseErrors, _ = parsedInputs[index]
+                        let prefixPathOpt = None
+                        // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                        let partialResult, tcState = 
+                            AddSignatureResultToTcImplEnv
+                                (bootstrapInfo.TcImports,
+                                    bootstrapInfo.TcGlobals,
+                                    prefixPathOpt,
+                                    TcResultsSink.NoSink,
+                                    tcInfo.tcState,
+                                    parsedInput)
+                                tcInfo.tcState
+
+
+                        let tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile = partialResult
+
+                        let tcEnvAtEndOfFile =
+                            if keepAllBackgroundResolutions then
+                                tcEnv
+                            else
+                                tcState.TcEnvFromImpls
+
+                        partialResult,
+                        { tcInfo with
+                            tcState = tcState
+                            tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                            topAttribs = Some topAttribs
+                            latestCcuSigForFile = Some ccuSigForFile
+                            graphNode = Some fileNode
+                            stateContainsNodes = tcInfo.stateContainsNodes |> Set.add fileNode
+                        } ))
+
+    }
+
+    // Type check everything that is needed to check given file
+    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+
+        let priorSnapshot = projectSnapshot.UpTo file.Source.FileName
+        let key = priorSnapshot.Key
+
+        TcPriorCache.Get(
+            key,
+            node {
+                use _ =
+                    Activity.start "ComputeTcPrior" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName |]
+
+                // parse required files
+                let files =
+                    seq {
+                        yield! bootstrapInfo.SourceFiles |> Seq.takeWhile ((<>) file)
+                        file
+                    }
+
+                let! parsedInputs = files |> Seq.map (ComputeParseFile bootstrapInfo) |> NodeCode.Parallel
+
+                let! graph, dependencyFiles =
+                    ComputeDependencyGraphForFile priorSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
+
+
+
+                let! _results, tcInfo = processTypeCheckingGraph graph (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles) bootstrapInfo.InitialTcInfo
+
+                return tcInfo, dependencyFiles
             }
         )
 
@@ -1047,54 +1258,6 @@ type internal TransparentCompiler
     let emptyParseResult fileName diagnostics =
         let parseTree = EmptyParsedInput(fileName, (false, false))
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
-
-    let ComputeParseAndCheckFileInProject' (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
-        let key = fileName, projectSnapshot.Key
-
-        ParseAndCheckFileInProjectCache.Get(
-            key,
-            node {
-
-                use _ =
-                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-
-                match! ComputeBootstrapInfo projectSnapshot with
-                | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
-
-                | Some bootstrapInfo, creationDiags ->
-
-                    let! parseResults, sourceText = getParseResult bootstrapInfo creationDiags fileName
-
-                    let file = bootstrapInfo.GetFile fileName
-                    let! tcInfo, _ = ComputeTcPrior file bootstrapInfo projectSnapshot
-
-                    let! checkResults =
-                        FSharpCheckFileResults.CheckOneFile(
-                            parseResults,
-                            sourceText,
-                            fileName,
-                            projectSnapshot.ProjectFileName,
-                            bootstrapInfo.TcConfig,
-                            bootstrapInfo.TcGlobals,
-                            bootstrapInfo.TcImports,
-                            tcInfo.tcState,
-                            tcInfo.moduleNamesDict,
-                            bootstrapInfo.LoadClosure,
-                            tcInfo.TcDiagnostics,
-                            projectSnapshot.IsIncompleteTypeCheckEnvironment,
-                            projectSnapshot.ToOptions(),
-                            None,
-                            Array.ofList tcInfo.tcDependencyFiles,
-                            creationDiags,
-                            parseResults.Diagnostics,
-                            keepAssemblyContents,
-                            suggestNamesForErrors
-                        )
-                        |> NodeCode.FromCancellable
-
-                    return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
-            }
-        )
 
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         let key = fileName, projectSnapshot.Key
@@ -1207,19 +1370,11 @@ type internal TransparentCompiler
                 let! graph, dependencyFiles =
                     ComputeDependencyGraphForProject projectSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
 
-                // layers that can be processed in parallel
-                let layers = Graph.leafSequence graph |> Seq.toList
+                //// layers that can be processed in parallel
+                //let layers = Graph.leafSequence graph |> Seq.toList
 
-                let! tcInfos, _ = typeCheckLayers bootstrapInfo projectSnapshot parsedInputs dependencyFiles layers
-
-                return
-                    tcInfos
-                    |> List.filter (function
-                        | {
-                              graphNode = Some (NodeToTypeCheck.PhysicalFile _)
-                          } -> true
-                        | _ -> false)
-                    |> List.rev
+                //let! tcInfos, _ = typeCheckLayers bootstrapInfo projectSnapshot parsedInputs dependencyFiles layers
+                return! processTypeCheckingGraph graph (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles) bootstrapInfo.InitialTcInfo
             }
         )
 
@@ -1227,20 +1382,13 @@ type internal TransparentCompiler
         ProjectExtrasCache.Get(
             projectSnapshot.Key,
             node {
-                let! tcInfos = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
                 let tcGlobals = bootstrapInfo.TcGlobals
 
-                let results =
-                    [
-                        for tcInfo in tcInfos ->
-                            tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, None, tcInfo.latestCcuSigForFile
-                    ]
-
-                // Get the state at the end of the type-checking of the last file
-                let finalInfo = List.last tcInfos
+                let results = results |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
                 // Finish the checking
                 let (_tcEnvAtEndOfLastFile, topAttrs, _mimpls, _), tcState =
