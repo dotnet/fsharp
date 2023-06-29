@@ -445,9 +445,23 @@ module rec M =
               Range = { StartLine = 6
                         StartColumn = 28
                         EndLine = 6
+                        EndColumn = 39 }
+              Message =
+               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 6
+                        StartColumn = 28
+                        EndLine = 6
                         EndColumn = 37 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 10
+                        StartColumn = 28
+                        EndLine = 10
+                        EndColumn = 39 }
+              Message =
+               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 10
                         StartColumn = 28

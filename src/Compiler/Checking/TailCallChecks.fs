@@ -4,8 +4,6 @@
 /// is complete.
 module internal FSharp.Compiler.TailCallChecks
 
-open System.Collections.Generic
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -15,8 +13,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -34,7 +30,7 @@ type env =
       mutable mustTailCall: Zset<Val> // mutable as this is updated in loops
       
       /// Recursive scopes of [<TailCall>] attributed values
-      mutable mustTailCallRanges: Map<Stamp, Range> // mutable as this is updated in loops
+      mutable mustTailCallExprs: Map<Stamp, Expr> // mutable as this is updated in loops
     } 
 
     override _.ToString() = "<env>"
@@ -76,9 +72,7 @@ let IsValRefIsDllImport g (vref:ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute 
 
 type cenv = 
-    { boundVals: Dictionary<Stamp, int> // really a hash set
-
-      stackGuard: StackGuard
+    { stackGuard: StackGuard
 
       g: TcGlobals 
 
@@ -87,21 +81,6 @@ type cenv =
       reportErrors: bool }
 
     override x.ToString() = "<cenv>"
-
-let BindVal cenv env (exprRange: Range option) (v: Val) = 
-    cenv.boundVals[v.Stamp] <- 1
-
-    if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
-        env.mustTailCall <- Zset.add v env.mustTailCall
-        match exprRange with
-        | Some r when not (env.mustTailCallRanges.ContainsKey v.Stamp) ->
-            env.mustTailCallRanges <- Map.add v.Stamp r env.mustTailCallRanges
-        | _ -> ()
-
-let BindVals cenv env (exprRanges: Range option list) vs =
-    let zipped = List.zip exprRanges vs
-    zipped
-    |> List.iter (fun (exprRange, v) -> BindVal cenv env exprRange v)
 
 //--------------------------------------------------------------------------
 // approx walk of type
@@ -171,35 +150,22 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f        
     | _  -> []
 
-let callRangeIsInAnyRecRange (env: env) (callingRange: Range) =
-    env.mustTailCallRanges.Values |> Seq.exists (fun recRange -> rangeContainsRange recRange callingRange)
-
-let rec allValsAndRangesOfModDef mdef =
-    let abstractSlotValsAndRangesOfTycons (tycons: Tycon list) =  
-        abstractSlotValRefsOfTycons tycons 
-        |> List.map (fun v -> v.Deref, v.Deref.Range)
-        
+let rec allValsAndExprsOfModDef mdef =
     seq { match mdef with 
-          | TMDefRec(tycons = tycons; bindings = mbinds) ->
-              yield! abstractSlotValsAndRangesOfTycons tycons
+          | TMDefRec(tycons = _tycons; bindings = mbinds) ->
               for mbind in mbinds do 
                 match mbind with 
                 | ModuleOrNamespaceBinding.Binding bind ->
-                    let r =
-                        match (stripExpr bind.Expr) with
-                        | Expr.Lambda _ -> bind.Expr.Range
-                        | Expr.TyLambda(bodyExpr = bodyExpr) -> bodyExpr.Range
-                        | e -> e.Range
-                    yield bind.Var, r
-                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndRangesOfModDef def
+                    yield bind.Var, bind.Expr
+                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndExprsOfModDef def
           | TMDefLet(binding = bind) ->
               let e = stripExpr bind.Expr
-              yield bind.Var, e.Range
+              yield bind.Var, e
           | TMDefDo _ -> ()
           | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
-                  yield! allValsAndRangesOfModDef def
+                  yield! allValsAndExprsOfModDef def
     }
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
@@ -213,7 +179,7 @@ and CheckValRef (cenv: cenv) (env: env) (v: ValRef) m (_ctxt: PermitByRefExpr) (
     // ``Warn successfully for invalid tailcalls in type methods``
     if cenv.reportErrors then 
         if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-            if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No && callRangeIsInAnyRecRange env m then
+            if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No then
                 warning(Error(FSComp.SR.chkNotTailRecursive(v.DisplayName), m))
 
 /// Check a use of a value
@@ -273,7 +239,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                     // warn if we call inside of recursive scope in non-tail-call manner or with tail blockers. See
                     // ``Warn successfully in match clause``
                     // ``Warn for byref parameters``
-                    if not canTailCall && (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange m) then
+                    if not canTailCall then
                         warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), m))
                 | _ -> ()
     | _ -> ()
@@ -313,7 +279,6 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (isTail
                 PermitByRefExpr.Yes
 
         CheckBinding cenv env false bindingContext bind  
-        BindVal cenv env None v
         // tailcall
         CheckExprLinear cenv env body ctxt isTailCall
 
@@ -432,12 +397,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
 and CheckStructStateMachineExpr cenv env _expr info =
 
     let (_dataTy,  
-         (moveNextThisVar, moveNextExpr), 
-         (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
-         (afterCodeThisVar, afterCodeBody)) = info
+         (_moveNextThisVar, moveNextExpr), 
+         (_setStateMachineThisVar, _setStateMachineStateVar, setStateMachineBody), 
+         (_afterCodeThisVar, afterCodeBody)) = info
 
-    let exprRanges = [None; None; None; None]
-    BindVals cenv env exprRanges [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
     CheckExprNoByrefs cenv env IsTailCall.No moveNextExpr
     CheckExprNoByrefs cenv env IsTailCall.No setStateMachineBody
     CheckExprNoByrefs cenv env IsTailCall.No afterCodeBody
@@ -492,9 +455,6 @@ and CheckMatch cenv env ctxt (dtree, targets, _m, _ty) isTailCall =
     CheckDecisionTreeTargets cenv env targets ctxt isTailCall
 
 and CheckLetRec cenv env (binds, bodyExpr) isTailCall =
-    let vals = valsOfBinds binds
-    let exprRanges = List.replicate vals.Length None
-    BindVals cenv env exprRanges vals
     CheckBindings cenv env binds
     CheckExprNoByrefs cenv env isTailCall bodyExpr
     
@@ -685,7 +645,6 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
         let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
-        let syntacticArgs = thisAndBase @ restArgs
 
         match memInfo with 
         | None -> ()
@@ -700,9 +659,6 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
             for arg in restArgs do
                 if isByrefTy g arg.Type then
                     arg.SetHasBeenReferenced()
-
-        for arg in syntacticArgs do
-            BindVal cenv env None arg
 
         // Check the body of the lambda
         if isTop && not g.compilingFSharpCore && isByrefLikeTy g m bodyTy then
@@ -750,9 +706,7 @@ and CheckDecisionTreeTargets cenv env targets ctxt (isTailCall: IsTailCall) =
     |> List.ofArray
     |> ignore
 
-and CheckDecisionTreeTarget cenv env (isTailCall: IsTailCall) ctxt (TTarget(vs, targetExpr, _)) : unit = 
-    let exprRanges = List.replicate vs.Length None
-    BindVals cenv env exprRanges vs 
+and CheckDecisionTreeTarget cenv env (isTailCall: IsTailCall) ctxt (TTarget(_vs, targetExpr, _)) : unit = 
     CheckExpr cenv env targetExpr ctxt isTailCall
 
 and CheckDecisionTree cenv env dtree =
@@ -830,13 +784,9 @@ let rec CheckDefnsInModule cenv env mdefs =
 and CheckDefnInModule cenv env mdef = 
     match mdef with 
     | TMDefRec(isRec, _opens, _tycons, mspecs, _m) -> 
-        if isRec then
-            let valls, ranges = allValsAndRangesOfModDef mdef |> Seq.toList |> List.unzip
-            BindVals cenv env (ranges |> List.map Some) valls
         List.iter (CheckModuleSpec cenv env isRec) mspecs
     | TMDefLet(bind, _m)  -> 
         CheckModuleBinding cenv env false bind 
-        BindVal cenv env (Some bind.Expr.Range) bind.Var
     | TMDefOpens _ ->
         ()
     | TMDefDo(e, _m)  -> 
@@ -853,24 +803,58 @@ and CheckDefnInModule cenv env mdef =
 and CheckModuleSpec cenv env isRec mbind =
     match mbind with 
     | ModuleOrNamespaceBinding.Binding bind ->
-        BindVals cenv env [None] (valsOfBinds [bind])
         CheckModuleBinding cenv env isRec bind
     | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
         CheckDefnInModule cenv env rhs 
 
-let CheckImplFileContents cenv env implFileContents  = 
-    CheckDefnInModule cenv env implFileContents
-    
+let rec CollectCheckDefnsInModule cenv env mdefs = 
+    for mdef in mdefs do
+        CollectCheckDefnInModule cenv env mdef
+
+and CollectCheckDefnInModule cenv env mdef = 
+    match mdef with 
+    | TMDefRec(isRec, _opens, _tycons, mspecs, _m) -> 
+        if isRec then
+            let vallsAndExprs = allValsAndExprsOfModDef mdef
+            for (v, e) in vallsAndExprs do
+                if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                    env.mustTailCall <- Zset.add v env.mustTailCall
+                    env.mustTailCallExprs <- Map.add v.Stamp e env.mustTailCallExprs
+        List.iter (CollectCheckModuleSpec cenv env isRec) mspecs
+    | TMDefLet(_bind, _m)  ->
+        ()
+    | TMDefOpens _ ->
+        ()
+    | TMDefDo(_e, _m)  ->
+        () 
+    | TMDefs defs -> CollectCheckDefnsInModule cenv env defs 
+
+and CollectCheckModuleSpec cenv env _isRec mbind =
+    match mbind with 
+    | ModuleOrNamespaceBinding.Binding _bind ->
+        ()
+    | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
+        CollectCheckDefnInModule cenv env rhs 
+
 let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
     let cenv = 
         { g = g  
           reportErrors = reportErrors 
-          boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           amap = amap }
     
     let env = 
         { mustTailCall = Zset.empty valOrder
-          mustTailCallRanges = Map<string, Range>.Empty }
+          mustTailCallExprs = Map<string, Expr>.Empty }
 
-    CheckImplFileContents cenv env implFileContents
+    CollectCheckDefnInModule cenv env implFileContents
+    
+    for v in env.mustTailCall do
+        let exprOfV = env.mustTailCallExprs[v.Stamp]
+        let freshCenv = 
+            { g = g  
+              reportErrors = reportErrors 
+              stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+              amap = amap }
+        let binding = Binding.TBind(v, exprOfV, DebugPointAtBinding.NoneAtLet)
+        CheckModuleBinding freshCenv env true binding
