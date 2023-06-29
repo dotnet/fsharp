@@ -22,13 +22,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
             if not (Char.IsWhiteSpace(ch)) then
                 pos
             else
-                loop sourceText.[pos] (pos - 1)
+                loop sourceText[pos] (pos - 1)
 
-        loop (sourceText.[span.Start - 1]) span.Start
+        loop (sourceText[span.Start - 1]) span.Start
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0010")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0010"
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
@@ -42,7 +42,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                     let document = context.Document
 
                     let! defines, langVersion =
-                        document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingFunKeywordCodeFixProvider))
+                        document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof AddMissingFunKeywordCodeFixProvider)
 
                     let! sourceText = context.GetSourceTextAsync()
                     let adjustedPosition = adjustPosition sourceText context.Span

@@ -15,9 +15,9 @@ open CancellableTasks
 type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0039"
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
