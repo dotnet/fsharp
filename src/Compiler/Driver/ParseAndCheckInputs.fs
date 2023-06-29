@@ -1537,6 +1537,7 @@ let CheckOneInputWithCallback
                     Finisher(
                         node,
                         (fun tcState ->
+                            Trace.TraceInformation $"* * * * {node} Finisher [sig]"
                             let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
                             let tcSigEnv =
@@ -1585,6 +1586,7 @@ let CheckOneInputWithCallback
                     Finisher(
                         node,
                         (fun tcState ->
+                            Trace.TraceInformation $"* * * * {node} Finisher [impl]"
                             // Check if we've already seen an implementation for this fragment
                             if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                                 errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))

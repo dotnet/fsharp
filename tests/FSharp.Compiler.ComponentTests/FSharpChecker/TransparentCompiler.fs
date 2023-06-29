@@ -335,7 +335,7 @@ let ``Multi-project`` signatureFiles =
             with
                 Source = "let f (x: int) = x"
                 SignatureFile = sigFile },
-        { sourceFile "LibB" ["LibA"] with SignatureFile = No }//,
+        { sourceFile "LibB" ["LibA"] with SignatureFile = sigFile }//,
         //{ sourceFile "LibC" ["LibA"] with SignatureFile = sigFile },
         //{ sourceFile "LibD" ["LibB"; "LibC"] with SignatureFile = sigFile }
         )

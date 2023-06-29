@@ -72,6 +72,8 @@ type internal TcInfo =
         sigNameOpt: (string * QualifiedNameOfFile) option
 
         graphNode: NodeToTypeCheck option
+
+        stateContainsNodes: Set<NodeToTypeCheck>
     }
 
     member x.TcDiagnostics = Array.concat (List.rev x.tcDiagnosticsRev)
@@ -339,6 +341,7 @@ type internal TransparentCompiler
                     tcDependencyFiles = basicDependencies
                     sigNameOpt = None
                     graphNode = None
+                    stateContainsNodes = Set.empty
                 }
 
             return tcImports, tcInfo
@@ -774,8 +777,8 @@ type internal TransparentCompiler
             let debugGraph =
                 nodeGraph
                 |> Graph.map (function
-                    | NodeToTypeCheck.PhysicalFile i -> i, fileNames[i]
-                    | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
+                    | NodeToTypeCheck.PhysicalFile i -> i, $"[{i}] {fileNames[i]}"
+                    | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF [{i}] : {fileNames[i]}")
                 |> Graph.serialiseToMermaid
 
             Trace.TraceInformation("\n" + debugGraph)
@@ -876,11 +879,14 @@ type internal TransparentCompiler
 
     let mergeIntermediateResults =
         Array.fold (fun (tcInfos: TcInfo list) (tcIntermediate: TcIntermediate) ->
-            match tcInfos with
-            | [] -> failwith "need initial tcInfo"
-            | tcInfo :: rest ->
-                let (Finisher (node = node; finisher = finisher)) = tcIntermediate.finisher
-
+            let (Finisher (node = node; finisher = finisher)) = tcIntermediate.finisher
+            match tcInfos, node with
+            | [], _ -> failwith "need initial tcInfo"
+            | tcInfo :: _, NodeToTypeCheck.ArtificialImplFile idx 
+                when tcInfo.stateContainsNodes.Contains (NodeToTypeCheck.PhysicalFile (idx + 1)) -> 
+                    Trace.TraceInformation $"Filtering out {node}"
+                    tcInfos
+            | tcInfo :: rest, _ ->                
                 let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
                     tcInfo.tcState |> finisher
 
@@ -898,6 +904,7 @@ type internal TransparentCompiler
                     tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
                     latestCcuSigForFile = Some ccuSigForFile
                     graphNode = Some node
+                    stateContainsNodes = tcInfo.stateContainsNodes |> Set.add node
                 }
                 :: tcInfo :: rest)
 
@@ -908,8 +915,17 @@ type internal TransparentCompiler
                 | [], _ -> return tcInfos
                 | _, [] -> return failwith "need initial tcInfo"
                 | layer :: rest, tcInfo :: _ ->
+                    Trace.TraceInformation $"<><><> Processing layer: %A{layer}"
                     let! results =
                         layer
+                        |> Seq.filter (function
+                        | NodeToTypeCheck.ArtificialImplFile idx ->
+                            // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results
+                            if layer.Contains(NodeToTypeCheck.PhysicalFile(idx + 1)) then
+                                Trace.TraceInformation $"Filtering out AIF [{idx}]"
+
+                            not (layer.Contains(NodeToTypeCheck.PhysicalFile(idx + 1)))
+                        | _ -> true)
                         |> Seq.map (fun fileNode ->
 
                             match fileNode with
@@ -920,6 +936,7 @@ type internal TransparentCompiler
                             | NodeToTypeCheck.ArtificialImplFile fileIndex ->
 
                                 let finisher tcState =
+                                    Trace.TraceInformation $"* * * * {fileNode} Finisher"
                                     let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
                                     let prefixPathOpt = None
                                     // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
@@ -946,13 +963,13 @@ type internal TransparentCompiler
 
                     return!
                         results
-                        |> Array.filter (function
-                            | {
-                                  finisher = Finisher(node = NodeToTypeCheck.ArtificialImplFile idx)
-                              } ->
-                                // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results
-                                not (layer.Contains(NodeToTypeCheck.PhysicalFile(idx + 1)))
-                            | _ -> true)
+                        //|> Array.filter (function
+                        //    | {
+                        //          finisher = Finisher(node = NodeToTypeCheck.ArtificialImplFile idx)
+                        //      } ->
+                        //        // When we have the actual PhysicalFile in the same layer as the corresponding ArtificialImplFile then we don't apply the artificial's file finisher because it's not needed and it would lead to doubling of the results
+                        //        not (layer.Contains(NodeToTypeCheck.PhysicalFile(idx + 1)))
+                        //    | _ -> true)
                         |> mergeIntermediateResults tcInfos
                         |> processLayer rest
             }
