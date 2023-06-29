@@ -10,7 +10,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
-open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingRecToMutuallyRecFunctions); Shared>]
 type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingConstructor>] () =
@@ -32,7 +31,7 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                         nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider)
                     )
 
-                let! sourceText = getSourceTextAsync context
+                let! sourceText = context.GetSourceTextAsync()
 
                 let funcStartPos =
                     let rec loop ch pos =

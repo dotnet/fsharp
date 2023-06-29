@@ -9,7 +9,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
-open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveReturnOrYield); Shared>]
 type internal RemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
@@ -24,8 +23,8 @@ type internal RemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
             cancellableTask {
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveReturnOrYieldCodeFixProvider)
 
-                let! sourceText = getSourceTextAsync context
-                let! errorRange = getErrorRangeAsync context
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
                 return
                     parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start

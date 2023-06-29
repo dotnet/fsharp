@@ -9,7 +9,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
-open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertToAnonymousRecord); Shared>]
 type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] () =
@@ -25,8 +24,8 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ConvertToAnonymousRecordCodeFixProvider)
-                let! sourceText = getSourceTextAsync context
-                let! errorRange = getErrorRangeAsync context
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
                 return
                     parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start

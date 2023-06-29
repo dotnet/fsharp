@@ -10,7 +10,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open CancellableTasks
-open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeOuterBindingRecursive); Shared>]
 type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] () =
@@ -24,8 +23,8 @@ type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] 
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof MakeOuterBindingRecursiveCodeFixProvider)
-                let! sourceText = getSourceTextAsync context
-                let! diagnosticRange = getErrorRangeAsync context
+                let! sourceText = context.GetSourceTextAsync()
+                let! diagnosticRange = context.GetErrorRangeAsync()
 
                 if not <| parseResults.IsPosContainedInApplication diagnosticRange.Start then
                     return None

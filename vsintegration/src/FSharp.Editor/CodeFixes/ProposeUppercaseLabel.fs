@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Diagnostics
 
 open CancellableTasks
-open FSharpCodeFixContextHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ProposeUppercaseLabel); Shared>]
 type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
@@ -25,7 +24,7 @@ type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! errorText = getSquigglyTextAsync context
+                let! errorText = context.GetSquigglyTextAsync()
 
                 // probably not the 100% robust way to do that
                 // but actually we could also just implement the code fix for this case as well
