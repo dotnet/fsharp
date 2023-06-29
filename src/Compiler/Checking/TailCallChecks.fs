@@ -35,12 +35,6 @@ type env =
       
       /// Recursive scopes of [<TailCall>] attributed values
       mutable mustTailCallRanges: Map<Stamp, Range> // mutable as this is updated in loops
-
-      /// Are we in a quotation?
-      quote : bool 
-
-      /// Are we under [<ReflectedDefinition>]?
-      reflect : bool
     } 
 
     override _.ToString() = "<env>"
@@ -179,9 +173,6 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     // step through subsumption coercions 
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f        
     | _  -> []
-
-/// Check if a function is a quotation splice operator
-let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref 
 
 let callRangeIsInAnyRecRange (env: env) (callingRange: Range) =
     env.mustTailCallRanges.Values |> Seq.exists (fun recRange -> rangeContainsRange recRange callingRange)
@@ -380,8 +371,8 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
     | Expr.Val (vref, vFlags, m) -> 
         CheckValUse cenv env (vref, vFlags, m) ctxt isTailCall
           
-    | Expr.Quote (ast, savedConv, _isFromQueryExpression, m, ty) -> 
-        CheckQuoteExpr cenv env (ast, savedConv, m, ty)
+    | Expr.Quote (_ast, _savedConv, _isFromQueryExpression, _m, _ty) -> 
+         ()
 
     | StructStateMachineExpr g info ->
         CheckStructStateMachineExpr cenv env expr info
@@ -413,10 +404,6 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
     | TypeDefOfExpr g ty when isVoidTy g ty ->
         ()
 
-    // Allow '%expr' in quotations
-    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when isSpliceOperator g vref && env.quote ->
-        CheckSpliceApplication cenv env (tinst, arg, m)
-
     // Check an application
     | Expr.App (f, _fty, tyargs, argsl, m) ->
         CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt isTailCall
@@ -444,9 +431,6 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
 
     | Expr.Link _ -> 
         failwith "Unexpected reclink"
-
-and CheckQuoteExpr cenv env (ast, _savedConv, _m, _ty) =
-    CheckExprNoByrefs cenv {env with quote=true} IsTailCall.No ast
 
 and CheckStructStateMachineExpr cenv env _expr info =
 
@@ -478,9 +462,6 @@ and CheckFSharpBaseCall cenv env _expr (v, f, _fty, _tyargs, baseVal, rest, m) :
 and CheckILBaseCall cenv env (_ilMethRef, _enclTypeInst, _methInst, _retTypes, _tyargs, baseVal, rest, m) : unit = 
     CheckValRef cenv env baseVal m PermitByRefExpr.No IsTailCall.No
     CheckExprsPermitByRefLike cenv env rest
-
-and CheckSpliceApplication cenv env (_tinst, arg, _m) = 
-    CheckExprNoByrefs cenv env IsTailCall.No arg
 
 and CheckApplication cenv env expr (f, _tyargs, argsl, m) ctxt (isTailCall: IsTailCall) : unit = 
     let g = cenv.g
@@ -802,33 +783,6 @@ and CheckDecisionTreeTest cenv env _m discrim =
 and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) : unit =
     let g = cenv.g
     let isTop = Option.isSome bind.Var.ValReprInfo
-
-    if cenv.reportErrors  then 
-
-        match v.PublicPath with
-        | None -> ()
-        | _ ->
-            if 
-              // Don't support implicit [<ReflectedDefinition>] on generated members, except the implicit members
-              // for 'let' bound functions in classes.
-              (not v.IsCompilerGenerated || v.IsIncrClassGeneratedMember) &&
-              
-              (// Check the attributes on any enclosing module
-               env.reflect || 
-               // Check the attributes on the value
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.Attribs ||
-               // Also check the enclosing type for members - for historical reasons, in the TAST member values 
-               // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
-               // on the enclosing type at this point.
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.DeclaringEntity.Attribs) then 
-
-                cenv.usesQuotations <- true
-
-                // If we've already recorded a definition then skip this 
-                match v.ReflectedDefinition with 
-                | None -> v.SetValDefn bindRhs
-                | Some _ -> ()
-
     let isTailCall = IsTailCall.YesFromVal g bind.Var
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
     CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo isTailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
@@ -904,8 +858,7 @@ and CheckModuleSpec cenv env isRec mbind =
     | ModuleOrNamespaceBinding.Binding bind ->
         BindVals cenv env [None] (valsOfBinds [bind])
         CheckModuleBinding cenv env isRec bind
-    | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
-        let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
+    | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
         CheckDefnInModule cenv env rhs 
 
 let CheckImplFileContents cenv env implFileContents  = 
@@ -921,9 +874,7 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           amap = amap }
     
     let env = 
-        { quote=false
-          mustTailCall = Zset.empty valOrder
-          mustTailCallRanges = Map<string, Range>.Empty
-          reflect=false }
+        { mustTailCall = Zset.empty valOrder
+          mustTailCallRanges = Map<string, Range>.Empty }
 
     CheckImplFileContents cenv env implFileContents
