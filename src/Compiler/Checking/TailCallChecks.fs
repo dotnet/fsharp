@@ -84,10 +84,7 @@ type cenv =
 
       amap: Import.ImportMap 
 
-      reportErrors: bool
-
-      // outputs
-      mutable usesQuotations: bool }
+      reportErrors: bool }
 
     override x.ToString() = "<cenv>"
 
@@ -870,7 +867,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
-          usesQuotations = false 
           amap = amap }
     
     let env = 
