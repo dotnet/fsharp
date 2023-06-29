@@ -5,8 +5,4 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
 val CheckImplFile:
-    g: TcGlobals *
-    amap: Import.ImportMap *
-    reportErrors: bool *
-    implFileContents: ModuleOrNamespaceContents ->
-        unit
+    g: TcGlobals * amap: Import.ImportMap * reportErrors: bool * implFileContents: ModuleOrNamespaceContents -> unit
