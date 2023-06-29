@@ -48,9 +48,6 @@ type env =
       /// Are we under [<ReflectedDefinition>]?
       reflect : bool
 
-      /// Are we in an extern declaration?
-      external : bool 
-    
       /// Current return scope of the expr.
       returnScope : int 
       
@@ -831,8 +828,6 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     let g = cenv.g
     let isTop = Option.isSome bind.Var.ValReprInfo
 
-    let env = { env with external = env.external || g.attrib_DllImportAttribute |> Option.exists (fun attr -> HasFSharpAttribute g attr v.Attribs) }
-
     if cenv.reportErrors  then 
 
         match v.PublicPath with
@@ -957,7 +952,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
           reflect=false
-          external=false 
           returnScope = 0
           isInAppExpr = false }
 
