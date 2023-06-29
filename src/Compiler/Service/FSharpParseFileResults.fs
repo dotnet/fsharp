@@ -277,6 +277,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             // Capture the body of a lambda, often nested in a call to a collection function
             | SynExpr.Lambda (body = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
+            | SynExpr.DotLambda (expr = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
             | SynExpr.Do (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             | SynExpr.Assert (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
@@ -410,6 +412,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+                    | SynBinding(expr = SynExpr.DotLambda _) when skipLambdas -> defaultTraverse binding
 
                     // Skip manually type-annotated bindings
                     | SynBinding(returnInfo = Some (SynBindingReturnInfo _)) -> defaultTraverse binding
@@ -500,6 +503,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynBinding.SynBinding (expr = expr; range = range) when Position.posEq range.Start pos ->
                         match expr with
                         | SynExpr.Lambda _ -> Some range
+                        | SynExpr.DotLambda _ -> Some range
                         | _ -> None
                     | _ -> defaultTraverse binding
             }
@@ -795,6 +799,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true resultExpr
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
+
+                        | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
 
                         | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind

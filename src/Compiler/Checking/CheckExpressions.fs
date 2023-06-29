@@ -5524,10 +5524,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         if env.NameEnv.eUnqualifiedItems |> Map.exists(fun _ itemValue -> itemValue |> function |Item.Value _ when itemValue.DisplayNameCore.StartsWith("_") -> true |_ -> false)
         then
             warning(Error(FSComp.SR.tcAmbiguousDiscardDotLambda(), trivia.UnderscoreRange))
-        let unaryArg = mkSynId m (cenv.synArgNameGenerator.New())
+        let unaryArg = mkSynId trivia.UnderscoreRange (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
         let pushedExpr = pushUnaryArg synExpr unaryArg
-        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ],[], m), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
+        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ],[], svar.Range), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv lambda
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr

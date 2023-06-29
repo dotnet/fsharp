@@ -880,6 +880,8 @@ module InterfaceStubGenerator =
 
                 | SynExpr.Lambda (body = synExpr) -> walkExpr synExpr
 
+                | SynExpr.DotLambda (expr = synExpr) -> walkExpr synExpr
+
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
                     |> List.tryPick (fun (SynMatchClause (resultExpr = e)) -> walkExpr e)

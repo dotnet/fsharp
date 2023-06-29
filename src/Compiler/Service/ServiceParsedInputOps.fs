@@ -752,6 +752,8 @@ module ParsedInput =
 
             | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
 
+            | SynExpr.DotLambda (expr = e) -> walkExprWithKind parentKind e
+
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> List.tryPick walkClause synMatchClauseList
 
             | SynExpr.Match (expr = e; clauses = synMatchClauseList) ->
@@ -1733,6 +1735,7 @@ module ParsedInput =
             | SynExpr.Lambda (args = pats; body = e) ->
                 walkSimplePats pats
                 walkExpr e
+            | SynExpr.DotLambda (expr = e) -> walkExpr e
             | SynExpr.New (_, t, e, _)
             | SynExpr.TypeTest (e, t, _)
             | SynExpr.Upcast (e, t, _)

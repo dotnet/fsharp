@@ -6,6 +6,9 @@ open Xunit
 open FSharp.Test.Compiler
 
 
+
+// range test for _.ExistingProperty.NonExistingProperty
+
 [<Fact>]
 let ``Underscore Dot ToString`` () =
     Fsx """
