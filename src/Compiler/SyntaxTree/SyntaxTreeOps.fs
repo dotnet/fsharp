@@ -98,7 +98,7 @@ let rec pushUnaryArg expr arg =
     | SynExpr.DotIndexedGet (objectExpr, indexArgs, dotRange, range) ->
         SynExpr.DotIndexedGet(pushUnaryArg objectExpr arg, indexArgs, dotRange, range)
     | _ -> expr
-// | SynExpr.App(ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1)
+
 let (|SynSingleIdent|_|) x =
     match x with
     | SynLongIdent ([ id ], _, _) -> Some id
