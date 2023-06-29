@@ -30,9 +30,6 @@ let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChec
 
 type env = 
     { 
-      /// The bound type parameter names in scope
-      boundTyparNames: string list 
-      
       /// The set of arguments to this method/function
       argVals: ValMap<unit>
 
@@ -936,7 +933,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
     
     let env = 
         { quote=false
-          boundTyparNames=[]
           argVals = ValMap.Empty
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
