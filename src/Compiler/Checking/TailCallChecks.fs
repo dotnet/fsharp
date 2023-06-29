@@ -28,15 +28,6 @@ let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChec
 // check environment
 //--------------------------------------------------------------------------
 
-[<RequireQualifiedAccess>]
-type Resumable =
-      | None
-      /// Indicates we are expecting resumable code (the body of a ResumableCode delegate or
-      /// the body of the MoveNextMethod for a state machine)
-      ///   -- allowed: are we inside the 'then' branch of an 'if __useResumableCode then ...' 
-      ///      for a ResumableCode delegate.
-      | ResumableExpr of allowed: bool
-
 type env = 
     { 
       /// The bound type parameter names in scope
@@ -65,9 +56,6 @@ type env =
       
       /// Are we in an app expression (Expr.App)?
       isInAppExpr: bool
-
-      /// Are we expecting a  resumable code block etc
-      resumableCode: Resumable
     } 
 
     override _.ToString() = "<env>"
@@ -379,97 +367,6 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (isTail
         // not a linear expression
         CheckExpr cenv env expr ctxt isTailCall
 
-/// Check a resumable code expression (the body of a ResumableCode delegate or
-/// the body of the MoveNextMethod for a state machine)
-and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : bool =    
-    let g = cenv.g
-
-    match env.resumableCode with
-    | Resumable.None ->
-        false
-    | Resumable.ResumableExpr allowed ->
-        match expr with
-        | IfUseResumableStateMachinesExpr g (thenExpr, elseExpr) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } isTailCall thenExpr 
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall elseExpr 
-            true
-
-        | ResumableEntryMatchExpr g (noneBranchExpr, someVar, someBranchExpr, _rebuild) ->
-            CheckExprNoByrefs cenv env isTailCall noneBranchExpr 
-            BindVal cenv env None someVar
-            CheckExprNoByrefs cenv env isTailCall someBranchExpr
-            true
-
-        | ResumeAtExpr g pcExpr  ->
-            CheckExprNoByrefs cenv env isTailCall pcExpr
-            true
-
-        | ResumableCodeInvoke g (_, f, args, _, _) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall f
-            for arg in args do
-                CheckExprPermitByRefLike cenv { env with resumableCode = Resumable.None } arg |> ignore
-            true
-
-        | SequentialResumableCode g (e1, e2, _m, _recreate) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr allowed } isTailCall e1
-            CheckExprNoByrefs cenv env isTailCall e2
-            true
-
-        | WhileExpr (_sp1, _sp2, guardExpr, bodyExpr, _m) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall guardExpr
-            CheckExprNoByrefs cenv env isTailCall bodyExpr
-            true
-
-        // Integer for-loops are allowed but their bodies are not currently resumable
-        | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, _m) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e1
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e2
-            BindVal cenv env None v
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e3
-            true
-
-        | TryWithExpr (_spTry, _spWith, _resTy, bodyExpr, _filterVar, filterExpr, _handlerVar, handlerExpr, _m) ->
-            CheckExprNoByrefs cenv env isTailCall bodyExpr
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall handlerExpr
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall filterExpr
-            true
-
-        | TryFinallyExpr (_sp1, _sp2, _ty, e1, e2, _m) ->
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e1
-            CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e2
-            true
-
-        | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) ->
-            targets |> Array.iter(fun (TTarget(vs, targetExpr, _)) ->
-                let exprRanges = List.replicate vs.Length None
-                BindVals cenv env exprRanges vs
-                CheckExprNoByrefs cenv env isTailCall targetExpr)
-            CheckDecisionTree cenv { env with resumableCode = Resumable.None } dtree
-            true
-
-        | Expr.Let (bind, bodyExpr, _m, _)
-                // Restriction: resumable code can't contain local constrained generic functions
-                when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
-            CheckBinding cenv { env with resumableCode = Resumable.None } false PermitByRefExpr.Yes bind
-            BindVal cenv env None bind.Var
-            CheckExprNoByrefs cenv env isTailCall bodyExpr
-            true
-        
-        // LetRec bindings may not appear as part of resumable code (more careful work is needed to make them compilable)
-        | Expr.LetRec(_bindings, bodyExpr, _range, _frees) when allowed -> 
-            CheckExprNoByrefs cenv env isTailCall bodyExpr
-            true
-
-        // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
-        | Expr.Const (Const.Zero, _, _) -> 
-            true
-
-        | Expr.DebugPoint (_, innerExpr) -> 
-            TryCheckResumableCodeConstructs cenv env innerExpr isTailCall
-
-        | _ ->
-            false
-
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCall: IsTailCall) : unit =    
     
@@ -484,15 +381,6 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
     CheckForOverAppliedExceptionRaisingPrimitive cenv env origExpr isTailCall
     let expr = NormalizeAndAdjustPossibleSubsumptionExprs g origExpr
     let expr = stripExpr expr
-
-    match TryCheckResumableCodeConstructs cenv env expr isTailCall with
-    | true -> 
-        // we've handled the special cases of resumable code and don't do other checks.
-        ()
-    | false -> 
-
-    // Handle ResumableExpr --> other expression
-    let env = { env with resumableCode = Resumable.None }
 
     match expr with
     | LinearOpExpr _ 
@@ -589,7 +477,7 @@ and CheckStructStateMachineExpr cenv env _expr info =
 
     let exprRanges = [None; None; None; None]
     BindVals cenv env exprRanges [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
-    CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } IsTailCall.No moveNextExpr
+    CheckExprNoByrefs cenv env IsTailCall.No moveNextExpr
     CheckExprNoByrefs cenv env IsTailCall.No setStateMachineBody
     CheckExprNoByrefs cenv env IsTailCall.No afterCodeBody
 
@@ -664,15 +552,9 @@ and CheckStaticOptimization cenv env (_constraints, e2, e3, _m) =
 and CheckMethods cenv env baseValOpt (ty, methods) = 
     methods |> List.iter (CheckMethod cenv env baseValOpt ty) 
 
-and CheckMethod cenv env _baseValOpt ty (TObjExprMethod(_, _, _tps, vs, body, _m)) = 
+and CheckMethod cenv env _baseValOpt _ty (TObjExprMethod(_, _, _tps, vs, body, _m)) = 
     let vs = List.concat vs
     let env = BindArgVals env vs
-    let env =
-        // Body of ResumableCode delegate
-        if isResumableCodeTy cenv.g ty then
-           { env with resumableCode = Resumable.ResumableExpr false }
-        else
-           { env with resumableCode = Resumable.None }
     CheckExpr cenv { env with returnScope = env.returnScope + 1 } body PermitByRefExpr.YesReturnableNonLocal IsTailCall.No |> ignore
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
@@ -979,13 +861,6 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     let isTailCall = IsTailCall.YesFromVal g bind.Var
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
-
-    let env = 
-        if isReturnsResumableCodeTy g v.TauType then 
-            { env with resumableCode = Resumable.ResumableExpr false } 
-        else
-            env
-
     CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo isTailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds = 
@@ -1084,7 +959,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           reflect=false
           external=false 
           returnScope = 0
-          isInAppExpr = false
-          resumableCode = Resumable.None }
+          isInAppExpr = false }
 
     CheckImplFileContents cenv env implFileContents
