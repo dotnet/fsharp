@@ -47,9 +47,6 @@ type env =
 
       /// Are we under [<ReflectedDefinition>]?
       reflect : bool
-
-      /// Current return scope of the expr.
-      returnScope : int 
     } 
 
     override _.ToString() = "<env>"
@@ -338,7 +335,7 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (isTail
             else
                 PermitByRefExpr.Yes
 
-        CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
+        CheckBinding cenv env false bindingContext bind  
         BindVal cenv env None v
         // tailcall
         CheckExprLinear cenv env body ctxt isTailCall
@@ -544,7 +541,7 @@ and CheckMethods cenv env baseValOpt (ty, methods) =
 and CheckMethod cenv env _baseValOpt _ty (TObjExprMethod(_, _, _tps, vs, body, _m)) = 
     let vs = List.concat vs
     let env = BindArgVals env vs
-    CheckExpr cenv { env with returnScope = env.returnScope + 1 } body PermitByRefExpr.YesReturnableNonLocal IsTailCall.No |> ignore
+    CheckExpr cenv env body PermitByRefExpr.YesReturnableNonLocal IsTailCall.No |> ignore
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
     l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
@@ -883,7 +880,7 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind(_v, _e, _) as bind) =
             checkTailCall false bodyExpr
         | _ -> ()
 
-    CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
+    CheckBinding cenv env true PermitByRefExpr.Yes bind |> ignore
 
 //--------------------------------------------------------------------------
 // check modules
@@ -943,7 +940,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents, _extraAttribs) =
           argVals = ValMap.Empty
           mustTailCall = Zset.empty valOrder
           mustTailCallRanges = Map<string, Range>.Empty
-          reflect=false
-          returnScope = 0 }
+          reflect=false }
 
     CheckImplFileContents cenv env implFileContents
