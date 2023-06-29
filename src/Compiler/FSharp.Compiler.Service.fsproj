@@ -415,8 +415,6 @@
     <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
     <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
     <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
-    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
-    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
     <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
