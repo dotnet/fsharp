@@ -1084,64 +1084,71 @@ module GraphNode =
 #endif
         | None -> ()
 
+    
+
+
 [<Sealed>]
 type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption<'T>, cachedResultNode: NodeCode<'T>) =
-    let mutable requestCount = 0
+    
+    static let computeValue (graphNode: GraphNode<'T>) =
+        node {
 
-    member val Computation = computation with get, set
-    member val CachedResult = cachedResult with get, set
-    member val CachedResultNode: NodeCode<'T> = cachedResultNode with get, set
+            do Interlocked.Increment(&graphNode.RequestCount) |> ignore
 
-    member val Semaphore = new SemaphoreSlim(1, 1)
+            try
+                let! ct = NodeCode.getCurrentCancellationToken ()
 
-    member this.GetOrComputeValue() =
+                // We must set 'taken' before any implicit cancellation checks
+                // occur, making sure we are under the protection of the 'try'.
+                // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
+                // implicit cancellation checks even before the try is entered, as do the
+                // de-sugaring of 'do!' and other NodeCode constructs.
+                let mutable taken = false
+
+                try
+                    do! graphNode.Semaphore.WaitAsync(ct)
+                
+                    taken <- true
+
+                    match graphNode.CachedResult with
+                    | ValueSome value ->
+                        return value
+                    | _ ->
+
+                        Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+
+                        let! res = graphNode.Computation
+                        graphNode.CachedResult <- ValueSome res
+                        graphNode.CachedResultNode <- graphNode.Computation
+                        graphNode.Computation <- Unchecked.defaultof<_>
+
+                        return res
+                finally
+                    if taken then
+                        do graphNode.Semaphore.Release() |> ignore
+            finally
+                do Interlocked.Decrement(&graphNode.RequestCount) |> ignore
+        }
+
+    [<DefaultValue>] val mutable RequestCount : int
+
+    member val private Computation : NodeCode<'T> = computation with get, set
+    member val private CachedResult = cachedResult with get, set
+    member val private CachedResultNode : NodeCode<'T> = cachedResultNode with get, set
+
+    member val private Semaphore : SemaphoreSlim = new SemaphoreSlim(1, 1)
+
+    member inline this.GetOrComputeValue() =
         // fast path
         if not (obj.ReferenceEquals(cachedResultNode, null)) then
             cachedResultNode
         else
-            node {
-                do Interlocked.Increment(&requestCount) |> ignore
-
-                try
-                    let! ct = NodeCode.getCurrentCancellationToken ()
-
-                    // We must set 'taken' before any implicit cancellation checks
-                    // occur, making sure we are under the protection of the 'try'.
-                    // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
-                    // implicit cancellation checks even before the try is entered, as do the
-                    // de-sugaring of 'do!' and other NodeCode constructs.
-                    let mutable taken = false
-
-                    try
-                        do! this.Semaphore.WaitAsync(ct)
-                        
-                        taken <- true
-
-                        match cachedResult with
-                        | ValueSome value ->
-                            return value
-                        | _ ->
-
-                            Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-
-                            let! res = this.Computation
-                            this.CachedResult <- ValueSome res
-                            this.CachedResultNode <- this.Computation
-                            this.Computation <- Unchecked.defaultof<_>
-
-                            return res
-                    finally
-                        if taken then
-                            do this.Semaphore.Release() |> ignore
-                finally
-                    do Interlocked.Decrement(&requestCount) |> ignore
-            }
-
+            computeValue this
     member _.TryPeekValue() = cachedResult
 
     member _.HasValue = cachedResult.IsSome
 
-    member _.IsComputing = requestCount > 0
+    member this.IsComputing = this.RequestCount > 0
 
     static member FromResult(result: 'T) =
         let nodeResult = NodeCode.singleton result
