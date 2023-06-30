@@ -42,16 +42,12 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-                let! sourceText = context.Document.GetTextAsync cancellationToken
-                let filePath = context.Document.FilePath
-                let spanText = sourceText.GetSubText(context.Span).ToString()
-
+                let! spanText = context.GetSquigglyTextAsync()
                 if spanText <> "=" then
                     return None
 
                 else
-                    let errorRange = RoslynHelpers.TextSpanToFSharpRange(filePath, context.Span, sourceText)
+                    let! errorRange = context.GetErrorRangeAsync()
                     let! isInRecord = errorRange |> isInRecord context.Document
 
                     if not isInRecord then
