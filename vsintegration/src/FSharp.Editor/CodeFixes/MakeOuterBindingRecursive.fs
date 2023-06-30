@@ -9,45 +9,40 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeOuterBindingRecursive); Shared>]
 type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0039"
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! parseResults =
-                context.Document.GetFSharpParseResultsAsync(nameof (MakeOuterBindingRecursiveCodeFixProvider))
-                |> liftAsync
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof MakeOuterBindingRecursiveCodeFixProvider)
+                let! sourceText = context.GetSourceTextAsync()
+                let! diagnosticRange = context.GetErrorRangeAsync()
 
-            let diagnosticRange =
-                RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+                if not <| parseResults.IsPosContainedInApplication diagnosticRange.Start then
+                    return None
+                else
+                    return
+                        parseResults.TryRangeOfNameOfNearestOuterBindingContainingPos diagnosticRange.Start
+                        |> Option.bind (fun bindingRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, bindingRange))
+                        |> Option.filter (fun bindingSpan ->
+                            sourceText
+                                .GetSubText(bindingSpan)
+                                .ContentEquals(sourceText.GetSubText context.Span))
+                        |> Option.map (fun bindingSpan ->
+                            let title =
+                                String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(bindingSpan).ToString())
 
-            do! Option.guard (parseResults.IsPosContainedInApplication diagnosticRange.Start)
-
-            let! outerBindingRange = parseResults.TryRangeOfNameOfNearestOuterBindingContainingPos diagnosticRange.Start
-            let! outerBindingNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, outerBindingRange)
-
-            // One last check to verify the names are the same
-            do!
-                Option.guard (
-                    sourceText
-                        .GetSubText(outerBindingNameSpan)
-                        .ContentEquals(sourceText.GetSubText(context.Span))
-                )
-
-            let title =
-                String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(outerBindingNameSpan).ToString())
-
-            do
-                context.RegisterFsharpFix(
-                    CodeFix.MakeOuterBindingRecursive,
-                    title,
-                    [| TextChange(TextSpan(outerBindingNameSpan.Start, 0), "rec ") |]
-                )
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                            {
+                                Name = CodeFix.MakeOuterBindingRecursive
+                                Message = title
+                                Changes = [ TextChange(TextSpan(bindingSpan.Start, 0), "rec ") ]
+                            })
+            }

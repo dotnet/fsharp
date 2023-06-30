@@ -19,12 +19,9 @@ type internal ChangeToUpcastCodeFixProvider() =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let text = sourceText.GetSubText(span).ToString()
+                let! text = context.GetSquigglyTextAsync()
 
                 // Only works if it's one or the other
                 let isDowncastOperator = text.Contains(":?>")
@@ -40,7 +37,7 @@ type internal ChangeToUpcastCodeFixProvider() =
                         else
                             text.Replace("downcast", "upcast")
 
-                    let changes = [ TextChange(span, replacement) ]
+                    let changes = [ TextChange(context.Span, replacement) ]
 
                     let title =
                         if isDowncastOperator then
