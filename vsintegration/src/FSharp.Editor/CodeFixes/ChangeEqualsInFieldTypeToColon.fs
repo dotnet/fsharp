@@ -43,6 +43,7 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! spanText = context.GetSquigglyTextAsync()
+
                 if spanText <> "=" then
                     return None
 
