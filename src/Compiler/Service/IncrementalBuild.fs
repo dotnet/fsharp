@@ -238,22 +238,16 @@ module ValueOption =
 type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
-/// Bound model of an underlying syntax and typed tree.
-type BoundModel private (
-        tcConfig: TcConfig,
-        tcGlobals,
-        tcImports: TcImports,
-        keepAssemblyContents, keepAllBackgroundResolutions,
-        keepAllBackgroundSymbolUses,
-        enableBackgroundItemKeyStoreAndSemanticClassification,
-        beforeFileChecked: Event<string>,
-        fileChecked: Event<string>,
-        prevTcInfo: TcInfo,
-        syntaxTreeOpt: SyntaxTree option,
-        ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
-    ) =
-
-    let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
+module internal BoundModel =
+    let inline getTypeCheck
+        (syntaxTree: SyntaxTree)
+        (tcGlobals: TcGlobals)
+        (tcConfig: TcConfig)
+        (beforeFileChecked: Event<string>)
+        (tcImports: TcImports)
+        prevTcInfo
+        (fileChecked: Event<string>)
+        keepAllBackgroundResolutions : NodeCode<TypeCheck> =
         node {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
             use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
@@ -302,6 +296,22 @@ type BoundModel private (
                 }
             return tcInfo, sink, implFile, fileName, newErrors
         }
+
+/// Bound model of an underlying syntax and typed tree.
+type BoundModel private (
+        tcConfig: TcConfig,
+        tcGlobals,
+        tcImports: TcImports,
+        keepAssemblyContents, keepAllBackgroundResolutions,
+        keepAllBackgroundSymbolUses,
+        enableBackgroundItemKeyStoreAndSemanticClassification,
+        beforeFileChecked: Event<string>,
+        fileChecked: Event<string>,
+        prevTcInfo: TcInfo,
+        syntaxTreeOpt: SyntaxTree option,
+        ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
+    ) =
+
 
     let skippedImplemetationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
@@ -367,7 +377,12 @@ type BoundModel private (
         } |> GraphNode
 
     let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
-    let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
+    let typeCheckNode = 
+        syntaxTreeOpt
+        |> Option.map 
+            (fun syntaxTree -> 
+                BoundModel.getTypeCheck syntaxTree tcGlobals tcConfig beforeFileChecked tcImports prevTcInfo fileChecked keepAllBackgroundResolutions)
+        |> Option.defaultValue defaultTypeCheck |> GraphNode
     let tcInfoExtras = getTcInfoExtras typeCheckNode
     let diagnostics  =
         node {
@@ -391,7 +406,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> NodeCode.startAsTaskWithoutCancellation |> ignore
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics

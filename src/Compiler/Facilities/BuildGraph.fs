@@ -967,17 +967,24 @@ module NodeCode =
     let inline startWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = ctask CancellationToken.None
 
     let inline runSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = ctask ct
+        let task = start ct ctask
         task.GetAwaiter().GetResult()
 
     let inline runSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = ctask CancellationToken.None
+        let task = startWithoutCancellation ctask
         task.GetAwaiter().GetResult()
 
     let inline startAsTask ct ([<InlineIfLambda>] ctask: NodeCode<_>) = (ctask ct) :> Task
 
     let inline startAsTaskWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = (ctask CancellationToken.None) :> Task
 
+    let inline runAsTaskSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = startAsTask ct ctask
+        task.GetAwaiter().GetResult()
+
+    let inline runAsTaskSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = startAsTaskWithoutCancellation ctask
+        task.GetAwaiter().GetResult()
 
     let inline wrapThreadStaticInfo ([<InlineIfLambda>] computation: NodeCode<'T>) =
         node {
@@ -1079,25 +1086,21 @@ module GraphNode =
 
 [<Sealed>]
 type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption<'T>, cachedResultNode: NodeCode<'T>) =
-
-    let mutable computation = computation
     let mutable requestCount = 0
 
-    let mutable cachedResult = cachedResult
-    let mutable cachedResultNode: NodeCode<'T> = cachedResultNode
+    member val Computation = computation with get, set
+    member val CachedResult = cachedResult with get, set
+    member val CachedResultNode: NodeCode<'T> = cachedResultNode with get, set
 
-    let isCachedResultNodeNotNull () =
-        not (obj.ReferenceEquals(cachedResultNode, null))
+    member val Semaphore = new SemaphoreSlim(1, 1)
 
-    let semaphore = new SemaphoreSlim(1, 1)
-
-    member _.GetOrComputeValue() =
+    member this.GetOrComputeValue() =
         // fast path
-        if isCachedResultNodeNotNull () then
+        if not (obj.ReferenceEquals(cachedResultNode, null)) then
             cachedResultNode
         else
             node {
-                Interlocked.Increment(&requestCount) |> ignore
+                do Interlocked.Increment(&requestCount) |> ignore
 
                 try
                     let! ct = NodeCode.getCurrentCancellationToken ()
@@ -1110,15 +1113,9 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                     let mutable taken = false
 
                     try
-                        do!
-                            semaphore
-                                .WaitAsync(ct)
-                                .ContinueWith(
-                                    (fun _ -> taken <- true),
-                                    (TaskContinuationOptions.NotOnCanceled
-                                     ||| TaskContinuationOptions.NotOnFaulted
-                                     ||| TaskContinuationOptions.ExecuteSynchronously)
-                                )
+                        do! this.Semaphore.WaitAsync(ct)
+                        
+                        taken <- true
 
                         match cachedResult with
                         | ValueSome value ->
@@ -1127,17 +1124,17 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
 
                             Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
 
-                            let! res = computation
-                            cachedResult <- ValueSome res
-                            cachedResultNode <- computation
-                            computation <- Unchecked.defaultof<_>
+                            let! res = this.Computation
+                            this.CachedResult <- ValueSome res
+                            this.CachedResultNode <- this.Computation
+                            this.Computation <- Unchecked.defaultof<_>
 
                             return res
                     finally
                         if taken then
-                            semaphore.Release() |> ignore
+                            do this.Semaphore.Release() |> ignore
                 finally
-                    Interlocked.Decrement(&requestCount) |> ignore
+                    do Interlocked.Decrement(&requestCount) |> ignore
             }
 
     member _.TryPeekValue() = cachedResult
