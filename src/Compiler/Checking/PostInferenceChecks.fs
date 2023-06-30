@@ -2703,6 +2703,24 @@ let CheckEntityDefns cenv env tycons =
 // check modules
 //--------------------------------------------------------------------------
 
+let rec allValsAndExprsOfModDef mdef =
+    seq { match mdef with 
+          | TMDefRec(tycons = _tycons; bindings = mbinds) ->
+              for mbind in mbinds do 
+                match mbind with 
+                | ModuleOrNamespaceBinding.Binding bind ->
+                    yield bind.Var, bind.Expr
+                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndExprsOfModDef def
+          | TMDefLet(binding = bind) ->
+              let e = stripExpr bind.Expr
+              yield bind.Var, e
+          | TMDefDo _ -> ()
+          | TMDefOpens _ -> ()
+          | TMDefs defs -> 
+              for def in defs do 
+                  yield! allValsAndExprsOfModDef def
+    }
+    
 let rec CheckDefnsInModule cenv env mdefs = 
     for mdef in mdefs do
         CheckDefnInModule cenv env mdef
@@ -2715,7 +2733,23 @@ and CheckDefnInModule cenv env mdef =
     match mdef with 
     | TMDefRec(isRec, _opens, tycons, mspecs, m) -> 
         CheckNothingAfterEntryPoint cenv m
-        if isRec then BindVals cenv env (allValsOfModDef mdef |> Seq.toList)
+        let env =
+            if isRec then
+                BindVals cenv env (allValsOfModDef mdef |> Seq.toList)
+        
+                let vallsAndExprs = allValsAndExprsOfModDef mdef
+                let mustTailCall, mustTailCallExprs =
+                    Seq.fold (fun (mustTailCall, mustTailCallExpr) (v: Val, e) ->
+                        if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                            let newSet = Zset.add v mustTailCall
+                            let newMap = Map.add v.Stamp e mustTailCallExpr
+                            (newSet, newMap)
+                        else
+                            (mustTailCall, mustTailCallExpr)
+                    ) (env.mustTailCall, env.mustTailCallExprs) vallsAndExprs
+                { env with mustTailCall  = mustTailCall; mustTailCallExprs = mustTailCallExprs }
+            else
+                env
         CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env isRec) mspecs
     | TMDefLet(bind, m)  -> 
@@ -2740,78 +2774,17 @@ and CheckDefnInModule cenv env mdef =
 and CheckModuleSpec cenv env isRec mbind =
     match mbind with 
     | ModuleOrNamespaceBinding.Binding bind ->
+        let env =
+            if env.mustTailCall.Contains bind.Var then
+                env
+            else
+                { env with mustTailCall = Zset.empty valOrder; mustTailCallExprs = Map.empty }
         BindVals cenv env (valsOfBinds [bind])
         CheckModuleBinding cenv env isRec bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
-
-//--------------------------------------------------------------------------
-// collect TailCall-attributed vals
-//--------------------------------------------------------------------------
-
-let rec allValsAndExprsOfModDef mdef =
-    seq { match mdef with 
-          | TMDefRec(tycons = _tycons; bindings = mbinds) ->
-              for mbind in mbinds do 
-                match mbind with 
-                | ModuleOrNamespaceBinding.Binding bind ->
-                    yield bind.Var, bind.Expr
-                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndExprsOfModDef def
-          | TMDefLet(binding = bind) ->
-              let e = stripExpr bind.Expr
-              yield bind.Var, e
-          | TMDefDo _ -> ()
-          | TMDefOpens _ -> ()
-          | TMDefs defs -> 
-              for def in defs do 
-                  yield! allValsAndExprsOfModDef def
-    }
-
-let rec CollectCheckDefnsInModule cenv mdefs mustTailCall mustTailCallExpr =
-    List.fold (fun (mustTailCall, mustTailCallExpr) mdef ->
-        CollectCheckDefnInModule cenv mdef mustTailCall mustTailCallExpr
-    ) (mustTailCall, mustTailCallExpr) mdefs
-    
-and CollectCheckDefnInModule cenv mdef (mustTailCall: Zset<Val>) (mustTailCallExpr: Map<Stamp, Expr>) = 
-    match mdef with 
-    | TMDefRec(isRec, _opens, _tycons, mspecs, _m) ->
-        let mustTailCall'', mustTailCallExprs'' =
-            if isRec then
-                let vallsAndExprs = allValsAndExprsOfModDef mdef
-                
-                let mustTailCall', mustTailCallExpr' =
-                    Seq.fold (fun (mustTailCall, mustTailCallExpr) (v: Val, e) ->
-                        if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
-                            let newSet = Zset.add v mustTailCall
-                            let newMap = Map.add v.Stamp e mustTailCallExpr
-                            (newSet, newMap)
-                        else
-                            (mustTailCall, mustTailCallExpr)
-                    ) (mustTailCall, mustTailCallExpr) vallsAndExprs
-                    
-                mustTailCall', mustTailCallExpr'
-            else
-                mustTailCall, mustTailCallExpr
-        
-        List.fold (fun (mustTailCall, mustTailCallExpr) mspec ->
-            CollectCheckModuleSpec cenv mspec mustTailCall mustTailCallExpr
-        ) (mustTailCall'', mustTailCallExprs'') mspecs
-    | TMDefLet(_bind, _m)  ->
-        mustTailCall, mustTailCallExpr
-    | TMDefOpens _ ->
-        mustTailCall, mustTailCallExpr
-    | TMDefDo(_e, _m)  ->
-        mustTailCall, mustTailCallExpr
-    | TMDefs defs -> CollectCheckDefnsInModule cenv defs mustTailCall mustTailCallExpr
-
-and CollectCheckModuleSpec cenv mbind mustTailCall mustTailCallExpr =
-    match mbind with 
-    | ModuleOrNamespaceBinding.Binding _bind ->
-        mustTailCall, mustTailCallExpr
-    | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
-        CollectCheckDefnInModule cenv rhs mustTailCall mustTailCallExpr
 
 let CheckImplFileContents cenv env implFileTy implFileContents  = 
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
@@ -2870,15 +2843,4 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
     if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 
         viewCcu.UsesFSharp20PlusQuotations <- true
     
-    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then    
-        let mustTailCall, mustTailCallExprs = CollectCheckDefnInModule cenv implFileContents (Zset.empty valOrder) Map.Empty
-        
-        let env = 
-            { env with mustTailCall = mustTailCall; mustTailCallExprs = mustTailCallExprs }
-        
-        for v in env.mustTailCall do
-            let expr = env.mustTailCallExprs[v.Stamp]
-            let binding = Binding.TBind(v, expr, DebugPointAtBinding.NoneAtLet)
-            CheckModuleBinding cenv env true binding
-
     cenv.entryPointGiven, cenv.anonRecdTypes
