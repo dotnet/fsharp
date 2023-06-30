@@ -1460,3 +1460,91 @@ x[0].
 """
 
         VerifyCompletionListExactly(fileContents, "x[0].", [ "Foo"; "Goo"; "Equals"; "GetHashCode"; "GetType"; "ToString" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern with one field, and no valrefs other than literals`` () =
+        let fileContents =
+            """
+let logV = 1
+let [<Literal>] logLit = 1
+
+type DU = A of logField: int
+
+match A 1 with
+| A l -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern in a match clause`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * rest: Du list
+    | D of int
+
+let x du =
+    match du with
+    | C (f, [ D i; C (first = s) ]) -> ()
+    | C (rest = r) -> ()
+    | _ -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| C (f", [ "first"; "du" ], [ "rest"; "item"; "num" ])
+        VerifyCompletionList(fileContents, "| C (f, [ D i", [ "num"; "item" ], [ "rest"; "first"; "du" ])
+        VerifyCompletionList(fileContents, "| C (f, [ D i; C (first = s", [ "first"; "du" ], [ "rest"; "num" ])
+        VerifyCompletionList(fileContents, "| C (rest = r", [ "rest"; "list" ], [ "first"; "du"; "item"; "num" ])
+
+    [<Fact>]
+    let ``Completion list does not contain suggested names which are already used in the same pattern`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: string option * rest: Du list
+
+let x (du: Du list) =
+    match du with
+    | [ C (first = first); C (first = f) ] -> ()
+    | [ C (first, rest); C (f, l) ] -> ()
+    | _ -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| [ C (first = first); C (first = f", [ "option" ], [ "first" ])
+        VerifyCompletionList(fileContents, "| [ C (first, rest); C (f", [ "option" ], [ "first" ])
+        VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern in a let binding and lambda`` () =
+        let fileContents =
+            """
+type Ids = Ids of customerId: int * orderId: string option
+
+let x (Ids (c)) = ()
+let xy (Ids (c, o)) = ()
+let xyz (Ids c) = ()
+
+fun (Ids (c, o)) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "let x (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "let xy (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "let xy (Ids (c, o", [ "orderId"; "option" ], [])
+        VerifyCompletionList(fileContents, "let xyz (Ids c", [ "option" ], [ "customerId"; "orderId"; "num" ]) // option is on the list as a type
+        VerifyCompletionList(fileContents, "fun (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "fun (Ids (c, o", [ "orderId"; "option" ], [])
+
+    [<Fact>]
+    let ``Completion list does not contain suggested names in tuple deconstruction`` () =
+        let fileContents =
+            """
+match Some (1, 2) with
+| Some v -> ()
+| Some (a, b) -> ()
+| Some (c) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| Some v", [ "value" ], [])
+        VerifyCompletionList(fileContents, "| Some (a", [], [ "value" ])
+        VerifyCompletionList(fileContents, "| Some (a, b", [], [ "value" ])
+        VerifyCompletionList(fileContents, "| Some (c", [], [ "value" ])

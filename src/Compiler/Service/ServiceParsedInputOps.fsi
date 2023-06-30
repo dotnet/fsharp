@@ -23,6 +23,20 @@ type public RecordContext =
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
+type public PatternContext =
+    /// Completing pattern type (e.g. foo (x: |))
+    | Type
+
+    /// Completing union case field in a pattern (e.g. fun (Some v|) -> )
+    /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
+    | PositionalUnionCaseField of fieldIndex: int option * caseIdRange: range
+
+    /// Completing union case field in a pattern (e.g. fun (Some (Value = v|) -> )
+    | NamedUnionCaseField of fieldName: string * caseIdRange: range
+
+    | Other
+
+[<RequireQualifiedAccess>]
 type public CompletionContext =
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -44,15 +58,15 @@ type public CompletionContext =
 
     | OpenDeclaration of isOpenType: bool
 
-    /// Completing pattern type (e.g. foo (x: |))
-    | PatternType
-
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
 
     /// Completing a type abbreviation (e.g. type Long = int6|)
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
+
+    /// Completing a pattern in a match clause, member/let binding or lambda
+    | Pattern of context: PatternContext
 
 type public ModuleKind =
     { IsAutoOpen: bool

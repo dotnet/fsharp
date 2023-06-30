@@ -49,11 +49,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AbstractIL
-open System.Reflection.PortableExecutable
-open FSharp.Compiler.CreateILModule
-open FSharp.Compiler.IlxGen
-open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -937,6 +932,61 @@ type internal TypeCheckInfo
 
     let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
 
+    let CompletionItemSuggestedName displayName =
+        {
+            ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
+            MinorPriority = 0
+            Type = None
+            Kind = CompletionItemKind.SuggestedName
+            IsOwnMember = false
+            Unresolved = None
+        }
+
+    /// Check whether the suggested name is unused and add it to the list.
+    /// In the future we could use an increasing numeric suffix for conflict resolution
+    let PostProcessSuggestedPatternName (pos: pos) name list =
+        let name = String.lowerCaseFirstChar name
+
+        let unused =
+            sResolutions.CapturedNameResolutions
+            |> ResizeArray.forall (fun r ->
+                match r.Item with
+                | Item.Value vref when r.Pos.Line = pos.Line -> vref.DisplayName <> name
+                | _ -> true)
+
+        if unused then
+            CompletionItemSuggestedName name :: list
+        else
+            list
+
+    /// Suggest name based on type, add it to the list
+    let SuggestNameBasedOnType g pos ty list =
+        if isNumericType g ty then
+            PostProcessSuggestedPatternName pos "num" list
+        else
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref -> PostProcessSuggestedPatternName pos tcref.DisplayName list
+            | _ -> list
+
+    /// Suggest name based on field name and type, add it to the list
+    let SuggestNameForUnionCaseFieldPattern g pos (uci: UnionCaseInfo) indexOrName list =
+        let field =
+            match indexOrName with
+            | Choice1Of2 index ->
+                // Index is None when parentheses were not used, i.e. "| Some v ->" - suggest a name only when the case has a single field
+                match uci.UnionCase.RecdFieldsArray, index with
+                | [| field |], None -> Some field
+                | [| _ |], Some _
+                | _, None -> None
+                | arr, Some index -> arr |> Array.tryItem index
+            | Choice2Of2 name -> uci.UnionCase.RecdFieldsArray |> Array.tryFind (fun x -> x.DisplayName = name)
+
+        field
+        |> Option.map (fun f ->
+            SuggestNameBasedOnType g pos f.FormalType list
+            |> PostProcessSuggestedPatternName pos f.DisplayName)
+        |> Option.defaultValue list
+
     let getItem (x: ItemWithInst) = x.Item
 
     let GetDeclaredItems
@@ -1403,7 +1453,7 @@ type internal TypeCheckInfo
                     m)
 
             // Completion at '(x: ...)"
-            | Some CompletionContext.PatternType
+            | Some (CompletionContext.Pattern PatternContext.Type)
             // Completion at  '| Case1 of ...'
             | Some CompletionContext.UnionCaseFieldsDeclaration
             // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
@@ -1436,6 +1486,51 @@ type internal TypeCheckInfo
                         | _ -> false),
                     denv,
                     m)
+
+            | Some (CompletionContext.Pattern patternContext) ->
+                let declaredItems =
+                    GetDeclaredItems(
+                        parseResultsOpt,
+                        lineStr,
+                        origLongIdentOpt,
+                        colAtEndOfNamesAndResidue,
+                        residueOpt,
+                        lastDotPos,
+                        line,
+                        loc,
+                        filterCtors,
+                        resolveOverloads,
+                        false,
+                        getAllSymbols
+                    )
+                    |> Option.map (fun (items, denv, range) ->
+                        let filtered =
+                            items
+                            |> List.filter (fun item ->
+                                match item.Item with
+                                | Item.Value v -> v.LiteralValue.IsSome
+                                | _ -> true)
+
+                        filtered, denv, range)
+
+                let indexOrName, caseIdRange =
+                    match patternContext with
+                    | PatternContext.PositionalUnionCaseField (index, m) -> Choice1Of2 index, m
+                    | PatternContext.NamedUnionCaseField (name, m) -> Choice2Of2 name, m
+                    | PatternContext.Type // This is handled separately above
+                    | PatternContext.Other -> Choice1Of2 None, range0
+
+                if equals caseIdRange range0 then
+                    declaredItems
+                else
+                    GetCapturedNameResolutions caseIdRange.End ResolveOverloads.Yes
+                    |> ResizeArray.tryPick (fun r ->
+                        match r.Item with
+                        | Item.UnionCase (uci, _) ->
+                            let list = declaredItems |> Option.map p13 |> Option.defaultValue []
+                            Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End uci indexOrName list, r.DisplayEnv, r.Range)
+                        | _ -> None)
+                    |> Option.orElse declaredItems
 
             // Other completions
             | cc ->

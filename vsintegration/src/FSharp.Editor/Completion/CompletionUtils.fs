@@ -123,6 +123,7 @@ module internal CompletionUtils =
 
     let inline getKindPriority kind =
         match kind with
+        | CompletionItemKind.SuggestedName
         | CompletionItemKind.CustomOperation -> 0
         | CompletionItemKind.Property -> 1
         | CompletionItemKind.Field -> 2
