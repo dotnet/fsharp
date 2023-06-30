@@ -40,19 +40,19 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
             task { return () }
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-                let! sourceText = document.GetTextAsync cancellationToken
-                let filePath = document.FilePath
-                let spanText = sourceText.GetSubText(span).ToString()
+                let! sourceText = context.Document.GetTextAsync cancellationToken
+                let filePath = context.Document.FilePath
+                let spanText = sourceText.GetSubText(context.Span).ToString()
 
                 if spanText <> "=" then
                     return None
 
                 else
-                    let errorRange = RoslynHelpers.TextSpanToFSharpRange(filePath, span, sourceText)
-                    let! isInRecord = errorRange |> isInRecord document
+                    let errorRange = RoslynHelpers.TextSpanToFSharpRange(filePath, context.Span, sourceText)
+                    let! isInRecord = errorRange |> isInRecord context.Document
 
                     if not isInRecord then
                         return None
@@ -62,7 +62,7 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
                             {
                                 Name = CodeFix.ChangeEqualsInFieldTypeToColon
                                 Message = SR.ChangeEqualsInFieldTypeToColon()
-                                Changes = [ TextChange(TextSpan(span.Start, span.Length), ":") ]
+                                Changes = [ TextChange(TextSpan(context.Span.Start, context.Span.Length), ":") ]
                             }
 
                         return (Some codeFix)
