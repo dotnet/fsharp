@@ -105,6 +105,39 @@ module IncrementalBuildSyntaxTree =
 
     type ParseResult = ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 
+    let inline parseFile (source: FSharpSource) (tcConfig: TcConfig) fileName lexResourceManager isLastCompiland sourceRange (fileParsed: Event<string>) =
+           node {
+               IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+               use _ =
+                   Activity.start "IncrementalBuildSyntaxTree.parse"
+                       [|
+                           Activity.Tags.fileName, fileName
+                           Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                       |]
+
+               try
+                   let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                   // Return the disposable object that cleans up
+                   use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+                   use! text = source.GetTextContainer()
+                   let input =
+                       match text with
+                       | TextContainer.Stream(stream) ->
+                           ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
+                       | TextContainer.SourceText(sourceText) ->
+                           ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+                       | TextContainer.OnDisk ->
+                           ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
+
+                   fileParsed.Trigger fileName
+
+                   return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+               with exn ->
+                   let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
+                   System.Diagnostics.Debug.Assert(false, msg)
+                   return failwith msg
+           }
+
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
     type SyntaxTree (
@@ -135,42 +168,10 @@ module IncrementalBuildSyntaxTree =
                 )
             ), sourceRange, fileName, [||]
 
-        let parse (source: FSharpSource) =
-            node {
-                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
-                use _ =
-                    Activity.start "IncrementalBuildSyntaxTree.parse"
-                        [|
-                            Activity.Tags.fileName, fileName
-                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
-                        |]
-
-                try
-                    let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-                    // Return the disposable object that cleans up
-                    use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-                    use! text = source.GetTextContainer()
-                    let input =
-                        match text with
-                        | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
-                        | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-                        | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
-
-                    fileParsed.Trigger fileName
-
-                    return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-                with exn ->
-                    let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
-                    System.Diagnostics.Debug.Assert(false, msg)
-                    failwith msg
-                    return Unchecked.defaultof<_>
-            }
+       
 
         /// Parse the given file and return the given input.
-        member val ParseNode : GraphNode<ParseResult> = GraphNode(parse source)
+        member val ParseNode : GraphNode<ParseResult> = GraphNode(parseFile source tcConfig fileName lexResourceManager isLastCompiland sourceRange fileParsed)
 
         member _.Invalidate() =
             SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature)
