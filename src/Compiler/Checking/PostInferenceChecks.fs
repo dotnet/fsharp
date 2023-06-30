@@ -85,10 +85,11 @@ type env =
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
-      /// Values in this recursive scope that have been marked [<TailCall>]
-      mutable mustTailCall: Zset<Val>
+      /// Values in module that have been marked [<TailCall>]
+      mustTailCall: Zset<Val>
       
-      mutable mustTailCallRanges: Map<Stamp, Range>
+      /// Recursive expressions of [<TailCall>] attributed values
+      mustTailCallExprs: Map<Stamp, Expr>
 
       /// Are we in a quotation?
       quote : bool 
@@ -337,18 +338,11 @@ let LimitVal cenv (v: Val) limit =
     if not v.IgnoresByrefScope then
         cenv.limitVals[v.Stamp] <- limit
 
-let BindVal cenv env (exprRange: Range option) (v: Val) = 
+let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
 
-    if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
-        env.mustTailCall <- Zset.add v env.mustTailCall
-        match exprRange with
-        | Some r when not (env.mustTailCallRanges.ContainsKey v.Stamp) ->
-            env.mustTailCallRanges <- Map.add v.Stamp r env.mustTailCallRanges
-        | _ -> ()
-    
     let topLevelBindingHiddenBySignatureFile () =
         let parentHasSignatureFile () =
             match v.TryDeclaringEntity with
@@ -373,10 +367,7 @@ let BindVal cenv env (exprRange: Range option) (v: Val) =
         else
             warning (Error(FSComp.SR.chkUnusedValue v.DisplayName, v.Range))
 
-let BindVals cenv env (exprRanges: Range option list) vs =
-    let zipped = List.zip exprRanges vs
-    zipped
-    |> List.iter (fun (exprRange, v) -> BindVal cenv env exprRange v)
+let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 
 let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
     if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
@@ -819,9 +810,6 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-let callRangeIsInAnyRecRange (env: env) (callingRange: Range) =
-    env.mustTailCallRanges.Values |> Seq.exists (fun recRange -> rangeContainsRange recRange callingRange)
-
 let rec allValsAndRangesOfModDef mdef =
     let abstractSlotValsAndRangesOfTycons (tycons: Tycon list) =  
         abstractSlotValRefsOfTycons tycons 
@@ -874,7 +862,7 @@ and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) (isTailCall:
             errorR(Error(FSComp.SR.chkNoByrefAtThisPoint(v.DisplayName), m))
 
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-        if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No && callRangeIsInAnyRecRange env m then
+        if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No then
             warning(Error(FSComp.SR.chkNotTailRecursive(v.DisplayName), m))
 
     if env.isInAppExpr then
@@ -1012,7 +1000,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                             else 
                                 true
 
-                    if not canTailCall && (env.mustTailCallRanges.Item vref.Stamp |> fun recRange -> rangeContainsRange recRange m) then
+                    if not canTailCall then
                         warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), m))
                 | _ -> ()
     | _ -> ()
@@ -1121,7 +1109,7 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf 
                 PermitByRefExpr.Yes
 
         let limit = CheckBinding cenv { env with returnScope = env.returnScope + 1 } false bindingContext bind  
-        BindVal cenv env None v
+        BindVal cenv env v
         LimitVal cenv v { limit with scope = if isByRef then limit.scope else env.returnScope }
         // tailcall
         CheckExprLinear cenv env body ctxt contf isTailCall
@@ -1166,7 +1154,7 @@ and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : boo
             if not allowed then
                 errorR(Error(FSComp.SR.tcInvalidResumableConstruct("__resumableEntry"), expr.Range))
             CheckExprNoByrefs cenv env isTailCall noneBranchExpr 
-            BindVal cenv env None someVar
+            BindVal cenv env someVar
             CheckExprNoByrefs cenv env isTailCall someBranchExpr
             true
 
@@ -1196,7 +1184,7 @@ and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : boo
         | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, _m) ->
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e1
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e2
-            BindVal cenv env None v
+            BindVal cenv env v
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } isTailCall e3
             true
 
@@ -1213,8 +1201,7 @@ and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : boo
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) ->
             targets |> Array.iter(fun (TTarget(vs, targetExpr, _)) ->
-                let exprRanges = List.replicate vs.Length None
-                BindVals cenv env exprRanges vs
+                BindVals cenv env vs
                 CheckExprNoByrefs cenv env isTailCall targetExpr)
             CheckDecisionTree cenv { env with resumableCode = Resumable.None } dtree
             true
@@ -1223,7 +1210,7 @@ and TryCheckResumableCodeConstructs cenv env expr (isTailCall: IsTailCall) : boo
                 // Restriction: resumable code can't contain local constrained generic functions
                 when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
             CheckBinding cenv { env with resumableCode = Resumable.None } false PermitByRefExpr.Yes bind |> ignore<Limit>
-            BindVal cenv env None bind.Var
+            BindVal cenv env bind.Var
             CheckExprNoByrefs cenv env isTailCall bodyExpr
             true
         
@@ -1392,8 +1379,7 @@ and CheckStructStateMachineExpr cenv env expr info =
     if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
         error(Error(FSComp.SR.tcResumableCodeNotSupported(), expr.Range))
 
-    let exprRanges = [None; None; None; None]
-    BindVals cenv env exprRanges [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
+    BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
     CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } IsTailCall.No moveNextExpr
     CheckExprNoByrefs cenv env IsTailCall.No setStateMachineBody
     CheckExprNoByrefs cenv env IsTailCall.No afterCodeBody
@@ -1506,8 +1492,7 @@ and CheckMatch cenv env ctxt (dtree, targets, m, ty) isTailCall =
 
 and CheckLetRec cenv env (binds, bodyExpr) isTailCall =
     let vals = valsOfBinds binds
-    let exprRanges = List.replicate vals.Length None
-    BindVals cenv env exprRanges vals
+    BindVals cenv env vals
     CheckBindings cenv env binds
     CheckExprNoByrefs cenv env isTailCall bodyExpr
     NoLimit
@@ -1897,7 +1882,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo (isT
         )
 
         for arg in syntacticArgs do
-            BindVal cenv env None arg
+            BindVal cenv env arg
 
         // Check escapes in the body.  Allow access to protected things within members.
         let freesOpt = CheckEscapes cenv memInfo.IsSome m syntacticArgs body
@@ -1977,8 +1962,7 @@ and CheckDecisionTreeTargets cenv env targets ctxt (isTailCall: IsTailCall) =
     |> CombineLimits
 
 and CheckDecisionTreeTarget cenv env (isTailCall: IsTailCall) ctxt (TTarget(vs, targetExpr, _)) = 
-    let exprRanges = List.replicate vs.Length None
-    BindVals cenv env exprRanges vs 
+    BindVals cenv env vs 
     for v in vs do
         CheckValSpec PermitByRefType.All cenv env v
     CheckExpr cenv env targetExpr ctxt isTailCall
@@ -2731,15 +2715,13 @@ and CheckDefnInModule cenv env mdef =
     match mdef with 
     | TMDefRec(isRec, _opens, tycons, mspecs, m) -> 
         CheckNothingAfterEntryPoint cenv m
-        if isRec then
-            let valls, ranges = allValsAndRangesOfModDef mdef |> Seq.toList |> List.unzip
-            BindVals cenv env (ranges |> List.map Some) valls
+        if isRec then BindVals cenv env (allValsOfModDef mdef |> Seq.toList)
         CheckEntityDefns cenv env tycons
         List.iter (CheckModuleSpec cenv env isRec) mspecs
     | TMDefLet(bind, m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckModuleBinding cenv env false bind 
-        BindVal cenv env (Some bind.Expr.Range) bind.Var
+        BindVal cenv env bind.Var
     | TMDefOpens _ ->
         ()
     | TMDefDo(e, m)  -> 
@@ -2758,12 +2740,78 @@ and CheckDefnInModule cenv env mdef =
 and CheckModuleSpec cenv env isRec mbind =
     match mbind with 
     | ModuleOrNamespaceBinding.Binding bind ->
-        BindVals cenv env [None] (valsOfBinds [bind])
+        BindVals cenv env (valsOfBinds [bind])
         CheckModuleBinding cenv env isRec bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
+
+//--------------------------------------------------------------------------
+// collect TailCall-attributed vals
+//--------------------------------------------------------------------------
+
+let rec allValsAndExprsOfModDef mdef =
+    seq { match mdef with 
+          | TMDefRec(tycons = _tycons; bindings = mbinds) ->
+              for mbind in mbinds do 
+                match mbind with 
+                | ModuleOrNamespaceBinding.Binding bind ->
+                    yield bind.Var, bind.Expr
+                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndExprsOfModDef def
+          | TMDefLet(binding = bind) ->
+              let e = stripExpr bind.Expr
+              yield bind.Var, e
+          | TMDefDo _ -> ()
+          | TMDefOpens _ -> ()
+          | TMDefs defs -> 
+              for def in defs do 
+                  yield! allValsAndExprsOfModDef def
+    }
+
+let rec CollectCheckDefnsInModule cenv mdefs mustTailCall mustTailCallExpr =
+    List.fold (fun (mustTailCall, mustTailCallExpr) mdef ->
+        CollectCheckDefnInModule cenv mdef mustTailCall mustTailCallExpr
+    ) (mustTailCall, mustTailCallExpr) mdefs
+    
+and CollectCheckDefnInModule cenv mdef (mustTailCall: Zset<Val>) (mustTailCallExpr: Map<Stamp, Expr>) = 
+    match mdef with 
+    | TMDefRec(isRec, _opens, _tycons, mspecs, _m) ->
+        let mustTailCall'', mustTailCallExprs'' =
+            if isRec then
+                let vallsAndExprs = allValsAndExprsOfModDef mdef
+                
+                let mustTailCall', mustTailCallExpr' =
+                    Seq.fold (fun (mustTailCall, mustTailCallExpr) (v: Val, e) ->
+                        if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                            let newSet = Zset.add v mustTailCall
+                            let newMap = Map.add v.Stamp e mustTailCallExpr
+                            (newSet, newMap)
+                        else
+                            (mustTailCall, mustTailCallExpr)
+                    ) (mustTailCall, mustTailCallExpr) vallsAndExprs
+                    
+                mustTailCall', mustTailCallExpr'
+            else
+                mustTailCall, mustTailCallExpr
+        
+        List.fold (fun (mustTailCall, mustTailCallExpr) mspec ->
+            CollectCheckModuleSpec cenv mspec mustTailCall mustTailCallExpr
+        ) (mustTailCall'', mustTailCallExprs'') mspecs
+    | TMDefLet(_bind, _m)  ->
+        mustTailCall, mustTailCallExpr
+    | TMDefOpens _ ->
+        mustTailCall, mustTailCallExpr
+    | TMDefDo(_e, _m)  ->
+        mustTailCall, mustTailCallExpr
+    | TMDefs defs -> CollectCheckDefnsInModule cenv defs mustTailCall mustTailCallExpr
+
+and CollectCheckModuleSpec cenv mbind mustTailCall mustTailCallExpr =
+    match mbind with 
+    | ModuleOrNamespaceBinding.Binding _bind ->
+        mustTailCall, mustTailCallExpr
+    | ModuleOrNamespaceBinding.Module (_mspec, rhs) ->
+        CollectCheckDefnInModule cenv rhs mustTailCall mustTailCallExpr
 
 let CheckImplFileContents cenv env implFileTy implFileContents  = 
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
@@ -2808,7 +2856,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           boundTyparNames=[]
           argVals = ValMap.Empty
           mustTailCall = Zset.empty valOrder
-          mustTailCallRanges = Map<string, Range>.Empty
+          mustTailCallExprs = Map<Stamp, Expr>.Empty
           boundTypars= TyparMap.Empty
           reflect=false
           external=false 
@@ -2821,5 +2869,16 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
 
     if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 
         viewCcu.UsesFSharp20PlusQuotations <- true
+    
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then    
+        let mustTailCall, mustTailCallExprs = CollectCheckDefnInModule cenv implFileContents (Zset.empty valOrder) Map.Empty
+        
+        let env = 
+            { env with mustTailCall = mustTailCall; mustTailCallExprs = mustTailCallExprs }
+        
+        for v in env.mustTailCall do
+            let expr = env.mustTailCallExprs[v.Stamp]
+            let binding = Binding.TBind(v, expr, DebugPointAtBinding.NoneAtLet)
+            CheckModuleBinding cenv env true binding
 
     cenv.entryPointGiven, cenv.anonRecdTypes
