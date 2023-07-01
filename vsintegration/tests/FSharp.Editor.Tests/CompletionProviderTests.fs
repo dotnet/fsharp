@@ -876,6 +876,7 @@ type T() =
 """
 
         VerifyNoCompletionList(fileContents, "member this.M(p:int, h")
+        VerifyNoCompletionList(fileContents, "member this.M(p")
 
     [<Fact>]
     let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
@@ -932,6 +933,7 @@ type T(p:int, h) =
 """
 
         VerifyNoCompletionList(fileContents, "type T(p:int, h")
+        VerifyNoCompletionList(fileContents, "type T(p")
 
     [<Fact>]
     let ``Provide completion on implicit constructor argument type hint`` () =
@@ -1515,7 +1517,7 @@ let x (du: Du list) =
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
 
     [<Fact>]
-    let ``Completion list contains suggested names for union case field pattern in a let binding and lambda`` () =
+    let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
         let fileContents =
             """
 type Ids = Ids of customerId: int * orderId: string option
@@ -1525,6 +1527,10 @@ let xy (Ids (c, o)) = ()
 let xyz (Ids c) = ()
 
 fun (Ids (c, o)) -> ()
+fun (Some v) -> ()
+
+type C =
+    member _.M (Ids (c, o)) = ()
 """
 
         VerifyCompletionList(fileContents, "let x (Ids (c", [ "customerId"; "num" ], [])
@@ -1533,6 +1539,9 @@ fun (Ids (c, o)) -> ()
         VerifyCompletionList(fileContents, "let xyz (Ids c", [ "option" ], [ "customerId"; "orderId"; "num" ]) // option is on the list as a type
         VerifyCompletionList(fileContents, "fun (Ids (c", [ "customerId"; "num" ], [])
         VerifyCompletionList(fileContents, "fun (Ids (c, o", [ "orderId"; "option" ], [])
+        VerifyCompletionList(fileContents, "fun (Some v", [ "value" ], [])
+        VerifyCompletionList(fileContents, "member _.M (Ids (c", [ "customerId"; "num" ], [ "orderId" ])
+        VerifyCompletionList(fileContents, "member _.M (Ids (c, o", [ "orderId"; "option" ], [ "customerId"; "num" ])
 
     [<Fact>]
     let ``Completion list does not contain suggested names in tuple deconstruction`` () =

@@ -1193,11 +1193,6 @@ module ParsedInput =
                     None
         | _ -> None
 
-    let (|SkipFromParseErrorPat|) pat =
-        match pat with
-        | SynPat.FromParseError (pat, _) -> pat
-        | _ -> pat
-
     let rec parseLidAux pos plid (parts: Ident list) (dots: range list) =
         match parts, dots with
         | [], _ -> Some(plid, None)
@@ -1280,7 +1275,19 @@ module ParsedInput =
                     None
             | _ -> None
 
-    let rec TryGetCompletionContextInPattern isInMemberDefinition (pat: SynPat) previousContext pos =
+    // In member, function and lambda definitions (but not in match clauses) we suppress completions on outer identifiers
+    //
+    // fun x| ->
+    // member _.X (a| ) =
+    // let f x| =
+    //
+    // As soon as union case deconstruction is used, we *do* want to see completions on identifiers, in particular to suggest identifier names
+    //
+    // fun (SingleCase (v1, v| )) ->
+    // member _.X (SingleCase (v1, v| )) =
+    // let f (SingleCase (v1, v| )) =
+    //
+    let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
         | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = id) ->
             pats
@@ -1289,28 +1296,28 @@ module ParsedInput =
                     Some CompletionContext.Invalid
                 else
                     let context = Some(PatternContext.NamedUnionCaseField(patId.idText, id.Range))
-                    TryGetCompletionContextInPattern isInMemberDefinition pat context pos)
+                    TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
         | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id) ->
             match pats with
             | [ SynPat.Named _ as pat ] ->
                 TryGetCompletionContextInPattern
-                    isInMemberDefinition
+                    false
                     pat
                     (Some(PatternContext.PositionalUnionCaseField(None, id.Range)))
                     pos
             | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
                 TryGetCompletionContextInPattern
-                    isInMemberDefinition
+                    false
                     pat
                     (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range)))
                     pos
             | _ ->
                 pats
-                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern isInMemberDefinition pat None pos)
+                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
         | SynPat.Ands (pats = pats)
         | SynPat.ArrayOrList (elementPats = pats) ->
             pats
-            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern isInMemberDefinition pat None pos)
+            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat None pos)
         | SynPat.Tuple (elementPats = pats) ->
             pats
             |> List.indexed
@@ -1323,24 +1330,32 @@ module ParsedInput =
                         // No preceding LongIdent => this is a tuple deconstruction
                         None
 
-                TryGetCompletionContextInPattern isInMemberDefinition pat context pos)
+                TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
         | SynPat.Named (range = m) when rangeContainsPos m pos ->
-            // In member definitions show no completions on identifiers
-            if isInMemberDefinition then
+            if suppressIdentifierCompletions then
                 Some CompletionContext.Invalid
             else
                 previousContext
                 |> Option.defaultValue PatternContext.Other
                 |> CompletionContext.Pattern
                 |> Some
-        | SynPat.Attrib (pat = pat) -> TryGetCompletionContextInPattern isInMemberDefinition pat previousContext pos
-        | SynPat.Paren (pat, _) -> TryGetCompletionContextInPattern isInMemberDefinition pat None pos
+        | SynPat.FromParseError (pat = pat)
+        | SynPat.Attrib (pat = pat) -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
+        | SynPat.Paren (pat, _) -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat None pos
         | SynPat.ListCons (lhsPat = pat1; rhsPat = pat2)
         | SynPat.As (lhsPat = pat1; rhsPat = pat2)
         | SynPat.Or (lhsPat = pat1; rhsPat = pat2) ->
-            TryGetCompletionContextInPattern isInMemberDefinition pat1 None pos
-            |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern isInMemberDefinition pat2 None pos)
+            TryGetCompletionContextInPattern suppressIdentifierCompletions pat1 None pos
+            |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat2 None pos)
         | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some(CompletionContext.Pattern PatternContext.Type)
+        | SynPat.Wild m when rangeContainsPos m pos -> Some CompletionContext.Invalid
+        | SynPat.Typed (pat = pat; targetType = synType) ->
+            if rangeContainsPos pat.Range pos then
+                TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
+            elif rangeContainsPos synType.Range pos then
+                Some(CompletionContext.Pattern PatternContext.Type)
+            else
+                None
         | _ -> None
 
     /// Try to determine completion context for the given pair (row, columns)
@@ -1387,7 +1402,7 @@ module ParsedInput =
                         // fun (Some v$ ) ->
                         | SynExpr.Lambda(parsedData = Some (pats, _)) ->
                             pats
-                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
+                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
                             |> Option.orElseWith (fun () -> defaultTraverse expr)
 
                         | _ -> defaultTraverse expr
@@ -1442,37 +1457,15 @@ module ParsedInput =
 
                 member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
 
-                    let visitParam (SkipFromParseErrorPat pat) =
-                        match pat with
-                        | SynPat.Named (range = range)
-                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                            // parameter without type hint, no completion
-                            Some CompletionContext.Invalid
-                        | SynPat.Typed (SynPat.Named (_, _, _, range), _, _) when rangeContainsPos range pos ->
-                            // parameter with type hint, but we are on its name, no completion
-                            Some CompletionContext.Invalid
-                        | _ -> defaultTraverse synBinding
-
                     match headPat with
-                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
-                        // let fo|o x = ()
-                        Some CompletionContext.Invalid
-                    | SynPat.LongIdent (argPats = ctorArgs; range = range) when rangeContainsPos range pos ->
-                        match ctorArgs with
-                        | SynArgPats.Pats pats ->
+                    | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                        if rangeContainsPos lidwd.Range pos then
+                            // let fo|o x = ()
+                            Some CompletionContext.Invalid
+                        else
                             pats
-                            |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
-                                match pat with
-                                | SynPat.Paren (pat, _) ->
-                                    match pat with
-                                    | SynPat.Tuple (elementPats = pats) -> pats |> List.tryPick visitParam
-                                    | _ -> visitParam pat
-                                | SynPat.Wild range
-                                | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos ->
-                                    // let foo (x|
-                                    Some CompletionContext.Invalid
-                                | _ -> visitParam pat)
-                        | _ -> defaultTraverse synBinding
+                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                            |> Option.orElseWith (fun () -> defaultTraverse synBinding)
                     | SynPat.Named (range = range)
                     | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
                         // let fo|o = 1
@@ -1518,30 +1511,27 @@ module ParsedInput =
                     | _ -> None
 
                 member _.VisitSimplePats(_, pats) =
+                    // Lambdas and their patterns are processed above in VisitExpr,
+                    // so VisitSimplePats is only called for primary constructors
+
                     pats
                     |> List.tryPick (fun pat ->
-                        // No completions in an identifier in a pattern
                         match pat with
-                        // fun x| ->
+                        // type C (x| )
                         | SynSimplePat.Id (range = range) when rangeContainsPos range pos -> Some CompletionContext.Invalid
-                        | SynSimplePat.Typed (SynSimplePat.Id (range = idRange), synType, _) ->
-                            // fun (x|: int) ->
+                        | SynSimplePat.Typed (pat = SynSimplePat.Id (range = idRange); targetType = synType) ->
+                            // type C (x|: int) ->
                             if rangeContainsPos idRange pos then
                                 Some CompletionContext.Invalid
-                            // fun (x: int|) ->
+                            // type C (x: int|) ->
                             elif rangeContainsPos synType.Range pos then
                                 Some(CompletionContext.Pattern PatternContext.Type)
                             else
                                 None
                         | _ -> None)
 
-                member _.VisitPat(path, defaultTraverse, pat) =
-                    let isInMemberDefinition =
-                        match path with
-                        | _ :: SyntaxNode.SynMemberDefn _ :: _ -> true
-                        | _ -> false
-
-                    TryGetCompletionContextInPattern isInMemberDefinition pat None pos
+                member _.VisitPat(_, defaultTraverse, pat) =
+                    TryGetCompletionContextInPattern false pat None pos
                     |> Option.orElseWith (fun () -> defaultTraverse pat)
 
                 member _.VisitModuleDecl(_, defaultTraverse, decl) =
