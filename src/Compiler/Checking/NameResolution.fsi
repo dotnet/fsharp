@@ -247,6 +247,13 @@ type FullyQualifiedFlag =
     | FullyQualified
     | OpenQualified
 
+/// Indicates whether an identifier (single or long) is followed by an extra dot. Typically used
+/// to provide better tooling and error reporting.
+[<RequireQualifiedAccess>]
+type ExtraDotAfterIdentifier =
+    | Yes
+    | No
+
 [<RequireQualifiedAccess>]
 type BulkAdd =
     | Yes
@@ -708,7 +715,7 @@ val internal ResolvePatternLongIdent:
     nenv: NameResolutionEnv ->
     numTyArgsOpt: TypeNameResolutionInfo ->
     lid: Ident list ->
-    extraDotAtTheEnd: bool ->
+    extraDotAtTheEnd: ExtraDotAfterIdentifier ->
         Item
 
 /// Resolve a long identifier representing a type name

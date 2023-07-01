@@ -375,6 +375,12 @@ type FullyQualifiedFlag =
     /// Resolve any paths accessible via 'open'
     | OpenQualified
 
+/// Indicates whether an identifier (single or long) is followed by an extra dot. Typically used
+/// to provide better tooling and error reporting.
+[<RequireQualifiedAccess>]
+type ExtraDotAfterIdentifier =
+    | Yes
+    | No
 
 type UnqualifiedItems = LayeredMap<string, Item>
 
@@ -3252,23 +3258,43 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         | id2 :: rest2 ->
             ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt id2 rest2 extraDotAtTheEnd
     else
-        // Single identifiers in patterns, unless there is an extra dot at the end of the long ident
-        if isNil rest && not extraDotAtTheEnd && fullyQualified <> FullyQualified then
+        // Single identifiers in patterns
+        if isNil rest && fullyQualified <> FullyQualified then
             // Single identifiers in patterns - bind to constructors and active patterns
             // For the special case of
             //   let C = x
             match nenv.ePatItems.TryGetValue id.idText with
-            | true, res when not newDef  -> ResolveUnqualifiedItem ncenv nenv m res
+            | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
-            // Single identifiers in patterns - variable bindings
-            if not newDef &&
-               (warnOnUpper = WarnOnUpperCase) &&
-               id.idText.Length >= 3 &&
-               System.Char.ToLowerInvariant id.idText[0] <> id.idText[0] then
-              warning(UpperCaseIdentifierInPattern m)
-            Item.NewDef id
+                // Single identifiers in patterns - variable bindings
+                if
+                    not newDef
+                    && warnOnUpper = WarnOnUpperCase
+                    && id.idText.Length >= 3
+                    && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                then
+                    warning(UpperCaseIdentifierInPattern m)
 
-        // Long identifiers in patterns and a single identifier with a dot at the end (we want to report it to the sink so that it's available for autocompletions, etc.)
+                // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
+                match extraDotAtTheEnd with
+                | ExtraDotAfterIdentifier.Yes ->
+                    match LookupTypeNameInEnvNoArity fullyQualified id.idText nenv with
+                    | tcref :: _ when tcref.IsUnionTycon ->
+                        let res = ResolutionInfo.Empty.AddEntity (id.idRange, tcref)
+                        ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
+                        Item.Types (id.idText, [ mkAppTy tcref [] ])
+                    | _ ->
+                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false with
+                        | Result ((_, mref, _) :: _) ->
+                            let res = ResolutionInfo.Empty.AddEntity (id.idRange, mref)
+                            ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
+                            Item.ModuleOrNamespaces [ mref ]
+                        | _ ->
+                            Item.NewDef id
+                | _ ->
+                    Item.NewDef id
+
+        // Long identifiers in patterns
         else
             let moduleSearch ad () =
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
