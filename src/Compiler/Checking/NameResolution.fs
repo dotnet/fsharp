@@ -3244,16 +3244,16 @@ exception UpperCaseIdentifierInPattern of range
 type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
 
 // Long ID in a pattern
-let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) =
+let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) extraDotAtTheEnd =
     if id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt id2 rest2
+            ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt id2 rest2 extraDotAtTheEnd
     else
-        // Single identifiers in patterns
-        if isNil rest && fullyQualified <> FullyQualified then
+        // Single identifiers in patterns, unless there is an extra dot at the end of the long ident
+        if isNil rest && not extraDotAtTheEnd && fullyQualified <> FullyQualified then
             // Single identifiers in patterns - bind to constructors and active patterns
             // For the special case of
             //   let C = x
@@ -3268,7 +3268,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
               warning(UpperCaseIdentifierInPattern m)
             Item.NewDef id
 
-        // Long identifiers in patterns
+        // Long identifiers in patterns and a single identifier with a dot at the end (we want to report it to the sink so that it's available for autocompletions, etc.)
         else
             let moduleSearch ad () =
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
@@ -3300,10 +3300,10 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | element :: _ -> error(Error(FSComp.SR.nrIsNotConstructorOrLiteral(), element.idRange))
 
 /// Resolve a long identifier when used in a pattern.
-let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad nenv numTyArgsOpt (lid: Ident list) =
+let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad nenv numTyArgsOpt (lid: Ident list) extraDotAtTheEnd =
     match lid with
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), m))
-    | id :: rest -> ResolvePatternLongIdentPrim sink ncenv OpenQualified warnOnUpper newDef m ad nenv numTyArgsOpt id rest
+    | id :: rest -> ResolvePatternLongIdentPrim sink ncenv OpenQualified warnOnUpper newDef m ad nenv numTyArgsOpt id rest extraDotAtTheEnd
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in types

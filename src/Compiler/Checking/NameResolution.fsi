@@ -708,6 +708,7 @@ val internal ResolvePatternLongIdent:
     nenv: NameResolutionEnv ->
     numTyArgsOpt: TypeNameResolutionInfo ->
     lid: Ident list ->
+    extraDotAtTheEnd: bool ->
         Item
 
 /// Resolve a long identifier representing a type name
