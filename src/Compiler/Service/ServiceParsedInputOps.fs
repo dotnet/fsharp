@@ -1300,17 +1300,9 @@ module ParsedInput =
         | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id) ->
             match pats with
             | [ SynPat.Named _ as pat ] ->
-                TryGetCompletionContextInPattern
-                    false
-                    pat
-                    (Some(PatternContext.PositionalUnionCaseField(None, id.Range)))
-                    pos
+                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(None, id.Range))) pos
             | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
-                TryGetCompletionContextInPattern
-                    false
-                    pat
-                    (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range)))
-                    pos
+                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range))) pos
             | _ ->
                 pats
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
