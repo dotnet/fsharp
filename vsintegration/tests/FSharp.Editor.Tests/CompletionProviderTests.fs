@@ -1557,3 +1557,28 @@ match Some (1, 2) with
         VerifyCompletionList(fileContents, "| Some (a", [], [ "value" ])
         VerifyCompletionList(fileContents, "| Some (a, b", [], [ "value" ])
         VerifyCompletionList(fileContents, "| Some (c", [], [ "value" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern based on the name of the generic type's solution`` () =
+        let fileContents =
+            """
+type Tab =
+    | A
+    | B
+
+match Some A with
+| Some a -> ()
+
+type G<'x, 'y> =
+    | U1 of xxx: 'x * yyy: 'y
+    | U2 of fff: string
+
+match U1 (1, A) with
+| U2 s -> ()
+| U1 (x, y) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| Some a", [ "value"; "tab" ], [])
+        VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
+        VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
+        VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])

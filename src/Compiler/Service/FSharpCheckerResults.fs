@@ -965,11 +965,11 @@ type internal TypeCheckInfo
             PostProcessSuggestedPatternName pos "num" list
         else
             match tryTcrefOfAppTy g ty with
-            | ValueSome tcref -> PostProcessSuggestedPatternName pos tcref.DisplayName list
+            | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) -> PostProcessSuggestedPatternName pos tcref.DisplayName list
             | _ -> list
 
     /// Suggest name based on field name and type, add it to the list
-    let SuggestNameForUnionCaseFieldPattern g pos (uci: UnionCaseInfo) indexOrName list =
+    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName list =
         let field =
             match indexOrName with
             | Choice1Of2 index ->
@@ -982,9 +982,21 @@ type internal TypeCheckInfo
             | Choice2Of2 name -> uci.UnionCase.RecdFieldsArray |> Array.tryFind (fun x -> x.DisplayName = name)
 
         field
-        |> Option.map (fun f ->
-            SuggestNameBasedOnType g pos f.FormalType list
-            |> PostProcessSuggestedPatternName pos f.DisplayName)
+        |> Option.map (fun field ->
+            let ty =
+                // If the field type is generic, suggest a name based on the solution
+                if isTyparTy g field.FormalType then
+                    sResolutions.CapturedNameResolutions
+                    |> ResizeArray.tryPick (fun r ->
+                        match r.Item with
+                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqnsAux true vref.Type)
+                        | _ -> None)
+                    |> Option.defaultValue field.FormalType
+                else
+                    field.FormalType
+
+            let list = SuggestNameBasedOnType g caseIdPos ty list
+            PostProcessSuggestedPatternName caseIdPos field.DisplayName list)
         |> Option.defaultValue list
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1235,10 +1247,10 @@ type internal TypeCheckInfo
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
+        let pos = mkPos line colAtEndOfNamesAndResidue
+
         // Look for a "special" completion context
         let completionContext =
-            let pos = mkPos line colAtEndOfNamesAndResidue
-
             // If the completion context we have computed higher up the stack is for the same position,
             // reuse it, otherwise recompute
             match completionContextAtPos with
@@ -1528,7 +1540,7 @@ type internal TypeCheckInfo
                         match r.Item with
                         | Item.UnionCase (uci, _) ->
                             let list = declaredItems |> Option.map p13 |> Option.defaultValue []
-                            Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End uci indexOrName list, r.DisplayEnv, r.Range)
+                            Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName list, r.DisplayEnv, r.Range)
                         | _ -> None)
                     |> Option.orElse declaredItems
 
