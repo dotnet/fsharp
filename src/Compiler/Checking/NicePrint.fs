@@ -1255,7 +1255,7 @@ module PrintTastMemberOrVals =
 
     let mkInlineL denv (v: Val) nameL = 
         if v.MustInline && not denv.suppressInlineKeyword then 
-            wordL (tagKeyword "inline") ++ nameL 
+            WordL.keywordInline ++ nameL 
         else 
             nameL
 
@@ -1287,10 +1287,7 @@ module PrintTastMemberOrVals =
     let prettyLayoutOfMemberShortOption denv typarInst (v: Val) short =
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
-        let stat =
-            match vref.InlineInfo with
-            | ValInline.Always -> layoutMemberFlags membInfo.MemberFlags ^^ WordL.keywordInline
-            | _ -> layoutMemberFlags membInfo.MemberFlags
+        let stat = layoutMemberFlags membInfo.MemberFlags
         let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm denv.g vref
         
         if short then
@@ -1329,6 +1326,7 @@ module PrintTastMemberOrVals =
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), vref.Id.idRange))
                     let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
+                    let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                     let resL =
                         if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
                         else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
@@ -1345,6 +1343,7 @@ module PrintTastMemberOrVals =
                             else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
                         else
                             let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled
+                            let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                             stat --- ((nameL  |> addColonL) ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
                     prettyTyparInst, resL
 
@@ -1353,6 +1352,7 @@ module PrintTastMemberOrVals =
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), vref.Id.idRange))
                     let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
+                    let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                     let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
                     emptyTyparInst, resL
                 else
@@ -1364,6 +1364,7 @@ module PrintTastMemberOrVals =
                             (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
                         else
                             let nameL = layoutMemberName denv vref niceMethodTypars curriedArgInfos tagProperty vref.DisplayNameCoreMangled
+                            let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                             stat --- ((nameL |> addColonL) ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
                     prettyTyparInst, resL
 
