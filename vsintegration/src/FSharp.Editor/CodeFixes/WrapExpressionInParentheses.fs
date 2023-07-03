@@ -21,15 +21,15 @@ type internal WrapExpressionInParenthesesCodeFixProvider() =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync _ span =
+        member _.GetCodeFixIfAppliesAsync context =
             let codeFix =
                 {
                     Name = CodeFix.AddParentheses
                     Message = title
                     Changes =
                         [
-                            TextChange(TextSpan(span.Start, 0), "(")
-                            TextChange(TextSpan(span.End, 0), ")")
+                            TextChange(TextSpan(context.Span.Start, 0), "(")
+                            TextChange(TextSpan(context.Span.End, 0), ")")
                         ]
                 }
 
