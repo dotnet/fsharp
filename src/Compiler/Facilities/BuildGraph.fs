@@ -673,10 +673,10 @@ module LowPriority =
                     )
             )
 
-        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> CompilationGlobalsScope>
+        member inline _.Using<'TOverall, 'T>
             (
-                resource: 'Resource,
-                [<InlineIfLambda>] binder: 'Resource -> NodeCodeCode<'TOverall, 'T>
+                resource: CompilationGlobalsScope,
+                [<InlineIfLambda>] binder: CompilationGlobalsScope -> NodeCodeCode<'TOverall, 'T>
             ) =
             ResumableCode.Using(
                 resource,
