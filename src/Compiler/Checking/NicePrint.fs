@@ -1287,7 +1287,10 @@ module PrintTastMemberOrVals =
     let prettyLayoutOfMemberShortOption denv typarInst (v: Val) short =
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
-        let stat = layoutMemberFlags membInfo.MemberFlags
+        let stat =
+            match vref.InlineInfo with
+            | ValInline.Always -> layoutMemberFlags membInfo.MemberFlags ^^ WordL.keywordInline
+            | _ -> layoutMemberFlags membInfo.MemberFlags
         let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm denv.g vref
         
         if short then
