@@ -2198,40 +2198,29 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind(v, e, _) as bind) =
 
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match bind.Expr with
-        | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-            let rec checkTailCall (insideSubBinding: bool) (allArgsProvided: bool) expr =
+        | Expr.TyLambda(bodyExpr = bodyExpr)
+        | Expr.Lambda(bodyExpr = bodyExpr) ->
+            let rec checkTailCall (insideSubBinding: bool) expr =
                 match expr with
-                | Expr.Val(valRef, _valUseFlag, m) ->
-                    if isRec && insideSubBinding && allArgsProvided && env.mustTailCall.Contains valRef.Deref then
+                | Expr.Val(valRef = valRef; range = m) ->
+                    if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
                         warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
-                | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
-                    let allArgsProvided =
-                        match funcExpr with
-                        | Expr.Link e
-                        | Expr.Op (TOp.Coerce, _, [Expr.Link e], _) ->
-                            let expr = e.Value
-                            match expr with
-                            | Expr.Val(valRef = valRef) ->
-                                match valRef.ValReprInfo with
-                                | Some info -> info.TotalArgCount = exprs.Length    // Don't warn for partial application
-                                | _ -> false
-                            | _ -> false
-                        | _ -> false
-                    checkTailCall insideSubBinding allArgsProvided funcExpr
-                    exprs |> List.iter (checkTailCall insideSubBinding false)
-                | Expr.Link exprRef -> checkTailCall insideSubBinding allArgsProvided exprRef.Value
-                | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-                    checkTailCall insideSubBinding allArgsProvided bodyExpr
-                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding allArgsProvided expr
-                | Expr.Let(binding, bodyExpr, _range, _frees) ->
-                    checkTailCall true allArgsProvided binding.Expr
-                    checkTailCall insideSubBinding allArgsProvided bodyExpr
-                | Expr.Match(_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
-                    decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding allArgsProvided target.TargetExpression)
-                | Expr.Op (TOp.Coerce, _, exprs, _) ->
-                    exprs |> Seq.iter (checkTailCall insideSubBinding allArgsProvided)
+                | Expr.App(funcExpr = funcExpr; args = argExprs) ->
+                    checkTailCall insideSubBinding funcExpr
+                    argExprs |> List.iter (checkTailCall insideSubBinding)
+                | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
+                | Expr.Lambda(bodyExpr = bodyExpr) ->
+                    checkTailCall insideSubBinding bodyExpr
+                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
+                | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
+                    checkTailCall true binding.Expr
+                    checkTailCall insideSubBinding bodyExpr
+                | Expr.Match(targets = decisionTreeTargets) ->
+                    decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
+                | Expr.Op (op = TOp.Coerce; args = exprs) ->
+                    exprs |> Seq.iter (checkTailCall insideSubBinding)
                 | _ -> ()
-            checkTailCall false false bodyExpr
+            checkTailCall false bodyExpr
         | _ -> ()
     
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition

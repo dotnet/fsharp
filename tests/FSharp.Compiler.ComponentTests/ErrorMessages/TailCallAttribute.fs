@@ -637,7 +637,7 @@ let rec instType a b (ty: Type) =
         let typeArgs = Array.map (instType true 100) (ty.GetArray())
         22
     elif ty.HasElementType then
-        let ety = instType true 23    // should not warn
+        let ety = instType true 23    // ToDo: also warn for partial app?
         let ety = instType true 23 ty // should warn
         if ty.IsArray then
             let rank = ty.GetArrayRank()
@@ -654,17 +654,59 @@ let rec instType a b (ty: Type) =
         |> typecheck
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 18
-                        StartColumn = 19
-                        EndLine = 18
-                        EndColumn = 27 }
-              Message =
-                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
               Range = { StartLine = 14
                         StartColumn = 35
                         EndLine = 14
                         EndColumn = 43 }
               Message =
                 "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 17
+                        StartColumn = 19
+                        EndLine = 17
+                        EndColumn = 27 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 18
+                        StartColumn = 19
+                        EndLine = 18
+                        EndColumn = 27 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for invalid calls in inner bindings of conditional`` () =
+        """
+[<TailCall>]
+let rec foldBackOpt f (m: Map<'Key, 'Value>) x =
+    if not (Map.isEmpty m) then
+        x
+    else if m.Count = 1 then
+        let a = foldBackOpt f m x
+        f  x
+    else
+        let a = foldBackOpt f m x
+        let x = f x
+        foldBackOpt f m a
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 7
+                        StartColumn = 17
+                        EndLine = 7
+                        EndColumn = 28 }
+              Message =
+                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 10
+                        StartColumn = 17
+                        EndLine = 10
+                        EndColumn = 28 }
+              Message =
+                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
