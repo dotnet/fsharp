@@ -3932,7 +3932,6 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
             | Expr.TyLambda (_, _, b, _, _) -> firstArg b
             | Expr.TyChoose (_, b, _) -> firstArg b
             | Expr.Lambda (_, _, _, [v], _, _, _) -> Some v
-            | Expr.Const (value = Const.Zero) -> None // parser recovery on `member _`
             | _ -> failwith "GetInstanceMemberThisVariable: instance member did not have expected internal form"
 
         firstArg expr

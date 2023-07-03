@@ -915,6 +915,7 @@ module MutRecBindingChecking =
                             let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)     
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
 
+                        | SynMemberDefn.Member(SynBinding(headPat = SynPat.Wild _; expr = SynExpr.ArbitraryAfterError _), _), _
                         | SynMemberDefn.Member(SynBinding(headPat = SynPat.FromParseError(SynPat.Wild _, _)), _), _ ->
                             [], innerState
 
