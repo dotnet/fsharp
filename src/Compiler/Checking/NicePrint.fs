@@ -1830,9 +1830,10 @@ module TastDefinitionPrinting =
                     if getValRef.Accessibility <> setValRef.Accessibility then
                         Some (getValRef, setValRef)
                     else
-                        match getValRef.ValReprInfo, setValRef.ValReprInfo with
-                        | Some getValReprInfo, Some setValReprInfo when getValReprInfo.TotalArgCount <> setValReprInfo.TotalArgCount  ->
-                            Some (getValRef, setValRef)
+                        match getValRef.ValReprInfo with
+                        | Some getValReprInfo when
+                            // Getter has an index parameter
+                            getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
                         | _ -> None 
                 | _ -> None
         
