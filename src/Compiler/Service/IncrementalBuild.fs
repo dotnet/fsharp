@@ -761,13 +761,13 @@ module IncrementalBuilderHelpers =
         let! latestImplFiles =
             computedBoundModels
             |> Seq.map (fun boundModel ->
-            node {
-                if partialCheck then
-                    return None
-                else
-                    let! tcInfoExtras = boundModel.GetOrComputeTcInfoExtras()
-                    return tcInfoExtras.latestImplFile
-            })
+                node {
+                    if partialCheck then
+                        return None
+                    else
+                        let! tcInfoExtras = boundModel.GetOrComputeTcInfoExtras()
+                        return tcInfoExtras.latestImplFile
+                })
             |> NodeCode.Parallel
 
         let results = [

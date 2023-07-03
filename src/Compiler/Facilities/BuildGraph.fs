@@ -397,20 +397,28 @@ type NodeCodeBuilder(runOnBackground: bool) =
                             if ct.IsCancellationRequested then
                                 Task.FromCanceled<_>(ct)
                             else
-                                // Warning: this will always try to yield even if on thread pool already.
-                                Task.Run<'T>(
-                                    (fun () ->
-                                        let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
-                                        sm.Data.CancellationToken <- ct
+                                let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                let phase = DiagnosticsThreadStatics.BuildPhase
 
-                                        sm.Data.MethodBuilder <-
-                                            AsyncTaskMethodBuilder<'T>.Create()
+                                try
+                                    // Warning: this will always try to yield even if on thread pool already.
+                                    Task.Run<'T>(
+                                        (fun () ->
+                                            let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
+                                            sm.Data.CancellationToken <- ct
 
-                                        sm.Data.MethodBuilder.Start(&sm)
-                                        sm.Data.MethodBuilder.Task
-                                    ),
-                                    ct
-                                )
+                                            sm.Data.MethodBuilder <-
+                                                AsyncTaskMethodBuilder<'T>.Create()
+
+                                            sm.Data.MethodBuilder.Start(&sm)
+                                            sm.Data.MethodBuilder.Task
+                                        ),
+                                        ct
+                                    )
+                                finally
+                                    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                                    DiagnosticsThreadStatics.BuildPhase <- phase
+                                
                     else
                         let mutable sm = sm
 
@@ -498,28 +506,35 @@ module LowPriority =
 
             NodeCodeCode<'TOverall, _>(fun sm ->
                 if __useResumableCode then
-                    //-- RESUMABLE CODE START
-                    sm.Data.ThrowIfCancellationRequested()
-                    // Get an awaiter from the Awaiter
-                    let mutable awaiter = getAwaiter sm.Data.CancellationToken
+                    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                    let phase = DiagnosticsThreadStatics.BuildPhase
+                    
+                    try
+                        //-- RESUMABLE CODE START
+                        sm.Data.ThrowIfCancellationRequested()
+                        // Get an awaiter from the Awaiter
+                        let mutable awaiter = getAwaiter sm.Data.CancellationToken
 
-                    let mutable __stack_fin = true
+                        let mutable __stack_fin = true
 
-                    if not (Awaiter.isCompleted awaiter) then
-                        // This will yield with __stack_yield_fin = false
-                        // This will resume with __stack_yield_fin = true
-                        let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-                        __stack_fin <- __stack_yield_fin
+                        if not (Awaiter.isCompleted awaiter) then
+                            // This will yield with __stack_yield_fin = false
+                            // This will resume with __stack_yield_fin = true
+                            let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                            __stack_fin <- __stack_yield_fin
 
-                    if __stack_fin then
-                        let result =
-                            awaiter
-                            |> Awaiter.getResult
+                        if __stack_fin then
+                            let result =
+                                awaiter
+                                |> Awaiter.getResult
 
-                        (continuation result).Invoke(&sm)
-                    else
-                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
-                        false
+                            (continuation result).Invoke(&sm)
+                        else
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                            false
+                    finally
+                        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                        DiagnosticsThreadStatics.BuildPhase <- phase
                 else
                     NodeCodeBuilderBase.BindDynamic<'TResult1, 'TResult2, 'Awaiter, 'TOverall>(
                         &sm,
@@ -657,6 +672,25 @@ module LowPriority =
                         (binder resource).Invoke(&sm)
                     )
             )
+
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> CompilationGlobalsScope>
+            (
+                resource: 'Resource,
+                [<InlineIfLambda>] binder: 'Resource -> NodeCodeCode<'TOverall, 'T>
+            ) =
+            ResumableCode.Using(
+                resource,
+                fun resource ->
+                    NodeCodeCode<'TOverall, 'T>(fun sm ->
+                        DiagnosticsThreadStatics.DiagnosticsLogger <- resource.DiagnosticsLogger
+                        DiagnosticsThreadStatics.BuildPhase <- resource.BuildPhase
+                        try
+                            sm.Data.ThrowIfCancellationRequested()
+                            (binder resource).Invoke(&sm)
+                        finally
+                            (resource :> IDisposable).Dispose()
+                )
+        )
 
 /// <exclude />
 [<AutoOpen>]
@@ -962,30 +996,6 @@ module NodeCode =
     let inline getAwaiter ([<InlineIfLambda>] ctask: NodeCode<_>) =
         fun ct -> (ctask ct).GetAwaiter()
 
-    let inline start ct ([<InlineIfLambda>] ctask: NodeCode<_>) = ctask ct
-
-    let inline startWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = ctask CancellationToken.None
-
-    let inline runSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = start ct ctask
-        task.GetAwaiter().GetResult()
-
-    let inline runSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = startWithoutCancellation ctask
-        task.GetAwaiter().GetResult()
-
-    let inline startAsTask ct ([<InlineIfLambda>] ctask: NodeCode<_>) = (ctask ct) :> Task
-
-    let inline startAsTaskWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = (ctask CancellationToken.None) :> Task
-
-    let inline runAsTaskSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = startAsTask ct ctask
-        task.GetAwaiter().GetResult()
-
-    let inline runAsTaskSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
-        let task = startAsTaskWithoutCancellation ctask
-        task.GetAwaiter().GetResult()
-
     let inline wrapThreadStaticInfo ([<InlineIfLambda>] computation: NodeCode<'T>) =
         node {
             let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -997,6 +1007,44 @@ module NodeCode =
                 DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                 DiagnosticsThreadStatics.BuildPhase <- phase
         }
+
+    let inline propagateThreadStaticInfo ([<InlineIfLambda>] computation: NodeCode<'T>) =
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+        let phase = DiagnosticsThreadStatics.BuildPhase
+
+        try
+            node {
+                DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
+                DiagnosticsThreadStatics.BuildPhase <- phase
+                return! computation
+            }
+        with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise (ex.InnerExceptions[0])
+
+    let inline start ct ([<InlineIfLambda>] ctask: NodeCode<_>) = propagateThreadStaticInfo(ctask) ct
+
+    let inline startWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = start CancellationToken.None ctask
+
+    let inline runSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = start ct ctask
+        task.GetAwaiter().GetResult()
+
+    let inline runSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = startWithoutCancellation ctask
+        task.GetAwaiter().GetResult()
+
+    let inline startAsTask ct ([<InlineIfLambda>] ctask: NodeCode<_>) = (propagateThreadStaticInfo(ctask) ct) :> Task
+
+    let inline startAsTaskWithoutCancellation ([<InlineIfLambda>] ctask: NodeCode<_>) = (ctask CancellationToken.None) :> Task
+
+    let inline runAsTaskSyncronously ct ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = startAsTask ct ctask
+        task.GetAwaiter().GetResult()
+
+    let inline runAsTaskSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: NodeCode<_>) =
+        let task = startAsTaskWithoutCancellation ctask
+        task.GetAwaiter().GetResult()
+
 
     let inline Sequential (computations: NodeCode<'T> seq) =
         node {
@@ -1084,11 +1132,8 @@ module GraphNode =
 #endif
         | None -> ()
 
-    
-
-
 [<Sealed>]
-type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption<'T>, cachedResultNode: NodeCode<'T>) =
+type GraphNode<'T> private(computation: NodeCode<'T>, cachedResult: ValueOption<'T>, cachedResultNode: NodeCode<'T>) =
     
     static let computeValue (graphNode: GraphNode<'T>) =
         node {
