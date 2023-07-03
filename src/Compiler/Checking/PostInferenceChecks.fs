@@ -810,34 +810,6 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-let rec allValsAndRangesOfModDef mdef =
-    let abstractSlotValsAndRangesOfTycons (tycons: Tycon list) =  
-        abstractSlotValRefsOfTycons tycons 
-        |> List.map (fun v -> v.Deref, v.Deref.Range)
-        
-    seq { match mdef with 
-          | TMDefRec(tycons = tycons; bindings = mbinds) ->
-              yield! abstractSlotValsAndRangesOfTycons tycons
-              for mbind in mbinds do 
-                match mbind with 
-                | ModuleOrNamespaceBinding.Binding bind ->
-                    let r =
-                        match (stripExpr bind.Expr) with
-                        | Expr.Lambda _ -> bind.Expr.Range
-                        | Expr.TyLambda(bodyExpr = bodyExpr) -> bodyExpr.Range
-                        | e -> e.Range
-                    yield bind.Var, r
-                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) -> yield! allValsAndRangesOfModDef def
-          | TMDefLet(binding = bind) ->
-              let e = stripExpr bind.Expr
-              yield bind.Var, e.Range
-          | TMDefDo _ -> ()
-          | TMDefOpens _ -> ()
-          | TMDefs defs -> 
-              for def in defs do 
-                  yield! allValsAndRangesOfModDef def
-    }
-
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env (isTailCall: IsTailCall) expr =
     CheckExpr cenv env expr PermitByRefExpr.No isTailCall |> ignore
@@ -2227,25 +2199,39 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind(v, e, _) as bind) =
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match bind.Expr with
         | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-            let rec checkTailCall (insideSubBinding: bool) expr =
+            let rec checkTailCall (insideSubBinding: bool) (allArgsProvided: bool) expr =
                 match expr with
                 | Expr.Val(valRef, _valUseFlag, m) ->
-                    if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
+                    if isRec && insideSubBinding && allArgsProvided && env.mustTailCall.Contains valRef.Deref then
                         warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
                 | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
-                    checkTailCall insideSubBinding funcExpr
-                    exprs |> List.iter (checkTailCall insideSubBinding)
-                | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
+                    let allArgsProvided =
+                        match funcExpr with
+                        | Expr.Link e
+                        | Expr.Op (TOp.Coerce, _, [Expr.Link e], _) ->
+                            let expr = e.Value
+                            match expr with
+                            | Expr.Val(valRef = valRef) ->
+                                match valRef.ValReprInfo with
+                                | Some info -> info.TotalArgCount = exprs.Length    // Don't warn for partial application
+                                | _ -> false
+                            | _ -> false
+                        | _ -> false
+                    checkTailCall insideSubBinding allArgsProvided funcExpr
+                    exprs |> List.iter (checkTailCall insideSubBinding false)
+                | Expr.Link exprRef -> checkTailCall insideSubBinding allArgsProvided exprRef.Value
                 | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-                    checkTailCall insideSubBinding bodyExpr
-                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
+                    checkTailCall insideSubBinding allArgsProvided bodyExpr
+                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding allArgsProvided expr
                 | Expr.Let(binding, bodyExpr, _range, _frees) ->
-                    checkTailCall true binding.Expr
-                    checkTailCall insideSubBinding bodyExpr
+                    checkTailCall true allArgsProvided binding.Expr
+                    checkTailCall insideSubBinding allArgsProvided bodyExpr
                 | Expr.Match(_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
-                    decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
+                    decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding allArgsProvided target.TargetExpression)
+                | Expr.Op (TOp.Coerce, _, exprs, _) ->
+                    exprs |> Seq.iter (checkTailCall insideSubBinding allArgsProvided)
                 | _ -> ()
-            checkTailCall false bodyExpr
+            checkTailCall false false bodyExpr
         | _ -> ()
     
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition

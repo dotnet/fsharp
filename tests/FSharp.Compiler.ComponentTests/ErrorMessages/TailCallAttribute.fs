@@ -618,3 +618,53 @@ and [<TailCall>] CheckModuleSpec cenv env isRec mbind =
               Message =
                 "The member or function 'CheckModuleSpec' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for partial application but for calls in map and total applications`` () =
+        """
+type Type() =
+    member val HasElementType = true with get, set
+    member val IsArray = true with get, set
+    member val IsPointer = false with get, set
+    member val IsByRef = false with get, set
+    member val IsGenericParameter = false with get, set
+    member _.GetArray () = Array.empty
+    member _.GetArrayRank () = 2
+
+[<TailCall>]
+let rec instType a b (ty: Type) =
+    if a then
+        let typeArgs = Array.map (instType true 100) (ty.GetArray())
+        22
+    elif ty.HasElementType then
+        let ety = instType true 23    // should not warn
+        let ety = instType true 23 ty // should warn
+        if ty.IsArray then
+            let rank = ty.GetArrayRank()
+            23
+        elif ty.IsPointer then 24
+        elif ty.IsByRef then 25
+        else 26
+    elif ty.IsGenericParameter then
+        27
+    else 28
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> typecheck
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 18
+                        StartColumn = 19
+                        EndLine = 18
+                        EndColumn = 27 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 35
+                        EndLine = 14
+                        EndColumn = 43 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
