@@ -4268,22 +4268,33 @@ type AnonRecdTypeInfo =
       mutable Stamp: Stamp
 
       mutable SortedNames: string[]
+
+      mutable IlTypeName : int64
     }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
         // Hash all the data to form a unique stamp
-        let stamp = 
-            sha1HashInt64 
+        let stamp =
+            sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
                    match tupInfo with 
                    | TupInfo.Const b -> yield (if b then 0uy else 1uy)
                    for id in sortedIds do 
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
                        yield 0uy |]
+
+        let ilName =
+            sha1HashInt64
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
+                   match tupInfo with
+                   | TupInfo.Const b -> yield (if b then 0uy else 1uy)
+                   for id in sortedIds do
+                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
+
         let sortedNames = Array.map textOfId sortedIds
-        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames }
+        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames; IlTypeName = ilName }
 
     /// Get the ILTypeRef for the generated type implied by the anonymous type
     member x.ILTypeRef = 
@@ -4294,8 +4305,9 @@ type AnonRecdTypeInfo =
         { Assembly = Unchecked.defaultof<_>
           TupInfo = Unchecked.defaultof<_>
           SortedIds = Unchecked.defaultof<_>
-          Stamp = Unchecked.defaultof<_> 
-          SortedNames = Unchecked.defaultof<_> }
+          Stamp = Unchecked.defaultof<_>
+          SortedNames = Unchecked.defaultof<_>
+          IlTypeName = Unchecked.defaultof<_> }
 
     member x.Link d = 
         let sortedNames = Array.map textOfId d.SortedIds
