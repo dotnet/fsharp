@@ -945,19 +945,22 @@ type internal TypeCheckInfo
     /// Checks whether the suggested name is unused.
     /// In the future we could use an increasing numeric suffix for conflict resolution
     let CreateCompletionItemForSuggestedPatternName (pos: pos) name =
-        let name = String.lowerCaseFirstChar name
-
-        let unused =
-            sResolutions.CapturedNameResolutions
-            |> ResizeArray.forall (fun r ->
-                match r.Item with
-                | Item.Value vref when r.Pos.Line = pos.Line -> vref.DisplayName <> name
-                | _ -> true)
-
-        if unused then
-            Some(CompletionItemSuggestedName name)
-        else
+        if String.IsNullOrWhiteSpace name then
             None
+        else
+            let name = String.lowerCaseFirstChar name
+
+            let unused =
+                sResolutions.CapturedNameResolutions
+                |> ResizeArray.forall (fun r ->
+                    match r.Item with
+                    | Item.Value vref when r.Pos.Line = pos.Line -> vref.DisplayName <> name
+                    | _ -> true)
+
+            if unused then
+                Some(CompletionItemSuggestedName name)
+            else
+                None
 
     /// Suggest name based on type
     let SuggestNameBasedOnType g pos ty =
@@ -990,15 +993,22 @@ type internal TypeCheckInfo
                     sResolutions.CapturedNameResolutions
                     |> ResizeArray.tryPick (fun r ->
                         match r.Item with
-                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqnsAux true vref.Type)
+                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqns vref.Type)
                         | _ -> None)
                     |> Option.defaultValue field.FormalType
                 else
                     field.FormalType
 
+            let fieldName =
+                // If the field has not been given an explicit name, do not suggest the generated one
+                if field.rfield_name_generated then
+                    ""
+                else
+                    field.DisplayName
+
             completions
             |> List.prependIfSome (SuggestNameBasedOnType g caseIdPos ty)
-            |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos field.DisplayName))
+            |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
         |> Option.defaultValue completions
 
     let getItem (x: ItemWithInst) = x.Item

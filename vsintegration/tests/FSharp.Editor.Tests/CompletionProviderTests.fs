@@ -1479,7 +1479,7 @@ match A 1 with
         VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
 
     [<Fact>]
-    let ``Completion list contains suggested names for union case field pattern in a match clause`` () =
+    let ``Completion list contains suggested names for union case field pattern in a match clause unless the field name is generated`` () =
         let fileContents =
             """
 type Du =
@@ -1494,7 +1494,7 @@ let x du =
 """
 
         VerifyCompletionList(fileContents, "| C (f", [ "first"; "du" ], [ "rest"; "item"; "num" ])
-        VerifyCompletionList(fileContents, "| C (f, [ D i", [ "num"; "item" ], [ "rest"; "first"; "du" ])
+        VerifyCompletionList(fileContents, "| C (f, [ D i", [ "num" ], [ "rest"; "first"; "du"; "item" ])
         VerifyCompletionList(fileContents, "| C (f, [ D i; C (first = s", [ "first"; "du" ], [ "rest"; "num" ])
         VerifyCompletionList(fileContents, "| C (rest = r", [ "rest"; "list" ], [ "first"; "du"; "item"; "num" ])
 
