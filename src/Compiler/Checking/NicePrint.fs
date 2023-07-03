@@ -1820,22 +1820,25 @@ module TastDefinitionPrinting =
             | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
             | _ -> false
 
-        let (|MixedAccessibilityGetterAndSetter|_|) (pinfo: PropInfo) =
+        let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
             if not (pinfo.HasGetter && pinfo.HasSetter) then
                 None
             else
                 match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
                 | Some getValRef, Some setValRef ->
-                    if getValRef.Accessibility = setValRef.Accessibility then
-                        None
-                    else
+                    if getValRef.Accessibility <> setValRef.Accessibility then
                         Some (getValRef, setValRef)
+                    else
+                        match getValRef.ValReprInfo, setValRef.ValReprInfo with
+                        | Some getValReprInfo, Some setValReprInfo when getValReprInfo.TotalArgCount <> setValReprInfo.TotalArgCount  ->
+                            Some (getValRef, setValRef)
+                        | _ -> None 
                 | _ -> None
         
         match pinfo.ArbitraryValRef with
         | Some vref ->
             match pinfo with
-            | MixedAccessibilityGetterAndSetter(getValRef, setValRef) ->
+            | DifferentGetterAndSetter(getValRef, setValRef) ->
                 let getSuffix = if pinfo.IsIndexer then emptyL else wordL (tagKeyword "with") ^^ wordL (tagText "get")
                 [
                     PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader getValRef ^^ getSuffix
