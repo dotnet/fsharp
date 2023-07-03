@@ -34,6 +34,7 @@ type public PatternContext =
     /// Completing union case field in a pattern (e.g. fun (Some (Value = v|) -> )
     | NamedUnionCaseField of fieldName: string * caseIdRange: range
 
+    /// Any other position in a pattern that does not need special handling
     | Other
 
 [<RequireQualifiedAccess>]

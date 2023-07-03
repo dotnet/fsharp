@@ -942,9 +942,9 @@ type internal TypeCheckInfo
             Unresolved = None
         }
 
-    /// Check whether the suggested name is unused and add it to the list.
+    /// Checks whether the suggested name is unused.
     /// In the future we could use an increasing numeric suffix for conflict resolution
-    let PostProcessSuggestedPatternName (pos: pos) name list =
+    let CreateCompletionItemForSuggestedPatternName (pos: pos) name =
         let name = String.lowerCaseFirstChar name
 
         let unused =
@@ -955,21 +955,22 @@ type internal TypeCheckInfo
                 | _ -> true)
 
         if unused then
-            CompletionItemSuggestedName name :: list
+            Some(CompletionItemSuggestedName name)
         else
-            list
+            None
 
-    /// Suggest name based on type, add it to the list
-    let SuggestNameBasedOnType g pos ty list =
+    /// Suggest name based on type
+    let SuggestNameBasedOnType g pos ty =
         if isNumericType g ty then
-            PostProcessSuggestedPatternName pos "num" list
+            CreateCompletionItemForSuggestedPatternName pos "num"
         else
             match tryTcrefOfAppTy g ty with
-            | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) -> PostProcessSuggestedPatternName pos tcref.DisplayName list
-            | _ -> list
+            | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) ->
+                CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
+            | _ -> None
 
-    /// Suggest name based on field name and type, add it to the list
-    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName list =
+    /// Suggest names based on field name and type, add them to the list
+    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName completions =
         let field =
             match indexOrName with
             | Choice1Of2 index ->
@@ -995,9 +996,10 @@ type internal TypeCheckInfo
                 else
                     field.FormalType
 
-            let list = SuggestNameBasedOnType g caseIdPos ty list
-            PostProcessSuggestedPatternName caseIdPos field.DisplayName list)
-        |> Option.defaultValue list
+            completions
+            |> List.prependIfSome (SuggestNameBasedOnType g caseIdPos ty)
+            |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos field.DisplayName))
+        |> Option.defaultValue completions
 
     let getItem (x: ItemWithInst) = x.Item
 
