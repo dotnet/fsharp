@@ -341,7 +341,7 @@ let nullableSlotFull x = x
 type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let inline cached cache resF =
+let inline cached cache ([<InlineIfLambda>] resF) =
     match box cache.cacheVal with
     | null ->
         let res = resF()
@@ -350,7 +350,7 @@ let inline cached cache resF =
     | _ ->
         cache.cacheVal
 
-let inline cacheOptByref (cache: byref<'T option>) f =
+let inline cacheOptByref (cache: byref<'T option>) ([<InlineIfLambda>] f) =
     match cache with
     | Some v -> v
     | None ->
@@ -361,7 +361,7 @@ let inline cacheOptByref (cache: byref<'T option>) f =
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
 // we cannot use 'cacheOptByref'. If that is changed, this can be removed.
-let inline cacheOptRef (cache: _ ref) f =
+let inline cacheOptRef (cache: _ ref) ([<InlineIfLambda>] f) =
     match cache.Value with
     | Some v -> v
     | None ->
