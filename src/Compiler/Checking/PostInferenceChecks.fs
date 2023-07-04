@@ -1003,7 +1003,7 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (acc : 
         CheckTypeInstNoByrefs cenv env m tyargs
         argsHead |> List.iter (CheckExprNoByrefs cenv env) 
         // tailcall
-        CheckExprLinear cenv env argLast PermitByRefExpr.No NoLimit
+        CheckExprLinear cenv env argLast PermitByRefExpr.No acc
 
     | LinearMatchExpr (_spMatch, _exprm, dtree, tg1, e2, m, ty) ->
         CheckTypeNoInnerByrefs cenv env m ty 
