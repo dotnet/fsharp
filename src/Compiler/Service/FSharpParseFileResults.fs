@@ -641,7 +641,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.Ident _
                         | SynExpr.ImplicitZero _
                         | SynExpr.Const _
-                        | SynExpr.Dynamic _ -> ()
+                        | SynExpr.Dynamic _
+                        | SynExpr.Wild _ -> ()
 
                         | SynExpr.Quote (_, _, e, _, _)
                         | SynExpr.TypeTest (e, _, _)

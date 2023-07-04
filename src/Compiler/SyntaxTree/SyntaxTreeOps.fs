@@ -800,7 +800,8 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Typar _
         | SynExpr.ImplicitZero _
         | SynExpr.Const _
-        | SynExpr.Dynamic _ -> false
+        | SynExpr.Dynamic _
+        | SynExpr.Wild _ -> false
 
         | SynExpr.TypeTest (e, _, _)
         | SynExpr.Upcast (e, _, _)

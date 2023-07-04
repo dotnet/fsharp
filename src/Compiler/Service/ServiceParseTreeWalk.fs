@@ -785,6 +785,8 @@ module SyntaxTraversal =
 
                 | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> traverseSynExpr synExpr
 
+                | SynExpr.Wild _ -> None
+
             visitor.VisitExpr(origPath, traverseSynExpr origPath, defaultTraverse, expr)
 
         and traversePat origPath (pat: SynPat) =

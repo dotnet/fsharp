@@ -5752,6 +5752,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.IndexRange (range=m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
 
+    | SynExpr.Wild _ -> failwith "No suppport for SynExpr.WildCard"
+
 and TcExprMatch (cenv: cenv) overallTy env tpenv synInputExpr spMatch synClauses =
     let inputExpr, inputTy, tpenv =
         let env = { env with eIsControlFlow = false }
@@ -8721,7 +8723,8 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.Const _
         | SynExpr.Typar _
         | SynExpr.LongIdent _
-        | SynExpr.Dynamic _ -> true
+        | SynExpr.Dynamic _
+        | SynExpr.Wild _ -> true
 
         | SynExpr.Tuple (_, synExprs, _, _)
         | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument

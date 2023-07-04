@@ -301,7 +301,8 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match e with
-        | SynExpr.Const _ -> continuation []
+        | SynExpr.Const _
+        | SynExpr.Wild _ -> continuation []
         | SynExpr.Paren (expr = expr) -> visit expr continuation
         | SynExpr.Quote (operator = operator; quotedExpr = quotedExpr) ->
             visit operator (fun operatorNodes -> visit quotedExpr (fun quotedNodes -> operatorNodes @ quotedNodes |> continuation))

@@ -923,6 +923,9 @@ type SynExpr =
     /// F# syntax: f?x
     | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
 
+    /// F# syntax: _, used in `_.Property`
+    | Wild of range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 

@@ -713,6 +713,8 @@ type SynExpr =
 
     | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
 
+    | Wild of range: range
+
     member e.Range =
         match e with
         | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
@@ -782,9 +784,10 @@ type SynExpr =
         | SynExpr.DoBang (range = m)
         | SynExpr.Fixed (range = m)
         | SynExpr.InterpolatedString (range = m)
-        | SynExpr.Dynamic (range = m) -> m
+        | SynExpr.Dynamic (range = m)
+        | SynExpr.Typar (range = m)
+        | SynExpr.Wild (range = m) -> m
         | SynExpr.Ident id -> id.idRange
-        | SynExpr.Typar (range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
