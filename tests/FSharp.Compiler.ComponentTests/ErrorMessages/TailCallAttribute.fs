@@ -466,13 +466,6 @@ namespace N
               Range = { StartLine = 8
                         StartColumn = 22
                         EndLine = 8
-                        EndColumn = 31 }
-              Message =
-               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
-              Range = { StartLine = 8
-                        StartColumn = 22
-                        EndLine = 8
                         EndColumn = 23 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
