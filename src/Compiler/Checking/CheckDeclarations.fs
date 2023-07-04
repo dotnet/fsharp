@@ -348,12 +348,6 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (moduleTy: ModuleOrNa
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Report a name resolution environment for the scope of type representation to the sink if there are any typars.
-/// Completions in union and record definitions use it to suggest type parameters.
-let ReportRepresentationIfTyparsEmpty tcSink (env: TcEnv) scopem (typars: Typars) =
-    if not typars.IsEmpty then
-        CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
-
 /// Inside "namespace X.Y.Z" there is an implicit open of "X.Y.Z"
 let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env: TcEnv) = 
     if isNil enclosingNamespacePath then 
@@ -3350,7 +3344,7 @@ module EstablishTypeDefinitionCores =
                     else 
                         TNoRepr, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Union (_, unionCases, m) -> 
+                | SynTypeDefnSimpleRepr.Union (_, unionCases, mRepr) -> 
                     noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDU
@@ -3363,11 +3357,11 @@ module EstablishTypeDefinitionCores =
                     multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
-                    ReportRepresentationIfTyparsEmpty cenv.tcSink envinner m typars
+                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
                     let repr = Construct.MakeUnionRepr unionCases
                     repr, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Record (_, fields, m) -> 
+                | SynTypeDefnSimpleRepr.Record (_, fields, mRepr) -> 
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()
@@ -3376,7 +3370,7 @@ module EstablishTypeDefinitionCores =
                     let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
-                    ReportRepresentationIfTyparsEmpty cenv.tcSink envinner m typars
+                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
                     let repr = TFSharpRecdRepr (Construct.MakeRecdFieldsTable recdFields)
                     repr, None, NoSafeInitInfo
 
