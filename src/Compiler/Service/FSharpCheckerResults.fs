@@ -889,6 +889,7 @@ type internal TypeCheckInfo
                 match minfos with
                 | [] -> CompletionItemKind.Method false
                 | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.AnonRecdField _
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
             | Item.Event _ -> CompletionItemKind.Event
@@ -896,10 +897,7 @@ type internal TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             // These items are not given a completion kind. This could be reviewed
-            | Item.AnonRecdField _
             | Item.ActivePatternResult _
-            | Item.CustomOperation _
-            | Item.CtorGroup _
             | Item.ExnCase _
             | Item.ImplicitOp _
             | Item.ModuleOrNamespaces _
@@ -909,7 +907,6 @@ type internal TypeCheckInfo
             | Item.UnionCase _
             | Item.UnionCaseField _
             | Item.UnqualifiedType _
-            | Item.Value _
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _
