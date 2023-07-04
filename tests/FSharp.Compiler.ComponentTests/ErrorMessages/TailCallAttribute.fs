@@ -8,31 +8,36 @@ module ``TailCall Attribute`` =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully in if-else`` () =
         """
-let mul x y = x * y
+namespace N
 
-[<TailCall>]
-let rec fact n acc =
-    if n = 0
-    then acc
-    else (fact (n - 1) (mul n acc)) + 23
+    module M =
+
+        let mul x y = x * y
+
+        [<TailCall>]
+        let rec fact n acc =
+            if n = 0
+            then acc
+            else (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        // |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 8
-                        StartColumn = 11
-                        EndLine = 8
-                        EndColumn = 35 }
+              Range = { StartLine = 12
+                        StartColumn = 19
+                        EndLine = 12
+                        EndColumn = 43 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 8
-                        StartColumn = 11
-                        EndLine = 8
-                        EndColumn = 15 }
+              Range = { StartLine = 12
+                        StartColumn = 19
+                        EndLine = 12
+                        EndColumn = 23 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -40,31 +45,35 @@ let rec fact n acc =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully in match clause`` () =
         """
-let mul x y = x * y
+namespace N
 
-[<TailCall>]
-let rec fact n acc =
-    match n with
-    | 0 -> acc
-    | _ -> (fact (n - 1) (mul n acc)) + 23
+    module M =
+
+        let mul x y = x * y
+
+        [<TailCall>]
+        let rec fact n acc =
+            match n with
+            | 0 -> acc
+            | _ -> (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 8
-                        StartColumn = 13
-                        EndLine = 8
-                        EndColumn = 37 }
+              Range = { StartLine = 12
+                        StartColumn = 21
+                        EndLine = 12
+                        EndColumn = 45 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 8
-                        StartColumn = 13
-                        EndLine = 8
-                        EndColumn = 17 }
+              Range = { StartLine = 12
+                        StartColumn = 21
+                        EndLine = 12
+                        EndColumn = 25 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -72,26 +81,37 @@ let rec fact n acc =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for rec call in binding`` () =
         """
-let mul x y = x * y
+namespace N
 
-[<TailCall>]
-let rec fact n acc =
-    match n with
-    | 0 -> acc
-    | _ ->
-        let r = fact (n - 1) (mul n acc)
-        r + 23
+    module M =
+
+        let mul x y = x * y
+
+        [<TailCall>]
+        let rec fact n acc =
+            match n with
+            | 0 -> acc
+            | _ ->
+                let r = fact (n - 1) (mul n acc)
+                r + 23
         """
         |> FSharp
         |> withLangVersionPreview        
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 9
-                        StartColumn = 17
-                        EndLine = 9
-                        EndColumn = 21 }
+              Range = { StartLine = 13
+                        StartColumn = 25
+                        EndLine = 13
+                        EndColumn = 49 }
+              Message =
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 13
+                        StartColumn = 25
+                        EndLine = 13
+                        EndColumn = 29 }
               Message =
                "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -99,67 +119,75 @@ let rec fact n acc =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcall and bind from toplevel`` () =
         """
-let mul x y = x * y
+namespace N
 
-[<TailCall>]
-let rec fact n acc =
-    if n = 0
-    then acc
-    else
-        printfn "%A" n
-        fact (n - 1) (mul n acc)
-    
-let r = fact 100000 1
-r |> ignore
+    module M =
+
+        let mul x y = x * y
+
+        [<TailCall>]
+        let rec fact n acc =
+            if n = 0
+            then acc
+            else
+                printfn "%A" n
+                fact (n - 1) (mul n acc)
+            
+        let r = fact 100000 1
+        r |> ignore
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for mutually recursive functions`` () =
         """
-let foo x =
-    printfn "Foo: %x" x
+namespace N
 
-[<TailCall>]
-let rec bar x =
-    match x with
-    | 0 ->
-        foo x           // OK: non-tail-recursive call to a function which doesn't share the current stack frame (i.e., 'bar' or 'baz').
-        printfn "Zero"
-        
-    | 1 ->
-        bar (x - 1)     // Warning: this call is not tail-recursive
-        printfn "Uno"
-        baz x           // OK: tail-recursive call.
+    module M =
 
-    | x ->
-        printfn "0x%08x" x
-        bar (x - 1)     // OK: tail-recursive call.
-        
-and [<TailCall>] baz x =
-    printfn "Baz!"
-    bar (x - 1)         // OK: tail-recursive call.
+        let foo x =
+            printfn "Foo: %x" x
+
+        [<TailCall>]
+        let rec bar x =
+            match x with
+            | 0 ->
+                foo x           // OK: non-tail-recursive call to a function which doesn't share the current stack frame (i.e., 'bar' or 'baz').
+                printfn "Zero"
+                
+            | 1 ->
+                bar (x - 1)     // Warning: this call is not tail-recursive
+                printfn "Uno"
+                baz x           // OK: tail-recursive call.
+
+            | x ->
+                printfn "0x%08x" x
+                bar (x - 1)     // OK: tail-recursive call.
+                
+        and [<TailCall>] baz x =
+            printfn "Baz!"
+            bar (x - 1)         // OK: tail-recursive call.
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 13
-                        StartColumn = 9
-                        EndLine = 13
-                        EndColumn = 20 }
+              Range = { StartLine = 17
+                        StartColumn = 17
+                        EndLine = 17
+                        EndColumn = 28 }
               Message =
                "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 13
-                        StartColumn = 9
-                        EndLine = 13
-                        EndColumn = 12 }
+              Range = { StartLine = 17
+                        StartColumn = 17
+                        EndLine = 17
+                        EndColumn = 20 }
               Message =
                "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -167,20 +195,24 @@ and [<TailCall>] baz x =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for invalid tailcall in type method`` () =
         """
-type C () =
-    [<TailCall>]
-    member this.M1() = this.M1() + 1
+namespace N
+
+    module M =
+
+        type C () =
+            [<TailCall>]
+            member this.M1() = this.M1() + 1
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 4
-                        StartColumn = 24
-                        EndLine = 4
-                        EndColumn = 33 }
+              Range = { StartLine = 8
+                        StartColumn = 32
+                        EndLine = 8
+                        EndColumn = 41 }
               Message =
                "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -188,119 +220,150 @@ type C () =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcall in type method`` () =
         """
-type C () =
-    [<TailCall>]
-    member this.M1() =
-        printfn "M1 called"
-        this.M1()
+namespace N
 
-let c = C()
-c.M1()
+    module M =
+
+        type C () =
+            [<TailCall>]
+            member this.M1() =
+                printfn "M1 called"
+                this.M1()
+
+        let c = C()
+        c.M1()
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcalls in type methods`` () =
         """
-type C () =
-    [<TailCall>]
-    member this.M1() =
-        printfn "M1 called"
-        this.M2()    // ok
+namespace N
 
-    [<TailCall>]
-    member this.M2() =
-        printfn "M2 called"
-        this.M1()     // ok
+    module M =
+
+        type C () =
+            [<TailCall>]
+            member this.M1() =
+                printfn "M1 called"
+                this.M2()    // ok
+
+            [<TailCall>]
+            member this.M2() =
+                printfn "M2 called"
+                this.M1()     // ok
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for invalid tailcalls in type methods`` () =
         """
-type F () =
-    [<TailCall>]
-    member this.M1() =
-        printfn "M1 called"
-        this.M2() + 1   // should warn
+namespace N
 
-    [<TailCall>]
-    member this.M2() =
-        printfn "M2 called"
-        this.M1() + 2    // should warn
+    module M =
+
+        type F () =
+            [<TailCall>]
+            member this.M1() =
+                printfn "M1 called"
+                this.M2() + 1   // should warn
+
+            [<TailCall>]
+            member this.M2() =
+                printfn "M2 called"
+                this.M1() + 2    // should warn
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 6
-                        StartColumn = 9
-                        EndLine = 6
-                        EndColumn = 18 }
+              Range = { StartLine = 10
+                        StartColumn = 17
+                        EndLine = 10
+                        EndColumn = 26 }
               Message =
                "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 11
-                        StartColumn = 9
-                        EndLine = 11
-                        EndColumn = 18 }
+              Range = { StartLine = 15
+                        StartColumn = 17
+                        EndLine = 15
+                        EndColumn = 26 }
               Message =
+#if Debug               
+               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+#else
                "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+#endif
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcall and bind from nested bind`` () =
         """
-let mul x y = x * y
+namespace N
 
-[<TailCall>]
-let rec fact n acc =
-    if n = 0
-    then acc
-    else
-        printfn "%A" n
-        fact (n - 1) (mul n acc)
-    
-let f () =
-    let r = fact 100000 1
-    r |> ignore
-    
-fact 100000 1 |> ignore
+    module M =
+
+        let mul x y = x * y
+
+        [<TailCall>]
+        let rec fact n acc =
+            if n = 0
+            then acc
+            else
+                printfn "%A" n
+                fact (n - 1) (mul n acc)
+            
+        let f () =
+            let r = fact 100000 1
+            r |> ignore
+            
+        fact 100000 1 |> ignore
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in seq expression because of bind`` () =
         """
-[<TailCall>]
-let rec f x : seq<int> =
-    seq {
-        let r = f (x - 1)
-        let r2 = Seq.map (fun x -> x + 1) r
-        yield! r2
-}
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec f x : seq<int> =
+            seq {
+                let r = f (x - 1)
+                let r2 = Seq.map (fun x -> x + 1) r
+                yield! r2
+        }
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 5
-                        StartColumn = 17
-                        EndLine = 5
-                        EndColumn = 18 }
+              Range = { StartLine = 9
+                        StartColumn = 25
+                        EndLine = 9
+                        EndColumn = 34 }
+              Message =
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 25
+                        EndLine = 9
+                        EndColumn = 26 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -308,29 +371,33 @@ let rec f x : seq<int> =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in seq expression because of pipe`` () =
         """
-[<TailCall>]
-let rec f x : seq<int> =
-    seq {
-        yield! f (x - 1) |> Seq.map (fun x -> x + 1)
-}
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec f x : seq<int> =
+            seq {
+                yield! f (x - 1) |> Seq.map (fun x -> x + 1)
+        }
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 5
-                        StartColumn = 16
-                        EndLine = 5
-                        EndColumn = 25 }
+              Range = { StartLine = 9
+                        StartColumn = 24
+                        EndLine = 9
+                        EndColumn = 33 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 5
-                        StartColumn = 16
-                        EndLine = 5
-                        EndColumn = 17 }
+              Range = { StartLine = 9
+                        StartColumn = 24
+                        EndLine = 9
+                        EndColumn = 25 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -338,63 +405,75 @@ let rec f x : seq<int> =
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcalls in seq expression`` () =
         """
-[<TailCall>]
-let rec f x = seq {
-    let y = x - 1
-    let z = y - 1
-    yield! f (z - 1)
-}
+namespace N
 
-let a: seq<int> = f 10
+    module M =
+
+        [<TailCall>]
+        let rec f x = seq {
+            let y = x - 1
+            let z = y - 1
+            yield! f (z - 1)
+        }
+
+        let a: seq<int> = f 10
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcalls in async expression`` () =
         """
-[<TailCall>] 
-let rec f x = async {
-    let y = x - 1
-    let z = y - 1
-    return! f (z - 1)
-}
+namespace N
 
-let a: Async<int> = f 10
+    module M =
+
+        [<TailCall>] 
+        let rec f x = async {
+            let y = x - 1
+            let z = y - 1
+            return! f (z - 1)
+        }
+
+        let a: Async<int> = f 10
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in async expression`` () =
         """
-[<TailCall>] 
-let rec f x = async { 
-    let! r = f (x - 1)
-    return r
-}
+namespace N
+
+    module M =
+
+        [<TailCall>] 
+        let rec f x = async { 
+            let! r = f (x - 1)
+            return r
+        }
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 4
-                        StartColumn = 14
-                        EndLine = 4
-                        EndColumn = 23 }
+              Range = { StartLine = 8
+                        StartColumn = 22
+                        EndLine = 8
+                        EndColumn = 31 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 4
-                        StartColumn = 14
-                        EndLine = 4
-                        EndColumn = 15 }
+              Range = { StartLine = 8
+                        StartColumn = 22
+                        EndLine = 8
+                        EndColumn = 23 }
               Message =
                "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -402,92 +481,95 @@ let rec f x = async {
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcalls in rec module`` () =
         """
-module rec M =
+namespace N
 
-    module M1 =
-        [<TailCall>]
-        let m1func() = M2.m2func()
+    module rec M =
 
+        module M1 =
+            [<TailCall>]
+            let m1func() = M2.m2func()
+
+        module M2 =
+            [<TailCall>]
+            let m2func() = M1.m1func()
+            
+        let f () =
+            M1.m1func() |> ignore
+            
     module M2 =
-        [<TailCall>]
-        let m2func() = M1.m1func()
-        
-    let f () =
-        M1.m1func() |> ignore
 
-M.M1.m1func() |> ignore
-M.M2.m2func()
+        M.M1.m1func() |> ignore
+        M.M2.m2func()
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in rec module`` () =
         """
-module rec M =
+namespace N
 
-    module M1 =
-        [<TailCall>]
-        let m1func() = 1 + M2.m2func()
+    module rec M =
 
-    module M2 =
-        [<TailCall>]
-        let m2func() = 2 + M1.m1func()
+        module M1 =
+            [<TailCall>]
+            let m1func() = 1 + M2.m2func()
+
+        module M2 =
+            [<TailCall>]
+            let m2func() = 2 + M1.m1func()
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 6
-                        StartColumn = 28
-                        EndLine = 6
-                        EndColumn = 39 }
+              Range = { StartLine = 8
+                        StartColumn = 32
+                        EndLine = 8
+                        EndColumn = 43 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 6
-                        StartColumn = 28
-                        EndLine = 6
-                        EndColumn = 37 }
+              Range = { StartLine = 8
+                        StartColumn = 32
+                        EndLine = 8
+                        EndColumn = 41 }
               Message =
                "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 10
-                        StartColumn = 28
-                        EndLine = 10
-                        EndColumn = 39 }
+              Range = { StartLine = 12
+                        StartColumn = 32
+                        EndLine = 12
+                        EndColumn = 43 }
               Message =
-               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
-              Range = { StartLine = 10
-                        StartColumn = 28
-                        EndLine = 10
-                        EndColumn = 37 }
-              Message =
-               "The member or function 'm1func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
         
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for byref parameters`` () =
         """
-[<TailCall>]
-let rec foo(x: int byref) = foo(&x)
-let run() = let mutable x = 0 in foo(&x)
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec foo(x: int byref) = foo(&x)
+        let run() = let mutable x = 0 in foo(&x)
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 3
-                        StartColumn = 29
-                        EndLine = 3
-                        EndColumn = 36 }
+              Range = { StartLine = 7
+                        StartColumn = 37
+                        EndLine = 7
+                        EndColumn = 44 }
               Message =
                "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
@@ -495,122 +577,236 @@ let run() = let mutable x = 0 in foo(&x)
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for yield! in tail position`` () =
         """
-type Bind = { Var: string; Expr: string }
+namespace N
 
-type ModuleOrNamespaceBinding =
-    | Binding of bind: Bind
-    | Module of moduleOrNamespaceContents: MDef
+    module M =
 
-and MDef =
-    | TMDefRec of tycons: string list * bindings: ModuleOrNamespaceBinding list
-    | TMDefLet of binding: Bind
-    | TMDefDo of expr: string
-    | TMDefOpens of expr: string
-    | TMDefs of defs: MDef list
+        type Bind = { Var: string; Expr: string }
 
-[<TailCall>]
-let rec allValsAndExprsOfModDef mdef =
-    seq {
-        match mdef with
-        | TMDefRec(tycons = _tycons; bindings = mbinds) ->
-            for mbind in mbinds do
-                match mbind with
-                | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var, bind.Expr
-                | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) ->
-                    yield! allValsAndExprsOfModDef def
-        | TMDefLet(binding = bind) -> yield bind.Var, bind.Expr
-        | TMDefDo _ -> ()
-        | TMDefOpens _ -> ()
-        | TMDefs defs ->
-            for def in defs do
-                yield! allValsAndExprsOfModDef def
-    }
+        type ModuleOrNamespaceBinding =
+            | Binding of bind: Bind
+            | Module of moduleOrNamespaceContents: MDef
+
+        and MDef =
+            | TMDefRec of tycons: string list * bindings: ModuleOrNamespaceBinding list
+            | TMDefLet of binding: Bind
+            | TMDefDo of expr: string
+            | TMDefOpens of expr: string
+            | TMDefs of defs: MDef list
+
+        [<TailCall>]
+        let rec allValsAndExprsOfModDef mdef =
+            seq {
+                match mdef with
+                | TMDefRec(tycons = _tycons; bindings = mbinds) ->
+                    for mbind in mbinds do
+                        match mbind with
+                        | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var, bind.Expr
+                        | ModuleOrNamespaceBinding.Module(moduleOrNamespaceContents = def) ->
+                            yield! allValsAndExprsOfModDef def
+                | TMDefLet(binding = bind) -> yield bind.Var, bind.Expr
+                | TMDefDo _ -> ()
+                | TMDefOpens _ -> ()
+                | TMDefs defs ->
+                    for def in defs do
+                        yield! allValsAndExprsOfModDef def
+            }
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
         |> shouldSucceed
         
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for calls in for and iter`` () =
         """
-type Bind = { Var: string; Expr: string }
+namespace N
 
-type ModuleOrNamespaceBinding =
-    | Binding of bind: Bind
-    | Module of moduleOrNamespaceContents: MDef
+    module M =
 
-and MDef =
-    | TMDefRec of isRec: bool * tycons: string list * bindings: ModuleOrNamespaceBinding list
-    | TMDefLet of binding: Bind
-    | TMDefDo of expr: string
-    | TMDefOpens of expr: string
-    | TMDefs of defs: MDef list
+        type Bind = { Var: string; Expr: string }
 
-let someCheckFunc x = ()
+        type ModuleOrNamespaceBinding =
+            | Binding of bind: Bind
+            | Module of moduleOrNamespaceContents: MDef
 
-[<TailCall>]
-let rec CheckDefnsInModule cenv env mdefs =
-    for mdef in mdefs do
-        CheckDefnInModule cenv env mdef
+        and MDef =
+            | TMDefRec of isRec: bool * tycons: string list * bindings: ModuleOrNamespaceBinding list
+            | TMDefLet of binding: Bind
+            | TMDefDo of expr: string
+            | TMDefOpens of expr: string
+            | TMDefs of defs: MDef list
 
-and CheckNothingAfterEntryPoint cenv =
-    if true then
-        printfn "foo"
+        let someCheckFunc x = ()
 
-and [<TailCall>] CheckDefnInModule cenv env mdef =
-    match mdef with
-    | TMDefRec(isRec, tycons, mspecs) ->
-        CheckNothingAfterEntryPoint cenv
-        someCheckFunc tycons
-        List.iter (CheckModuleSpec cenv env isRec) mspecs
-    | TMDefLet bind ->
-        CheckNothingAfterEntryPoint cenv
-        someCheckFunc bind
-    | TMDefOpens _ -> ()
-    | TMDefDo e ->
-        CheckNothingAfterEntryPoint cenv
-        let isTailCall = true
-        someCheckFunc isTailCall
-    | TMDefs defs -> CheckDefnsInModule cenv env defs
+        [<TailCall>]
+        let rec CheckDefnsInModule cenv env mdefs =
+            for mdef in mdefs do
+                CheckDefnInModule cenv env mdef
 
-and [<TailCall>] CheckModuleSpec cenv env isRec mbind =
-    match mbind with
-    | ModuleOrNamespaceBinding.Binding bind -> someCheckFunc bind
-    | ModuleOrNamespaceBinding.Module mspec ->
-        someCheckFunc mspec
-        CheckDefnInModule cenv env mspec
+        and CheckNothingAfterEntryPoint cenv =
+            if true then
+                printfn "foo"
+
+        and [<TailCall>] CheckDefnInModule cenv env mdef =
+            match mdef with
+            | TMDefRec(isRec, tycons, mspecs) ->
+                CheckNothingAfterEntryPoint cenv
+                someCheckFunc tycons
+                List.iter (CheckModuleSpec cenv env isRec) mspecs
+            | TMDefLet bind ->
+                CheckNothingAfterEntryPoint cenv
+                someCheckFunc bind
+            | TMDefOpens _ -> ()
+            | TMDefDo e ->
+                CheckNothingAfterEntryPoint cenv
+                let isTailCall = true
+                someCheckFunc isTailCall
+            | TMDefs defs -> CheckDefnsInModule cenv env defs
+
+        and [<TailCall>] CheckModuleSpec cenv env isRec mbind =
+            match mbind with
+            | ModuleOrNamespaceBinding.Binding bind -> someCheckFunc bind
+            | ModuleOrNamespaceBinding.Module mspec ->
+                someCheckFunc mspec
+                CheckDefnInModule cenv env mspec
         """
         |> FSharp
         |> withLangVersionPreview
-        |> typecheck
+        |> compile
+        |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 20
-                        StartColumn = 9
-                        EndLine = 20
-                        EndColumn = 40 }
+              Range = { StartLine = 24
+                        StartColumn = 17
+                        EndLine = 24
+                        EndColumn = 48 }
               Message =
                 "The member or function 'CheckDefnInModule' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 20
-                        StartColumn = 9
-                        EndLine = 20
-                        EndColumn = 26 }
+              Range = { StartLine = 24
+                        StartColumn = 17
+                        EndLine = 24
+                        EndColumn = 34 }
               Message =
                 "The member or function 'CheckDefnInModule' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
-              Range = { StartLine = 31
-                        StartColumn = 20
-                        EndLine = 31
-                        EndColumn = 50 }
-              Message =
-                "The member or function 'CheckModuleSpec' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
-              Range = { StartLine = 31
-                        StartColumn = 20
-                        EndLine = 31
-                        EndColumn = 35 }
+              Range = { StartLine = 35
+                        StartColumn = 17
+                        EndLine = 35
+                        EndColumn = 66 }
               Message =
                 "The member or function 'CheckModuleSpec' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for partial application but for calls in map and total applications`` () =
+        """
+namespace N
+
+    module M =
+        type Type() =
+            member val HasElementType = true with get, set
+            member val IsArray = true with get, set
+            member val IsPointer = false with get, set
+            member val IsByRef = false with get, set
+            member val IsGenericParameter = false with get, set
+            member _.GetArray () = Array.empty
+            member _.GetArrayRank () = 2
+
+        [<TailCall>]
+        let rec instType a b (ty: Type) =
+            if a then
+                let typeArgs = Array.map (instType true 100) (ty.GetArray())
+                22
+            elif ty.HasElementType then
+                let ety = instType true 23    // ToDo: also warn for partial app?
+                let ety = instType true 23 ty // should warn
+                if ty.IsArray then
+                    let rank = ty.GetArrayRank()
+                    23
+                elif ty.IsPointer then 24
+                elif ty.IsByRef then 25
+                else 26
+            elif ty.IsGenericParameter then
+                27
+            else 28
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 21
+                        StartColumn = 27
+                        EndLine = 21
+                        EndColumn = 35 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 17
+                        StartColumn = 32
+                        EndLine = 17
+                        EndColumn = 77 }
+              Message =
+                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for invalid calls in inner bindings of conditional`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec foldBackOpt f (m: Map<'Key, 'Value>) x =
+            if not (Map.isEmpty m) then
+                x
+            else if m.Count = 1 then
+                let a = foldBackOpt f m x
+                f  x
+            else
+                let a = foldBackOpt f m x
+                let x = f x
+                foldBackOpt f m a
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 11
+                        StartColumn = 25
+                        EndLine = 11
+                        EndColumn = 36 }
+              Message =
+                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 25
+                        EndLine = 14
+                        EndColumn = 36 }
+              Message =
+                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for piped arg in tailrec call`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec loop xs =
+            xs
+            |> fun xs ->
+                 loop xs
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed

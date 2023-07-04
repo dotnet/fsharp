@@ -5501,15 +5501,11 @@ let CheckOneImplFile
                 try  
                     let reportErrors = not (checkForErrors())
                     let tcVal = LightweightTcValForUsingInBuildMethodCall g
-                    let hasExplicitEntryPoint, anonRecdTypes =
-                        PostTypeCheckSemanticChecks.CheckImplFile 
-                           (g, cenv.amap, reportErrors, cenv.infoReader, 
-                            env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
-                            implFileTy, implFileContents, extraAttribs, isLastCompiland, 
-                            isInternalTestSpanStackReferring)
-                    TailCallChecks.CheckImplFile (g, cenv.amap, reportErrors, implFileContents)
-
-                    hasExplicitEntryPoint, anonRecdTypes
+                    PostTypeCheckSemanticChecks.CheckImplFile 
+                       (g, cenv.amap, reportErrors, cenv.infoReader, 
+                        env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
+                        implFileTy, implFileContents, extraAttribs, isLastCompiland, 
+                        isInternalTestSpanStackReferring)
 
                 with exn -> 
                     errorRecovery exn m
