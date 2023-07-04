@@ -16,7 +16,10 @@ module PostInferenceChecksTests =
         else
             abs i
 
-    let internal possibleLimitFlags = LimitFlags.GetValues<LimitFlags> ()
+    let internal possibleLimitFlags =
+        Enum.GetValues typeof<LimitFlags>
+        |> Seq.cast<LimitFlags>
+        |> Array.ofSeq
 
     let internal genLimitFlags (rng : Random) : LimitFlags =
         Seq.init (genNat rng % 10 + 1) (fun _ -> possibleLimitFlags[genNat rng % possibleLimitFlags.Length])
