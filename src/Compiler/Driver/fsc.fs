@@ -879,11 +879,11 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
-    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then        
+    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match optimizedImpls with
         | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
             for f in checkedImplFileAfterOptimizations do
-                TailCallChecks.CheckImplFile (tcGlobals, tcImports.GetImportMap(), true,  f.ImplFile.Contents)
+                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
 
     let refAssemblySignatureHash =
         match tcConfig.emitMetadataAssembly with
