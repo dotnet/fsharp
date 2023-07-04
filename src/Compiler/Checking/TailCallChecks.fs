@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Implements a set of checks on the TAST for a file that can only be performed after type inference
-/// is complete.
 module internal FSharp.Compiler.TailCallChecks
 
 open Internal.Utilities.Collections
@@ -167,20 +165,6 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
 let rec CheckExprNoByrefs cenv env (isTailCall: IsTailCall) expr =
     CheckExpr cenv env expr PermitByRefExpr.No isTailCall |> ignore
 
-/// Check a value
-and CheckValRef (cenv: cenv) (env: env) (v: ValRef) m (_ctxt: PermitByRefExpr) (isTailCall: IsTailCall) =
-    // To warn for mutually recursive calls like in the following tests:
-    // ``Warn for invalid tailcalls in rec module``
-    // ``Warn successfully for invalid tailcalls in type methods``
-    if cenv.reportErrors then
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-            if env.mustTailCall.Contains v.Deref && isTailCall = IsTailCall.No then
-                warning (Error(FSComp.SR.chkNotTailRecursive (v.DisplayName), m))
-
-/// Check a use of a value
-and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, _vFlags, m) (ctxt: PermitByRefExpr) (isTailCall: IsTailCall) : unit =
-    CheckValRef cenv env vref m ctxt isTailCall
-
 /// Check an expression, given information about the position of the expression
 and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (isTailCall: IsTailCall) =
     let g = cenv.g
@@ -240,7 +224,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (i
                             else
                                 true
 
-                    // warn if we call inside of recursive scope in non-tail-call manner or with tail blockers. See
+                    // warn if we call inside of recursive scope in non-tail-call manner/with tail blockers. See
                     // ``Warn successfully in match clause``
                     // ``Warn for byref parameters``
                     if not canTailCall then
@@ -332,7 +316,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCa
 
         | Expr.Const (_, _m, _ty) -> ()
 
-        | Expr.Val (vref, vFlags, m) -> CheckValUse cenv env (vref, vFlags, m) ctxt isTailCall
+        | Expr.Val (_vref, _vFlags, _m) -> ()
 
         | Expr.Quote (_ast, _savedConv, _isFromQueryExpression, _m, _ty) -> ()
 
@@ -403,18 +387,15 @@ and CheckObjectExpr cenv env (ty, basev, superInitCall, overrides, iimpls, _m) =
     CheckMethods cenv env basev (ty, overrides)
     CheckInterfaceImpls cenv env basev iimpls
 
-and CheckFSharpBaseCall cenv env _expr (v, f, _fty, _tyargs, baseVal, rest, m) : unit =
+and CheckFSharpBaseCall cenv env _expr (v, f, _fty, _tyargs, _baseVal, rest, _m) : unit =
     let memberInfo = Option.get v.MemberInfo
 
     if memberInfo.MemberFlags.IsDispatchSlot then
         ()
     else
-        CheckValRef cenv env v m PermitByRefExpr.No IsTailCall.No
-        CheckValRef cenv env baseVal m PermitByRefExpr.No IsTailCall.No
         CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f) IsTailCall.No
 
-and CheckILBaseCall cenv env (_ilMethRef, _enclTypeInst, _methInst, _retTypes, _tyargs, baseVal, rest, m) : unit =
-    CheckValRef cenv env baseVal m PermitByRefExpr.No IsTailCall.No
+and CheckILBaseCall cenv env (_ilMethRef, _enclTypeInst, _methInst, _retTypes, _tyargs, _baseVal, rest, _m) : unit =
     CheckExprsPermitByRefLike cenv env rest
 
 and CheckApplication cenv env expr (f, _tyargs, argsl, m) ctxt (isTailCall: IsTailCall) : unit =
