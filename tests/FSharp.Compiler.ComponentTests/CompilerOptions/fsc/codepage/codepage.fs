@@ -202,5 +202,4 @@ Parameter name: codepage")
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 7, Col 10, Line 7, Col 11, "Unexpected character '�' in type name")
-            (Error 10, Line 9, Col 14, Line 9, Col 17, "Unexpected keyword 'end' in implementation file")
         ]

@@ -49,7 +49,7 @@ type Context =
     | CtxtTypeDefns of Position    // 'type <here> =', not removed when we find the "="
 
     | CtxtNamespaceHead of Position * token
-    | CtxtModuleHead of Position * token * LexingModuleAttributes
+    | CtxtModuleHead of Position * token * LexingModuleAttributes * isNested: bool
     | CtxtMemberHead of Position
     | CtxtMemberBody of Position
     // If bool is true then this is "whole file"
@@ -68,7 +68,7 @@ type Context =
 
     member c.StartPos =
         match c with
-        | CtxtNamespaceHead (p, _) | CtxtModuleHead (p, _, _) | CtxtException p | CtxtModuleBody (p, _) | CtxtNamespaceBody p
+        | CtxtNamespaceHead (p, _) | CtxtModuleHead (p, _, _, _) | CtxtException p | CtxtModuleBody (p, _) | CtxtNamespaceBody p
         | CtxtLetDecl (_, p) | CtxtDo p | CtxtInterfaceHead p | CtxtTypeDefns p | CtxtParen (_, p) | CtxtMemberHead p | CtxtMemberBody p
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
@@ -751,6 +751,9 @@ type LexFilterImpl (
             |  CtxtSeqBlock(FirstInSeqBlock, _, _), (CtxtDo _ as limitCtxt) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtModuleBody _) :: _ ->
                 PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
+            |  CtxtSeqBlock(FirstInSeqBlock, _, _), CtxtWithAsAugment _ :: (CtxtTypeDefns _ as limitCtxt) :: _ ->
+                PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
+
             | _, CtxtSeqBlock _ :: rest when not strict -> undentationLimit strict rest
             | _, CtxtParen _ :: rest when not strict -> undentationLimit strict rest
 
@@ -1393,6 +1396,9 @@ type LexFilterImpl (
             | CtxtSeqBlock(_, _, AddOneSidedBlockEnd) ->
                 Some (ORIGHT_BLOCK_END(getLastTokenEndRange ()))
 
+            | CtxtModuleHead(isNested = true) ->
+                Some OBLOCKSEP
+
             | _ ->
                 None
 
@@ -1557,9 +1563,11 @@ type LexFilterImpl (
             | INTERP_STRING_PART _ ->
                 pushCtxt tokenTup (CtxtParen (token, tokenTup.LexbufState.EndPos))
                 pushCtxtSeqBlock tokenTup NoAddBlockEnd
+            | INTERP_STRING_END _ -> ()
             | _ ->
                 // Queue a dummy token at this position to check if any closing rules apply
                 delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+
             returnToken tokenLexbufState token
 
         // Balancing rule. Encountering a 'end' can balance with a 'with' but only when not offside
@@ -1598,11 +1606,11 @@ type LexFilterImpl (
         //  Otherwise it's a 'head' module declaration, so ignore it
 
         //  Here prevToken is either 'module', 'rec', 'global' (invalid), '.', or ident, because we skip attribute tokens and access modifier tokens
-        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: rest ->
+        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes, isNested) :: rest ->
             match prevToken, token with
             | _, GREATER_RBRACK when lexingModuleAttributes = LexingModuleAttributes
                                      && moduleTokenPos.Column < tokenStartPos.Column ->
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, NotLexingModuleAttributes))
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, NotLexingModuleAttributes, isNested))
                 returnToken tokenLexbufState token
             | _ when lexingModuleAttributes = LexingModuleAttributes
                      && moduleTokenPos.Column < tokenStartPos.Column ->
@@ -1612,10 +1620,10 @@ type LexFilterImpl (
             | MODULE, GLOBAL
             | (MODULE | REC | DOT), (REC | IDENT _)
             | IDENT _, DOT when moduleTokenPos.Column < tokenStartPos.Column ->
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes))
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, token, NotLexingModuleAttributes, isNested))
                 returnToken tokenLexbufState token
             | MODULE, LBRACK_LESS when moduleTokenPos.Column < tokenStartPos.Column  ->
-                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, LexingModuleAttributes))
+                replaceCtxt tokenTup (CtxtModuleHead (moduleTokenPos, prevToken, LexingModuleAttributes, isNested))
                 returnToken tokenLexbufState token
             | _, (EQUALS | COLON) ->
                 if debug then dprintf "CtxtModuleHead: COLON/EQUALS, pushing CtxtModuleBody and CtxtSeqBlock\n"
@@ -1643,7 +1651,7 @@ type LexFilterImpl (
                     // and we've encountered declarations below
                     if debug then dprintf "CtxtModuleHead: not start of file, popping CtxtModuleHead\n"
                     popCtxt()
-                    reprocessWithoutBlockRule()
+                    insertTokenFromPrevPosToCurrentPos OBLOCKSEP
 
         //  Offside rule for SeqBlock.
         //      f x
@@ -1972,7 +1980,8 @@ type LexFilterImpl (
         | MODULE, _ :: _ ->
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes))
+            let isNested = match offsideStack with | [ CtxtSeqBlock _ ] -> false | _ -> true
+            pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes, isNested))
             pool.Return tokenTup
             hwTokenFetch useBlockRule
 
@@ -2304,7 +2313,7 @@ type LexFilterImpl (
             if debug then dprintf "WITH\n"
             if debug then dprintf "WITH --> NO MATCH, pushing CtxtWithAsAugment (type augmentation), stack = %A" stack
             pushCtxt tokenTup (CtxtWithAsAugment tokenStartPos)
-            pushCtxtSeqBlock tokenTup AddBlockEnd
+            tryPushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
         | FUNCTION, _ ->

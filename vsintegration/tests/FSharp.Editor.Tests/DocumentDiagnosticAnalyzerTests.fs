@@ -130,16 +130,6 @@ let b =
         )
 
     [<Fact>]
-    member public this.Error_Type_WithoutName() =
-        this.VerifyErrorBetweenMarkers(
-            fileContents =
-                """
-type (*start*)=(*end*)
-                """,
-            expectedMessage = "Unexpected symbol '=' in type name"
-        )
-
-    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_1() =
         this.VerifyNoErrors(
             """
