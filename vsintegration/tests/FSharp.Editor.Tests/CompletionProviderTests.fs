@@ -1199,6 +1199,76 @@ type A<'keyType> =
         VerifyCompletionList(fileContents, "of key", [ "keyType" ], [])
 
     [<Fact>]
+    let ``Completion list on a union identifier and a dot in a match clause contains union cases`` () =
+        let fileContents =
+            """
+type DU =
+    | A
+    | B
+    | C
+
+match A with
+|  DU. -> ()
+
+match A with
+| B
+|   DU.
+| A -> ()
+
+match A with
+| DU.
+"""
+
+        VerifyCompletionListExactly(fileContents, "| DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|  DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|   DU.", [ "A"; "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list on a union identifier and a dot in a match clause contains union cases2`` () =
+        let fileContents =
+            """
+type DU =
+    | A
+    | B
+    | C
+
+match None with
+| Some DU.
+
+match A, () with
+| DU.
+
+match A, () with
+|  Some DU., _ -> ()
+
+match (), A with
+| _, DU.
+"""
+
+        VerifyCompletionListExactly(fileContents, "| Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|  Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| _, DU.", [ "A"; "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list on a module identifier and a dot in a match clause contains module contents`` () =
+        let fileContents =
+            """
+module M =
+    type DU =
+        | A
+
+match M.A with
+| M. -> ()
+
+match M.A with
+|  M.DU. ->
+"""
+
+        VerifyCompletionListExactly(fileContents, "| M.", [ "A"; "DU" ])
+        VerifyCompletionListExactly(fileContents, "|  M.DU.", [ "A" ])
+
+    [<Fact>]
     let ``Completion list on type alias contains modules and types but not keywords or functions`` () =
         let fileContents =
             """

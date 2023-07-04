@@ -807,9 +807,9 @@
         <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="translated">预期模式</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
