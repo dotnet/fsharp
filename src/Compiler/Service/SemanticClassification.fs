@@ -19,6 +19,21 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
+[<Struct>]
+type private OrderedSet<'T> =
+    val mutable private set : HashSet<'T>
+    val mutable private list : LinkedList<'T>
+    new (comparer: IEqualityComparer<'T>) =
+        { set = HashSet(comparer); list = LinkedList() }
+    member this.Add (x: 'T) =
+        if this.set.Add(x) then
+            this.list.AddLast(x) |> ignore
+            true
+        else
+            false
+    member this.ToArray () =
+        this.list |> Seq.toArray
+
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1
@@ -180,7 +195,7 @@ module TcResolutionsExtensions =
             else
                 cnrs
 
-    let private semanticClassificationItemComparer =
+    let private semanticClassificationItemEqualityComparer =
         { new IEqualityComparer<SemanticClassificationItem> with
                 member _.Equals(x1, x2) = equals (x1.Range) (x2.Range)
                 member _.GetHashCode o = o.Range.GetHashCode()
@@ -210,7 +225,7 @@ module TcResolutionsExtensions =
                     | None -> Array.singleton resolutions
 
                 // TODO: Check if we need strict ordering here.
-                let results = HashSet<SemanticClassificationItem>(semanticClassificationItemComparer)
+                let results = OrderedSet<SemanticClassificationItem>(semanticClassificationItemEqualityComparer)
 
                 let inline add m (typ: SemanticClassificationType) : unit =
                     results.Add(SemanticClassificationItem((m, typ))) |> ignore
@@ -403,7 +418,7 @@ module TcResolutionsExtensions =
                     for (m, _) in formatSpecifierLocations do
                         add m SemanticClassificationType.Printf
 
-                Seq.toArray results
+                results.ToArray()
 
             DiagnosticsScope.Protect
                 range0
