@@ -133,6 +133,59 @@ module TcResolutionsExtensions =
 #endif
         | TNoRepr -> SemanticClassificationType.ReferenceType
 
+    [<return: Struct>]
+    let inline (|LegitTypeOccurence|_|) occ =
+        match occ with
+        | ItemOccurence.UseInType
+        | ItemOccurence.UseInAttribute
+        | ItemOccurence.Use
+        | ItemOccurence.Binding
+        | ItemOccurence.Pattern
+        | ItemOccurence.Open -> ValueSome()
+        | _ -> ValueNone
+
+    [<return: Struct>]
+    let inline (|KeywordIntrinsicValue|_|) g (vref: ValRef) =
+        if
+            valRefEq g g.raise_vref vref
+            || valRefEq g g.reraise_vref vref
+            || valRefEq g g.typeof_vref vref
+            || valRefEq g g.typedefof_vref vref
+            || valRefEq g g.sizeof_vref vref
+            || valRefEq g g.nameof_vref vref
+        then
+            ValueSome()
+        else
+            ValueNone
+
+    [<return: Struct>]
+    let inline (|EnumCaseFieldInfo|_|) (rfinfo: RecdFieldInfo) =
+        match rfinfo.TyconRef.TypeReprInfo with
+        | TFSharpObjectRepr x ->
+            match x.fsobjmodel_kind with
+            | TFSharpEnum -> ValueSome()
+            | _ -> ValueNone
+        | _ -> ValueNone
+
+    // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
+    // We should prefer the latter, otherwise they would not get classified as CEs.
+    let inline takeCustomBuilder (cnrs: CapturedNameResolution[]) =
+            assert (cnrs.Length > 0)
+
+            if cnrs.Length = 2 then
+                match cnrs[0].Item, cnrs[1].Item with
+                | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
+                | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
+                | _ -> cnrs
+            else
+                cnrs
+
+    let private semanticClassificationItemComparer =
+        { new IEqualityComparer<SemanticClassificationItem> with
+                member _.Equals(x1, x2) = equals (x1.Range) (x2.Range)
+                member _.GetHashCode o = o.Range.GetHashCode()
+        }
+
     type TcResolutions with
 
         member sResolutions.GetSemanticClassification
@@ -142,82 +195,35 @@ module TcResolutionsExtensions =
                 formatSpecifierLocations: (range * int)[],
                 range: range option
             ) : SemanticClassificationItem[] =
-            DiagnosticsScope.Protect
-                range0
-                (fun () ->
-                    let (|LegitTypeOccurence|_|) occ =
-                        match occ with
-                        | ItemOccurence.UseInType
-                        | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use
-                        | ItemOccurence.Binding
-                        | ItemOccurence.Pattern
-                        | ItemOccurence.Open -> Some()
-                        | _ -> None
 
-                    let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-                        if
-                            valRefEq g g.raise_vref vref
-                            || valRefEq g g.reraise_vref vref
-                            || valRefEq g g.typeof_vref vref
-                            || valRefEq g g.typedefof_vref vref
-                            || valRefEq g g.sizeof_vref vref
-                            || valRefEq g g.nameof_vref vref
-                        then
-                            Some()
-                        else
-                            None
+            let inline classifyResolutions () =
 
-                    let (|EnumCaseFieldInfo|_|) (rfinfo: RecdFieldInfo) =
-                        match rfinfo.TyconRef.TypeReprInfo with
-                        | TFSharpObjectRepr x ->
-                            match x.fsobjmodel_kind with
-                            | TFSharpEnum -> Some()
-                            | _ -> None
-                        | _ -> None
+                let resolutions = sResolutions.CapturedNameResolutions.ToArray()
+                let resolutions =
+                    match range with
+                    | Some range ->
+                        resolutions
+                        |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
+                        |> Array.groupBy (fun cnr -> cnr.Range)
+                        |> Array.map (fun (_, cnrs) -> takeCustomBuilder cnrs)
 
-                    // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
-                    // We should prefer the latter, otherwise they would not get classified as CEs.
-                    let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
-                        assert (cnrs.Length > 0)
+                    | None -> Array.singleton resolutions
 
-                        if cnrs.Length = 1 then
-                            cnrs
-                        elif cnrs.Length = 2 then
-                            match cnrs[0].Item, cnrs[1].Item with
-                            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                            | _ -> cnrs
-                        else
-                            cnrs
+                // TODO: Check if we need strict ordering here.
+                let results = HashSet<SemanticClassificationItem>(semanticClassificationItemComparer)
 
-                    let resolutions =
-                        match range with
-                        | Some range ->
-                            sResolutions.CapturedNameResolutions.ToArray()
-                            |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-                            |> Array.groupBy (fun cnr -> cnr.Range)
-                            |> Array.map (fun (_, cnrs) -> takeCustomBuilder cnrs)
-                            |> Array.concat
-                        | None -> sResolutions.CapturedNameResolutions.ToArray()
+                let inline add m (typ: SemanticClassificationType) : unit =
+                    results.Add(SemanticClassificationItem((m, typ))) |> ignore
 
-                    let duplicates = HashSet<range>(comparer)
-
-                    let results = ImmutableArray.CreateBuilder()
-
-                    let inline add m (typ: SemanticClassificationType) =
-                        if duplicates.Add m then
-                            results.Add(SemanticClassificationItem((m, typ)))
-
-                    resolutions
-                    |> Array.iter (fun cnr ->
+                for group in resolutions do
+                    for cnr in group do
                         match cnr.Item, cnr.ItemOccurence, cnr.Range with
                         | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
                             add m SemanticClassificationType.ComputationExpression
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
-                        | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
+                        | Item.Value (KeywordIntrinsicValue g), ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
                         | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
                             if isDiscard vref.DisplayName then
@@ -392,14 +398,16 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.ReferenceType
 
-                        | _, _, m -> add m SemanticClassificationType.Plaintext)
+                        | _, _, m -> add m SemanticClassificationType.Plaintext
 
-                    let locs =
-                        formatSpecifierLocations
-                        |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf)))
+                    for (m, _) in formatSpecifierLocations do
+                        add m SemanticClassificationType.Printf
 
-                    results.AddRange(locs)
-                    results.ToArray())
+                Seq.toArray results
+
+            DiagnosticsScope.Protect
+                range0
+                classifyResolutions
                 (fun msg ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
                     Array.empty)
