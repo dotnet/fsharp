@@ -758,25 +758,26 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind (_v, _e, _) as bind) =
     // see test ``Warn successfully for rec call in binding`` for an example
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match bind.Expr with
-        | Expr.Lambda (_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
+        | Expr.TyLambda (bodyExpr = bodyExpr)
+        | Expr.Lambda (bodyExpr = bodyExpr) ->
             let rec checkTailCall (insideSubBinding: bool) expr =
                 match expr with
-                | Expr.Val (valRef, _valUseFlag, m) ->
+                | Expr.Val (valRef = valRef; range = m) ->
                     if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
                         warning (Error(FSComp.SR.chkNotTailRecursive (valRef.DisplayName), m))
-                | Expr.App (funcExpr, _formalType, _typeArgs, exprs, _range) ->
+                | Expr.App (funcExpr = funcExpr; args = argExprs) ->
                     checkTailCall insideSubBinding funcExpr
-                    exprs |> List.iter (checkTailCall insideSubBinding)
+                    argExprs |> List.iter (checkTailCall insideSubBinding)
                 | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
-                | Expr.Lambda (_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
-                    checkTailCall insideSubBinding bodyExpr
+                | Expr.Lambda (bodyExpr = bodyExpr) -> checkTailCall insideSubBinding bodyExpr
                 | Expr.DebugPoint (_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
-                | Expr.Let (binding, bodyExpr, _range, _frees) ->
+                | Expr.Let (binding = binding; bodyExpr = bodyExpr) ->
                     checkTailCall true binding.Expr
                     checkTailCall insideSubBinding bodyExpr
-                | Expr.Match (_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
+                | Expr.Match (targets = decisionTreeTargets) ->
                     decisionTreeTargets
                     |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
+                | Expr.Op (op = TOp.Coerce; args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBinding)
                 | _ -> ()
 
             checkTailCall false bodyExpr
