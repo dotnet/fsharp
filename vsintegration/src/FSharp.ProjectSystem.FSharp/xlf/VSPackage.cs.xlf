@@ -444,7 +444,7 @@
       </trans-unit>
       <trans-unit id="ProductID">
         <source>1.0</source>
-        <target state="translated">1.0</target>
+        <target state="new">1.0</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductName">

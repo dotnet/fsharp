@@ -11,7 +11,7 @@ open Microsoft.FSharp.Control
 [<RequireQualifiedAccess>]
 module Observable =
 
-    let inline protect f succeed fail =
+    let inline protect ([<InlineIfLambda>] f) ([<InlineIfLambda>] succeed) ([<InlineIfLambda>] fail) =
         match
             (try
                 Choice1Of2(f ())

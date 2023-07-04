@@ -167,4 +167,4 @@ type internal FilePairMap(files: FileInProject array) =
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
-type internal Finisher<'State, 'Result> = delegate of 'State -> 'Result * 'State
+type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)
