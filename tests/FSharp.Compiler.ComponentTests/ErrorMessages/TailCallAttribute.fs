@@ -553,13 +553,22 @@ namespace N
                 | TMDefOpens _ -> ()
                 | TMDefs defs ->
                     for def in defs do
-                        yield! allValsAndExprsOfModDef def
+                        yield! allValsAndExprsOfModDef def  // ToDo: okay to warn here?
             }
         """
         |> FSharp
         |> withLangVersionPreview
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 34
+                        StartColumn = 32
+                        EndLine = 34
+                        EndColumn = 59 }
+              Message =
+                "The member or function 'allValsAndExprsOfModDef' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
         
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for calls in for and iter`` () =

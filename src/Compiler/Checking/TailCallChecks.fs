@@ -36,8 +36,8 @@ type env =
 
 let (|ValUseAtApp|_|) e =
     match e with
-    | InnerExprPat (Expr.App (InnerExprPat (Expr.Val (valRef = vref; flags = valUseFlags)), _, _, [], _) | Expr.Val (valRef = vref
-                                                                                                                     flags = valUseFlags)) ->
+    | InnerExprPat (Expr.App (funcExpr = InnerExprPat (Expr.Val (valRef = vref; flags = valUseFlags))) | Expr.Val (valRef = vref
+                                                                                                                   flags = valUseFlags)) ->
         Some(vref, valUseFlags)
     | _ -> None
 
@@ -285,7 +285,7 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (isTail
 
     | _ ->
         // not a linear expression
-        CheckExpr cenv env expr ctxt isTailCall
+        CheckExpr cenv env expr ctxt (IsTailCall.YesFromExpr cenv.g expr)
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) (isTailCall: IsTailCall) : unit =
