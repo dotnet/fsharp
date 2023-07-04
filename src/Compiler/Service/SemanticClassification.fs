@@ -21,18 +21,23 @@ open FSharp.Compiler.TypeHierarchy
 
 [<Struct>]
 type private OrderedSet<'T> =
-    val mutable private set : HashSet<'T>
-    val mutable private list : LinkedList<'T>
-    new (comparer: IEqualityComparer<'T>) =
-        { set = HashSet(comparer); list = LinkedList() }
-    member this.Add (x: 'T) =
+    val private set: HashSet<'T>
+    val private list: LinkedList<'T>
+
+    new(comparer: IEqualityComparer<'T>) =
+        {
+            set = HashSet(comparer)
+            list = LinkedList()
+        }
+
+    member this.Add(x: 'T) =
         if this.set.Add(x) then
             this.list.AddLast(x) |> ignore
             true
         else
             false
-    member this.ToArray () =
-        this.list |> Seq.toArray
+
+    member this.ToArray() = this.list |> Seq.toArray
 
 type SemanticClassificationType =
     | ReferenceType = 0
@@ -185,20 +190,20 @@ module TcResolutionsExtensions =
     // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
     // We should prefer the latter, otherwise they would not get classified as CEs.
     let inline takeCustomBuilder (cnrs: CapturedNameResolution[]) =
-            assert (cnrs.Length > 0)
+        assert (cnrs.Length > 0)
 
-            if cnrs.Length = 2 then
-                match cnrs[0].Item, cnrs[1].Item with
-                | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                | _ -> cnrs
-            else
-                cnrs
+        if cnrs.Length = 2 then
+            match cnrs[0].Item, cnrs[1].Item with
+            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
+            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
+            | _ -> cnrs
+        else
+            cnrs
 
     let private semanticClassificationItemEqualityComparer =
         { new IEqualityComparer<SemanticClassificationItem> with
-                member _.Equals(x1, x2) = equals (x1.Range) (x2.Range)
-                member _.GetHashCode o = o.Range.GetHashCode()
+            member _.Equals(x1, x2) = equals (x1.Range) (x2.Range)
+            member _.GetHashCode o = o.Range.GetHashCode()
         }
 
     type TcResolutions with
@@ -214,6 +219,7 @@ module TcResolutionsExtensions =
             let inline classifyResolutions () =
 
                 let resolutions = sResolutions.CapturedNameResolutions.ToArray()
+
                 let resolutions =
                     match range with
                     | Some range ->
@@ -225,7 +231,8 @@ module TcResolutionsExtensions =
                     | None -> Array.singleton resolutions
 
                 // TODO: Check if we need strict ordering here.
-                let results = OrderedSet<SemanticClassificationItem>(semanticClassificationItemEqualityComparer)
+                let results =
+                    OrderedSet<SemanticClassificationItem>(semanticClassificationItemEqualityComparer)
 
                 let inline add m (typ: SemanticClassificationType) : unit =
                     results.Add(SemanticClassificationItem((m, typ))) |> ignore
@@ -420,9 +427,6 @@ module TcResolutionsExtensions =
 
                 results.ToArray()
 
-            DiagnosticsScope.Protect
-                range0
-                classifyResolutions
-                (fun msg ->
-                    Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
-                    Array.empty)
+            DiagnosticsScope.Protect range0 classifyResolutions (fun msg ->
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
+                Array.empty)
