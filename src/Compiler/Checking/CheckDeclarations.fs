@@ -2249,7 +2249,7 @@ module TcExceptionDeclarations =
 
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
-        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
+        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
