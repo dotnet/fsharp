@@ -750,11 +750,17 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind (_v, _e, _) as bind) =
                 | Expr.DebugPoint (_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
                 | Expr.Let (binding = binding; bodyExpr = bodyExpr) ->
                     checkTailCall true binding.Expr
-                    checkTailCall insideSubBinding bodyExpr
+
+                    let warnForBodyExpr =
+                        match stripDebugPoints bodyExpr with
+                        | Expr.Op _ -> true // ToDo: too crude of a check?
+                        | _ -> false
+
+                    checkTailCall warnForBodyExpr bodyExpr
                 | Expr.Match (targets = decisionTreeTargets) ->
                     decisionTreeTargets
                     |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
-                | Expr.Op (op = TOp.Coerce; args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBinding)
+                | Expr.Op (args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBinding)
                 | _ -> ()
 
             checkTailCall false bodyExpr

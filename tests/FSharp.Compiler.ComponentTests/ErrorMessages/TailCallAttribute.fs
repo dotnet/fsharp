@@ -756,3 +756,78 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for ColonColon with inner let-bound value to rec call`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec addOne (input: int list) : int list =
+            match input with
+            | [] -> []
+            | x :: xs ->
+                let head = (x + 1)
+                let tail = addOne xs
+                head :: tail
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 12
+                        StartColumn = 28
+                        EndLine = 12
+                        EndColumn = 34 }
+              Message =
+                "The member or function 'addOne' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for ColonColon with rec call`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec addOne (input: int list) : int list =
+            match input with
+            | [] -> []
+            | x :: xs -> (x + 1) :: addOne xs
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 10
+                        StartColumn = 37
+                        EndLine = 10
+                        EndColumn = 43 }
+              Message =
+                "The member or function 'addOne' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for ColonColon as arg of valid tail call `` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec addOne (input: int list) (acc: int list) : int list = 
+            match input with
+            | [] -> acc
+            | x :: xs -> addOne xs ((x + 1) :: acc)
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
