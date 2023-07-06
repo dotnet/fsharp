@@ -113,21 +113,9 @@ type PermitByRefExpr =
     /// General (address-of expr and byref values not allowed)
     | No
 
-    member ctxt.Disallow =
-        match ctxt with
-        | PermitByRefExpr.Yes
-        | PermitByRefExpr.YesReturnable
-        | PermitByRefExpr.YesReturnableNonLocal -> false
-        | _ -> true
-
     member ctxt.PermitOnlyReturnable =
         match ctxt with
         | PermitByRefExpr.YesReturnable
-        | PermitByRefExpr.YesReturnableNonLocal -> true
-        | _ -> false
-
-    member ctxt.PermitOnlyReturnableNonLocal =
-        match ctxt with
         | PermitByRefExpr.YesReturnableNonLocal -> true
         | _ -> false
 
