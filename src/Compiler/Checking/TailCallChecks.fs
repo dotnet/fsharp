@@ -40,8 +40,12 @@ let (|ValUseAtApp|_|) e =
         Some(vref, valUseFlags)
     | _ -> None
 
+type TailCallReturnType =
+    | MustReturnVoid // indicates "has unit return type and must return void"
+    | NonVoid
+
 type TailCall =
-    | Yes of bool // true indicates "has unit return type and must return void"
+    | Yes of TailCallReturnType
     | No
 
     static member private IsVoidRet (g: TcGlobals) (v: Val) =
@@ -52,20 +56,23 @@ type TailCall =
             let _curriedArgInfos, returnTy =
                 GetTopTauTypeInFSharpForm g info.ArgInfos tau v.Range
 
-            isUnitTy g returnTy
-        | None -> false
+            if isUnitTy g returnTy then
+                TailCallReturnType.MustReturnVoid
+            else
+                TailCallReturnType.NonVoid
+        | None -> TailCallReturnType.NonVoid
 
     static member YesFromVal (g: TcGlobals) (v: Val) = TailCall.Yes(TailCall.IsVoidRet g v)
 
     static member YesFromExpr (g: TcGlobals) (expr: Expr) =
         match expr with
         | ValUseAtApp (valRef, _) -> TailCall.Yes(TailCall.IsVoidRet g valRef.Deref)
-        | _ -> TailCall.Yes false
+        | _ -> TailCall.Yes TailCallReturnType.NonVoid
 
     member x.AtExprLambda =
         match x with
         // Inside a lambda that is considered an expression, we must always return "unit" not "void"
-        | TailCall.Yes _ -> TailCall.Yes false
+        | TailCall.Yes _ -> TailCall.Yes TailCallReturnType.NonVoid
         | TailCall.No -> TailCall.No
 
 let IsValRefIsDllImport g (vref: ValRef) =
@@ -182,7 +189,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (t
                         match tailCall with
                         | TailCall.No -> // an upper level has already decided that this is not in a tailcall position
                             false
-                        | TailCall.Yes isVoidRet ->
+                        | TailCall.Yes returnType ->
                             if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
                                 let topValInfo = vref.ValReprInfo.Value
 
@@ -206,7 +213,9 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (t
                                     | _ -> false
 
                                 let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
-                                let mustGenerateUnitAfterCall = (isUnitTy g returnTy && not isVoidRet)
+
+                                let mustGenerateUnitAfterCall =
+                                    (isUnitTy g returnTy && returnType <> TailCallReturnType.MustReturnVoid)
 
                                 let noTailCallBlockers =
                                     not isNewObj
@@ -246,7 +255,7 @@ and CheckCallWithReceiver cenv env _m _returnTy args ctxts _ctxt =
             | ctxt :: ctxts -> ctxt, ctxts
 
         CheckExpr cenv env receiverArg receiverContext TailCall.No
-        CheckExprs cenv env args ctxts (TailCall.Yes false)
+        CheckExprs cenv env args ctxts (TailCall.Yes TailCallReturnType.NonVoid)
 
 and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (tailCall: TailCall) : unit =
     match expr with
