@@ -22,7 +22,6 @@ namespace N
         """
         |> FSharp
         |> withLangVersionPreview
-        // |> typecheck
         |> compile
         |> shouldFail
         |> withResults [
@@ -815,7 +814,7 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Don't warn for ColonColon as arg of valid tail call `` () =
+    let ``Don't warn for ColonColon as arg of valid tail call`` () =
         """
 namespace N
 
