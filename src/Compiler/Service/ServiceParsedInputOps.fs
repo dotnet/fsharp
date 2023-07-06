@@ -1522,7 +1522,7 @@ module ParsedInput =
 
                 member _.VisitEnumDefn(_, cases, _) =
                     cases
-                    |> List.tryPick (fun (SynEnumCase (ident = SynIdent (ident = id))) ->
+                    |> List.tryPick (fun (SynEnumCase(ident = SynIdent (ident = id))) ->
                         if rangeContainsPos id.idRange pos then
                             // No completions in an enum case identifier
                             Some CompletionContext.Invalid
