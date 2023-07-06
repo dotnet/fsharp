@@ -26,9 +26,6 @@ type env =
     {
         /// Values in module that have been marked [<TailCall>]
         mustTailCall: Zset<Val>
-
-        /// Recursive expressions of [<TailCall>] attributed values
-        mustTailCallExprs: Map<Stamp, Expr>
     }
 
     override _.ToString() = "<env>"
@@ -768,24 +765,6 @@ let CheckModuleBinding cenv env (isRec: bool) (TBind (_v, _e, _) as bind) =
 // check modules
 //--------------------------------------------------------------------------
 
-let rec allValsAndExprsOfModDef mdef =
-    seq {
-        match mdef with
-        | TMDefRec (tycons = _tycons; bindings = mbinds) ->
-            for mbind in mbinds do
-                match mbind with
-                | ModuleOrNamespaceBinding.Binding bind -> yield bind.Var, bind.Expr
-                | ModuleOrNamespaceBinding.Module (moduleOrNamespaceContents = def) -> yield! allValsAndExprsOfModDef def
-        | TMDefLet (binding = bind) ->
-            let e = stripExpr bind.Expr
-            yield bind.Var, e
-        | TMDefDo _ -> ()
-        | TMDefOpens _ -> ()
-        | TMDefs defs ->
-            for def in defs do
-                yield! allValsAndExprsOfModDef def
-    }
-
 let rec CheckDefnsInModule cenv env mdefs =
     for mdef in mdefs do
         CheckDefnInModule cenv env mdef
@@ -795,24 +774,20 @@ and CheckDefnInModule cenv env mdef =
     | TMDefRec (isRec, _opens, _tycons, mspecs, _m) ->
         let env =
             if isRec then
-                let vallsAndExprs = allValsAndExprsOfModDef mdef
+                let vals = allValsOfModDef mdef
 
-                let mustTailCall, mustTailCallExprs =
+                let mustTailCall =
                     Seq.fold
-                        (fun (mustTailCall, mustTailCallExpr) (v: Val, e) ->
+                        (fun mustTailCall (v: Val) ->
                             if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
                                 let newSet = Zset.add v mustTailCall
-                                let newMap = Map.add v.Stamp e mustTailCallExpr
-                                (newSet, newMap)
+                                newSet
                             else
-                                (mustTailCall, mustTailCallExpr))
-                        (env.mustTailCall, env.mustTailCallExprs)
-                        vallsAndExprs
+                                mustTailCall)
+                        env.mustTailCall
+                        vals
 
-                { env with
-                    mustTailCall = mustTailCall
-                    mustTailCallExprs = mustTailCallExprs
-                }
+                { env with mustTailCall = mustTailCall }
             else
                 env
 
@@ -840,7 +815,6 @@ and CheckModuleSpec cenv env isRec mbind =
             else
                 { env with
                     mustTailCall = Zset.empty valOrder
-                    mustTailCallExprs = Map.empty
                 }
 
         CheckModuleBinding cenv env isRec bind
@@ -855,10 +829,6 @@ let CheckImplFile (g, amap, reportErrors, implFileContents) =
             amap = amap
         }
 
-    let env =
-        {
-            mustTailCall = Zset.empty valOrder
-            mustTailCallExprs = Map<Stamp, Expr>.Empty
-        }
+    let env = { mustTailCall = Zset.empty valOrder }
 
     CheckDefnInModule cenv env implFileContents
