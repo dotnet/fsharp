@@ -2,16 +2,23 @@
 
 module FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
 
+open System
+open System.Collections.Immutable
 open System.Threading
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
+open FSharp.Compiler.Diagnostics
 open FSharp.Editor.Tests.Helpers
 
-type TestCodeFix = { Title: string; FixedCode: string }
+type TestCodeFix = { Message: string; FixedCode: string }
+
+let mockAction =
+    Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
 let getRelevantDiagnostic (document: Document) errorNumber =
     cancellableTask {
@@ -20,27 +27,40 @@ let getRelevantDiagnostic (document: Document) errorNumber =
         return
             checkFileResults.Diagnostics
             |> Seq.where (fun d -> d.ErrorNumber = errorNumber)
-            |> Seq.exactlyOne
+            |> Seq.head
     }
 
-let fix (code: string) diagnostic (fixProvider: IFSharpCodeFix) =
+let createTestCodeFixContext (code: string) (document: Document) (diagnostic: FSharpDiagnostic) =
+    cancellableTask {
+        let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
+        let sourceText = SourceText.From code
+
+        let location =
+            RoslynHelpers.RangeToLocation(diagnostic.Range, sourceText, document.FilePath)
+
+        let roslynDiagnostic = RoslynHelpers.ConvertError(diagnostic, location)
+
+        return CodeFixContext(document, roslynDiagnostic, mockAction, cancellationToken)
+    }
+
+let tryFix (code: string) diagnostic (fixProvider: IFSharpCodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
         let document = RoslynTestHelpers.GetFsDocument code
 
         let! diagnostic = getRelevantDiagnostic document diagnostic
+        let! context = createTestCodeFixContext code document diagnostic
 
-        let diagnosticSpan =
-            RoslynHelpers.FSharpRangeToTextSpan(sourceText, diagnostic.Range)
-
-        let! title, changes = fixProvider.GetChangesAsync document diagnosticSpan
-        let fixedSourceText = sourceText.WithChanges changes
+        let! result = fixProvider.GetCodeFixIfAppliesAsync context
 
         return
-            {
-                Title = title
-                FixedCode = fixedSourceText.ToString()
-            }
+            (result
+             |> Option.map (fun codeFix ->
+                 {
+                     Message = codeFix.Message
+                     FixedCode = (sourceText.WithChanges codeFix.Changes).ToString()
+                 }))
     }
     |> CancellableTask.start CancellationToken.None
     |> fun task -> task.Result

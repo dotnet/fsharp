@@ -295,6 +295,21 @@ type Derived3() =
                 (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]
 
     [<Fact>]
+    let ``Interface member with tuple argument should give error message with better solution``() =
+        FSharp """
+type IFoo = 
+  abstract member Bar: (int * int) -> int
+  
+type Foo =
+  interface IFoo with
+    member _.Bar (x, y) = x + y
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
+                                 """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c').""")
+
+    [<Fact>]
     let ``Elements in computed lists, arrays and sequences``() =
         FSharp """
 let f1 =
@@ -335,3 +350,4 @@ let f4 =
             (Error 193,   Line 21, Col 9,  Line 21, Col 24, "Type constraint mismatch. The type \n    'int list'    \nis not compatible with type\n    'string seq'    \n")
             (Error 193,   Line 28, Col 9,  Line 28, Col 12, "Type constraint mismatch. The type \n    'float'    \nis not compatible with type\n    'int64'    \n")
         ]
+

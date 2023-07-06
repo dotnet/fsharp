@@ -203,27 +203,27 @@ let AddLocalValPrimitive g (v: Val) env =
 
 /// Add a table of local values to TcEnv
 let AddLocalValMap g tcSink scopem (vals: Val NameMap) env =
-    let env =
-        if vals.IsEmpty then
-            env
-        else
+    if vals.IsEmpty then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValMapToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a list of local values to TcEnv and report them to the sink
 let AddLocalVals g tcSink scopem (vals: Val list) env =
-    let env =
-        if isNil vals then
-            env
-        else
+    if isNil vals then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValListToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a local value to TcEnv and report it to the sink
 let AddLocalVal g tcSink scopem v env =
@@ -235,9 +235,11 @@ let AddLocalVal g tcSink scopem v env =
 
 /// Add a set of explicitly declared type parameters as being available in the TcEnv
 let AddDeclaredTypars check typars env =
-    if isNil typars then env else
-    let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
-    { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+    if isNil typars then
+        env
+    else
+        let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
+        { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
 /// Environment of implicitly scoped type parameters, e.g. 'a in "(x: 'a)"
 
@@ -1919,7 +1921,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let ad = env.eAccessRights
 
     let mkf, argTys, _argNames =
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId ExtraDotAfterIdentifier.No with
         | Item.UnionCase _ | Item.ExnCase _ as item ->
             ApplyUnionCaseOrExn funcs m cenv env ty1 item
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
@@ -2404,11 +2406,13 @@ module BindingNormalization =
             | SynPat.FromParseError(innerPat, _) ->
                 normPattern innerPat
 
-            | SynPat.LongIdent (SynLongIdent(longId, _, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _) as synLongId, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
-                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+                    let extraDot = if synLongId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
+
+                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
                     | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
@@ -4353,8 +4357,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.Tuple(isStruct, segments, m) ->
         TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct segments m
 
-    | SynType.AnonRecd(_, [],m) ->
-        error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
+    | SynType.AnonRecd(fields = []) ->
+        // The parser takes care of error messages
+        NewErrorType(), tpenv
 
     | SynType.AnonRecd(isStruct, args, m) ->
         TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m
@@ -11091,13 +11096,27 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                      []
 
-                 | slots ->
+                 | slot :: _ as slots ->
                      match dispatchSlotsArityMatch with
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
-                         let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
-                         []
+                         let raiseGenericArityMismatch() =
+                              let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
+                              errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
+                              []
+                         
+                         match slot with
+                         | FSMeth (_, _, valRef, _) ->
+                             match valRef.TauType with
+                             // https://github.com/dotnet/fsharp/issues/15307
+                             // check if abstract method expects tuple, give better error message
+                             | TType_fun(_,TType_fun(TType_tuple _,_,_),_) ->
+                                 if not slot.NumArgs.IsEmpty && slot.NumArgs.Head = 1 then 
+                                     errorR(Error(FSComp.SR.tcOverrideUsesMultipleArgumentsInsteadOfTuple(), memberId.idRange))
+                                     []
+                                 else raiseGenericArityMismatch()
+                             | _ -> raiseGenericArityMismatch()
+                         | _ -> raiseGenericArityMismatch()
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 

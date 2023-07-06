@@ -77,7 +77,7 @@ ImplFile
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
                               EqualsRange = Some (6,29--6,30) }), (6,4--6,35))],
-                     (5,2--6,37))], (2,2--2,11), (2,0--6,37)), (2,0--6,37))],
+                     (5,2--6,35))], (2,2--2,11), (2,0--6,37)), (2,0--6,37))],
           PreXmlDocEmpty, [], None, (2,0--6,37), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
