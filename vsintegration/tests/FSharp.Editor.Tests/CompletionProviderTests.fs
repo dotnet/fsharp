@@ -1139,6 +1139,8 @@ type ARecord<'keyType> = {
         static member Create () = { F }
         member x.F () = typeof<AR
         member _.G = typeof<ke
+
+let x = { F }
 """
 
         VerifyCompletionList(fileContents, ": key", [ "keyType" ], [])
@@ -1146,7 +1148,8 @@ type ARecord<'keyType> = {
         VerifyCompletionList(fileContents, ": ARecord<ke", [ "ARecord" ], [])
         VerifyCompletionList(fileContents, "typeof<AR", [ "ARecord" ], [])
         VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
-        VerifyCompletionList(fileContents, "{ F", [ "Field"; "Field2"; "Field3" ], [])
+        VerifyCompletionList(fileContents, "Create () = { F", [ "Field"; "Field2"; "Field3" ], [])
+        VerifyCompletionList(fileContents, "let x = { F", [ "Field"; "Field2"; "Field3" ], [])
 
     [<Fact>]
     let ``No completion on record stub with no fields at declaration site`` () =
@@ -1223,6 +1226,8 @@ type AUnion<'keyType> =
         static member Create () = Cas
         member x.F () = typeof<AU
         member _.G = typeof<ke
+
+let x = c
 """
 
         VerifyCompletionList(fileContents, "of key", [ "keyType" ], [])
@@ -1231,6 +1236,7 @@ type AUnion<'keyType> =
         VerifyCompletionList(fileContents, "typeof<AU", [ "AUnion" ], [])
         VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
         VerifyCompletionList(fileContents, "= Cas", [ "Case"; "Case2"; "Case3" ], [])
+        VerifyCompletionList(fileContents, "let x = c", [ "Case"; "Case2"; "Case3" ], [])
 
     [<Fact>]
     let ``Completion list on a union identifier and a dot in a match clause contains union cases`` () =

@@ -3259,8 +3259,7 @@ module EstablishTypeDefinitionCores =
                         match spats with
                         | SynSimplePats.SimplePats(range = m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
 
-            let typars = tycon.Typars m
-            let envinner = AddDeclaredTypars CheckForDuplicateTypars typars envinner
+            let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
 
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
