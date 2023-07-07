@@ -19,6 +19,30 @@ printfn "%s" x"""
     |> shouldSucceed
 
 [<Fact>]
+let ``Underscore Dot ToString With Space Before Paranthesis`` () =
+    Fsx """
+let x = "a" |> _.ToString () """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 1, Line 2, Col 16, Line 2, Col 29, "Type mismatch. Expecting a
+    'string -> 'a'    
+but given a
+    'unit -> string'    
+The type 'string' does not match the type 'unit'"]
+
+[<Fact>]
+let ``Underscore Dot Curried Function With Arguments`` () =
+    Fsx """
+type MyRecord = {MyRecordField:string}
+    with member x.DoStuff a b c = $"%s{x.MyRecordField} %i{a} %i{b} %i{c}"
+let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 72, Line 4, Col 36, Line 4, Col 45, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
+
+[<Fact>]
 let ``Underscore Dot Length on string`` () =         
     Fsx """ 
 let x = "a" |> _.Length
