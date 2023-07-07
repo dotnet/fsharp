@@ -14,24 +14,19 @@ let private diagnostic = 3373 // ... invalid interpolated string ...
 let ``Fixes FS3373`` () =
     let code =
         """
-let answer = $"{"42"}"
+let pluralize n word = if n = 1 then word else $"{word}s"
+let createMsg x = $"Review in {x} {pluralize x "day"}"
 """
 
     let expected =
         Some
             {
                 Message = "Use triple quoted string interpolation."
-                // yeah... because I can't understand how to
-                // put a triple-quoted string inside a triple-quoted string
-                // but this is what we need
                 FixedCode =
-                    """
-let answer = $"""
-                    + "\"\"\""
-                    + """{"42"}"""
-                    + "\"\"\""
-                    + """
-"""
+                    "\r\n"
+                    + "let pluralize n word = if n = 1 then word else $\"{word}s\"\r\n"
+                    + "let createMsg x = $\"\"\"Review in {x} {pluralize x \"day\"}\"\"\""
+                    + "\r\n"
             }
 
     let actual = codeFix |> tryFix code diagnostic
