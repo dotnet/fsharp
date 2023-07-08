@@ -830,3 +830,141 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for non tail-rec traversal`` () =
+        """
+namespace N
+
+    module M =
+    
+        type 'a Tree =
+            | Leaf of 'a
+            | Node of 'a Tree * 'a Tree
+    
+        [<TailCall>]
+        let rec findMax (tree: int Tree) : int =
+            match tree with
+            | Leaf i -> i
+            | Node (l, r) -> System.Math.Max(findMax l, findMax r)
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 46
+                        EndLine = 14
+                        EndColumn = 53 }
+              Message =
+                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 57
+                        EndLine = 14
+                        EndColumn = 64 }
+              Message =
+                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 46
+                        EndLine = 14
+                        EndColumn = 55 }
+              Message =
+                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 57
+                        EndLine = 14
+                        EndColumn = 66 }
+              Message =
+                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+        ]
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda`` () =
+        """
+namespace N
+
+    module M =
+    
+        type 'a Tree =
+            | Leaf of 'a
+            | Node of 'a Tree * 'a Tree
+    
+        [<TailCall>]
+        let rec findMaxInner (tree: int Tree) (continuation: int -> int) : int =
+            match tree with
+            | Leaf i -> i |> continuation
+            | Node (left, right) ->
+                findMaxInner left (fun lMax ->
+                    findMaxInner right (fun rMax ->
+                        System.Math.Max(lMax, rMax) |> continuation
+                    )
+                )
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for Continuation Passing Style func not using [<TailCall>] func in continuation lambda`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec loop
+            (files: string list)
+            (finalContinuation: string list * string list -> string list * string list)
+            =
+            match files with
+            | [] -> finalContinuation ([], [])
+            | h :: rest ->
+                loop rest (fun (files, folders) ->
+                    if h.EndsWith("/") then
+                        files, (h :: folders)
+                    else
+                        (h :: files), folders
+                    |> finalContinuation)
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda 2`` () =
+        """
+namespace N
+
+    module M =
+        type 'a RoseTree =
+            | Leaf of 'a
+            | Node of 'a * 'a RoseTree list
+    
+        [<TailCall>]
+        let rec findMaxInner (roseTree : int RoseTree) (continuation : int -> 'ret) : 'ret =
+            match roseTree with
+            | Leaf i
+            | Node (i, [])  -> i |> continuation
+            | Node (i, [ x ]) ->
+                findMaxInner x (fun xMax ->
+                    System.Math.Max(i, xMax) |> continuation
+                )
+            | Node (i, [ x; y ]) ->
+                findMaxInner x (fun xMax ->
+                    findMaxInner y (fun yMax ->
+                        System.Math.Max(i, System.Math.Max(xMax, yMax)) |> continuation
+                    )
+                )
+            | _ -> failwith "Nodes with lists longer than 2 are not supported"
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
