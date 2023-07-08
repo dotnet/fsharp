@@ -1390,8 +1390,7 @@ module ParsedInput =
                         | SynExpr.Record (None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
                         // Unchecked.defaultof<str$>
-                        | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
-                            Some CompletionContext.Type
+                        | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.Type
 
                         // fun (Some v$ ) ->
                         | SynExpr.Lambda(parsedData = Some (pats, _)) ->
