@@ -93,6 +93,7 @@ type cenv =
 //--------------------------------------------------------------------------
 
 /// Indicates whether an address-of operation is permitted at a particular location
+/// Type definition taken from PostInferenceChecks.fs. To be kept in sync.
 [<RequireQualifiedAccess>]
 type PermitByRefExpr =
     /// Permit a tuple of arguments where elements can be byrefs
