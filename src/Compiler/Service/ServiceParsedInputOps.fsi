@@ -24,9 +24,6 @@ type public RecordContext =
 
 [<RequireQualifiedAccess>]
 type public PatternContext =
-    /// Completing pattern type (e.g. foo (x: |))
-    | Type
-
     /// Completing union case field in a pattern (e.g. fun (Some v|) -> )
     /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
     | PositionalUnionCaseField of fieldIndex: int option * caseIdRange: range
@@ -58,6 +55,10 @@ type public CompletionContext =
     | AttributeApplication
 
     | OpenDeclaration of isOpenType: bool
+
+    /// Completing a type annotation (e.g. foo (x: |))
+    /// Completing a type application (e.g. typeof<str| >)
+    | Type
 
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration

@@ -1474,7 +1474,7 @@ type internal TypeCheckInfo
                     m)
 
             // Completion at '(x: ...)"
-            | Some (CompletionContext.Pattern PatternContext.Type)
+            | Some CompletionContext.Type
             // Completion at  '| Case1 of ...'
             | Some CompletionContext.UnionCaseFieldsDeclaration
             // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
@@ -1538,9 +1538,9 @@ type internal TypeCheckInfo
                     match patternContext with
                     | PatternContext.PositionalUnionCaseField (index, m) -> Choice1Of2 index, m
                     | PatternContext.NamedUnionCaseField (name, m) -> Choice2Of2 name, m
-                    | PatternContext.Type // This is handled separately above
                     | PatternContext.Other -> Choice1Of2 None, range0
 
+                // No special handling for PatternContext.Other other than filtering out non-literal values
                 if equals caseIdRange range0 then
                     declaredItems
                 else

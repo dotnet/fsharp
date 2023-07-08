@@ -51,9 +51,6 @@ type RecordContext =
 
 [<RequireQualifiedAccess>]
 type PatternContext =
-    /// Completing pattern type (e.g. foo (x: |))
-    | Type
-
     /// Completing union case field in a pattern (e.g. fun (Some v|) -> )
     /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
     | PositionalUnionCaseField of fieldIndex: int option * caseIdRange: range
@@ -85,6 +82,10 @@ type CompletionContext =
     | AttributeApplication
 
     | OpenDeclaration of isOpenType: bool
+
+    /// Completing a type annotation (e.g. foo (x: |))
+    /// Completing a type application (e.g. typeof<str| >)
+    | Type
 
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
@@ -1340,13 +1341,13 @@ module ParsedInput =
         | SynPat.Or (lhsPat = pat1; rhsPat = pat2) ->
             TryGetCompletionContextInPattern suppressIdentifierCompletions pat1 None pos
             |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat2 None pos)
-        | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some(CompletionContext.Pattern PatternContext.Type)
+        | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some CompletionContext.Type
         | SynPat.Wild m when rangeContainsPos m pos -> Some CompletionContext.Invalid
         | SynPat.Typed (pat = pat; targetType = synType) ->
             if rangeContainsPos pat.Range pos then
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
             elif rangeContainsPos synType.Range pos then
-                Some(CompletionContext.Pattern PatternContext.Type)
+                Some CompletionContext.Type
             else
                 None
         | _ -> None
@@ -1390,7 +1391,7 @@ module ParsedInput =
 
                         // Unchecked.defaultof<str$>
                         | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
-                            Some(CompletionContext.Pattern PatternContext.Type)
+                            Some CompletionContext.Type
 
                         // fun (Some v$ ) ->
                         | SynExpr.Lambda(parsedData = Some (pats, _)) ->
@@ -1518,7 +1519,7 @@ module ParsedInput =
                                 Some CompletionContext.Invalid
                             // type C (x: int|) ->
                             elif rangeContainsPos synType.Range pos then
-                                Some(CompletionContext.Pattern PatternContext.Type)
+                                Some CompletionContext.Type
                             else
                                 None
                         | _ -> None)
@@ -1557,7 +1558,7 @@ module ParsedInput =
 
                 member _.VisitType(_, defaultTraverse, ty) =
                     match ty with
-                    | SynType.LongIdent _ when rangeContainsPos ty.Range pos -> Some(CompletionContext.Pattern PatternContext.Type)
+                    | SynType.LongIdent _ when rangeContainsPos ty.Range pos -> Some CompletionContext.Type
                     | _ -> defaultTraverse ty
 
                 member _.VisitRecordDefn(_, fields, _) =
