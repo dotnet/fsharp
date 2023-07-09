@@ -226,8 +226,8 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr (t
     | _ -> ()
 
 /// Check call arguments, including the return argument.
-and CheckCall cenv env _m _returnTy args tailCalls ctxts _ctxt =
-    CheckExprs cenv env args ctxts tailCalls
+and CheckCall cenv env _m _returnTy args ctxts _ctxt =
+    CheckExprs cenv env args ctxts TailCall.No
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
 and CheckCallWithReceiver cenv env _m _returnTy args ctxts _ctxt =
@@ -241,8 +241,7 @@ and CheckCallWithReceiver cenv env _m _returnTy args ctxts _ctxt =
             | ctxt :: ctxts -> ctxt, ctxts
 
         CheckExpr cenv env receiverArg receiverContext TailCall.No
-        let tailCalls = List.replicate args.Length (TailCall.Yes TailCallReturnType.NonVoid)
-        CheckExprs cenv env args ctxts tailCalls
+        CheckExprs cenv env args ctxts (TailCall.Yes TailCallReturnType.NonVoid)
 
 and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (tailCall: TailCall) : unit =
     match expr with
@@ -385,8 +384,7 @@ and CheckFSharpBaseCall cenv env _expr (v, f, _fty, _tyargs, _baseVal, rest, _m)
     if memberInfo.MemberFlags.IsDispatchSlot then
         ()
     else
-        let tailCalls = List.replicate rest.Length TailCall.No
-        CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f) tailCalls
+        CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f) TailCall.No
 
 and CheckILBaseCall cenv env (_ilMethRef, _enclTypeInst, _methInst, _retTypes, _tyargs, _baseVal, rest, _m) : unit =
     CheckExprsPermitByRefLike cenv env rest
@@ -407,33 +405,7 @@ and CheckApplication cenv env expr (f, _tyargs, argsl, m) ctxt (tailCall: TailCa
     if hasReceiver then
         CheckCallWithReceiver cenv env m returnTy argsl ctxts ctxt
     else
-        // if this is an application of a tailcall-attributed function,
-        // try to recognize continuation passing style in the arguments
-        // and mark such arguments as valid tailcalls
-        let isApplicationOfTailCallAttributedFunction =
-            match f with
-            | Expr.Val (vref, _, _) -> env.mustTailCall.Contains vref.Deref
-            | _ -> false
-
-        let rec getTailCall arg =
-            match stripDebugPoints arg with
-            | Expr.Lambda (bodyExpr = expr)
-            | Expr.TyLambda (bodyExpr = expr)
-            | Expr.App (funcExpr = expr) -> getTailCall expr
-            | Expr.Val (valRef, _valUseFlag, _range) ->
-                if env.mustTailCall.Contains valRef.Deref then
-                    TailCall.YesFromVal cenv.g valRef.Deref
-                else
-                    TailCall.No
-            | _ -> TailCall.No
-
-        let tailCalls =
-            if isApplicationOfTailCallAttributedFunction then
-                List.map getTailCall argsl
-            else
-                List.replicate argsl.Length TailCall.No
-
-        CheckCall cenv env m returnTy argsl tailCalls ctxts ctxt
+        CheckCall cenv env m returnTy argsl ctxts ctxt
 
 and CheckLambda cenv env expr (argvs, m, bodyTy) (tailCall: TailCall) =
     let valReprInfo =
@@ -465,7 +437,12 @@ and CheckMethods cenv env baseValOpt (ty, methods) =
     methods |> List.iter (CheckMethod cenv env baseValOpt ty)
 
 and CheckMethod cenv env _baseValOpt _ty (TObjExprMethod (_, _, _tps, _vs, body, _m)) =
-    CheckExpr cenv env body PermitByRefExpr.YesReturnableNonLocal TailCall.No
+    let tailCall =
+        match stripDebugPoints body with
+        | Expr.App _ as a -> TailCall.YesFromExpr cenv.g a
+        | _ -> TailCall.No
+
+    CheckExpr cenv env body PermitByRefExpr.YesReturnableNonLocal tailCall
 
 and CheckInterfaceImpls cenv env baseValOpt l =
     l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
@@ -513,14 +490,12 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr : unit =
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts ctxt
             else
-                let tailCalls = List.replicate args.Length TailCall.No
-                CheckCall cenv env m returnTy args tailCalls argContexts ctxt
+                CheckCall cenv env m returnTy args argContexts ctxt
         | _ ->
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts PermitByRefExpr.Yes
             else
-                let tailCalls = List.replicate args.Length TailCall.No
-                CheckCall cenv env m returnTy args tailCalls argContexts PermitByRefExpr.Yes
+                CheckCall cenv env m returnTy args argContexts PermitByRefExpr.Yes
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with
@@ -670,7 +645,7 @@ and CheckLambdas
             // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv env body
         else
-            CheckExprNoByrefs cenv env tailCall body
+            CheckExprNoByrefs cenv env (TailCall.YesFromExpr cenv.g body) body // TailCall.Yes for CPS
 
     // This path is for expression bindings that are not actually lambdas
     | _ ->
@@ -682,14 +657,14 @@ and CheckLambdas
         else
             CheckExprNoByrefs cenv env tailCall expr
 
-and CheckExprs cenv env exprs ctxts (tailCalls: TailCall list) : unit =
+and CheckExprs cenv env exprs ctxts (tailCall: TailCall) : unit =
     let ctxts = Array.ofList ctxts
 
     let argArity i =
         if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
 
     exprs
-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i) tailCalls[i])
+    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i) tailCall)
     |> ignore
 
 and CheckExprsNoByRefLike cenv env exprs : unit =

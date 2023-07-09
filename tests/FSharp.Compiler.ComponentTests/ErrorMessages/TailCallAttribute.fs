@@ -552,22 +552,13 @@ namespace N
                 | TMDefOpens _ -> ()
                 | TMDefs defs ->
                     for def in defs do
-                        yield! allValsAndExprsOfModDef def  // ToDo: okay to warn here?
+                        yield! allValsAndExprsOfModDef def  // ToDo: okay to not warn here?
             }
         """
         |> FSharp
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withResults [
-            { Error = Warning 3569
-              Range = { StartLine = 34
-                        StartColumn = 32
-                        EndLine = 34
-                        EndColumn = 59 }
-              Message =
-                "The member or function 'allValsAndExprsOfModDef' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
-        ]
+        |> shouldSucceed
         
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for calls in for and iter`` () =
@@ -963,6 +954,81 @@ namespace N
                     )
                 )
             | _ -> failwith "Nodes with lists longer than 2 are not supported"
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in list of continuations`` () =
+        """
+namespace N
+
+    [<RequireQualifiedAccess>]
+    module Continuation =
+        let rec sequence<'a, 'ret> (recursions : (('a -> 'ret) -> 'ret) list) (finalContinuation : 'a list -> 'ret) : 'ret =
+            match recursions with
+            | [] -> [] |> finalContinuation
+            | recurse :: recurses ->
+                recurse (fun ret ->
+                    sequence recurses (fun rets ->
+                        ret :: rets |> finalContinuation
+                    )
+                )
+
+    module M =
+        type 'a RoseTree =
+            | Leaf of 'a
+            | Node of 'a * 'a RoseTree list
+    
+        [<TailCall>]
+        let rec findMaxInner (roseTree : int RoseTree) (finalContinuation : int -> 'ret) : 'ret =
+            match roseTree with
+            | Leaf i ->
+                i |> finalContinuation
+            | Node (i : int, xs : int RoseTree list) ->
+                let continuations : ((int -> 'ret) -> 'ret) list = xs |> List.map findMaxInner
+                let finalContinuation (maxValues : int list) : 'ret = List.max (i :: maxValues) |> finalContinuation
+                Continuation.sequence continuations finalContinuation
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in object interface expression`` () =
+        """
+namespace N
+
+[<NoComparison>]
+type Foo<'a> =
+    | Pure of 'a
+    | Apply of ApplyCrate<'a>
+
+and ApplyEval<'a, 'ret> = abstract Eval<'b,'c,'d> : 'b Foo -> 'c Foo -> 'd Foo -> ('b -> 'c -> 'd -> 'a) Foo -> 'ret
+
+and ApplyCrate<'a> = abstract Apply : ApplyEval<'a, 'ret> -> 'ret
+
+module M =
+
+    [<TailCall>]
+    let rec evaluateCps<'a, 'b> (f : 'a Foo) (cont : 'a -> 'b) : 'b =
+        match f with
+        | Pure a -> cont a
+        | Apply crate ->
+            crate.Apply
+                { new ApplyEval<_,_> with
+                    member _.Eval b c d f =
+                        evaluateCps f (fun f ->
+                            evaluateCps b (fun b ->
+                                evaluateCps c (fun c ->
+                                    evaluateCps d (fun d -> cont (f b c d))
+                                )
+                            )
+                        )
+                }
         """
         |> FSharp
         |> withLangVersionPreview
