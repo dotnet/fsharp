@@ -842,29 +842,6 @@ let main3
             errorRecoveryNoRange e
             exiter.Exit 1
 
-    let refAssemblySignatureHash =
-        match tcConfig.emitMetadataAssembly with
-        | MetadataAssemblyGeneration.None -> None
-        | MetadataAssemblyGeneration.ReferenceOnly
-        | MetadataAssemblyGeneration.ReferenceOut _ ->
-            let hasIvt =
-                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
-                |> Option.isSome
-
-            let observer =
-                if hasIvt then
-                    Fsharp.Compiler.SignatureHash.PublicAndInternal
-                else
-                    Fsharp.Compiler.SignatureHash.PublicOnly
-
-            try
-                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
-                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
-                |> Some
-            with e ->
-                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
-                None
-
     let metadataVersion =
         match tcConfig.metadataVersion with
         | Some v -> v
@@ -873,7 +850,7 @@ let main3
             | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
             | _ -> ""
 
-    let optimizedImpls, (optDataResources, optHash) =
+    let optimizedImpls, optDataResources =
         // Perform optimization
         use _ = UseBuildPhase BuildPhase.Optimize
 
@@ -902,7 +879,36 @@ let main3
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     let refAssemblySignatureHash =
-        refAssemblySignatureHash |> Option.map (fun h -> h ^^^ (hash optHash))
+        match tcConfig.emitMetadataAssembly with
+        | MetadataAssemblyGeneration.None -> None
+        | MetadataAssemblyGeneration.ReferenceOnly
+        | MetadataAssemblyGeneration.ReferenceOut _ ->
+            let hasIvt =
+                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
+                |> Option.isSome
+
+            let observer =
+                if hasIvt then
+                    Fsharp.Compiler.SignatureHash.PublicAndInternal
+                else
+                    Fsharp.Compiler.SignatureHash.PublicOnly
+
+            let optDataHash =
+                optDataResources
+                |> List.map (fun ilResource ->
+                    use s = ilResource.GetBytes().AsStream()
+                    let sha256 = System.Security.Cryptography.SHA256.Create()
+                    sha256.ComputeHash s)
+                |> List.sumBy hash
+
+            try
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
+                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
+                + optDataHash
+                |> Some
+            with e ->
+                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
+                None
 
     // Pass on only the minimum information required for the next phase
     Args(

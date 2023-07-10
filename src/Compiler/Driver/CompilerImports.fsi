@@ -62,7 +62,7 @@ val EncodeOptimizationData:
     exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *
     isIncrementalBuild: bool ->
-        ILResource list * byte array
+        ILResource list
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =
