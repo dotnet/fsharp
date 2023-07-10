@@ -217,10 +217,10 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) expr (tailCall: Ta
     | _ -> ()
 
 /// Check call arguments, including the return argument.
-and CheckCall cenv _m _returnTy args ctxts _ctxt = CheckExprs cenv args ctxts TailCall.No
+and CheckCall cenv args ctxts = CheckExprs cenv args ctxts TailCall.No
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
-and CheckCallWithReceiver cenv _m _returnTy args ctxts _ctxt =
+and CheckCallWithReceiver cenv args ctxts =
     match args with
     | [] -> failwith "CheckCallWithReceiver: Argument list is empty."
     | receiverArg :: args ->
@@ -301,30 +301,28 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
         | Expr.Val _
         | Expr.Quote _ -> ()
 
-        | StructStateMachineExpr g info -> CheckStructStateMachineExpr cenv expr info
+        | StructStateMachineExpr g info -> CheckStructStateMachineExpr cenv info
 
-        | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, m) ->
-            CheckObjectExpr cenv (ty, basev, superInitCall, overrides, iimpls, m)
+        | Expr.Obj (_, ty, _basev, superInitCall, overrides, iimpls, _) -> CheckObjectExpr cenv (ty, superInitCall, overrides, iimpls)
 
         // Allow base calls to F# methods
-        | Expr.App (InnerExprPat (ExprValWithPossibleTypeInst (v, vFlags, _, _) as f), _fty, tyargs, Expr.Val (baseVal, _, _) :: rest, m) when
+        | Expr.App (InnerExprPat (ExprValWithPossibleTypeInst (v, vFlags, _, _) as f), _fty, _tyargs, Expr.Val (baseVal, _, _) :: rest, _m) when
             ((match vFlags with
               | VSlotDirectCall -> true
               | _ -> false)
              && baseVal.IsBaseVal)
             ->
-
-            CheckFSharpBaseCall cenv expr (v, f, _fty, tyargs, baseVal, rest, m)
+            CheckFSharpBaseCall cenv (v, f, rest)
 
         // Allow base calls to IL methods
-        | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes),
-                   tyargs,
+        | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, _ilMethRef, _enclTypeInst, _methInst, _retTypes),
+                   _tyargs,
                    Expr.Val (baseVal, _, _) :: rest,
-                   m) when not isVirtual && baseVal.IsBaseVal ->
+                   _m) when not isVirtual && baseVal.IsBaseVal ->
 
-            CheckILBaseCall cenv (ilMethRef, enclTypeInst, methInst, retTypes, tyargs, baseVal, rest, m)
+            CheckILBaseCall cenv rest
 
-        | Expr.Op (op, tyargs, args, m) -> CheckExprOp cenv (op, tyargs, args, m) ctxt expr
+        | Expr.Op (op, tyargs, args, m) -> CheckExprOp cenv (op, tyargs, args, m) ctxt
 
         // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void!
         | TypeOfExpr g ty when isVoidTy g ty -> ()
@@ -333,7 +331,7 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
         | TypeDefOfExpr g ty when isVoidTy g ty -> ()
 
         // Check an application
-        | Expr.App (f, _fty, tyargs, argsl, m) -> CheckApplication cenv expr (f, tyargs, argsl, m) ctxt tailCall
+        | Expr.App (f, _fty, _tyargs, argsl, _m) -> CheckApplication cenv (f, argsl) tailCall
 
         | Expr.Lambda (_, _, _, argvs, _, m, bodyTy) -> CheckLambda cenv expr (argvs, m, bodyTy) tailCall
 
@@ -341,17 +339,17 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
 
         | Expr.TyChoose (_tps, e1, _) -> CheckExprNoByrefs cenv tailCall e1
 
-        | Expr.Match (_, _, dtree, targets, m, ty) -> CheckMatch cenv ctxt (dtree, targets, m, ty) tailCall
+        | Expr.Match (_, _, dtree, targets, _m, _ty) -> CheckMatch cenv ctxt (dtree, targets) tailCall
 
         | Expr.LetRec (binds, bodyExpr, _, _) -> CheckLetRec cenv (binds, bodyExpr) tailCall
 
-        | Expr.StaticOptimization (constraints, e2, e3, m) -> CheckStaticOptimization cenv (constraints, e2, e3, m)
+        | Expr.StaticOptimization (_constraints, e2, e3, _m) -> CheckStaticOptimization cenv (e2, e3)
 
         | Expr.WitnessArg _ -> ()
 
         | Expr.Link _ -> failwith "Unexpected reclink"
 
-and CheckStructStateMachineExpr cenv _expr info =
+and CheckStructStateMachineExpr cenv info =
 
     let (_dataTy,
          (_moveNextThisVar, moveNextExpr),
@@ -363,12 +361,12 @@ and CheckStructStateMachineExpr cenv _expr info =
     CheckExprNoByrefs cenv TailCall.No setStateMachineBody
     CheckExprNoByrefs cenv TailCall.No afterCodeBody
 
-and CheckObjectExpr cenv (ty, basev, superInitCall, overrides, iimpls, _m) =
+and CheckObjectExpr cenv (ty, superInitCall, overrides, iimpls) =
     CheckExprNoByrefs cenv TailCall.No superInitCall
-    CheckMethods cenv basev (ty, overrides)
-    CheckInterfaceImpls cenv basev iimpls
+    CheckMethods cenv (ty, overrides)
+    CheckInterfaceImpls cenv iimpls
 
-and CheckFSharpBaseCall cenv _expr (v, f, _fty, _tyargs, _baseVal, rest, _m) : unit =
+and CheckFSharpBaseCall cenv (v, f, rest) : unit =
     let memberInfo = Option.get v.MemberInfo
 
     if memberInfo.MemberFlags.IsDispatchSlot then
@@ -376,13 +374,9 @@ and CheckFSharpBaseCall cenv _expr (v, f, _fty, _tyargs, _baseVal, rest, _m) : u
     else
         CheckExprs cenv rest (mkArgsForAppliedExpr true rest f) TailCall.No
 
-and CheckILBaseCall cenv (_ilMethRef, _enclTypeInst, _methInst, _retTypes, _tyargs, _baseVal, rest, _m) : unit =
-    CheckExprsPermitByRefLike cenv rest
+and CheckILBaseCall cenv rest : unit = CheckExprsPermitByRefLike cenv rest
 
-and CheckApplication cenv expr (f, _tyargs, argsl, m) ctxt (tailCall: TailCall) : unit =
-    let g = cenv.g
-
-    let returnTy = tyOfExpr g expr
+and CheckApplication cenv (f, argsl) (tailCall: TailCall) : unit =
     CheckExprNoByrefs cenv tailCall f
 
     let hasReceiver =
@@ -393,9 +387,9 @@ and CheckApplication cenv expr (f, _tyargs, argsl, m) ctxt (tailCall: TailCall) 
     let ctxts = mkArgsForAppliedExpr false argsl f
 
     if hasReceiver then
-        CheckCallWithReceiver cenv m returnTy argsl ctxts ctxt
+        CheckCallWithReceiver cenv argsl ctxts
     else
-        CheckCall cenv m returnTy argsl ctxts ctxt
+        CheckCall cenv argsl ctxts
 
 and CheckLambda cenv expr (argvs, m, bodyTy) (tailCall: TailCall) =
     let valReprInfo =
@@ -411,7 +405,7 @@ and CheckTyLambda cenv expr (tps, m, bodyTy) (tailCall: TailCall) =
     let ty = mkForallTyIfNeeded tps bodyTy in
     CheckLambdas false None cenv false valReprInfo tailCall.AtExprLambda false expr m ty PermitByRefExpr.Yes
 
-and CheckMatch cenv ctxt (dtree, targets, _m, _ty) tailCall =
+and CheckMatch cenv ctxt (dtree, targets) tailCall =
     CheckDecisionTree cenv dtree
     CheckDecisionTreeTargets cenv targets ctxt tailCall
 
@@ -419,14 +413,14 @@ and CheckLetRec cenv (binds, bodyExpr) tailCall =
     CheckBindings cenv binds
     CheckExprNoByrefs cenv tailCall bodyExpr
 
-and CheckStaticOptimization cenv (_constraints, e2, e3, _m) =
+and CheckStaticOptimization cenv (e2, e3) =
     CheckExprNoByrefs cenv TailCall.No e2
     CheckExprNoByrefs cenv TailCall.No e3
 
-and CheckMethods cenv baseValOpt (ty, methods) =
-    methods |> List.iter (CheckMethod cenv baseValOpt ty)
+and CheckMethods cenv (ty, methods) =
+    methods |> List.iter (CheckMethod cenv ty)
 
-and CheckMethod cenv _baseValOpt _ty (TObjExprMethod (_, _, _tps, _vs, body, _m)) =
+and CheckMethod cenv _ty (TObjExprMethod (_, _, _tps, _vs, body, _m)) =
     let tailCall =
         match stripDebugPoints body with
         | Expr.App _ as a -> TailCall.YesFromExpr cenv.g a
@@ -434,12 +428,12 @@ and CheckMethod cenv _baseValOpt _ty (TObjExprMethod (_, _, _tps, _vs, body, _m)
 
     CheckExpr cenv body PermitByRefExpr.YesReturnableNonLocal tailCall
 
-and CheckInterfaceImpls cenv baseValOpt l =
-    l |> List.iter (CheckInterfaceImpl cenv baseValOpt)
+and CheckInterfaceImpls cenv l =
+    l |> List.iter (CheckInterfaceImpl cenv)
 
-and CheckInterfaceImpl cenv baseValOpt overrides = CheckMethods cenv baseValOpt overrides
+and CheckInterfaceImpl cenv overrides = CheckMethods cenv overrides
 
-and CheckExprOp cenv (op, tyargs, args, m) ctxt expr : unit =
+and CheckExprOp cenv (op, tyargs, args, m) ctxt : unit =
     let g = cenv.g
 
     // Special cases
@@ -470,21 +464,19 @@ and CheckExprOp cenv (op, tyargs, args, m) ctxt expr : unit =
             (ilMethRef.CallingConv.IsInstance || ilMethRef.CallingConv.IsInstanceExplicit)
             && not args.IsEmpty
 
-        let returnTy = tyOfExpr g expr
-
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
         match retTypes with
         | [ ty ] when ctxt.PermitOnlyReturnable && isByrefLikeTy g m ty ->
             if hasReceiver then
-                CheckCallWithReceiver cenv m returnTy args argContexts ctxt
+                CheckCallWithReceiver cenv args argContexts
             else
-                CheckCall cenv m returnTy args argContexts ctxt
+                CheckCall cenv args argContexts
         | _ ->
             if hasReceiver then
-                CheckCallWithReceiver cenv m returnTy args argContexts PermitByRefExpr.Yes
+                CheckCallWithReceiver cenv args argContexts
             else
-                CheckCall cenv m returnTy args argContexts PermitByRefExpr.Yes
+                CheckCall cenv args argContexts
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with
@@ -681,18 +673,18 @@ and CheckDecisionTree cenv dtree =
     | TDBind (bind, rest) ->
         CheckBinding cenv false PermitByRefExpr.Yes bind
         CheckDecisionTree cenv rest
-    | TDSwitch (inpExpr, cases, dflt, m) -> CheckDecisionTreeSwitch cenv (inpExpr, cases, dflt, m)
+    | TDSwitch (inpExpr, cases, dflt, _m) -> CheckDecisionTreeSwitch cenv (inpExpr, cases, dflt)
 
-and CheckDecisionTreeSwitch cenv (inpExpr, cases, dflt, m) =
+and CheckDecisionTreeSwitch cenv (inpExpr, cases, dflt) =
     CheckExprPermitByRefLike cenv inpExpr // can be byref for struct union switch
 
     for TCase (discrim, dtree) in cases do
-        CheckDecisionTreeTest cenv m discrim
+        CheckDecisionTreeTest cenv discrim
         CheckDecisionTree cenv dtree
 
     dflt |> Option.iter (CheckDecisionTree cenv)
 
-and CheckDecisionTreeTest cenv _m discrim =
+and CheckDecisionTreeTest cenv discrim =
     match discrim with
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> CheckExprNoByrefs cenv TailCall.No exp
     | _ -> ()
@@ -714,7 +706,7 @@ and CheckBindings cenv binds =
         CheckBinding cenv false PermitByRefExpr.Yes bind
 
 // Top binds introduce expression, check they are reraise free.
-let CheckModuleBinding cenv (isRec: bool) (TBind (_v, _e, _) as bind) =
+let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
     // Check that a let binding to the result of a rec expression is not inside the rec expression
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
     // see test ``Warn successfully for rec call in binding`` for an example
