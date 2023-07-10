@@ -882,6 +882,8 @@ let main3
     if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match optimizedImpls with
         | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
+            ReportTime tcConfig ("TailCall Checks")
+
             for f in checkedImplFileAfterOptimizations do
                 TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
 
