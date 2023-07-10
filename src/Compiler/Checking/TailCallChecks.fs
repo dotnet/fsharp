@@ -147,13 +147,12 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
 let rec CheckExprNoByrefs cenv (tailCall: TailCall) expr =
     CheckExpr cenv expr PermitByRefExpr.No tailCall
 
-/// Check an expression, given information about the position of the expression
-and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) expr (tailCall: TailCall) =
+/// Check an expression, warn if it's attributed with TailCall but our analysis concludes it's not a valid tail call
+and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
     let g = cenv.g
     let expr = stripExpr expr
     let expr = stripDebugPoints expr
 
-    // Some things are more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
     match expr with
     | Expr.App (f, _fty, _tyargs, argsl, m) ->
 
@@ -282,7 +281,7 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
         let origExpr = stripExpr origExpr
 
         // CheckForOverAppliedExceptionRaisingPrimitive is more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
-        CheckForOverAppliedExceptionRaisingPrimitive cenv origExpr tailCall
+        CheckForNonTailRecCall cenv origExpr tailCall
         let expr = NormalizeAndAdjustPossibleSubsumptionExprs g origExpr
         let expr = stripExpr expr
 
@@ -705,7 +704,6 @@ and CheckBindings cenv binds =
     for bind in binds do
         CheckBinding cenv false PermitByRefExpr.Yes bind
 
-// Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
     // Check that a let binding to the result of a rec expression is not inside the rec expression
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
