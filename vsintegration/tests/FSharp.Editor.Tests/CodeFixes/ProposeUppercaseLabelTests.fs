@@ -32,13 +32,21 @@ type MyNumber = Number of int
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Doesn't fix FS0053 for exceptions`` () =
+let ``Fix FS0053 for exceptions`` () =
     let code =
         """
 exception lowException of string
 """
 
-    let expected = None
+    let expected =
+        Some
+            {
+                Message = "Replace with 'LowException'"
+                FixedCode =
+                    """
+exception LowException of string
+"""
+            }
 
     let actual = codeFix |> tryFix code diagnostic
 
