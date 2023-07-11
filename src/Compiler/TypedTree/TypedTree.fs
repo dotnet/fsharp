@@ -4316,6 +4316,7 @@ type AnonRecdTypeInfo =
         x.SortedIds <- d.SortedIds
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
+        x.IlTypeName <- d.IlTypeName
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
     
