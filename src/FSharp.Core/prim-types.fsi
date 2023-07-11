@@ -950,7 +950,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
 
-    /// <summary>Indicates a function that should be called in a tail recursive way inside it's recursive scope.
+    /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
     /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
     ///
     /// <category>Attributes</category>
