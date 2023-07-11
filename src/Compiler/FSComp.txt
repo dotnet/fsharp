@@ -1724,3 +1724,4 @@ featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only fun
 featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)"
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
 3579,alwaysUseTypedStringInterpolation,"Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended."
+3580,tcUnexpectedFunTypeInUnionCaseField,"Unexpected function type in union case field definition"
