@@ -588,7 +588,6 @@ and CheckLambdas
     ctxt
     : unit =
     let g = cenv.g
-    let memInfo = memberVal |> Option.bind (fun v -> v.MemberInfo)
 
     // The valReprInfo here says we are _guaranteeing_ to compile a function value
     // as a .NET method with precisely the corresponding argument counts.
@@ -597,26 +596,8 @@ and CheckLambdas
 
     | Expr.Lambda (_, _, _, _, _, m, _)
     | Expr.TyLambda (_, _, _, m, _) ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy =
+        let _tps, _ctorThisValOpt, _baseValOpt, _vsl, body, bodyTy =
             destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
-
-        let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
-        let restArgs = List.concat vsl
-
-        match memInfo with
-        | None -> ()
-        | Some mi ->
-            // ctorThis and baseVal values are always considered used
-            for v in thisAndBase do
-                v.SetHasBeenReferenced()
-            // instance method 'this' is always considered used
-            match mi.MemberFlags.IsInstance, restArgs with
-            | true, firstArg :: _ -> firstArg.SetHasBeenReferenced()
-            | _ -> ()
-            // any byRef arguments are considered used, as they may be 'out's
-            for arg in restArgs do
-                if isByrefTy g arg.Type then
-                    arg.SetHasBeenReferenced()
 
         // Check the body of the lambda
         if isTop && not g.compilingFSharpCore && isByrefLikeTy g m bodyTy then
