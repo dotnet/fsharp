@@ -173,6 +173,10 @@ namespace N
         type C () =
             [<TailCall>]
             member this.M1() = this.M1() + 1
+            
+            type InnerC () =
+                [<TailCall>]
+                member this.InnerCMeth x = this.InnerCMeth x + 23
         """
         |> FSharp
         |> withLangVersionPreview
@@ -186,6 +190,13 @@ namespace N
                         EndColumn = 41 }
               Message =
                "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 12
+                        StartColumn = 44
+                        EndLine = 12
+                        EndColumn = 61 }
+              Message =
+               "The member or function 'InnerCMeth' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
