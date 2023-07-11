@@ -4275,7 +4275,10 @@ type AnonRecdTypeInfo =
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
-        // Hash all the data to form a unique stamp
+
+        // Hash all the data to form a unique stamp.
+        // This used to be used as an input for generating IL type name, however the stamp generation
+        // had to be modified to fix #6411, and the IL type name must remain unchanged for back compat reasons.
         let stamp =
             sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
@@ -4285,6 +4288,8 @@ type AnonRecdTypeInfo =
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
                        yield 0uy |]
 
+        // Hash data to form a code used in generating IL type name.
+        // To maintain backward compatibility this should not be changed.
         let ilName =
             sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
