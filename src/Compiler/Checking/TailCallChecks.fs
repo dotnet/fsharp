@@ -774,15 +774,9 @@ and CheckDefnInModule cenv mdef =
 and CheckModuleSpec cenv isRec mbind =
     match mbind with
     | ModuleOrNamespaceBinding.Binding bind ->
-        let cenv =
-            if cenv.mustTailCall.Contains bind.Var then
-                cenv
-            else
-                { cenv with
-                    mustTailCall = Zset.empty valOrder
-                }
+        if cenv.mustTailCall.Contains bind.Var then
+            CheckModuleBinding cenv isRec bind
 
-        CheckModuleBinding cenv isRec bind
     | ModuleOrNamespaceBinding.Module (_mspec, rhs) -> CheckDefnInModule cenv rhs
 
 let CheckImplFile (g, amap, reportErrors, implFileContents) =
