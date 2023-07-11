@@ -1,9 +1,9 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.RecordTests
+﻿module Signatures.RecordTests
 
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Fact>]
 let ``Internal record with xml comment`` () =

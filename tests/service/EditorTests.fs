@@ -576,12 +576,13 @@ let s3 = $"abc %d{s.Length}
     typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
-    |> shouldEqual
-        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
-          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
-          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
-          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
-          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
+    |> shouldEqual [|
+        (3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+        (8, 11, 8, 14, 1); (13, 12, 13, 15, 1); (14, 38, 14, 40, 1);
+        (16, 12, 16, 18, 1); (17, 11, 17, 13, 1); (17, 18, 17, 22, 1);
+        (18, 10, 18, 12, 0); (19, 15, 19, 17, 1); (19, 32, 19, 34, 1);
+        (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)
+    |]
 
 [<Test>]
 let ``Printf specifiers for triple quote interpolated strings`` () =

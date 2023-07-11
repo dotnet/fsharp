@@ -375,6 +375,12 @@ type FullyQualifiedFlag =
     /// Resolve any paths accessible via 'open'
     | OpenQualified
 
+/// Indicates whether an identifier (single or long) is followed by an extra dot. Typically used
+/// to provide better tooling and error reporting.
+[<RequireQualifiedAccess>]
+type ExtraDotAfterIdentifier =
+    | Yes
+    | No
 
 type UnqualifiedItems = LayeredMap<string, Item>
 
@@ -541,8 +547,9 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
       
         let csharpStyleExtensionMembers = 
             if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
-                GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-                |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+                protectAssemblyExploration [] (fun () ->
+                    GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
+                    |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
             else
                 []
 
@@ -2137,14 +2144,16 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
@@ -2724,6 +2733,36 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
         let errorTextF s =
             match tryTcrefOfAppTy g ty with
+            | ValueSome tcref when tcref.IsRecordTycon ->
+                let alternative = nenv.eFieldLabels |> Map.tryFind nm
+                match alternative with
+                | Some fieldLabels ->
+                    let fieldsOfResolvedType = tcref.AllFieldsArray  |> Array.map (fun f -> f.LogicalName) |> Set.ofArray
+                    let fieldsOfAlternatives =
+                        fieldLabels
+                        |> Seq.collect (fun l -> l.Tycon.AllFieldsArray |> Array.map (fun f -> f.LogicalName))
+                        |> Set.ofSeq
+                    let intersect = Set.intersect fieldsOfAlternatives fieldsOfResolvedType
+
+                    if not intersect.IsEmpty then
+                        let resolvedTypeName = NicePrint.fqnOfEntityRef g tcref
+                        let namesOfAlternatives =
+                            fieldLabels
+                            |> List.map (fun l -> $"    %s{NicePrint.fqnOfEntityRef g l.TyconRef}")
+                            |> fun names -> $"    %s{resolvedTypeName}" :: names
+                        let candidates = System.String.Join("\n", namesOfAlternatives)
+                        let overlappingNames =
+                            intersect
+                            |> Set.toArray
+                            |> Array.sort
+                            |> Array.map (fun s -> $"    %s{s}")
+                            |> fun a -> System.String.Join("\n", a)
+                        if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
+                            warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                        else
+                            informationalWarning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                | _ -> ()
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->
@@ -3211,13 +3250,13 @@ exception UpperCaseIdentifierInPattern of range
 type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
 
 // Long ID in a pattern
-let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) =
+let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) extraDotAtTheEnd =
     if id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt id2 rest2
+            ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt id2 rest2 extraDotAtTheEnd
     else
         // Single identifiers in patterns
         if isNil rest && fullyQualified <> FullyQualified then
@@ -3225,15 +3264,35 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             // For the special case of
             //   let C = x
             match nenv.ePatItems.TryGetValue id.idText with
-            | true, res when not newDef  -> ResolveUnqualifiedItem ncenv nenv m res
+            | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
-            // Single identifiers in patterns - variable bindings
-            if not newDef &&
-               (warnOnUpper = WarnOnUpperCase) &&
-               id.idText.Length >= 3 &&
-               System.Char.ToLowerInvariant id.idText[0] <> id.idText[0] then
-              warning(UpperCaseIdentifierInPattern m)
-            Item.NewDef id
+                // Single identifiers in patterns - variable bindings
+                if
+                    not newDef
+                    && warnOnUpper = WarnOnUpperCase
+                    && id.idText.Length >= 3
+                    && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                then
+                    warning(UpperCaseIdentifierInPattern m)
+
+                // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
+                match extraDotAtTheEnd with
+                | ExtraDotAfterIdentifier.Yes ->
+                    match LookupTypeNameInEnvNoArity fullyQualified id.idText nenv with
+                    | tcref :: _ when tcref.IsUnionTycon ->
+                        let res = ResolutionInfo.Empty.AddEntity (id.idRange, tcref)
+                        ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
+                        Item.Types (id.idText, [ mkAppTy tcref [] ])
+                    | _ ->
+                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false with
+                        | Result ((_, mref, _) :: _) ->
+                            let res = ResolutionInfo.Empty.AddEntity (id.idRange, mref)
+                            ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
+                            Item.ModuleOrNamespaces [ mref ]
+                        | _ ->
+                            Item.NewDef id
+                | _ ->
+                    Item.NewDef id
 
         // Long identifiers in patterns
         else
@@ -3267,10 +3326,10 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | element :: _ -> error(Error(FSComp.SR.nrIsNotConstructorOrLiteral(), element.idRange))
 
 /// Resolve a long identifier when used in a pattern.
-let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad nenv numTyArgsOpt (lid: Ident list) =
+let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad nenv numTyArgsOpt (lid: Ident list) extraDotAtTheEnd =
     match lid with
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), m))
-    | id :: rest -> ResolvePatternLongIdentPrim sink ncenv OpenQualified warnOnUpper newDef m ad nenv numTyArgsOpt id rest
+    | id :: rest -> ResolvePatternLongIdentPrim sink ncenv OpenQualified warnOnUpper newDef m ad nenv numTyArgsOpt id rest extraDotAtTheEnd
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in types

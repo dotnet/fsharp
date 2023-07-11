@@ -1533,6 +1533,7 @@ type Exception with
                     |> List.map Parser.tokenTagToTokenId
                     |> List.filter (function
                         | Parser.TOKEN_error
+                        | Parser.TOKEN_OBLOCKSEP
                         | Parser.TOKEN_EOF -> false
                         | _ -> true)
                     |> List.map tokenIdToText

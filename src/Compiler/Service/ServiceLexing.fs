@@ -173,11 +173,7 @@ module internal TokenClassifications =
         match token with
         | HASH_IDENT s
         | IDENT s ->
-            if s.Length <= 0 then
-                System.Diagnostics.Debug.Assert(false, "BUG: Received zero length IDENT token.")
-                // This is related to 4783. Recover by treating as lower case identifier.
-                (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
-            else if Char.ToUpperInvariant s[0] = s[0] then
+            if s.Length > 0 && Char.ToUpperInvariant s[0] = s[0] then
                 (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -316,12 +312,12 @@ module internal TokenClassifications =
         | NAMESPACE
         | OASSERT
         | OLAZY
-        | ODECLEND
+        | ODECLEND _
         | OBLOCKSEP
         | OEND
         | OBLOCKBEGIN
-        | ORIGHT_BLOCK_END
-        | OBLOCKEND
+        | ORIGHT_BLOCK_END _
+        | OBLOCKEND _
         | OBLOCKEND_COMING_SOON
         | OBLOCKEND_IS_HERE
         | OTHEN
@@ -1509,9 +1505,9 @@ type FSharpToken =
         | STRING_TEXT _ -> FSharpTokenKind.StringText
         | FIXED -> FSharpTokenKind.Fixed
         | OINTERFACE_MEMBER -> FSharpTokenKind.OffsideInterfaceMember
-        | OBLOCKEND -> FSharpTokenKind.OffsideBlockEnd
-        | ORIGHT_BLOCK_END -> FSharpTokenKind.OffsideRightBlockEnd
-        | ODECLEND -> FSharpTokenKind.OffsideDeclEnd
+        | OBLOCKEND _ -> FSharpTokenKind.OffsideBlockEnd
+        | ORIGHT_BLOCK_END _ -> FSharpTokenKind.OffsideRightBlockEnd
+        | ODECLEND _ -> FSharpTokenKind.OffsideDeclEnd
         | OEND -> FSharpTokenKind.OffsideEnd
         | OBLOCKSEP -> FSharpTokenKind.OffsideBlockSep
         | OBLOCKBEGIN -> FSharpTokenKind.OffsideBlockBegin
@@ -1886,7 +1882,7 @@ module FSharpLexerImpl =
 
             if canUseLexFilter then
                 let lexFilter =
-                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf)
+                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf, false)
 
                 (fun _ -> lexFilter.GetToken())
             else

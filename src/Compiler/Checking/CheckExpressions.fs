@@ -203,27 +203,27 @@ let AddLocalValPrimitive g (v: Val) env =
 
 /// Add a table of local values to TcEnv
 let AddLocalValMap g tcSink scopem (vals: Val NameMap) env =
-    let env =
-        if vals.IsEmpty then
-            env
-        else
+    if vals.IsEmpty then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValMapToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a list of local values to TcEnv and report them to the sink
 let AddLocalVals g tcSink scopem (vals: Val list) env =
-    let env =
-        if isNil vals then
-            env
-        else
+    if isNil vals then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValListToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a local value to TcEnv and report it to the sink
 let AddLocalVal g tcSink scopem v env =
@@ -235,9 +235,11 @@ let AddLocalVal g tcSink scopem v env =
 
 /// Add a set of explicitly declared type parameters as being available in the TcEnv
 let AddDeclaredTypars check typars env =
-    if isNil typars then env else
-    let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
-    { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+    if isNil typars then
+        env
+    else
+        let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
+        { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
 /// Environment of implicitly scoped type parameters, e.g. 'a in "(x: 'a)"
 
@@ -1956,7 +1958,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let ad = env.eAccessRights
 
     let mkf, argTys, _argNames =
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId ExtraDotAfterIdentifier.No with
         | Item.UnionCase _ | Item.ExnCase _ as item ->
             ApplyUnionCaseOrExn funcs m cenv env ty1 item
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
@@ -2261,18 +2263,21 @@ module GeneralizationHelpers =
 //-------------------------------------------------------------------------
 
 let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable g attrs m =
-    let hasNoCompilerInliningAttribute() = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs  
-    let isCtorOrAbstractSlot() =
+    let hasNoCompilerInliningAttribute () = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs  
+
+    let isCtorOrAbstractSlot () =
         match memFlagsOption with
         | None -> false
         | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
+
+    let isExtern () = HasFSharpAttributeOpt g g.attrib_DllImportAttribute attrs
 
     let inlineFlag, reportIncorrectInlineKeywordUsage =
         // Mutable values may never be inlined
         // Constructors may never be inlined
         // Calls to virtual/abstract slots may never be inlined
         // Values marked with NoCompilerInliningAttribute or [<MethodImpl(MethodImplOptions.NoInlining)>] may never be inlined
-        if isMutable || isCtorOrAbstractSlot() || hasNoCompilerInliningAttribute() then
+        if isMutable || isCtorOrAbstractSlot() || hasNoCompilerInliningAttribute() || isExtern () then
             ValInline.Never, errorR
         elif HasMethodImplNoInliningAttribute g attrs then
             ValInline.Never, 
@@ -2438,11 +2443,13 @@ module BindingNormalization =
             | SynPat.FromParseError(innerPat, _) ->
                 normPattern innerPat
 
-            | SynPat.LongIdent (SynLongIdent(longId, _, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _) as synLongId, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
-                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+                    let extraDot = if synLongId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
+
+                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
                     | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
@@ -4394,8 +4401,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.Tuple(isStruct, segments, m) ->
         TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct segments m
 
-    | SynType.AnonRecd(_, [],m) ->
-        error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
+    | SynType.AnonRecd(fields = []) ->
+        // The parser takes care of error messages
+        NewErrorType(), tpenv
 
     | SynType.AnonRecd(isStruct, args, m) ->
         TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m
@@ -8494,7 +8502,19 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 // This is where the constructor expects arguments but is not applied to arguments, hence build a lambda
                 numArgTys,
                 (fun () ->
-                    let vs, args = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
+                    let argNamesIfFeatureEnabled =
+                        if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
+                            argNames
+                        else
+                            []
+
+                    let vs, args =
+                        argTys
+                        |> List.mapi (fun i ty ->
+                            let argName = argNamesIfFeatureEnabled |> List.tryItem i |> Option.map (fun x -> x.idText) |> Option.defaultWith (fun () -> "arg" + string i)
+                            mkCompGenLocal mItem argName ty)
+                        |> List.unzip
+                    
                     let constrApp = mkConstrApp mItem args
                     let lam = mkMultiLambda mItem vs (constrApp, tyOfExpr g constrApp)
                     lam)
@@ -9584,7 +9604,13 @@ and TcMethodApplication_CheckArguments
     let denv = env.DisplayEnv
     match curriedCallerArgsOpt with
     | None ->
-        let curriedArgTys, returnTy =
+        let curriedArgTys, curriedArgNamesIfFeatureEnabled, returnTy =
+            let paramNamesIfFeatureEnabled (g: TcGlobals) (meth: MethInfo) =
+                if g.langVersion.SupportsFeature LanguageFeature.ImprovedImpliedArgumentNames then
+                    meth.GetParamNames()
+                else
+                    []
+
             match candidates with
             // "single named item" rule. This is where we have a single accessible method
             //      member x.M(arg1, ..., argN)
@@ -9596,19 +9622,23 @@ and TcMethodApplication_CheckArguments
             // to their default values (for optionals) and be part of the return tuple (for out args).
             | [calledMeth] ->
                 let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
-                curriedArgTys, MustEqual returnTy
+                curriedArgTys, paramNamesIfFeatureEnabled g calledMeth, MustEqual returnTy
             | _ ->
                 let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
                 let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
-                let argTys =
-                    if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then
-                        argTys
-                    else
-                        [domainTy]
-                [argTys], MustEqual returnTy
+                let argTys, argNames =
+                    match candidates |> List.tryFind (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) with
+                    | Some meth -> argTys, paramNamesIfFeatureEnabled g meth
+                    | None -> [domainTy], [[None]]
+                [argTys], argNames, MustEqual returnTy
 
-        let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
+        let lambdaVarsAndExprs =
+            curriedArgTys
+            |> List.mapiSquared (fun i j ty ->
+                let argName = curriedArgNamesIfFeatureEnabled |> List.tryItem i |> Option.bind (List.tryItem j) |> Option.flatten |> Option.defaultWith (fun () -> "arg" + string i + string j)
+                mkCompGenLocal mMethExpr argName ty)
+        
         let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr g e, e.Range, false, e))
         let namedCurriedCallerArgs = lambdaVarsAndExprs |> List.map (fun _ -> [])
         let lambdaVars = List.mapSquared fst lambdaVarsAndExprs
@@ -11118,13 +11148,27 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                      []
 
-                 | slots ->
+                 | slot :: _ as slots ->
                      match dispatchSlotsArityMatch with
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
-                         let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
-                         errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
-                         []
+                         let raiseGenericArityMismatch() =
+                              let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
+                              errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
+                              []
+                         
+                         match slot with
+                         | FSMeth (_, _, valRef, _) ->
+                             match valRef.TauType with
+                             // https://github.com/dotnet/fsharp/issues/15307
+                             // check if abstract method expects tuple, give better error message
+                             | TType_fun(_,TType_fun(TType_tuple _,_,_),_) ->
+                                 if not slot.NumArgs.IsEmpty && slot.NumArgs.Head = 1 then 
+                                     errorR(Error(FSComp.SR.tcOverrideUsesMultipleArgumentsInsteadOfTuple(), memberId.idRange))
+                                     []
+                                 else raiseGenericArityMismatch()
+                             | _ -> raiseGenericArityMismatch()
+                         | _ -> raiseGenericArityMismatch()
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 

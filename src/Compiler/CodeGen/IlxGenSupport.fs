@@ -130,7 +130,7 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         |> Array.map (fun (name, value) -> mkILStaticLiteralField (name, ilType, ILFieldInit.Int32 value, None, ILMemberAccess.Public))
         |> Array.append
             [|
-                (mkILInstanceField ("value__", g.ilg.typ_Int32, Some(ILFieldInit.Int32 0), ILMemberAccess.Public))
+                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public))
                     .WithSpecialName(true)
             |]
         |> Array.toList
@@ -194,7 +194,9 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                         ("Interfaces", 8192)
                     |]
 
-                mkLocalPrivateInt32Enum (g, tref, values))
+                (mkLocalPrivateInt32Enum (g, tref, values))
+                    .WithSerializable(true)
+                    .WithSealed(true))
         )
 
     ILType.Value(mkILNonGenericTySpec (tref))

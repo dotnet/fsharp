@@ -1945,6 +1945,9 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] Item
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] get_Item()
 FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 Custom
@@ -2002,6 +2005,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSh
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] OpenDeclarations
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] get_OpenDeclarations()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Text.Range[] GetFormatSpecifierLocations()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse] GetSymbolUsesAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse]] GetDeclarationListSymbols(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.EditorServices.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse] GetSymbolUseAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpDisplayContext] GetDisplayContextForPos(FSharp.Compiler.Text.Position)
@@ -2076,6 +2080,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeName(FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeAnnotationGivenAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean ParseHadErrors
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean get_ParseHadErrors()
@@ -2165,11 +2170,40 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_OtherOptions()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_SourceFiles()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.String[], System.String[], FSharp.Compiler.CodeAnalysis.FSharpReferencedProject[], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_options()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions options
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: System.String get_projectOutputFile()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: System.String projectOutputFile
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader] getReader
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader] get_getReader()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] getStamp
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] get_getStamp()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: System.String get_projectOutputFile()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: System.String projectOutputFile
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: FSharp.Compiler.CodeAnalysis.DelayedILModuleReader delayedReader
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: FSharp.Compiler.CodeAnalysis.DelayedILModuleReader get_delayedReader()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] getStamp
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] get_getStamp()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 FSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 ILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 PEReference
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsFSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsPEReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsFSharpReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsILModuleReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsPEReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewFSharpReference(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewILModuleReference(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewPEReference(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], FSharp.Compiler.CodeAnalysis.DelayedILModuleReader)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 Tag
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_OutputFile()
@@ -4926,6 +4960,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] LiteralValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] get_LiteralValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String[]] TryGetFullCompiledOperatorNameIdents()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] GetValSignatureText(FSharp.Compiler.Symbols.FSharpDisplayContext, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullDisplayName()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAbstractSignature] ImplementedAbstractSignatures
@@ -5124,6 +5159,8 @@ FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_HasFields()
 FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility Accessibility
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility get_Accessibility()
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType ReturnType
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType get_ReturnType()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc XmlDoc
@@ -8136,6 +8173,8 @@ FSharp.Compiler.Syntax.SynRationalConst: Int32 Tag
 FSharp.Compiler.Syntax.SynRationalConst: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynRationalConst: System.String ToString()
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Syntax.SynReturnInfo NewSynReturnInfo(System.Tuple`2[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynArgInfo], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynReturnInfo: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynReturnInfo: Int32 Tag
@@ -9457,6 +9496,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal: FSharp.Compiler.Text
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal: FSharp.Compiler.Text.Range get_valRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal: FSharp.Compiler.Text.Range overrideRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal: FSharp.Compiler.Text.Range valRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Static: FSharp.Compiler.Text.Range get_staticRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Static: FSharp.Compiler.Text.Range staticRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstract: FSharp.Compiler.Text.Range abstractRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstract: FSharp.Compiler.Text.Range get_abstractRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstract: FSharp.Compiler.Text.Range get_staticRange()
@@ -9509,6 +9550,7 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 MemberVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 New
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 Override
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 OverrideVal
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 Static
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticAbstractMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticDo
@@ -9543,6 +9585,7 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsMemberVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsNew
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsOverride
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsOverrideVal
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStatic
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticAbstractMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticDo
@@ -9569,6 +9612,7 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsMemberVal()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsNew()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsOverride()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsOverrideVal()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStatic()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticAbstract()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticAbstractMember()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticDo()
@@ -9595,6 +9639,7 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.Syn
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewNew(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewOverride(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewOverrideVal(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStatic(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticAbstract(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticAbstractMember(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticDo(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
@@ -9622,6 +9667,7 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.Syn
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+New
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Override
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Static
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticDo
@@ -9769,6 +9815,8 @@ FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.SyntaxTr
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+StaticType
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+Tags
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+Type
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword: System.String ToString()

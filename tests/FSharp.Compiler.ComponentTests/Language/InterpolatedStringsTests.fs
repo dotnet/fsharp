@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Language
+namespace Language
 
 open System
 open Xunit
@@ -110,3 +110,22 @@ let s = $"...%-%...{0}"
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Warning 3376, Line 2, Col 9, Line 2, Col 24, "Bad format specifier: '%'")
+
+    [<Fact>]
+    let ``Interpolated expression can be offside`` () =
+        Fsx """
+let a() =
+    let b() =
+        $"
+{1}"
+    b()
+
+type Foo () =
+    member _.Bar () =
+        let x =
+            $"
+{2}"
+        x
+        """
+        |> compile
+        |> shouldSucceed

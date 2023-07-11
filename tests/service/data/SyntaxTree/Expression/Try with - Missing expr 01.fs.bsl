@@ -6,7 +6,7 @@ ImplFile
          ([Module], false, NamedModule,
           [Expr
              (TryWith
-                (ArbitraryAfterError ("typedSequentialExprBlockR", (3,0--3,3)),
+                (ArbitraryAfterError ("try2", (3,3--3,3)),
                  [SynMatchClause
                     (Wild (4,5--4,6), None, Const (Unit, (4,10--4,12)),
                      (4,5--4,12), Yes, { ArrowRange = Some (4,7--4,9)
@@ -21,4 +21,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,0)-(4,4) parse error Incomplete structured construct at or before this point in expression
+(4,0)-(4,4) parse error Expecting expression

@@ -624,7 +624,7 @@ module ValueOptionInternal =
         | Some x -> ValueSome x
         | None -> ValueNone
 
-    let inline bind f x =
+    let inline bind ([<InlineIfLambda>] f) x =
         match x with
         | ValueSome x -> f x
         | ValueNone -> ValueNone

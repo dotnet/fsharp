@@ -292,9 +292,19 @@
         <target state="translated">隱含 yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="new">Improved implied argument names</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">用於編製索引和分割的 expr[idx] 註釋</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="new">Diagnostic 3559 (warn when obj inferred) at informational level, off by default</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -422,6 +432,11 @@
         <target state="translated">介面中的靜態成員</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">字串內插補點</target>
@@ -445,6 +460,11 @@
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">當 'let inline ... =' 與 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 屬性一起使用時引發警告。函數未內嵌。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -807,14 +827,14 @@
         <target state="translated">在這個點之後必須有模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">必須是運算式</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="translated">必須是模式</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
@@ -830,6 +850,16 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">不完整的運算子運算式 (範例 a^b) 或限定類型調用 (範例: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
@@ -1107,6 +1137,11 @@
         <target state="translated">下列必要的屬性必須初始化:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">使用具有 'NoEagerConstraintApplicationAttribute' 的方法需要 /langversion:6.0 或更新版本</target>
@@ -1147,6 +1182,11 @@
         <target state="translated">語法 'expr1[expr2]' 現已為編製索引保留，但用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction expr1 [expr2]'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">語法 '(expr1)[expr2]' 用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果您要編製索引或切割，則必須在引數位置使用 '(expr1).[expr2]'。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction (expr1) [expr2]'。</target>
@@ -1158,8 +1198,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">只有在計算運算式產生器定義 '{0}' 方法或正確的 'MergeSource' 和 'Bind' 方法時，才可使用 'let! ... and! ...' 建構</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1639,7 +1679,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
-        <target state="needs-review-translation">選項無法辨認: '{0}'</target>
+        <target state="new">Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3293,8 +3333,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">為屬性 getter 或 setter 指定了多個存取範圍</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="new">When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">

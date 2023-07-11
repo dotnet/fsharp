@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Language.PrintfFormatTests
+module Language.PrintfFormatTests
 
 open Xunit
 open FSharp.Test.Compiler

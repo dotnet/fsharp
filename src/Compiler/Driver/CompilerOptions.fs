@@ -1241,9 +1241,10 @@ let noFrameworkFlag isFsc tcConfigB =
         "noframework",
         tagNone,
         OptionUnit(fun () ->
-            tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-
+            // When the compilation is not fsi do nothing.
+            // It is just not a usefull option when running fsi on the coreclr or the desktop framework really.
             if isFsc then
+                tcConfigB.implicitlyReferenceDotNetAssemblies <- false
                 tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
@@ -1259,7 +1260,6 @@ let advancedFlagsFsi tcConfigB =
             None,
             Some(FSComp.SR.optsClearResultsCache ())
         )
-        noFrameworkFlag false tcConfigB
     ]
 
 let advancedFlagsFsc tcConfigB =
@@ -1570,6 +1570,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
+            "tokenize-debug",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Debug),
+            Some(InternalCommandLineOption("--tokenize-debug", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
             "tokenize-unfiltered",
             tagNone,
             OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Unfiltered),
@@ -1860,7 +1868,8 @@ let deprecatedFlagsBoth tcConfigB =
         )
     ]
 
-let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
+let deprecatedFlagsFsi tcConfigB =
+    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB

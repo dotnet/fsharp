@@ -60,7 +60,7 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
 let rec TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] ExtraDotAfterIdentifier.No with
         | Item.NewDef _ ->
             // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
             None
@@ -105,6 +105,12 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
         | _ -> UnifyTypes cenv env m ty ctyR
 
         let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+        
+        // Ensure the untyped typar name sticks
+        match cty, ty with
+        | SynType.Var(typar = SynTypar(ident = untypedIdent)), TType_var(typar = typedTp) -> typedTp.SetIdent(untypedIdent)
+        | _ -> ()
+
         TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnvR p
 
     | SynSimplePat.Attrib (p, _, _) ->
@@ -502,8 +508,9 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
         | _ -> AllIdsOK
 
     let mLongId = rangeOfLid longId
+    let extraDot = if longDotId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
 
-    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
     | Item.NewDef id ->
         TcPatLongIdentNewDef warnOnUpperForId warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (vis, id, args, m)
 

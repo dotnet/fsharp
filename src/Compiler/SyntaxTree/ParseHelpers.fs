@@ -1090,3 +1090,62 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
     | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
+
+let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
+    match access with
+    | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
+    | _ -> ()
+
+    let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+    let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+    SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
+
+let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
+    let mWith, (getSet, getSetOpt) = accessors
+    let memberRange = unionRanges rangeStart expr.Range |> unionRangeWithXmlDoc xmlDoc
+    let flags, leadingKeyword = flags
+    let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
+    let memberFlags: SynMemberFlags = flags SynMemberKind.Member
+    let memberFlagsForSet = flags SynMemberKind.PropertySet
+    let isStatic = not memberFlags.IsInstance
+
+    let trivia =
+        {
+            LeadingKeyword = leadingKeyword
+            WithKeyword = mWith
+            EqualsRange = mEquals
+            GetSetKeywords = getSetOpt
+        }
+
+    SynMemberDefn.AutoProperty(
+        attribs,
+        isStatic,
+        ident,
+        typ,
+        getSet,
+        memberFlags,
+        memberFlagsForSet,
+        xmlDoc,
+        access,
+        expr,
+        memberRange,
+        trivia
+    )
+
+let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attribs mStaticOpt =
+    let isStatic = Option.isSome mStaticOpt
+    let mValDecl = unionRanges rangeStart typ.Range |> unionRangeWithXmlDoc xmlDoc
+
+    let leadingKeyword =
+        match mStaticOpt with
+        | None -> SynLeadingKeyword.Val mVal
+        | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+
+    let fld =
+        SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
+
+    SynMemberDefn.ValField(fld, mValDecl)
+
+let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })

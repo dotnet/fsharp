@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated.OverloadResolution
+module Miscellaneous.FsharpSuiteMigrated_OverloadResolution
 
 open Xunit
 open FSharp.Test
-open TestFrameworkAdapter   
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter
 
 module ``fsharpqa migrated tests`` =
     let [<FactForDESKTOP>] ``Conformance\Expressions\SyntacticSugar (E_Slices01_fs)`` () = singleNegTest ( "conformance/expressions/syntacticsugar") "E_Slices01"

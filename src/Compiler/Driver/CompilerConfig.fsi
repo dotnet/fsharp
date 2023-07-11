@@ -160,6 +160,8 @@ type TokenizeOption =
 
     | Only
 
+    | Debug
+
     | Unfiltered
 
 type PackageManagerLine =

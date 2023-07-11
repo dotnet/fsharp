@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.FSharpChecker.CommonWorkflows
+﻿module FSharpChecker.CommonWorkflows
 
 open System
 open System.IO

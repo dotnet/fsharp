@@ -336,6 +336,9 @@ module rec CompilerAssertHelpers =
             Stamp = None
         }
 
+    let defaultProjectOptionsForFilePath path (targetFramework: TargetFramework) =
+        { defaultProjectOptions targetFramework with SourceFiles = [| path |] }
+
     let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) =
         let args =
             [|
@@ -804,7 +807,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     /// Parses and type checks the given source. Fails if type checker is aborted.
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
-            let defaultOptions = defaultProjectOptions TargetFramework.Current
+            let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
             checker.ParseAndCheckFileInProject(
                 name,
                 0,
@@ -858,8 +861,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText) : FSharpCheckProjectResults =
-        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText)
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
 

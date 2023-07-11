@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated.CoreTests
+module Miscellaneous.FsharpSuiteMigrated_CoreTests
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.ScriptHelpers 
-open TestFrameworkAdapter    
-      
+open System.Runtime.InteropServices
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter
 
 // These tests are enabled for .NET Framework and .NET Core
 [<Fact>]
@@ -28,13 +28,13 @@ let ``apporder-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/apporder" FSC_OP
 let ``apporder-FSI`` () = singleTestBuildAndRun "core/apporder" FSI
 
 [<Fact>]
-let ``array-FSC_DEBUG-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V50
+let ``array-FSC_DEBUG-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V50
 
 [<Fact>]
-let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V50
+let ``array-FSC_OPTIMIZED-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V50
 
 [<Fact>]
-let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V50
+let ``array-FSI-5_0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V50
 
 [<Fact>]
 let ``array-FSC_OPTIMIZED-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.Preview
@@ -462,16 +462,14 @@ let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/reflect" FSC_OPTI
 [<Fact>]
 let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
 
-module PInvokeTests = 
-    open System.Runtime.InteropServices
-    let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
-    [<Fact()>]
-    let ``pinvoke-FSC_OPTIMIZED`` () =   
-        if isWindows then
-            singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
+[<Fact()>]
+let ``pinvoke-FSC_OPTIMIZED`` () =   
+    if isWindows then
+        singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
 
-    [<Fact>]
-    let ``pinvoke-FSI`` () =
-        if isWindows then
-            singleTestBuildAndRun "core/pinvoke" FSI
+[<Fact>]
+let ``pinvoke-FSI`` () =
+    if isWindows then
+        singleTestBuildAndRun "core/pinvoke" FSI

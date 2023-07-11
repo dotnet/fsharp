@@ -238,8 +238,9 @@ function Update-Arguments() {
     }
 }
 
-function BuildSolution([string] $solutionName) {
-    Write-Host "${solutionName}:"
+
+function BuildSolution([string] $solutionName, $nopack) {
+        Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
@@ -255,6 +256,8 @@ function BuildSolution([string] $solutionName) {
     $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
 
     $env:BUILDING_USING_DOTNET="false"
+
+    $pack = if ($nopack -eq $False) {""} else {$pack}
 
     MSBuild $toolsetBuildProj `
         $bl `
@@ -536,17 +539,17 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln"
+            BuildSolution "FSharp.sln" $False
         }
         else {
-            BuildSolution "VisualFSharp.sln"
+            BuildSolution "VisualFSharp.sln" $False
         }
     }
 
     if ($pack) {
         $properties_storage = $properties
         $properties += "/p:GenerateSbom=false"
-        BuildSolution "Microsoft.FSharp.Compiler.sln"
+        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
         $properties = $properties_storage
     }
     if ($build) {

@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.ComponentTests.Language
+﻿namespace Language
 
 open FSharp.Test
 open Xunit

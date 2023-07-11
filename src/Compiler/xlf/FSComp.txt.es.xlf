@@ -292,9 +292,19 @@
         <target state="translated">elemento yield implícito</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureImprovedImpliedArgumentNames">
+        <source>Improved implied argument names</source>
+        <target state="new">Improved implied argument names</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">Notación para indexación y segmentación expr[idx]</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInformationalObjInferenceDiagnostic">
+        <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
+        <target state="new">Diagnostic 3559 (warn when obj inferred) at informational level, off by default</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -422,6 +432,11 @@
         <target state="translated">Miembros estáticos en interfaces</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStrictIndentation">
+        <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
+        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
@@ -445,6 +460,11 @@
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Genera advertencias cuando se usa "let inline ... =" junto con el atributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La función no se está insertando.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -807,14 +827,14 @@
         <target state="translated">Se esperaba un patrón después de este punto</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
+      <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="translated">Se espera una expresión</target>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="translated">Se espera un patrón</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
@@ -830,6 +850,16 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Expresión de operador incompleta (ejemplo, a^b) o invocación de tipo calificada (ejemplo: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingKeyword">
+        <source>Missing keyword '{0}'</source>
+        <target state="new">Missing keyword '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingMemberBody">
+        <source>Expecting member body</source>
+        <target state="new">Expecting member body</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
@@ -1107,6 +1137,11 @@
         <target state="translated">Se deben inicializar las siguientes propiedades necesarias:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">El uso de métodos con "NoEagerConstraintApplicationAttribute" requiere /langversion:6.0 o posteriores</target>
@@ -1147,6 +1182,11 @@
         <target state="translated">La sintaxis "expr1[expr2]" está reservada ahora para la indexación y es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función con varios argumentos currificados, agregue un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
+        <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
+        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">La sintaxis "(expr1)[expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "(expr1).[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción (expr1) [expr2]".</target>
@@ -1158,8 +1198,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="translated">La construcción "let! ... and! ..." solo se puede usar si el generador de expresiones de cálculo define un método "{0}" o bien los métodos "MergeSource" y "Bind" adecuados.</target>
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1639,7 +1679,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
-        <target state="needs-review-translation">Opción no reconocida: '{0}'.</target>
+        <target state="new">Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3293,8 +3333,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
-        <source>Multiple accessibilities given for property getter or setter</source>
-        <target state="translated">Se proporcionaron varias accesibilidades para un captador o establecedor de propiedad.</target>
+        <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
+        <target state="new">When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
