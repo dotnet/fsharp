@@ -170,6 +170,21 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsTypeName(range: range) =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitModuleDecl(_, _, synModuleDecl) =
+                    match synModuleDecl with
+                    | SynModuleDecl.Types (typeDefns, _) ->
+                        typeDefns
+                        |> Seq.exists (fun (SynTypeDefn (typeInfo, _, _, _, _, _)) -> typeInfo.Range = range)
+                        |> Some
+                    | _ -> None
+            }
+
+        let result = SyntaxTraversal.Traverse(range.Start, input, visitor)
+        result |> Option.contains true
+
     member _.TryRangeOfFunctionOrMethodBeingApplied pos =
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with

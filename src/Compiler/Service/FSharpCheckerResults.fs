@@ -1116,8 +1116,6 @@ type internal TypeCheckInfo
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             // These items are not given a completion kind. This could be reviewed
             | Item.ActivePatternResult _
-            | Item.CustomOperation _
-            | Item.CtorGroup _
             | Item.ExnCase _
             | Item.ImplicitOp _
             | Item.ModuleOrNamespaces _
@@ -1127,7 +1125,6 @@ type internal TypeCheckInfo
             | Item.UnionCase _
             | Item.UnionCaseField _
             | Item.UnqualifiedType _
-            | Item.Value _
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _

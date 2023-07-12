@@ -147,8 +147,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 9, Col 1, Line 9, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
-            (Error 53, Line 10, Col 1, Line 10, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 9, Col 11, Line 9, Col 12, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 10, Col 11, Line 10, Col 12, "Discriminated union cases and exception labels must be uppercase identifiers")
         ]
 
     // SOURCE=E_BeginWithUppercase02.fsx                   SCFLAGS="--test:ErrorRanges"        # E_BeginWithUppercase02.fsx
@@ -310,7 +310,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 8, Col 1, Line 8, Col 39, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 8, Col 11, Line 8, Col 29, "Discriminated union cases and exception labels must be uppercase identifiers")
         ]
 
     // SOURCE=E_Undefined.fsx                     SCFLAGS=--test:ErrorRanges                   # E_Undefined.fsx

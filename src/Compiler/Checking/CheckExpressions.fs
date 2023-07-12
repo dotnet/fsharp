@@ -203,27 +203,27 @@ let AddLocalValPrimitive g (v: Val) env =
 
 /// Add a table of local values to TcEnv
 let AddLocalValMap g tcSink scopem (vals: Val NameMap) env =
-    let env =
-        if vals.IsEmpty then
-            env
-        else
+    if vals.IsEmpty then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValMapToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a list of local values to TcEnv and report them to the sink
 let AddLocalVals g tcSink scopem (vals: Val list) env =
-    let env =
-        if isNil vals then
-            env
-        else
+    if isNil vals then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValListToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a local value to TcEnv and report it to the sink
 let AddLocalVal g tcSink scopem v env =
@@ -235,9 +235,11 @@ let AddLocalVal g tcSink scopem v env =
 
 /// Add a set of explicitly declared type parameters as being available in the TcEnv
 let AddDeclaredTypars check typars env =
-    if isNil typars then env else
-    let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
-    { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+    if isNil typars then
+        env
+    else
+        let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
+        { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
 /// Environment of implicitly scoped type parameters, e.g. 'a in "(x: 'a)"
 

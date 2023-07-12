@@ -1224,6 +1224,33 @@ match A with
         VerifyCompletionListExactly(fileContents, "|   DU.", [ "A"; "B"; "C" ])
 
     [<Fact>]
+    let ``Completion list on a union identifier and a dot in a match clause contains union cases2`` () =
+        let fileContents =
+            """
+type DU =
+    | A
+    | B
+    | C
+
+match None with
+| Some DU.
+
+match A, () with
+| DU.
+
+match A, () with
+|  Some DU., _ -> ()
+
+match (), A with
+| _, DU.
+"""
+
+        VerifyCompletionListExactly(fileContents, "| Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|  Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| _, DU.", [ "A"; "B"; "C" ])
+
+    [<Fact>]
     let ``Completion list on a module identifier and a dot in a match clause contains module contents`` () =
         let fileContents =
             """
