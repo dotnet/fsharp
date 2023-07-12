@@ -2,7 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -13,11 +15,14 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Symbols
+
 open CancellableTasks
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let private reportCodeFixTelemetry
+    let reportCodeFixTelemetry
         (diagnostics: ImmutableArray<Diagnostic>)
         (doc: Document)
         (staticName: string)
@@ -70,6 +75,38 @@ module internal CodeFixHelpers =
             name
         )
 
+    let getUnusedSymbol textSpan (document: Document) codeFixName =
+        cancellableTask {
+            let! token = CancellableTask.getCurrentCancellationToken ()
+            let! sourceText = document.GetTextAsync token
+
+            let ident = sourceText.ToString textSpan
+
+            // Prefixing operators and backticked identifiers does not make sense.
+            // We have to use the additional check for backtickes
+            if PrettyNaming.IsIdentifierName ident then
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
+
+                let range =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
+
+                return
+                    lexerSymbol
+                    |> Option.bind (fun symbol ->
+                        checkResults.GetSymbolUseAtLocation(range.StartLine, range.EndColumn, lineText, symbol.FullIsland))
+                    |> Option.bind (fun symbolUse ->
+                        match symbolUse.Symbol with
+                        | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> Some symbolUse.Symbol
+                        | _ -> None)
+            else
+                return None
+        }
+
 [<AutoOpen>]
 module internal CodeFixExtensions =
     type CodeFixContext with
@@ -106,3 +143,55 @@ module internal CodeFixExtensions =
                 let! sourceText = ctx.GetSourceTextAsync()
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
             }
+
+// This cannot be an extension on the code fix context
+// because the underlying GetFixAllProvider method doesn't take the context in
+[<AutoOpen>]
+module IFSharpCodeFixProviderExtensions =
+    type IFSharpCodeFixProvider with
+
+        member provider.RegisterFsharpFixAll() =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                cancellableTask {
+                    let sw = Stopwatch.StartNew()
+
+                    let! token = CancellableTask.getCurrentCancellationToken ()
+                    let! sourceText = doc.GetTextAsync token
+
+                    // this is not used anywhere, it's just needed to create the context
+                    let action =
+                        Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
+                    let! codeFixOpts =
+                        allDiagnostics
+                        // The distiction is to avoid collisions of compiler and analyzer diags
+                        // See: https://github.com/dotnet/fsharp/issues/15620
+                        |> Seq.distinctBy (fun d -> d.Id, d.Location)
+                        |> Seq.map (fun diag -> CodeFixContext(doc, diag, action, token))
+                        |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
+                        |> Seq.map (fun task -> task token)
+                        |> Task.WhenAll
+
+                    let codeFixes = codeFixOpts |> Seq.choose id
+                    let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
+                    let updatedDoc = doc.WithText(sourceText.WithChanges changes)
+
+                    let name =
+                        codeFixes
+                        |> Seq.tryHead
+                        |> Option.map (fun fix -> fix.Name)
+                        // Now, I cannot see this happening.
+                        // How could a bulk code fix get activated for zero changes?
+                        // But since that's for telemetry purposes,
+                        // let's be on the safe side.
+                        |> Option.defaultValue "UnknownCodeFix"
+
+                    CodeFixHelpers.reportCodeFixTelemetry
+                        allDiagnostics
+                        updatedDoc
+                        name
+                        [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
+
+                    return updatedDoc
+                }
+                |> CancellableTask.start fixAllCtx.CancellationToken)
