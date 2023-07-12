@@ -1926,3 +1926,228 @@ do let x = 1 in ()
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
 
+let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpField as field -> field.DisplayName = fieldName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Field {fieldName} not found.")
+
+let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpEntity as recordType -> recordType.IsFSharpRecord && recordType.DisplayName = recordTypeName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
+
+[<Test>]
+let ``Record fields are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+type Entry =
+    {
+        Idx: int
+        FileName: string
+        /// Own deps
+        DependencyCount: int
+        /// Being depended on
+        DependentCount: int
+        LineCount: int
+    }
+
+let x =
+    {
+        Entry.
+    }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            14,
+            "        Entry.",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Entry" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Idx" declarations
+    hasRecordField "FileName" declarations
+    hasRecordField "DependentCount" declarations
+    hasRecordField "LineCount" declarations
+
+[<Test>]
+let ``Record fields and types are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+
+    { Module1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            11,
+            "    { Module1. }",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+    hasRecordType "R1" declarations
+    hasRecordType "R2" declarations
+
+[<Test>]
+let ``Record fields are completed via type name usage with open statement`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    open Module1
+
+    { R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            12,
+            "    { R1. }",
+            {
+                EndColumn = 8
+                LastDotPos = Some 8
+                PartialIdent = ""
+                QualifyingIdents = [ "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed via type name with module usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    { Module1.R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            10,
+            "    { Module1.R1. }",
+            {
+                EndColumn = 16
+                LastDotPos = Some 16
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1"; "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed in update record`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with  }",
+            {
+                EndColumn = 24
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+
+[<Test>]
+[<Ignore "Current fails to suggest any record fields">]
+let ``Record fields are completed in update record with partial field name`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with Fi }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with Fi }",
+            {
+                EndColumn = 26
+                LastDotPos = None
+                PartialIdent = "Fi"
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
