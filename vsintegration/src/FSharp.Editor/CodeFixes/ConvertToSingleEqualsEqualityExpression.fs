@@ -3,11 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertToSingleEqualsEqualityExpression); Shared>]
 type internal ConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
@@ -15,17 +16,23 @@ type internal ConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
 
     static let title = SR.ConvertToSingleEqualsEqualityExpression()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0043")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0043"
 
-    override this.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let text = sourceText.GetSubText(context.Span).ToString()
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            // We're converting '==' into '=', a common new user mistake.
-            // If this is an FS00043 that is anything other than that, bail out
-            do! Option.guard (text = "==")
-            do context.RegisterFsharpFix(CodeFix.ConvertToSingleEqualsEqualityExpression, title, [| TextChange(context.Span, "=") |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! text = context.GetSquigglyTextAsync()
+
+                if text <> "==" then
+                    return None
+                else
+                    return
+                        Some
+                            {
+                                Name = CodeFix.ConvertToSingleEqualsEqualityExpression
+                                Message = title
+                                Changes = [ TextChange(context.Span, "=") ]
+                            }
+            }
