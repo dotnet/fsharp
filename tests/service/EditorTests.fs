@@ -2086,3 +2086,67 @@ module Module2 =
         |> List.concat
 
     hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed in update record`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with  }",
+            {
+                EndColumn = 24
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+
+[<Test>]
+let ``Record fields are completed in update record with partial field name`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with Fi }",
+            {
+                EndColumn = 26
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
