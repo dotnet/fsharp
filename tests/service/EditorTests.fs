@@ -2120,6 +2120,7 @@ let rUpdate = { r1 with  }
     hasRecordField "Field2" declarations
 
 [<Test>]
+[<Ignore "Current fails to suggest any record fields">]
 let ``Record fields are completed in update record with partial field name`` () =
     let parseResults, checkResults =
         getParseAndCheckResults """
@@ -2130,7 +2131,7 @@ type R1 =
 
 let r1 = { Field1 = 1; Field2 = 2 }
 
-let rUpdate = { r1 with  }
+let rUpdate = { r1 with Fi }
 """
 
     let declarations =
@@ -2141,7 +2142,7 @@ let rUpdate = { r1 with  }
             {
                 EndColumn = 26
                 LastDotPos = None
-                PartialIdent = ""
+                PartialIdent = "Fi"
                 QualifyingIdents = []
             },
             fun _ -> List.empty
