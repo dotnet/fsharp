@@ -855,7 +855,7 @@ module MutRecBindingChecking =
 
                 // The basic iteration over the declarations in a single type definition
                 let initialInnerState = (None, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
-                let defnAs, (_, _envForTycon, tpenv, recBindIdx, uncheckedBindsRev) = 
+                let defnAs, (_, envForTycon, tpenv, recBindIdx, uncheckedBindsRev) = 
 
                     (initialInnerState, binds) ||> List.collectFold (fun innerState defn ->
 
@@ -956,6 +956,33 @@ module MutRecBindingChecking =
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 
+                // I guess, if nothing was reported for the auto property in the Sink,
+                // Now would be a good times to report the property as a whole
+                if defnAs.Length > 1 then
+                    for b1, b2 in List.pairwise defnAs do
+                        match b1, b2 with
+                        | TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(memberFlags = Some { GetterOrSetterIsCompilerGenerated = true
+                                                                                                              MemberKind = SynMemberKind.PropertyGet }); mBinding = m1)
+                            RecBindingInfo = RecursiveBindingInfo(vspec = v1)
+                          },
+                          TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(memberFlags = Some { GetterOrSetterIsCompilerGenerated = true
+                                                                                                              MemberKind = SynMemberKind.PropertySet }); mBinding = m2)
+                            RecBindingInfo = RecursiveBindingInfo(vspec = v2)
+                          } ->
+                            if Range.equals m1 m2 then
+                                match  v1.ApparentEnclosingEntity with
+                                | ParentNone -> ()
+                                | Parent parentRef ->
+                                // let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec)
+                                // CallEnvSink cenv.tcSink (vspec.Range, nenv, env.eAccessRights)
+                                let apparentEnclosingType =  generalizedTyconRef g parentRef
+                                let item = Item.Property(v1.DisplayName, [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef v1), Some (mkLocalValRef v2)) ])
+                                    // Item.Value(mkLocalValRef vspec)
+                                CallNameResolutionSink cenv.tcSink (v1.Range, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                        | _ -> ()
+                
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
                     match defnAs with 

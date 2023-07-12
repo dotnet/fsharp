@@ -139,7 +139,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
-        let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
+        let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false, Some memberFlags) 
         ctorValScheme, ctorVal
 
     // We only generate the cctor on demand, because we don't need it if there are no cctor actions. 
@@ -159,14 +159,14 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
             let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
                  
-            let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
+            let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false, None) 
             cctorArgs, cctorVal, cctorValScheme
 
     let thisVal = 
         // --- Create this for use inside constructor 
         let thisId = ident ("this", m)
         let thisValScheme = ValScheme(thisId, NonGenericTypeScheme thisTy, None, None, None, false, ValInline.Never, CtorThisVal, None, true, false, false, false)
-        let thisVal = MakeAndPublishVal cenv env (ParentNone, false, ClassLetBinding false, ValNotInRecScope, thisValScheme, [], XmlDoc.Empty, None, false)
+        let thisVal = MakeAndPublishVal cenv env (ParentNone, false, ClassLetBinding false, ValNotInRecScope, thisValScheme, [], XmlDoc.Empty, None, false, None)
         thisVal
 
     {   TyconRef = tcref
@@ -355,7 +355,7 @@ type IncrClassReprInfo =
                 // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
                 let memberValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
 
-                let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
+                let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false, Some memberFlags) 
 
                 reportIfUnused()
                 InMethod(isStatic, methodVal, valReprInfo)

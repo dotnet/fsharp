@@ -517,7 +517,8 @@ val MakeAndPublishVal:
     attrs: Attribs *
     xmlDoc: XmlDoc *
     konst: Const option *
-    isGeneratedEventVal: bool ->
+    isGeneratedEventVal: bool *
+    memberFlagsOpt: SynMemberFlags option ->
         Val
 
 /// Make an initial 'base' value

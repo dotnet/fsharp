@@ -1233,7 +1233,7 @@ let private HasMethodImplNoInliningAttribute g attrs =
             | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
             | _ -> false
 
-let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
+let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal, memberFlagsOpt) =
 
     let g = cenv.g
 
@@ -1348,6 +1348,12 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 
     PublishValueDefn cenv env declKind vspec
 
+    let isAutoPropMember =
+        match memberFlagsOpt with
+        | Some { SynMemberFlags.GetterOrSetterIsCompilerGenerated = true
+                 SynMemberFlags.MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet } -> true
+        | _ -> false
+    
     let shouldNotifySink (vspec: Val) =
         match vspec.MemberInfo with
         // `this` reference named `__`. It's either:
@@ -1357,7 +1363,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
         | None when
             vspec.IsBaseVal ||
             vspec.IsMemberThisVal && vspec.LogicalName = "__" -> false
-        | _ -> true
+        | _ -> not isAutoPropMember
 
     match cenv.tcSink.CurrentSink with
     | Some _ when not vspec.IsCompilerGenerated && shouldNotifySink vspec ->
@@ -1372,7 +1378,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 let MakeAndPublishVals (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, valSchemes, attrs, xmlDoc, literalValue) =
     Map.foldBack
         (fun name (valscheme: ValScheme) values ->
-          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, valRecInfo, valscheme, attrs, xmlDoc, literalValue, false), valscheme.GeneralizedType) values)
+          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, valRecInfo, valscheme, attrs, xmlDoc, literalValue, false, None), valscheme.GeneralizedType) values)
         valSchemes
         Map.empty
 
@@ -1381,7 +1387,7 @@ let MakeAndPublishBaseVal (cenv: cenv) env baseIdOpt ty =
     baseIdOpt
     |> Option.map (fun (id: Ident) ->
        let valscheme = ValScheme(id, NonGenericTypeScheme ty, None, None, None, false, ValInline.Never, BaseVal, None, false, false, false, false)
-       MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valscheme, [], XmlDoc.Empty, None, false))
+       MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valscheme, [], XmlDoc.Empty, None, false, None))
 
 // Make the "delayed reference" value where the this pointer will reside after calling the base class constructor
 // Make the value for the 'this' pointer for use within a constructor
@@ -1394,7 +1400,7 @@ let MakeAndPublishSafeThisVal (cenv: cenv) env (thisIdOpt: Ident option) thisTy 
             errorR(Error(FSComp.SR.tcStructsCanOnlyBindThisAtMemberDeclaration(), thisId.idRange))
 
         let valScheme = ValScheme(thisId, NonGenericTypeScheme(mkRefCellTy g thisTy), None, None, None, false, ValInline.Never, CtorThisVal, None, false, false, false, false)
-        Some(MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valScheme, [], XmlDoc.Empty, None, false))
+        Some(MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valScheme, [], XmlDoc.Empty, None, false, None))
 
     | None ->
         None
@@ -11578,7 +11584,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
        List.concat extraBindings, List.concat extraValues, tpenv, recBindIdx
 
     // Create the value
-    let vspec = MakeAndPublishVal cenv envinner (altActualParent, false, declKind, ValInRecScope isComplete, prelimValScheme, bindingAttribs, bindingXmlDoc, literalValue, isGeneratedEventVal)
+    let vspec = MakeAndPublishVal cenv envinner (altActualParent, false, declKind, ValInRecScope isComplete, prelimValScheme, bindingAttribs, bindingXmlDoc, literalValue, isGeneratedEventVal, memberFlagsOpt)
 
     // Suppress hover tip for "get" and "set" at property definitions, where toolId <> bindingId
     match toolIdOpt with
@@ -12220,7 +12226,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs 
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
-        let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
+        let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false, memFlagsOpt)
 
         PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
 

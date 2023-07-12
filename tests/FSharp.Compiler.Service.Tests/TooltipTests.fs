@@ -410,5 +410,5 @@ type Bar() =
             |> Array.map (fun taggedText -> taggedText.Text)
             |> String.concat ""
 
-        Assert.AreEqual("member Bar.Foo: string", toolTipText)
+        Assert.AreEqual("property Bar.Foo: string with get, set", toolTipText)
     | _ -> Assert.Fail $"Expected group, got {items.[0]}"
