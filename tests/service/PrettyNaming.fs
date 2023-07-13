@@ -4,42 +4,66 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FsUnit
 open NUnit.Framework
 
-[<Test>]
-let ``words in operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "$foo hoo"
-    |> should equal false
+// invalid operator name
+[<TestCase ("op_Dollarfoo", false)>]
+// random stuff
+[<TestCase ("foo", false)>]
+// operator display representations
+[<TestCase ("~%%", false)>]
+[<TestCase ("~%", false)>]
+// not infix operators
+[<TestCase ("op_BitwiseOr", false)>]
+[<TestCase ("op_Equality", false)>]
+// valid logical names
+[<TestCase ("op_Splice", true)>]
+[<TestCase ("op_SpliceUntyped", true)>]
+let ``IsLogicalPrefixOperator`` logicalName result =
+    IsLogicalPrefixOperator logicalName
+    |> should equal result
 
-    IsMangledInfixOperator "@foo hoo"
-    |> should equal false
+// empty string
+[<TestCase ("", false)>]
+// invalid opearators
+[<TestCase ("op_Dynamic", false)>]
+[<TestCase ("op_RangeStep", false)>]
+// display representation
+[<TestCase ("?<-", false)>]
+// correct option
+[<TestCase ("op_DynamicAssignment", true)>]
+let ``IsLogicalTernaryOperator`` logicalName result =
+    IsLogicalTernaryOperator logicalName
+    |> should equal result
 
-[<Test>]
-let ``typo in mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Nagation"
-    |> should equal false
-
-[<Test>]
-let ``valid mangled operator name should be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Addition"
-    |> should equal true
-    
-    IsMangledInfixOperator "op_Append"
-    |> should equal true
-
-[<Test>]
-let ``invalid mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Dollarfoo"
-    |> should equal false
-    
-    IsMangledInfixOperator "foo"
-    |> should equal false
-
-[<Test>]
-let ``symbols in mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "$foo"
-    |> should equal false
-    
-    IsMangledInfixOperator "$"
-    |> should equal false
-
-    IsMangledInfixOperator "+"
-    |> should equal false
+// words in operator name
+[<TestCase ("$foo hoo", false)>]
+[<TestCase ("@foo hoo", false)>]
+// typo in operator name
+[<TestCase ("op_Nagation", false)>]
+// invalid operator name
+[<TestCase ("op_Dollarfoo", false)>]
+[<TestCase ("foo", false)>]
+[<TestCase ("$foo", false)>]
+// random symbols
+[<TestCase ("$", false)>]
+// operator display representations
+[<TestCase ("+", false)>]
+[<TestCase ("[]", false)>]
+[<TestCase ("::", false)>]
+[<TestCase ("~++", false)>]
+[<TestCase (".. ..", false)>]
+// not infix operators
+[<TestCase ("op_Splice", false)>]
+[<TestCase ("op_SpliceUntyped", false)>]
+// valid logical names
+[<TestCase ("op_Addition", true)>]
+[<TestCase ("op_Append", true)>]
+[<TestCase ("op_ColonColon", true)>]
+[<TestCase ("op_BitwiseOr", true)>]
+[<TestCase ("op_GreaterThanOrEqual", true)>]
+[<TestCase ("op_Dynamic", true)>]
+[<TestCase ("op_ArrayLookup", true)>]
+[<TestCase ("op_DynamicAssignment", true)>]
+[<TestCase ("op_ArrayAssign", true)>]
+let ``IsLogicalInfixOpName`` logicalName result =
+    IsLogicalInfixOpName logicalName
+    |> should equal result

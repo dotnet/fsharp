@@ -40,7 +40,7 @@ let DecideLambda exprF cenv valReprInfo expr exprTy z =
     match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap valReprInfo (expr, exprTy) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy) 
         let snoc = fun x y -> y :: x
         let args = List.concat vsl
         let args = Option.fold snoc args baseValOpt
@@ -196,6 +196,6 @@ let TransformImplFile g amap implFile =
                 PreInterceptBinding = Some(TransformBinding g heapValMap)
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = true
-                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
+                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth, "AutoboxRewriteStackGuardDepth") } 
 
 

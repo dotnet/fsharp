@@ -4,14 +4,14 @@
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 #if DEBUG
-module internal CompilerService =
-    val showAssertForUnexpectedException: bool ref
+val showAssertForUnexpectedException: bool ref
 
 /// For extra diagnostics
 val mutable showParserStackOnParseError: bool
@@ -47,48 +47,51 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-/// Get the location associated with an error
-val GetRangeOfDiagnostic: diagnostic: PhasedDiagnostic -> range option
+type PhasedDiagnostic with
 
-/// Get the number associated with an error
-val GetDiagnosticNumber: diagnostic: PhasedDiagnostic -> int
+    /// Get the location associated with a diagnostic
+    member Range: range option
 
-/// Split errors into a "main" error and a set of associated errors
-val SplitRelatedDiagnostics: diagnostic: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
+    /// Get the number associated with a diagnostic
+    member Number: int
 
-/// Output an error to a buffer
-val OutputPhasedDiagnostic:
-    os: StringBuilder -> diagnostic: PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
+    /// Eagerly format a PhasedDiagnostic return as a new PhasedDiagnostic requiring no formatting of types.
+    member EagerlyFormatCore: suggestNames: bool -> PhasedDiagnostic
 
-/// Output an error or warning to a buffer
-val OutputDiagnostic:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
-    severity: FSharpDiagnosticSeverity ->
-        StringBuilder ->
-        PhasedDiagnostic ->
+    /// Format the core of the diagnostic as a string. Doesn't include the range information.
+    member FormatCore: flattenErrors: bool * suggestNames: bool -> string
+
+    /// Indicates if a diagnostic should be reported as an informational
+    member ReportAsInfo: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+
+    /// Indicates if a diagnostic should be reported as a warning
+    member ReportAsWarning: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+
+    /// Indicates if a diagnostic should be reported as an error
+    member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+
+    /// Output all of a diagnostic to a buffer, including range
+    member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit
+
+    /// Write extra context information for a diagnostic
+    member WriteWithContext:
+        os: System.IO.TextWriter *
+        prefix: string *
+        fileLineFunction: (string -> int -> string) *
+        tcConfig: TcConfig *
+        severity: FSharpDiagnosticSeverity ->
             unit
 
-/// Output extra context information for an error or warning to a buffer
-val OutputDiagnosticContext:
-    prefix: string -> fileLineFunction: (string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
-
-/// Get an error logger that filters the reporting of warnings based on scoped pragma information
+/// Get a diagnostics logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * DiagnosticsLogger -> DiagnosticsLogger
+    checkFile: bool *
+    scopedPragmas: ScopedPragma list *
+    diagnosticOptions: FSharpDiagnosticOptions *
+    diagnosticsLogger: DiagnosticsLogger ->
+        DiagnosticsLogger
 
+/// Remove 'implicitIncludeDir' from a file name before output
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
-
-/// Indicates if we should report a diagnostic as a warning
-val ReportDiagnosticAsInfo: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-/// Indicates if we should report a diagnostic as a warning
-val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-/// Indicates if we should report a warning as an error
-val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
 
 /// Used internally and in LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
@@ -120,11 +123,5 @@ type FormattedDiagnostic =
 
 /// Used internally and in LegacyHostedCompilerForTesting
 val CollectFormattedDiagnostics:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
-    severity: FSharpDiagnosticSeverity *
-    PhasedDiagnostic *
-    suggestNames: bool ->
+    tcConfig: TcConfig * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool ->
         FormattedDiagnostic[]

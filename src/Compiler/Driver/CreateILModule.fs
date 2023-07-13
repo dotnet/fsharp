@@ -65,7 +65,11 @@ module AttributeHelpers =
 //----------------------------------------------------------------------------
 
 /// Represents the configuration settings used to perform strong-name signing
-type StrongNameSigningInfo = StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: string option * container: string option
+type StrongNameSigningInfo =
+    | StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: byte array option * container: string option
+
+let GetStrongNameSigningInfo (delaysign, publicsign, signer, container) =
+    StrongNameSigningInfo(delaysign, publicsign, signer, container)
 
 /// Validate the attributes and configuration settings used to perform strong-name signing
 let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
@@ -91,14 +95,24 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 
     // if signer is set via an attribute, validate that it wasn't set via an option
     let signer =
-        match signerAttrib with
-        | Some signer ->
-            if tcConfig.signer.IsSome && tcConfig.signer <> Some signer then
-                warning (Error(FSComp.SR.fscKeyFileWarning (), rangeCmdArgs))
-                tcConfig.signer
-            else
-                Some signer
-        | None -> tcConfig.signer
+        let signerFile =
+            match signerAttrib with
+            | Some signer ->
+                if tcConfig.signer.IsSome && tcConfig.signer <> Some signer then
+                    warning (Error(FSComp.SR.fscKeyFileWarning (), rangeCmdArgs))
+                    tcConfig.signer
+                else
+                    Some signer
+            | None -> tcConfig.signer
+
+        match signerFile with
+        | Some signerPath ->
+            try
+                Some(FileSystem.OpenFileForReadShim(signerPath).ReadAllBytes())
+            with _ ->
+                // Note :: don't use errorR here since we really want to fail and not produce a binary
+                error (Error(FSComp.SR.fscKeyFileCouldNotBeOpened signerPath, rangeCmdArgs))
+        | None -> None
 
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
@@ -127,15 +141,11 @@ let GetStrongNameSigner signingInfo =
     | None ->
         match signer with
         | None -> None
-        | Some s ->
-            try
-                if publicsign || delaysign then
-                    Some(ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
-                else
-                    Some(ILStrongNameSigner.OpenKeyPairFile s)
-            with _ ->
-                // Note :: don't use errorR here since we really want to fail and not produce a binary
-                error (Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
+        | Some bytes ->
+            if publicsign || delaysign then
+                Some(ILStrongNameSigner.OpenPublicKeyOptions bytes publicsign)
+            else
+                Some(ILStrongNameSigner.OpenKeyPairFile bytes)
 
 //----------------------------------------------------------------------------
 // Building the contents of the finalized IL module
@@ -276,7 +286,7 @@ module MainModuleBuilder =
         (
             ctok,
             tcConfig: TcConfig,
-            tcGlobals,
+            tcGlobals: TcGlobals,
             tcImports: TcImports,
             pdbfile,
             assemblyName,
@@ -293,9 +303,16 @@ module MainModuleBuilder =
 
         RequireCompilationThread ctok
 
+        let isEmbeddableTypeWithLocalSourceImplementation (td: ILTypeDef) =
+            (TcGlobals.IsInEmbeddableKnownSet td.Name)
+            && not (codegenResults.ilTypeDefs |> List.exists (fun r -> r.Name = td.Name))
+
         let ilTypeDefs =
-            //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
-            mkILTypeDefs codegenResults.ilTypeDefs
+            mkILTypeDefs (
+                codegenResults.ilTypeDefs
+                @ (tcGlobals.tryRemoveEmbeddedILTypeDefs ()
+                   |> List.filter isEmbeddableTypeWithLocalSourceImplementation)
+            )
 
         let mainModule =
             let hashAlg =

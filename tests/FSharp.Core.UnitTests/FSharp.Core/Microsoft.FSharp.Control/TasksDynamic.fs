@@ -89,43 +89,43 @@ module TaskBuilderDynamicLowPriority =
 module Value = 
 
     [<AutoOpen>]
-    module TaskLowProrityExtensions = 
+    module TaskLowPriorityExtensions = 
 
         type TaskBuilderDynamic with
-            member inline _.ReturnFrom< ^TaskLike, ^Awaiter, ^T
-                                                  when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+            member inline _.ReturnFrom<^TaskLike, ^Awaiter, ^T
+                                                  when ^TaskLike: (member GetAwaiter:  unit -> ^Awaiter)
                                                   and ^Awaiter :> ICriticalNotifyCompletion
                                                   and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                                  and ^Awaiter: (member GetResult: unit ->  ^T)>
-                    (t: ^TaskLike) : TaskCode< ^T,  ^T> =
+                                                  and ^Awaiter: (member GetResult: unit -> ^T)>
+                    (t: ^TaskLike) : TaskCode<^T, ^T> =
                 task.ReturnFrom(t)
-            member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
-                                                when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+            member inline _.Bind<^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+                                                when ^TaskLike: (member GetAwaiter:  unit -> ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
                                                 and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
+                                                and ^Awaiter: (member GetResult:  unit -> ^TResult1)>
                         (t: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
                 task.Bind(t, continuation)
 
         type BackgroundTaskBuilderDynamic with
-            member inline _.ReturnFrom< ^TaskLike, ^Awaiter, ^T
-                                                  when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+            member inline _.ReturnFrom<^TaskLike, ^Awaiter, ^T
+                                                  when ^TaskLike: (member GetAwaiter:  unit -> ^Awaiter)
                                                   and ^Awaiter :> ICriticalNotifyCompletion
                                                   and ^Awaiter: (member get_IsCompleted: unit -> bool)
-                                                  and ^Awaiter: (member GetResult: unit ->  ^T)>
-                    (t: ^TaskLike) : TaskCode< ^T,  ^T> =
+                                                  and ^Awaiter: (member GetResult: unit -> ^T)>
+                    (t: ^TaskLike) : TaskCode<^T, ^T> =
                 backgroundTask.ReturnFrom(t)
-            member inline _.Bind< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
-                                                when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
+            member inline _.Bind<^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall
+                                                when ^TaskLike: (member GetAwaiter:  unit -> ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
                                                 and ^Awaiter: (member get_IsCompleted:  unit -> bool)
-                                                and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
+                                                and ^Awaiter: (member GetResult:  unit -> ^TResult1)>
                         (t: ^TaskLike, continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
                 backgroundTask.Bind(t, continuation)
 
 
     [<AutoOpen>]
-    module HighLowProrityExtensions = 
+    module HighLowPriorityExtensions = 
 
         type TaskBuilderDynamic with
             member inline _.Bind (t: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =

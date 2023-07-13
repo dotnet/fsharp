@@ -2112,7 +2112,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Details">
         <source>&amp;Details</source>
-        <target state="translated">&amp;Podrobnosti</target>
+        <target state="translated">Po&amp;drobnosti</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Thumbnail">

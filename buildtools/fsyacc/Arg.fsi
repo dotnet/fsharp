@@ -1,11 +1,7 @@
 // (c) Microsoft Corporation 2005-2009. 
 
 /// A simple command-line argument processor.
-#if INTERNALIZED_FSLEXYACC_RUNTIME
-namespace Internal.Utilities
-#else
-namespace Microsoft.FSharp.Text
-#endif
+namespace FSharp.Text
 
 /// The spec value describes the action of the argument,
 /// and whether it expects a following parameter.
@@ -37,7 +33,7 @@ type ArgParser =
     [<System.Obsolete("This method should not be used directly as it will be removed in a future revision of this library")>]
     static member ParsePartial: cursor: int ref * argv: string[] * arguments:seq<ArgInfo> * ?otherArgs: (string -> unit) * ?usageText:string -> unit
 
-    /// Parse the arguments given by System.Environment.GetEnvironmentVariables()
+    /// Parse the arguments given by System.Environment.GetCommandLineArgs()
     /// according to the argument processing specifications "specs".
     /// Args begin with "-". Non-arguments are passed to "f" in
     /// order.  "use" is printed as part of the usage line if an error occurs.

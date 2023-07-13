@@ -3,10 +3,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworks>net472</TargetFrameworks>
     <PlatformTarget>arm64</PlatformTarget>
     <TargetExt>.exe</TargetExt>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />

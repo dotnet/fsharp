@@ -1088,7 +1088,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        /// This just returnes the closure to make sure we don't optimize it all away
+        // This just returnes the closure to make sure we don't optimize it all away
         h
 
 
@@ -1099,7 +1099,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3)
-        /// This just returnes the closure to make sure we don't optimize it all away
+        // This just returnes the closure to make sure we don't optimize it all away
         h
             
     let Example3 (y:'b,z:'a) = 
@@ -1108,7 +1108,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        /// This just returnes the closure to make sure we don't optimize it all away
+        // This just returnes the closure to make sure we don't optimize it all away
         h
 
     let Example4 (y:'b,z:'a) = 
@@ -1119,7 +1119,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        /// This just returnes the closure to make sure we don't optimize it all away
+        // This just returnes the closure to make sure we don't optimize it all away
         h1,h2
 
 
@@ -1132,7 +1132,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        /// This just returnes the closure to make sure we don't optimize it all away
+        // This just returnes the closure to make sure we don't optimize it all away
         h1,h2
 
     let Example6 (y:'b,z:'a) = 
@@ -1838,7 +1838,7 @@ module SRTPFix =
     let inline fmap (f : ^a -> ^b) (a : ^c) =
       fmap_instance<CFunctor, _, _, _, _> (f, a)
 
-    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b ->  ^a0) =
+    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b -> ^a0) =
       replace_instance<CFunctor, _, _, _> (a, f)
 
     (*
@@ -2457,6 +2457,72 @@ module TestSubtypeMatching13 =
     check "cnwcki4d2" (toName (B())) "IA"
     check "cnwcki4d3" (toName (C())) "IA"
     check "cnwcki4d4" (toName (obj())) "other"
+
+module TestStructMatching1 =
+
+    let toName (x: obj) =
+        match x with
+        | :? int when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? IComparable -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "B"
+    check "cnwcki4cewweq2" (toName "a") "B"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching2 =
+
+    let toName (x: obj) =
+        match x with
+        | :? DateTime when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? IComparable -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "B"
+    check "cnwcki4cewweq2" (toName "a") "B"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching3 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IComparable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? DateTime -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "other"
+    check "cnwcki4cewweq2" (toName "a") "other"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching4 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IFormattable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? DateTime -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "other"
+    check "cnwcki4cewweq2" (toName "a") "other"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching5 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IFormattable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? Guid -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq11" (toName 1) "other"
+    check "cnwcki4cewweq22" (toName "a") "other"
+    check "cnwcki4cewweq33" (toName System.DateTime.Now) "other"
+    check "cnwcki4cewweq34" (toName (System.Guid())) "B"
+    check "cnwcki4cewweq45" (toName (obj())) "other"
 
 #if !NETCOREAPP
 module TestConverter =

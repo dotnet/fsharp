@@ -1,0 +1,9 @@
+<Project>
+    <PropertyGroup>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+        <CachePath>$(MSBuildProjectDirectory)\..\..\artifacts\tmp\$([System.Guid]::NewGuid())</CachePath>
+        <BaseIntermediateOutputPath>$(CachePath)\obj\</BaseIntermediateOutputPath>
+        <NUGET_HTTP_CACHE_PATH>$(CachePath)\http_cache</NUGET_HTTP_CACHE_PATH >
+        <RestorePackagesPath>$(CachePath)\nuget_cache</RestorePackagesPath>
+    </PropertyGroup>
+</Project>

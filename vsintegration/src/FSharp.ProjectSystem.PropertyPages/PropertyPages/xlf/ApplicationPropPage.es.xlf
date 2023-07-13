@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">
         <source>Tar&amp;get Framework:</source>
-        <target state="translated">&amp;Versión de .NET Framework de destino:</target>
+        <target state="translated">Marco de des&amp;tino:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">

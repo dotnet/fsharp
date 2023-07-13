@@ -11,6 +11,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
@@ -122,9 +123,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               let aenv = aenv.BindEquivTypars implTypars sigTypars 
               (implTypars, sigTypars) ||> List.forall2 (fun implTypar sigTypar -> 
                   let m = sigTypar.Range
-                  if implTypar.StaticReq <> sigTypar.StaticReq then 
-                      errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))          
                   
+                  let check =
+                      if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+                          implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None
+                      else
+                          implTypar.StaticReq <> sigTypar.StaticReq
+                  if check then
+                      errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
+                
                   // Adjust the actual type parameter name to look like the signature
                   implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 
@@ -158,6 +165,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
         and checkTypeDef (aenv: TypeEquivEnv) (infoReader: InfoReader) (implTycon: Tycon) (sigTycon: Tycon) =
             let m = implTycon.Range
+            
+            implTycon.SetOtherXmlDoc(sigTycon.XmlDoc)
             
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
@@ -300,8 +309,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               if sigHasInlineIfLambda && not implHasInlineIfLambda then 
                                   errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))
 
-                              implArgInfo.Name <- sigArgInfo.Name
-                              implArgInfo.Attribs <- attribs))) && 
+                              implArgInfo.OtherRange <- sigArgInfo.Name |> Option.map (fun ident -> ident.idRange)
+                              sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
+
+                              implArgInfo.Name <- implArgInfo.Name |> Option.orElse sigArgInfo.Name
+                              implArgInfo.Attribs <- attribs))) &&
 
                       checkAttribs aenv implRetInfo.Attribs sigRetInfo.Attribs (fun attribs -> 
                           implRetInfo.Name <- sigRetInfo.Name
@@ -315,6 +327,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigVal.SetOtherRange (implVal.Range, true)
             implVal.SetOtherRange (sigVal.Range, false)
+            implVal.SetOtherXmlDoc(sigVal.XmlDoc)
 
             let mk_err denv f = ValueNotContained(denv, infoReader, implModRef, implVal, sigVal, f)
             let err denv f = errorR(mk_err denv f); false
@@ -357,7 +370,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | _ -> 
                 (errorR (err FSComp.SR.ExceptionDefsNotCompatibleExceptionDeclarationsDiffer); false)
 
-        and checkUnionCase aenv infoReader (enclosingTycon: Tycon) implUnionCase sigUnionCase =
+        and checkUnionCase aenv infoReader (enclosingTycon: Tycon) (implUnionCase: UnionCase) (sigUnionCase: UnionCase) =
+            implUnionCase.SetOtherXmlDoc(sigUnionCase.XmlDoc)
+            
             let err f = errorR(UnionCaseNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
@@ -368,6 +383,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else checkAttribs aenv implUnionCase.Attribs sigUnionCase.Attribs (fun attribs -> implUnionCase.Attribs <- attribs)
 
         and checkField aenv infoReader (enclosingTycon: Tycon) implField sigField =
+            implField.SetOtherXmlDoc(sigField.XmlDoc)
+            
             let err f = errorR(FieldNotContained(denv, infoReader, enclosingTycon, implField, sigField, f)); false
             sigField.rfield_other_range <- Some (implField.Range, true)
             implField.rfield_other_range <- Some (sigField.Range, false)
@@ -638,7 +655,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              allPairsOk && not someNotOk)
 
 
-        and checkModuleOrNamespace aenv (infoReader: InfoReader) implModRef sigModRef = 
+        and checkModuleOrNamespace aenv (infoReader: InfoReader) implModRef sigModRef =
+            implModRef.SetOtherXmlDoc(sigModRef.XmlDoc)
             // Propagate defn location information from implementation to signature . 
             sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)

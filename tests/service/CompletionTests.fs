@@ -17,7 +17,6 @@ let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
     for name in names do
         Assert.That(Set.contains name itemNames, name)
 
-
 [<Test>]
 let ``Expr - record - field 01 - anon module`` () =
     let info = getCompletionInfo "{ Fi }" (4, 3)  """

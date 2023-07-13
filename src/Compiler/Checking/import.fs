@@ -38,7 +38,7 @@ type AssemblyLoader =
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -183,16 +183,24 @@ let rec ImportILType (env: ImportMap) m tinst ty =
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
+
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
+
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
+
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
+
     | ILType.Modified(_, _, ty) -> 
          // All custom modifiers are ignored
          ImportILType env m tinst ty
+
     | ILType.TypeVar u16 -> 
-         try List.item (int u16) tinst
-         with _ -> 
-              error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        let ty = 
+            try 
+                List.item (int u16) tinst
+            with _ -> 
+                error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        ty
 
 /// Determines if an IL type can be imported as an F# type
 let rec CanImportILType (env: ImportMap) m ty =  
@@ -354,15 +362,15 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
+     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
 
      let mbase = 
          // Find the formal member corresponding to the called member
          match mbase.OfType<ProvidedMethodInfo>() with 
          | Some minfo when 
-                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| minfo.DeclaringType.IsGenericType), m) -> 
+                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| (nonNull<ProvidedType> minfo.DeclaringType).IsGenericType), m) -> 
 
-                let declaringType = minfo.PApply((fun minfo -> minfo.DeclaringType), m)
+                let declaringType = minfo.PApply((fun minfo -> nonNull<ProvidedType> minfo.DeclaringType), m)
 
                 let declaringGenericTypeDefn =  
                     if declaringType.PUntaint((fun t -> t.IsGenericType), m) then 
@@ -381,8 +389,8 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                     error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
-         | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
-                let declaringType = cinfo.PApply((fun x -> x.DeclaringType), m)
+         | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) -> 
+                let declaringType = cinfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m)
                 let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()), m)
 
                 // We have to find the uninstantiated formal signature corresponding to this instantiated constructor.
@@ -584,7 +592,7 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
     let scoref = ILScopeRef.Assembly aref
     let mtypsForExportedTypes = ImportILAssemblyExportedTypes amap m auxModLoader scoref mainmod.ManifestOfAssembly.ExportedTypes
     let mainmod = ImportILAssemblyMainTypeDefs amap m scoref mainmod
-    CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
+    CombineCcuContentFragments (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders): CcuTypeForwarderTable =            

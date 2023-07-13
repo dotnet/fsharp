@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.LexicalFiltering.Basic
+namespace Conformance.LexicalFiltering
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module OffsideExceptions =
+
     type FileAttribute(file) =
         inherit DirectoryAttribute(__SOURCE_DIRECTORY__, Includes=[|file|])
 
@@ -25,7 +27,7 @@ module OffsideExceptions =
     let RelaxWhitespace2 compilation =
         compilation
         |> asFsx
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> withOptions ["--nowarn:25"] // Incomplete pattern matches on this expression.
         |> typecheck
         |> shouldSucceed
@@ -35,7 +37,7 @@ module OffsideExceptions =
     let RelaxWhitespace2_Warning25 compilation =
         compilation
         |> asFsx
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> verifyBaseline
         |> ignore
 
@@ -58,7 +60,7 @@ while (
 true
 ) do ()
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -228,7 +230,7 @@ module [<
                    Experimental "c"
                    >] c = 1
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -276,7 +278,7 @@ module A
     y = 1
 |}
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -328,7 +330,7 @@ module A
     1
 |}
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -472,6 +474,12 @@ raise (new Exception("exit 1"))
                         EndColumn = 40 }
               Message =
                "Unexpected end of quotation in expression. Expected incomplete structured construct at or before this point or other token." }
+            { Error = Error 3567
+              Range = { StartLine = 5
+                        StartColumn = 30
+                        EndLine = 5
+                        EndColumn = 31 }
+              Message = "Expecting member body" }
         ] |> ignore
 
     [<Theory; File "RelaxWhitespace2.fs">]
@@ -5178,7 +5186,7 @@ match
 | "" -> ""
 | _ -> failwith ""
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> withOptions ["--nowarn:20"]
         |> typecheck
         |> shouldSucceed
@@ -5194,7 +5202,7 @@ try
     with
     | ex -> ex.Message
         """
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> withOptions ["--nowarn:20"]
         |> typecheck
         |> shouldSucceed

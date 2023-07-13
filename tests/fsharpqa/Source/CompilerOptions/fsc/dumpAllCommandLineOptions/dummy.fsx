@@ -30,7 +30,7 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=utf8output                     kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=fullpaths                      kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=lib                            kind=OptionStringList</Expects>
-//<Expects status="success">section='- ADVANCED -             ' ! option=noframework                    kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=noframework                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtree                      kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreefile                  kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreestamps                kind=OptionUnit</Expects>
@@ -85,12 +85,11 @@
 //<Expects status="success">section='NoSection                ' ! option=light                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=indentation-syntax             kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-indentation-syntax          kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionHelp</Expects>
+//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=--                             kind=OptionRest</Expects>
-//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=\?                              kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionHelp</Expects>
+//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionConsoleOnly</Expects>
+//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionConsoleOnly</Expects>
+//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=exec                           kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=gui                            kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=quiet                          kind=OptionUnit</Expects>
@@ -110,6 +109,7 @@
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=doc                            kind=OptionString</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=keyfile                        kind=OptionString</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=platform                       kind=OptionString</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -         ' ! option=compressmetadata               kind=OptionUnit</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=nointerfacedata                kind=OptionUnit</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=sig                            kind=OptionString</Expects>
@@ -123,6 +123,7 @@
 //<Expects status="notin">section='- ADVANCED -             ' ! option=standalone                     kind=OptionUnit</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=staticlink                     kind=OptionString</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=pdb                            kind=OptionString</Expects>
+//<Expects status="notin">section='- ADVANCED -             ' ! option=noframework                    kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=generatehtml                   kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmloutputdir                  kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmlcss                        kind=OptionString</Expects>
@@ -137,6 +138,8 @@
 //<Expects status="notin">section='NoSection                ' ! option=no-jit-tracking                kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=progress                       kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=compiling-fslib                kind=OptionUnit</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=compiling-fslib-20             kind=OptionString</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=version                        kind=OptionConsoleOnly</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=compiling-fslib-20     kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=version                        kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=local-optimize                 kind=OptionUnit</Expects>

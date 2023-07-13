@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.CodeAnalysis
 
-exception internal LegacyResolutionFailure
+exception LegacyResolutionFailure
 
 [<RequireQualifiedAccess>]
 type LegacyResolutionEnvironment =
@@ -28,7 +28,7 @@ type LegacyResolvedFile =
         sprintf "LegacyResolvedFile(%s)" this.itemSpec
 
 [<AllowNullLiteral>]
-type internal ILegacyReferenceResolver =
+type ILegacyReferenceResolver =
     /// Get the "v4.5.1"-style moniker for the highest installed .NET Framework version.
     /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
     ///

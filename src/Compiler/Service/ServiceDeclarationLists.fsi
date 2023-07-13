@@ -3,6 +3,7 @@
 // API for declaration lists and method overload lists
 namespace FSharp.Compiler.EditorServices
 
+open System
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Symbols
@@ -16,6 +17,8 @@ open FSharp.Compiler.AccessibilityLogic
 [<RequireQualifiedAccess>]
 type public ToolTipElementData = 
     {
+      Symbol: FSharpSymbol option
+
       MainDescription: TaggedText[]
 
       XmlDoc: FSharpXmlDoc
@@ -30,6 +33,8 @@ type public ToolTipElementData =
       ParamName: string option
     }
 
+    static member internal Create: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElementData
+
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
@@ -43,7 +48,7 @@ type public ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> ToolTipElement
+    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElement
 
 /// Information for building a tool tip box.
 //
@@ -94,10 +99,21 @@ type internal CompletionItem =
 // Note: this type holds a weak reference to compiler resources.
 [<Sealed>]
 type public DeclarationListItem =
+
     /// Get the text to display in the declaration list for the declaration.
+    ///
+    /// This is a display name without backticks.
+    [<Obsolete("Renamed to NameInList - this is the text to appear in the declaration list, while NameInCode is the text inserted on completion.")>]
     member Name: string
 
+    /// Get the text to display in the declaration list for the declaration.
+    ///
+    /// This is a display name without backticks.
+    member NameInList: string
+
     /// Get the text for the declaration as it's to be inserted into source code.
+    ///
+    /// This is a display name with backticks if necessary.
     member NameInCode: string
 
     /// Get the description
@@ -212,7 +228,7 @@ type public MethodGroup =
     static member internal Empty: MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> FSharpSymbol option -> int option -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 

@@ -22,18 +22,18 @@
     <FscToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FscToolPath>
     <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
     <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net6.0\fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\net7.0\fsc.dll</DotnetFscCompilerPath>
 
     <FsiToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FsiToolPath>
     <FsiToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FsiToolExe>
     <FsiToolExe Condition="'$(OS)' == 'Unix'">dotnet</FsiToolExe>
-    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net6.0\fsi.dll</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\net7.0\fsi.dll</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
     <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'!='Core'">net472</_FSharpBuildTargetFramework>
-    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">net6.0</_FSharpBuildTargetFramework>
+    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">net7.0</_FSharpBuildTargetFramework>
     <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
 
     <FSharpBuildAssemblyFile>$(_FSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
@@ -42,6 +42,7 @@
     <FSharpPropsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
     <FSharpOverridesTargetsShim>$(_FSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+
   </PropertyGroup>
 
 </Project>

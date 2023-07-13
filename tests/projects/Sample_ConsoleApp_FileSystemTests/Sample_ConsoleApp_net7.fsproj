@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net7.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net7.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="3.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>

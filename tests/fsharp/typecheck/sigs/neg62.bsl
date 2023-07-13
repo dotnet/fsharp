@@ -25,7 +25,7 @@ neg62.fs(49,6,49,26): typecheck error FS0081: Implicit object constructors for s
 
 neg62.fs(50,5,50,21): typecheck error FS0901: Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.
 
-neg62.fs(54,26,54,34): typecheck error FS3135: To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
+neg62.fs(54,31,54,34): typecheck error FS3135: To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
 
 neg62.fs(69,22,69,40): typecheck error FS0670: This code is not sufficiently generic. The type variable 'S could not be generalized because it would escape its scope.
 

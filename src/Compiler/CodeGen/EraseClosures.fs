@@ -103,16 +103,6 @@ let stripSupportedAbstraction lambdas =
         tys, [], rest
     | rest -> [], [], rest
 
-// This must correspond to stripSupportedAbstraction
-let isSupportedDirectCall apps =
-    match apps with
-    | Apps_app (_, Apps_done _) -> true
-    | Apps_app (_, Apps_app (_, Apps_done _)) -> true
-    | Apps_app (_, Apps_app (_, Apps_app (_, Apps_done _))) -> true
-    | Apps_app (_, Apps_app (_, Apps_app (_, Apps_app (_, Apps_done _)))) -> true
-    | Apps_tyapp _ -> false
-    | _ -> false
-
 // --------------------------------------------------------------------
 // Prelude for function types.  Only use System.Func for now, prepare
 // for more refined types later.
@@ -225,17 +215,6 @@ let mkCallBlockForMultiValueApp cenv doTailCall (argTys, retTy) =
          else
              I_call(doTailCall, mr, None))
     ]
-
-let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) =
-    let tyargsl, argTys, rstruct = stripSupportedAbstraction clospec.FormalLambdas
-
-    if not (isNil tyargsl) then
-        failwith "mkMethSpecForClosureCall: internal error"
-
-    let retTyR = mkTyOfLambdas cenv rstruct
-    let argTysR = typesOfILParams argTys
-    let minstR = clospec.GenericArgs
-    mkILInstanceMethSpecInTy (clospec.ILType, "Invoke", argTysR, retTyR, minstR)
 
 // --------------------------------------------------------------------
 // Translate instructions....
@@ -366,7 +345,7 @@ let convReturnInstr ty instr =
     | I_ret -> [ I_box ty; I_ret ]
     | I_call (_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
     | I_callvirt (_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
-    | I_callconstraint (_, ty, mspec, varargs) -> [ I_callconstraint(Normalcall, ty, mspec, varargs) ]
+    | I_callconstraint (callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
     | I_calli (_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
     | _ -> [ instr ]
 
@@ -573,6 +552,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
+                        ILCallingConv.Instance,
                         ILMemberAccess.Public,
                         addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
                         [],
@@ -707,7 +687,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let convil = convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
 
                     let nowApplyMethDef =
-                        mkILNonGenericVirtualMethod (
+                        mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
                             nowParams,

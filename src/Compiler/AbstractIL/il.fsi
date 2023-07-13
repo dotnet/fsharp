@@ -8,6 +8,7 @@ open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
 
+/// Represents the target primary assembly
 [<RequireQualifiedAccess>]
 type internal PrimaryAssembly =
     | Mscorlib
@@ -15,6 +16,11 @@ type internal PrimaryAssembly =
     | NetStandard
 
     member Name: string
+
+    /// Checks if an assembly resolution may represent a primary assembly that actually contains the
+    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
+    static member IsPossiblePrimaryAssembly: fileName: string -> bool
 
 /// Represents guids
 type ILGuid = byte[]
@@ -523,7 +529,7 @@ type internal ILInstr =
     // Method call
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -855,6 +861,8 @@ type ILAttributes =
 
     member AsList: unit -> ILAttribute list
 
+    static member internal Empty: ILAttributes
+
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
 type ILAttributesStored
@@ -1126,6 +1134,7 @@ type ILMethodDef =
     member internal WithHideBySig: bool -> ILMethodDef
     member internal WithFinal: bool -> ILMethodDef
     member internal WithAbstract: bool -> ILMethodDef
+    member internal WithVirtual: bool -> ILMethodDef
     member internal WithAccess: ILMemberAccess -> ILMethodDef
     member internal WithNewSlot: ILMethodDef
     member internal WithSecurity: bool -> ILMethodDef
@@ -1405,11 +1414,11 @@ type ILTypeDefs =
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
     member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
-    /// Calls to <c>FindByName</c> will result in any laziness in the overall
-    /// set of ILTypeDefs being read in in addition
-    /// to the details for the type found, but the remaining individual
-    /// type definitions will not be read.
+    /// Calls to <c>FindByName</c> will result in all the ILPreTypeDefs being read.
     member internal FindByName: string -> ILTypeDef
+
+    /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
+    member internal ExistsByName: string -> bool
 
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
@@ -1806,6 +1815,10 @@ type internal ILGlobals =
     member primaryAssemblyScopeRef: ILScopeRef
     member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
+    member fsharpCoreAssemblyScopeRef: ILScopeRef
+
+    member typ_Attribute: ILType
+    member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
     member typ_Type: ILType
@@ -1824,9 +1837,8 @@ type internal ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
+    member typ_SealedAttribute: ILType
     member typ_TypedReference: ILType
-
-    member fsharpCoreAssemblyScopeRef: ILScopeRef
 
     /// Is the given assembly possibly a primary assembly?
     /// In practice, a primary assembly is an assembly that contains the System.Object type definition
@@ -1839,10 +1851,11 @@ type internal ILGlobals =
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
+///
+///   primaryScopeRef is the primary assembly we are emitting
+///   equivPrimaryAssemblyRefs are ones regarded as equivalent
 val internal mkILGlobals:
-    primaryScopeRef: ILScopeRef *
-    assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list *
-    fsharpCoreAssemblyScopeRef: ILScopeRef ->
+    primaryScopeRef: ILScopeRef * equivPrimaryAssemblyRefs: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
@@ -1968,7 +1981,6 @@ type internal ILLocalsAllocator =
 /// Derived functions for making some common patterns of instructions.
 val internal mkNormalCall: ILMethodSpec -> ILInstr
 val internal mkNormalCallvirt: ILMethodSpec -> ILInstr
-val internal mkNormalCallconstraint: ILType * ILMethodSpec -> ILInstr
 val internal mkNormalNewobj: ILMethodSpec -> ILInstr
 val internal mkCallBaseConstructor: ILType * ILType list -> ILInstr list
 val internal mkNormalStfld: ILFieldSpec -> ILInstr
@@ -2023,12 +2035,16 @@ val internal mkILNonGenericStaticMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILGenericVirtualMethod:
-    string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+    string * ILCallingConv * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody ->
+        ILMethodDef
 
 val internal mkILGenericNonVirtualMethod:
     string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericVirtualMethod:
+    string * ILCallingConv * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
+val internal mkILNonGenericVirtualInstanceMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericInstanceMethod:
@@ -2037,6 +2053,7 @@ val internal mkILNonGenericInstanceMethod:
 /// Make field definitions.
 val internal mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
 val internal mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
+val internal mkILStaticLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 val internal mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.

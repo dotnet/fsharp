@@ -74,7 +74,7 @@ type Zero with
   static member        Zero (_: seq<'a>                   , _: Zero) = Seq.empty      : seq<'a>
 
 let inline (++) (x: 'Monoid) (y: 'Monoid) : 'Monoid = Plus.Invoke x y
-let inline zero< ^Monoid when (Zero or ^Monoid) : (static member Zero : ^Monoid * Zero -> ^Monoid) > : ^Monoid = Zero.Invoke ()
+let inline zero<^Monoid when (Zero or ^Monoid) : (static member Zero : ^Monoid * Zero -> ^Monoid) > : ^Monoid = Zero.Invoke ()
 
 type MonoidSample = 
   | MonoidSample of int

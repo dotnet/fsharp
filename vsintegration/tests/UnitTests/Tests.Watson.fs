@@ -19,7 +19,7 @@ type Check =
         try 
             try
 #if DEBUG
-                FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := false
+                FSharp.Compiler.CompilerDiagnostics.showAssertForUnexpectedException := false
 #endif
                 if (FileSystem.FileExistsShim("watson-test.fs")) then
                     FileSystem.FileDeleteShim("watson-test.fs")
@@ -46,7 +46,7 @@ type Check =
                 Assert.Fail("An InternalError exception occurred.")
         finally               
 #if DEBUG
-            FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := true 
+            FSharp.Compiler.CompilerDiagnostics.showAssertForUnexpectedException := true 
 #endif
         FileSystem.FileDeleteShim("watson-test.fs")
 

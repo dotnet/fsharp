@@ -89,7 +89,7 @@ let ``Intro test`` () =
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], partialName, (fun _ -> []))
-    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
+    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.NameInList ])
     // Get overloads of the String.Concat method
     let methods = typeCheckResults.GetMethods(5, 27, inputLines[4], Some ["String"; "Concat"])
 
@@ -139,8 +139,8 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj[]")]);
-             ("Concat", [("values", "string[]")]);
+             ("Concat", [("args", "obj array")]);
+             ("Concat", [("values", "string array")]);
 #if NETCOREAPP
              ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
 #endif
@@ -280,7 +280,7 @@ let ``Expression typing test`` () =
     //
     for col in 42..43 do
         let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines[1], PartialLongName.Empty(col), (fun _ -> []))
-        let autoCompleteSet = set [ for item in decls.Items -> item.Name ]
+        let autoCompleteSet = set [ for item in decls.Items -> item.NameInList ]
         autoCompleteSet |> shouldEqual (set stringMethods)
 
 // The underlying problem is that the parser error recovery doesn't include _any_ information for
@@ -301,8 +301,8 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from member 2`` () =
@@ -318,8 +318,8 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from var`` () =
@@ -335,7 +335,7 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 
 [<Test>]
@@ -355,7 +355,7 @@ type B(bar) =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], PartialLongName.Empty(17), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 
@@ -378,7 +378,7 @@ type B(bar) =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines[8], PartialLongName.Empty(7), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 [<Test; Ignore("SKIPPED: see #139")>]
@@ -471,10 +471,18 @@ let _ =  printf "           %a" (fun _ _ -> ()) 2
 let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
 """
 
-    let file = "/home/user/Test.fsx"
+    let file = System.IO.Path.Combine [| "home"; "user"; "Test.fsx" |]
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
-    typeCheckResults.Diagnostics |> shouldEqual [||]
+    typeCheckResults.Diagnostics
+        |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Message)
+        |> shouldEqual [|
+            (3376, 23, 16, 23, 22, "Bad format specifier: '%'")
+            (3376, 24, 16, 24, 24, "Bad format specifier: '%'")
+            (3376, 25, 16, 25, 26, "Bad format specifier: '%'")
+            (3376, 27, 16, 27, 28, "Bad format specifier: '%'")
+            (3376, 32, 16, 32, 33, "Bad format specifier: '%'") |]
+
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -568,17 +576,20 @@ let s3 = $"abc %d{s.Length}
     typeCheckResults.Diagnostics |> shouldEqual [||]
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
-    |> shouldEqual
-        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
-          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
-          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
-          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
-          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
+    |> shouldEqual [|
+        (3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+        (8, 11, 8, 14, 1); (13, 12, 13, 15, 1); (14, 38, 14, 40, 1);
+        (16, 12, 16, 18, 1); (17, 11, 17, 13, 1); (17, 18, 17, 22, 1);
+        (18, 10, 18, 12, 0); (19, 15, 19, 17, 1); (19, 32, 19, 34, 1);
+        (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)
+    |]
 
 [<Test>]
 let ``Printf specifiers for triple quote interpolated strings`` () =
     let input =
-      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
+      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"
+let _ = $$\"\"\"abc %%d{{1}} and %%d{{2}}def\"\"\"
+let _ = $$$\"\"\"%% %%%d{{{4}}} % %%%d{{{5}}}\"\"\" "
 
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |])
@@ -587,7 +598,9 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
-        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
+        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)
+          (2, 17, 2, 20, 1); (2, 30, 2, 33, 1)
+          (3, 17, 3, 21, 1); (3, 31, 3, 35, 1)|]
 #endif // ASSUME_PREVIEW_FSHARP_CORE
 
 
@@ -694,6 +707,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 
@@ -1909,3 +1925,229 @@ do let x = 1 in ()
     | ToolTipText [ToolTipElement.Group [data]] ->
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
+
+let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpField as field -> field.DisplayName = fieldName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Field {fieldName} not found.")
+
+let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpEntity as recordType -> recordType.IsFSharpRecord && recordType.DisplayName = recordTypeName
+        | _ -> false
+    )
+    |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
+
+[<Test>]
+let ``Record fields are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+type Entry =
+    {
+        Idx: int
+        FileName: string
+        /// Own deps
+        DependencyCount: int
+        /// Being depended on
+        DependentCount: int
+        LineCount: int
+    }
+
+let x =
+    {
+        Entry.
+    }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            14,
+            "        Entry.",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Entry" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Idx" declarations
+    hasRecordField "FileName" declarations
+    hasRecordField "DependentCount" declarations
+    hasRecordField "LineCount" declarations
+
+[<Test>]
+let ``Record fields and types are completed via type name usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+
+    { Module1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            11,
+            "    { Module1. }",
+            {
+                EndColumn = 13
+                LastDotPos = Some 13
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+    hasRecordType "R1" declarations
+    hasRecordType "R2" declarations
+
+[<Test>]
+let ``Record fields are completed via type name usage with open statement`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    open Module1
+
+    { R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            12,
+            "    { R1. }",
+            {
+                EndColumn = 8
+                LastDotPos = Some 8
+                PartialIdent = ""
+                QualifyingIdents = [ "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed via type name with module usage`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module1 =
+    type R1 =
+        { Field1: int }
+
+    type R2 =
+        { Field2: int }
+
+module Module2 =
+    { Module1.R1. }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            10,
+            "    { Module1.R1. }",
+            {
+                EndColumn = 16
+                LastDotPos = Some 16
+                PartialIdent = ""
+                QualifyingIdents = [ "Module1"; "R1" ] 
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+
+[<Test>]
+let ``Record fields are completed in update record`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with  }",
+            {
+                EndColumn = 24
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
+
+[<Test>]
+[<Ignore "Current fails to suggest any record fields">]
+let ``Record fields are completed in update record with partial field name`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate = { r1 with Fi }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let rUpdate = { r1 with Fi }",
+            {
+                EndColumn = 26
+                LastDotPos = None
+                PartialIdent = "Fi"
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations

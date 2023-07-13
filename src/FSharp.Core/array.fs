@@ -692,7 +692,7 @@ module Array =
     // - when the predicate yields consecutive runs of true data that is >= 32 elements (and fall
     //   into maskArray buckets) are copied in chunks using System.Array.Copy
     module Filter =
-        let private populateMask<'a> (f: 'a -> bool) (src: array<'a>) (maskArray: array<uint32>) =
+        let private populateMask<'a> (f: 'a -> bool) (src: 'a array) (maskArray: uint32 array) =
             let mutable count = 0
 
             for maskIdx = 0 to maskArray.Length - 1 do
@@ -833,8 +833,8 @@ module Array =
 
         let private createMask<'a>
             (f: 'a -> bool)
-            (src: array<'a>)
-            (maskArrayOut: byref<array<uint32>>)
+            (src: 'a array)
+            (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
             let maskArrayLength = src.Length / 0x20
@@ -842,7 +842,7 @@ module Array =
             // null when there are less than 32 items in src array.
             let maskArray =
                 if maskArrayLength = 0 then
-                    Unchecked.defaultof<_>
+                    null
                 else
                     Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<uint32> maskArrayLength
 
@@ -871,7 +871,7 @@ module Array =
             leftoverMaskOut <- leftoverMask
             count
 
-        let private populateDstViaMask<'a> (src: array<'a>) (maskArray: array<uint32>) (dst: array<'a>) =
+        let private populateDstViaMask<'a> (src: 'a array) (maskArray: uint32 array) (dst: 'a array) =
             let mutable dstIdx = 0
             let mutable batchCount = 0
 
@@ -1026,7 +1026,7 @@ module Array =
 
             dstIdx
 
-        let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
             let mutable dstIdx = 0
@@ -1049,7 +1049,7 @@ module Array =
 
             dst
 
-        let filter f (src: array<_>) =
+        let filter f (src: _ array) =
             let mutable maskArray = Unchecked.defaultof<_>
             let mutable leftOverMask = Unchecked.defaultof<_>
 
@@ -1932,7 +1932,69 @@ module Array =
             result
 
     module Parallel =
+        open System.Threading
         open System.Threading.Tasks
+        open System.Collections.Concurrent
+
+        [<CompiledName("Exists")>]
+        let exists (predicate: 'T -> bool) (array: 'T[]) =
+            checkNonNull "array" array
+
+            Parallel
+                .For(
+                    0,
+                    array.Length,
+                    (fun i pState ->
+                        if predicate array[i] then
+                            pState.Stop())
+                )
+                .IsCompleted
+            |> not
+
+        [<CompiledName("ForAll")>]
+        let forall (predicate: 'T -> bool) (array: 'T[]) =
+            // Not exists $condition <==> (opposite of $condition is true forall)
+            exists (predicate >> not) array |> not
+
+        [<CompiledName("TryFindIndex")>]
+        let tryFindIndex predicate (array: _[]) =
+            checkNonNull "array" array
+
+            let pResult =
+                Parallel.For(
+                    0,
+                    array.Length,
+                    (fun i pState ->
+                        if predicate array[i] then
+                            pState.Break())
+                )
+
+            pResult.LowestBreakIteration |> Option.ofNullable |> Option.map int
+
+        [<CompiledName("TryFind")>]
+        let tryFind predicate (array: _[]) =
+            array |> tryFindIndex predicate |> Option.map (fun i -> array[i])
+
+        [<CompiledName("TryPick")>]
+        let tryPick chooser (array: _[]) =
+            checkNonNull "array" array
+            let allChosen = new System.Collections.Concurrent.ConcurrentDictionary<_, _>()
+
+            let pResult =
+                Parallel.For(
+                    0,
+                    array.Length,
+                    (fun i pState ->
+                        match chooser array[i] with
+                        | None -> ()
+                        | chosenElement ->
+                            allChosen[i] <- chosenElement
+                            pState.Break())
+                )
+
+            pResult.LowestBreakIteration
+            |> Option.ofNullable
+            |> Option.bind (fun i -> allChosen[int i])
 
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T[]) =
@@ -2014,6 +2076,243 @@ module Array =
 
             result
 
+        // The following two parameters were benchmarked and found to be optimal.
+        // Benchmark was run using: 11th Gen Intel Core i9-11950H 2.60GHz, 1 CPU, 16 logical and 8 physical cores
+        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
+        let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
+
+        let private createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize (array: 'T[]) =
+            [|
+                let chunkSize =
+                    match maxIdxExclusive with
+                    | smallSize when smallSize < minChunkSize -> smallSize
+                    | biggerSize when biggerSize % maxPartitions = 0 -> biggerSize / maxPartitions
+                    | biggerSize -> (biggerSize / maxPartitions) + 1
+
+                let mutable offset = 0
+
+                while (offset + chunkSize) < maxIdxExclusive do
+                    yield new ArraySegment<'T>(array, offset, chunkSize)
+                    offset <- offset + chunkSize
+
+                yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
+            |]
+
+        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+            createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
+
+        (* This function is there also as a support vehicle for other aggregations. 
+           It is public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
+        [<CompiledName("ReduceBy")>]
+        let reduceBy (projection: 'T -> 'U) (reduction: 'U -> 'U -> 'U) (array: 'T[]) =
+            checkNonNull "array" array
+
+            if array.Length = 0 then
+                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+            let chunks = createPartitionsUpToWithMinChunkSize array.Length 2 array // We need at least 2 elements/chunk for 'reduction'
+
+            let chunkResults =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunks.Length
+
+            Parallel.For(
+                0,
+                chunks.Length,
+                fun chunkIdx ->
+                    let chunk = chunks[chunkIdx]
+                    let mutable res = projection array[chunk.Offset]
+                    let lastIdx = chunk.Offset + chunk.Count - 1
+
+                    for i = chunk.Offset + 1 to lastIdx do
+                        let projected = projection array[i]
+                        res <- reduction res projected
+
+                    chunkResults[chunkIdx] <- res
+            )
+            |> ignore
+
+            let mutable finalResult = chunkResults[0]
+
+            for i = 1 to chunkResults.Length - 1 do
+                finalResult <- reduction finalResult chunkResults[i]
+
+            finalResult
+
+        [<CompiledName("Reduce")>]
+        let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) =
+            array |> reduceBy id reduction
+
+        let inline vFst struct (a, _) =
+            a
+
+        let inline vSnd struct (_, b) =
+            b
+
+        [<CompiledName("MinBy")>]
+        let inline minBy ([<InlineIfLambda>] projection) (array: _[]) =
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Min")>]
+        let inline min (array: _[]) =
+            array |> reduce (fun a b -> if a < b then a else b)
+
+        [<CompiledName("SumBy")>]
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            if array.Length = 0 then
+                LanguagePrimitives.GenericZero
+            else
+                array |> reduceBy projection Operators.Checked.(+)
+
+        [<CompiledName("Sum")>]
+        let inline sum (array: ^T[]) : ^T =
+            array |> sumBy id
+
+        [<CompiledName("MaxBy")>]
+        let inline maxBy projection (array: _[]) =
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Max")>]
+        let inline max (array: _[]) =
+            array |> reduce (fun a b -> if a > b then a else b)
+
+        [<CompiledName("AverageBy")>]
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            let sum = array |> reduceBy projection Operators.Checked.(+)
+            LanguagePrimitives.DivideByInt sum (array.Length)
+
+        [<CompiledName("Average")>]
+        let inline average (array: 'T[]) =
+            array |> averageBy id
+
+        [<CompiledName("Zip")>]
+        let zip (array1: _[]) (array2: _[]) =
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            let len1 = array1.Length
+
+            if len1 <> array2.Length then
+                invalidArgDifferentArrayLength "array1" len1 "array2" array2.Length
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
+            let inputChunks = createPartitionsUpTo array1.Length array1
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        res[elemIdx] <- (array1[elemIdx], array2[elemIdx])
+            )
+            |> ignore
+
+            res
+
+        let inline groupByImplParallel
+            (comparer: IEqualityComparer<'SafeKey>)
+            ([<InlineIfLambda>] keyf: 'T -> 'SafeKey)
+            ([<InlineIfLambda>] getKey: 'SafeKey -> 'Key)
+            (array: 'T[])
+            =
+            let counts =
+                new ConcurrentDictionary<_, _>(
+                    concurrencyLevel = maxPartitions,
+                    capacity = Operators.min (array.Length) 1_000,
+                    comparer = comparer
+                )
+
+            let valueFactory = new Func<_, _>(fun _ -> ref 0)
+
+            let projectedValues =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let inputChunks = createPartitionsUpTo array.Length array
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        let projected = keyf array[elemIdx]
+                        projectedValues[elemIdx] <- projected
+                        let counter = counts.GetOrAdd(projected, valueFactory = valueFactory)
+                        Interlocked.Increment(counter) |> ignore
+            )
+            |> ignore
+
+            let finalResults =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked counts.Count
+
+            let mutable finalIdx = 0
+
+            let finalResultsLookup =
+                new Dictionary<'SafeKey, int ref * 'T[]>(capacity = counts.Count, comparer = comparer)
+
+            for kvp in counts do
+                let arrayForThisGroup =
+                    Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked kvp.Value.Value
+
+                finalResults.[finalIdx] <- getKey kvp.Key, arrayForThisGroup
+                finalResultsLookup[kvp.Key] <- kvp.Value, arrayForThisGroup
+                finalIdx <- finalIdx + 1
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        let key = projectedValues[elemIdx]
+                        let (counter, arrayForThisGroup) = finalResultsLookup[key]
+                        let idxToWrite = Interlocked.Decrement(counter)
+                        arrayForThisGroup[idxToWrite] <- array[elemIdx]
+            )
+            |> ignore
+
+            finalResults
+
+        let groupByValueTypeParallel (keyf: 'T -> 'Key) (array: 'T[]) =
+            // Is it a bad idea to put floating points as keys for grouping? Yes
+            // But would the implementation fail with KeyNotFound "nan" if we just leave it? Also yes
+            // Here we  enforce nan=nan equality to prevent throwing
+            if typeof<'Key> = typeof<float> || typeof<'Key> = typeof<float32> then
+                let genericCmp =
+                    HashIdentity.FromFunctions<'Key>
+                        (LanguagePrimitives.GenericHash)
+                        (LanguagePrimitives.GenericEqualityER)
+
+                groupByImplParallel genericCmp keyf id array
+            else
+                groupByImplParallel HashIdentity.Structural<'Key> keyf id array
+
+        // Just like in regular Array.groupBy: Wrap a StructBox around all keys in order to avoid nulls
+        // (dotnet doesn't allow null keys in dictionaries)
+        let groupByRefTypeParallel (keyf: 'T -> 'Key) (array: 'T[]) =
+            groupByImplParallel
+                RuntimeHelpers.StructBox<'Key>.Comparer
+                (fun t -> RuntimeHelpers.StructBox(keyf t))
+                (fun sb -> sb.Value)
+                array
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (projection: 'T -> 'Key) (array: 'T[]) =
+            checkNonNull "array" array
+
+            if typeof<'Key>.IsValueType then
+                groupByValueTypeParallel projection array
+            else
+                groupByRefTypeParallel projection array
+
         [<CompiledName("Iterate")>]
         let iter action (array: 'T[]) =
             checkNonNull "array" array
@@ -2031,8 +2330,7 @@ module Array =
             Parallel.For(0, count, (fun i -> result.[i] <- initializer i)) |> ignore
             result
 
-        [<CompiledName("Partition")>]
-        let partition predicate (array: 'T[]) =
+        let countAndCollectTrueItems predicate (array: 'T[]) =
             checkNonNull "array" array
             let inputLength = array.Length
 
@@ -2055,10 +2353,28 @@ module Array =
             )
             |> ignore
 
+            trueLength, isTrue
+
+        [<CompiledName("Filter")>]
+        let filter predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
+            let mutable resIdx = 0
+
+            for i = 0 to isTrue.Length - 1 do
+                if isTrue.[i] then
+                    res.[resIdx] <- array.[i]
+                    resIdx <- resIdx + 1
+
+            res
+
+        [<CompiledName("Partition")>]
+        let partition predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
             let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
 
             let res2 =
-                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (inputLength - trueLength)
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length - trueLength)
 
             let mutable iTrue = 0
             let mutable iFalse = 0
@@ -2072,3 +2388,252 @@ module Array =
                     iFalse <- iFalse + 1
 
             res1, res2
+
+        let private createPartitions (array: 'T[]) =
+            createPartitionsUpTo array.Length array
+
+        let inline pickPivot
+            ([<InlineIfLambda>] cmpAtIndex: int -> int -> int)
+            ([<InlineIfLambda>] swapAtIndex: int -> int -> unit)
+            (orig: ArraySegment<'T>)
+            =
+            let inline swapIfGreater (i: int) (j: int) =
+                if cmpAtIndex i j > 0 then
+                    swapAtIndex i j
+
+            // Set pivot to be a median of {first,mid,last}
+
+            let firstIdx = orig.Offset
+            let lastIDx = orig.Offset + orig.Count - 1
+            let midIdx = orig.Offset + orig.Count / 2
+
+            swapIfGreater firstIdx midIdx
+            swapIfGreater firstIdx lastIDx
+            swapIfGreater midIdx lastIDx
+            midIdx
+
+        let inline partitionIntoTwo
+            ([<InlineIfLambda>] cmpWithPivot: int -> int)
+            ([<InlineIfLambda>] swapAtIndex: int -> int -> unit)
+            (orig: ArraySegment<'T>)
+            =
+            let mutable leftIdx = orig.Offset + 1 // Leftmost is already < pivot
+            let mutable rightIdx = orig.Offset + orig.Count - 2 // Rightmost is already > pivot
+
+            while leftIdx < rightIdx do
+                while cmpWithPivot leftIdx < 0 do
+                    leftIdx <- leftIdx + 1
+
+                while cmpWithPivot rightIdx > 0 do
+                    rightIdx <- rightIdx - 1
+
+                if leftIdx < rightIdx then
+                    swapAtIndex leftIdx rightIdx
+                    leftIdx <- leftIdx + 1
+                    rightIdx <- rightIdx - 1
+
+            let lastIdx = orig.Offset + orig.Count - 1
+            // There might be more elements being (=)pivot. Exclude them from further work
+            while cmpWithPivot leftIdx >= 0 && leftIdx > orig.Offset do
+                leftIdx <- leftIdx - 1
+
+            while cmpWithPivot rightIdx <= 0 && rightIdx < lastIdx do
+                rightIdx <- rightIdx + 1
+
+            new ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
+            new ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
+
+        let partitionIntoTwoUsingComparer
+            (cmp: 'T -> 'T -> int)
+            (orig: ArraySegment<'T>)
+            : ArraySegment<'T> * ArraySegment<'T> =
+            let array = orig.Array
+
+            let inline swap i j =
+                let tmp = array[i]
+                array[i] <- array[j]
+                array[j] <- tmp
+
+            let pivotIdx =
+                pickPivot (fun i j -> cmp array[i] array[j]) (fun i j -> swap i j) orig
+
+            let pivotItem = array[pivotIdx]
+            partitionIntoTwo (fun idx -> cmp array[idx] pivotItem) (fun i j -> swap i j) orig
+
+        let partitionIntoTwoUsingKeys (keys: 'A[]) (orig: ArraySegment<'T>) : ArraySegment<'T> * ArraySegment<'T> =
+            let array = orig.Array
+
+            let inline swap i j =
+                let tmpKey = keys[i]
+                keys[i] <- keys[j]
+                keys[j] <- tmpKey
+
+                let tmp = array.[i]
+                array.[i] <- array.[j]
+                array.[j] <- tmp
+
+            let pivotIdx =
+                pickPivot (fun i j -> compare keys[i] keys[j]) (fun i j -> swap i j) orig
+
+            let pivotKey = keys[pivotIdx]
+            partitionIntoTwo (fun idx -> compare keys[idx] pivotKey) (fun i j -> swap i j) orig
+
+        let inline sortInPlaceHelper
+            (array: 'T[])
+            ([<InlineIfLambda>] partitioningFunc: ArraySegment<'T> -> ArraySegment<'T> * ArraySegment<'T>)
+            ([<InlineIfLambda>] sortingFunc: ArraySegment<'T> -> unit)
+            =
+            let rec sortChunk (segment: ArraySegment<_>) freeWorkers =
+                match freeWorkers with
+                // Really small arrays are not worth creating a Task for, sort them immediately as well
+                | 0
+                | 1 -> sortingFunc segment
+                | _ when segment.Count <= minChunkSize -> sortingFunc segment
+                | _ ->
+                    let left, right = partitioningFunc segment
+                    // If either of the two is too small, sort small segments straight away.
+                    // If the other happens to be big, leave it with all workes in it's recursive step
+                    if left.Count <= minChunkSize || right.Count <= minChunkSize then
+                        sortChunk left freeWorkers
+                        sortChunk right freeWorkers
+                    else
+                        // Pivot-based partitions might be inbalanced. Split  free workers for left/right proportional to their size
+                        let itemsPerWorker = Operators.max ((left.Count + right.Count) / freeWorkers) 1
+
+                        let workersForLeftTask =
+                            (left.Count / itemsPerWorker)
+                            |> Operators.max 1
+                            |> Operators.min (freeWorkers - 1)
+
+                        let leftTask = Task.Run(fun () -> sortChunk left workersForLeftTask)
+                        sortChunk right (freeWorkers - workersForLeftTask)
+                        leftTask.Wait()
+
+            let bigSegment = new ArraySegment<_>(array, 0, array.Length)
+            sortChunk bigSegment maxPartitions
+
+        let sortInPlaceWithHelper
+            (partitioningComparer: 'T -> 'T -> int)
+            (sortingComparer: IComparer<'T>)
+            (inputArray: 'T[])
+            =
+            let partitioningFunc = partitionIntoTwoUsingComparer partitioningComparer
+
+            let sortingFunc =
+                fun (s: ArraySegment<'T>) -> Array.Sort<'T>(inputArray, s.Offset, s.Count, sortingComparer)
+
+            sortInPlaceHelper inputArray partitioningFunc sortingFunc
+
+        let sortKeysAndValuesInPlace (inputKeys: 'TKey[]) (values: 'TValue[]) =
+            let partitioningFunc = partitionIntoTwoUsingKeys inputKeys
+            let sortingComparer = LanguagePrimitives.FastGenericComparerCanBeNull<'TKey>
+
+            let sortingFunc =
+                fun (s: ArraySegment<'T>) ->
+                    Array.Sort<'TKey, 'TValue>(inputKeys, values, s.Offset, s.Count, sortingComparer)
+
+            sortInPlaceHelper values partitioningFunc sortingFunc
+
+        [<CompiledName("SortInPlaceWith")>]
+        let sortInPlaceWith comparer (array: 'T[]) =
+            checkNonNull "array" array
+            let sortingComparer = ComparisonIdentity.FromFunction(comparer)
+            sortInPlaceWithHelper comparer sortingComparer array
+
+        [<CompiledName("SortInPlaceBy")>]
+        let sortInPlaceBy (projection: 'T -> 'U) (array: 'T[]) =
+            checkNonNull "array" array
+
+            let inputKeys: 'U[] =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let partitions = createPartitions array
+
+            Parallel.For(
+                0,
+                partitions.Length,
+                fun i ->
+                    let segment = partitions.[i]
+
+                    for idx = segment.Offset to (segment.Offset + segment.Count - 1) do
+                        inputKeys[idx] <- projection array[idx]
+            )
+            |> ignore
+
+            sortKeysAndValuesInPlace inputKeys array
+
+        [<CompiledName("SortInPlace")>]
+        let sortInPlace (array: 'T[]) =
+            checkNonNull "array" array
+
+            let sortingComparer: IComparer<'T> =
+                LanguagePrimitives.FastGenericComparerCanBeNull<'T>
+
+            let partioningFunc = compare
+            sortInPlaceWithHelper partioningFunc sortingComparer array
+
+        [<CompiledName("SortWith")>]
+        let sortWith (comparer: 'T -> 'T -> int) (array: 'T[]) =
+            let result = copy array
+            sortInPlaceWith comparer result
+            result
+
+        [<CompiledName("SortBy")>]
+        let sortBy projection (array: 'T[]) =
+            checkNonNull "array" array
+
+            let inputKeys =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let clone =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let partitions = createPartitions clone
+
+            Parallel.For(
+                0,
+                partitions.Length,
+                fun i ->
+                    let segment = partitions.[i]
+
+                    for idx = segment.Offset to (segment.Offset + segment.Count - 1) do
+                        clone[idx] <- array[idx]
+                        inputKeys.[idx] <- projection array[idx]
+            )
+            |> ignore
+
+            sortKeysAndValuesInPlace inputKeys clone
+            clone
+
+        [<CompiledName("Sort")>]
+        let sort array =
+            let result = copy array
+            sortInPlace result
+            result
+
+        let reverseInPlace (array: 'T[]) =
+            let segments = createPartitionsUpTo (array.Length / 2) array
+            let lastIdx = array.Length - 1
+
+            Parallel.For(
+                0,
+                segments.Length,
+                fun idx ->
+                    let s = segments[idx]
+
+                    for i = s.Offset to (s.Offset + s.Count - 1) do
+                        let tmp = array[i]
+                        array[i] <- array[lastIdx - i]
+                        array[lastIdx - i] <- tmp
+            )
+            |> ignore
+
+            array
+
+        [<CompiledName("SortByDescending")>]
+        let sortByDescending projection array =
+            array |> sortBy projection |> reverseInPlace
+
+        [<CompiledName("SortDescending")>]
+        let sortDescending array =
+            array |> sort |> reverseInPlace

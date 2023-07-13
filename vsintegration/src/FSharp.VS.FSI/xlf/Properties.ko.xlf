@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="FSharpInteractiveAnyCpu">
         <source>Use fsiAnyCpu.exe</source>
-        <target state="new">Use fsiAnyCpu.exe</target>
+        <target state="translated">fsiAnyCpu.exe 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpuDescr">
         <source>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</source>
-        <target state="new">If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</target>
+        <target state="translated">true로 설정하면 'fsiAnyCpu.exe'가 플랫폼 중립 프로세스로 실행됩니다. 그렇지 않으면 F# 대화형이 X86/X64의 32비트 프로세스이거나 Arm64 기반 시스템의 네이티브 64비트 프로세스입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">

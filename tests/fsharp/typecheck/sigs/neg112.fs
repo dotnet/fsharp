@@ -13,8 +13,8 @@ type IOption<'T> =
     
 let inline tupleMap f x = Tuple.Map f x
 
-let inline addOptionValues< ^value, ^options, ^values, 'item when 
-                              'item :> IOption< ^value>>
+let inline addOptionValues<^value, ^options, ^values, 'item when 
+                              'item :> IOption<^value>>
                               (addUp : ^values -> ^value, sourceOptions : ^options) =
     let getValue (i : 'item) = i.Value
     let allValues : ^values = tupleMap getValue sourceOptions

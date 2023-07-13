@@ -29,8 +29,6 @@ let _ =
     if logging then
         dprintn "* warning: Il.logging is on"
 
-let int_order = LanguagePrimitives.FastGenericComparer<int>
-
 let notlazy v = Lazy<_>.CreateFromValue v
 
 /// A little ugly, but the idea is that if a data structure does not
@@ -53,6 +51,14 @@ type PrimaryAssembly =
         | Mscorlib -> "mscorlib"
         | System_Runtime -> "System.Runtime"
         | NetStandard -> "netstandard"
+
+    static member IsPossiblePrimaryAssembly(fileName: string) =
+        let name = System.IO.Path.GetFileNameWithoutExtension(fileName)
+
+        String.Compare(name, "mscorlib", true) <> 0
+        || String.Compare(name, "System.Runtime", true) <> 0
+        || String.Compare(name, "netstandard", true) <> 0
+        || String.Compare(name, "System.Private.CoreLib", true) <> 0
 
 // --------------------------------------------------------------------
 // Utilities: type names
@@ -90,8 +96,6 @@ let rec splitNamespaceAux (nm: string) =
 
 let splitNamespace nm =
     memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
-
-let splitNamespaceMemoized nm = splitNamespace nm
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = ConcurrentDictionary<string, string[]>()
@@ -143,11 +147,6 @@ splitILTypeNameWithPossibleStaticArguments "Foo.Bar," = ([| "Foo" |], "Bar,")
 splitILTypeNameWithPossibleStaticArguments "Foo.Bar,\"1.0\"" = ([| "Foo" |], "Bar,\"1.0\"")
 splitILTypeNameWithPossibleStaticArguments "Foo.Bar.Bar,\"1.0\"" = ([| "Foo"; "Bar" |], "Bar,\"1.0\"")
 *)
-
-let unsplitTypeName (ns, n) =
-    match ns with
-    | [] -> String.concat "." ns + "." + n
-    | _ -> n
 
 let splitTypeNameRightAux (nm: string) =
     let idx = nm.LastIndexOf '.'
@@ -425,8 +424,6 @@ type AssemblyRefData =
 
 /// Global state: table of all assembly references keyed by AssemblyRefData.
 let AssemblyRefUniqueStampGenerator = UniqueStampGenerator<AssemblyRefData>()
-
-let isMscorlib data = data.assemRefName = "mscorlib"
 
 [<Sealed>]
 type ILAssemblyRef(data) =
@@ -1203,10 +1200,11 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
+    member _.AsArray() = array
 
-    member x.AsArray() = array
+    member _.AsList() = array |> Array.toList
 
-    member x.AsList() = array |> Array.toList
+    static member val internal Empty = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
@@ -1369,7 +1367,7 @@ type ILInstr =
 
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -1862,7 +1860,7 @@ let inline conditionalAdd condition flagToAdd source =
 
 let NoMetadataIdx = -1
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodDef
     (
         name: string,
@@ -2064,6 +2062,9 @@ type ILMethodDef
     member x.WithAbstract(condition) =
         x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
 
+    member x.WithVirtual(condition) =
+        x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Virtual))
+
     member x.WithAccess(access) =
         x.With(
             attributes =
@@ -2097,6 +2098,11 @@ type ILMethodDef
 
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "method " + x.Name
 
 /// Index table by name and arity.
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -2314,7 +2320,7 @@ let convertFieldAccess (ilMemberAccess: ILMemberAccess) =
     | ILMemberAccess.Private -> FieldAttributes.Private
     | ILMemberAccess.Public -> FieldAttributes.Public
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldDef
     (
         name: string,
@@ -2404,6 +2410,11 @@ type ILFieldDef
 
     member x.WithFieldMarshal(marshal) =
         x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "field " + x.Name
 
 // Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 type ILFieldDefs =
@@ -2559,7 +2570,7 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
         name: string,
@@ -2773,6 +2784,11 @@ type ILTypeDef
     member x.WithInitSemantics(init) =
         x.With(attributes = (x.Attributes ||| convertInitSemantics init))
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "type " + x.Name
+
 and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
     let mutable array = InlineDelayInit<_>(f)
@@ -2802,11 +2818,15 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
         member x.GetEnumerator() =
             (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
 
-    member x.AsArrayOfPreTypeDefs() = array.Value
+    member _.AsArrayOfPreTypeDefs() = array.Value
 
-    member x.FindByName nm =
+    member _.FindByName nm =
         let ns, n = splitILTypeName nm
         dict.Value[ (ns, n) ].GetTypeDef()
+
+    member _.ExistsByName nm =
+        let ns, n = splitILTypeName nm
+        dict.Value.ContainsKey((ns, n))
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Namespace: string list
@@ -3233,9 +3253,6 @@ let mkILMethods xs =
 let mkILMethodsComputed f = ILMethodDefs f
 let emptyILMethods = mkILMethodsFromArray [||]
 
-let filterILMethodDefs f (mdefs: ILMethodDefs) =
-    ILMethodDefs(fun () -> mdefs.AsArray() |> Array.filter f)
-
 // --------------------------------------------------------------------
 // Operations and defaults for modules, assemblies etc.
 // --------------------------------------------------------------------
@@ -3271,6 +3288,15 @@ let destILArrTy ty =
 // --------------------------------------------------------------------
 // Sigs of special types built-in
 // --------------------------------------------------------------------
+
+[<Literal>]
+let tname_Attribute = "System.Attribute"
+
+[<Literal>]
+let tname_Enum = "System.Enum"
+
+[<Literal>]
+let tname_SealedAttribute = "System.SealedAttribute"
 
 [<Literal>]
 let tname_Object = "System.Object"
@@ -3330,15 +3356,9 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals
-    (
-        primaryScopeRef: ILScopeRef,
-        assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list,
-        fsharpCoreAssemblyScopeRef: ILScopeRef
-    ) =
+type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
 
-    let assembliesThatForwardToPrimaryAssembly =
-        Array.ofList assembliesThatForwardToPrimaryAssembly
+    let equivPrimaryAssemblyRefs = Array.ofList equivPrimaryAssemblyRefs
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
@@ -3350,6 +3370,12 @@ type ILGlobals
         | _ -> failwith "Invalid primary assembly"
 
     member x.primaryAssemblyName = x.primaryAssemblyRef.Name
+
+    member val typ_Attribute = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Attribute))
+
+    member val typ_Enum = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Enum))
+
+    member val typ_SealedAttribute = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_SealedAttribute))
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
 
@@ -3393,8 +3419,7 @@ type ILGlobals
 
     member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
         aref.EqualsIgnoringVersion x.primaryAssemblyRef
-        || assembliesThatForwardToPrimaryAssembly
-           |> Array.exists aref.EqualsIgnoringVersion
+        || equivPrimaryAssemblyRefs |> Array.exists aref.EqualsIgnoringVersion
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3402,15 +3427,12 @@ type ILGlobals
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef) =
-    ILGlobals(primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+let mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef) =
+    ILGlobals(primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
 
 let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
 let mkNormalCallvirt mspec = I_callvirt(Normalcall, mspec, None)
-
-let mkNormalCallconstraint (ty, mspec) =
-    I_callconstraint(Normalcall, ty, mspec, None)
 
 let mkNormalNewobj mspec = I_newobj(mspec, None)
 
@@ -3453,11 +3475,6 @@ let mkLdcInt32 i =
         ldi32s[i]
     else
         AI_ldc(DT_I4, ILConst.I4 i)
-
-let tname_CompilerGeneratedAttribute =
-    "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
-
-let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 
 (* NOTE: ecma_ prefix refers to the standard "mscorlib" *)
 let ecmaPublicKey =
@@ -3813,26 +3830,24 @@ let mkILClassCtor impl =
         body = notlazy impl
     )
 
-// --------------------------------------------------------------------
-// Make a virtual method, where the overriding is simply the default
-// (i.e. overrides by name/signature)
-// --------------------------------------------------------------------
+let mkILGenericVirtualMethod (nm, callconv: ILCallingConv, access, genparams, actual_args, actual_ret, impl) =
+    let attributes =
+        convertMemberAccess access
+        ||| MethodAttributes.CheckAccessOnOverride
+        ||| (match impl with
+             | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
+             | _ -> MethodAttributes.Virtual)
+        ||| (if callconv.IsInstance then
+                 enum 0
+             else
+                 MethodAttributes.Static)
 
-let mk_ospec (ty: ILType, callconv, nm, genparams, formal_args, formal_ret) =
-    OverridesSpec(mkILMethRef (ty.TypeRef, callconv, nm, genparams, formal_args, formal_ret), ty)
-
-let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
     ILMethodDef(
         name = nm,
-        attributes =
-            (convertMemberAccess access
-             ||| MethodAttributes.CheckAccessOnOverride
-             ||| (match impl with
-                  | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
-                  | _ -> MethodAttributes.Virtual)),
+        attributes = attributes,
         implAttributes = MethodImplAttributes.Managed,
         genericParams = genparams,
-        callingConv = ILCallingConv.Instance,
+        callingConv = callconv,
         parameters = actual_args,
         ret = actual_ret,
         isEntryPoint = false,
@@ -3841,8 +3856,11 @@ let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, im
         body = notlazy impl
     )
 
-let mkILNonGenericVirtualMethod (nm, access, args, ret, impl) =
-    mkILGenericVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
+let mkILNonGenericVirtualMethod (nm, callconv, access, args, ret, impl) =
+    mkILGenericVirtualMethod (nm, callconv, access, mkILEmptyGenericParams, args, ret, impl)
+
+let mkILNonGenericVirtualInstanceMethod (nm, access, args, ret, impl) =
+    mkILNonGenericVirtualMethod (nm, ILCallingConv.Instance, access, args, ret, impl)
 
 let mkILGenericNonVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
     ILMethodDef(
@@ -3887,7 +3905,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     // If there is a sequence point as the first instruction then keep it at the front
     | I_seqpoint _ as i0 ->
         let labels =
-            let dict = Dictionary.newWithSize c2.Labels.Count
+            let dict = Dictionary.newWithSize (c2.Labels.Count * 2) // Decrease chance of collisions by oversizing the hashtable
 
             for kvp in c2.Labels do
                 dict.Add(kvp.Key, (if kvp.Value = 0 then 0 else kvp.Value + n))
@@ -3900,7 +3918,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
         }
     | _ ->
         let labels =
-            let dict = Dictionary.newWithSize c2.Labels.Count
+            let dict = Dictionary.newWithSize (c2.Labels.Count * 2) // Decrease chance of collisions by oversizing the hashtable
 
             for kvp in c2.Labels do
                 dict.Add(kvp.Key, kvp.Value + n)
@@ -3937,11 +3955,6 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             |])
 
     cd.With(methods = methods)
-
-let codeOfMethodDef (md: ILMethodDef) =
-    match md.Code with
-    | Some x -> x
-    | None -> failwith "codeOfmdef: not IL"
 
 let mkRefToILMethod (tref, md: ILMethodDef) =
     mkILMethRef (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
@@ -3981,6 +3994,9 @@ let mkILInstanceField (nm, ty, init, access) =
 
 let mkILStaticField (nm, ty, init, at, access) =
     mkILField (true, nm, ty, init, at, access, false)
+
+let mkILStaticLiteralField (nm, ty, init, at, access) =
+    mkILField (true, nm, ty, Some init, at, access, true)
 
 let mkILLiteralField (nm, ty, init, at, access) =
     mkILField (true, nm, ty, Some init, at, access, true)
@@ -4266,7 +4282,7 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     let one nm args ret =
         let mdef =
-            mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
+            mkILNonGenericVirtualInstanceMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
 
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
 
@@ -4347,10 +4363,6 @@ let computeILEnumInfo (mdName, mdFields: ILFieldDefs) =
 //---------------------------------------------------------------------
 
 let sigptr_get_byte bytes sigptr = Bytes.get bytes sigptr, sigptr + 1
-
-let sigptr_get_bool bytes sigptr =
-    let b0, sigptr = sigptr_get_byte bytes sigptr
-    (b0 = 0x01), sigptr
 
 let sigptr_get_u8 bytes sigptr =
     let b0, sigptr = sigptr_get_byte bytes sigptr
@@ -4475,11 +4487,6 @@ let mkRefToILAssembly (m: ILAssemblyManifest) =
         m.Locale
     )
 
-let z_unsigned_int_size n =
-    if n <= 0x7F then 1
-    elif n <= 0x3FFF then 2
-    else 3
-
 let z_unsigned_int n =
     if n >= 0 && n <= 0x7F then
         [| byte n |]
@@ -4540,8 +4547,6 @@ let ieee32AsBytes i = i32AsBytes (bitsOfSingle i)
 
 let ieee64AsBytes i = i64AsBytes (bitsOfDouble i)
 
-let et_END = 0x00uy
-let et_VOID = 0x01uy
 let et_BOOLEAN = 0x02uy
 let et_CHAR = 0x03uy
 let et_I1 = 0x04uy
@@ -4555,22 +4560,8 @@ let et_U8 = 0x0Buy
 let et_R4 = 0x0Cuy
 let et_R8 = 0x0Duy
 let et_STRING = 0x0Euy
-let et_PTR = 0x0Fuy
-let et_BYREF = 0x10uy
-let et_VALUETYPE = 0x11uy
-let et_CLASS = 0x12uy
-let et_VAR = 0x13uy
-let et_ARRAY = 0x14uy
-let et_WITH = 0x15uy
-let et_TYPEDBYREF = 0x16uy
-let et_I = 0x18uy
-let et_U = 0x19uy
-let et_FNPTR = 0x1Buy
 let et_OBJECT = 0x1Cuy
 let et_SZARRAY = 0x1Duy
-let et_MVAR = 0x1Euy
-let et_CMOD_REQD = 0x1Fuy
-let et_CMOD_OPT = 0x20uy
 
 let formatILVersion (version: ILVersionInfo) =
     sprintf "%d.%d.%d.%d" (int version.Major) (int version.Minor) (int version.Build) (int version.Revision)
@@ -4617,7 +4608,7 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.UInt64 _ -> [| et_U8 |]
     | ILAttribElem.Type _ -> [| 0x50uy |]
     | ILAttribElem.TypeRef _ -> [| 0x50uy |]
-    | ILAttribElem.Null _ -> [| et_STRING |] // yes, the 0xe prefix is used when passing a "null" to a property or argument of type "object" here
+    | ILAttribElem.Null -> [| et_STRING |] // yes, the 0xe prefix is used when passing a "null" to a property or argument of type "object" here
     | ILAttribElem.Single _ -> [| et_R4 |]
     | ILAttribElem.Double _ -> [| et_R8 |]
     | ILAttribElem.Array (elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
@@ -5297,7 +5288,7 @@ and refsOfILInstr s x =
     | I_callvirt (_, mr, varargs) ->
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_callconstraint (_, tr, mr, varargs) ->
+    | I_callconstraint (_, _, tr, mr, varargs) ->
         refsOfILType s tr
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs

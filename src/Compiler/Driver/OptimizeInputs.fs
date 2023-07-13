@@ -2,7 +2,9 @@
 
 module internal FSharp.Compiler.OptimizeInputs
 
+open System.Collections.Generic
 open System.IO
+open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -48,6 +50,259 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos
     optEnv
 
+/// Result of the 'FirstLoop' phase
+type FirstLoopRes =
+    {
+        OptEnv: Optimizer.IncrementalOptimizationEnv
+        OptInfo: Optimizer.ImplFileOptimizationInfo
+        HidingInfo: SignatureHidingInfo
+        OptDuringCodeGen: bool -> Expr -> Expr
+    }
+
+/// All the state optimization phases can produce (except 'CheckedImplFile') and most of what they require as input.
+type PhaseContext =
+    {
+        FirstLoopRes: FirstLoopRes
+        OptEnvExtraLoop: Optimizer.IncrementalOptimizationEnv
+        OptEnvFinalSimplify: Optimizer.IncrementalOptimizationEnv
+    }
+
+/// The result of running a single Optimization Phase.
+type PhaseRes = CheckedImplFile * PhaseContext
+
+/// 0-based index of an Optimization Phase.
+type PhaseIdx = int
+
+/// All inputs required to evaluate each Optimization Phase.
+type PhaseInputs =
+    {
+        File: CheckedImplFile
+        FileIdx: int
+        /// State returned by processing the previous phase for the current file, or initial state.
+        PrevPhase: PhaseContext
+        /// State returned by processing the current phase for the previous file, or initial state.
+        PrevFile: PhaseContext
+    }
+
+/// Signature of each optimization phase.
+type PhaseFunc = PhaseInputs -> CheckedImplFile * PhaseContext
+
+/// Each file's optimization can be split into up to seven different phases, executed one after another.
+type Phase =
+    {
+        Idx: PhaseIdx
+        Name: string
+    }
+
+    override this.ToString() = $"{this.Idx}-{this.Name}"
+
+type PhaseInfo = { Phase: Phase; Func: PhaseFunc }
+
+[<RequireQualifiedAccess>]
+module private ParallelOptimization =
+    open Optimizer
+
+    /// Identifies a work item scheduled independently of others - consists of a (file) index and OptimizationPhase.
+    /// There are (NumberOfFiles * NumberOfPhases) nodes in the whole optimization process.
+    type private Node =
+        {
+            FileIdx: int
+            Phase: PhaseIdx
+        }
+
+        override this.ToString() = $"[{this.FileIdx}-{this.Phase}]"
+
+    /// Final processing of file results to produce output needed for further compilation steps.
+    let private collectFinalResults
+        (fileResults: PhaseRes[])
+        : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
+        let finalFileResults =
+            fileResults
+            |> Array.map (fun (file, res) ->
+                let implFile =
+                    {
+                        ImplFile = file
+                        OptimizeDuringCodeGen = res.FirstLoopRes.OptDuringCodeGen
+                    }
+
+                implFile, res.FirstLoopRes.OptInfo)
+
+        let lastFileFirstLoopEnv =
+            fileResults |> Array.last |> (fun (_file, res) -> res.FirstLoopRes.OptEnv)
+
+        finalFileResults, lastFileFirstLoopEnv
+
+    let optimizeFilesInParallel
+        (env0: IncrementalOptimizationEnv)
+        (phases: PhaseInfo[])
+        (files: CheckedImplFile list)
+        : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
+
+        let files = files |> List.toArray
+
+        /// Initial state for processing the current file.
+        let initialState =
+            {
+                FirstLoopRes =
+                    {
+                        OptEnv = env0
+                        OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                        HidingInfo = SignatureHidingInfo.Empty
+                        // A no-op optimizer
+                        OptDuringCodeGen = fun _ expr -> expr
+                    }
+                OptEnvExtraLoop = env0
+                OptEnvFinalSimplify = env0
+            }
+
+        // Functions for accessing a set of node jobs and their results
+        let getTask, setTask =
+            let tasks: Task<PhaseRes>[,] = Array2D.zeroCreate files.Length phases.Length
+            let getTask (node: Node) = tasks[node.FileIdx, node.Phase]
+            let setTask (node: Node) (task: Task<PhaseRes>) = tasks[node.FileIdx, node.Phase] <- task
+            getTask, setTask
+
+        /// Asynchronously wait for dependencies of a node
+        let getNodeInputs (node: Node) =
+            backgroundTask {
+                let prevPhaseNode = { node with Phase = node.Phase - 1 }
+                let prevFileNode = { node with FileIdx = node.FileIdx - 1 }
+
+                let prevPhaseTask =
+                    if node.Phase > 0 then
+                        backgroundTask {
+                            // Make sure that creating the task does not block before other node tasks finish
+                            do! Task.Yield()
+                            return! getTask prevPhaseNode
+                        }
+                    else
+                        // First phase uses input file without modifications
+                        (files[node.FileIdx], initialState) |> Task.FromResult
+
+                let prevFileTask =
+                    if node.FileIdx > 0 then
+                        backgroundTask {
+                            // Make sure that creating the task does not block before other node tasks finish
+                            do! Task.Yield()
+                            return! getTask prevFileNode
+                        }
+                    else
+                        // We don't use the file result in this case, but we need something, so just take the first input file as a placeholder.
+                        (files[0], initialState) |> Task.FromResult
+
+                let! results = [| prevPhaseTask; prevFileTask |] |> Task.WhenAll
+                let prevPhaseFile, prevPhaseRes = results[0]
+                let _prevFileFile, prevFileRes = results[1]
+
+                let inputs =
+                    {
+                        File = prevPhaseFile
+                        FileIdx = node.FileIdx
+                        PrevPhase = prevPhaseRes
+                        PrevFile = prevFileRes
+                    }
+
+                return inputs
+            }
+
+        let startNodeTask (phase: PhaseInfo) (node: Node) =
+            backgroundTask {
+                // Make sure that creating the task does not block before other node tasks finish
+                do! Task.Yield()
+                let! inputs = getNodeInputs node
+                let res = phase.Func inputs
+                return res
+            }
+
+        let fileIndices = [| 0 .. files.Length - 1 |]
+
+        for fileIdx in fileIndices do
+            for phase in phases do
+                let node =
+                    {
+                        Node.Phase = phase.Phase.Idx
+                        FileIdx = fileIdx
+                    }
+
+                let task = startNodeTask phase node
+                setTask node task
+
+        let lastPhaseResultsTask =
+            let lastPhaseIndex = phases[phases.Length - 1].Phase.Idx
+
+            fileIndices
+            |> Array.map (fun fileIdx ->
+                getTask
+                    {
+                        Node.FileIdx = fileIdx
+                        Phase = lastPhaseIndex
+                    })
+            |> Task.WhenAll
+
+        let lastPhaseResults =
+            try
+                lastPhaseResultsTask.GetAwaiter().GetResult()
+            // If multiple exceptions returned by multiple tasks, ignore all but the first one.
+            with :? System.AggregateException as ex when ex.InnerExceptions.Count > 0 ->
+                raise ex.InnerExceptions[0]
+
+        collectFinalResults lastPhaseResults
+
+let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
+    let results, (optEnvFirstLoop, _, _, _) =
+        let implFiles = implFiles |> List.mapi (fun i file -> i, file)
+
+        ((optEnv, optEnv, optEnv, SignatureHidingInfo.Empty), implFiles)
+
+        ||> List.mapFold
+            (fun (optEnvFirstLoop: Optimizer.IncrementalOptimizationEnv, optEnvExtraLoop, optEnvFinalSimplify, hidden) (fileIdx, implFile) ->
+
+                /// Initial state for processing the current file.
+                let state =
+                    implFile,
+                    {
+                        FirstLoopRes =
+                            {
+                                OptEnv = optEnvFirstLoop
+                                OptInfo =
+                                    lazy
+                                        failwith
+                                            "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                                HidingInfo = hidden
+                                // A no-op optimizer
+                                OptDuringCodeGen = fun _ expr -> expr
+                            }
+                        OptEnvExtraLoop = optEnvExtraLoop
+                        OptEnvFinalSimplify = optEnvFinalSimplify
+                    }
+
+                let runPhase (file: CheckedImplFile, state: PhaseContext) (phase: PhaseInfo) =
+                    // In the sequential mode we always process all phases of the previous file before processing the current file.
+                    // This is why the state returned by the previous phase of the current file contains all changes made in the previous file,
+                    // and we can use it in both places.
+                    let input =
+                        {
+                            File = file
+                            FileIdx = fileIdx
+                            PrevPhase = state
+                            PrevFile = state
+                        }
+
+                    phase.Func input
+
+                let implFile, state = Array.fold runPhase state phases
+
+                let file =
+                    {
+                        ImplFile = implFile
+                        OptimizeDuringCodeGen = state.FirstLoopRes.OptDuringCodeGen
+                    }
+
+                (file, state.FirstLoopRes.OptInfo),
+                (state.FirstLoopRes.OptEnv, state.OptEnvExtraLoop, state.OptEnvFinalSimplify, state.FirstLoopRes.HidingInfo))
+
+    results, optEnvFirstLoop
+
 let ApplyAllOptimizations
     (
         tcConfig: TcConfig,
@@ -74,131 +329,219 @@ let ApplyAllOptimizations
         dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL ccu.Contents)))
 #endif
 
-    let optEnv0 = optEnv
     ReportTime tcConfig "Optimizations"
 
-    // Only do abstract_big_targets on the first pass!  Only do it when TLR is on!
-    let optSettings = tcConfig.optSettings
-
-    let optSettings =
-        { optSettings with
+    let firstLoopSettings =
+        { tcConfig.optSettings with
+            // Only do abstractBigTargets in the first phase, and only when TLR is on.
             abstractBigTargets = tcConfig.doTLR
-        }
-
-    let optSettings =
-        { optSettings with
             reportingPhase = true
         }
 
-    let results, (optEnvFirstLoop, _, _, _) =
-        ((optEnv0, optEnv0, optEnv0, SignatureHidingInfo.Empty), implFiles)
+    // Only do these two steps in the first phase.
+    let extraAndFinalLoopSettings =
+        { firstLoopSettings with
+            abstractBigTargets = false
+            reportingPhase = false
+        }
 
-        ||> List.mapFold (fun (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden) implFile ->
+    let addPhaseDiagnostics (f: PhaseFunc) (info: Phase) =
+        fun (inputs: PhaseInputs) ->
+            use _ =
+                let tags =
+                    [|
+                        "QualifiedNameOfFile", inputs.File.QualifiedNameOfFile.Text
+                        "OptimisationPhase", info.Name
+                    |]
 
-            //ReportTime tcConfig ("Initial simplify")
-            let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen =
-                Optimizer.OptimizeImplFile(
-                    optSettings,
-                    ccu,
-                    tcGlobals,
-                    tcVal,
-                    importMap,
-                    optEnvFirstLoop,
-                    isIncrementalFragment,
-                    tcConfig.fsiMultiAssemblyEmit,
-                    tcConfig.emitTailcalls,
-                    hidden,
-                    implFile
-                )
+                FSharp.Compiler.Diagnostics.Activity.start $"file-{inputs.FileIdx}_phase-{info.Name}" tags
 
-            let implFile = LowerLocalMutables.TransformImplFile tcGlobals importMap implFile
+            f inputs
 
-            // Only do this on the first pass!
-            let optSettings =
-                { optSettings with
-                    abstractBigTargets = false
-                    reportingPhase = false
-                }
-#if DEBUG
-            if tcConfig.showOptimizationData then
-                dprintf
-                    "Optimization implFileOptData:\n%s\n"
-                    (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
-#endif
+    let phases = List<PhaseInfo>()
 
-            let implFile, optEnvExtraLoop =
-                if tcConfig.extraOptimizationIterations > 0 then
+    let addPhase (name: string) (phaseFunc: PhaseFunc) =
+        let phase = { Idx = phases.Count; Name = name }
 
-                    //ReportTime tcConfig ("Extra simplification loop")
-                    let (optEnvExtraLoop, implFile, _, _), _ =
-                        Optimizer.OptimizeImplFile(
-                            optSettings,
-                            ccu,
-                            tcGlobals,
-                            tcVal,
-                            importMap,
-                            optEnvExtraLoop,
-                            isIncrementalFragment,
-                            tcConfig.fsiMultiAssemblyEmit,
-                            tcConfig.emitTailcalls,
-                            hidden,
-                            implFile
-                        )
+        let phaseInfo =
+            {
+                Phase = phase
+                Func = addPhaseDiagnostics phaseFunc phase
+            }
 
-                    //PrintWholeAssemblyImplementation tcConfig outfile (sprintf "extra-loop-%d" n) implFile
-                    implFile, optEnvExtraLoop
-                else
-                    implFile, optEnvExtraLoop
+        phases.Add(phaseInfo)
 
-            let implFile =
-                if tcConfig.doDetuple then
-                    //ReportTime tcConfig ("Detupled optimization")
-                    let implFile = implFile |> Detuple.DetupleImplFile ccu tcGlobals
-                    //PrintWholeAssemblyImplementation tcConfig outfile "post-detuple" implFile
-                    implFile
-                else
-                    implFile
+    let firstLoop
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let (env, file, optInfo, hidingInfo), optDuringCodeGen =
+            Optimizer.OptimizeImplFile(
+                firstLoopSettings,
+                ccu,
+                tcGlobals,
+                tcVal,
+                importMap,
+                prevFile.FirstLoopRes.OptEnv,
+                isIncrementalFragment,
+                tcConfig.fsiMultiAssemblyEmit,
+                tcConfig.emitTailcalls,
+                prevFile.FirstLoopRes.HidingInfo,
+                file
+            )
 
-            let implFile =
-                if tcConfig.doTLR then
-                    implFile
-                    |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
-                else
-                    implFile
-
-            let implFile = LowerCalls.LowerImplFile tcGlobals implFile
-
-            let implFile, optEnvFinalSimplify =
-                if tcConfig.doFinalSimplify then
-
-                    //ReportTime tcConfig ("Final simplify pass")
-                    let (optEnvFinalSimplify, implFile, _, _), _ =
-                        Optimizer.OptimizeImplFile(
-                            optSettings,
-                            ccu,
-                            tcGlobals,
-                            tcVal,
-                            importMap,
-                            optEnvFinalSimplify,
-                            isIncrementalFragment,
-                            tcConfig.fsiMultiAssemblyEmit,
-                            tcConfig.emitTailcalls,
-                            hidden,
-                            implFile
-                        )
-
-                    //PrintWholeAssemblyImplementation tcConfig outfile "post-rec-opt" implFile
-                    implFile, optEnvFinalSimplify
-                else
-                    implFile, optEnvFinalSimplify
-
-            let implFile =
+        file,
+        { prevPhase with
+            FirstLoopRes =
                 {
-                    ImplFile = implFile
-                    OptimizeDuringCodeGen = optimizeDuringCodeGen
+                    OptEnv = env
+                    OptInfo = optInfo
+                    HidingInfo = hidingInfo
+                    OptDuringCodeGen = optDuringCodeGen
                 }
+        }
 
-            (implFile, implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
+    addPhase "firstLoop" firstLoop
+
+    let lowerLocalMutables
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = _prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
+        file, prevPhase
+
+    addPhase "lowerLocalMutables" lowerLocalMutables
+
+    let extraLoop
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let (optEnvExtraLoop, file, _, _), _ =
+            Optimizer.OptimizeImplFile(
+                extraAndFinalLoopSettings,
+                ccu,
+                tcGlobals,
+                tcVal,
+                importMap,
+                prevFile.OptEnvExtraLoop,
+                isIncrementalFragment,
+                tcConfig.fsiMultiAssemblyEmit,
+                tcConfig.emitTailcalls,
+                prevPhase.FirstLoopRes.HidingInfo,
+                file
+            )
+
+        file,
+        { prevPhase with
+            OptEnvExtraLoop = optEnvExtraLoop
+        }
+
+    if tcConfig.extraOptimizationIterations > 0 then
+        addPhase "ExtraLoop" extraLoop
+
+    let detuple
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = _prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let file = file |> Detuple.DetupleImplFile ccu tcGlobals
+        file, prevPhase
+
+    if tcConfig.doDetuple then
+        addPhase "Detuple" detuple
+
+    let innerLambdasToToplevelFuncs
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = _prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let file =
+            file
+            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
+
+        file, prevPhase
+
+    if tcConfig.doTLR then
+        addPhase "InnerLambdasToToplevelFuncs" innerLambdasToToplevelFuncs
+
+    let lowerCalls
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = _prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let file = LowerCalls.LowerImplFile tcGlobals file
+        file, prevPhase
+
+    addPhase "LowerCalls" lowerCalls
+
+    let finalSimplify
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let (optEnvFinalSimplify, file, _, _), _ =
+            Optimizer.OptimizeImplFile(
+                extraAndFinalLoopSettings,
+                ccu,
+                tcGlobals,
+                tcVal,
+                importMap,
+                prevFile.OptEnvFinalSimplify,
+                isIncrementalFragment,
+                tcConfig.fsiMultiAssemblyEmit,
+                tcConfig.emitTailcalls,
+                prevPhase.FirstLoopRes.HidingInfo,
+                file
+            )
+
+        file,
+        { prevPhase with
+            OptEnvFinalSimplify = optEnvFinalSimplify
+        }
+
+    if tcConfig.doFinalSimplify then
+        addPhase "FinalSimplify" finalSimplify
+
+    let phases = phases.ToArray()
+
+    let results, optEnvFirstLoop =
+        match tcConfig.optSettings.processingMode with
+        // Parallel optimization breaks determinism - turn it off in deterministic builds.
+        | Optimizer.OptimizationProcessingMode.Parallel when (not tcConfig.deterministic) ->
+            let results, optEnvFirstPhase =
+                ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
+
+            results |> Array.toList, optEnvFirstPhase
+        | Optimizer.OptimizationProcessingMode.Parallel
+        | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles
+
+#if DEBUG
+    if tcConfig.showOptimizationData then
+        results
+        |> List.map snd
+        |> List.iter (fun implFileOptData ->
+            let str =
+                (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
+
+            dprintf $"Optimization implFileOptData:\n{str}\n")
+#endif
 
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
@@ -251,9 +594,11 @@ let GenerateIlxCode
             mainMethodInfo = mainMethodInfo
             ilxBackend = ilxBackend
             fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
+            useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen && not tcConfig.deterministic
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)

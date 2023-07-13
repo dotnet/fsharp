@@ -15,8 +15,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
-let LowerComputedCollectionsStackGuardDepth = StackGuard.GetDepthOption "LowerComputedCollections"
-
 /// Build the 'test and dispose' part of a 'use' statement
 let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
     let disposeMethod = 
@@ -28,13 +26,13 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
         assert (TypeFeasiblySubsumesType 0 g infoReader.amap m g.system_IDisposable_ty CanCoerce v.Type)
         // We can use NeverMutates here because the variable is going out of scope, there is no need to take a defensive
         // copy of it.
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] []
+        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] [] None
         //callNonOverloadedILMethod g infoReader.amap m "Dispose" g.system_IDisposable_ty [exprForVal v.Range v]
         
         disposeExpr
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
+        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
         let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
@@ -44,7 +42,7 @@ let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
         match GetIntrinsicMethInfosOfType infoReader (Some name) AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m listCollectorTy with
         | [x] -> x
         | _ -> error(InternalError("no " + name + " method found on Collector", m))
-    let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args
+    let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args None
     expr
 
 let mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr arg =

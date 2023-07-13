@@ -1,18 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 {
-
-module internal FSharp.Compiler.AbstractIL.AsciiLexer 
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Text
-open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Library
-
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.AsciiParser 
-open FSharp.Compiler.AbstractIL.AsciiConstants 
-
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.AsciiConstants
 
 let lexeme (lexbuf : LexBuffer<char>) = LexBuffer<char>.LexemeString lexbuf
 let lexemeChar (lexbuf : LexBuffer<char>) n = lexbuf.LexemeChar n

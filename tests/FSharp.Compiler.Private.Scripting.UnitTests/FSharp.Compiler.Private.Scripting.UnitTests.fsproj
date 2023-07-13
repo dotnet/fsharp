@@ -2,15 +2,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Interactive\ControlledExecution.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\RidHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />
     <Compile Include="DependencyManagerLineParserTests.fs" />
@@ -19,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
+    <None Include="housing.csv" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

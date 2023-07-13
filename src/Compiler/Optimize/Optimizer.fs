@@ -36,16 +36,6 @@ open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
 
-#if DEBUG
-let verboseOptimizationInfo = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo")) with _ -> false
-let verboseOptimizations = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizations")) with _ -> false
-#else
-let [<Literal>] verboseOptimizationInfo = false
-let [<Literal>] verboseOptimizations = false
-#endif
-
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 
 
 /// size of a function call 
@@ -300,6 +290,11 @@ let [<Literal>] crossAssemblyOptimizationDefault = true
 
 let [<Literal>] debugPointsForPipeRightDefault = true
 
+[<RequireQualifiedAccess>]
+type OptimizationProcessingMode =
+    | Sequential
+    | Parallel
+
 type OptimizationSettings = 
     { 
       abstractBigTargets : bool
@@ -331,6 +326,8 @@ type OptimizationSettings =
       reportHasEffect : bool 
       
       reportTotalSizes : bool
+      
+      processingMode : OptimizationProcessingMode
     }
 
     static member Defaults = 
@@ -347,6 +344,7 @@ type OptimizationSettings =
           reportFunctionSizes = false
           reportHasEffect = false
           reportTotalSizes = false
+          processingMode = OptimizationProcessingMode.Sequential
         }
 
     /// Determines if JIT optimizations are enabled
@@ -407,7 +405,10 @@ type OptimizationSettings =
 
     /// Determines if we should expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled 
+    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled
+    
+    /// Determines how to process optimization of multiple files and individual optimization phases
+    member x.ProcessingMode() = x.processingMode
 
 type cenv =
     { g: TcGlobals
@@ -614,9 +615,7 @@ let BindTyparsToUnknown (tps: Typar list) env =
     // However here we mutate to provide better names for generalized type parameters 
     // The names chosen are 'a', 'b' etc. These are also the compiled names in the IL code
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp, _) -> tp.Name) ) tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
@@ -744,8 +743,6 @@ let mkUInt32Val (g: TcGlobals) n = ConstValue(Const.UInt32 n, g.uint32_ty)
 
 let mkUInt64Val (g: TcGlobals) n = ConstValue(Const.UInt64 n, g.uint64_ty)
 
-let (|StripInt32Value|_|) = function StripConstValue(Const.Int32 n) -> Some n | _ -> None
-      
 let MakeValueInfoForValue g m vref vinfo = 
 #if DEBUG
     let rec check x = 
@@ -1575,7 +1572,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 
 let IsDiscardableEffectExpr expr = 
     match stripDebugPoints expr with 
-    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | Expr.Op (TOp.LValueOp (LByrefGet, _), [], [], _) -> true 
     | _ -> false
 
 /// Checks is a value binding is non-discardable
@@ -2385,15 +2382,19 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.LetRec (binds, bodyExpr, m, _) ->  
         OptimizeLetRec cenv env (binds, bodyExpr, m)
 
-    | Expr.StaticOptimization (constraints, expr2, expr3, m) ->
-        let expr2R, e2info = OptimizeExpr cenv env expr2
-        let expr3R, e3info = OptimizeExpr cenv env expr3
-        Expr.StaticOptimization (constraints, expr2R, expr3R, m), 
-        { TotalSize = min e2info.TotalSize e3info.TotalSize
-          FunctionSize = min e2info.FunctionSize e3info.FunctionSize
-          HasEffect = e2info.HasEffect || e3info.HasEffect
-          MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
-          Info= UnknownValue }
+    | Expr.StaticOptimization (staticConditions, expr2, expr3, m) ->
+        let d = DecideStaticOptimizations g staticConditions false
+        if d = StaticOptimizationAnswer.Yes then OptimizeExpr cenv env expr2
+        elif d = StaticOptimizationAnswer.No then OptimizeExpr cenv env expr3
+        else
+            let expr2R, e2info = OptimizeExpr cenv env expr2
+            let expr3R, e3info = OptimizeExpr cenv env expr3
+            Expr.StaticOptimization (staticConditions, expr2R, expr3R, m), 
+            { TotalSize = min e2info.TotalSize e3info.TotalSize
+              FunctionSize = min e2info.FunctionSize e3info.FunctionSize
+              HasEffect = e2info.HasEffect || e3info.HasEffect
+              MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
+              Info= UnknownValue }
 
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")
@@ -3738,7 +3739,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap valReprInfo expr
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
@@ -4043,7 +4044,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
             let cenv = if vref.InlineInfo.MustInline then { cenv with optimizing=false} else cenv 
-            let arityInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.No vref expr
+            let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
             let size = localVarSize 
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
@@ -4083,7 +4084,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                
                (vref.InlineInfo = ValInline.Never) ||
                // MarshalByRef methods may not be inlined
-               (match vref.DeclaringEntity with 
+               (match vref.TryDeclaringEntity with 
                 | Parent tcref -> 
                     match g.system_MarshalByRefObject_tcref with
                     | None -> false
@@ -4321,7 +4322,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
-          stackGuard = StackGuard(OptimizerStackGuardDepth) 
+          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth") 
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

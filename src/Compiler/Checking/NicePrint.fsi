@@ -17,6 +17,8 @@ open FSharp.Compiler.TypedTreeOps
 module PrintUtilities =
     val layoutBuiltinAttribute: denv: DisplayEnv -> attrib: BuiltinAttribInfo -> Layout
 
+    val squashToWidth: width: int option -> Layout -> Layout
+
 val layoutTyparConstraint: denv: DisplayEnv -> Typar * TyparConstraint -> Layout
 
 val outputType: denv: DisplayEnv -> os: StringBuilder -> x: TType -> unit
@@ -79,8 +81,16 @@ val prettyLayoutOfPropInfoFreeStyle:
 
 val stringOfMethInfo: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
 
+/// Convert a MethInfo to a F# signature
+val stringOfMethInfoFSharpStyle: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> string
+
 val multiLineStringOfMethInfos:
     infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfos: MethInfo list -> string
+
+val stringOfPropInfo: g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfo: PropInfo -> string
+
+val multiLineStringOfPropInfos:
+    g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfos: PropInfo list -> string
 
 val stringOfParamData: denv: DisplayEnv -> paramData: ParamData -> string
 
@@ -108,6 +118,8 @@ val stringOfTy: denv: DisplayEnv -> x: TType -> string
 
 val prettyLayoutOfType: denv: DisplayEnv -> x: TType -> Layout
 
+val prettyLayoutOfTrait: denv: DisplayEnv -> x: TraitConstraintInfo -> Layout
+
 val prettyLayoutOfTypeNoCx: denv: DisplayEnv -> x: TType -> Layout
 
 val prettyLayoutOfTypar: denv: DisplayEnv -> x: Typar -> Layout
@@ -125,6 +137,8 @@ val stringOfExnDef: denv: DisplayEnv -> infoReader: InfoReader -> x: EntityRef -
 val stringOfFSAttrib: denv: DisplayEnv -> x: Attrib -> string
 
 val stringOfILAttrib: denv: DisplayEnv -> ILType * ILAttribElem list -> string
+
+val fqnOfEntityRef: g: TcGlobals -> x: EntityRef -> string
 
 val layoutImpliedSignatureOfModuleOrNamespace:
     showHeader: bool ->

@@ -9,10 +9,10 @@ module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
 open FSharp.Compiler.Tokenization
-
+open FsUnit
 open NUnit.Framework
 
-let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
+let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None)
 
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(state.Value) with
@@ -214,3 +214,22 @@ let ``Tokenizer test - single-line nested string interpolation``() =
         printfn "expected = %A" expected
         Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
+
+[<Test>]
+let ``Unfinished idents``() =
+    let tokenizedLines =
+      tokenizeLines
+        [| "`"; "``"; "``a"; "``a`"; "```" |]
+
+    let actual =
+        [ for lineTokens in tokenizedLines |> List.map snd do
+            [ for str, info in lineTokens -> info.TokenName, str ] ]
+
+    let expected =
+        [["IDENT", "`"]
+         ["IDENT", "``"]
+         ["IDENT", "``a"]
+         ["IDENT", "``a`"]
+         ["IDENT", "```"]]
+
+    actual |> shouldEqual expected

@@ -12,7 +12,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-   <PropertyGroup>
+  <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
@@ -30,11 +30,12 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </Choose>
 
   <PropertyGroup>
-    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
+    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!-- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
   </PropertyGroup>
 
   <PropertyGroup>
+    <Language>F#</Language>                                                                                                                         <!-- It's an F# Language project -->
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
     <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
@@ -42,6 +43,12 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
+    <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
+  </PropertyGroup>
+
+  <!-- BinaryFormatter is disabled (warning is treated as error) by default in .NET8+, this mirroring the change in SDK (https://github.com/dotnet/sdk/pull/31591) -->
+  <PropertyGroup>
+    <WarningsAsErrors Condition="'$(_BinaryFormatterObsoleteAsError)' == 'true'">$(WarningsAsErrors);SYSLIB0011</WarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -64,6 +71,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FsiToolPath Condition="'$(FsiToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FsiToolPath>
     <FsiToolExe Condition="'$(FsiToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FsiToolExe>
     <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.dll"</DotnetFsiCompilerPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(ManagePackageVersionsCentrally)' == 'true' ">
+    <DisableImplicitSystemValueTupleReference Condition="'$(DisableImplicitSystemValueTupleReference)' == ''">true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'

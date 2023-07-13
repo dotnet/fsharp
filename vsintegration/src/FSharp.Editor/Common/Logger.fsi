@@ -17,18 +17,18 @@ type internal LogEditorFunctionId =
 [<RequireQualifiedAccess>]
 module internal Logger =
 
-    val Log : LogEditorFunctionId -> unit
+    val Log: LogEditorFunctionId -> unit
 
-    val LogMessage : message: string -> LogEditorFunctionId -> unit
+    val LogMessage: message: string -> LogEditorFunctionId -> unit
 
-    val LogBlockStart : LogEditorFunctionId -> unit
+    val LogBlockStart: LogEditorFunctionId -> unit
 
-    val LogBlockStop : LogEditorFunctionId -> unit
+    val LogBlockStop: LogEditorFunctionId -> unit
 
-    val LogBlockMessageStart : message: string -> LogEditorFunctionId -> unit
+    val LogBlockMessageStart: message: string -> LogEditorFunctionId -> unit
 
-    val LogBlockMessageStop : message: string -> LogEditorFunctionId -> unit
+    val LogBlockMessageStop: message: string -> LogEditorFunctionId -> unit
 
-    val LogBlock : LogEditorFunctionId -> IDisposable
+    val LogBlock: LogEditorFunctionId -> IDisposable
 
-    val LogBlockMessage : message: string -> LogEditorFunctionId -> IDisposable
+    val LogBlockMessage: message: string -> LogEditorFunctionId -> IDisposable

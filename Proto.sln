@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build", "src\FSharp.Build\FSharp.Build.fsproj", "{C02D44B2-BB67-4A17-9678-9D21D93B3930}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsc\fscProject\fsc.fsproj", "{5BEC9F77-5AE6-4EC3-BDE9-63CF8E1D0086}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsi\fsiProject\fsi.fsproj", "{07CB51BF-8E98-4CFF-A7BA-99C4A0BC6037}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{8A772476-D857-4810-9A9C-E67AC61497AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Proto|Any CPU = Proto|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C02D44B2-BB67-4A17-9678-9D21D93B3930}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{C02D44B2-BB67-4A17-9678-9D21D93B3930}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{5BEC9F77-5AE6-4EC3-BDE9-63CF8E1D0086}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{5BEC9F77-5AE6-4EC3-BDE9-63CF8E1D0086}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{07CB51BF-8E98-4CFF-A7BA-99C4A0BC6037}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{07CB51BF-8E98-4CFF-A7BA-99C4A0BC6037}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{8A772476-D857-4810-9A9C-E67AC61497AB}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{8A772476-D857-4810-9A9C-E67AC61497AB}.Proto|Any CPU.Build.0 = Proto|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {53F11F0A-D5FC-4410-B875-DC432F12B5AF}
+	EndGlobalSection
+EndGlobal

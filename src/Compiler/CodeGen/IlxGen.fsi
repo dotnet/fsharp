@@ -54,8 +54,14 @@ type internal IlxGenOptions =
         /// storage, even though 'it' is not logically mutable
         isInteractiveItExpr: bool
 
+        /// Suppress ToString emit
+        useReflectionFreeCodeGen: bool
+
         /// Indicates that, whenever possible, use callvirt instead of call
         alwaysCallVirt: bool
+
+        /// When set to true, the IlxGen will delay generation of method bodies and generate them later in parallel (parallelized across files)
+        parallelIlxGenEnabled: bool
     }
 
 /// The results of the ILX compilation of one fragment of an assembly

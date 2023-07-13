@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Język Microsoft Visual F# nie obsługuje projektów, których kompilowanie nie ma żadnych skutków. Aby utworzyć projekt języka F# na podstawie szablonu, otwórz menu programu Visual Studio, wybierz kolejno opcje „Narzędzia, Opcje..., Projekty i rozwiązania, Ogólne” i zaznacz pole wyboru „Zapisuj nowe projekty, gdy zostaną utworzone” lub w pliku .vstemplate szablonu umieść element &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; w sekcji &lt;TemplateData&gt;, a następnie ponów operację.</target>
+        <target state="translated">Język Microsoft Visual F# nie obsługuje projektów, których kompilowanie nie ma żadnych skutków. Aby utworzyć projekt języka F# na podstawie szablonu, otwórz menu programu Visual Studio „Narzędzia, Opcje..., Projekty i rozwiązania, Ogólne” i zaznacz pole wyboru „Zapisuj nowe projekty, gdy zostaną utworzone” lub w pliku .vstemplate szablonu umieść element &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; w sekcji &lt;TemplateData&gt;, a następnie ponów operację.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

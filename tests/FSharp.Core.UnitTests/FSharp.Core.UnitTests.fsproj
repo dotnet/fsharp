@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net7.0;net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -31,7 +31,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
@@ -91,7 +90,6 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
-    <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.fs" />
   </ItemGroup>
@@ -103,6 +101,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 </Project>

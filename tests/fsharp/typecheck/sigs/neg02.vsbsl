@@ -1,0 +1,10 @@
+
+neg02.fs(6,8,6,15): parse error FS0046: The identifier 'virtual' is reserved for future use by F#
+
+neg02.fs(6,8,6,15): parse error FS0010: Unexpected identifier in member definition
+
+neg02.fs(17,21,17,26): typecheck error FS3351: Feature 'static abstract interface members' is not supported by target runtime.
+
+neg02.fs(17,21,17,26): typecheck error FS3350: Feature 'static abstract interface members' is not available in F# 6.0. Please use language version 7.0 or greater.
+
+neg02.fs(17,21,17,24): typecheck error FS0855: No abstract or interface member was found that corresponds to this override

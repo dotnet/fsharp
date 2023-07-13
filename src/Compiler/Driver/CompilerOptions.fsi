@@ -28,7 +28,7 @@ type OptionSpec =
     | OptionStringList of (string -> unit)
     | OptionStringListSwitch of (string -> OptionSwitch -> unit)
     | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit) // like OptionUnit, but given the "options"
+    | OptionConsoleOnly of (CompilerOptionBlock list -> unit)
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
 and CompilerOption =
@@ -36,14 +36,14 @@ and CompilerOption =
         name: string *
         argumentDescriptionString: string *
         actionSpec: OptionSpec *
-        deprecationError: Option<exn> *
+        deprecationError: exn option *
         helpText: string option
 
 and CompilerOptionBlock =
     | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 
-val PrintCompilerOptionBlocks: CompilerOptionBlock list -> unit // for printing usage
+val GetCompilerOptionBlocks: CompilerOptionBlock list -> width: int option -> string
 
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
@@ -52,13 +52,21 @@ val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -
 /// Parse and process a set of compiler options
 val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit
 
-val DisplayBannerText: TcConfigBuilder -> unit
+val GetBannerText: tcConfigB: TcConfigBuilder -> string
+
+val GetHelpFsc: tcConfigB: TcConfigBuilder -> blocks: CompilerOptionBlock list -> string
+
+val GetVersion: tcConfigB: TcConfigBuilder -> string
+
+val GetLanguageVersions: unit -> string
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreServiceCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
+
+val CheckAndReportSourceFileDuplicates: ResizeArray<string> -> string list
 
 /// Apply args to TcConfigBuilder and return new list of source files
 val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
@@ -83,7 +91,7 @@ val DoWithColor: ConsoleColor -> (unit -> 'T) -> 'T
 
 val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'T) -> 'T
 
-val ReportTime: TcConfig -> string -> unit
+val ReportTime: (TcConfig -> string -> unit)
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 

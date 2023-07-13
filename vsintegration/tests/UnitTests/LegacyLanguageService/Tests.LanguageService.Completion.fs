@@ -316,31 +316,6 @@ type UsingMSBuild() as this  =
         test "DU_4." "DU_4." ["ExtensionPropObj"; "ExtensionMethodObj"; "GetHashCode"] ["Equals"] // no equals, has gethashcode defined in DU4 type
 
     [<Test>]
-    member this.``AutoCompletion.escaped with backticks`` () =
-        let code = """
-type MyRec = {
-  ``field.field``  : string
-}
-
-let a = {``field.field`` = ""}
-a.
-        """
-        this.AssertCtrlSpaceCompletion(
-          [code]
-          , "a."
-          , (fun completions ->
-              completions 
-              |> Seq.tryFind (fun (CompletionItem(_,name,nameInCode,_,_)) ->
-                name = "field.field" 
-                && nameInCode = "``field.field``"
-              )
-              |> function
-                  | Some _ -> ()
-                  | None -> Assert.Fail "expected ``field.field`` to be present"
-
-          ))
-        
-    [<Test>]
     member this.``AutoCompletion.BeforeThis``() = 
         let code = 
             [
@@ -4469,7 +4444,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
-        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+        gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]

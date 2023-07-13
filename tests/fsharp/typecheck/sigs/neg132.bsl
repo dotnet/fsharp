@@ -6,5 +6,5 @@ neg132.fs(15,9,15,55): typecheck error FS0041: A unique overload for method 'Som
 Known types of arguments: 'a * ('b -> int)
 
 Candidates:
- - static member OverloadsWithSrtp.SomeMethod: x:  ^T * f: ( ^T -> int) -> int when  ^T: (member get_Length:  ^T -> int)
  - static member OverloadsWithSrtp.SomeMethod: x: 'T list * f: ('T list -> int) -> int
+ - static member OverloadsWithSrtp.SomeMethod: x: ^T * f: (^T -> int) -> int when ^T: (member Length: int)

@@ -44,7 +44,7 @@ module Result =
     [<CompiledName("DefaultWith")>]
     let defaultWith defThunk result =
         match result with
-        | Error _ -> defThunk ()
+        | Error error -> defThunk error
         | Ok v -> v
 
     [<CompiledName("Count")>]
@@ -97,12 +97,6 @@ module Result =
 
     [<CompiledName("ToList")>]
     let toList result =
-        match result with
-        | Error _ -> []
-        | Ok x -> [ x ]
-
-    [<CompiledName("ToSeq")>]
-    let toSeq result =
         match result with
         | Error _ -> []
         | Ok x -> [ x ]

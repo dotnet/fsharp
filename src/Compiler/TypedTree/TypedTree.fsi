@@ -206,6 +206,8 @@ type TyparFlags =
 
     member WithCompatFlex: b: bool -> TyparFlags
 
+    member WithStaticReq: staticReq: Syntax.TyparStaticReq -> TyparFlags
+
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member ComparisonConditionalOn: bool
 
@@ -292,6 +294,7 @@ exception UndefinedName of depth: int * error: (string -> string) * id: Ident * 
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
+[<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =
 
     /// Indicates that a module is compiled to a class with the "Module" suffix added.
@@ -349,6 +352,9 @@ type EntityOptionalData =
 
         /// The declared documentation for the type or module
         mutable entity_xmldoc: XmlDoc
+
+        /// the signature xml doc for an item in an implementation file.
+        mutable entity_other_xmldoc: XmlDoc option
 
         /// The XML document signature for this entity
         mutable entity_xmldocsig: string
@@ -456,6 +462,8 @@ type Entity =
     member SetIsStructRecordOrUnion: b: bool -> unit
 
     member SetOtherRange: m: (range * bool) -> unit
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
     member SetTypeAbbrev: tycon_abbrev: TType option -> unit
 
@@ -567,6 +575,9 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
+
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
 
     /// Get the Abstract IL scope, nesting type metadata for this
     /// type definition, assuming it is backed by Abstract IL metadata.
@@ -769,7 +780,7 @@ type Entity =
 
 type EntityData = Entity
 
-/// Represents the parent entity of a type definition, if any
+/// Represents the declaring entity of a type definition, if any
 type ParentRef =
     | Parent of parent: EntityRef
     | ParentNone
@@ -1108,7 +1119,10 @@ type UnionCase =
         ReturnType: TType
 
         /// Documentation for the case
-        XmlDoc: XmlDoc
+        OwnXmlDoc: XmlDoc
+
+        /// Documentation for the case from signature file
+        mutable OtherXmlDoc: XmlDoc
 
         /// XML documentation signature for the case
         mutable XmlDocSig: string
@@ -1127,6 +1141,8 @@ type UnionCase =
         mutable Attribs: Attribs
     }
 
+    member XmlDoc: XmlDoc
+
     /// Get a field of the union case by position
     member GetFieldByIndex: n: int -> RecdField
 
@@ -1136,7 +1152,7 @@ type UnionCase =
     override ToString: unit -> string
 
     /// Get the name of the case in generated IL code.
-    /// Note logical names `op_Nil` type `op_ConsCons` become `Empty` type `Cons` respectively.
+    /// Note logical names `op_Nil` type `op_ColonColon` become `Empty` type `Cons` respectively.
     /// This is because this is how ILX union code gen expects to see them.
     member CompiledName: string
 
@@ -1148,16 +1164,16 @@ type UnionCase =
 
     /// Get the display name of the union case
     ///
-    /// Backticks type parens are added for non-identifiers.
+    /// Backticks are added for non-identifiers.
     ///
-    /// Note logical names op_Nil type op_ConsCons become ([]) type (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member DisplayName: string
 
     /// Get the core of the display name of the union case
     ///
-    /// Backticks type parens are not added for non-identifiers.
+    /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil type op_ConsCons become [] type :: respectively.
+    /// Note logical names op_Nil type op_ColonColon become [] and :: respectively.
     member DisplayNameCore: string
 
     /// Indicates if the union case has no fields
@@ -1178,6 +1194,8 @@ type UnionCase =
     /// Get the signature location of the union case
     member SigRange: range
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
 /// Represents a class, struct, record or exception field in an F# type, exception or union-case definition.
 /// This may represent a "field" in either a struct, class, record or union.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1189,6 +1207,9 @@ type RecdField =
 
         /// Documentation for the field
         rfield_xmldoc: XmlDoc
+
+        /// Documentation for the field from signature file
+        mutable rfield_otherxmldoc: XmlDoc
 
         /// XML Documentation signature for the field
         mutable rfield_xmldocsig: string
@@ -1287,6 +1308,8 @@ type RecdField =
 
     /// Get or set the XML documentation signature for the field
     member XmlDocSig: string with get, set
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison>]
@@ -1628,7 +1651,12 @@ type TyparConstraint =
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo =
-    | TraitWitnessInfo of TTypes * string * Syntax.SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of
+        tys: TTypes *
+        memberName: string *
+        memberFlags: SynMemberFlags *
+        objAndArgTys: TTypes *
+        returnTy: TType option
 
     override ToString: unit -> string
 
@@ -1650,34 +1678,42 @@ type TraitConstraintInfo =
     | TTrait of
         tys: TTypes *
         memberName: string *
-        _memFlags: Syntax.SynMemberFlags *
-        argTys: TTypes *
-        returnTy: TType option *
+        memberFlags: Syntax.SynMemberFlags *
+        objAndArgTys: TTypes *
+        returnTyOpt: TType option *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member ArgumentTypes: TTypes
-
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+    /// Get the types that may provide solutions for the traits
+    member SupportTypes: TType list
 
     /// Get the member flags associated with the member constraint.
     member MemberFlags: Syntax.SynMemberFlags
 
-    /// Get the member name associated with the member constraint.
-    member MemberName: string
+    /// Get the member name associated with the member constraint.  For preop
+    member MemberLogicalName: string
+
+    /// Get the raw object and argument types recorded in the member constraint. This includes the object instance type
+    /// instance members. This may be empty for property traits e.g.
+    ///      "(static member Zero: ^T)"
+    /// or unit-taking methods
+    ///      "(static member get_Zero: unit -> ^T)"
+    /// See also extension members GetCompiledArgumentTypes and GetLogicalArgumentTypes
+    member CompiledObjectAndArgumentTypes: TTypes
 
     /// Get the return type recorded in the member constraint.
-    member ReturnType: TType option
+    member CompiledReturnType: TType option
 
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
-    /// Get the key associated with the member constraint.
-    member TraitKey: TraitWitnessInfo
+    /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
+    /// the extension property MemberDisplayNameCore
+    member WithMemberKind: SynMemberKind -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -1688,8 +1724,9 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by an F# method.
     ///    ty -- the type type its instantiation
     ///    vref -- the method that solves the trait constraint
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
     ///    minst -- the generic method instantiation
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -1709,7 +1746,13 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | ILMethSln of
+        ty: TType *
+        extOpt: ILTypeRef option *
+        ilMethodRef: ILMethodRef *
+        minst: TypeInst *
+        staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///
@@ -1786,6 +1829,10 @@ type ValOptionalData =
         /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
         mutable val_repr_info_for_display: ValReprInfo option
 
+        /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+        /// them with lambda arguments.
+        mutable arg_repr_info_for_display: ArgReprInfo option
+
         /// How visible is this?
         /// MUTABILITY: for unpickle linkage
         mutable val_access: Accessibility
@@ -1793,6 +1840,9 @@ type ValOptionalData =
         /// XML documentation attached to a value.
         /// MUTABILITY: for unpickle linkage
         mutable val_xmldoc: XmlDoc
+
+        /// the signature xml doc for an item in an implementation file.
+        mutable val_other_xmldoc: XmlDoc option
 
         /// Is the value actually an instance method/property/event that augments
         /// a type, type if so what name does it take in the IL?
@@ -1887,6 +1937,8 @@ type Val =
 
     member SetOtherRange: m: (range * bool) -> unit
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
     member SetType: ty: TType -> unit
 
     member SetValDefn: val_defn: Expr -> unit
@@ -1896,6 +1948,8 @@ type Val =
     member SetValReprInfo: info: ValReprInfo option -> unit
 
     member SetValReprInfoForDisplay: info: ValReprInfo option -> unit
+
+    member SetArgReprInfoForDisplay: info: ArgReprInfo option -> unit
 
     override ToString: unit -> string
 
@@ -1917,7 +1971,7 @@ type Val =
     member DebugText: string
 
     /// The parent type or module, if any (None for expression bindings type parameters)
-    member DeclaringEntity: ParentRef
+    member TryDeclaringEntity: ParentRef
 
     /// Range of the definition (implementation) of the value, used by Visual Studio
     member DefinitionRange: range
@@ -1940,7 +1994,12 @@ type Val =
     member DisplayNameCore: string
 
     /// The display name of the value or method but without operator names decompiled type without backticks etc.
-    /// This is very close to LogicalName except that properties have get_ removed.
+    ///
+    /// This is very close to LogicalName except that properties have get_ removed and
+    /// interface implementation methods report the name of the implemented method.
+    ///
+    /// Note: avoid using this, we would like to remove it. All uses should be code-reviewed and
+    /// gradually eliminated in favour of DisplayName, DisplayNameCore or LogicalName.
     ///
     /// Note: here "Core" means "without added backticks or parens"
     /// Note: here "Mangled" means "op_Addition"
@@ -2001,6 +2060,9 @@ type Val =
     /// Note: this is true for the overrides generated by hash/compare augmentations
     member IsCompilerGenerated: bool
 
+    /// Indicates that this value's getter or setter are generated by the compiler
+    member GetterOrSetterIsCompilerGenerated: bool
+
     /// Indicates if this is an F#-defined 'new' constructor member
     member IsConstructor: bool
 
@@ -2053,6 +2115,9 @@ type Val =
     member IsOverrideOrExplicitImpl: bool
 
     member IsTypeFunction: bool
+
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
 
     /// The value of a value or member marked with [<LiteralAttribute>]
     member LiteralValue: Const option
@@ -2114,7 +2179,7 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    member DeclaringEntity: EntityRef
 
     /// Get the generic type parameters for the value
     member Typars: Typars
@@ -2146,6 +2211,10 @@ type Val =
     /// Records the "extra information" for display purposes for expression-level function definitions
     /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
     member ValReprInfoForDisplay: ValReprInfo option
+
+    /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+    /// them with lambda arguments.
+    member ArgReprInfoForDisplay: ArgReprInfo option
 
     /// Get the declared documentation for the value
     member XmlDoc: XmlDoc
@@ -2598,6 +2667,8 @@ type EntityRef =
     /// an XML file).
     member XmlDoc: XmlDoc
 
+    member SetOtherXmlDoc: XmlDoc -> unit
+
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
     member XmlDocSig: string
@@ -2642,18 +2713,47 @@ type ValRef =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-    /// The parent type or module, if any (None for expression bindings type parameters)
-    member DeclaringEntity: ParentRef
+    /// The parent type or module, if any (ParentNone for expression bindings type parameters)
+    member TryDeclaringEntity: ParentRef
 
     member DefinitionRange: range
 
     /// Dereference the ValRef to a Val.
     member Deref: Val
 
+    /// The full text for the value to show in error messages type to use in code.
+    /// This includes backticks, parens etc.
+    ///
+    ///   - If this is a property                      --> Foo
+    ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
+    ///   - If this is an active pattern               --> (|A|_|)
+    ///   - If this is an operator                     --> (+)
+    ///   - If this is an identifier needing backticks --> ``A-B``
+    ///   - If this is a base value  --> base
+    ///   - If this is a value named ``base`` --> ``base``
     member DisplayName: string
 
+    /// The display name of the value or method with operator names decompiled but without backticks etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
     member DisplayNameCore: string
 
+    /// The display name of the value or method but without operator names decompiled type without backticks etc.
+    ///
+    /// This is very close to LogicalName except that properties have get_ removed and
+    /// interface implementation methods report the name of the implemented method.
+    ///
+    /// Note: avoid using this, we would like to remove it. All uses should be code-reviewed and
+    /// gradually eliminated in favour of DisplayName, DisplayNameCore or LogicalName.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    /// Note: here "Mangled" means "op_Addition"
+    ///
+    ///   - If this is a property                      --> Foo
+    ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
+    ///   - If this is an active pattern               --> |A|_|
+    ///   - If this is an operator                     --> op_Addition
+    ///   - If this is an identifier needing backticks --> A-B
     member DisplayNameCoreMangled: string
 
     /// Get the type of the value including any generic type parameters
@@ -2663,7 +2763,7 @@ type ValRef =
 
     member Id: Syntax.Ident
 
-    /// Gets the dispatch slots implemented by this method
+    /// Gets the dispatch slots implemented by this method, either 0 or 1
     member ImplementedSlotSigs: SlotSig list
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
@@ -2793,7 +2893,9 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    ///
+    /// This may fail for expression-bound values and parameters.
+    member DeclaringEntity: EntityRef
 
     /// Dereference the ValRef to a Val option.
     member TryDeref: Val voption
@@ -2962,7 +3064,8 @@ type AnonRecdTypeInfo =
       mutable TupInfo: TupInfo
       mutable SortedIds: Syntax.Ident[]
       mutable Stamp: Stamp
-      mutable SortedNames: string[] }
+      mutable SortedNames: string[]
+      mutable IlTypeName: int64 }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo
@@ -2975,6 +3078,12 @@ type AnonRecdTypeInfo =
     member ILTypeRef: ILTypeRef
 
     member IsLinked: bool
+
+    /// Get the display name for one of the fields of the anonymous record, by index
+    member DisplayNameByIdx: idx: int -> string
+
+    /// Get the core of the display name for one of the fields of the anonymous record, by index
+    member DisplayNameCoreByIdx: idx: int -> string
 
 [<RequireQualifiedAccess>]
 type TupInfo =
@@ -3299,6 +3408,9 @@ type ArgReprInfo =
 
         /// The name for the argument at this position, if any
         mutable Name: Syntax.Ident option
+
+        /// The range of the signature/implementation counterpart to this argument, if any
+        mutable OtherRange: range option
     }
 
     override ToString: unit -> string
@@ -3855,7 +3967,7 @@ type CheckedImplFile =
 
     member Signature: ModuleOrNamespaceType
 
-/// Represents a complete typechecked assembly, made up of multiple implementation files.
+/// Represents checked file, after optimization, equipped with the ability to do further optimization of expressions.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type CheckedImplFileAfterOptimization =
     { ImplFile: CheckedImplFile
@@ -4159,8 +4271,8 @@ type Construct =
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem:
-        p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> :
+        p: Tainted<'T> -> range option
 #endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.
