@@ -1852,6 +1852,7 @@ type internal FsiDynamicCompiler
                 dumpDebugInfo = tcConfig.dumpDebugInfo
                 referenceAssemblyOnly = false
                 referenceAssemblyAttribOpt = None
+                referenceAssemblySignatureHash = None
                 pathMap = tcConfig.pathMap
             }
 
