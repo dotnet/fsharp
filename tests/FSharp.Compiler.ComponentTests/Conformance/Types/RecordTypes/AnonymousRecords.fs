@@ -95,3 +95,13 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
             (Error 3578, Line 2, Col 51, Line 2, Col 53, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
         ]
     
+    [<Fact>]
+    let ``Nested anonymous records where outer label = concatenated inner labels (see secondary issue reported in 6411)`` () =
+        FSharp """
+module NestedAnonRecds
+
+let x = {| abcd = {| ab = 4; cd = 1 |} |}
+"""
+        |> compile
+        |> shouldSucceed
+
