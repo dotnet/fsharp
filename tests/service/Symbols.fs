@@ -458,13 +458,26 @@ type Foo =
         | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
 
     [<Test>]
-    let ``AutoProperty with get,set has two symbols`` () =
+    let ``AutoProperty with get,set has a single symbol!`` () =
         let _, checkResults = getParseAndCheckResults """
 namespace Foo
 
 type Foo =
     member val AutoPropGetSet = 0 with get, set
 """
+
+        let autoPropertySymbolUse =
+            checkResults.GetSymbolUsesAtLocation(5, 29, "    member val AutoPropGetSet = 0 with get, set", ["AutoPropGetSet"])
+            |> List.exactlyOne
+       
+        match autoPropertySymbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+            Assert.True (mfv.GetterMethod.CompiledName.StartsWith("get_"))
+            Assert.True (mfv.SetterMethod.CompiledName.StartsWith("set_"))
+
+        | _ -> Assert.Fail "Symbol was not FSharpMemberOrFunctionOrValue"
 
         let getSymbol = findSymbolUseByName "get_AutoPropGetSet" checkResults
         let setSymbol = findSymbolUseByName "set_AutoPropGetSet" checkResults
@@ -522,6 +535,7 @@ type internal SR () =
             Assert.AreEqual(".ctor", ctor.CompiledName)
             Assert.AreEqual("SR", entity.DisplayName)
         | _ -> Assert.Fail "Expected symbols"
+
 
 module Expressions =
     [<Test>]
