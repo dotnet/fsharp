@@ -67,7 +67,7 @@ type ErrorResponse =
         ]
         
     [<Fact>]
-    let ```Anonymous Record type annotation with with fields defined in a record`` () =
+    let ``Anonymous Record type annotation with with fields defined in a record`` () =
         Fsx """
 type T = { ff : int }
 
@@ -84,7 +84,7 @@ but here has type
         ]
         
     [<Fact>]
-    let ```This expression was expected to have an anonymous Record but has a record`` () =
+    let ``This expression was expected to have an anonymous Record but has a record`` () =
         Fsx """
 let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         """
