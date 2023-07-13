@@ -479,17 +479,27 @@ type Foo =
 
         | _ -> Assert.Fail "Symbol was not FSharpMemberOrFunctionOrValue"
 
-        let getSymbol = findSymbolUseByName "get_AutoPropGetSet" checkResults
-        let setSymbol = findSymbolUseByName "set_AutoPropGetSet" checkResults
+        let getSymbol =
+            checkResults.GetSymbolUsesAtLocation(5, 42, "    member val AutoPropGetSet = 0 with get, set", ["get"])
+            |> List.map (fun su -> su.Symbol)
+            |> List.exactlyOne
 
-        match getSymbol.Symbol, setSymbol.Symbol with
+        // Two symbols for the setter: the set function and the compiler generated v parameter
+        let setSymbols =
+            checkResults.GetSymbolUsesAtLocation(5, 47, "    member val AutoPropGetSet = 0 with get, set", ["set"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbol, setSymbols with
         | :? FSharpMemberOrFunctionOrValue as getMfv,
-          (:? FSharpMemberOrFunctionOrValue as setMfv) ->
-            Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
+          [ :? FSharpMemberOrFunctionOrValue as setVMfv 
+            :? FSharpMemberOrFunctionOrValue as setMfv ] ->
+            Assert.True(getMfv.CompiledName.StartsWith("get_"))
+            Assert.AreEqual("v", setVMfv.DisplayName)
+            Assert.True(setMfv.CompiledName.StartsWith("set_"))
         | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
         
     [<Test>]
-    let ``Multiple symbols are resolved for property`` () =
+    let ``Single symbol is resolved for property`` () =
         let source = """
 type X(y: string) =
     member val Y = y with get, set
@@ -501,10 +511,9 @@ type X(y: string) =
             |> List.map (fun su -> su.Symbol)
 
         match symbolUses with
-        | [ :? FSharpMemberOrFunctionOrValue as setMfv
-            :? FSharpMemberOrFunctionOrValue as getMfv ] ->
-            Assert.AreEqual("set_Y", setMfv.CompiledName)
-            Assert.AreEqual("get_Y", getMfv.CompiledName)
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
         | _ -> Assert.Fail "Expected symbols"
 
     [<Test>]

@@ -625,7 +625,7 @@ module SynInfo =
 
     let private emptySynValInfo = SynValInfo([], unnamedRetVal)
 
-    let emptySynValData = SynValData(None, emptySynValInfo, None)
+    let emptySynValData = SynValData(None, emptySynValInfo, None, None)
 
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
@@ -653,7 +653,7 @@ module SynInfo =
                 @ (if explicitArgsAreSimple then infosForLambdaArgs else [])
 
             let infosForArgs = AdjustArgsForUnitElimination infosForArgs
-            SynValData(None, SynValInfo(infosForArgs, retInfo), None)
+            SynValData(None, SynValInfo(infosForArgs, retInfo), None, None)
 
         | Some memFlags ->
             let infosForObjArgs = if memFlags.IsInstance then [ selfMetadata ] else []
@@ -662,7 +662,7 @@ module SynInfo =
             let infosForArgs = AdjustArgsForUnitElimination infosForArgs
 
             let argInfos = infosForObjArgs @ infosForArgs
-            SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None)
+            SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None, None)
 
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
@@ -686,6 +686,19 @@ let mkSynBinding
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
+
+let mkSynBindingForAutoPropertyMember
+    (autoPropertyIdent: Ident)
+    (xmlDoc: PreXmlDoc, headPat)
+    (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
+    =
+    let (SynBinding (vis, kind, ii, im, attr, xmlDoc, SynValData (memberFlags, valInfo, thisIdOpt, _), p, ri, e, m, dp, t)) =
+        mkSynBinding
+            (xmlDoc, headPat)
+            (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
+
+    let valData = SynValData(memberFlags, valInfo, thisIdOpt, Some autoPropertyIdent)
+    SynBinding(vis, kind, ii, im, attr, xmlDoc, valData, p, ri, e, m, dp, t)
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
