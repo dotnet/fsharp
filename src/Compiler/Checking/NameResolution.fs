@@ -3716,8 +3716,15 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        | _ ->
-            lookup()
+        | ValueNone ->
+            if isAnonRecdTy g ty || isStructAnonRecdTy g ty then
+                match TryFindAnonRecdFieldOfType g ty id.idText with
+                | Some(Item.AnonRecdField _) ->
+                    error(Error(FSComp.SR.chkAnonymousRecordFields(id.idText, id.idText), id.idRange))
+                | _ ->
+                    error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, id, NoSuggestions))
+            else
+                lookup()
     | _ ->
         let lid = (mp@[id])
         let tyconSearch ad () =

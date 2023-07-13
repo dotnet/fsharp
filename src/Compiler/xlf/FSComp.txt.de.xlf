@@ -32,6 +32,11 @@
         <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Ein zusätzlicher Konstruktor ist nicht zulässig.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAnonymousRecordFields">
+        <source>Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</source>
+        <target state="new">Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
         <target state="translated">FSharp.Core.AutoOpenAttribute darf kein Alias sein.</target>

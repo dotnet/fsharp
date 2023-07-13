@@ -65,3 +65,33 @@ type ErrorResponse =
             Error 10, Line 7, Col 12, Line 7, Col 14, "Unexpected symbol '|}' in field declaration. Expected identifier or other token."
             Error 10, Line 10, Col 17, Line 10, Col 21, "Incomplete structured construct at or before this point in field declaration. Expected identifier or other token."
         ]
+        
+    [<Fact>]
+    let ```Anonymous Record type annotation with with fields defined in a record`` () =
+        Fsx """
+type T = { ff : int }
+
+let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 42, Line 4, Col 60, "This expression was expected to have type
+    '{| ff: int; gu: string |}'    
+but here has type
+    'T'    ")
+        ]
+        
+    [<Fact>]
+    let ```This expression was expected to have an anonymous Record but has a record`` () =
+        Fsx """
+let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3578, Line 2, Col 51, Line 2, Col 53, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+        ]
+    

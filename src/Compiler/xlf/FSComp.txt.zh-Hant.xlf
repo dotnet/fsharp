@@ -32,6 +32,11 @@
         <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許其他建構函式。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAnonymousRecordFields">
+        <source>Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</source>
+        <target state="new">Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
         <target state="translated">不應別名化 FSharp.Core.AutoOpenAttribute。</target>
