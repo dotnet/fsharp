@@ -1178,9 +1178,9 @@ type SynValData =
         memberFlags: SynMemberFlags option *
         valInfo: SynValInfo *
         thisIdOpt: Ident option *
-        /// Is only used populated during type-checking when an auto-property has both a getter and setter.
-        /// It is used to track the fact that the getter and setter are part of the same auto-property when they are desugared.
-        transformedFromAutoProperty: Ident option
+        /// Is only used populated during type-checking when an property has both a getter and setter.
+        /// It is used to track the fact that the getter and setter are part of the same property when they are desugared.
+        transformedFromProperty: Ident option
 
     member SynValInfo: SynValInfo
 

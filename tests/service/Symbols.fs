@@ -442,9 +442,14 @@ type Foo =
 
         // "X" resolves a symbol but it will either be the get or set symbol.
         // Use get_ or set_ to differentiate.
-        let xSymbol = checkResults.GetSymbolUseAtLocation(5, 14, "    member _.X", [ "X" ])
-        Assert.True xSymbol.IsSome
+        let xSymbol = checkResults.GetSymbolUsesAtLocation(5, 14, "    member _.X", [ "X" ]) |> List.exactlyOne
         
+        match xSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+        | symbol-> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
         let getSymbol = findSymbolUseByName "get_X" checkResults
         match getSymbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
@@ -544,7 +549,6 @@ type internal SR () =
             Assert.AreEqual(".ctor", ctor.CompiledName)
             Assert.AreEqual("SR", entity.DisplayName)
         | _ -> Assert.Fail "Expected symbols"
-
 
 module Expressions =
     [<Test>]

@@ -920,7 +920,7 @@ module MutRecBindingChecking =
 
                         | SynMemberDefn.Member (bind, m), _ ->
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
-                            let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
+                            let NormalizedBinding(valSynData = valSynData) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
                             let (SynValData(memberFlags = memberFlagsOpt)) = valSynData 
 
                             match tcref.TypeOrMeasureKind with
@@ -956,24 +956,24 @@ module MutRecBindingChecking =
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 
-                // Report any desugared auto properties
+                // Report any desugared properties
                 if defnAs.Length > 1 then
                     for b1, b2 in List.pairwise defnAs do
                         match b1, b2 with
                         | TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromAutoProperty = Some getAutoPropertyIdent))
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some getPropertyIdent))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
                           },
                           TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromAutoProperty = Some setAutoPropertyIdent))
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some setPropertyIdent))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getAutoPropertyIdent.idRange setAutoPropertyIdent.idRange ->
+                          } when Range.equals getPropertyIdent.idRange setPropertyIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
                             let apparentEnclosingType =  generalizedTyconRef g parentRef
-                            let item = Item.Property(getAutoPropertyIdent.idText, [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ])
-                            CallNameResolutionSink cenv.tcSink (getAutoPropertyIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                            let item = Item.Property(getPropertyIdent.idText, [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ])
+                            CallNameResolutionSink cenv.tcSink (getPropertyIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
                         | _ -> ()
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
@@ -4222,7 +4222,9 @@ module TcDeclarations =
                                             | _ -> id
                                         if isStatic then [id] else [ident ("__", mMemberPortion);id]
                                     let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
-                                    let binding = mkSynBindingForAutoPropertyMember id (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                                    let binding =
+                                        mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                                        |> updatePropertyIdentInSynBinding id
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4243,7 +4245,9 @@ module TcDeclarations =
                                         if isStatic then [id] else [ident ("__", mMemberPortion);id]
                                     let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
-                                    let binding = mkSynBindingForAutoPropertyMember id (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
+                                    let binding =
+                                        mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
+                                        |> updatePropertyIdentInSynBinding id
                                     SynMemberDefn.Member (binding, mMemberPortion)
                                 yield setter 
                             | _ -> ()]

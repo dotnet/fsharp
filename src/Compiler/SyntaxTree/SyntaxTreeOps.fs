@@ -687,17 +687,11 @@ let mkSynBinding
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
-let mkSynBindingForAutoPropertyMember
-    (autoPropertyIdent: Ident)
-    (xmlDoc: PreXmlDoc, headPat)
-    (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
+let updatePropertyIdentInSynBinding
+    propertyIdent
+    (SynBinding (vis, kind, ii, im, attr, xmlDoc, SynValData (memberFlags, valInfo, thisIdOpt, _), p, ri, e, m, dp, t))
     =
-    let (SynBinding (vis, kind, ii, im, attr, xmlDoc, SynValData (memberFlags, valInfo, thisIdOpt, _), p, ri, e, m, dp, t)) =
-        mkSynBinding
-            (xmlDoc, headPat)
-            (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
-
-    let valData = SynValData(memberFlags, valInfo, thisIdOpt, Some autoPropertyIdent)
+    let valData = SynValData(memberFlags, valInfo, thisIdOpt, Some propertyIdent)
     SynBinding(vis, kind, ii, im, attr, xmlDoc, valData, p, ri, e, m, dp, t)
 
 let NonVirtualMemberFlags k : SynMemberFlags =
@@ -966,17 +960,25 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
     memberDefns
     |> List.collect (fun md ->
         match md with
-        | SynMemberDefn.GetSetMember (Some (SynBinding _ as getBinding),
+        | SynMemberDefn.GetSetMember (Some (SynBinding(headPat = SynPat.LongIdent (longDotId = lid)) as getBinding),
                                       Some (SynBinding _ as setBinding),
                                       m,
                                       {
                                           GetKeyword = Some mGet
                                           SetKeyword = Some mSet
                                       }) ->
+            let lastIdent = List.last lid.LongIdent
+
             if Position.posLt mGet.Start mSet.Start then
-                [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
+                [
+                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent getBinding, m)
+                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent setBinding, m)
+                ]
             else
-                [ SynMemberDefn.Member(setBinding, m); SynMemberDefn.Member(getBinding, m) ]
+                [
+                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent setBinding, m)
+                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent getBinding, m)
+                ]
         | SynMemberDefn.GetSetMember (Some binding, None, m, _)
         | SynMemberDefn.GetSetMember (None, Some binding, m, _) -> [ SynMemberDefn.Member(binding, m) ]
         | SynMemberDefn.Interface (interfaceType, withKeyword, members, m) ->

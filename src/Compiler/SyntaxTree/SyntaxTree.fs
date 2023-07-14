@@ -1027,7 +1027,7 @@ type SynValData =
         memberFlags: SynMemberFlags option *
         valInfo: SynValInfo *
         thisIdOpt: Ident option *
-        transformedFromAutoProperty: Ident option
+        transformedFromProperty: Ident option
 
     member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 

@@ -2344,7 +2344,7 @@ module BindingNormalization =
         NormalizedBindingPat(SynPat.InstanceMember(thisId, memberId, toolId, vis, m), PushMultiplePatternsToRhs cenv true args rhsExpr, valSynData, typars)
 
     let private NormalizeStaticMemberBinding (cenv: cenv) (memberFlags: SynMemberFlags) valSynData id vis typars args m rhsExpr =
-        let (SynValData(valInfo = valSynInfo; thisIdOpt = thisIdOpt; transformedFromAutoProperty = tap)) = valSynData
+        let (SynValData(valInfo = valSynInfo; thisIdOpt = thisIdOpt; transformedFromProperty = tp)) = valSynData
         if memberFlags.IsInstance then
             // instance method without adhoc "this" argument
             error(Error(FSComp.SR.tcInstanceMemberRequiresTarget(), m))
@@ -2358,7 +2358,7 @@ module BindingNormalization =
         // static property: these transformed into methods taking one "unit" argument
         | [], SynMemberKind.Member ->
             let memberFlags = {memberFlags with MemberKind = SynMemberKind.PropertyGet}
-            let valSynData = SynValData(Some memberFlags, valSynInfo, thisIdOpt, tap)
+            let valSynData = SynValData(Some memberFlags, valSynInfo, thisIdOpt, tp)
             NormalizedBindingPat(mkSynPatVar vis id,
                                  PushOnePatternToRhs cenv true (SynPat.Const(SynConst.Unit, m)) rhsExpr,
                                  valSynData,
@@ -11432,8 +11432,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          // the definition of these symbols.
          //
          // See https://github.com/fsharp/FSharp.Compiler.Service/issues/79.
-         //let memberId = match toolId with Some tid -> ident(memberId.idText, tid.idRange) | None -> memberId
-         //ignore toolId
+         let memberId = match toolId with Some tid -> ident(memberId.idText, tid.idRange) | _ -> memberId
 
          envinner, tpenv, memberId, toolId, Some memberInfo, vis, vis2, None, enclosingDeclaredTypars, baseValOpt, explicitTyparInfo, bindingRhs, declaredTypars
      | _ ->
