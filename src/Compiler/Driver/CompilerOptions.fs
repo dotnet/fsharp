@@ -521,23 +521,12 @@ let SetOptimizeOff (tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <-
         { tcConfigB.optSettings with
             jitOptUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             localOptUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             crossAssemblyOptimizationUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             lambdaInlineThreshold = 0
         }
 
+    tcConfigB.onlyEssentialOptimizationData <- true
     tcConfigB.doDetuple <- false
     tcConfigB.doTLR <- false
     tcConfigB.doFinalSimplify <- false
