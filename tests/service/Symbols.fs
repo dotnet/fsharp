@@ -550,6 +550,67 @@ type internal SR () =
             Assert.AreEqual("SR", entity.DisplayName)
         | _ -> Assert.Fail "Expected symbols"
 
+    [<Test>]
+    let ``AutoProperty with get has get symbol attached to property name`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo() =
+    member val Bar = 0 with get
+"""
+
+        let autoPropertySymbolUses =
+            checkResults.GetSymbolUsesAtLocation(5, 18, "    member val Bar = 0 with get", ["Bar"])
+            |> List.map (fun su -> su.Symbol)
+
+        match autoPropertySymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertyGetterMethod
+            assertRange (5, 15) (5, 18) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+
+    [<Test>]
+    let ``Property with get has symbol attached to property name`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace F
+
+type Foo() =
+    let mutable b = 0
+    member this.Count with get () = b
+"""
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with get () = b", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertyGetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+
+    [<Test>]
+    let ``Property with set has symbol attached to property name`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace F
+
+type Foo() =
+    let mutable b = 0
+    member this.Count with set (v:int) = b <- v
+"""
+
+        let _all = checkResults.GetAllUsesOfAllSymbolsInFile()
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with set (v:int) = b <- v", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertySetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+
 module Expressions =
     [<Test>]
     let ``Unresolved record field 01`` () =
@@ -705,3 +766,7 @@ type BAttribute() =
 let a ([<B>] c: int) : int = 0
 """
             (7, 5, "let a ([<B>] c: int) : int = 0", "a")
+
+type Foo() =
+    let mutable b = 0
+    member this.Bar with get () = b and set (v: int) = b <- v

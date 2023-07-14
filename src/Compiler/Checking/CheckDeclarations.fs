@@ -4222,9 +4222,13 @@ module TcDeclarations =
                                             | _ -> id
                                         if isStatic then [id] else [ident ("__", mMemberPortion);id]
                                     let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
                                     let binding =
-                                        mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
-                                        |> updatePropertyIdentInSynBinding id
+                                        match mGetSetOpt with
+                                        | Some (GetSetKeywords.GetSet _) ->
+                                            // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
+                                            updatePropertyIdentInSynBinding id binding
+                                        | _ -> binding
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4245,9 +4249,13 @@ module TcDeclarations =
                                         if isStatic then [id] else [ident ("__", mMemberPortion);id]
                                     let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
                                     let binding =
-                                        mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
-                                        |> updatePropertyIdentInSynBinding id
+                                        match mGetSetOpt with
+                                        | Some (GetSetKeywords.GetSet _) ->
+                                            // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
+                                            updatePropertyIdentInSynBinding id binding
+                                        | _ -> binding
                                     SynMemberDefn.Member (binding, mMemberPortion)
                                 yield setter 
                             | _ -> ()]
