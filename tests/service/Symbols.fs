@@ -626,8 +626,6 @@ type Foo() =
     member this.Count with set (v:int) = b <- v and get () = b
 """
 
-        let _all = checkResults.GetAllUsesOfAllSymbolsInFile()
-
         let getSymbolUses =
             checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with set (v:int) = b <- v", ["Count"])
             |> List.map (fun su -> su.Symbol)
@@ -639,6 +637,31 @@ type Foo() =
             Assert.True mfv.HasSetterMethod
             assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
         | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+
+    [<Test>]
+    let ``Property usage is reported properly`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+
+type Foo() =
+    let mutable b = 0
+    member x.Name
+        with get() = 0
+        and set (v: int) = ()
+
+ignore (Foo().Name)
+"""
+
+        let propertySymbolUse =
+            checkResults.GetSymbolUsesAtLocation(6, 17, "    member x.Name", ["Name"])
+            |> List.map (fun su -> su.Symbol)
+            |> List.exactlyOne
+
+        let usages =  checkResults.GetUsesOfSymbolInFile(propertySymbolUse)
+        Assert.AreEqual(3, usages.Length)
+        Assert.True usages.[0].IsFromDefinition
+        Assert.True usages.[1].IsFromDefinition
+        Assert.True usages.[2].IsFromUse
 
 module Expressions =
     [<Test>]
