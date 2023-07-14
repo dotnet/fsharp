@@ -2080,8 +2080,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
-FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeName(FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeAnnotationGivenAtPosition(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsTypeName(FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean ParseHadErrors
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean get_ParseHadErrors()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
@@ -9034,7 +9034,7 @@ FSharp.Compiler.Syntax.SynUnionCaseKind: FSharp.Compiler.Syntax.SynUnionCaseKind
 FSharp.Compiler.Syntax.SynUnionCaseKind: Int32 Tag
 FSharp.Compiler.Syntax.SynUnionCaseKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynUnionCaseKind: System.String ToString()
-FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValData NewSynValData(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Syntax.SynValInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
+FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValData NewSynValData(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Syntax.SynValInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo SynValInfo
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo get_SynValInfo()
 FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo get_valInfo()
@@ -9042,7 +9042,9 @@ FSharp.Compiler.Syntax.SynValData: FSharp.Compiler.Syntax.SynValInfo valInfo
 FSharp.Compiler.Syntax.SynValData: Int32 Tag
 FSharp.Compiler.Syntax.SynValData: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_thisIdOpt()
+FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_transformedFromProperty()
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] thisIdOpt
+FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] transformedFromProperty
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags] get_memberFlags()
 FSharp.Compiler.Syntax.SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMemberFlags] memberFlags
 FSharp.Compiler.Syntax.SynValData: System.String ToString()
