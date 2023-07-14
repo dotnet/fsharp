@@ -257,13 +257,12 @@ type FSharpProjectSnapshot with
             Async<FSharpProjectSnapshot>
 
     /// Create snapshot from FSharpProjectOptions using the filesystem to retrieve file contents.
-    static member FromOptions:
-        options: FSharpProjectOptions ->
-            Async<FSharpProjectSnapshot>
+    static member FromOptions: options: FSharpProjectOptions -> Async<FSharpProjectSnapshot>
 
     /// Create snapshot from FSharpProjectOptions using the filesystem to retrieve file contents except one file that is specified by the arguments.
-    static member FromOptions: options:FSharpProjectOptions * fileName:string * fileVersion:int * sourceText:ISourceText ->Async<FSharpProjectSnapshot>
-
+    static member FromOptions:
+        options: FSharpProjectOptions * fileName: string * fileVersion: int * sourceText: ISourceText ->
+            Async<FSharpProjectSnapshot>
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

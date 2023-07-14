@@ -989,7 +989,15 @@ type internal TransparentCompiler
             }
         )
 
-    let processGraphNode projectSnapshot bootstrapInfo (parsedInputs: _ array) dependencyFiles collectSinks (fileNode: NodeToTypeCheck) tcInfo =
+    let processGraphNode
+        projectSnapshot
+        bootstrapInfo
+        (parsedInputs: _ array)
+        dependencyFiles
+        collectSinks
+        (fileNode: NodeToTypeCheck)
+        tcInfo
+        =
         node {
 
             match fileNode with
@@ -1023,7 +1031,11 @@ type internal TransparentCompiler
                                 latestCcuSigForFile = Some ccuSigForFile
                                 graphNode = Some node
                                 stateContainsNodes = tcInfo.stateContainsNodes |> Set.add node
-                                sink = if collectSinks then tcIntermediate.sink :: tcInfo.sink else [tcIntermediate.sink]
+                                sink =
+                                    if collectSinks then
+                                        tcIntermediate.sink :: tcInfo.sink
+                                    else
+                                        [ tcIntermediate.sink ]
                             })
                     )
 
@@ -1090,7 +1102,7 @@ type internal TransparentCompiler
 
                 let! graph, dependencyFiles =
                     ComputeDependencyGraphForFile priorSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
-                    //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
+                //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
 
                 let! results, tcInfo =
                     processTypeCheckingGraph
@@ -1174,8 +1186,8 @@ type internal TransparentCompiler
                         seq {
                             yield! priorTcInfo.TcDiagnostics
 
-                            //for x in tcIntermediate.tcDiagnosticsRev do
-                            //    yield! x
+                        //for x in tcIntermediate.tcDiagnosticsRev do
+                        //    yield! x
                         }
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
@@ -1399,7 +1411,7 @@ type internal TransparentCompiler
                          bootstrapInfo.TcImports,
                          tcState.Ccu,
                          tcState.CcuSig,
-                         Choice2Of2 (async.Return symbolUses),
+                         Choice2Of2(async.Return symbolUses),
                          topAttribs,
                          getAssemblyData,
                          ilAssemRef,
@@ -1549,7 +1561,10 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpCheckFileAnswer> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText) |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    |> NodeCode.AwaitAsync
+
                 ignore parseResults
                 let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
                 return result
@@ -1565,7 +1580,10 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpCheckFileAnswer option> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText) |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    |> NodeCode.AwaitAsync
+
                 ignore parseResults
                 let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
                 return Some result
@@ -1620,11 +1638,10 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileResults> =
             node {
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
+
                 match! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) with
-                | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> 
-                    return parseResult, checkResult
-                | parseResult, FSharpCheckFileAnswer.Aborted _ -> 
-                    return parseResult, FSharpCheckFileResults.MakeEmpty(fileName, [||], true)
+                | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return parseResult, checkResult
+                | parseResult, FSharpCheckFileAnswer.Aborted _ -> return parseResult, FSharpCheckFileResults.MakeEmpty(fileName, [||], true)
             }
 
         member this.GetBackgroundParseResultsForFileInProject
@@ -1647,9 +1664,13 @@ type internal TransparentCompiler
             ) : NodeCode<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             node {
                 ignore builder
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText) |> NodeCode.AwaitAsync
+
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
+                    |> NodeCode.AwaitAsync
+
                 match! this.ParseAndCheckFileInProject(fileName, snapshot, "GetCachedCheckFileResult") with
-                | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return Some (parseResult, checkResult)
+                | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return Some(parseResult, checkResult)
                 | _, FSharpCheckFileAnswer.Aborted _ -> return None
             }
 
@@ -1715,7 +1736,10 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             node {
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText) |> NodeCode.AwaitAsync
+                let! snapshot =
+                    FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
+                    |> NodeCode.AwaitAsync
+
                 return! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
             }
 

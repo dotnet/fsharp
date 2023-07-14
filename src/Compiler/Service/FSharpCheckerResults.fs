@@ -411,34 +411,41 @@ type FSharpProjectSnapshot with
                     Stamp = options.Stamp
                 }
         }
-    
+
     static member FromOptions(options: FSharpProjectOptions) =
         async {
             let getFileSnapshot _ fileName =
                 async {
                     let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
                     let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-                    return {
-                        FileName = fileName
-                        Version = timeStamp.Ticks.ToString()
-                        GetSource = fun () -> Task.FromResult (SourceText.ofString contents)
-                    }
+
+                    return
+                        {
+                            FileName = fileName
+                            Version = timeStamp.Ticks.ToString()
+                            GetSource = fun () -> Task.FromResult(SourceText.ofString contents)
+                        }
                 }
+
             return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
         }
 
     static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
         async {
             let! snapshot = FSharpProjectSnapshot.FromOptions options
+
             return
-                { snapshot 
-                    with SourceFiles =
-                            snapshot.SourceFiles 
-                            |> List.map (function 
-                                | f when f.FileName = fileName -> 
-                                    { f with GetSource = fun () -> Task.FromResult sourceText
-                                             Version = $"{fileVersion}{sourceText.GetHashCode().ToString()}" } 
-                                | f -> f) }
+                { snapshot with
+                    SourceFiles =
+                        snapshot.SourceFiles
+                        |> List.map (function
+                            | f when f.FileName = fileName ->
+                                { f with
+                                    GetSource = fun () -> Task.FromResult sourceText
+                                    Version = $"{fileVersion}{sourceText.GetHashCode().ToString()}"
+                                }
+                            | f -> f)
+                }
         }
 
 [<AutoOpen>]
@@ -3467,14 +3474,18 @@ type FSharpCheckProjectResults
                     | _ -> [||])
                 |> Array.toSeq
             | Choice2Of2 task ->
-                Async.RunSynchronously(async {
-                    let! tcSymbolUses = task
+                Async.RunSynchronously(
+                    async {
+                        let! tcSymbolUses = task
 
-                    return seq {
-                        for symbolUses in tcSymbolUses do
-                            yield! symbolUses.GetUsesOfSymbol symbol.Item
-                    }
-                }, ?cancellationToken=cancellationToken)
+                        return
+                            seq {
+                                for symbolUses in tcSymbolUses do
+                                    yield! symbolUses.GetUsesOfSymbol symbol.Item
+                            }
+                    },
+                    ?cancellationToken = cancellationToken
+                )
 
         results
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
@@ -3506,7 +3517,7 @@ type FSharpCheckProjectResults
                         | _ -> TcSymbolUses.Empty
                     | _ -> TcSymbolUses.Empty)
                 |> Array.toSeq
-            | Choice2Of2 tcSymbolUses -> Async.RunSynchronously(tcSymbolUses, ?cancellationToken=cancellationToken)
+            | Choice2Of2 tcSymbolUses -> Async.RunSynchronously(tcSymbolUses, ?cancellationToken = cancellationToken)
 
         [|
             for r in tcSymbolUses do
