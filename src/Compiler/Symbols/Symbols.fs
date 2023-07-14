@@ -2365,14 +2365,20 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
 
         let stringValOfPropInfo (p: PropInfo) =
-            let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
-            let withGetSet =
-                if p.HasGetter && p.HasSetter then "with get, set"
-                elif p.HasGetter then "with get"
-                elif p.HasSetter then "with set"
-                else ""
-                
-            $"member val %s{p.DisplayName}: %s{t} %s{withGetSet}"
+            match p with
+            | DifferentGetterAndSetter(getValRef, setValRef) ->
+                let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                $"{g}\n{s}"
+            | _ ->
+                let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                let withGetSet =
+                    if p.HasGetter && p.HasSetter then "with get, set"
+                    elif p.HasGetter then "with get"
+                    elif p.HasSetter then "with set"
+                    else ""
+
+                $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
 
         match d with
         | E _ -> None

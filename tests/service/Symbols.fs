@@ -818,3 +818,29 @@ type BAttribute() =
 let a ([<B>] c: int) : int = 0
 """
             (7, 5, "let a ([<B>] c: int) : int = 0", "a")
+
+    [<Test>]
+    let ``Signature text for auto property`` () =
+        assertSignature
+            "member AutoPropGetSet: int with get, set"
+            """
+module T
+
+type Foo() =
+    member val AutoPropGetSet = 0 with get, set
+"""
+            (5, 29, "    member val AutoPropGetSet = 0 with get, set", "AutoPropGetSet")
+
+    [<Test>]
+    let ``Signature text for property`` () =
+        assertSignature
+            "member X: y: int -> string with get\nmember X: a: int -> float with set"
+            """
+module T
+
+type Foo() =
+    member _.X
+            with get (y: int) : string = ""
+            and set (a: int) (b: float) = ()
+"""
+            (5, 14, "    member _.X", "X")
