@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
-        <source>The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
