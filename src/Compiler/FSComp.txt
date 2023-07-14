@@ -1531,6 +1531,7 @@ useSdkRefs,"Use reference assemblies for .NET framework references when availabl
 optsGetLangVersions,"Display the allowed values for language version."
 optsSetLangVersion,"Specify language version such as 'latest' or 'preview'."
 optsSupportedLangVersions,"Supported language versions:"
+optsStrictIndentation,"Override indentation rules implied by the language version"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
 nativeResourceHeaderMalformed,"Resource header beginning at offset %s is malformed."
 formatDashItem," - %s"

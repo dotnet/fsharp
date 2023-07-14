@@ -57,6 +57,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
                     filePath,
                     defines,
                     Some parsingOptions.LangVersionText,
+                    parsingOptions.StrictIndentation,
                     cancellationToken
                 )
 
