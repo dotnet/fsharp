@@ -31,7 +31,7 @@ namespace N
                         EndLine = 12
                         EndColumn = 43 }
               Message =
-               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -60,7 +60,7 @@ namespace N
                         EndLine = 12
                         EndColumn = 45 }
               Message =
-               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -91,7 +91,7 @@ namespace N
                         EndLine = 13
                         EndColumn = 49 }
               Message =
-               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -160,7 +160,7 @@ namespace N
                         EndLine = 17
                         EndColumn = 28 }
               Message =
-               "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'bar' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -189,14 +189,14 @@ namespace N
                         EndLine = 8
                         EndColumn = 41 }
               Message =
-               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 12
                         StartColumn = 44
                         EndLine = 12
                         EndColumn = 61 }
               Message =
-               "The member or function 'InnerCMeth' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'InnerCMeth' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -272,7 +272,7 @@ namespace N
                         EndLine = 10
                         EndColumn = 26 }
               Message =
-               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 15
                         StartColumn = 17
@@ -280,9 +280,9 @@ namespace N
                         EndColumn = 26 }
               Message =
 #if Debug               
-               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
 #else
-               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
 #endif
         ]
 
@@ -340,7 +340,7 @@ namespace N
                         EndLine = 9
                         EndColumn = 34 }
               Message =
-               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -367,7 +367,7 @@ namespace N
                         EndLine = 9
                         EndColumn = 33 }
               Message =
-               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -436,7 +436,7 @@ namespace N
                         EndLine = 8
                         EndColumn = 23 }
               Message =
-               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
         
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -493,14 +493,14 @@ namespace N
                         EndLine = 8
                         EndColumn = 43 }
               Message =
-               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'm2func' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 12
                         StartColumn = 32
                         EndLine = 12
                         EndColumn = 43 }
               Message =
-               "The member or function 'm2func' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'm2func' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
         
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -525,7 +525,7 @@ namespace N
                         EndLine = 7
                         EndColumn = 44 }
               Message =
-               "The member or function 'foo' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'foo' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
         
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -636,14 +636,14 @@ namespace N
                         EndLine = 24
                         EndColumn = 48 }
               Message =
-                "The member or function 'CheckDefnInModule' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'CheckDefnInModule' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 35
                         StartColumn = 17
                         EndLine = 35
                         EndColumn = 66 }
               Message =
-                "The member or function 'CheckModuleSpec' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'CheckModuleSpec' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -690,14 +690,14 @@ namespace N
                         EndLine = 21
                         EndColumn = 35 }
               Message =
-                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'instType' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 17
                         StartColumn = 32
                         EndLine = 17
                         EndColumn = 77 }
               Message =
-                "The member or function 'instType' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'instType' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -730,14 +730,14 @@ namespace N
                         EndLine = 11
                         EndColumn = 36 }
               Message =
-                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'foldBackOpt' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 14
                         StartColumn = 25
                         EndLine = 14
                         EndColumn = 36 }
               Message =
-                "The member or function 'foldBackOpt' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'foldBackOpt' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -785,7 +785,7 @@ namespace N
                         EndLine = 12
                         EndColumn = 34 }
               Message =
-                "The member or function 'addOne' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'addOne' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -812,7 +812,7 @@ namespace N
                         EndLine = 10
                         EndColumn = 43 }
               Message =
-                "The member or function 'addOne' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'addOne' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -861,28 +861,28 @@ namespace N
                         EndLine = 14
                         EndColumn = 53 }
               Message =
-                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 14
                         StartColumn = 57
                         EndLine = 14
                         EndColumn = 64 }
               Message =
-                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 14
                         StartColumn = 46
                         EndLine = 14
                         EndColumn = 55 }
               Message =
-                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 14
                         StartColumn = 57
                         EndLine = 14
                         EndColumn = 66 }
               Message =
-                "The member or function 'findMax' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
+                "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
