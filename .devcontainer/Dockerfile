@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-ARG VARIANT=7.0.203-bullseye-slim-amd64
+ARG VARIANT=8.0.100-preview.6-bookworm-slim-amd64
 FROM mcr.microsoft.com/dotnet/sdk:${VARIANT}
 
 # Avoid warnings by switching to noninteractive
