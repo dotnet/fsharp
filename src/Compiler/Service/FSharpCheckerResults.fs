@@ -411,6 +411,35 @@ type FSharpProjectSnapshot with
                     Stamp = options.Stamp
                 }
         }
+    
+    static member FromOptions(options: FSharpProjectOptions) =
+        async {
+            let getFileSnapshot _ fileName =
+                async {
+                    let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
+                    let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
+                    return {
+                        FileName = fileName
+                        Version = timeStamp.Ticks.ToString()
+                        GetSource = fun () -> Task.FromResult (SourceText.ofString contents)
+                    }
+                }
+            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+        }
+
+    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
+        async {
+            let! snapshot = FSharpProjectSnapshot.FromOptions options
+            return
+                { snapshot 
+                    with SourceFiles =
+                            snapshot.SourceFiles 
+                            |> List.map (function 
+                                | f when f.FileName = fileName -> 
+                                    { f with GetSource = fun () -> Task.FromResult sourceText
+                                             Version = $"{fileVersion}{sourceText.GetHashCode().ToString()}" } 
+                                | f -> f) }
+        }
 
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =
@@ -3328,7 +3357,7 @@ type FSharpCheckProjectResults
         tcConfigOption: TcConfig option,
         keepAssemblyContents: bool,
         diagnostics: FSharpDiagnostic[],
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses seq> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, Async<TcSymbolUses seq>> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
     ) =
 
     let getDetails () =
@@ -3420,6 +3449,7 @@ type FSharpCheckProjectResults
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
+    // TODO: this should be async
     member _.GetUsesOfSymbol(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
         let _, _, _, _, builderOrSymbolUses, _, _, _, _, _, _, _ = getDetails ()
 
@@ -3436,11 +3466,15 @@ type FSharpCheckProjectResults
                         | _ -> [||]
                     | _ -> [||])
                 |> Array.toSeq
-            | Choice2Of2 tcSymbolUses ->
-                seq {
-                    for symbolUses in tcSymbolUses do
-                        yield! symbolUses.GetUsesOfSymbol symbol.Item
-                }
+            | Choice2Of2 task ->
+                Async.RunSynchronously(async {
+                    let! tcSymbolUses = task
+
+                    return seq {
+                        for symbolUses in tcSymbolUses do
+                            yield! symbolUses.GetUsesOfSymbol symbol.Item
+                    }
+                }, ?cancellationToken=cancellationToken)
 
         results
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
@@ -3452,6 +3486,7 @@ type FSharpCheckProjectResults
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
+    // TODO: this should be async
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
         let tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _, _, _, _, _, _, _ =
             getDetails ()
@@ -3471,7 +3506,7 @@ type FSharpCheckProjectResults
                         | _ -> TcSymbolUses.Empty
                     | _ -> TcSymbolUses.Empty)
                 |> Array.toSeq
-            | Choice2Of2 tcSymbolUses -> tcSymbolUses
+            | Choice2Of2 tcSymbolUses -> Async.RunSynchronously(tcSymbolUses, ?cancellationToken=cancellationToken)
 
         [|
             for r in tcSymbolUses do
@@ -3604,7 +3639,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcImports,
                  tcFileInfo.ThisCcu,
                  tcFileInfo.CcuSigForFile,
-                 Choice2Of2(Seq.singleton tcFileInfo.ScopeSymbolUses),
+                 Choice2Of2(tcFileInfo.ScopeSymbolUses |> Seq.singleton |> async.Return),
                  None,
                  (fun () -> None),
                  mkSimpleAssemblyRef "stdin",

@@ -23,6 +23,7 @@ open TestFramework
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
+let internal transparentCompilerChecker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10, useTransparentCompiler=true)
 
 /// Extract range info
 let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -144,7 +145,11 @@ let ``Test multi project 1 basic`` () =
         |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
-let ``Test multi project 1 all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 all symbols`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -182,7 +187,11 @@ let ``Test multi project 1 all symbols`` () =
     usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
 
 [<Test>]
-let ``Test multi project 1 xmldoc`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 1 xmldoc`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -319,14 +328,16 @@ let p = ("""
         |> function Some x -> x | None -> if a = jointProject.FileName then "fileN" else "??"
 
 
-    let makeCheckerForStressTest ensureBigEnough =
+    let makeCheckerForStressTest ensureBigEnough useTransparentCompiler =
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
-        FSharpChecker.Create(projectCacheSize=size)
+        FSharpChecker.Create(projectCacheSize=size, useTransparentCompiler=useTransparentCompiler)
 
 [<Test>]
-let ``Test ManyProjectsStressTest basic`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest basic`` useTransparentCompiler =
 
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest true
+    let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
 
@@ -338,9 +349,11 @@ let ``Test ManyProjectsStressTest basic`` () =
         |> shouldEqual ["p"]
 
 [<Test>]
-let ``Test ManyProjectsStressTest cache too small`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest cache too small`` useTransparentCompiler =
 
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest false
+    let checker = ManyProjectsStressTest.makeCheckerForStressTest false useTransparentCompiler
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
 
@@ -352,9 +365,11 @@ let ``Test ManyProjectsStressTest cache too small`` () =
         |> shouldEqual ["p"]
 
 [<Test>]
-let ``Test ManyProjectsStressTest all symbols`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test ManyProjectsStressTest all symbols`` useTransparentCompiler =
 
-  let checker = ManyProjectsStressTest.makeCheckerForStressTest true
+  let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
   for i in 1 .. 10 do
     printfn "stress test iteration %d (first may be slow, rest fast)" i
     let projectsResults = [ for p in ManyProjectsStressTest.projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.RunImmediate ]
@@ -432,7 +447,11 @@ let z = Project1.x
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
 [<Test>]
-let ``Test multi project symbols should pick up changes in dependent projects`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project symbols should pick up changes in dependent projects`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     //  register to count the file checks
     let count = ref 0
@@ -667,7 +686,11 @@ let v = Project2A.C().InternalMember // access an internal symbol
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project2 errors`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project2 errors`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -760,7 +783,11 @@ let fizzBuzz = function
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test multi project 3 whole project errors`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test multi project 3 whole project errors`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -769,7 +796,11 @@ let ``Test multi project 3 whole project errors`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 [<Test>]
-let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
+[<TestCase true>]
+[<TestCase false>]
+let ``Test active patterns' XmlDocSig declared in referenced projects`` useTransparentCompiler =
+
+    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =

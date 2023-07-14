@@ -251,9 +251,19 @@ type FSharpProjectSnapshot with
 
     member ToOptions: unit -> FSharpProjectOptions
 
+    /// Create snapshot from FSharpProjectOptions using given function to retrieve file contnets.
     static member FromOptions:
         options: FSharpProjectOptions * getFileSnapshot: (FSharpProjectOptions -> string -> Async<FSharpFileSnapshot>) ->
             Async<FSharpProjectSnapshot>
+
+    /// Create snapshot from FSharpProjectOptions using the filesystem to retrieve file contents.
+    static member FromOptions:
+        options: FSharpProjectOptions ->
+            Async<FSharpProjectSnapshot>
+
+    /// Create snapshot from FSharpProjectOptions using the filesystem to retrieve file contents except one file that is specified by the arguments.
+    static member FromOptions: options:FSharpProjectOptions * fileName:string * fileVersion:int * sourceText:ISourceText ->Async<FSharpProjectSnapshot>
+
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -653,7 +663,7 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses seq> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, Async<TcSymbolUses seq>> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
