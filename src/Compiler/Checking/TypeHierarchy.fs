@@ -55,7 +55,7 @@ let GetSuperTypeOfType g amap m ty =
             let tinst = argsOfAppTy g ty
             match tdef.Extends with
             | None -> None
-            | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
+            | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy (fun () -> emptyILCustomAttrs))
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
@@ -115,7 +115,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // assume those are present.
             for intfTy in tdef.Implements do
                 if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
-                    RescopeAndImportILType scoref amap m tinst intfTy
+                    RescopeAndImportILType scoref amap m tinst intfTy (fun () -> emptyILCustomAttrs)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
                instType (mkInstForAppTy g ty) intfTy ]
@@ -357,11 +357,11 @@ let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
 let ImportILTypeFromMetadata amap m scoref tinst minst ilTy =
-    RescopeAndImportILType scoref amap m (tinst@minst) ilTy
+    RescopeAndImportILType scoref amap m (tinst@minst) ilTy (fun() -> emptyILCustomAttrs)
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs =
-    let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs getMethCattrs =
+    let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy getMethCattrs
     // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
     if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ()) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
@@ -370,14 +370,14 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCat
 
 /// Get the parameter type of an IL method.
 let ImportParameterTypeFromMetadata amap m ilTy getCattrs scoref tinst mist =
-    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilTy getCattrs
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilTy getCattrs (fun _ -> emptyILCustomAttrs)
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
+let ImportReturnTypeFromMetadata amap m ilTy getCattrs getMethCattrs scoref tinst minst =
     match ilTy with
     | ILType.Void -> None
-    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
+    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs getMethCattrs)
 
 
 /// Copy constraints.  If the constraint comes from a type parameter associated

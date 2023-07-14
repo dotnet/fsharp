@@ -2358,7 +2358,7 @@ type internal FsiDynamicCompiler
                     let ccuinfos2, ty = import ccuInfos ilGenericArgTy
                     (ccuinfos2 @ ccuinfos, ty :: tinst))
 
-            let ty = Import.ImportILType amap range0 tinst ilTy
+            let ty = Import.ImportILType amap range0 tinst ilTy (fun () -> emptyILCustomAttrs)
 
             let ccuinfos =
                 match tryTcrefOfAppTy tcGlobals ty with

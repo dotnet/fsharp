@@ -182,36 +182,43 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     // TODO NULLNESS
     KnownAmbivalentToNull
 
+let ImportNullnessForILType (g: TcGlobals) (getCattrs: unit -> ILAttributes) =
+    let (AttribInfo(tref,_)) = g.attrib_NullableContextAttribute
+    let attributes = getCattrs ()
+    let attribute = TryDecodeILAttribute tref attributes
+    match attribute with
+    | _x -> KnownAmbivalentToNull
+
 /// Import an IL type as an F# type.
-let rec ImportILType (env: ImportMap) m tinst ty =  
+let rec ImportILType (env: ImportMap) m tinst ty (getCattrs: unit -> ILAttributes) =  
     match ty with
     | ILType.Void -> 
         env.g.unit_ty
 
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
-        let elemTy = ImportILType env m tinst ty
-        let nullness = ImportNullness env.g
+        let elemTy = ImportILType env m tinst ty getCattrs
+        let nullness = ImportNullnessForILType env.g getCattrs
         mkArrayTy env.g n nullness elemTy m
 
-    | ILType.Boxed  tspec | ILType.Value tspec ->
+    | ILType.Boxed tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
-        let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        let nullness = ImportNullnessForTyconRef env.g m tcref
+        let inst = tspec.GenericArgs |> List.map (fun ty -> ImportILType env m tinst ty (fun () -> emptyILCustomAttrs)) 
+        let nullness = ImportNullnessForILType env.g getCattrs
         ImportTyconRefApp env tcref inst nullness
 
-    | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
+    | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty getCattrs)
 
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
 
-    | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
+    | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty getCattrs)
 
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
 
     | ILType.Modified(_, _, ty) -> 
          // All custom modifiers are ignored
          // NULLNESS TODO: pick up the optional attributes at this point and fold the array of nullness information into the conversion
-         ImportILType env m tinst ty
+         ImportILType env m tinst ty getCattrs
 
     | ILType.TypeVar u16 -> 
         let ty = 
@@ -433,7 +440,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                        let formalParamTysAfterInst = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m))
-                                yield ImportILType env m actualGenericArgs ilFormalTy ]
+                                yield ImportILType env m actualGenericArgs ilFormalTy (fun () -> emptyILCustomAttrs) ]
 
                        (formalParamTysAfterInst, actualParamTys) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
                      
@@ -489,7 +496,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) )
+            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy) (fun () -> emptyILCustomAttrs), m) )
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m) :: constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m) :: constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m) :: constraints) else constraints
@@ -717,9 +724,10 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
 //-------------------------------------------------------------------------
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
-let RescopeAndImportILType scoref amap m importInst ilTy =
-    ilTy |> rescopeILType scoref |>  ImportILType amap m importInst
+let RescopeAndImportILType scoref amap m importInst ilTy (getCattrs: unit -> ILAttributes) =
+    let rescoped = ilTy |> rescopeILType scoref 
+    ImportILType amap m importInst rescoped getCattrs
 
 let CanRescopeAndImportILType scoref amap m ilTy =
-    ilTy |> rescopeILType scoref |>  CanImportILType amap m
+    ilTy |> rescopeILType scoref |> CanImportILType amap m
 
