@@ -8,32 +8,35 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseTripleQuotedInterpolation); Shared>]
 type internal UseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
     static let title = SR.UseTripleQuotedInterpolation()
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3373")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! parseResults =
-                context.Document.GetFSharpParseResultsAsync(nameof (UseTripleQuotedInterpolationCodeFixProvider))
-                |> liftAsync
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS3373"
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let errorRange =
-                RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof UseTripleQuotedInterpolationCodeFixProvider)
 
-            let! interpolationRange = parseResults.TryRangeOfStringInterpolationContainingPos errorRange.Start
-            let! interpolationSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, interpolationRange)
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
-            let replacement =
-                let interpolation = sourceText.GetSubText(interpolationSpan).ToString()
-                TextChange(interpolationSpan, "$\"\"" + interpolation.[1..] + "\"\"")
+                return
+                    parseResults.TryRangeOfStringInterpolationContainingPos errorRange.Start
+                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
+                    |> Option.map (fun span ->
+                        let interpolation = sourceText.GetSubText(span).ToString()
 
-            do context.RegisterFsharpFix(CodeFix.UseTripleQuotedInterpolation, title, [| replacement |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        {
+                            Name = CodeFix.UseTripleQuotedInterpolation
+                            Message = title
+                            Changes = [ TextChange(span, "$\"\"" + interpolation[1..] + "\"\"") ]
+                        })
+            }
