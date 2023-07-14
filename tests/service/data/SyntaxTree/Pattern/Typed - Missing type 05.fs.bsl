@@ -15,7 +15,7 @@ ImplFile
                            SynValData
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
-                              None),
+                              None, None),
                            Named (SynIdent (i, None), false, None, (4,8--4,9)),
                            Some
                              (SynBindingReturnInfo

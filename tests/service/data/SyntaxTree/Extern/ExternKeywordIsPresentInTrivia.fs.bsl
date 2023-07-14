@@ -10,7 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None,
+                     None),
                   LongIdent
                     (SynLongIdent ([GetProcessHeap], [], [None]), None,
                      Some (SynValTyparDecls (None, false)),

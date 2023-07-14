@@ -10,7 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None),
                   Named (SynIdent (meh, None), false, None, (2,4--2,7)), None,
                   ObjExpr
                     (LongIdent (SynLongIdent ([Interface], [], [None])), None,
@@ -28,7 +29,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; Foo], [(4,21--4,22)], [None; None]),
@@ -55,7 +56,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; Bar], [(5,19--5,20)], [None; None]),
@@ -86,7 +87,7 @@ ImplFile
                                        MemberKind = Member },
                                    SynValInfo
                                      ([[SynArgInfo ([], false, None)]; []],
-                                      SynArgInfo ([], false, None)), None),
+                                      SynArgInfo ([], false, None)), None, None),
                                 LongIdent
                                   (SynLongIdent
                                      ([this; Blah], [(7,19--7,20)], [None; None]),
