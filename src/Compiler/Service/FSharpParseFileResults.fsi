@@ -36,6 +36,9 @@ type public FSharpParseFileResults =
     /// Determines if the given position is inside a function or method application.
     member IsPosContainedInApplication: pos: pos -> bool
 
+    /// Determines if the range points to a type name in the type definition.
+    member IsTypeName: range: range -> bool
+
     /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 

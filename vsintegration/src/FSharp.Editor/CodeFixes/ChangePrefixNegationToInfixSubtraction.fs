@@ -2,40 +2,45 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
+open System.Text.RegularExpressions
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangePrefixNegationToInfixSubtraction); Shared>]
-type internal ChangePrefixNegationToInfixSubtractionodeFixProvider() =
+type internal ChangePrefixNegationToInfixSubtractionCodeFixProvider() =
     inherit CodeFixProvider()
 
     static let title = SR.ChangePrefixNegationToInfixSubtraction()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0003")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0003"
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let mutable pos = context.Span.End + 1
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! sourceText = context.GetSourceTextAsync()
 
-            // This won't ever actually happen, but eh why not
-            do! Option.guard (pos < sourceText.Length)
+                // in a line like "... x  -1 ...",
+                // squiggly goes for "x", not for "-", hence we search for "-"
+                let remainingText = $"{sourceText.GetSubText(context.Span.End)}"
+                let pattern = @"^\s+(-)"
 
-            let mutable ch = sourceText.[pos]
+                match Regex.Match(remainingText, pattern) with
+                | m when m.Success ->
+                    let spacePlace = context.Span.End + m.Groups[1].Index + 1
 
-            while pos < sourceText.Length && Char.IsWhiteSpace(ch) do
-                pos <- pos + 1
-                ch <- sourceText.[pos]
-
-            // Bail if this isn't a negation
-            do! Option.guard (ch = '-')
-            do context.RegisterFsharpFix(CodeFix.ChangePrefixNegationToInfixSubtraction, title, [| TextChange(TextSpan(pos, 1), "- ") |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    return
+                        Some
+                            {
+                                Name = CodeFix.ChangePrefixNegationToInfixSubtraction
+                                Message = title
+                                Changes = [ TextChange(TextSpan(spacePlace, 0), " ") ]
+                            }
+                | _ -> return None
+            }
