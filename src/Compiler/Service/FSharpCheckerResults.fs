@@ -1974,7 +1974,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Property (name, ILProp propInfo :: _) ->
+                        | Item.Property (name, ILProp propInfo :: _, _) ->
                             let methInfo =
                                 if propInfo.HasGetter then Some propInfo.GetterMethod
                                 elif propInfo.HasSetter then Some propInfo.SetterMethod
@@ -2045,7 +2045,7 @@ type internal TypeCheckInfo
                             // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                             | Item.CtorGroup (name, ProvidedMeth _ :: _)
                             | Item.MethodGroup (name, ProvidedMeth _ :: _, _)
-                            | Item.Property (name, ProvidedProp _ :: _) -> FindDeclFailureReason.ProvidedMember name
+                            | Item.Property (name, ProvidedProp _ :: _, _) -> FindDeclFailureReason.ProvidedMember name
                             | Item.Event (ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
                             | Item.ILField (ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName
                             | ItemIsProvidedType g tcref -> FindDeclFailureReason.ProvidedType tcref.DisplayName

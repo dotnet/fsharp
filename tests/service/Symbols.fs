@@ -446,6 +446,7 @@ type Foo =
         
         match xSymbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsProperty
             Assert.True mfv.HasGetterMethod
             Assert.True mfv.HasSetterMethod
         | symbol-> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
@@ -477,10 +478,12 @@ type Foo =
        
         match autoPropertySymbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsProperty
             Assert.True mfv.HasGetterMethod
             Assert.True mfv.HasSetterMethod
             Assert.True (mfv.GetterMethod.CompiledName.StartsWith("get_"))
             Assert.True (mfv.SetterMethod.CompiledName.StartsWith("set_"))
+            assertRange (5, 15) (5, 29) autoPropertySymbolUse.Range
 
         | _ -> Assert.Fail "Symbol was not FSharpMemberOrFunctionOrValue"
 
@@ -517,8 +520,10 @@ type X(y: string) =
 
         match symbolUses with
         | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsProperty
             Assert.True mfv.HasGetterMethod
             Assert.True mfv.HasSetterMethod
+            assertRange (3, 15) (3, 16) mfv.SignatureLocation.Value
         | _ -> Assert.Fail "Expected symbols"
 
     [<Test>]
@@ -608,6 +613,30 @@ type Foo() =
         match getSymbolUses with
         | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
             Assert.True mfv.IsPropertySetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+        
+    [<Test>]
+    let ``Property with set/get has property symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace F
+
+type Foo() =
+    let mutable b = 0
+    member this.Count with set (v:int) = b <- v and get () = b
+"""
+
+        let _all = checkResults.GetAllUsesOfAllSymbolsInFile()
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with set (v:int) = b <- v", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsProperty
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
             assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
         | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
 
@@ -766,7 +795,3 @@ type BAttribute() =
 let a ([<B>] c: int) : int = 0
 """
             (7, 5, "let a ([<B>] c: int) : int = 0", "a")
-
-type Foo() =
-    let mutable b = 0
-    member this.Bar with get () = b and set (v: int) = b <- v
