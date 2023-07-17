@@ -3,11 +3,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeRefCellDerefToNotExpression); Shared>]
 type internal ChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
@@ -15,25 +16,25 @@ type internal ChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstr
 
     static let title = SR.UseNotForNegation()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0001")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0001"
 
-    override this.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let document = context.Document
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let! parseResults =
-                document.GetFSharpParseResultsAsync(nameof (ChangeRefCellDerefToNotExpressionCodeFixProvider))
-                |> liftAsync
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ChangeRefCellDerefToNotExpressionCodeFixProvider)
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
-            let errorRange =
-                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
-
-            let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start
-            let! derefSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, derefRange)
-
-            do context.RegisterFsharpFix(CodeFix.ChangeRefCellDerefToNotExpression, title, [| TextChange(derefSpan, "not ") |])
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                return
+                    parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start
+                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
+                    |> Option.map (fun span ->
+                        {
+                            Name = CodeFix.ChangeRefCellDerefToNotExpression
+                            Message = title
+                            Changes = [ TextChange(span, "not ") ]
+                        })
+            }
