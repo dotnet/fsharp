@@ -40,6 +40,7 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -877,6 +878,14 @@ let main3
         ReportTime tcConfig ("Encoding OptData")
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+
+    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+        match optimizedImpls with
+        | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
+            ReportTime tcConfig ("TailCall Checks")
+
+            for f in checkedImplFileAfterOptimizations do
+                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
 
     let refAssemblySignatureHash =
         match tcConfig.emitMetadataAssembly with
