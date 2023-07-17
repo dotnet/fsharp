@@ -19,20 +19,19 @@ printfn "%s" x"""
     |> shouldSucceed
 
 [<Fact>]
-let ``Underscore Dot ToString With Space Before Paranthesis`` () =
+let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
     Fsx """
 let x = "a" |> _.ToString () """
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [Error 1, Line 2, Col 16, Line 2, Col 29, "Type mismatch. Expecting a
-    'string -> 'a'    
-but given a
-    'unit -> string'    
-The type 'string' does not match the type 'unit'"]
+    |> withDiagnostics [
+            (Error 10, Line 2, Col 1, Line 2, Col 30, "Incomplete structured construct at or before this point in expression")
+            (Error 3571, Line 2, Col 16, Line 2, Col 17, " _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.")]
+
 
 [<Fact>]
-let ``Underscore Dot Curried Function With Arguments`` () =
+let ``Underscore Dot Curried Function With Arguments - NonAtomic`` () =
     Fsx """
 type MyRecord = {MyRecordField:string}
     with member x.DoStuff a b c = $"%s{x.MyRecordField} %i{a} %i{b} %i{c}"
@@ -40,7 +39,9 @@ let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [Error 72, Line 4, Col 36, Line 4, Col 45, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
+    |> withDiagnostics [
+            (Error 10, Line 4, Col 1, Line 4, Col 51, "Incomplete structured construct at or before this point in expression")
+            (Error 3571, Line 4, Col 36, Line 4, Col 37, " _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.")]
 
 [<Fact>]
 let ``Underscore Dot Length on string`` () =         
@@ -115,11 +116,11 @@ let c = ( _ :> obj) """
         
 [<Fact>]
 let ``ToString with F# 7`` () =
-    Fsx "_.ToString()"
+    Fsx """let x = "a" |> _.ToString()"""
     |> withLangVersion70
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Error 3350, Line 1, Col 1, Line 1, Col 3, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 'PREVIEW' or greater." )
+    |> withSingleDiagnostic (Error 3350, Line 1, Col 16, Line 1, Col 18, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 'PREVIEW' or greater." )
         
 [<Fact>]
 let ``Simple anonymous unary function shorthands compile`` () =

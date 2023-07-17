@@ -862,6 +862,11 @@
         <target state="translated">Este acceso de miembro es ambiguo. Use paréntesis alrededor de la creación del objeto, por ejemplo, '(nuevo AlgúnTipo(args)).NombreMiembro'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fin de entrada inesperado en la rama "else if" o "elif" de una expresión condicional. Se espera "elif &lt;expr&gt; then &lt;expr&gt;" o "else if &lt;expr&gt; then &lt;expr&gt;".</target>
@@ -963,8 +968,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
-        <source>Discard is ambiguous</source>
-        <target state="new">Discard is ambiguous</target>
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">

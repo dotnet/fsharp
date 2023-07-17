@@ -862,6 +862,11 @@
         <target state="translated">이 구성원 액세스가 모호합니다. 개체 생성 주위에 괄호를 사용하세요. 예: '(새로운 SomeType(인수)).MemberName'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">조건식의 'else if' 또는 'elif' 분기에서 입력이 예기치 않게 끝났습니다. 'elif &lt;expr&gt; then &lt;expr&gt;' 또는 'else if &lt;expr&gt; then &lt;expr&gt;'이 필요합니다.</target>
@@ -963,8 +968,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
-        <source>Discard is ambiguous</source>
-        <target state="new">Discard is ambiguous</target>
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">

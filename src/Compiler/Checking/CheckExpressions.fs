@@ -5525,7 +5525,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
     | SynExpr.DotLambda (synExpr, m, trivia) ->
-        if env.NameEnv.eUnqualifiedItems |> Map.exists(fun _ itemValue -> itemValue |> function |Item.Value _ when itemValue.DisplayNameCore.StartsWith("_") -> true |_ -> false)
+        if env.NameEnv.eUnqualifiedItems |> Map.containsKey "_arg1"
         then
             warning(Error(FSComp.SR.tcAmbiguousDiscardDotLambda(), trivia.UnderscoreRange))
         let unaryArg = mkSynId trivia.UnderscoreRange (cenv.synArgNameGenerator.New())

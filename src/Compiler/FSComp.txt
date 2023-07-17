@@ -1702,6 +1702,7 @@ featureInformationalObjInferenceDiagnostic,"Diagnostic 3559 (warn when obj infer
 3567,parsMissingMemberBody,"Expecting member body"
 3568,parsMissingKeyword,"Missing keyword '%s'"
 3570,tcAmbiguousDiscardDotLambda,"The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope."
+3571,parsUnderScoreDotLambdaNonAtomic," _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses."
 featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only function"
 3569,chkNotTailRecursive,"The member or function '%s' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way."
 3577,tcOverrideUsesMultipleArgumentsInsteadOfTuple,"This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c')."
