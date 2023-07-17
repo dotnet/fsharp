@@ -1,5 +1,9 @@
 // #NoMT #CompilerOptions 
 
+[<NoComparison>]
+/// Meh - Informational diagnostics "XML comment is not placed on a valid language element."
+type A = int
+
 let x = 10
 // Normally a The result of this equality expression has type 'bool' and is implicitly discarded.
 x = 20
