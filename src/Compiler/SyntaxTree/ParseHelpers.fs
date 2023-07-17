@@ -367,7 +367,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] =
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion strictIndentation m : IL.ILInstr[] =
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -376,13 +376,13 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL
     [||]
 #else
     try
-        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
+        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
     with _ ->
         errorR (Error(FSComp.SR.astParseEmbeddedILError (), m))
         [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion strictIndentation m =
     ignore s
 
 #if NO_INLINE_IL_PARSER
@@ -390,7 +390,7 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
     try
-        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
+        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
     with RecoverableParseError ->
         errorR (Error(FSComp.SR.astParseEmbeddedILTypeError (), m))
         IL.PrimaryAssemblyILGlobals.typ_Object

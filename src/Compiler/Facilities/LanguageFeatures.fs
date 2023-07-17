@@ -72,6 +72,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -167,6 +168,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
                 LanguageFeature.DiagnosticForObjInference, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
+                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
 
             ]
 
@@ -294,6 +296,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
+        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

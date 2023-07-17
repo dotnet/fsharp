@@ -1764,13 +1764,27 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some (items, denv, _, m) ->
-                        ToolTipText(
-                            items
-                            |> List.map (fun x ->
-                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                        ))
+                        let mkToolTipText (items: CompletionItem list) =
+                            ToolTipText(
+                                items
+                                |> List.map (fun x ->
+                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                            )
 
+                        match items with
+                        | [ getItem; setItem ] ->
+                            match getItem.Item, setItem.Item with
+                            | Item.Value vr1, Item.Value vr2 when vr1.PropertyName = vr2.PropertyName ->
+                                let getItem =
+                                    if (vr1.CompiledName None).StartsWith "get_" then
+                                        getItem
+                                    else
+                                        setItem
+
+                                mkToolTipText [ getItem ]
+                            | _ -> mkToolTipText items
+                        | items -> mkToolTipText items)
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
@@ -2170,6 +2184,7 @@ type FSharpParsingOptions =
         LangVersionText: string
         IsInteractive: bool
         IndentationAwareSyntax: bool option
+        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2187,6 +2202,7 @@ type FSharpParsingOptions =
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
             IndentationAwareSyntax = None
+            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2200,6 +2216,7 @@ type FSharpParsingOptions =
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
             IndentationAwareSyntax = tcConfig.indentationAwareSyntax
+            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2213,6 +2230,7 @@ type FSharpParsingOptions =
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
             IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
+            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -2341,8 +2359,8 @@ module internal ParseAndCheckFile =
 
         (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
+    let createLexbuf langVersion strictIndentation sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
 
     let matchBraces (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         // Make sure there is an DiagnosticsLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
@@ -2354,7 +2372,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
 
@@ -2466,7 +2484,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
 
