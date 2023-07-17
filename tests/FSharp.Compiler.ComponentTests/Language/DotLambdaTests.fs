@@ -147,7 +147,7 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3570, Line 3, Col 75, Line 3, Col 76, "Discard is ambiguous")
+    |> withSingleDiagnostic (Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
         
 [<Fact>]
 let ``Anonymous unary function shorthand with conflicting wild argument`` () =
@@ -160,4 +160,4 @@ let c : string = let _ = "test" in "asd" |> _.ToString()
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "Discard is ambiguous")
+    |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
