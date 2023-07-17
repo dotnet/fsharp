@@ -727,6 +727,11 @@
         <target state="translated">Uwzględnij informacje o interfejsie języka F#. Wartość domyślna to plik. Niezbędne do rozpowszechniania bibliotek.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Obsługiwane wersje językowe:</target>

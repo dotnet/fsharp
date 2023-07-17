@@ -2428,7 +2428,7 @@ tyconDefnOrSpfnSimpleRepr:
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError mLhs
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
        let s, _ = $5
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion (rhs parseState 5)
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion parseState.LexBuffer.StrictIndentation (rhs parseState 5)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(box ilType, mLhs) }
 
 
@@ -5198,7 +5198,7 @@ inlineAssemblyExpr:
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
-            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion sm
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion parseState.LexBuffer.StrictIndentation sm
             SynExpr.LibraryOnlyILAssembly(box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:

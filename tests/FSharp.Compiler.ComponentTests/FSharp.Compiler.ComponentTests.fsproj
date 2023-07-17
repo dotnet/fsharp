@@ -250,6 +250,7 @@
     <Compile Include="Signatures\SeqTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
+    <Compile Include="Signatures\ImpliedSignatureHashTests.fs" />
     <Compile Include="Signatures\NestedTypeTests.fs" />
     <Compile Include="Signatures\MissingDiagnostic.fs" />
     <Compile Include="Signatures\HashConstraintTests.fs" />
