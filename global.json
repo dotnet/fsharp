@@ -1,16 +1,14 @@
 {
   "sdk": {
-    "version": "8.0.100-preview.5.23303.2",
+    "version": "8.0.100-preview.6.23330.14",
     "allowPrerelease": true,
     "rollForward": "latestPatch"
   },
   "tools": {
-    "dotnet": "8.0.100-preview.5.23303.2",
+    "dotnet": "8.0.100-preview.6.23330.14",
     "vs": {
       "version": "17.6",
-      "components": [
-        "Microsoft.VisualStudio.Component.FSharp"
-      ]
+      "components": ["Microsoft.VisualStudio.Component.FSharp"]
     },
     "xcopy-msbuild": "17.6.0-2"
   },

@@ -4887,7 +4887,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
 
         let qualifiedFields =
             match rest with
-            | [] when not fieldsOnly ->
+            | [] ->
                 // get record types accessible in given nenv
                 let tycons = LookupTypeNameInEnvNoArity OpenQualified id nenv
                 tycons
