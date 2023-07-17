@@ -146,6 +146,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let captureIdentifiersWhenParsing =
                                 editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
 
+                            // Default is false here
+                            let solutionCrawler = editorOptions.Advanced.SolutionBackgroundAnalysis
+
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(
                                     TelemetryEvents.LanguageServiceStarted,
@@ -163,6 +166,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
                                         nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
+                                        nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
                                 )
