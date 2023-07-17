@@ -148,7 +148,7 @@ and accIntfImpl cenv env (baseValOpt: Val option) (mFallback: range) (ty, overri
     accTy cenv env mFallback ty
     accMethods cenv env baseValOpt overrides
 
-/// Walk an operator, collecting type variables
+/// Walk an operation, collecting type variables
 and accOp cenv env (op, tyargs, args, m) =
     // Special cases
     accTypeInst cenv env m tyargs
