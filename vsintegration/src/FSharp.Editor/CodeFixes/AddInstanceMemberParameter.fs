@@ -21,12 +21,12 @@ type internal AddInstanceMemberParameterCodeFixProvider() =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync _ span =
+        member _.GetCodeFixIfAppliesAsync context =
             let codeFix =
                 {
                     Name = CodeFix.AddInstanceMemberParameter
                     Message = title
-                    Changes = [ TextChange(TextSpan(span.Start, 0), "x.") ]
+                    Changes = [ TextChange(TextSpan(context.Span.Start, 0), "x.") ]
                 }
 
             CancellableTask.singleton (Some codeFix)

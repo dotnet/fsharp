@@ -67,7 +67,7 @@ type public HashIfExpression() =
         DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
         let parser (s : string) =
-            let lexbuf = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
+            let lexbuf = LexBuffer<char>.FromChars (true, LanguageVersion.Default, None, s.ToCharArray ())
             lexbuf.StartPos <- startPos
             lexbuf.EndPos <- startPos
             let tokenStream = PPLexer.tokenstream args

@@ -252,6 +252,7 @@ module TaggedText =
     let rightBracketAngle = tagPunctuation ">]"
     let star = tagOperator "*"
     let keywordNew = tagKeyword "new"
+    let keywordInline = tagKeyword "inline"
 #endif
 
 [<AutoOpen>]

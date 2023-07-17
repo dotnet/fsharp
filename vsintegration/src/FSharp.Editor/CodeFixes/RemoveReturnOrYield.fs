@@ -19,24 +19,20 @@ type internal RemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveReturnOrYieldCodeFixProvider)
 
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (RemoveReturnOrYieldCodeFixProvider))
-
-                let! sourceText = document.GetTextAsync(cancellationToken)
-
-                let errorRange =
-                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
                 return
                     parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
                     |> Option.bind (fun exprRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, exprRange))
-                    |> Option.map (fun exprSpan -> [ TextChange(span, sourceText.GetSubText(exprSpan).ToString()) ])
+                    |> Option.map (fun exprSpan -> [ TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) ])
                     |> Option.map (fun changes ->
                         let title =
-                            let text = sourceText.GetSubText(span).ToString()
+                            let text = sourceText.GetSubText(context.Span).ToString()
 
                             if text.StartsWith("return!") then SR.RemoveReturnBang()
                             elif text.StartsWith("return") then SR.RemoveReturn()

@@ -98,6 +98,7 @@ module internal WordL =
     val keywordAbstract: Layout
     val keywordOverride: Layout
     val keywordEnum: Layout
+    val keywordInline: Layout
 
 module internal LeftL =
     val leftParen: Layout
