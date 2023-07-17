@@ -1764,13 +1764,27 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some (items, denv, _, m) ->
-                        ToolTipText(
-                            items
-                            |> List.map (fun x ->
-                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                        ))
+                        let mkToolTipText (items: CompletionItem list) =
+                            ToolTipText(
+                                items
+                                |> List.map (fun x ->
+                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                            )
 
+                        match items with
+                        | [ getItem; setItem ] ->
+                            match getItem.Item, setItem.Item with
+                            | Item.Value vr1, Item.Value vr2 when vr1.PropertyName = vr2.PropertyName ->
+                                let getItem =
+                                    if (vr1.CompiledName None).StartsWith "get_" then
+                                        getItem
+                                    else
+                                        setItem
+
+                                mkToolTipText [ getItem ]
+                            | _ -> mkToolTipText items
+                        | items -> mkToolTipText items)
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
