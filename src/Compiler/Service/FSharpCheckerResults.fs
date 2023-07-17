@@ -898,8 +898,6 @@ type internal TypeCheckInfo
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             // These items are not given a completion kind. This could be reviewed
             | Item.ActivePatternResult _
-            | Item.CustomOperation _
-            | Item.CtorGroup _
             | Item.ExnCase _
             | Item.ImplicitOp _
             | Item.ModuleOrNamespaces _
@@ -909,7 +907,6 @@ type internal TypeCheckInfo
             | Item.UnionCase _
             | Item.UnionCaseField _
             | Item.UnqualifiedType _
-            | Item.Value _
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _
@@ -2173,6 +2170,7 @@ type FSharpParsingOptions =
         LangVersionText: string
         IsInteractive: bool
         IndentationAwareSyntax: bool option
+        StrictIndentation: bool option
         CompilingFSharpCore: bool
         IsExe: bool
     }
@@ -2190,6 +2188,7 @@ type FSharpParsingOptions =
             LangVersionText = LanguageVersion.Default.VersionText
             IsInteractive = false
             IndentationAwareSyntax = None
+            StrictIndentation = None
             CompilingFSharpCore = false
             IsExe = false
         }
@@ -2203,6 +2202,7 @@ type FSharpParsingOptions =
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
             IndentationAwareSyntax = tcConfig.indentationAwareSyntax
+            StrictIndentation = tcConfig.strictIndentation
             CompilingFSharpCore = tcConfig.compilingFSharpCore
             IsExe = tcConfig.target.IsExe
         }
@@ -2216,6 +2216,7 @@ type FSharpParsingOptions =
             LangVersionText = tcConfigB.langVersion.VersionText
             IsInteractive = isInteractive
             IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
+            StrictIndentation = tcConfigB.strictIndentation
             CompilingFSharpCore = tcConfigB.compilingFSharpCore
             IsExe = tcConfigB.target.IsExe
         }
@@ -2344,8 +2345,8 @@ module internal ParseAndCheckFile =
 
         (fun _ -> tokenizer.GetToken())
 
-    let createLexbuf langVersion sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
+    let createLexbuf langVersion strictIndentation sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
 
     let matchBraces (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         // Make sure there is an DiagnosticsLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
@@ -2357,7 +2358,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
 
-        usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
 
@@ -2469,7 +2470,7 @@ module internal ParseAndCheckFile =
         use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
 
@@ -2957,6 +2958,16 @@ type FSharpCheckFileResults
                 | Some pageWidth -> Display.squashTo pageWidth layout
                 |> LayoutRender.showL
                 |> SourceText.ofString)
+
+    member internal _.CalculateSignatureHash() =
+        let visibility = Fsharp.Compiler.SignatureHash.PublicAndInternal
+
+        match details with
+        | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."
+        | Some (scope, _builderOpt) ->
+            scope.ImplementationFile
+            |> Option.map (fun implFile ->
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles [ implFile ] scope.TcGlobals visibility)
 
     member _.ImplementationFile =
         if not keepAssemblyContents then
