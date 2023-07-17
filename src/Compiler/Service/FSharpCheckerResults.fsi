@@ -220,6 +220,8 @@ type public FSharpParsingOptions =
 
         IndentationAwareSyntax: bool option
 
+        StrictIndentation: bool option
+
         CompilingFSharpCore: bool
 
         IsExe: bool
