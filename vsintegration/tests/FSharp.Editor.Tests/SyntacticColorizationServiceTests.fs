@@ -38,6 +38,7 @@ type SyntacticClassificationServiceTests() =
                 Some(fileName),
                 defines,
                 langVersion,
+                None,
                 CancellationToken.None
             )
 

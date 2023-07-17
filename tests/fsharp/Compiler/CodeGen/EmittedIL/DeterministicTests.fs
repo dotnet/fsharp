@@ -7,373 +7,138 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open NUnit.Framework
 
+
 [<TestFixture>]
 module DeterministicTests =
 
-    [<Test>]
-    let ``Simple assembly should be deterministic``() =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module Assembly
+    let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]
+    let inputPath = CompilerAssert.GenerateFsInputPath()
+    let outputPath = CompilerAssert.GenerateDllOutputPath()
+
+    [<Literal>]
+    let ivtSnippet = """
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleToAttribute("Assembly.Name")>]
+do() 
+"""
+
+    [<Literal>]
+    let basicCodeSnippet = """
+module ReferenceAssembly
 
 open System
 
+//PLACEHOLDER
+
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
 let test() =
-    Console.WriteLine("Hello World!")
-            """
+    privTest()
+    Console.WriteLine("Hello World!")"""
+
+
+    let getMvid codeSnippet compileOptions =
+        File.WriteAllText(inputPath, codeSnippet)
 
         let mvid1 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--deterministic"]
+            FSharpWithInputAndOutputPath codeSnippet inputPath outputPath
+            |> withOptions compileOptions
             |> compileGuid
-        let mvid2 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
+
+        mvid1
+
+    let commonOptionsBasicMvid = lazy(getMvid basicCodeSnippet commonOptions)
+
+    let calculateRefAssMvids referenceCodeSnippet codeAfterChangeIsDone = 
+
+        let mvid1 = 
+            if referenceCodeSnippet = basicCodeSnippet then
+                commonOptionsBasicMvid.Value
+            else
+                getMvid referenceCodeSnippet commonOptions
+
+        let mvid2 = getMvid codeAfterChangeIsDone commonOptions
+        mvid1 , mvid2
+
+
+    [<Test>]
+    let ``Simple assembly should be deterministic``() =  
+        File.WriteAllText(inputPath, basicCodeSnippet)
+
+        let getMvid() =
+            FSharpWithInputAndOutputPath basicCodeSnippet inputPath outputPath
             |> withOptions ["--deterministic"]
             |> compileGuid
 
         // Two identical compilations should produce the same MVID
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.AreEqual(getMvid(), getMvid())
 
     [<Test>]
-    let ``Simple assembly with different platform should not be deterministic``() =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module Assembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--deterministic"]
-            |> compileGuid
-        let mvid2 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--deterministic";"--platform:Itanium"]
-            |> compileGuid
-
+    let ``Simple assembly with different platform should not be deterministic``() = 
+        let mvid1 = getMvid basicCodeSnippet ["--deterministic"]
+        let mvid2 = getMvid basicCodeSnippet ["--deterministic";"--platform:Itanium"]
         // No two platforms should produce the same MVID
         Assert.AreNotEqual(mvid1, mvid2)
 
     [<Test>]
     let ``Simple reference assembly should be deterministic``() =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest()
-    Console.WriteLine("Hello World!")
-            """
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-        let mvid2 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two identical compilations should produce the same MVID
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet basicCodeSnippet
         Assert.AreEqual(mvid1, mvid2)
 
     [<Test>]
     let ``Simple reference assembly with different platform should not be deterministic``() =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest()
-    Console.WriteLine("Hello World!")
-            """
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-        let mvid2 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic";"--platform:Itanium"]
-            |> compileGuid
+        let mvid1 = getMvid basicCodeSnippet ["--refonly";"--deterministic"]
+        let mvid2 = getMvid basicCodeSnippet ["--refonly";"--deterministic";"--platform:Itanium"]
 
         // No two platforms should produce the same MVID
         Assert.AreNotEqual(mvid1, mvid2)
 
-
     [<Test>]
     let ``False-positive reference assemblies test, different aseemblies' mvid should not match`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
-        let src2 =
-            """
-module ReferenceAssembly
-
-open System
-
-let test2() =
-    Console.WriteLine("Hello World!")
-            """
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath src2 inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two different compilations should _not_ produce the same MVID
+        let src2 = basicCodeSnippet.Replace("test()","test2()")
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreNotEqual(mvid1, mvid2)
-(*
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function name is different with the same function name length`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest1() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest1()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
-        let src2 =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest2() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest2()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let privCode1 = basicCodeSnippet.Replace("privTest()","privTest1()")
+        let privCode2 = basicCodeSnippet.Replace("privTest()","privTest2()")
+        let mvid1, mvid2 = calculateRefAssMvids privCode1 privCode2
         Assert.AreEqual(mvid1, mvid2)
     
     
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function name is different with the different function name length`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest1() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest1()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
-        let src2 =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest11() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest11()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let src2 = basicCodeSnippet.Replace("privTest()","privTest11()")
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreEqual(mvid1, mvid2)
     
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function body is different`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest1() =
-    Console.WriteLine("Private Hello World!")
-
-let test() =
-    privTest1()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
-        let src2 =
-            """
-module ReferenceAssembly
-
-open System
-
-let private privTest1() =
-    Console.Write("Private Hello World!")
-
-let test() =
-    privTest1()
-    Console.WriteLine("Hello World!")
-            """
-
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let src2 = basicCodeSnippet.Replace("""Console.WriteLine("Private Hello World!")""","""Console.Write("Private Hello World!")""")
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreEqual(mvid1, mvid2)
         
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function return type is different`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let src =
-            """
-module ReferenceAssembly
 
-open System
-
-let private privTest1() : string = "Private Hello World!"
-
-let test() =
-    privTest1() |> ignore
-    Console.WriteLine()
-            """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
         let src2 =
             """
 module ReferenceAssembly
 
 open System
 
-let private privTest1() : int = 0
+let private privTest() : int = 0
 
 let test() =
-    privTest1() |> ignore
+    privTest() |> ignore
     Console.WriteLine()
             """
-
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreEqual(mvid1, mvid2)
      
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function parameter count is different`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
             """
 module ReferenceAssembly
@@ -386,17 +151,7 @@ let test() =
     privTest1 () |> ignore
     Console.WriteLine()
             """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
+       
         let src2 =
             """
 module ReferenceAssembly
@@ -410,21 +165,11 @@ let test() =
     Console.WriteLine()
             """
 
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.AreEqual(mvid1, mvid2)
 
-
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function parameter count is different and private function is unused`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
             """
 module ReferenceAssembly
@@ -436,17 +181,6 @@ let private privTest1 () : string = "Private Hello World!"
 let test() =
     Console.WriteLine()
             """
-
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
         let src2 =
             """
 module ReferenceAssembly
@@ -459,20 +193,11 @@ let test() =
     Console.WriteLine()
             """
 
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.AreEqual(mvid1, mvid2)
      
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when only private function parameter types are different`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
             """
 module ReferenceAssembly
@@ -486,16 +211,6 @@ let test() =
     Console.WriteLine()
             """
 
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
         let src2 =
             """
 module ReferenceAssembly
@@ -508,21 +223,12 @@ let test() =
     privTest1 "" |> ignore
     Console.WriteLine()
             """
-
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+       
+        let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.AreEqual(mvid1, mvid2)
         
-    [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
+    [<Test>] 
     let ``Reference assemblies should be deterministic when private function is missing in one of them`` () =
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
             """
 module ReferenceAssembly
@@ -536,16 +242,6 @@ let test() =
     Console.WriteLine()
             """
 
-        File.WriteAllText(inputFilePath, src)
-
-        let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-
-        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
         let src2 =
             """
 module ReferenceAssembly
@@ -556,15 +252,85 @@ let test() =
     Console.WriteLine()
             """
 
-        File.WriteAllText(inputFilePath2, src2)
-
-        let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
-            |> withOptions ["--refonly";"--deterministic"]
-            |> compileGuid
-
-        // Two compilations with changes only to private code should produce the same MVID
+        let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.AreEqual(mvid1, mvid2)
 
-    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
-*)
+    [<Test>] 
+    let ``Reference assemblies should be deterministic when inner function is removed`` () =
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let test() =
+    let innerFunc number = 
+        string number
+
+    let stringVal = innerFunc 15
+    Console.WriteLine(stringVal)
+            """
+     
+        let src2 =
+            """
+module ReferenceAssembly
+
+open System
+
+let test() =
+    Console.WriteLine()
+            """
+       
+        let mvid1, mvid2 = calculateRefAssMvids src src2
+        Assert.AreEqual(mvid1, mvid2)
+
+    [<Test>] 
+    let ``Reference assemblies should be same when contents of quoted expression change`` () =
+        let src =
+            """
+module ReferenceAssembly
+
+let foo () = <@ 2 + 2 @>
+            """
+
+        let src2 =
+            """
+module ReferenceAssembly
+
+let foo () = <@ 2 + 3 @>
+            """
+
+        let mvid1, mvid2 = calculateRefAssMvids src src2
+        Assert.AreEqual(mvid1, mvid2)
+
+    [<Test>]
+    let ``Reference assemblies must change when a must-inline function changes body`` () =
+        let codeBefore = """module ReferenceAssembly
+let inline myFunc x y = x + y"""
+        let codeAfter = codeBefore.Replace("+","-")
+        let mvid1, mvid2 = calculateRefAssMvids codeBefore codeAfter
+        Assert.AreNotEqual(mvid1,mvid2)
+
+    [<Test>]
+    let ``Reference assemblies must not change when a must-inline function does not change`` () =
+        let codeBefore = """module ReferenceAssembly
+let inline myFunc x y = x - y"""       
+        let mvid1, mvid2 = calculateRefAssMvids codeBefore codeBefore
+        Assert.AreEqual(mvid1,mvid2)
+
+
+    [<TestCase(ivtSnippet, false)>] // If IVT provided -> MVID must reflect internal binding
+    [<TestCase("", true )>] // No IVT => internal binding can be ignored for mvid purposes
+    let ``Reference assemblies MVID when having internal binding``(additionalSnippet:string, shouldBeStable:bool) =
+        let codeAfter = 
+            basicCodeSnippet
+                .Replace("private","internal")
+                .Replace("//PLACEHOLDER", additionalSnippet)
+
+        let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet codeAfter
+
+        if shouldBeStable then
+            Assert.AreEqual(mvid1,mvid2)
+        else
+            Assert.AreNotEqual(mvid1,mvid2)
+

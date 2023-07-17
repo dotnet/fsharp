@@ -2404,7 +2404,7 @@ module TastDefinitionPrinting =
 
 module InferredSigPrinting = 
     open PrintTypes
-
+    
     /// Layout the inferred signature of a compilation unit
     let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m expr =
 

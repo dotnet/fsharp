@@ -727,6 +727,11 @@
         <target state="translated">F# 인터페이스 정보를 포함합니다. 기본값은 파일입니다. 라이브러리를 배포하는 데 필수적입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">지원되는 언어 버전:</target>

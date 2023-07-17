@@ -727,6 +727,11 @@
         <target state="translated">包括 F# 接口信息，默认值为文件。对于分发库必不可少。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">支持的语言版本:</target>
