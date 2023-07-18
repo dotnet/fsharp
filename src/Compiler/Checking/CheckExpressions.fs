@@ -774,9 +774,11 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         | SynMeasure.Product(ms1, ms2, _) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2)
         | SynMeasure.Divide(ms1, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
-            Measure.Prod(tcMeasure ms1, Measure.Inv (tcMeasure ms2))
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
         | SynMeasure.Divide(ms1, ms2, _) ->
-            Measure.Prod(tcMeasure ms1, Measure.Inv (tcMeasure ms2))
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))

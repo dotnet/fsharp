@@ -178,7 +178,7 @@ type SynMeasure =
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 

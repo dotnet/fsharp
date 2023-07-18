@@ -6249,12 +6249,11 @@ measureTypeExpr:
   | measureTypeExpr INFIX_STAR_DIV_MOD_OP measureTypeExpr
     { if $2 <> "*" && $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if $2 = "*" then SynMeasure.Product($1, $3, lhs parseState)
-      else SynMeasure.Divide($1, $3, lhs parseState) }
+      else SynMeasure.Divide(Some $1, $3, lhs parseState) }
 
   | INFIX_STAR_DIV_MOD_OP measureTypeExpr
      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-       let m = Range.Zero  // zero range to signal absence in concrete syntax
-       SynMeasure.Divide(SynMeasure.One m, $2, lhs parseState) }
+       SynMeasure.Divide(None, $2, lhs parseState) }
 
 typar:
   | QUOTE ident

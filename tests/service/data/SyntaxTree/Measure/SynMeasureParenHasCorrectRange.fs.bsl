@@ -9,7 +9,7 @@ ImplFile
                 (Measure
                    (UInt32 40u, (2,0--2,3),
                     Divide
-                      (Seq ([Named ([hr], (2,4--2,6))], (2,4--2,6)),
+                      (Some (Seq ([Named ([hr], (2,4--2,6))], (2,4--2,6))),
                        Seq
                          ([Paren
                              (Seq

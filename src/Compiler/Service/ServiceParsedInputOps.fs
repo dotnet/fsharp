@@ -1837,9 +1837,11 @@ module ParsedInput =
 
         and walkMeasure measure =
             match measure with
-            | SynMeasure.Product (m1, m2, _)
-            | SynMeasure.Divide (m1, m2, _) ->
+            | SynMeasure.Product (m1, m2, _) ->
                 walkMeasure m1
+                walkMeasure m2
+            | SynMeasure.Divide (m1, m2, _) ->
+                m1 |> Option.iter walkMeasure
                 walkMeasure m2
             | SynMeasure.Named (longIdent, _) -> addLongIdent longIdent
             | SynMeasure.Seq (ms, _) -> List.iter walkMeasure ms

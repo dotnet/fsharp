@@ -7259,12 +7259,12 @@ FSharp.Compiler.Syntax.SynMatchClause: Microsoft.FSharp.Core.FSharpOption`1[FSha
 FSharp.Compiler.Syntax.SynMatchClause: System.String ToString()
 FSharp.Compiler.Syntax.SynMeasure+Anon: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMeasure+Anon: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Syntax.SynMeasure get_measure1()
 FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Syntax.SynMeasure get_measure2()
-FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Syntax.SynMeasure measure1
 FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Syntax.SynMeasure measure2
 FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMeasure+Divide: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynMeasure+Divide: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMeasure] get_measure1()
+FSharp.Compiler.Syntax.SynMeasure+Divide: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMeasure] measure1
 FSharp.Compiler.Syntax.SynMeasure+Named: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMeasure+Named: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynMeasure+Named: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_longId()
@@ -7323,7 +7323,7 @@ FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsProduct()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsSeq()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsVar()
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewAnon(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewDivide(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewDivide(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynMeasure], FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewNamed(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewOne(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewParen(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
