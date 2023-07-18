@@ -195,7 +195,7 @@ type SynRationalConst =
 
     | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
     | Negate of SynRationalConst
 

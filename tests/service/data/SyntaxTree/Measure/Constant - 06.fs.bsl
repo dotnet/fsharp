@@ -1,21 +1,19 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Measure/Constant - 06.fs", false, QualifiedNameOfFile Constant - 06,
-      [], [],
+     ("/root/Measure/Constant - 06.fs", false, QualifiedNameOfFile M, [], [],
       [SynModuleOrNamespace
-         ([Constant - 06], false, AnonModule,
+         ([M], false, NamedModule,
           [Expr
              (Const
                 (Measure
-                   (Int32 42, (1,0--1,2),
+                   (Int32 42, (3,0--3,2),
                     Seq
                       ([Power
-                          (Named ([m], (1,3--1,4)), Integer (12345, (1,5--1,10)),
-                           (1,3--1,10))], (1,3--1,10)),
-                    { LessRange = (1,2--1,3)
-                      GreaterRange = (1,10--1,11) }), (1,0--1,11)), (1,0--1,11))],
-          PreXmlDocEmpty, [], None, (1,0--1,11), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
-
-(1,0)-(1,11) parse warning The declarations in this file will be placed in an implicit module 'Constant - 06' based on the file name 'Constant - 06.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
+                          (Named ([m], (3,3--3,4)), Integer (12345, (3,5--3,10)),
+                           (3,3--3,10))], (3,3--3,10)),
+                    { LessRange = (3,2--3,3)
+                      GreaterRange = (3,10--3,11) }), (3,0--3,11)), (3,0--3,11))],
+          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
+          (1,0--3,11), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))

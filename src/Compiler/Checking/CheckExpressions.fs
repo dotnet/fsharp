@@ -755,7 +755,7 @@ let rec TcSynRationalConst c =
   match c with
   | SynRationalConst.Integer(value = i) -> intToRational i
   | SynRationalConst.Negate c2 -> NegRational (TcSynRationalConst c2)
-  | SynRationalConst.Rational(p, q, _) -> DivRational (intToRational p) (intToRational q)
+  | SynRationalConst.Rational(numerator = p; denominator = q) -> DivRational (intToRational p) (intToRational q)
 
 /// Typecheck constant terms in expressions and patterns
 let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
