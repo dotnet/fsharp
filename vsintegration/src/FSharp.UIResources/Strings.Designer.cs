@@ -79,6 +79,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart).
+        /// </summary>
+        public static string Analyze_full_solution_on_background {
+            get {
+                return ResourceManager.GetString("Analyze_full_solution_on_background", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Background analysis.
+        /// </summary>
+        public static string Background_analysis {
+            get {
+                return ResourceManager.GetString("Background_analysis", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Block Structure Guides.
         /// </summary>
         public static string Block_Structure {

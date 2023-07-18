@@ -55,7 +55,7 @@ type internal FSharpCompletionService
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
 
-        let defines, langVersion =
+        let defines, langVersion, strictIndentation =
             projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
 
         CompletionUtils.getDefaultCompletionListSpan (
@@ -65,6 +65,7 @@ type internal FSharpCompletionService
             document.FilePath,
             defines,
             Some langVersion,
+            strictIndentation,
             CancellationToken.None
         )
 
