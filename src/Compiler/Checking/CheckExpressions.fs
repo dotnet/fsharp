@@ -3930,7 +3930,7 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     // Skip over LAM tps. Choose 'a.
     if vspec.IsInstanceMember then
         let rec firstArg e =
-          match stripDebugPoints e with
+            match stripDebugPoints e with
             | Expr.TyLambda (_, _, b, _, _) -> firstArg b
             | Expr.TyChoose (_, b, _) -> firstArg b
             | Expr.Lambda (_, _, _, [v], _, _, _) -> Some v

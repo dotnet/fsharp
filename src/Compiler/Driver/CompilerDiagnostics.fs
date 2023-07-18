@@ -388,7 +388,7 @@ type PhasedDiagnostic with
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
             | _ ->
-                (severity = FSharpDiagnosticSeverity.Info)
+                (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational

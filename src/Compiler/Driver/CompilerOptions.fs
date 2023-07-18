@@ -521,23 +521,12 @@ let SetOptimizeOff (tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <-
         { tcConfigB.optSettings with
             jitOptUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             localOptUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             crossAssemblyOptimizationUser = Some false
-        }
-
-    tcConfigB.optSettings <-
-        { tcConfigB.optSettings with
             lambdaInlineThreshold = 0
         }
 
+    tcConfigB.onlyEssentialOptimizationData <- true
     tcConfigB.doDetuple <- false
     tcConfigB.doTLR <- false
     tcConfigB.doFinalSimplify <- false
@@ -1142,8 +1131,18 @@ let languageFlags tcConfigB =
             None,
             Some(FSComp.SR.optsChecked ())
         )
+
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
+
         mlCompatibilityFlag tcConfigB
+
+        CompilerOption(
+            "strict-indentation",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
+            None,
+            Some(FSComp.SR.optsStrictIndentation ())
+        )
     ]
 
 // OptionBlock: Advanced user options
@@ -1332,7 +1331,6 @@ let advancedFlagsFsc tcConfigB =
             None,
             Some(FSComp.SR.optsEmitDebugInfoInQuotations ())
         )
-
     ]
 
 // OptionBlock: Internal options (test use only)

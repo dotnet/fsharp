@@ -354,6 +354,8 @@ type public FSharpParsingOptions =
 
         IndentationAwareSyntax: bool option
 
+        StrictIndentation: bool option
+
         CompilingFSharpCore: bool
 
         IsExe: bool
@@ -561,6 +563,8 @@ type public FSharpCheckFileResults =
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
+
+    member internal CalculateSignatureHash: unit -> int option
 
     /// Internal constructor
     static member internal MakeEmpty:

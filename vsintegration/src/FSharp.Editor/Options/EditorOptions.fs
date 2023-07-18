@@ -115,6 +115,7 @@ type AdvancedOptions =
         IsLiveBuffersEnabled: bool
         UseTransparentCompiler: bool
         SendAdditionalTelemetry: bool
+        SolutionBackgroundAnalysis: bool
     }
 
     static member Default =
@@ -127,6 +128,7 @@ type AdvancedOptions =
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
             UseTransparentCompiler = false
             SendAdditionalTelemetry = true
+            SolutionBackgroundAnalysis = false
         }
 
 [<CLIMutable>]

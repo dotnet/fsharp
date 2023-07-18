@@ -60,6 +60,7 @@ let main argv =
                 Some(fileName),
                 defines,
                 None,
+                None,
                 CancellationToken.None
             )
 
