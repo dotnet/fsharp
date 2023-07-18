@@ -6229,7 +6229,8 @@ measureTypePower:
 
   | INT32
      { if fst $1 <> 1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedIntegerLiteralForUnitOfMeasure())
-       SynMeasure.One }
+       let m = rhs parseState 1
+       SynMeasure.One(m) }
 
 measureTypeSeq:
   | measureTypePower
@@ -6252,7 +6253,8 @@ measureTypeExpr:
 
   | INFIX_STAR_DIV_MOD_OP measureTypeExpr
      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-       SynMeasure.Divide(SynMeasure.One, $2, lhs parseState) }
+       let m = Range.Zero  // zero range to signal absence in concrete syntax
+       SynMeasure.Divide(SynMeasure.One m, $2, lhs parseState) }
 
 typar:
   | QUOTE ident

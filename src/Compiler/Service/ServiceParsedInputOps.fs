@@ -1846,7 +1846,7 @@ module ParsedInput =
             | SynMeasure.Paren (m, _)
             | SynMeasure.Power (m, _, _) -> walkMeasure m
             | SynMeasure.Var (ty, _) -> walkTypar ty
-            | SynMeasure.One
+            | SynMeasure.One _
             | SynMeasure.Anon _ -> ()
 
         and walkSimplePat spat =

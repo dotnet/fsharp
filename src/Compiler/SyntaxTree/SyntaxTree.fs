@@ -182,7 +182,7 @@ type SynMeasure =
 
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
-    | One
+    | One of range: range
 
     | Anon of range: range
 

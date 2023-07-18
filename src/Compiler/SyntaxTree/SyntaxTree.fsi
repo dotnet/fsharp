@@ -199,7 +199,7 @@ type SynMeasure =
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
     /// The '1' unit of measure
-    | One
+    | One of range: range
 
     /// An anonymous (inferred) unit of measure
     | Anon of range: range
