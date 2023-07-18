@@ -8149,6 +8149,8 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynPat: Int32 Tag
 FSharp.Compiler.Syntax.SynPat: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynPat: System.String ToString()
+FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 get_value()
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 value
 FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Syntax.SynRationalConst Item
@@ -8168,7 +8170,7 @@ FSharp.Compiler.Syntax.SynRationalConst: Boolean IsRational
 FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsInteger()
 FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsNegate()
 FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsRational()
-FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewInteger(Int32)
+FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewInteger(Int32, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewNegate(FSharp.Compiler.Syntax.SynRationalConst)
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewRational(Int32, Int32, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst+Integer

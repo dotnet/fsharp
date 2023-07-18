@@ -3292,15 +3292,15 @@ rationalConstant:
 
   | INT32
     { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Integer(fst $1) }
+      SynRationalConst.Integer(fst $1, lhs parseState) }
 
   | MINUS INT32
     { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Integer(fst $2)) }
+      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, lhs parseState)) }
 
 atomicUnsignedRationalConstant:
   | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-            SynRationalConst.Integer(fst $1) }
+            SynRationalConst.Integer(fst $1, lhs parseState) }
 
   | LPAREN rationalConstant rparen
     { $2 }

@@ -193,7 +193,7 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
     | Rational of numerator: int32 * denominator: int32 * range: range
 

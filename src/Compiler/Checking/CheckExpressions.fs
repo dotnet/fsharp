@@ -753,7 +753,7 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
 /// Typecheck rational constant terms in units-of-measure exponents
 let rec TcSynRationalConst c =
   match c with
-  | SynRationalConst.Integer i -> intToRational i
+  | SynRationalConst.Integer(value = i) -> intToRational i
   | SynRationalConst.Negate c2 -> NegRational (TcSynRationalConst c2)
   | SynRationalConst.Rational(p, q, _) -> DivRational (intToRational p) (intToRational q)
 
