@@ -1086,7 +1086,7 @@ let CompilePatternBasic
             let tg = TTarget([], throwExpr, None)
             let _ = matchBuilder.AddTarget tg
             let clause = MatchClause(TPat_wild mMatch, None, tg, mMatch)
-            incompleteMatchClauseOnce <- Some clause
+            //incompleteMatchClauseOnce <- Some clause
             clause
 
         | Some c -> c
