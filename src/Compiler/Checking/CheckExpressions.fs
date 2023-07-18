@@ -787,10 +787,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     let unifyMeasureArg iszero tcr =
         let measureTy =
             match synConst with
-            | SynConst.Measure(_, _, SynMeasure.Anon _) ->
+            | SynConst.Measure(synMeasure = SynMeasure.Anon _) ->
               (mkAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
 
-            | SynConst.Measure(_, _, ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
+            | SynConst.Measure(synMeasure = ms) -> mkAppTy tcr [TType_measure (tcMeasure ms)]
             | _ -> mkAppTy tcr [TType_measure Measure.One]
         unif measureTy
 
@@ -843,43 +843,43 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     | SynConst.UIntPtr i ->
         unif g.unativeint_ty
         Const.UIntPtr i
-    | SynConst.Measure(SynConst.Single f, _, _) ->
+    | SynConst.Measure(constant = SynConst.Single f) ->
         unifyMeasureArg (f=0.0f) g.pfloat32_tcr
         Const.Single f
-    | SynConst.Measure(SynConst.Double f, _, _) ->
+    | SynConst.Measure(constant = SynConst.Double f) ->
         unifyMeasureArg (f=0.0) g.pfloat_tcr
         Const.Double f
-    | SynConst.Measure(SynConst.Decimal f, _, _) ->
+    | SynConst.Measure(constant = SynConst.Decimal f) ->
         unifyMeasureArg false g.pdecimal_tcr
         Const.Decimal f
-    | SynConst.Measure(SynConst.SByte i, _, _) ->
+    | SynConst.Measure(constant = SynConst.SByte i)->
         unifyMeasureArg (i=0y) g.pint8_tcr
         Const.SByte i
-    | SynConst.Measure(SynConst.Int16 i, _, _) ->
+    | SynConst.Measure(constant = SynConst.Int16 i) ->
         unifyMeasureArg (i=0s) g.pint16_tcr
         Const.Int16 i
-    | SynConst.Measure(SynConst.Int32 i, _, _) ->
+    | SynConst.Measure(constant = SynConst.Int32 i) ->
         unifyMeasureArg (i=0) g.pint_tcr
         Const.Int32 i
-    | SynConst.Measure(SynConst.Int64 i, _, _) ->
+    | SynConst.Measure(constant = SynConst.Int64 i) ->
         unifyMeasureArg (i=0L) g.pint64_tcr
         Const.Int64 i
-    | SynConst.Measure(SynConst.IntPtr i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.IntPtr i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0L) g.pnativeint_tcr
         Const.IntPtr i
-    | SynConst.Measure(SynConst.Byte i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.Byte i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0uy) g.puint8_tcr
         Const.Byte i
-    | SynConst.Measure(SynConst.UInt16 i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt16 i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0us) g.puint16_tcr
         Const.UInt16 i
-    | SynConst.Measure(SynConst.UInt32 i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt32 i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0u) g.puint_tcr
         Const.UInt32 i
-    | SynConst.Measure(SynConst.UInt64 i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt64 i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0UL) g.puint64_tcr
         Const.UInt64 i
-    | SynConst.Measure(SynConst.UIntPtr i, _, _) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UIntPtr i) when expandedMeasurablesEnabled ->
         unifyMeasureArg (i=0UL) g.punativeint_tcr
         Const.UIntPtr i
     | SynConst.Char c ->

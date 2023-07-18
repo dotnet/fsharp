@@ -158,7 +158,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     | SourceIdentifier of constant: string * value: string * range: range
 

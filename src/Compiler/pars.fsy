@@ -3316,7 +3316,10 @@ constant:
     { $1, rhs parseState 1 }
 
   | rawConstant HIGH_PRECEDENCE_TYAPP measureTypeArg
-    { SynConst.Measure($1, rhs parseState 1, $3), lhs parseState }
+    { let synMeasure, trivia = $3 
+      let mConstant = rhs parseState 1
+      let m = unionRanges mConstant trivia.GreaterRange
+      SynConst.Measure($1, rhs parseState 1, synMeasure, trivia), m }
 
 bindingPattern:
   | headBindingPattern
@@ -6193,10 +6196,16 @@ dummyTypeArg:
 
 measureTypeArg:
   | LESS measureTypeExpr GREATER
-     { $2 }
+     { let mLess = rhs parseState 1
+       let mGreater = rhs parseState 3
+       let trivia = { LessRange = mLess; GreaterRange = mGreater }
+       $2, trivia }
 
   | LESS UNDERSCORE GREATER
-     { SynMeasure.Anon(lhs parseState) }
+     { let mLess = rhs parseState 1
+       let mGreater = rhs parseState 3
+       let trivia = { LessRange = mLess; GreaterRange = mGreater } 
+       SynMeasure.Anon(rhs parseState 2), trivia }
 
 measureTypeAtom:
   | path

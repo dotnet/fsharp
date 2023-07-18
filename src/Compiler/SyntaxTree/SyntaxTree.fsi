@@ -170,7 +170,7 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     /// Source Line, File, and Path Identifiers
     /// Containing both the original value as the evaluated value.

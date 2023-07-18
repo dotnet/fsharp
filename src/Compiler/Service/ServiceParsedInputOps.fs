@@ -1832,7 +1832,7 @@ module ParsedInput =
                 List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
-            | SynExpr.Const (SynConst.Measure (_, _, m), _) -> walkMeasure m
+            | SynExpr.Const(constant = SynConst.Measure (synMeasure = m)) -> walkMeasure m
             | _ -> ()
 
         and walkMeasure measure =
