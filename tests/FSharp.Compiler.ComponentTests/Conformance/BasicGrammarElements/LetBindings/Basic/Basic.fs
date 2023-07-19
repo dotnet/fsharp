@@ -118,7 +118,7 @@ module LetBindings_Basic =
     let ``E_Literals02_fsi`` compilation =
         compilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++"E_Literals02.fs"))
-        |> verifyCompile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 876, Line 12, Col 1, Line 13, Col 18, "A declaration may only be the [<Literal>] attribute if a constant value is also given, e.g. 'val x: int = 1'")
