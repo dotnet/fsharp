@@ -197,9 +197,11 @@ exception CannotRefute
 
 [<Struct>]
 [<RequireQualifiedAccess>]
-type internal CounterExampleType = 
-    | EnumCoversKnown // maps to EnumMatchIncomplete exn
-    | WithoutEnum // maps to MatchIncomplete exn
+type CounterExampleType = 
+    /// Maps to EnumMatchIncomplete exn
+    | EnumCoversKnown 
+    /// Maps to MatchIncomplete exn
+    | WithoutEnum 
     with member x.Combine(other) = match other with EnumCoversKnown -> other | _ -> x
 
 let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
