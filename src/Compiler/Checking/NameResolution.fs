@@ -3685,9 +3685,8 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
     | [] ->
         let lookup() =
             let frefs =
-                match Map.tryFind id.idText nenv.eFieldLabels with
-                | Some fields -> fields
-                | None ->
+                 try Map.find id.idText nenv.eFieldLabels
+                 with :? KeyNotFoundException ->
                     // record label is unknown -> suggest related labels and give a hint to the user
                     error(SuggestLabelsOfRelatedRecords g nenv id allFields)
 
