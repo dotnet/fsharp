@@ -764,8 +764,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILAttributes get_CustomAttrs()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv CallingConv
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingConv get_CallingConv()
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature CallingSignature
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature get_CallingSignature()
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILCallingSignature GetCallingSignature()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMemberAccess Access
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMemberAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: ILMethodBody MethodBody
@@ -825,8 +824,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodRef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILCallingConv CallingConv
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILCallingConv get_CallingConv()
-FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILCallingSignature CallingSignature
-FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILCallingSignature get_CallingSignature()
+FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILCallingSignature GetCallingSignature()
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILMethodRef Create(ILTypeRef, ILCallingConv, System.String, Int32, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILType)
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILType ReturnType
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: ILType get_ReturnType()
