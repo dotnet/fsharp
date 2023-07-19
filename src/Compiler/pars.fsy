@@ -1588,24 +1588,6 @@ tyconDefn:
            let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = None }
            SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range, trivia) }
 
-  | typeNameInfo opt_equals tyconDefnRhsBlock
-     { match $2 with
-       | Some _ -> ()
-       | None ->
-            let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
-            // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
-            let typeNameId = List.last lid
-            raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
-
-       let nameRange = rhs parseState 1
-       let (tcDefRepr: SynTypeDefnRepr), mWith, members = $3 nameRange
-       let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
-       let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem: SynMemberDefn) -> mem.Range)
-
-       fun leadingKeyword ->
-           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = $2; WithKeyword = mWith }
-           SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
-
   | typeNameInfo tyconDefnAugmentation
      { let mWithKwd, classDefns = $2
        let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
@@ -1632,11 +1614,21 @@ tyconDefn:
 
        let tcDefRepr =
          match tcDefRepr, memberCtorPattern with
+         | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None _, m), Some ctor ->
+             reportParseErrorAt m (FSComp.SR.parsEmptyTypeDefinition())
+             SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Unspecified, [ctor], unionRanges m mEquals)
+
+         | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None mName, m), _ ->
+             reportParseErrorAt m (FSComp.SR.parsEmptyTypeDefinition())
+             tcDefRepr
+
          | SynTypeDefnRepr.ObjectModel(k, cspec, m), Some ctor ->
              SynTypeDefnRepr.ObjectModel(k, ctor :: cspec, m)
+
          | _, Some ctor ->
              reportParseErrorAt (rhs2 parseState 1 5) (FSComp.SR.parsOnlyClassCanTakeValueArguments ())
              tcDefRepr
+
          | _ ->
              match az with
              | Some(_, Some id) ->
@@ -1685,7 +1677,7 @@ tyconDefn:
 
        fun leadingKeyword ->
            let trivia = { SynTypeDefnTrivia.Zero with LeadingKeyword = leadingKeyword }
-           SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None(mName), mName), members, None, mName, trivia) }
+           SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None(mName), mName), members, None, mWhole, trivia) }
 
 
 /* The right-hand-side of a type definition */
@@ -1714,6 +1706,10 @@ tyconDefnRhsBlock:
        (fun nameRange ->
            let tcDefRepr, members = $2 nameRange (checkForMultipleAugmentations m ($4 @ optClassDefn) [])
            tcDefRepr, mWith, members) }
+
+  | OBLOCKBEGIN oblockend
+     { fun mName ->
+           SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None mName, mName), None, [] }
 
   | tyconDefnRhs opt_classDefn
      { let m = rhs parseState 1
@@ -1775,7 +1771,7 @@ tyconClassDefn:
 
 /* The right-hand-side of a object type definition where the class/interface/struct kind has not been specified */
 classDefnBlockKindUnspecified:
-  | OBLOCKBEGIN classDefnMembers recover
+  | OBLOCKBEGIN classDefnMembersAtLeastOne recover
      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition())
        let mopt =
            match $2 with
@@ -1783,7 +1779,7 @@ classDefnBlockKindUnspecified:
            | _ -> None
        false, $2, mopt }
 
-  | OBLOCKBEGIN classDefnMembers oblockend
+  | OBLOCKBEGIN classDefnMembersAtLeastOne oblockend
      { let mopt =
            match $2 with
            | _ :: _ -> Some((rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d: SynMemberDefn) -> d.Range))
@@ -2428,7 +2424,7 @@ tyconDefnOrSpfnSimpleRepr:
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError mLhs
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
        let s, _ = $5
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion (rhs parseState 5)
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion parseState.LexBuffer.StrictIndentation (rhs parseState 5)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(box ilType, mLhs) }
 
 
@@ -5198,7 +5194,7 @@ inlineAssemblyExpr:
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
-            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion sm
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion parseState.LexBuffer.StrictIndentation sm
             SynExpr.LibraryOnlyILAssembly(box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:

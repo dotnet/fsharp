@@ -507,6 +507,7 @@ type EditorBraceCompletionSessionFactory() =
                     Some(document.FilePath),
                     [],
                     None,
+                    None,
                     cancellationToken
                 )
 

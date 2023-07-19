@@ -11,10 +11,12 @@ module TestCompilerWarningLevel =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level0.fs"|])>]
     let ``warn_level0_fs --warn:0`` compilation =
         compilation
+        |> withLangVersionPreview
         |> asExe
         |> withOptions ["--warn:0"]
         |> compileAndRun
         |> shouldSucceed
+        |> withDiagnostics []
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level1.fs"|])>]
     let ``warn_level1_fs --warn:1 --warnaserror:52`` compilation =
