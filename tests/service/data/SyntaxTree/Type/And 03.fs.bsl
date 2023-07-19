@@ -21,10 +21,10 @@ ImplFile
                     ([], None, [], [B],
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (5,4--5,5)),
-                  ObjectModel (Unspecified, [], (7,0--7,0)), [], None,
-                  (5,4--7,0), { LeadingKeyword = And (5,0--5,3)
-                                EqualsRange = Some (5,6--5,7)
-                                WithKeyword = None });
+                  Simple (None (5,4--5,7), (5,4--5,7)), [], None, (5,4--5,7),
+                  { LeadingKeyword = And (5,0--5,3)
+                    EqualsRange = Some (5,6--5,7)
+                    WithKeyword = None });
                SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [C],

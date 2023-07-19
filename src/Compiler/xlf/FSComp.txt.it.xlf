@@ -807,11 +807,6 @@
         <target state="translated">La stringa verbatim interpolata incompleta inizia in questa posizione o prima di essa</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Token imprevisto nella definizione del tipo. Dopo il tipo '{0}' è previsto '='.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">Previsto un criterio dopo questa posizione</target>

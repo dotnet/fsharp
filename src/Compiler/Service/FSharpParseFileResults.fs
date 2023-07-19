@@ -508,6 +508,24 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsPositionWithinTypeDefinition pos =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitComponentInfo(path, _) =
+                    let typeDefs =
+                        path
+                        |> List.filter (function
+                            | SyntaxNode.SynModule (SynModuleDecl.Types _) -> true
+                            | _ -> false)
+
+                    match typeDefs with
+                    | [] -> None
+                    | _ -> Some true
+            }
+
+        let result = SyntaxTraversal.Traverse(pos, input, visitor)
+        result.IsSome
+
     member _.IsBindingALambdaAtPosition pos =
         let visitor =
             { new SyntaxVisitorBase<_>() with
