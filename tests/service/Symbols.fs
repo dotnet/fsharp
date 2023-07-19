@@ -575,4 +575,4 @@ type BAttribute() =
     inherit System.Attribute()
 let a ([<B>] c: int) : int = 0
 """
-            (7, 5, "let a ([<B>] c: int) : int = 0", "a")
+            (5, 5, "let a ([<B>] c: int) : int = 0", "a")
