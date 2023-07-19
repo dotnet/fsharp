@@ -1751,7 +1751,7 @@ type ITypecheckResultsSink =
 
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
 
-    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: (Item -> bool) option -> unit
 
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
 
@@ -2144,7 +2144,9 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
             if isAlreadyDone endPos item m || not (allowedRange m) then () else
 
             let replaced =
-                if not replace then false else
+                match replace with
+                | None -> false
+                | Some f ->
 
                 match item with
                 | Item.MethodGroup _ ->
@@ -2154,10 +2156,10 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 | _ -> ()
 
                 match capturedNameResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
-                | -1 -> false
-                | i ->
+                | i when i >= 0 && f capturedNameResolutions[i].Item ->
                     capturedNameResolutions[i] <- CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
                     true
+                | _ -> false
 
             if not replaced then
                 capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
@@ -2211,17 +2213,17 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, false)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, None)
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+let CallNameResolutionSinkReplacing (sink: TcResultsSink) f (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, true)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, Some f)
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
