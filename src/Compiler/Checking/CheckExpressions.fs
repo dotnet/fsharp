@@ -4440,7 +4440,7 @@ and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tp
     | _, TyparKind.Measure ->
         TType_measure (Measure.Const tcref), tpenv
     | _, TyparKind.Type ->
-        TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinstEnclosing []
+        TcTypeApp cenv newOk checkConstraints occ env tpenv m m tcref tinstEnclosing []
 
 /// Some.Long.TypeName<ty1, ty2>
 /// ty1 SomeLongTypeName
@@ -4467,7 +4467,7 @@ and TcLongIdentAppType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env
     | _, TyparKind.Type ->
         if postfix && tcref.Typars m |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) then
             error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
-        TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinstEnclosing args
+        TcTypeApp cenv newOk checkConstraints occ env tpenv longId.Range m tcref tinstEnclosing args
 
     | _, TyparKind.Measure ->
         match args, postfix with
@@ -4487,7 +4487,7 @@ and TcNestedAppType (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synL
     match leftTy with
     | AppTy g (tcref, tinst) ->
         let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId
-        TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinst args
+        TcTypeApp cenv newOk checkConstraints occ env tpenv synLongId.Range m tcref tinst args
     | _ ->
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
@@ -4886,18 +4886,18 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
 /// Note that the generic type may be a nested generic type List<T>.ListEnumerator<U>.
 /// In this case, 'argsR is only the instantiation of the suffix type arguments, and pathTypeArgs gives
 /// the prefix of type arguments.
-and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathTypeArgs (synArgTys: SynType list) =
+and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv mItem mWhole tcref pathTypeArgs (synArgTys: SynType list) =
     let g = cenv.g
-    CheckTyconAccessible cenv.amap m env.AccessRights tcref |> ignore
-    CheckEntityAttributes g tcref m |> CommitOperationResult
+    CheckTyconAccessible cenv.amap mItem env.AccessRights tcref |> ignore
+    CheckEntityAttributes g tcref mItem |> CommitOperationResult
 
 #if !NO_TYPEPROVIDERS
     // Provided types are (currently) always non-generic. Their names may include mangled
     // static parameters, which are passed by the provider.
-    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys m else
+    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys mWhole else
 #endif
 
-    let tps, _, tinst, _ = FreshenTyconRef2 g m tcref
+    let tps, _, tinst, _ = FreshenTyconRef2 g mItem tcref
 
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized.
@@ -4905,22 +4905,26 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
     let synArgTysLength = synArgTys.Length
     let pathTypeArgsLength = pathTypeArgs.Length
     if tinst.Length <> pathTypeArgsLength + synArgTysLength then
-        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgsLength + synArgTysLength, m))
+        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgsLength + synArgTysLength, mWhole))
 
     let argTys, tpenv =
         // Get the suffix of typars
         let tpsForArgs = List.skip (tps.Length - synArgTysLength) tps
         let kindsForArgs = tpsForArgs |> List.map (fun tp -> tp.Kind)
-        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkConstraints occ env tpenv synArgTys m
+        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkConstraints occ env tpenv synArgTys mWhole
 
     // Add the types of the enclosing class for a nested type
     let actualArgTys = pathTypeArgs @ argTys
 
     if checkConstraints = CheckCxs then
-        List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
+        List.iter2 (UnifyTypes cenv env mWhole) tinst actualArgTys
 
     // Try to decode System.Tuple --> F# tuple types etc.
     let ty = g.decompileType tcref actualArgTys
+
+    if not actualArgTys.IsEmpty then
+        let item = Item.Types(tcref.DisplayNameCore, [ty])
+        CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
 
     ty, tpenv
 
@@ -4943,7 +4947,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
 and TcTypeAndRecover (cenv: cenv) newOk checkConstraints occ iwsam env tpenv ty =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkConstraints occ iwsam env tpenv ty
 
-and TcNestedTypeApplication (cenv: cenv) newOk checkConstraints occ iwsam env tpenv mWholeTypeApp ty pathTypeArgs tyargs =
+and TcNestedTypeApplication (cenv: cenv) newOk checkConstraints occ iwsam env tpenv mItem mWholeTypeApp ty pathTypeArgs tyargs =
     let g = cenv.g
 
     let ty = convertToTypeWithMetadataIfPossible g ty
@@ -4954,7 +4958,7 @@ and TcNestedTypeApplication (cenv: cenv) newOk checkConstraints occ iwsam env tp
     match ty with
     | TType_app(tcref, _, _) ->
         CheckIWSAM cenv env checkConstraints iwsam mWholeTypeApp tcref
-        TcTypeApp cenv newOk checkConstraints occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
+        TcTypeApp cenv newOk checkConstraints occ env tpenv mItem mWholeTypeApp tcref pathTypeArgs tyargs
     | _ ->
         error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -8052,7 +8056,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
                     | Result (tinstEnclosing, tcref) when IsEntityAccessible cenv.amap m ad tcref ->
                         match delayed with
                         | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] ->
-                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref tinstEnclosing tyargs |> ignore
+                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs mExprAndTypeArgs tcref tinstEnclosing tyargs |> ignore
                         | _ -> ()
                         true // resolved to a type name, done with checks
                     | _ ->
@@ -8272,8 +8276,12 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     | Item.CtorGroup(nm, minfos) ->
         TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed
 
-    | Item.FakeInterfaceCtor _ ->
-        error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(), mItem))
+    | Item.FakeInterfaceCtor ty ->
+        let nm =
+            match ty with
+            | TType_app(tcref, _, _) -> tcref.DisplayNameCore
+            | _ -> NicePrint.minimalStringOfType env.DisplayEnv ty
+        TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed
 
     | Item.ImplicitOp(id, sln) ->
         TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed
@@ -8485,34 +8493,40 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
 and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing delayed =
     let g = cenv.g
     let ad = env.eAccessRights
+
+    // In this case the type is not generic, and indeed we should never have returned Item.Types.
+    // That's because ResolveTypeNamesToCtors should have been set at the original
+    // call to ResolveLongIdentAsExprAndComputeRange
+    let reportWrongTypeUsageError ty m _mWithArgs =
+        if isInterfaceTy g ty then
+            error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(), m))
+        else
+            error(Error(FSComp.SR.tcInvalidUseOfTypeName(), m))
+
+    let reportTypeUsage ty =
+        let item = Item.Types(nm, [ty])
+        CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, getInst ty, ItemOccurence.Use, env.eAccessRights)
+
     match delayed with
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedDotLookup (longId, mLongId) :: otherDelayed ->
         // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs
         // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args
         // and replace them by 'tyargs'
-        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
-
-        // Report information about the whole expression including type arguments to VS
-        let item = Item.Types(nm, [ty])
-        CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs ty tinstEnclosing tyargs
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
         let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
         TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) None otherDelayed
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
-        // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
-        let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
-        let item = Item.Types(nm, [ty])
-        CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+        reportTypeUsage ty
 
-        // Same error as in the following case
-        error(Error(FSComp.SR.tcInvalidUseOfTypeName(), mItem))
+        // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
+        let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs ty tinstEnclosing tyargs
+        reportWrongTypeUsageError ty mItem mExprAndTypeArgs
 
     | _ ->
-        // In this case the type is not generic, and indeed we should never have returned Item.Types.
-        // That's because ResolveTypeNamesToCtors should have been set at the original
-        // call to ResolveLongIdentAsExprAndComputeRange
-        error(Error(FSComp.SR.tcInvalidUseOfTypeName(), mItem))
+        reportTypeUsage ty
+        reportWrongTypeUsageError ty mItem mItem
 
 and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed =
     let ad = env.eAccessRights
@@ -8578,7 +8592,7 @@ and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpen
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
-        let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
+        let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs objTy tinstEnclosing tyargs
         CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
         let itemAfterTyArgs, minfosAfterTyArgs =
 #if !NO_TYPEPROVIDERS
@@ -8599,7 +8613,7 @@ and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpen
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: otherDelayed ->
 
-        let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
+        let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs objTy tinstEnclosing tyargs
 
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
         let resolvedItem = Item.Types(nm, [objTy])
@@ -8809,7 +8823,7 @@ and TcDelegateCtorItemThen cenv overallTy env ty tinstEnclosing tpenv mItem dela
     | DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
         TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
     | DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs) :: DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
-        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
+        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItem mItemAndTypeArgs ty tinstEnclosing tyargs
 
         // Report information about the whole expression including type arguments to VS
         let item = Item.DelegateCtor ty
