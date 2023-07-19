@@ -4921,7 +4921,7 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv mItem mWhole tcr
 
     if not actualArgTys.IsEmpty then
         let item = Item.Types(tcref.DisplayNameCore, [ty])
-        CallNameResolutionSinkReplacing cenv.tcSink (function Item.Types _ -> true | _ -> false) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
+        CallNameResolutionSinkReplacing cenv.tcSink (function Item.CtorGroup _ -> false | _ -> true) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
 
     ty, tpenv
 
@@ -8495,7 +8495,7 @@ and TcTypeItemThen (cenv: cenv) overallTy occ env nm ty tpenv mItem tinstEnclosi
 
     let reportTypeUsage ty =
         let item = Item.Types(nm, [ty])
-        CallNameResolutionSinkReplacing cenv.tcSink (function Item.Types _ -> true | _ -> false) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
+        CallNameResolutionSinkReplacing cenv.tcSink (function Item.CtorGroup _ -> false | _ -> true) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
 
     match delayed with
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedDotLookup (longId, mLongId) :: otherDelayed ->
