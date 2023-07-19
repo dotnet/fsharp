@@ -10,11 +10,11 @@ open System.Threading
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open CancellableTasks
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
@@ -26,7 +26,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! _, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
-                |> liftAsync
+                |> CancellableTask.start CancellationToken.None
 
             let! unusedOpens =
                 UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()))

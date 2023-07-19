@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Threading
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
@@ -11,6 +12,8 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open CancellableTasks
+
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
@@ -68,7 +71,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
             let! parseResults, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (AddOpenCodeFixProvider))
-                |> liftAsync
+                |> CancellableTask.start context.CancellationToken
 
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)

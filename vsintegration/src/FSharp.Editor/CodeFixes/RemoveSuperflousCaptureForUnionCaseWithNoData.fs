@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveSuperfluousCapture); Shared>]
 type internal RemoveSuperflousCaptureForUnionCaseWithNoDataCodeFixProvider [<ImportingConstructor>] () =
@@ -25,7 +26,7 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataCodeFixProvider [<Imp
         backgroundTask {
 
             let! sourceText = document.GetTextAsync(ct)
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(CodeFix.RemoveSuperfluousCapture)
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(CodeFix.RemoveSuperfluousCapture) |> CancellableTask.start ct
 
             let changes =
                 seq {

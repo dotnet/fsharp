@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open CancellableTasks
 
 module UnusedCodeFixHelper =
     let getUnusedSymbol (sourceText: SourceText) (textSpan: TextSpan) (document: Document) =
@@ -24,6 +25,7 @@ module UnusedCodeFixHelper =
         // We have to use the additional check for backtickes
         if PrettyNaming.IsIdentifierName ident then
             asyncMaybe {
+                let! ct = Async.CancellationToken |> liftAsync
                 let! lexerSymbol =
                     document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
 
@@ -33,7 +35,7 @@ module UnusedCodeFixHelper =
 
                 let! _, checkResults =
                     document.GetFSharpParseAndCheckResultsAsync(CodeFix.RenameUnusedValue)
-                    |> liftAsync
+                    |> CancellableTask.start ct
 
                 return! checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
 

@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading.Tasks
+open System.Threading
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
@@ -13,6 +14,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddTypeAnnotationToObjectOfIndeterminateType); Shared>]
 type internal AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<ImportingConstructor>] () =
@@ -44,7 +46,7 @@ type internal AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<Importin
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
-                |> liftAsync
+                |> CancellableTask.start context.CancellationToken
 
             let decl =
                 checkFileResults.GetDeclarationLocation(

@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
+open CancellableTasks
 
 [<Export(typeof<IFSharpFindUsagesService>)>]
 type internal FSharpFindUsagesService [<ImportingConstructor>] () =
@@ -61,7 +62,8 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpFindUsagesService))
-                |> liftAsync
+                |> CancellableTask.start context.CancellationToken
+
 
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)

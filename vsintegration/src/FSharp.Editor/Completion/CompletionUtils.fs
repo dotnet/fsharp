@@ -191,11 +191,11 @@ module internal CompletionUtils =
             let classifiedSpans =
                 Tokenizer.getClassifiedSpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, strictIndentation, ct)
 
-            let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
+            let inline isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
                 && Tokenizer.isDoubleBacktickIdent (sourceText.ToString(classifiedSpan.TextSpan))
 
-            let isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
+            let inline isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
                 && sourceText.ToString(classifiedSpan.TextSpan).StartsWith "``"
 

@@ -67,6 +67,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             use _eventDuration =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
 
+
             let! ct = CancellableTask.getCurrentCancellationToken ()
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
@@ -74,20 +75,15 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             let! sourceText = document.GetTextAsync(ct)
             let filePath = document.FilePath
 
-            let! errors =
-                cancellableTask {
-                    match diagnosticType with
-                    | DiagnosticsType.Semantic ->
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
-                        // In order to eliminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                        let allDiagnostics = HashSet(checkResults.Diagnostics, diagnosticEqualityComparer)
-                        allDiagnostics.ExceptWith(parseResults.Diagnostics)
-                        return Seq.toArray allDiagnostics
-                    | DiagnosticsType.Syntax -> return parseResults.Diagnostics
-                }
+            let errors = HashSet<FSharpDiagnostic>(parseResults.Diagnostics, diagnosticEqualityComparer)
+
+            if diagnosticType = DiagnosticsType.Semantic then
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore // We don't care about results and if it's already here
 
             let results =
-                HashSet(errors, diagnosticEqualityComparer)
+                errors
                 |> Seq.choose (fun diagnostic ->
                     if diagnostic.StartLine = 0 || diagnostic.EndLine = 0 then
                         // F# diagnostic line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)

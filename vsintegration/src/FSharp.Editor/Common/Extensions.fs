@@ -6,6 +6,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 
@@ -284,6 +285,11 @@ module Option =
         else
             None
 
+    let inline ofValueOption vo =
+        match vo with
+        | ValueSome v -> Some(v)
+        | ValueNone -> None
+
 [<RequireQualifiedAccess>]
 module Seq =
 
@@ -291,7 +297,7 @@ module Seq =
 
 [<RequireQualifiedAccess>]
 module Array =
-    let foldi (folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
+    let inline foldi ([<InlineIfLambda>] folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
         let mutable state = state
         let mutable i = 0
 
@@ -302,6 +308,17 @@ module Array =
         state
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
+
+[<RequireQualifiedAccess>]
+module List =
+    let rec tryFindV predicate list =
+        match list with
+        | [] -> ValueNone
+        | h :: t ->
+            if predicate h then
+                ValueSome h
+            else
+                tryFindV predicate t
 
 [<RequireQualifiedAccess>]
 module Exception =
@@ -345,3 +362,39 @@ type Async with
 
             task.Result
         | _ -> Async.RunSynchronously(computation, ?cancellationToken = cancellationToken)
+
+[<RequireQualifiedAccess>]
+module IEnumerator =
+    let inline chooseV f (e: IEnumerator<'T>) =
+        let mutable started = false
+        let mutable curr = None
+
+        let get () =
+            check started
+
+            match curr with
+            | None -> alreadyFinished ()
+            | Some x -> x
+
+        { new IEnumerator<'U> with
+            member _.Current = get ()
+          interface IEnumerator with
+              member _.Current = box (get ())
+
+              member _.MoveNext() =
+                  if not started then
+                      started <- true
+
+                  curr <- None
+
+                  while (curr.IsNone && e.MoveNext()) do
+                      curr <- f e.Current
+
+                  Option.isSome curr
+
+              member _.Reset() =
+                  noReset ()
+          interface System.IDisposable with
+              member _.Dispose() =
+                  e.Dispose()
+        }

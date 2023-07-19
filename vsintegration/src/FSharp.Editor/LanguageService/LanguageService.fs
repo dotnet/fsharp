@@ -190,15 +190,14 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
-                                        backgroundTask {
+                                        cancellableTask {
                                             let document = args.NewSolution.GetDocument(args.DocumentId)
 
                                             let! _, _, _, options =
                                                 document.GetFSharpCompilationOptionsAsync(nameof (workspace.WorkspaceChanged))
 
                                             do! checker.NotifyFileChanged(document.FilePath, options)
-                                        }
-                                        |> ignore)
+                                        } |> CancellableTask.startAsTask CancellationToken.None |> ignore)
 
                             checker
 

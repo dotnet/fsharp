@@ -13,13 +13,17 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open CancellableTasks
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! ct = Async.CancellationToken |> liftAsync
+            let! _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync(userOpName)
+                |> CancellableTask.start ct
             let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
@@ -79,11 +83,14 @@ module internal SymbolHelpers =
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
+                let tasks =
+                    [|
+                        for project in projects do
+                            yield project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects") |> CancellableTask.startAsTask ct
+                    |]
+
                 do!
-                    projects
-                    |> Seq.map (fun project ->
-                        Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
-                    |> Task.WhenAll
+                    Task.WhenAll tasks
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }

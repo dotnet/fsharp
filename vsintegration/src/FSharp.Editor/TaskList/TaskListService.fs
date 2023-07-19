@@ -13,15 +13,17 @@ open FSharp.Compiler
 open System.Collections.Immutable
 
 open System.Diagnostics
+open CancellableTasks
 
 [<Export(typeof<IFSharpTaskListService>)>]
 type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
     let getDefinesAndLangVersion (doc: Microsoft.CodeAnalysis.Document) =
         asyncMaybe {
+            let! ct = Async.CancellationToken |> liftAsync
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
-                |> liftAsync
+                |> CancellableTask.start ct
 
             return
                 CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,
