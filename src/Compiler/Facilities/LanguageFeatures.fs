@@ -165,7 +165,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedStringInterpolation, previewVersion
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
-                LanguageFeature.DiagnosticForObjInference, previewVersion         
+                LanguageFeature.DiagnosticForObjInference, previewVersion
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
