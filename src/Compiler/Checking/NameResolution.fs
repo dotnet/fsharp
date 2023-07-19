@@ -2143,11 +2143,13 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if isAlreadyDone endPos item m || not (allowedRange m) then () else
 
-            let replaced =
-                match replace with
-                | None -> false
-                | Some f ->
+            let cnr = CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
 
+            match replace with
+            | None ->
+                capturedNameResolutions.Add(cnr)
+
+            | Some f ->
                 match item with
                 | Item.MethodGroup _ ->
                     match capturedMethodGroupResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
@@ -2156,13 +2158,11 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 | _ -> ()
 
                 match capturedNameResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
-                | i when i >= 0 && f capturedNameResolutions[i].Item ->
-                    capturedNameResolutions[i] <- CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
-                    true
-                | _ -> false
-
-            if not replaced then
-                capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+                | i when i >= 0 ->
+                    if f capturedNameResolutions[i].Item then
+                        capturedNameResolutions[i] <- cnr
+                | _ ->
+                    capturedNameResolutions.Add(cnr)
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
