@@ -341,7 +341,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) /p:LangVersion=preview
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) /p:FSharpLangVersion=preview
             displayName: Build
 
           - task: PublishBuildArtifacts@1
