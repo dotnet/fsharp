@@ -562,7 +562,7 @@ open System.Collections.Immutable
 type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =
     class end
 """
-            (8, 29, "type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =", ".ctor")
+            (6, 29, "type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =", ".ctor")
 #endif
 
     [<Test>]
