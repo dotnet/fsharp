@@ -107,7 +107,7 @@ type InterfaceData =
                 function
                 | SynRationalConst.Integer (value = i) -> string i
                 | SynRationalConst.Rational (numerator = numerator; denominator = denominator) -> sprintf "(%i/%i)" numerator denominator
-                | SynRationalConst.Negate (RationalConst s) -> sprintf "- %s" s
+                | SynRationalConst.Negate (rationalConst = (RationalConst s)) -> sprintf "- %s" s
 
             let rec (|TypeIdent|_|) =
                 function

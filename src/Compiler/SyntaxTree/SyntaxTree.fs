@@ -197,7 +197,7 @@ type SynRationalConst =
 
     | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =

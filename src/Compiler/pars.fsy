@@ -3288,7 +3288,7 @@ rationalConstant:
     { if $3 <> "/" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if fst $4 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
       if (snd $2) || (snd $4) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, rhs parseState 2, fst $4, rhs parseState 4, lhs parseState)) }
+      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, rhs parseState 2, fst $4, rhs parseState 4, lhs parseState), lhs parseState) }
 
   | INT32
     { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
@@ -3296,7 +3296,7 @@ rationalConstant:
 
   | MINUS INT32
     { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, lhs parseState)) }
+      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, lhs parseState), lhs parseState) }
 
 atomicUnsignedRationalConstant:
   | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
@@ -3309,7 +3309,7 @@ atomicRationalConstant:
   | atomicUnsignedRationalConstant { $1 }
 
   | MINUS atomicUnsignedRationalConstant
-    { SynRationalConst.Negate($2) }
+    { SynRationalConst.Negate($2, lhs parseState) }
 
 constant:
   | rawConstant
@@ -5846,7 +5846,9 @@ appTypeCon:
 appTypeConPower:
   | appTypeCon INFIX_AT_HAT_OP atomicRationalConstant
     { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator())
-      if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+      if $2 = "^-" then
+          let m = unionRanges (rhs parseState 2).EndRange (rhs parseState 3)  // include MINUS in Negate range
+          SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
       else SynType.MeasurePower($1, $3, lhs parseState) }
 
   | appTypeCon
@@ -6003,7 +6005,9 @@ powerType:
 
   | atomTypeOrAnonRecdType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator())
-       if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+       if $2 = "^-" then
+           let m = unionRanges (rhs parseState 2).EndRange (rhs parseState 3)  // include MINUS in Negate range
+           SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynType.MeasurePower($1, $3, lhs parseState) }
 
 
@@ -6224,7 +6228,9 @@ measureTypePower:
 
   | measureTypeAtom INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-       if $2 = "^-" then SynMeasure.Power($1, SynRationalConst.Negate($3), lhs parseState)
+       if $2 = "^-" then
+           let m = unionRanges (rhs parseState 2).EndRange (rhs parseState 3)  // include MINUS in Negate range
+           SynMeasure.Power($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynMeasure.Power($1, $3, lhs parseState) }
 
   | INT32

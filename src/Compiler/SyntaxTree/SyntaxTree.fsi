@@ -218,7 +218,7 @@ type SynRationalConst =
 
     | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
 [<RequireQualifiedAccess>]

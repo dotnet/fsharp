@@ -8153,8 +8153,10 @@ FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range get_
 FSharp.Compiler.Syntax.SynRationalConst+Integer: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 get_value()
 FSharp.Compiler.Syntax.SynRationalConst+Integer: Int32 value
-FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Syntax.SynRationalConst Item
-FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Syntax.SynRationalConst get_Item()
+FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Syntax.SynRationalConst get_rationalConst()
+FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Syntax.SynRationalConst rationalConst
+FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynRationalConst+Negate: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynRationalConst+Rational: FSharp.Compiler.Text.Range denominatorRange
 FSharp.Compiler.Syntax.SynRationalConst+Rational: FSharp.Compiler.Text.Range get_denominatorRange()
 FSharp.Compiler.Syntax.SynRationalConst+Rational: FSharp.Compiler.Text.Range get_numeratorRange()
@@ -8175,7 +8177,7 @@ FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsInteger()
 FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsNegate()
 FSharp.Compiler.Syntax.SynRationalConst: Boolean get_IsRational()
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewInteger(Int32, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewNegate(FSharp.Compiler.Syntax.SynRationalConst)
+FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewNegate(FSharp.Compiler.Syntax.SynRationalConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst NewRational(Int32, FSharp.Compiler.Text.Range, Int32, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst+Integer
 FSharp.Compiler.Syntax.SynRationalConst: FSharp.Compiler.Syntax.SynRationalConst+Negate

@@ -754,7 +754,7 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
 let rec TcSynRationalConst c =
   match c with
   | SynRationalConst.Integer(value = i) -> intToRational i
-  | SynRationalConst.Negate c2 -> NegRational (TcSynRationalConst c2)
+  | SynRationalConst.Negate(rationalConst = c2) -> NegRational (TcSynRationalConst c2)
   | SynRationalConst.Rational(numerator = p; denominator = q) -> DivRational (intToRational p) (intToRational q)
 
 /// Typecheck constant terms in expressions and patterns
