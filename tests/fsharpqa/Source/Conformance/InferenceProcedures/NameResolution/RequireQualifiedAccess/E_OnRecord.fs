@@ -3,6 +3,7 @@
 // has the RequireQualifiedAccess attribute.
 
 //<Expects id="FS0039" status="error">The record label 'Field1' is not defined\.</Expects>
+//<Expects id="FS0039" status="error">The record label 'Field1' is not defined\.</Expects>
 
 [<RequireQualifiedAccess>]
 type R = { Field1 : int; Field2 : string }

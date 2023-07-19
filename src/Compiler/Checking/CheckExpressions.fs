@@ -1807,17 +1807,10 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     let fldResolutions =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
-        |> List.choose (fun (fld, fldExpr) ->
-            try
-                let fldPath, fldId = fld
-                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
-                Some(fld, frefSet, fldExpr)
-            with e ->
-                errorRecoveryNoRange e
-                None
-        )
-
-    if fldResolutions.IsEmpty then None else
+        |> List.map (fun (fld, fldExpr) ->
+            let (fldPath, fldId) = fld
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
+            fld, frefSet, fldExpr)
 
     let relevantTypeSets =
         fldResolutions |> List.map (fun (_, frefSet, _) ->
@@ -1877,7 +1870,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                         Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr) :: rfldsList
 
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
-    Some(tinst, tcref, fldsmap, List.rev rfldsList)
+    tinst, tcref, fldsmap, List.rev rfldsList
 
 let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env overallTy item =
     let g = cenv.g
@@ -7373,10 +7366,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         match flds with
         | [] -> []
         | _ ->
-            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
-            | None -> []
-            | Some(tinst, tcref, _, fldsList) ->
-
+            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let gtyp = mkAppTy tcref tinst
             UnifyTypes cenv env mWholeExpr overallTy gtyp
 
@@ -7407,7 +7397,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             error(Error(errorInfo, mWholeExpr))
 
         if isFSharpObjModelTy g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(), mWholeExpr))
-        elif not (isRecdTy g overallTy || fldsList.IsEmpty) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
+        elif not (isRecdTy g overallTy) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
 
     let superInitExprOpt , tpenv =
         match inherits, GetSuperTypeOfType g cenv.amap mWholeExpr overallTy with
@@ -7425,18 +7415,14 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    if fldsList.IsEmpty && isTyparTy g overallTy then
-        SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
-        mkDefault (mWholeExpr, overallTy), tpenv
-    else
-        let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
-        let expr =
-            match superInitExprOpt  with
-            | _ when isStructTy g overallTy -> expr
-            | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
-            | None -> expr
-        expr, tpenv
+    let expr =
+        match superInitExprOpt  with
+        | _ when isStructTy g overallTy -> expr
+        | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
+        | None -> expr
+    expr, tpenv
 
 
 // Check '{| .... |}'
