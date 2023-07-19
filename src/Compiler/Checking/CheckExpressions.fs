@@ -203,27 +203,27 @@ let AddLocalValPrimitive g (v: Val) env =
 
 /// Add a table of local values to TcEnv
 let AddLocalValMap g tcSink scopem (vals: Val NameMap) env =
-    let env =
-        if vals.IsEmpty then
-            env
-        else
+    if vals.IsEmpty then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValMapToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a list of local values to TcEnv and report them to the sink
 let AddLocalVals g tcSink scopem (vals: Val list) env =
-    let env =
-        if isNil vals then
-            env
-        else
+    if isNil vals then
+        env
+    else
+        let env =
             { env with
                 eNameResEnv = AddValListToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
-    env
+        CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+        env
 
 /// Add a local value to TcEnv and report it to the sink
 let AddLocalVal g tcSink scopem v env =
@@ -235,9 +235,11 @@ let AddLocalVal g tcSink scopem v env =
 
 /// Add a set of explicitly declared type parameters as being available in the TcEnv
 let AddDeclaredTypars check typars env =
-    if isNil typars then env else
-    let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
-    { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+    if isNil typars then
+        env
+    else
+        let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
+        { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
 
 /// Environment of implicitly scoped type parameters, e.g. 'a in "(x: 'a)"
 
@@ -1807,17 +1809,10 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     let fldResolutions =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
-        |> List.choose (fun (fld, fldExpr) ->
-            try
-                let fldPath, fldId = fld
-                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
-                Some(fld, frefSet, fldExpr)
-            with e ->
-                errorRecoveryNoRange e
-                None
-        )
-
-    if fldResolutions.IsEmpty then None else
+        |> List.map (fun (fld, fldExpr) ->
+            let (fldPath, fldId) = fld
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
+            fld, frefSet, fldExpr)
 
     let relevantTypeSets =
         fldResolutions |> List.map (fun (_, frefSet, _) ->
@@ -1877,7 +1872,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                         Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr) :: rfldsList
 
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
-    Some(tinst, tcref, fldsmap, List.rev rfldsList)
+    tinst, tcref, fldsmap, List.rev rfldsList
 
 let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env overallTy item =
     let g = cenv.g
@@ -1919,7 +1914,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let ad = env.eAccessRights
 
     let mkf, argTys, _argNames =
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false m ad env.eNameResEnv TypeNameResolutionInfo.Default longId ExtraDotAfterIdentifier.No with
         | Item.UnionCase _ | Item.ExnCase _ as item ->
             ApplyUnionCaseOrExn funcs m cenv env ty1 item
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
@@ -2404,11 +2399,13 @@ module BindingNormalization =
             | SynPat.FromParseError(innerPat, _) ->
                 normPattern innerPat
 
-            | SynPat.LongIdent (SynLongIdent(longId, _, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _) as synLongId, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
-                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+                    let extraDot = if synLongId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
+
+                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
                     | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
@@ -3926,7 +3923,7 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     // Skip over LAM tps. Choose 'a.
     if vspec.IsInstanceMember then
         let rec firstArg e =
-          match stripDebugPoints e with
+            match stripDebugPoints e with
             | Expr.TyLambda (_, _, b, _, _) -> firstArg b
             | Expr.TyChoose (_, b, _) -> firstArg b
             | Expr.Lambda (_, _, _, [v], _, _, _) -> Some v
@@ -7373,10 +7370,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         match flds with
         | [] -> []
         | _ ->
-            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
-            | None -> []
-            | Some(tinst, tcref, _, fldsList) ->
-
+            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let gtyp = mkAppTy tcref tinst
             UnifyTypes cenv env mWholeExpr overallTy gtyp
 
@@ -7407,7 +7401,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             error(Error(errorInfo, mWholeExpr))
 
         if isFSharpObjModelTy g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(), mWholeExpr))
-        elif not (isRecdTy g overallTy || fldsList.IsEmpty) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
+        elif not (isRecdTy g overallTy) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
 
     let superInitExprOpt , tpenv =
         match inherits, GetSuperTypeOfType g cenv.amap mWholeExpr overallTy with
@@ -7425,18 +7419,14 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    if fldsList.IsEmpty && isTyparTy g overallTy then
-        SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
-        mkDefault (mWholeExpr, overallTy), tpenv
-    else
-        let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
-        let expr =
-            match superInitExprOpt  with
-            | _ when isStructTy g overallTy -> expr
-            | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
-            | None -> expr
-        expr, tpenv
+    let expr =
+        match superInitExprOpt  with
+        | _ when isStructTy g overallTy -> expr
+        | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
+        | None -> expr
+    expr, tpenv
 
 
 // Check '{| .... |}'

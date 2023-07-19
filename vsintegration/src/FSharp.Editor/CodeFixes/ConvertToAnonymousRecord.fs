@@ -21,16 +21,11 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (ConvertToAnonymousRecordCodeFixProvider))
-
-                let! sourceText = document.GetTextAsync(cancellationToken)
-
-                let errorRange =
-                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof ConvertToAnonymousRecordCodeFixProvider)
+                let! sourceText = context.GetSourceTextAsync()
+                let! errorRange = context.GetErrorRangeAsync()
 
                 return
                     parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start

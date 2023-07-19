@@ -12,6 +12,16 @@
         <target state="translated">항상 최상위에 open 문 배치</target>
         <note />
       </trans-unit>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="new">Background analysis</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Capture_Identifiers_When_Parsing">
         <source>Capture identifiers while parsing</source>
         <target state="new">Capture identifiers while parsing</target>
@@ -139,7 +149,7 @@
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">반환 형식 힌트 표시(미리 보기)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

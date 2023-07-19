@@ -62,6 +62,7 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
     | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
 type LanguageVersion =

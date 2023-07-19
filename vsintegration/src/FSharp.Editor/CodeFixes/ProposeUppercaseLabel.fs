@@ -2,32 +2,45 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.Diagnostics
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
-type internal ProposeUpperCaseLabelCodeFixProvider [<ImportingConstructor>] () =
+open CancellableTasks
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ProposeUppercaseLabel); Shared>]
+type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0053")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0053"
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let textChanger (originalText: string) =
-                originalText.[0].ToString().ToUpper() + originalText.Substring(1)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let! solutionChanger, originalText = SymbolHelpers.changeAllSymbolReferences (context.Document, context.Span, textChanger)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! errorText = context.GetSquigglyTextAsync()
 
-            let title =
-                CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion <| textChanger originalText)
+                // probably not the 100% robust way to do that
+                // but actually we could also just implement the code fix for this case as well
+                if errorText.StartsWith "exception " then
+                    return None
+                else
+                    let upperCased = string (Char.ToUpper errorText[0]) + errorText.Substring(1)
 
-            context.RegisterCodeFix(CodeAction.Create(title, solutionChanger, title), context.Diagnostics)
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    let title =
+                        CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion upperCased)
+
+                    return
+                        (Some
+                            {
+                                Name = CodeFix.ProposeUppercaseLabel
+                                Message = title
+                                Changes = [ TextChange(TextSpan(context.Span.Start, context.Span.Length), upperCased) ]
+                            })
+            }

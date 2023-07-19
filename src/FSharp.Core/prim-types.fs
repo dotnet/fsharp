@@ -374,6 +374,11 @@ namespace Microsoft.FSharp.Core
     type NoCompilerInliningAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute() =
+        inherit System.Attribute()
+
 #if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 

@@ -951,6 +951,7 @@ module MutRecBindingChecking =
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)     
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
 
+                        | Some (SynMemberDefn.Member(SynBinding(headPat = SynPat.Wild _; expr = SynExpr.ArbitraryAfterError _), _)), _ ->
                         | Some (SynMemberDefn.Member(SynBinding(headPat = SynPat.FromParseError(SynPat.Wild _, _)), _)), _ ->
                             [], innerState
 
@@ -2320,7 +2321,7 @@ module TcExceptionDeclarations =
 
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
-        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
+        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
@@ -4199,6 +4200,7 @@ module TcDeclarations =
         // Convert auto properties to let bindings in the pre-list
         let rec preAutoProps memb =
             match memb with 
+            | SynMemberDefn.AutoProperty(ident = id) when id.idText = "" -> []
             | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; xmlDoc=xmlDoc; synExpr=synExpr; range=mWholeAutoProp) -> 
                 // Only the keep the field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
@@ -4226,6 +4228,7 @@ module TcDeclarations =
         // Convert auto properties to member bindings in the post-list
         let rec postAutoProps memb =
             match memb with 
+            | SynMemberDefn.AutoProperty(ident = id) when id.idText = "" -> []
             | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes

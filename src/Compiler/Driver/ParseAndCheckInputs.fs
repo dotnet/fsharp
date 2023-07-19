@@ -710,7 +710,7 @@ let parseInputStreamAux
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -726,7 +726,7 @@ let parseInputSourceTextAux
     ) =
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -738,7 +738,7 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -1472,11 +1472,10 @@ type NodeToTypeCheck =
     /// Even though the actual implementation file was not type-checked.
     | ArtificialImplFile of signatureFileIndex: FileIndex
 
-let folder (state: State) (finisher: Finisher<State, FinalFileResult>) : FinalFileResult * State = finisher.Invoke(state)
-
 /// Typecheck a single file (or interactive entry into F# Interactive)
 /// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
 let CheckOneInputWithCallback
+    (node: NodeToTypeCheck)
     ((checkForErrors,
       tcConfig: TcConfig,
       tcImports: TcImports,
@@ -1486,7 +1485,7 @@ let CheckOneInputWithCallback
       tcState: TcState,
       inp: ParsedInput,
       _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<Finisher<TcState, PartialResult>> =
+    : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     cancellable {
         try
             CheckSimulateException tcConfig
@@ -1535,25 +1534,29 @@ let CheckOneInputWithCallback
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
 
                 return
-                    Finisher(fun tcState ->
-                        let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
+                    Finisher(
+                        node,
+                        (fun tcState ->
+                            let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
-                        let tcSigEnv =
-                            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+                            let tcSigEnv =
+                                AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
-                        // Add the signature to the signature env (unless it had an explicit signature)
-                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+                            // Add the signature to the signature env (unless it had an explicit signature)
+                            let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
-                        let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
+                            let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
 
-                        let tcState =
-                            { tcState with
-                                tcsTcSigEnv = tcSigEnv
-                                tcsRootSigs = rootSigs
-                                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
+                            let tcState =
+                                { tcState with
+                                    tcsTcSigEnv = tcSigEnv
+                                    tcsRootSigs = rootSigs
+                                    tcsCreatesGeneratedProvidedTypes =
+                                        tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
 
-                        partialResult, tcState)
+                            partialResult, tcState)
+                    )
 
             | ParsedInput.ImplFile file ->
                 let qualNameOfFile = file.QualifiedName
@@ -1579,29 +1582,32 @@ let CheckOneInputWithCallback
                     )
 
                 return
-                    Finisher(fun tcState ->
-                        // Check if we've already seen an implementation for this fragment
-                        if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                    Finisher(
+                        node,
+                        (fun tcState ->
+                            // Check if we've already seen an implementation for this fragment
+                            if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+                                errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
 
-                        let ccuSigForFile, fsTcState =
-                            AddCheckResultsToTcState
-                                (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
-                                tcState
+                            let ccuSigForFile, fsTcState =
+                                AddCheckResultsToTcState
+                                    (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
+                                    tcState
 
-                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                            let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
 
-                        let tcState =
-                            { fsTcState with
-                                tcsCreatesGeneratedProvidedTypes =
-                                    fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
+                            let tcState =
+                                { fsTcState with
+                                    tcsCreatesGeneratedProvidedTypes =
+                                        fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
 
-                        partialResult, tcState)
+                            partialResult, tcState)
+                    )
 
         with e ->
             errorRecovery e range0
-            return Finisher(fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState)
+            return Finisher(node, (fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState))
     }
 
 let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
@@ -1625,6 +1631,106 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
                 tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
 
             partialResult, tcState
+
+module private TypeCheckingGraphProcessing =
+    open FSharp.Compiler.GraphChecking.GraphProcessing
+
+    // TODO Do we need to suppress some error logging if we
+    // TODO apply the same partial results multiple times?
+    // TODO Maybe we can enable logging only for the final fold
+    /// <summary>
+    /// Combine type-checking results of dependencies needed to type-check a 'higher' node in the graph
+    /// </summary>
+    /// <param name="emptyState">Initial state</param>
+    /// <param name="deps">Direct dependencies of a node</param>
+    /// <param name="transitiveDeps">Transitive dependencies of a node</param>
+    /// <param name="folder">A way to fold a single result into existing state</param>
+    let private combineResults
+        (emptyState: State)
+        (deps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (transitiveDeps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (folder: State -> Finisher<NodeToTypeCheck, State, FinalFileResult> -> State)
+        : State =
+        match deps with
+        | [||] -> emptyState
+        | _ ->
+            // Instead of starting with empty state,
+            // reuse state produced by the dependency with the biggest number of transitive dependencies.
+            // This is to reduce the number of folds required to achieve the final state.
+            let biggestDependency =
+                let sizeMetric (node: ProcessedNode<_, _>) = node.Info.TransitiveDeps.Length
+                deps |> Array.maxBy sizeMetric
+
+            let firstState = biggestDependency.Result |> fst
+
+            // Find items not already included in the state.
+            let itemsPresent =
+                set
+                    [|
+                        yield! biggestDependency.Info.TransitiveDeps
+                        yield biggestDependency.Info.Item
+                    |]
+
+            let resultsToAdd =
+                transitiveDeps
+                |> Array.filter (fun dep -> itemsPresent.Contains dep.Info.Item = false)
+                |> Array.distinctBy (fun dep -> dep.Info.Item)
+                |> Array.sortWith (fun a b ->
+                    // We preserve the order in which items are folded to the state.
+                    match a.Info.Item, b.Info.Item with
+                    | NodeToTypeCheck.PhysicalFile aIdx, NodeToTypeCheck.PhysicalFile bIdx
+                    | NodeToTypeCheck.ArtificialImplFile aIdx, NodeToTypeCheck.ArtificialImplFile bIdx -> aIdx.CompareTo bIdx
+                    | NodeToTypeCheck.PhysicalFile _, NodeToTypeCheck.ArtificialImplFile _ -> -1
+                    | NodeToTypeCheck.ArtificialImplFile _, NodeToTypeCheck.PhysicalFile _ -> 1)
+                |> Array.map (fun dep -> dep.Result |> snd)
+
+            // Fold results not already included and produce the final state
+            let state = Array.fold folder firstState resultsToAdd
+            state
+
+    /// <summary>
+    /// Process a graph of items.
+    /// A version of 'GraphProcessing.processGraph' with a signature specific to type-checking.
+    /// </summary>
+    let processTypeCheckingGraph
+        (graph: Graph<NodeToTypeCheck>)
+        (work: NodeToTypeCheck -> State -> Finisher<NodeToTypeCheck, State, FinalFileResult>)
+        (emptyState: State)
+        (ct: CancellationToken)
+        : (int * FinalFileResult) list * State =
+
+        let workWrapper
+            (getProcessedNode: NodeToTypeCheck -> ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>>)
+            (node: NodeInfo<NodeToTypeCheck>)
+            : State * Finisher<NodeToTypeCheck, State, FinalFileResult> =
+            let folder (state: State) (Finisher (finisher = finisher)) : State = finisher state |> snd
+            let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
+
+            let transitiveDeps =
+                node.TransitiveDeps
+                |> Array.except [| node.Item |]
+                |> Array.map getProcessedNode
+
+            let inputState = combineResults emptyState deps transitiveDeps folder
+
+            let singleRes = work node.Item inputState
+            let state = folder inputState singleRes
+            state, singleRes
+
+        let results = processGraph graph workWrapper ct
+
+        let finalFileResults, state: (int * FinalFileResult) list * State =
+            (([], emptyState),
+             results
+             |> Array.choose (fun (item, res) ->
+                 match item with
+                 | NodeToTypeCheck.ArtificialImplFile _ -> None
+                 | NodeToTypeCheck.PhysicalFile file -> Some(file, res)))
+            ||> Array.fold (fun (fileResults, state) (item, (_, Finisher (finisher = finisher))) ->
+                let fileResult, state = finisher state
+                (item, fileResult) :: fileResults, state)
+
+        finalFileResults, state
 
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
@@ -1711,38 +1817,51 @@ let CheckMultipleInputsUsingGraphMode
     // somewhere in the files processed prior to each one, or in the processing of this particular file.
     let priorErrors = checkForErrors ()
 
-    let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : Finisher<State, PartialResult> =
-        Finisher(fun (state: State) ->
-            let tcState, currentPriorErrors = state
+    let processArtificialImplFile
+        (node: NodeToTypeCheck)
+        (input: ParsedInput)
+        ((currentTcState, _currentPriorErrors): State)
+        : Finisher<NodeToTypeCheck, State, PartialResult> =
+        Finisher(
+            node,
+            (fun (state: State) ->
+                let tcState, currentPriorErrors = state
 
-            let f =
-                // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
-                AddSignatureResultToTcImplEnv(tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, currentTcState, input)
+                let f =
+                    // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                    AddSignatureResultToTcImplEnv(tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, currentTcState, input)
 
-            // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
-            // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
-            let partialResult, nextTcState = f tcState
-            partialResult, (nextTcState, currentPriorErrors))
+                // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
+                // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
+                let partialResult, nextTcState = f tcState
+                partialResult, (nextTcState, currentPriorErrors))
+        )
 
     let processFile
+        (node: NodeToTypeCheck)
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
-        : Finisher<State, PartialResult> =
+        : Finisher<NodeToTypeCheck, State, PartialResult> =
         use _ = UseDiagnosticsLogger logger
         let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
         let tcSink = TcResultsSink.NoSink
 
-        let finisher =
-            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+        let (Finisher (finisher = finisher)) =
+            CheckOneInputWithCallback
+                node
+                (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
             |> Cancellable.runWithoutCancellation
 
-        Finisher(fun (state: State) ->
-            let tcState, priorErrors = state
-            let (partialResult: PartialResult, tcState) = finisher.Invoke(tcState)
-            let hasErrors = logger.ErrorCount > 0
-            let priorOrCurrentErrors = priorErrors || hasErrors
-            let state: State = tcState, priorOrCurrentErrors
-            partialResult, state)
+        Finisher(
+            node,
+            (fun (state: State) ->
+                let tcState, priorErrors = state
+                let (partialResult: PartialResult, tcState) = finisher tcState
+                let hasErrors = logger.ErrorCount > 0
+                let priorOrCurrentErrors = priorErrors || hasErrors
+                let state: State = tcState, priorOrCurrentErrors
+                partialResult, state)
+        )
 
     UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1753,30 +1872,19 @@ let CheckMultipleInputsUsingGraphMode
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
                 input, logger)
 
-        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<State, PartialResult> =
+        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
             match node with
             | NodeToTypeCheck.ArtificialImplFile idx ->
                 let parsedInput, _ = inputsWithLoggers[idx]
-                processArtificialImplFile parsedInput state
+                processArtificialImplFile node parsedInput state
             | NodeToTypeCheck.PhysicalFile idx ->
                 let parsedInput, logger = inputsWithLoggers[idx]
-                processFile (parsedInput, logger) state
+                processFile node (parsedInput, logger) state
 
         let state: State = tcState, priorErrors
 
-        let finalStateItemChooser node =
-            match node with
-            | NodeToTypeCheck.ArtificialImplFile _ -> None
-            | NodeToTypeCheck.PhysicalFile file -> Some file
-
         let partialResults, (tcState, _) =
-            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, FinalFileResult>
-                nodeGraph
-                processFile
-                folder
-                finalStateItemChooser
-                state
-                cts.Token
+            TypeCheckingGraphProcessing.processTypeCheckingGraph nodeGraph processFile state cts.Token
 
         let partialResults =
             partialResults

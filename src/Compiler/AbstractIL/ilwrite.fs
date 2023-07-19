@@ -3803,6 +3803,7 @@ type options =
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
+     referenceAssemblySignatureHash : int option
      pathMap: PathMap }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
@@ -4130,11 +4131,17 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
               | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
           let hCode = sha.ComputeHash code
-          let hData = sha.ComputeHash data
-          let hMeta = sha.ComputeHash metadata
+          let hData = sha.ComputeHash data   
+          // Not yet suitable for the mvidsection optimization           
 
-          // Not yet suitable for the mvidsection optimization 
-          let deterministicId = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+          let deterministicId = 
+            [| hCode
+               hData
+               match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
+               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
+               | _ -> sha.ComputeHash metadata |] 
+            |> Array.collect id 
+            |> sha.ComputeHash
           let deterministicMvid () = deterministicId[0..15]
           let pdbData =
             // Hash code, data and metadata
@@ -4550,7 +4557,7 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
-    let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None }
+    let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None; referenceAssemblySignatureHash = None }
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
         writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
 

@@ -2,7 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
@@ -15,4 +15,4 @@ type FSharpCodeFix =
     }
 
 type IFSharpCodeFixProvider =
-    abstract member GetCodeFixIfAppliesAsync: document: Document -> span: TextSpan -> CancellableTask<FSharpCodeFix option>
+    abstract member GetCodeFixIfAppliesAsync: context: CodeFixContext -> CancellableTask<FSharpCodeFix option>

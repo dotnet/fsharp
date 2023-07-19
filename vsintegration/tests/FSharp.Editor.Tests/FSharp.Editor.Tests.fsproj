@@ -38,7 +38,17 @@
     <Compile Include="CodeFixes\ChangeToUpcastTests.fs" />
     <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctionsTests.fs" />
     <Compile Include="CodeFixes\WrapExpressionInParenthesesTests.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpLambdaToFSharpLambdaTests.fs" />
     <Compile Include="CodeFixes\RemoveReturnOrYieldTests.fs" />
+    <Compile Include="CodeFixes\MakeOuterBindingRecursiveTests.fs" />
+    <Compile Include="CodeFixes\AddMissingFunKeywordTests.fs" />
+    <Compile Include="CodeFixes\ProposeUppercaseLabelTests.fs" />
+    <Compile Include="CodeFixes\UseTripleQuotedInterpolationTests.fs" />
+    <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpressionTests.fs" />
+    <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpressionTests.fs" />
+    <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinitionTests.fs" />
+    <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpressionTests.fs" />
+    <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtractionTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

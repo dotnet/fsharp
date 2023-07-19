@@ -4289,33 +4289,51 @@ type AnonRecdTypeInfo =
       mutable Stamp: Stamp
 
       mutable SortedNames: string[]
+
+      mutable IlTypeName : int64
     }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
-        // Hash all the data to form a unique stamp
-        let stamp = 
-            sha1HashInt64 
+
+        // Hash all the data to form a unique stamp.
+        // This used to be used as an input for generating IL type name, however the stamp generation
+        // had to be modified to fix #6411, and the IL type name must remain unchanged for back compat reasons.
+        let stamp =
+            sha1HashInt64
                 [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
                    match tupInfo with 
                    | TupInfo.Const b -> yield (if b then 0uy else 1uy)
                    for id in sortedIds do 
+                       for c in id.idText do yield byte c; yield byte (int32 c >>> 8)
+                       yield 0uy |]
+
+        // Hash data to form a code used in generating IL type name.
+        // To maintain backward compatibility this should not be changed.
+        let ilName =
+            sha1HashInt64
+                [| for c in ccu.AssemblyName do yield byte c; yield byte (int32 c >>> 8)
+                   match tupInfo with
+                   | TupInfo.Const b -> yield (if b then 0uy else 1uy)
+                   for id in sortedIds do
                        for c in id.idText do yield byte c; yield byte (int32 c >>> 8) |]
+
         let sortedNames = Array.map textOfId sortedIds
-        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames }
+        { Assembly = ccu; TupInfo = tupInfo; SortedIds = sortedIds; Stamp = stamp; SortedNames = sortedNames; IlTypeName = ilName }
 
     /// Get the ILTypeRef for the generated type implied by the anonymous type
     member x.ILTypeRef = 
-        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.Stamp) x.SortedIds.Length
+        let ilTypeName = sprintf "<>f__AnonymousType%s%u`%d" (match x.TupInfo with TupInfo.Const b -> if b then "1000" else "") (uint32 x.IlTypeName) x.SortedIds.Length
         mkILTyRef(x.Assembly.ILScopeRef, ilTypeName)
 
     static member NewUnlinked() : AnonRecdTypeInfo = 
         { Assembly = Unchecked.defaultof<_>
           TupInfo = Unchecked.defaultof<_>
           SortedIds = Unchecked.defaultof<_>
-          Stamp = Unchecked.defaultof<_> 
-          SortedNames = Unchecked.defaultof<_> }
+          Stamp = Unchecked.defaultof<_>
+          SortedNames = Unchecked.defaultof<_>
+          IlTypeName = Unchecked.defaultof<_> }
 
     member x.Link d = 
         let sortedNames = Array.map textOfId d.SortedIds
@@ -4324,6 +4342,7 @@ type AnonRecdTypeInfo =
         x.SortedIds <- d.SortedIds
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
+        x.IlTypeName <- d.IlTypeName
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
     

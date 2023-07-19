@@ -72,6 +72,7 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
     | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -164,8 +165,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedStringInterpolation, previewVersion
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
-                LanguageFeature.DiagnosticForObjInference, previewVersion
-
+                LanguageFeature.DiagnosticForObjInference, previewVersion         
+                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
             ]
@@ -295,6 +296,7 @@ type LanguageVersion(versionText) =
 
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
+        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
