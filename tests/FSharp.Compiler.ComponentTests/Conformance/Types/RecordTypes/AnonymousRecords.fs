@@ -86,5 +86,5 @@ let f (r: {| A: int |}) =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 39, Line 2, Col 36, Line 2, Col 37, "The record label 'A' is not defined.")
+            (Error 39, Line 3, Col 14, Line 3, Col 15, "The record label 'A' is not defined.")
         ]
