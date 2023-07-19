@@ -91,6 +91,18 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> withDiagnostics [
             (Error 3578, Line 2, Col 52, Line 2, Col 54, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
         ]
+        
+    [<Fact>]
+    let ``This expression was expected to have an struct anonymous Record but has a record`` () =
+        Fsx """
+let t3 (t1: struct {| gu: string; ff: int |}) = { t1 with ff = 3 }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3578, Line 2, Col 59, Line 2, Col 61, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+        ]
     
     [<Fact>]
     let ``Nested anonymous records where outer label = concatenated inner labels (see secondary issue reported in 6411)`` () =
