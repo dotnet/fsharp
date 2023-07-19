@@ -355,7 +355,8 @@ let ``Test project1 all uses of all signature symbols`` () =
              yield s.ToString(),
                   [ for s in wholeProjectResults.GetUsesOfSymbol(s) ->
                          (Project1.cleanFileName s.FileName, tupsZ s.Range) ] ]
-    let expected =
+
+    allUsesOfAllSymbols |> shouldEqual
         [("N", [("file2", ((1, 7), (1, 8)))]);
          ("val y2", [("file2", ((12, 4), (12, 6)))]);
          ("val pair2", [("file2", ((23, 10), (23, 15)))]);
@@ -399,19 +400,16 @@ let ``Test project1 all uses of all signature symbols`` () =
          ("val fff", [("file1", ((7, 4), (7, 7))); ("file2", ((9, 28), (9, 33)))]);
          ("C",
           [("file1", ((3, 5), (3, 6))); ("file1", ((9, 15), (9, 16)));
-           ("file2", ((38, 12), (38, 15))); ("file2", ((38, 22), (38, 25)))]);
+           ("file2", ((38, 12), (38, 15))); ("file2", ((38, 22), (38, 25))); ("file2", ((38, 22), (38, 25)))]);
          ("member .ctor",
           [("file1", ((3, 5), (3, 6))); ("file1", ((9, 15), (9, 16)));
-           ("file2", ((38, 12), (38, 15))); ("file2", ((38, 22), (38, 25)))]);
+           ("file2", ((38, 12), (38, 15))); ("file2", ((38, 22), (38, 25))); ("file2", ((38, 22), (38, 25)))]);
          ("member get_P", [("file1", ((4, 13), (4, 14)))]);
          ("property P", [("file1", ((4, 13), (4, 14)))]);
          ("CAbbrev",
           [("file1", ((9, 5), (9, 12))); ("file2", ((39, 12), (39, 21)));
-           ("file2", ((39, 28), (39, 37)))]);
+           ("file2", ((39, 28), (39, 37))); ("file2", ((39, 28), (39, 37)))]);
          ("property P", [("file1", ((4, 13), (4, 14)))])]
-    set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
-    set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
-    (set expected = set allUsesOfAllSymbols) |> shouldEqual true
 
 [<Test>]
 let ``Test project1 all uses of all symbols`` () =
@@ -724,36 +722,32 @@ let ``Test project2 all uses of all signature symbols`` () =
         [ for s in allSymbols do
              let uses = [ for s in wholeProjectResults.GetUsesOfSymbol(s) -> (if s.FileName = Project2.fileName1 then "file1" else "??"), tupsZ s.Range ]
              yield s.ToString(), uses ]
-    let expected =
-              [("M", [("file1", ((1, 7), (1, 8)))]);
-               ("val c", [("file1", ((19, 4), (19, 5))); ("file1", ((20, 8), (20, 9)))]);
-               ("val GenericFunction",
-                [("file1", ((22, 4), (22, 19))); ("file1", ((24, 8), (24, 23)))]);
-               ("generic parameter T",
-                [("file1", ((22, 23), (22, 25))); ("file1", ((22, 30), (22, 32)));
-                 ("file1", ((22, 45), (22, 47))); ("file1", ((22, 50), (22, 52)))]);
-               ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
-               ("DU1", [("file1", ((4, 6), (4, 9))); ("file1", ((8, 8), (8, 11)))]);
-               ("field Item1", []); ("field Item2", []);
-               ("DU2", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
-               ("D", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
-               ("DUWithNamedFields", [("file1", ((12, 5), (12, 22)))]);
-               ("DU", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
-               ("field x", [("file1", ((12, 31), (12, 32))); ("file1", ((14, 11), (14, 12)))]);
-               ("field y", [("file1", ((12, 41), (12, 42))); ("file1", ((14, 16), (14, 17)))]);
-               ("GenericClass`1",
-                [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
-               ("generic parameter T",
-                [("file1", ((16, 18), (16, 20))); ("file1", ((17, 34), (17, 36)))]);
-               ("member .ctor",
-                [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
-               ("member GenericMethod",
-                [("file1", ((17, 13), (17, 26))); ("file1", ((20, 8), (20, 23)))]);
-               ("generic parameter U",
-                [("file1", ((17, 27), (17, 29))); ("file1", ((17, 41), (17, 43)))])]
-    set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
-    set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
-    (set expected = set allUsesOfAllSymbols) |> shouldEqual true
+    allUsesOfAllSymbols |> shouldEqual
+        [("M", [("file1", ((1, 7), (1, 8)))]);
+         ("val c", [("file1", ((19, 4), (19, 5))); ("file1", ((20, 8), (20, 9)))]);
+         ("val GenericFunction", [("file1", ((22, 4), (22, 19))); ("file1", ((24, 8), (24, 23)))]);
+         ("generic parameter T", [
+            ("file1", ((22, 23), (22, 25)))
+            ("file1", ((22, 30), (22, 32)))
+            ("file1", ((22, 45), (22, 47)))
+            ("file1", ((22, 50), (22, 52)))
+          ]);
+         ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
+         ("DU1", [("file1", ((4, 6), (4, 9))); ("file1", ((8, 8), (8, 11)))]);
+         ("field Item1", []); ("field Item2", []);
+         ("DU2", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
+         ("field Item1", []); ("field Item2", []);
+         ("D", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))])
+         ("field Item1", []); ("field Item2", []);
+         ("DUWithNamedFields", [("file1", ((12, 5), (12, 22)))]);
+         ("DU", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
+         ("field x", [("file1", ((12, 31), (12, 32))); ("file1", ((14, 11), (14, 12)))]);
+         ("field y", [("file1", ((12, 41), (12, 42))); ("file1", ((14, 16), (14, 17)))]);
+         ("GenericClass`1", [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
+         ("generic parameter T", [("file1", ((16, 18), (16, 20))); ("file1", ((17, 34), (17, 36)))]);
+         ("member .ctor", [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
+         ("member GenericMethod", [("file1", ((17, 13), (17, 26))); ("file1", ((20, 8), (20, 23)))]);
+         ("generic parameter U", [("file1", ((17, 27), (17, 29))); ("file1", ((17, 41), (17, 43)))])]
 
 [<Test>]
 let ``Test project2 all uses of all symbols`` () =
@@ -807,7 +801,6 @@ let ``Test project2 all uses of all symbols`` () =
            ("t", "file1", ((17, 31), (17, 32)), []);
            ("GenericClass", "file1", ((19, 8), (19, 20)), ["member"; "ctor"]);
            ("int", "file1", ((19, 21), (19, 24)), ["abbrev"])
-           ("GenericClass", "file1", ((19, 8), (19, 20)), ["class"]);
            ("c", "file1", ((19, 4), (19, 5)), ["val"]);
            ("c", "file1", ((20, 8), (20, 9)), ["val"]);
            ("int", "file1", ((20, 24), (20, 27)), ["abbrev"]);
@@ -2185,15 +2178,15 @@ let ``Test Project13 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
           [|("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
-            ("Object", "Object", "file1", ((4, 14), (4, 27)), [], ["class"]);
+            ("Object", "Object", "file1", ((4, 14), (4, 27)), ["type"], ["class"]);
             ("member .ctor", "Object", "file1", ((4, 14), (4, 27)), [], ["member"]);
             ("val x1", "x1", "file1", ((4, 4), (4, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((5, 14), (5, 20)), [], ["namespace"]);
-            ("DateTime", "DateTime", "file1", ((5, 14), (5, 29)), [], ["valuetype"]);
+            ("DateTime", "DateTime", "file1", ((5, 14), (5, 29)), ["type"], ["valuetype"]);
             ("member .ctor", "DateTime", "file1", ((5, 14), (5, 29)), [], ["member"]);
             ("val x2", "x2", "file1", ((5, 4), (5, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((6, 13), (6, 19)), [], ["namespace"]);
-            ("DateTime", "DateTime", "file1", ((6, 13), (6, 28)), [], ["valuetype"]);
+            ("DateTime", "DateTime", "file1", ((6, 13), (6, 28)), ["type"], ["valuetype"]);
             ("member .ctor", "DateTime", "file1", ((6, 13), (6, 28)), [], ["member"]);
             ("val x3", "x3", "file1", ((6, 4), (6, 6)), ["defn"], ["val"]);
             ("ExternalTypes", "ExternalTypes", "file1", ((2, 7), (2, 20)), ["defn"],
