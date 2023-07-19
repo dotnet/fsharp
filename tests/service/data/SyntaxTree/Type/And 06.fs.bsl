@@ -21,10 +21,10 @@ ImplFile
                     ([], None, [], [B],
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (5,4--5,5)),
-                  ObjectModel (Unspecified, [], (5,6--5,6)), [], None,
-                  (5,4--5,7), { LeadingKeyword = And (5,0--5,3)
-                                EqualsRange = Some (5,6--5,7)
-                                WithKeyword = None })], (3,0--5,7))],
+                  Simple (None (5,4--5,7), (5,4--5,7)), [], None, (5,4--5,7),
+                  { LeadingKeyword = And (5,0--5,3)
+                    EqualsRange = Some (5,6--5,7)
+                    WithKeyword = None })], (3,0--5,7))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,7), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -802,11 +802,6 @@
         <target state="translated">불완전한 보간 축자 문자열이 여기 또는 이전에서 시작되었습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">형식 정의에 예기치 않은 토큰이 있습니다. '{0}' 형식 뒤에 '='가 필요합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">이 지점 뒤에 패턴이 필요합니다.</target>
