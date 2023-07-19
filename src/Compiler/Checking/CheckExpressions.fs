@@ -285,10 +285,10 @@ type LiteralArgumentType =
 type DeclKind =
     | ModuleOrMemberBinding
 
-    /// Extensions to a type within the same assembly
+    /// Extensions to a type within the same module or namespace fragment
     | IntrinsicExtensionBinding
 
-    /// Extensions to a type in a different assembly
+    /// Extensions to a type not within the same module or namespace fragment
     | ExtrinsicExtensionBinding
 
     | ClassLetBinding of isStatic: bool
