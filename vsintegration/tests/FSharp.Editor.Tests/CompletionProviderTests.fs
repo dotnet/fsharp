@@ -1290,11 +1290,15 @@ type A = l
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
+let [<Literal>] lit = 1
+
 type A =
     | C = 0
+    | D = l
 """
 
         VerifyNoCompletionList(fileContents, "| C")
+        VerifyCompletionList(fileContents, "| D = l", [ "lit" ], [])
 
     [<Fact>]
     let ``Completion list in generic function body contains type parameter`` () =

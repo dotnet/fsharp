@@ -1520,9 +1520,15 @@ module ParsedInput =
                                             None)
                             | _ -> None)
 
-                member _.VisitEnumDefn(_, _, _) =
-                    // No completions anywhere in an enum, except in attributes, which is established earlier in VisitAttributeApplication
-                    Some CompletionContext.Invalid
+                member _.VisitEnumDefn(_, cases, _) =
+                    cases
+                    |> List.tryPick (fun (SynEnumCase(ident = SynIdent (ident = id))) ->
+                        if rangeContainsPos id.idRange pos then
+                            // No completions in an enum case identifier
+                            Some CompletionContext.Invalid
+                        else
+                            // The value expression should still get completions
+                            None)
 
                 member _.VisitTypeAbbrev(_, _, range) =
                     if rangeContainsPos range pos then
