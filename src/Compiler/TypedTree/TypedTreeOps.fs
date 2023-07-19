@@ -102,6 +102,12 @@ type ValRemap = ValMap<ValRef>
 let emptyTyconRefRemap: TyconRefRemap = TyconRefMap<_>.Empty
 let emptyTyparInst = ([]: TyparInstantiation)
 
+let getInst (ty: TType) =
+    match stripTyparEqns ty with
+    | TType_app(tcref, typeArgs, _) ->
+        List.zip tcref.Deref.TyparsNoRange typeArgs
+    | _ -> []
+
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst: TyparInstantiation

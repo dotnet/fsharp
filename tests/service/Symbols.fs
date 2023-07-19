@@ -7,7 +7,7 @@
 module Tests.Service.Symbols
 #endif
 
-open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -678,3 +678,98 @@ type BAttribute() =
 let a ([<B>] c: int) : int = 0
 """
             (7, 5, "let a ([<B>] c: int) : int = 0", "a")
+
+
+module TypeSymbols =
+    let getSymbols f (symbolUses: FSharpSymbolUse list) =
+        symbolUses
+        |> List.choose (fun symbolUse -> match symbolUse.Symbol with :? FSharpEntity as e when f e -> Some(e, symbolUse) | _ -> None)
+        |> List.map (fun (e, symbolUse) -> e.DisplayNameCore, symbolUse.GenericArguments |> List.map (fun (_, t) -> t.Format(symbolUse.DisplayContext)))
+
+    let isInterface (entity: FSharpEntity) =
+        entity.IsInterface
+
+    let isClass (entity: FSharpEntity) =
+        entity.IsClass
+
+    [<Test>]
+    let ``Interface 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+open System
+
+IDisposable
+"""
+        let symbolUses: FSharpSymbolUse list = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isInterface
+        |> shouldEqual [
+            "IDisposable", []
+        ]
+
+    [<Test>]
+    let ``Interface 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+System.IDisposable
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isInterface
+        |> shouldEqual [
+            "IDisposable", []
+        ]
+
+    [<Test>]
+    let ``Interface 03 - Application`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+open System.Collections.Generic
+
+IList<int>
+IList<foo>
+IList<_>
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isInterface
+        |> shouldEqual [
+            "IList", ["int"]
+            "IList", ["'a"]
+            "IList", ["'a"]
+        ]
+
+    [<Test>]
+    let ``Interface 04 - Application`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+open System.Collections.Generic
+
+let l: IList<_> = [|1|]
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isInterface
+        |> shouldEqual [
+            "IList", ["int"]
+        ]
+
+    [<Test>]
+    let ``Class 01 - Application`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+open System.Collections.Generic
+
+let l: List<_> = List [|1|]
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isClass
+        |> shouldEqual [
+            "List", ["int"]
+        ]

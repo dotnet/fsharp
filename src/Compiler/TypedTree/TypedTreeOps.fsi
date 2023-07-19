@@ -567,6 +567,8 @@ val mkTyconRefInst: TyconRef -> TypeInst -> TyparInstantiation
 
 val emptyTyparInst: TyparInstantiation
 
+val getInst: TType -> TyparInstantiation
+
 val instType: TyparInstantiation -> TType -> TType
 
 val instTypes: TyparInstantiation -> TypeInst -> TypeInst

@@ -2141,12 +2141,26 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 capturedExprTypings.Add((ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
-            if allowedRange m then
-                if replace then
-                    remove m
+            if isAlreadyDone endPos item m || not (allowedRange m) then () else
 
-                if not (isAlreadyDone endPos item m) then
-                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+            let replaced =
+                if not replace then false else
+
+                match item with
+                | Item.MethodGroup _ ->
+                    match capturedMethodGroupResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                    | -1 -> ()
+                    | i -> capturedMethodGroupResolutions.RemoveAt(i)
+                | _ -> ()
+
+                match capturedNameResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                | -1 -> false
+                | i ->
+                    capturedNameResolutions[i] <- CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
+                    true
+
+            if not replaced then
+                capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
