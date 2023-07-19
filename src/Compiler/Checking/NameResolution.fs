@@ -3685,8 +3685,9 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
     | [] ->
         let lookup() =
             let frefs =
-                try Map.find id.idText nenv.eFieldLabels
-                with :? KeyNotFoundException ->
+                match Map.tryFind id.idText nenv.eFieldLabels with
+                | Some fields -> fields
+                | None ->
                     // record label is unknown -> suggest related labels and give a hint to the user
                     error(SuggestLabelsOfRelatedRecords g nenv id allFields)
 
@@ -3756,16 +3757,26 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             errorR(Error(FSComp.SR.nrInvalidFieldLabel(), (List.head rest).idRange))
 
         [(resInfo, item)]
+        
+let ResolveAnonRecField (g: TcGlobals) ty (fldId: Ident) =
+    if (TryFindAnonRecdFieldOfType g ty fldId.idText).IsSome then
+        error(Error(FSComp.SR.chkAnonymousRecordFields(fldId.idText, fldId.idText), fldId.idRange))
+    else
+        error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
 
-let ResolveField sink ncenv nenv ad ty mp id allFields =
-    let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
-    // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
-    // info is only non-empty if there was a unique resolution of the field)
-    let checker = ResultTyparChecker(fun () -> true)
-    res
-    |> List.map (fun (resInfo, rfref) ->
-        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
-        rfref)
+let ResolveField sink (ncenv: NameResolver) nenv ad ty mp id allFields =
+    if isAnonRecdTy ncenv.g ty || isStructAnonRecdTy ncenv.g ty then
+        ResolveAnonRecField ncenv.g ty id
+        []
+    else
+        let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
+        // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
+        // info is only non-empty if there was a unique resolution of the field)
+        let checker = ResultTyparChecker(fun () -> true)
+        res
+        |> List.map (fun (resInfo, rfref) ->
+            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
+            rfref)
 
 /// Resolve a long identifier representing a nested record field.
 ///
