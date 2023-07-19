@@ -508,14 +508,12 @@ type internal SR () =
 """
 
         let symbols =
-            checkResults.GetSymbolUsesAtLocation(5, 16, "type internal SR () =", [ "" ])
+            checkResults.GetSymbolUsesAtLocation(5, 16, "type internal SR () =", [ "SR" ])
             |> List.map (fun su -> su.Symbol)
 
         match symbols with
-        | [ :? FSharpMemberOrFunctionOrValue as cctor
-            :? FSharpMemberOrFunctionOrValue as ctor
-            :? FSharpEntity as entity  ] ->
-            Assert.AreEqual(".cctor", cctor.CompiledName)
+        | [ :? FSharpEntity as entity
+            :? FSharpMemberOrFunctionOrValue as ctor ] ->
             Assert.AreEqual(".ctor", ctor.CompiledName)
             Assert.AreEqual("SR", entity.DisplayName)
         | s -> Assert.Fail ("Expected symbols, got: " + (sprintf "%A" s))
