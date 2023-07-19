@@ -77,7 +77,7 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 4, Col 51, Line 4, Col 53, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+            (Error 3578, Line 4, Col 52, Line 4, Col 54, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -89,7 +89,7 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 51, Line 2, Col 53, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+            (Error 3578, Line 2, Col 52, Line 2, Col 54, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
         ]
     
     [<Fact>]
