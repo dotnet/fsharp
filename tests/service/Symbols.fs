@@ -518,4 +518,63 @@ type internal SR () =
             Assert.AreEqual(".cctor", cctor.CompiledName)
             Assert.AreEqual(".ctor", ctor.CompiledName)
             Assert.AreEqual("SR", entity.DisplayName)
-        | _ -> Assert.Fail "Expected symbols"
+        | s -> Assert.Fail ("Expected symbols, got: " + (sprintf "%A" s))
+
+module GetValSignatureText =
+    let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
+        let _, checkResults = getParseAndCheckResults source
+        let symbolUseOpt = checkResults.GetSymbolUseAtLocation(lineNumber, column, line, [ identifier ])
+        match symbolUseOpt with
+        | None -> Assert.Fail "Expected symbol"
+        | Some symbolUse ->
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                let expected = expected.Replace("\r", "")
+                let signature = mfv.GetValSignatureText(symbolUse.DisplayContext, symbolUse.Range)
+                Assert.AreEqual(expected, signature.Value)
+            | symbol -> Assert.Fail $"Expected FSharpMemberOrFunctionOrValue, got %A{symbol}"
+
+    [<Test>]
+    let ``Signature text for let binding`` () =
+        assertSignature
+            "val a: b: int -> c: int -> int"
+            "let a b c = b + c"
+            (1, 4, "let a b c = b + c", "a")
+
+    [<Test>]
+    let ``Signature text for member binding`` () =
+        assertSignature
+            "member Bar: a: int -> b: int -> int"
+            """
+type Foo() =
+    member this.Bar (a:int) (b:int) : int = 0
+"""
+            (3, 19, "    member this.Bar (a:int) (b:int) : int = 0", "Bar")
+
+#if NETCOREAPP
+    [<Test>]
+    let ``Signature text for type with generic parameter in path`` () =
+        assertSignature
+            "new: builder: ImmutableArray<'T>.Builder -> ImmutableArrayViaBuilder<'T>"
+            """
+module Telplin
+open System
+open System.Collections.Generic
+open System.Collections.Immutable
+type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =
+    class end
+"""
+            (8, 29, "type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) =", ".ctor")
+#endif
+
+    [<Test>]
+    let ``Includes attribute for parameter`` () =
+        assertSignature
+            "val a: [<B>] c: int -> int"
+            """
+module Telplin
+type BAttribute() =
+    inherit System.Attribute()
+let a ([<B>] c: int) : int = 0
+"""
+            (7, 5, "let a ([<B>] c: int) : int = 0", "a")
