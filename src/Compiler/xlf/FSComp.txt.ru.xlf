@@ -107,6 +107,11 @@
         <target state="translated">Если тип использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Элементы экземпляра не разрешены.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Атрибут "AssemblyKeyNameAttribute" является устаревшим. Используйте вместо него атрибут "AssemblyKeyFileAttribute".</target>
@@ -210,6 +215,11 @@
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Разрешить атрибут неявного расширения для объявляющих типов, модулей</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -732,6 +742,11 @@
         <target state="translated">Включить сведения об интерфейсе F#, по умолчанию используется файл. Необходимо для распространения библиотек.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Поддерживаемые языковые версии:</target>
@@ -790,11 +805,6 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="translated">Неполная интерполированная буквальная строка, начатая в этой позиции или до нее</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
