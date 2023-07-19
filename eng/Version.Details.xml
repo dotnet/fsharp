@@ -43,6 +43,25 @@
       <Uri>https://github.com/dotnet/xliff-tasks</Uri>
       <Sha>a171b61473272e5a6d272117963864ba958a012a</Sha>
       <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
+    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.23362.5">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>068998a5d91f55a619d1d072ab3094dacd5d6a4f</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.23362.5">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>068998a5d91f55a619d1d072ab3094dacd5d6a4f</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23362.5">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>068998a5d91f55a619d1d072ab3094dacd5d6a4f</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23362.5">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>068998a5d91f55a619d1d072ab3094dacd5d6a4f</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23362.5">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>068998a5d91f55a619d1d072ab3094dacd5d6a4f</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>
