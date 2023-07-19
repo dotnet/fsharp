@@ -7396,7 +7396,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             let withExprAddrVal, withExprAddrValExpr = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy g overallTy then mkByrefTy g overallTy else overallTy)
             Some(withExpr, withExprAddrVal, withExprAddrValExpr)
 
-    if hasOrigExpr && not (isRecdTy g overallTy) then
+    if hasOrigExpr && not (isRecdTy g overallTy || isAnonRecdTy g overallTy) then
         errorR(Error(FSComp.SR.tcExpressionFormRequiresRecordTypes(), mWholeExpr))
 
     if requiresCtor || haveCtor then
@@ -7429,7 +7429,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    if fldsList.IsEmpty && isTyparTy g overallTy then
+    if fldsList.IsEmpty && isTyparTy g overallTy || isAnonRecdTy g overallTy then
         SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
         mkDefault (mWholeExpr, overallTy), tpenv
     else
