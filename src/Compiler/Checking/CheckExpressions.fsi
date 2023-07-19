@@ -895,7 +895,7 @@ val BuildFieldMap:
     ty: TType ->
     flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
-        TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
+        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:
