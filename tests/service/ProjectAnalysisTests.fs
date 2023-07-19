@@ -762,7 +762,7 @@ let ``Test project2 all uses of all symbols`` () =
     let allUsesOfAllSymbols =
         [ for s in wholeProjectResults.GetAllUsesOfAllSymbols() ->
             s.Symbol.DisplayName, (if s.FileName = Project2.fileName1 then "file1" else "???"), tupsZ s.Range, attribsOfSymbol s.Symbol ]
-    let expected =
+    allUsesOfAllSymbols |> shouldEqual
           [("int", "file1", ((4, 13), (4, 16)), ["abbrev"]);
            ("int", "file1", ((4, 19), (4, 22)), ["abbrev"]);
            ("int", "file1", ((5, 13), (5, 16)), ["abbrev"]);
@@ -784,10 +784,10 @@ let ``Test project2 all uses of all symbols`` () =
            ("D", "file1", ((10, 8), (10, 9)), []);
            ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
            ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
-           ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
            ("x", "file1", ((12, 31), (12, 32)), ["field"]);
-           ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
+           ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
            ("y", "file1", ((12, 41), (12, 42)), ["field"]);
+           ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
            ("DU", "file1", ((12, 25), (12, 27)), []);
            ("DUWithNamedFields", "file1", ((12, 5), (12, 22)), ["union"]);
            ("DU", "file1", ((14, 8), (14, 10)), []);
@@ -806,11 +806,12 @@ let ``Test project2 all uses of all symbols`` () =
            ("u", "file1", ((17, 38), (17, 39)), []);
            ("t", "file1", ((17, 31), (17, 32)), []);
            ("GenericClass", "file1", ((19, 8), (19, 20)), ["member"; "ctor"]);
-           ("int", "file1", ((19, 21), (19, 24)), ["abbrev"]);
+           ("int", "file1", ((19, 21), (19, 24)), ["abbrev"])
+           ("GenericClass", "file1", ((19, 8), (19, 20)), ["class"]);
            ("c", "file1", ((19, 4), (19, 5)), ["val"]);
            ("c", "file1", ((20, 8), (20, 9)), ["val"]);
-           ("GenericMethod", "file1", ((20, 8), (20, 23)), ["member"]);
            ("int", "file1", ((20, 24), (20, 27)), ["abbrev"]);
+           ("GenericMethod", "file1", ((20, 8), (20, 23)), ["member"]);
            ("T", "file1", ((22, 23), (22, 25)), []);
            ("T", "file1", ((22, 30), (22, 32)), []);
            ("y", "file1", ((22, 27), (22, 28)), []);
@@ -822,9 +823,6 @@ let ``Test project2 all uses of all symbols`` () =
            ("GenericFunction", "file1", ((22, 4), (22, 19)), ["val"]);
            ("GenericFunction", "file1", ((24, 8), (24, 23)), ["val"]);
            ("M", "file1", ((1, 7), (1, 8)), ["module"])]
-    set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
-    set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
-    (set expected = set allUsesOfAllSymbols) |> shouldEqual true
 
 //-----------------------------------------------------------------------------------------
 
@@ -2055,24 +2053,22 @@ let ``Test Project11 all symbols`` () =
           [|("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((4, 22), (4, 33)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((4, 34), (4, 41)), [], ["namespace"]);
-            ("Dictionary`2", "Dictionary", "file1", ((4, 15), (4, 52)), ["type"],
-             ["class"]); ("int", "int", "file1", ((4, 53), (4, 56)), [], ["abbrev"]);
-            ("int", "int", "file1", ((4, 57), (4, 60)), [], ["abbrev"]);
-            ("Enumerator", "Enumerator", "file1", ((4, 62), (4, 72)), ["type"],
-             ["valuetype"]);
+            ("Dictionary`2", "Dictionary", "file1", ((4, 15), (4, 52)), ["type"], ["class"])
+            ("int", "int", "file1", ((4, 53), (4, 56)), ["type"], ["abbrev"]);
+            ("int", "int", "file1", ((4, 57), (4, 60)), ["type"], ["abbrev"]);
+            ("Enumerator", "Enumerator", "file1", ((4, 62), (4, 72)), ["type"], ["valuetype"]);
             ("member .ctor", "Enumerator", "file1", ((4, 15), (4, 72)), [], ["member"]);
             ("val enum", "enum", "file1", ((4, 4), (4, 8)), ["defn"], ["val"]);
             ("System", "System", "file1", ((5, 11), (5, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((5, 18), (5, 29)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((5, 30), (5, 37)), [], ["namespace"]);
-            ("Dictionary`2", "Dictionary", "file1", ((5, 11), (5, 48)), ["type"],
-             ["class"]); ("int", "int", "file1", ((5, 49), (5, 52)), ["type"], ["abbrev"]);
+            ("Dictionary`2", "Dictionary", "file1", ((5, 11), (5, 48)), ["type"], ["class"])
+            ("int", "int", "file1", ((5, 49), (5, 52)), ["type"], ["abbrev"]);
             ("int", "int", "file1", ((5, 53), (5, 56)), ["type"], ["abbrev"]);
-            ("Enumerator", "Enumerator", "file1", ((5, 58), (5, 68)), ["type"],
-             ["valuetype"]); ("val x", "x", "file1", ((5, 9), (5, 10)), ["defn"], []);
+            ("Enumerator", "Enumerator", "file1", ((5, 58), (5, 68)), ["type"], ["valuetype"])
+            ("val x", "x", "file1", ((5, 9), (5, 10)), ["defn"], []);
             ("val fff", "fff", "file1", ((5, 4), (5, 7)), ["defn"], ["val"]);
-            ("NestedTypes", "NestedTypes", "file1", ((2, 7), (2, 18)), ["defn"],
-             ["module"])|]
+            ("NestedTypes", "NestedTypes", "file1", ((2, 7), (2, 18)), ["defn"], ["module"])|]
 
 //-----------------------------------------------------------------------------------------
 // see https://github.com/fsharp/FSharp.Compiler.Service/issues/92
@@ -2777,7 +2773,6 @@ let ``Test Project17 all symbols`` () =
             ("FSharp", "FSharp", "file1", ((4, 18), (4, 24)), [], ["namespace"]);
             ("FSharpList`1", "List", "file1", ((4, 8), (4, 41)), [], ["union"]);
             ("int", "int", "file1", ((4, 42), (4, 45)), ["type"], ["abbrev"]);
-            ("FSharpList`1", "List", "file1", ((4, 8), (4, 46)), [], ["union"]);
             ("property Empty", "Empty", "file1", ((4, 8), (4, 52)), [], ["member"; "prop"]);
             ("System", "System", "file1", ((6, 11), (6, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((6, 18), (6, 29)), [], ["namespace"]);
@@ -2786,14 +2781,11 @@ let ``Test Project17 all symbols`` () =
             ("generic parameter T", "T", "file1", ((6, 44), (6, 46)), ["type"], []);
             ("val x", "x", "file1", ((6, 8), (6, 9)), ["defn"], []);
             ("val x", "x", "file1", ((6, 51), (6, 52)), [], []);
-            ("property Item", "Item", "file1", ((6, 51), (6, 57)), [],
-             ["slot"; "member"; "prop"]);
+            ("property Item", "Item", "file1", ((6, 51), (6, 57)), [], ["slot"; "member"; "prop"]);
             ("val x", "x", "file1", ((6, 62), (6, 63)), [], []);
-            ("property Item", "Item", "file1", ((6, 62), (6, 67)), [],
-             ["slot"; "member"; "prop"]);
+            ("property Item", "Item", "file1", ((6, 62), (6, 67)), [], ["slot"; "member"; "prop"]);
             ("val x", "x", "file1", ((6, 69), (6, 70)), [], []);
-            ("property Count", "Count", "file1", ((6, 69), (6, 76)), [],
-             ["slot"; "member"; "prop"]);
+            ("property Count", "Count", "file1", ((6, 69), (6, 76)), [], ["slot"; "member"; "prop"]);
             ("val f1", "f1", "file1", ((6, 4), (6, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((8, 11), (8, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((8, 18), (8, 29)), [], ["namespace"]);
@@ -2802,15 +2794,13 @@ let ``Test Project17 all symbols`` () =
             ("int", "int", "file1", ((8, 44), (8, 47)), ["type"], ["abbrev"]);
             ("val x", "x", "file1", ((8, 8), (8, 9)), ["defn"], []);
             ("val x", "x", "file1", ((8, 52), (8, 53)), [], []);
-            ("property Item", "Item", "file1", ((8, 52), (8, 57)), [],
-             ["slot"; "member"; "prop"]);
+            ("property Item", "Item", "file1", ((8, 52), (8, 57)), [], ["slot"; "member"; "prop"]);
             ("val f2", "f2", "file1", ((8, 4), (8, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((10, 11), (10, 17)), [], ["namespace"]);
             ("Exception", "Exception", "file1", ((10, 11), (10, 27)), ["type"], ["class"]);
             ("val x", "x", "file1", ((10, 8), (10, 9)), ["defn"], []);
             ("val x", "x", "file1", ((10, 31), (10, 32)), [], []);
-            ("property HelpLink", "HelpLink", "file1", ((10, 31), (10, 41)), [],
-             ["slot"; "member"; "prop"]);
+            ("property HelpLink", "HelpLink", "file1", ((10, 31), (10, 41)), [], ["slot"; "member"; "prop"]);
             ("val f3", "f3", "file1", ((10, 4), (10, 6)), ["defn"], ["val"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
@@ -2859,7 +2849,6 @@ let ``Test Project18 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
       [|("list`1", "list", "file1", ((4, 8), (4, 12)), [], false);
-        ("list`1", "list", "file1", ((4, 8), (4, 15)), [], false);
         ("property Empty", "Empty", "file1", ((4, 8), (4, 21)), [], false);
         ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], false)|]
 
