@@ -3756,14 +3756,15 @@ let ResolveAnonRecField (g: TcGlobals) ty (fldId: Ident) =
         error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
 
 let ResolveField sink (ncenv: NameResolver) nenv ad ty mp id allFields =
+    let checker = ResultTyparChecker(fun () -> true)
     if isAnonRecdTy ncenv.g ty || isStructAnonRecdTy ncenv.g ty then
         ResolveAnonRecField ncenv.g ty id
+        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, ResolutionInfo.Empty, checker)
         []
     else
         let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
         // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
         // info is only non-empty if there was a unique resolution of the field)
-        let checker = ResultTyparChecker(fun () -> true)
         res
         |> List.map (fun (resInfo, rfref) ->
             ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
