@@ -320,7 +320,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# and .NET properties
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
@@ -520,7 +520,7 @@ module DeclarationListHelpers =
 
         // We don't expect these cases
         | Item.Types (_, []) 
-        | Item.Property (_, []) 
+        | Item.Property (info = []) 
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
@@ -798,7 +798,7 @@ module internal DescriptionListsImpl =
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap, m)
             let propTy = pinfo.GetPropertyType(amap, m) 
 
@@ -874,7 +874,7 @@ module internal DescriptionListsImpl =
         | Item.OtherName _
         | Item.MethodGroup(_, [], _)
         | Item.CtorGroup(_,[])
-        | Item.Property(_,[]) -> 
+        | Item.Property(info = []) -> 
             [], emptyL
 
 
@@ -999,7 +999,7 @@ module internal DescriptionListsImpl =
             if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase(ecr) -> 
             if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_TYPEPROVIDERS
@@ -1112,7 +1112,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
-                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
+                | Item.Property(info = pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)

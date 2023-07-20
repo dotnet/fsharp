@@ -10,8 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Wild (3,4--3,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Wild (3,4--3,5), None,
                   TryFinally
                     (Const (Int32 1, (4,8--4,9)), Const (Int32 2, (6,4--6,5)),
                      (4,4--6,5), Yes (4,4--4,7), Yes (5,4--5,11),

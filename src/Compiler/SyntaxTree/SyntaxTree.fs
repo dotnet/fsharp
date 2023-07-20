@@ -1026,9 +1026,13 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        transformedFromProperty: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
