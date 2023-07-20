@@ -16,6 +16,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -98,7 +99,9 @@ type TypeForwarding(tcImports: TcImports) =
 
     member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
-let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
+#if !NO_TYPEPROVIDERS
+let debugStaticLinking = isEnvVarSet "FSHARP_DEBUG_STATIC_LINKING"
+#endif
 
 let StaticLinkILModules
     (
@@ -252,7 +255,7 @@ let StaticLinkILModules
                     NativeResources = savedNativeResources
                 }
 
-            Morphs.morphILTypeRefsInILModuleMemoized typeForwarding.TypeForwardILTypeRef main
+            Morphs.morphILTypeRefsInILModuleMemoized TcGlobals.IsInEmbeddableKnownSet typeForwarding.TypeForwardILTypeRef main
 
         ilxMainModule, rewriteExternalRefsToLocalRefs
 
@@ -419,6 +422,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                     (n.ccu, n.data)
         ]
 
+#if !NO_TYPEPROVIDERS
 // Add all provider-generated assemblies into the static linking set
 let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGeneratedAssemblies: (ImportedBinary * _) list) =
     [
@@ -442,6 +446,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
                 (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
             | None -> ()
     ]
+#endif
 
 /// Split the list into left, middle and right parts at the first element satisfying 'p'. If no element matches return
 /// 'None' for the middle part.
@@ -491,7 +496,9 @@ let rec implantTypeDef ilGlobals isNested (tdefs: ILTypeDefs) (enc: string list)
 // Compute a static linker. This only captures tcImports (a large data structure) if
 // static linking is enabled. Normally this is not the case, which lets us collect tcImports
 // prior to this point.
-let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) =
+let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlobals) =
+
+    let ilGlobals = tcGlobals.ilg
 
 #if !NO_TYPEPROVIDERS
     let providerGeneratedAssemblies =
@@ -514,10 +521,6 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
         id
     else
         (fun ilxMainModule ->
-            match tcConfig.emitMetadataAssembly with
-            | MetadataAssemblyGeneration.None -> ()
-            | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))
-
             ReportTime tcConfig "Find assembly references"
 
             let dependentILModules =
@@ -549,7 +552,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
 
                     let ilModule =
                         ilModule
-                        |> Morphs.morphILTypeRefsInILModuleMemoized (fun tref ->
+                        |> Morphs.morphILTypeRefsInILModuleMemoized TcGlobals.IsInEmbeddableKnownSet (fun tref ->
                             if debugStaticLinking then
                                 printfn "deciding whether to rewrite type ref %A" tref.QualifiedName
 
@@ -718,6 +721,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     NormalizeAssemblyRefs(ctok, ilGlobals, tcImports)
 
                 Morphs.morphILTypeRefsInILModuleMemoized
+                    TcGlobals.IsInEmbeddableKnownSet
                     (Morphs.morphILScopeRefsInILTypeRef (
                         validateTargetPlatform
                         >> rewriteExternalRefsToLocalRefs

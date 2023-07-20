@@ -141,7 +141,13 @@ type OverallTy =
     /// Represents a point where no subsumption/widening is possible
     member Commit: TType
 
-exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
+exception ConstraintSolverTupleDiffLengths of
+    displayEnv: DisplayEnv *
+    contextInfo: ContextInfo *
+    TType list *
+    TType list *
+    range *
+    range
 
 exception ConstraintSolverInfiniteTypes of
     displayEnv: DisplayEnv *

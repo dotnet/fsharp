@@ -96,7 +96,7 @@ If you do have an explicit FSharp.Core reference in your C# project that you **n
 
 ## Guidance for older projects, compilers, and tools
 
-Modern .NET development, including F#, uses SDK-style projects. You can read about that here: https://docs.microsoft.com/dotnet/core/project-sdk/overview
+Modern .NET development, including F#, uses SDK-style projects. You can read about that here: https://learn.microsoft.com/dotnet/core/project-sdk/overview
 
 If you are not using SDK-style projects F# projects and/or have an older toolset, the following guidance applies.
 

@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.ComponentTests.Interop
+﻿namespace Interop
 
 open Xunit
 open FSharp.Test.Compiler

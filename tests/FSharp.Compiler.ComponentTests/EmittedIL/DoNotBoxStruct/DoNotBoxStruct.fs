@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open System.IO
 open Xunit
@@ -50,6 +50,12 @@ module DoNotBoxStruct =
     //SOURCE=DoNotBoxStruct_ArrayOfArray_CSInterface.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd DoNotBoxStruct_ArrayOfArray_CSInterface.exe"			# DoNotBoxStruct_ArrayOfArray_CSInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DoNotBoxStruct_ArrayOfArray_CSInterface.fs"|])>]
     let ``DoNotBoxStruct_ArrayOfArray_CSInterface_fs`` compilation =
+        compilation
+        |> verifyCompilation
+
+    //SOURCE=DoNotBoxStruct_ArrayOfArray_CSInterface.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd DoNotBoxStruct_ArrayOfArray_CSInterface.exe"			# DoNotBoxStruct_ArrayOfArray_CSInterface.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DoNotBoxStruct_ArrayOfArray_FSInterface.fs"|])>]
+    let ``DoNotBoxStruct_ArrayOfArray_FSInterface_fs`` compilation =
         compilation
         |> verifyCompilation
 

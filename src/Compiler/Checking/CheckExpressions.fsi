@@ -389,7 +389,13 @@ val AnalyzeAndMakeAndPublishRecursiveValue:
 
 /// Check that a member can be included in an interface
 val CheckForNonAbstractInterface:
-    declKind: DeclKind -> tcref: TyconRef -> memberFlags: SynMemberFlags -> m: range -> unit
+    g: TcGlobals ->
+    declKind: DeclKind ->
+    tcref: TyconRef ->
+    memberFlags: SynMemberFlags ->
+    isMemberStatic: bool ->
+    m: range ->
+        unit
 
 /// Check the flags on a member definition for consistency
 val CheckMemberFlags:
@@ -623,6 +629,12 @@ val TcExpr:
     synExpr: SynExpr ->
         Expr * UnscopedTyparEnv
 
+/// Check that 'args' have the correct number of elements for a tuple expression.
+/// If not, use 'tcArgs' to type check the given elements to show
+/// their correct types (if known) in the error message and raise the error
+val CheckTupleIsCorrectLength:
+    g: TcGlobals -> env: TcEnv -> m: range -> tupleTy: TType -> args: 'a list -> tcArgs: (TType list -> unit) -> unit
+
 /// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
 /// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
 val RewriteRangeExpr: synExpr: SynExpr -> SynExpr option
@@ -840,6 +852,7 @@ val TcValSpec:
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
 val TranslateSynValInfo:
+    cenv: TcFileState ->
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
@@ -880,9 +893,9 @@ val BuildFieldMap:
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    ((Ident list * Ident) * 'T) list ->
+    flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
-        TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
+        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:

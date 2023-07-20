@@ -113,6 +113,9 @@ exception DiagnosticWithSuggestions of number: int * message: string * range: ra
         | DiagnosticWithSuggestions (_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+
 /// The F# compiler code currently uses 'Error(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.
 ///
@@ -126,21 +129,24 @@ let Error ((n, text), m) = DiagnosticWithText(n, text, m)
 let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
 
-let inline protectAssemblyExploration dflt f =
+let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
+    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
+
+let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange _ -> dflt
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationF dflt f =
+let inline protectAssemblyExplorationF dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange (asmName, path) -> dflt (asmName, path)
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f =
+let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f) =
     try
         f ()
     with
@@ -180,7 +186,7 @@ type StopProcessingExiter() =
     member val ExitCode = 0 with get, set
 
     interface Exiter with
-        member exiter.Exit n = 
+        member exiter.Exit n =
             exiter.ExitCode <- n
             raise StopProcessing
 
@@ -512,7 +518,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     }
 
 let UseDiagnosticsLogger newLogger =
-    UseTransformedDiagnosticsLogger (fun _ -> newLogger)
+    UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -614,7 +620,7 @@ let conditionallySuppressErrorReporting cond f =
 //------------------------------------------------------------------------
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking
 
-/// The result type of a computational modality to colelct warnings and possibly fail
+/// The result type of a computational modality to collect warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> =
     | OkResult of warnings: exn list * result: 'T
@@ -803,6 +809,13 @@ let NormalizeErrorString (text: string MaybeNull) =
         i <- i + delta
 
     buf.ToString()
+
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type internal SuppressLanguageFeatureCheck =
+    | Yes
+    | No
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then

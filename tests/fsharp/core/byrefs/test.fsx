@@ -104,7 +104,7 @@ module ByrefNegativeTests =
         let test1 () =
             let aggregator = 
                 new ConcurrentDictionary<
-                        string, ConcurrentDictionary<string,array<float>>
+                        string, ConcurrentDictionary<string, float array>
                         >()
 
             for kvp in aggregator do

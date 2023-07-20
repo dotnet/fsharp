@@ -29,6 +29,12 @@
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Formatting}">
+                    <StackPanel Orientation="Horizontal" ToolTip="{x:Static local:Strings.Tooltip_preferred_description_width_in_characters}">
+                        <Label Content="{x:Static local:Strings.Preferred_description_width_in_characters}" />
+                        <TextBox x:Name="descriptionWidth" Width="40" VerticalContentAlignment="Center" />
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

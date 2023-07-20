@@ -5,7 +5,9 @@ module internal FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.InteropServices
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Internal.Utilities.Library
@@ -46,6 +48,10 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
+
+let FSharpExperimentalFeaturesEnabledAutomatically =
+    String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
+    |> not
 
 //--------------------------------------------------------------------------
 // General file name resolver
@@ -223,12 +229,7 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
         if ok then
             v
         else
-            let v =
-                try
-                    FileSystem.GetLastWriteTimeShim fileName
-                with :? FileNotFoundException ->
-                    defaultTimeStamp
-
+            let v = FileSystem.GetLastWriteTimeShim fileName
             files[fileName] <- v
             v
 
@@ -300,7 +301,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Option<Optimizer.LazyModuleInfo>>
+        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -322,6 +323,7 @@ type LStatus =
 type TokenizeOption =
     | AndCompile
     | Only
+    | Debug
     | Unfiltered
 
 type PackageManagerLine =
@@ -392,6 +394,18 @@ type MetadataAssemblyGeneration =
 type ParallelReferenceResolution =
     | On
     | Off
+
+[<RequireQualifiedAccess>]
+type TypeCheckingMode =
+    | Sequential
+    | Graph
+
+[<RequireQualifiedAccess>]
+type TypeCheckingConfig =
+    {
+        Mode: TypeCheckingMode
+        DumpGraph: bool
+    }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -507,7 +521,7 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
-        mutable parallelCheckingWithSignatureFiles: bool
+        mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -517,6 +531,7 @@ type TcConfigBuilder =
 
         /// show times between passes?
         mutable showTimes: bool
+        mutable writeTimesToFile: string option
         mutable showLoadedAssemblies: bool
         mutable continueAfterParseFailure: bool
 
@@ -544,6 +559,8 @@ type TcConfigBuilder =
 
         /// If true - every expression in quotations will be augmented with full debug info (fileName, location in file)
         mutable emitDebugInfoInQuotations: bool
+
+        mutable strictIndentation: bool option
 
         mutable exename: string option
 
@@ -587,6 +604,12 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable captureIdentifiersWhenParsing: bool
+
+        mutable typeCheckingConfig: TypeCheckingConfig
+
+        mutable dumpSignatureData: bool
     }
 
     // Directories to start probing in
@@ -729,17 +752,25 @@ type TcConfigBuilder =
             doTLR = false
             doFinalSimplify = false
             optsOn = false
-            optSettings = Optimizer.OptimizationSettings.Defaults
+            optSettings =
+                { OptimizationSettings.Defaults with
+                    processingMode =
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
+                            OptimizationProcessingMode.Parallel
+                        else
+                            OptimizationProcessingMode.Sequential
+                }
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelCheckingWithSignatureFiles = false
+            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
             productNameForBannerText = FSharpProductName
             showBanner = true
             showTimes = false
+            writeTimesToFile = None
             showLoadedAssemblies = false
             continueAfterParseFailure = false
 #if !NO_TYPEPROVIDERS
@@ -775,6 +806,18 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
+            captureIdentifiersWhenParsing = false
+            typeCheckingConfig =
+                {
+                    TypeCheckingConfig.Mode =
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
+                            TypeCheckingMode.Graph
+                        else
+                            TypeCheckingMode.Sequential
+                    DumpGraph = false
+                }
+            dumpSignatureData = false
+            strictIndentation = None
         }
 
     member tcConfigB.FxResolver =
@@ -1129,26 +1172,19 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    // "there is no really good notion of runtime directory on .NETCore"
-#if NETSTANDARD
-                    let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
-#else
-                    let runtimeRoot =
-                        System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
-                    let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                    let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                    let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
-
                     match data.resolutionEnvironment with
                     | LegacyResolutionEnvironment.CompilationAndEvaluation ->
                         // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
-                        //
                         // In the current way of doing things, F# Interactive refers to implementation assemblies.
+                        let runtimeRoot = RuntimeEnvironment.GetRuntimeDirectory().TrimEnd('/', '\\')
                         yield runtimeRoot
+
+                        let runtimeRootFacades = Path.Combine(runtimeRoot, "Facades")
 
                         if FileSystem.DirectoryExistsShim runtimeRootFacades then
                             yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+
+                        let runtimeRootWPF = Path.Combine(runtimeRoot, "WPF")
 
                         if FileSystem.DirectoryExistsShim runtimeRootWPF then
                             yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
@@ -1182,6 +1218,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
+    member _.strictIndentation = data.strictIndentation
     member _.primaryAssembly = data.primaryAssembly
     member _.noFeedback = data.noFeedback
     member _.stackReserveSize = data.stackReserveSize
@@ -1286,7 +1323,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
-    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
+    member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
@@ -1296,6 +1333,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.productNameForBannerText = data.productNameForBannerText
     member _.showBanner = data.showBanner
     member _.showTimes = data.showTimes
+    member _.writeTimesToFile = data.writeTimesToFile
     member _.showLoadedAssemblies = data.showLoadedAssemblies
     member _.continueAfterParseFailure = data.continueAfterParseFailure
 #if !NO_TYPEPROVIDERS
@@ -1319,6 +1357,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
+    member _.typeCheckingConfig = data.typeCheckingConfig
+    member _.dumpSignatureData = data.dumpSignatureData
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
@@ -1405,14 +1446,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
+            let dirName = Path.GetDirectoryName fileName
+            let baseName = FileSystemUtils.fileNameWithoutExtension fileName
+
             FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName))
-                || (tcConfig
-                       .FxResolver
-                       .GetSystemAssemblies()
-                       .Contains(FileSystemUtils.fileNameWithoutExtension fileName))
-                || tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
+            && ((tcConfig.GetTargetFrameworkDirectories() |> List.contains dirName)
+                || FxResolver.GetSystemAssemblies().Contains baseName
+                || FxResolver.IsReferenceAssemblyPackDirectoryApprox dirName)
         with _ ->
             false
 

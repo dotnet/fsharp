@@ -2,6 +2,7 @@
 
 /// Code to pickle out quotations in the quotation binary format.
 module internal FSharp.Compiler.QuotationPickler
+
 #nowarn "1178"
 
 type TypeData

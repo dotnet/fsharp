@@ -34,7 +34,7 @@ type ResolutionEnvironment =
     { ResolutionFolder: string
       OutputFile: string option
       ShowResolutionMessages: bool
-      ReferencedAssemblies: string[]
+      GetReferencedAssemblies: unit -> string[]
       TemporaryFolder: string }
 
 /// Load a the design-time part of a type-provider into the host process, and look for types
@@ -118,19 +118,32 @@ let CreateTypeProvider (
             let e = StripException (StripException err)
             raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
 
+    let getReferencedAssemblies () =
+        resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
+
     if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-            TypeProviderConfig(systemRuntimeContainsType, 
+#if FSHARPCORE_USE_PACKAGE
+            TypeProviderConfig(systemRuntimeContainsType,
+                ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
-                ReferencedAssemblies=Array.copy resolutionEnvironment.ReferencedAssemblies, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-
+#else
+            TypeProviderConfig(systemRuntimeContainsType,
+                ReferencedAssemblies=getReferencedAssemblies(),
+                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
+                RuntimeAssembly=runtimeAssemblyPath, 
+                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
+                IsInvalidationSupported=isInvalidationSupported, 
+                IsHostedExecution= isInteractive, 
+                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
+#endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
     elif typeProviderImplementationType.GetConstructor [| |] <> null then 
@@ -217,9 +230,10 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
     | Tainted.Null -> 
-        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
+        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
-    | Tainted.NonNull r -> r
+    | Tainted.NonNull r ->
+        r
 
 /// Try to access a property or method on a provided member, catching and reporting errors
 let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
@@ -333,7 +347,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
             x.CustomAttributes 
             |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -353,13 +367,13 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.IsGenericType = x.IsGenericType
 
-    member _.Namespace = x.Namespace
+    member _.Namespace : string MaybeNull = x.Namespace
 
     member _.FullName = x.FullName
 
     member _.IsArray = x.IsArray
 
-    member _.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
+    member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
 
     member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
 
@@ -402,7 +416,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
-    member _.IsVoid = (typeof<Void>.Equals x || (x.Namespace = "System" && x.Name = "Void"))
+    member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
 
     member _.IsGenericParameter = x.IsGenericParameter
 
@@ -533,7 +547,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
 
 [<AllowNullLiteral; AbstractClass>] 
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 
@@ -555,7 +569,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
 
 [<AllowNullLiteral; Sealed>] 
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 

@@ -14,31 +14,25 @@ neg04.fs(26,8,26,17): typecheck error FS0912: This declaration element is not pe
 neg04.fs(32,8,32,11): typecheck error FS0039: The type 'Double' does not define the field, constructor or member 'Nan'. Maybe you want one of the following:
    IsNaN
 
-neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a
-    ''a * 'b * 'c * 'e'    
-but given a
-    ''a * 'b * 'c'    
-The tuples have differing lengths of 4 and 3
+neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a tuple of length 4 of type
+    'a * 'g * 'f * 'i    
+but given a tuple of length 3 of type
+    'c * 'l * 'm    
 
-neg04.fs(46,99,46,107): typecheck error FS0001: Type mismatch. Expecting a
-    ''a * 'b * 'c * 'e'    
-but given a
-    ''a * 'b * 'c'    
-The tuples have differing lengths of 4 and 3
+
+neg04.fs(46,99,46,107): typecheck error FS0001: Type mismatch. Expecting a tuple of length 4 of type
+    'a * 'g * 'f * 'i    
+but given a tuple of length 3 of type
+    'n * 'o * 'p    
+
 
 neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
-    'seq<'a> -> 'f'    
+    ''a seq -> 'n'    
 but given a
-    ''g list -> 'h'    
-The type 'seq<'a>' does not match the type ''f list'
+    ''o list -> 'p'    
+The type ''a seq' does not match the type ''n list'
 
 neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
-
-neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
-    'seq<'a> -> 'f'    
-but given a
-    ''g list -> 'h'    
-The type 'seq<'a>' does not match the type ''f list'
 
 neg04.fs(61,25,61,40): typecheck error FS0001: This expression was expected to have type
     'ClassType1'    
@@ -51,7 +45,7 @@ neg04.fs(70,21,70,36): typecheck error FS0064: This construct causes code to be 
 
 neg04.fs(70,12,70,14): typecheck error FS0663: This type parameter has been used in a way that constrains it to always be 'c<string>'
 
-neg04.fs(70,21,70,36): typecheck error FS0698: Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution
+neg04.fs(70,12,70,14): typecheck error FS0660: This code is less generic than required by its annotations because the explicit type variable 'a' could not be generalized. It was constrained to be 'c<string>'.
 
 neg04.fs(76,19,76,26): typecheck error FS0698: Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution
 
@@ -59,7 +53,7 @@ neg04.fs(76,19,76,26): typecheck error FS0064: This construct causes code to be 
 
 neg04.fs(76,10,76,12): typecheck error FS0663: This type parameter has been used in a way that constrains it to always be 'd'
 
-neg04.fs(76,19,76,26): typecheck error FS0698: Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution
+neg04.fs(76,10,76,12): typecheck error FS0660: This code is less generic than required by its annotations because the explicit type variable 'a' could not be generalized. It was constrained to be 'd'.
 
 neg04.fs(81,58,81,61): typecheck error FS0001: This expression was expected to have type
     'int'    

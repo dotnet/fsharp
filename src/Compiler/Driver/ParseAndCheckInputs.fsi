@@ -39,7 +39,9 @@ val ParseInput:
     lexbuf: Lexbuf *
     defaultNamespace: string option *
     fileName: string *
-    isLastCompiland: (bool * bool) ->
+    isLastCompiland: (bool * bool) *
+    identCapture: bool *
+    userOpName: string option ->
         ParsedInput
 
 /// A general routine to process hash directives
@@ -112,7 +114,6 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
-
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 
@@ -133,6 +134,11 @@ type TcState =
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
+/// Returns partial type check result for skipped implementation files.
+val SkippedImplFilePlaceholder:
+    tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcState: TcState * input: ParsedInput ->
+        ((TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState) option
+
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
     checkForErrors: (unit -> bool) *
@@ -142,8 +148,7 @@ val CheckOneInput:
     prefixPathOpt: LongIdent option *
     tcSink: NameResolution.TcResultsSink *
     tcState: TcState *
-    input: ParsedInput *
-    skipImplIfSigExists: bool ->
+    input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs

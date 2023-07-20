@@ -101,19 +101,19 @@ module TcResolutionsExtensions =
 
     let reprToClassificationType g repr tcref =
         match repr with
-        | TFSharpObjectRepr om ->
+        | TFSharpTyconRepr om ->
             match om.fsobjmodel_kind with
+            | TFSharpUnion
+            | TFSharpRecord ->
+                if isStructTyconRef g tcref then
+                    SemanticClassificationType.ValueType
+                else
+                    SemanticClassificationType.Type
             | TFSharpClass -> SemanticClassificationType.ReferenceType
             | TFSharpInterface -> SemanticClassificationType.Interface
             | TFSharpStruct -> SemanticClassificationType.ValueType
             | TFSharpDelegate _ -> SemanticClassificationType.Delegate
-            | TFSharpEnum _ -> SemanticClassificationType.Enumeration
-        | TFSharpRecdRepr _
-        | TFSharpUnionRepr _ ->
-            if isStructTyconRef g tcref then
-                SemanticClassificationType.ValueType
-            else
-                SemanticClassificationType.Type
+            | TFSharpEnum -> SemanticClassificationType.Enumeration
         | TILObjectRepr (TILObjectReprData (_, _, td)) ->
             if td.IsClass then
                 SemanticClassificationType.ReferenceType
@@ -149,9 +149,9 @@ module TcResolutionsExtensions =
                         match occ with
                         | ItemOccurence.UseInType
                         | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use _
-                        | ItemOccurence.Binding _
-                        | ItemOccurence.Pattern _
+                        | ItemOccurence.Use
+                        | ItemOccurence.Binding
+                        | ItemOccurence.Pattern
                         | ItemOccurence.Open -> Some()
                         | _ -> None
 
@@ -170,7 +170,7 @@ module TcResolutionsExtensions =
 
                     let (|EnumCaseFieldInfo|_|) (rfinfo: RecdFieldInfo) =
                         match rfinfo.TyconRef.TypeReprInfo with
-                        | TFSharpObjectRepr x ->
+                        | TFSharpTyconRepr x ->
                             match x.fsobjmodel_kind with
                             | TFSharpEnum -> Some()
                             | _ -> None
@@ -212,10 +212,8 @@ module TcResolutionsExtensions =
                     resolutions
                     |> Array.iter (fun cnr ->
                         match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _
-                          | Item.CustomOperation _),
-                          ItemOccurence.Use,
-                          m -> add m SemanticClassificationType.ComputationExpression
+                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                            add m SemanticClassificationType.ComputationExpression
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
@@ -354,7 +352,7 @@ module TcResolutionsExtensions =
 
                         | Item.Event _, _, m -> add m SemanticClassificationType.Event
 
-                        | Item.ArgName _, _, m -> add m SemanticClassificationType.NamedArgument
+                        | Item.OtherName _, _, m -> add m SemanticClassificationType.NamedArgument
 
                         | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
 

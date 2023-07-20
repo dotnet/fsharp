@@ -170,6 +170,21 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsTypeName(range: range) =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitModuleDecl(_, _, synModuleDecl) =
+                    match synModuleDecl with
+                    | SynModuleDecl.Types (typeDefns, _) ->
+                        typeDefns
+                        |> Seq.exists (fun (SynTypeDefn (typeInfo, _, _, _, _, _)) -> typeInfo.Range = range)
+                        |> Some
+                    | _ -> None
+            }
+
+        let result = SyntaxTraversal.Traverse(range.Start, input, visitor)
+        result |> Option.contains true
+
     member _.TryRangeOfFunctionOrMethodBeingApplied pos =
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
@@ -298,7 +313,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
         SyntaxTraversal.Traverse(pos, input, visitor)
 
-    member _.GetAllArgumentsForFunctionApplicationAtPostion pos =
+    member _.GetAllArgumentsForFunctionApplicationAtPosition pos =
         SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
 
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
@@ -398,6 +413,35 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
         SyntaxTraversal.Traverse(expressionPos, input, visitor)
 
+    member _.TryRangeOfReturnTypeHint(symbolUseStart: pos, ?skipLambdas) =
+        let skipLambdas = defaultArg skipLambdas true
+
+        SyntaxTraversal.Traverse(
+            symbolUseStart,
+            input,
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = defaultTraverse expr
+
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    match binding with
+                    | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+
+                    // Skip manually type-annotated bindings
+                    | SynBinding(returnInfo = Some (SynBindingReturnInfo _)) -> defaultTraverse binding
+
+                    // Let binding
+                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    // Member binding
+                    | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
+                                  trivia = { EqualsRange = Some equalsRange }) when ident.idRange.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    | _ -> defaultTraverse binding
+            }
+        )
+
     member _.FindParameterLocations pos = ParameterLocations.Find(pos, input)
 
     member _.IsPositionContainedInACurriedParameter pos =
@@ -456,6 +500,24 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynBinding (headPat = SynPat.Named (range = patRange)
                                   returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> Some patRange
                     | _ -> defaultTraverse binding
+            }
+
+        let result = SyntaxTraversal.Traverse(pos, input, visitor)
+        result.IsSome
+
+    member _.IsPositionWithinTypeDefinition pos =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitComponentInfo(path, _) =
+                    let typeDefs =
+                        path
+                        |> List.filter (function
+                            | SyntaxNode.SynModule (SynModuleDecl.Types _) -> true
+                            | _ -> false)
+
+                    match typeDefs with
+                    | [] -> None
+                    | _ -> Some true
             }
 
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
@@ -622,7 +684,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.ArrayOrListComputed (_, e, _)
                         | SynExpr.Typed (e, _, _)
                         | SynExpr.FromParseError (e, _)
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _)
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, _)
                         | SynExpr.Do (e, _)
                         | SynExpr.Assert (e, _)
                         | SynExpr.Fixed (e, _)
@@ -715,7 +777,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                             yield! walkExprs (fs |> List.choose (fun (SynExprRecordField (expr = e)) -> e))
 
-                        | SynExpr.AnonRecd (_isStruct, copyExprOpt, fs, _) ->
+                        | SynExpr.AnonRecd (copyInfo = copyExprOpt; recordFields = fs) ->
                             match copyExprOpt with
                             | Some (e, _) -> yield! walkExpr true e
                             | None -> ()
@@ -886,7 +948,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         match memb with
                         | SynMemberDefn.LetBindings (binds, _, _, _) -> yield! walkBinds binds
                         | SynMemberDefn.AutoProperty (synExpr = synExpr) -> yield! walkExpr true synExpr
-                        | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) -> yield! checkRange m
+                        | SynMemberDefn.ImplicitCtor (range = m) -> yield! checkRange m
                         | SynMemberDefn.Member (bind, _) -> yield! walkBind bind
                         | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                             match getBinding, setBinding with

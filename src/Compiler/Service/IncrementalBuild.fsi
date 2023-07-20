@@ -185,6 +185,8 @@ type internal IncrementalBuilder =
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
     member GetCheckResultsForFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
 
+    // TODO: Looks like the following doc does not match the actual method or it's signature.
+
     /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
     /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
     /// This is a relatively quick operation.
@@ -192,8 +194,9 @@ type internal IncrementalBuilder =
     /// This is safe for use from non-compiler threads
     member AreCheckResultsBeforeFileInProjectReady: fileName: string -> bool
 
-    /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
-    /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
+    /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. the timestamps of files and referenced DLLs prior to this one.
+    /// However, files will not be parsed or checked.
+    /// Return None if the result is not available or if it is not up-to-date.
     ///
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
     member TryGetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults option
@@ -233,7 +236,7 @@ type internal IncrementalBuilder =
         unit ->
             NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
-    /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
+    /// Get the logical time stamp that is associated with the output of the project if it were fully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
     /// Does the given file exist in the builder's pipeline?
@@ -244,6 +247,8 @@ type internal IncrementalBuilder =
     /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+
+    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> NodeCode<unit>
 
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:
@@ -263,9 +268,12 @@ type internal IncrementalBuilder =
         keepAllBackgroundSymbolUses: bool *
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
-        enableParallelCheckingWithSignatureFiles: bool *
         dependencyProvider: DependencyProvider option *
-        parallelReferenceResolution: ParallelReferenceResolution ->
+        parallelReferenceResolution: ParallelReferenceResolution *
+        captureIdentifiersWhenParsing: bool *
+        getSource: (string -> Async<ISourceText option>) option *
+        useChangeNotifications: bool *
+        useSyntaxTreeCache: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

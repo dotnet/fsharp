@@ -46,6 +46,11 @@ type FsiPropertyPage() =
     [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>]
     member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
 
+    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveUseNetCore)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveUseNetCoreDescr)>]
+    member this.FsiUseNetCore with get() = SessionsProperties.fsiUseNetCore and set (x:bool) = SessionsProperties.fsiUseNetCore <- x
+
     [<ResourceCategory(SRProperties.FSharpInteractiveDebugging)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveDebugMode)>]
     [<ResourceDescription(SRProperties.FSharpInteractiveDebugModeDescr)>]
@@ -55,11 +60,6 @@ type FsiPropertyPage() =
     [<ResourceDisplayName(SRProperties.FSharpInteractivePreviewMode)>]
     [<ResourceDescription(SRProperties.FSharpInteractivePreviewModeDescr)>]
     member this.FsiPreview with get() = SessionsProperties.fsiPreview and set (x:bool) = SessionsProperties.fsiPreview <- x
-
-    [<ResourceCategory(SRProperties.FSharpInteractivePreview)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractiveUseNetCore)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveUseNetCoreDescr)>]
-    member this.FsiUseNetCore with get() = SessionsProperties.fsiUseNetCore and set (x:bool) = SessionsProperties.fsiUseNetCore <- x
 
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) =

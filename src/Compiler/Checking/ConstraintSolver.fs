@@ -232,7 +232,7 @@ type OverallTy =
         | MustEqual ty -> ty
         | MustConvertTo (_, ty) -> ty
 
-exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
+exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType list * TType list * range * range
 
 exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 
@@ -1203,7 +1203,9 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         if not (typarsAEquiv g aenv tps1 tps2) then localAbortD else
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bodyTy1 bodyTy2 
 
-    | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+    | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
     | _  -> localAbortD
 
 and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 =
@@ -1225,10 +1227,10 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        let rec loop l1 l2 = 
            match l1, l2 with 
            | [], [] -> CompleteD 
-           | h1 :: t1, h2 :: t2 -> 
+           | h1 :: t1, h2 :: t2 when t1.Length = t2.Length -> 
                SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
-           | _ -> 
-               ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, origl1, origl2, csenv.m, m2)) 
+           | _ ->
+               ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2 = trackErrors {
@@ -2749,7 +2751,7 @@ and ArgsMustSubsumeOrConvert
         msg csenv.DisplayEnv
     | None -> ()
     match usesTDC with 
-    | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
+    | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
     | TypeDirectedConversionUsed.No -> ()
     do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
@@ -2780,7 +2782,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
@@ -2807,7 +2809,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None reqdTy actualTy 
         return usesTDC
@@ -2824,7 +2826,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConst
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         if not (typeEquiv csenv.g calledArgTy callerArgTy) then 
             return! ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), m))
@@ -3236,7 +3238,11 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         if c <> 0 then c else
             
         // Prefer methods that need less type-directed conversion
-        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0)
+        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, false, _) -> 1 | _ -> 0)
+        if c <> 0 then c else
+
+        // Prefer methods that only have nullable type-directed conversions
+        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, _, true) -> 1 | _ -> 0)
         if c <> 0 then c else
 
         // Prefer methods that don't give "this code is less generic" warnings
@@ -3695,7 +3701,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
 let ChooseTyparSolutionAndSolve css denv tp =
     let g = css.g
     let amap = css.amap
-    let max, m = ChooseTyparSolutionAndRange g amap tp 
+    let max, m = ChooseTyparSolutionAndRange g amap tp
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)

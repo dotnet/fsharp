@@ -7,7 +7,6 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -144,10 +143,6 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
     | Some thataddrv ->
         // let thataddrv = &thatv
         mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr
-
-let mkDerefThis g m (thisv: Val) thise =
-    if isByrefTy g thisv.Type then  mkAddrGet m (mkLocalValRef thisv)
-    else thise
 
 let mkCompareTestConjuncts g m exprs =
     match List.tryFrontAndBack exprs with 
@@ -856,8 +851,7 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
           IsFinal=final
           IsOverrideOrExplicitImpl=true
           GetterOrSetterIsCompilerGenerated=false
-          MemberKind=SynMemberKind.Member
-          Trivia=SynMemberFlagsTrivia.Zero}
+          MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
@@ -868,8 +862,7 @@ let nonVirtualMethod c : ValMemberInfo =
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
                   GetterOrSetterIsCompilerGenerated=false
-                  MemberKind=SynMemberKind.Member
-                  Trivia=SynMemberFlagsTrivia.Zero}
+                  MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
@@ -999,7 +992,16 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
             // build the hash rhs
             let withcGetHashCodeExpr =
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
-                let thisv, hashe = hashf g tcref tycon compe
+
+                // Special case List<T> type to avoid StackOverflow exception , call custom hash code instead
+                let thisv,hashe = 
+                    if tyconRefEq g tcref g.list_tcr_canon && tycon.HasMember g "CustomHashCode" [g.IEqualityComparer_ty] then
+                        let customCodeVal = (tycon.TryGetMember g "CustomHashCode" [g.IEqualityComparer_ty]).Value                  
+                        let tinst, ty = mkMinimalTy g tcref
+                        let thisv, thise = mkThisVar g m ty   
+                        thisv,mkApps g ((exprForValRef m customCodeVal, customCodeVal.Type), (if isNil tinst then [] else [tinst]), [thise; compe], m)
+                    else                     
+                        hashf g tcref tycon compe
                 mkLambdas g m tps [thisv; compv] (hashe, g.int_ty)
                 
             // build the equals rhs
