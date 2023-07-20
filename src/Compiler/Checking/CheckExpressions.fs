@@ -4885,8 +4885,8 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
 /// the prefix of type arguments.
 and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv mItem mWhole tcref pathTypeArgs (synArgTys: SynType list) =
     let g = cenv.g
-    CheckTyconAccessible cenv.amap mItem env.AccessRights tcref |> ignore
-    CheckEntityAttributes g tcref mItem |> CommitOperationResult
+    CheckTyconAccessible cenv.amap mWhole env.AccessRights tcref |> ignore
+    CheckEntityAttributes g tcref mWhole |> CommitOperationResult
 
 #if !NO_TYPEPROVIDERS
     // Provided types are (currently) always non-generic. Their names may include mangled
