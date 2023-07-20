@@ -336,6 +336,7 @@ type TcGlobals(
   static let isInEmbeddableKnownSet name =
       match name with
       | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
       | _ -> false
@@ -1422,6 +1423,7 @@ type TcGlobals(
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 

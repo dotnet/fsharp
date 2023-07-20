@@ -5571,6 +5571,12 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | TyparConstraint.RequiresDefaultConstructor _ -> true
             | _ -> false)
 
+    let unmanagedConstraint =
+        tp.Constraints
+        |> List.exists (function
+            | TyparConstraint.IsUnmanaged _ -> true
+            | _ -> false)
+
     let tpName =
         // use the CompiledName if given
         // Inference variables get given an IL name "TA, TB" etc.
@@ -5598,7 +5604,15 @@ and GenGenericParam cenv eenv (tp: Typar) =
         else
             nm
 
-    let tpAttrs = mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)
+    let attributeList =
+        let defined = GenAttrs cenv eenv tp.Attribs
+
+        if unmanagedConstraint then
+            (GetIsUnmanagedAttribute g) :: defined
+        else
+            defined
+
+    let tpAttrs = mkILCustomAttrs (attributeList)
 
     {
         Name = tpName

@@ -223,7 +223,7 @@ let _ = Test<NonStructRecdC<int>>()
         (Error 43, Line 1, Col 34, Line 1, Col 48, "The constraints 'unmanaged' and 'not struct' are inconsistent")]
 
     [<Fact>]
-    let ``Modreq is not emitted for unmanaged type parameters`` () =
+    let ``IsUnmanagedAttribute Attribute is emitted and generated for unmanaged constraint on type`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct> = struct end"
         |> compile
         |> shouldSucceed
@@ -241,8 +241,37 @@ let _ = Test<NonStructRecdC<int>>()
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+        .param type T 
+          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
       } 
     
-    }"""]
-    // let ``Attribute is emitted for unmanaged`` () = ignore
+    }""";"""
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
+       extends [runtime]System.Attribute"""]
+
+    [<Fact>]
+    let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
+        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = struct(x,1)"
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+      .method public static valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32> 
+          testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
+  {
+    .param type TUnmanaged 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.1
+    IL_0002:  newobj     instance void valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32>::.ctor(!0,
+                                                                                                          !1)
+    IL_0007:  ret
+  } """;"""
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
+       extends [runtime]System.Attribute"""]
+
+
+
+
     // let ``C# <-> F# cross-project unmanaged usage`` () = ignore
