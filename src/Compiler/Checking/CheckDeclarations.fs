@@ -3428,7 +3428,6 @@ module EstablishTypeDefinitionCores =
                     writeFakeRecordFieldsToSink recdFields
                     CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
 
-                    let repr = TFSharpRecdRepr (Construct.MakeRecdFieldsTable recdFields)
                     let data =
                         {
                             fsobjmodel_cases = Construct.MakeUnionCases []
