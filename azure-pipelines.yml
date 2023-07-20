@@ -347,6 +347,33 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
+        - job: WindowsStrictIndentation
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:OtherFlags=--strict-indentation+
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
+
+
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
           variables:
