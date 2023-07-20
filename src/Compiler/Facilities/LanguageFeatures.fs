@@ -71,6 +71,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
@@ -165,9 +166,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
                 LanguageFeature.DiagnosticForObjInference, previewVersion
-                LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
-
+                LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
+                LanguageFeature.StrictIndentation, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -292,6 +293,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
+
+        | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
