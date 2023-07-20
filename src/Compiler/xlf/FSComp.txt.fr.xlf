@@ -166,6 +166,7 @@
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
         <note />
+	  </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Toutes les branches d’une expression « if » doivent retourner des valeurs implicitement convertibles au type de la première branche, qui est ici un tuple de longueur {0} de type\n    {1}    \nCette branche renvoie un tuple de longueur {2} de type\n    {3}    \n</target>

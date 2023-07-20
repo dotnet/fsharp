@@ -166,6 +166,7 @@
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
         <note />
+	  </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">'if' 式のすべての分岐は、最初の分岐の型に暗黙的に変換できる値を返す必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの分岐は、型の長さ {2} のタプルを返します\n    {3}    \n</target>

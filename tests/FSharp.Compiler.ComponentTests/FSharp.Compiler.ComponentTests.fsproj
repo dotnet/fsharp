@@ -24,55 +24,7 @@
   <ItemGroup>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
-    </Compile>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
-    <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags\Diags.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy\Legacy.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\ModuleDefinitions.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs" />
-    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
-    <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
-	<Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
-	<Compile Include="Conformance\Constraints\Unmanaged.fs" />
-    <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
-    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
-    <Compile Include="Conformance\DeclarationElements\Events\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\FieldMembers\FieldMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ImportDeclarations\ImportDeclarations.fs" />
-    <Compile Include="Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\Basic\Basic.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
-    <Compile Include="Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MemberDefinitions.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
-    <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
-    <Compile Include="Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
-    <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
+    </Compile>  
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -114,6 +66,7 @@
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
+	<Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
@@ -216,7 +169,6 @@
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
-	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
     <Compile Include="Language\IndexerSetterParamArray.fs" />

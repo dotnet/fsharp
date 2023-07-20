@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.Constraints
+namespace Conformance.Constraints
 
 open Xunit
 open FSharp.Test.Compiler
@@ -167,7 +167,7 @@ let _ = Test<NonStructRecdC<int>>()
         """
         |> typecheck
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
              (Error 1, Line 20, Col 6, Line 20, Col 33, "A generic construct requires that the type 'S<obj>' is an unmanaged type")
              (Error 193, Line 21, Col 6, Line 21, Col 14, "A generic construct requires that the type 'X<'a>' is an unmanaged type")
              (Error 193, Line 22, Col 7, Line 22, Col 20, "A generic construct requires that the type 'A<obj,int>' is an unmanaged type")
@@ -181,7 +181,7 @@ let _ = Test<NonStructRecdC<int>>()
         Fsx "type X<'T when 'T: unmanaged and 'T: not struct> = class end"
         |> typecheck
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
         (Error 43, Line 1, Col 34, Line 1, Col 48, "The constraints 'unmanaged' and 'not struct' are inconsistent")]
 
     [<Fact>]
