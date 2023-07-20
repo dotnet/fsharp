@@ -84,3 +84,46 @@ if res <> "formattable" then
          |> asExe
          |> compileAndRun
          |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Enum incompleteness check should not hide an issue with outer DU pattern matching with nowarn:104 `` () = 
+        Fsx """
+type E = A = 0
+
+type Ex =
+    | ExA of int * E
+    | ExB of int
+    
+let flub ex =
+    match ex with
+    | ExA(_, E.A) -> ()
+    
+flub (ExB 3)
+        """
+        |> withNoWarn 104        
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [Warning 25, Line 9, Col 11, Line 9, Col 13, "Incomplete pattern matches on this expression. For example, the value 'ExB (_)' may indicate a case not covered by the pattern(s)."]
+
+    [<Fact>]
+    let ``Enum incompleteness check in nested scenarios should report all warnings`` () = 
+        Fsx """
+type E =
+    | FieldA = 1
+    | FieldB = 2
+
+type U =
+    | CaseA
+    | CaseB of E
+
+match CaseA with
+| CaseB E.FieldA -> ()
+| CaseB E.FieldB -> ()
+        """     
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+                Warning 104, Line 10, Col 7, Line 10, Col 12, "Enums may take values outside known cases. For example, the value 'CaseB (enum<E> (0))' may indicate a case not covered by the pattern(s)."
+                Warning 25, Line 10, Col 7, Line 10, Col 12, "Incomplete pattern matches on this expression. For example, the value 'CaseA' may indicate a case not covered by the pattern(s)."]
+   
