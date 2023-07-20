@@ -3055,33 +3055,48 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m innerSearch with
                     | Result _ as res -> res
                     | _ ->
-                        let failingCase =
-                            match typeError with
-                            | Some e -> raze e
+                        match typeError with
+                        | Some e -> raze e
+                        | _ ->
+                            let tyconSearch () =
+                                let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                                if isNil tcrefs then NoResultsOrUsefulErrors else
+
+                                let tcrefs = ResolveUnqualifiedTyconRefs nenv tcrefs
+                                let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
+                                CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
+                                |> CollectResults success
+
+                            match tyconSearch () with
+                            | Result ((resInfo, tcref) :: _) ->
+                                let item = Item.Types(id.idText, [ generalizedTyconRef ncenv.g tcref ])
+                                success (resInfo, item)
+
                             | _ ->
-                                let suggestNamesAndTypes (addToBuffer: string -> unit) =
-                                    for e in nenv.eUnqualifiedItems do
-                                        if canSuggestThisItem e.Value then
-                                            addToBuffer e.Value.DisplayName
 
-                                    for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                                        if IsEntityAccessible ncenv.amap m ad e.Value then
-                                            addToBuffer e.Value.DisplayName
+                            let suggestNamesAndTypes (addToBuffer: string -> unit) =
+                                for e in nenv.eUnqualifiedItems do
+                                    if canSuggestThisItem e.Value then
+                                        addToBuffer e.Value.DisplayName
 
-                                    for kv in nenv.ModulesAndNamespaces fullyQualified do
-                                        for modref in kv.Value do
-                                            if IsEntityAccessible ncenv.amap m ad modref then
-                                                addToBuffer modref.DisplayName
+                                for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                                    if IsEntityAccessible ncenv.amap m ad e.Value then
+                                        addToBuffer e.Value.DisplayName
 
-                                    // check if the user forgot to use qualified access
-                                    for e in nenv.eTyconsByDemangledNameAndArity do                                    
-                                        let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
-                                        if hasRequireQualifiedAccessAttribute then
-                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
-                                                addToBuffer (e.Value.DisplayName + "." + id.idText)
+                                for kv in nenv.ModulesAndNamespaces fullyQualified do
+                                    for modref in kv.Value do
+                                        if IsEntityAccessible ncenv.amap m ad modref then
+                                            addToBuffer modref.DisplayName
 
-                                raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
-                        failingCase
+                                // check if the user forgot to use qualified access
+                                for e in nenv.eTyconsByDemangledNameAndArity do                                    
+                                    let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                                    if hasRequireQualifiedAccessAttribute then
+                                        if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
+                                            addToBuffer (e.Value.DisplayName + "." + id.idText)
+
+                            raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
+
                 match res with 
                 | Exception e -> raze e
                 | Result (resInfo, item) -> 

@@ -692,6 +692,9 @@ module TypeSymbols =
     let isClass (entity: FSharpEntity) =
         entity.IsClass
 
+    let isRecord (entity: FSharpEntity) =
+        entity.IsFSharpRecord
+
     [<Test>]
     let ``Interface 01`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -772,4 +775,95 @@ let l: List<_> = List [|1|]
         |> getSymbols isClass
         |> shouldEqual [
             "List", ["int"]
+        ]
+
+    [<Test>]
+    let ``Record 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R = { Field: int }
+
+R
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", []
+        ]
+
+    [<Test>]
+    let ``Record 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R = { Field: int }
+
+R.
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", []
+        ]
+
+    [<Test>]
+    let ``Record 03`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R =
+    { Field: int }
+    static member P = 1
+
+R.P
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", []
+        ]
+
+    [<Test>]
+    let ``Record 04 - Generic`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R<'T> =
+    { Field: int }
+    static member P = 1
+
+R<int>
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", ["int"]
+        ]
+
+    [<Test>]
+    let ``Record 05 - Generic`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R<'T> =
+    { Field: int }
+    static member P = 1
+
+R<int>.P
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", ["int"]
         ]
