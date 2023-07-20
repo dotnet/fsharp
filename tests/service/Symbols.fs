@@ -867,3 +867,22 @@ R<int>.P
             "R", []
             "R", ["int"]
         ]
+
+    [<Test>]
+    let ``Record 06 - Nameof`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Module
+
+type R =
+    { Field: int }
+
+nameof R
+"""
+        let symbolUses = getSymbolUses checkResults
+        symbolUses
+        |> getSymbols isRecord
+        |> shouldEqual [
+            "R", []
+            "R", []
+            "R", []
+        ]

@@ -8030,6 +8030,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
                           | Item.DelegateCtor _
                           | Item.CtorGroup _
                           | Item.FakeInterfaceCtor _ -> false
+                          | Item.Types _ -> false
                           | _ -> true) ->
                     let overallTy = match overallTyOpt with None -> MustEqual (NewInferenceType g) | Some t -> t
                     let _, _ = TcItemThen cenv overallTy ItemOccurence.Use env tpenv res None delayed
