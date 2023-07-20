@@ -75,3 +75,16 @@ let x = {| abcd = {| ab = 4; cd = 1 |} |}
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Wrong update syntax`` () =
+        Fsx """
+let f (r: {| A: int |}) =
+    { r with A = 1 }
+"""
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 3, Col 14, Line 3, Col 15, "The record label 'A' is not defined.")
+        ]
