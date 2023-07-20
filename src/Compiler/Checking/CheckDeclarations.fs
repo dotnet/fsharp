@@ -3320,7 +3320,7 @@ module EstablishTypeDefinitionCores =
 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
-            
+
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
                 if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
                     let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
@@ -3337,13 +3337,8 @@ module EstablishTypeDefinitionCores =
                 // Record fields should be visible from IntelliSense, so add fake names for them (similarly to "let a = ..")
                 for fspec in fields do
                     if not fspec.IsCompilerGenerated then
-                        let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
-                        let nenv' = AddFakeNameToNameEnv fspec.LogicalName nenv (Item.RecdField info) 
-                        // Name resolution gives better info for tooltips
                         let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec))
                         CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
-                        // Environment is needed for completions
-                        CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
 
             // Notify the Language Service about constructors in discriminated union declaration
             let writeFakeUnionCtorsToSink (unionCases: UnionCase list) = 
@@ -3351,11 +3346,8 @@ module EstablishTypeDefinitionCores =
                 // Constructors should be visible from IntelliSense, so add fake names for them 
                 for unionCase in unionCases do
                     let info = UnionCaseInfo(thisTyInst, mkUnionCaseRef thisTyconRef unionCase.Id.idText)
-                    let nenv' = AddFakeNameToNameEnv unionCase.Id.idText nenv (Item.UnionCase(info, false)) 
-                    // Report to both - as in previous function
                     let item = Item.UnionCase(info, false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
-                    CallEnvSink cenv.tcSink (unionCase.Id.idRange, nenv', ad)
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
@@ -3408,7 +3400,7 @@ module EstablishTypeDefinitionCores =
                     else 
                         TNoRepr, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
+                | SynTypeDefnSimpleRepr.Union (_, unionCases, mRepr) -> 
                     noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDU
@@ -3421,10 +3413,11 @@ module EstablishTypeDefinitionCores =
                     multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
+                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
                     let repr = Construct.MakeUnionRepr unionCases
                     repr, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
+                | SynTypeDefnSimpleRepr.Record (_, fields, mRepr) -> 
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()
@@ -3433,6 +3426,8 @@ module EstablishTypeDefinitionCores =
                     let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
+                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
+
                     let data =
                         {
                             fsobjmodel_cases = Construct.MakeUnionCases []

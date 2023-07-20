@@ -238,8 +238,9 @@ let AddDeclaredTypars check typars env =
     if isNil typars then
         env
     else
-        let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
-        { env with eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems }
+        { env with
+            eUngeneralizableItems = List.foldBack (mkTyparTy >> addFreeItemOfTy) typars env.eUngeneralizableItems
+            eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars}
 
 /// Environment of implicitly scoped type parameters, e.g. 'a in "(x: 'a)"
 
