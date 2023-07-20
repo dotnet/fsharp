@@ -20,7 +20,7 @@ module CompletionProviderTests =
     let filePath = "C:\\test.fs"
 
     let mkGetInfo documentId =
-        fun () -> documentId, filePath, [], (Some "preview")
+        fun () -> documentId, filePath, [], (Some "preview"), None
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
@@ -111,7 +111,16 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, CancellationToken.None)
+            CompletionUtils.getDefaultCompletionListSpan (
+                sourceText,
+                caretPosition,
+                documentId,
+                filePath,
+                [],
+                None,
+                None,
+                CancellationToken.None
+            )
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -1321,11 +1330,15 @@ type A = l
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
+let [<Literal>] lit = 1
+
 type A =
     | C = 0
+    | D = l
 """
 
         VerifyNoCompletionList(fileContents, "| C")
+        VerifyCompletionList(fileContents, "| D = l", [ "lit" ], [])
 
     [<Fact>]
     let ``Completion list in generic function body contains type parameter`` () =
