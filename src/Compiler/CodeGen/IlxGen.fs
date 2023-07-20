@@ -11109,7 +11109,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     // Build a basic type definition
                     let isObjectType =
                         match k with
-                        | TFSharpRecord _ -> false
+                        | TFSharpRecord -> false
                         | _ -> true
 
                     let ilAttrs =
