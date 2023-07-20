@@ -38,6 +38,8 @@ test(S<MyStructGenericWithNoConstraint<int>>(MyStructGenericWithNoConstraint<int
 let _ = Test<int>()
 let _ = Test<MyStruct>()
 let _ = Test<MyStructGeneric<int>>()
+let _ = Test<MyStructGeneric<System.TimeSpan>>()
+let _ = Test<MyStructGeneric<System.DateTime>>()
 let _ = Test<MyStructGeneric<MyStructGeneric<MyStructGeneric<int>>>>()
 let _ = Test<MyStructGenericWithNoConstraint<int>>()
 let _ = Test<MyStructGenericWithNoConstraint<MyStructGenericWithNoConstraint<int>>>()
@@ -138,6 +140,11 @@ type ResultC<'T,'TError when 'T: unmanaged and 'TError: unmanaged> =
 [<Struct>]
 type Test<'T when 'T: unmanaged> =
     val element: 'T
+[<Struct>]
+type DateOrTimeStampOrUnixOrCustom = 
+    | DuDateTime of dt:System.DateTime
+    | DuTimeSpan of ts:System.TimeSpan
+    | DuUnix of i:int
 let test (x: 'T when 'T : unmanaged) = ()
 test(SingleCaseUnion.X)
 test(MultiCaseUnion.A)
@@ -148,6 +155,8 @@ test(Ok 1)
 test(Error 2)
 test(ResultC<int,int>.OkC 1)
 test(ResultC<int,int>.ErrorC 1)
+test(DuUnix 132456)
+test(DuDateTime System.DateTime.Now)
 let _ = Test<SingleCaseUnion>()
 let _ = Test<MultiCaseUnion>()
 let _ = Test<Single<int>>()
