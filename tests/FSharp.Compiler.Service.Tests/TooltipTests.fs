@@ -189,7 +189,7 @@ type Bar = {
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 9 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
 
 
 [<Test>]
