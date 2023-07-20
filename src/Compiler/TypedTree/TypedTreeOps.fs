@@ -5997,14 +5997,14 @@ and remapUnionCases ctxt tmenv (x: TyconUnionData) =
     x.UnionCasesAsList |> List.map (remapUnionCase ctxt tmenv) |> Construct.MakeUnionCases 
 
 and remapFsObjData ctxt tmenv x = 
-    { x with 
-          fsobjmodel_cases = remapUnionCases ctxt tmenv x.fsobjmodel_cases
-          fsobjmodel_kind = 
-             (match x.fsobjmodel_kind with 
-              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
-              | _ -> x.fsobjmodel_kind)
-          fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
-          fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
+    { 
+        fsobjmodel_cases = remapUnionCases ctxt tmenv x.fsobjmodel_cases
+        fsobjmodel_kind = 
+            (match x.fsobjmodel_kind with 
+            | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
+            | _ -> x.fsobjmodel_kind)
+        fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
+        fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
 
 and remapTyconRepr ctxt tmenv repr = 
     match repr with 
