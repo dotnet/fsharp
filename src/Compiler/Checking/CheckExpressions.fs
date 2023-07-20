@@ -4862,22 +4862,27 @@ and TcProvidedMethodAppToStaticConstantArgs (cenv: cenv) env tpenv (minfo, methB
 
     providedMethAfterStaticArguments
 
-and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
-    let hasNoArgs, providedTypeAfterStaticArguments, checkTypeName = TcProvidedTypeAppToStaticConstantArgs cenv env None tpenv tcref args m
+and TcProvidedTypeApp (cenv: cenv) occ env tpenv tcref args mItem mWhole =
+    let hasNoArgs, providedTypeAfterStaticArguments, checkTypeName = TcProvidedTypeAppToStaticConstantArgs cenv env None tpenv tcref args mWhole
 
-    let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased), m)
+    let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased), mWhole)
 
     //printfn "adding entity for provided type '%s', isDirectReferenceToGenerated = %b, isGenerated = %b" (st.PUntaint((fun st -> st.Name), m)) isDirectReferenceToGenerated isGenerated
-    let isDirectReferenceToGenerated = isGenerated && IsGeneratedTypeDirectReference (providedTypeAfterStaticArguments, m)
+    let isDirectReferenceToGenerated = isGenerated && IsGeneratedTypeDirectReference (providedTypeAfterStaticArguments, mWhole)
     if isDirectReferenceToGenerated then
-        error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+        error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), mWhole))
 
     // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
     checkTypeName()
     if hasNoArgs then
         mkAppTy tcref [], tpenv
     else
-        let ty = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
+        let ty = Import.ImportProvidedType cenv.amap mWhole providedTypeAfterStaticArguments
+
+        if not hasNoArgs then
+            let item = Item.Types(tcref.DisplayNameCore, [ty])
+            CallNameResolutionSinkReplacing cenv.tcSink (function Item.CtorGroup _ -> false | _ -> true) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
+
         ty, tpenv
 #endif
 
@@ -4894,7 +4899,7 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv mItem mWhole tcr
 #if !NO_TYPEPROVIDERS
     // Provided types are (currently) always non-generic. Their names may include mangled
     // static parameters, which are passed by the provider.
-    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys mWhole else
+    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv occ env tpenv tcref synArgTys mItem mWhole else
 #endif
 
     let tps, _, tinst, _ = FreshenTyconRef2 g mItem tcref
