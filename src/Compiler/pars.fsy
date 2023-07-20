@@ -3292,7 +3292,7 @@ rationalConstant:
 
   | MINUS INT32
     { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, lhs parseState), lhs parseState) }
+      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, rhs parseState 2), lhs parseState) }
 
 atomicUnsignedRationalConstant:
   | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
