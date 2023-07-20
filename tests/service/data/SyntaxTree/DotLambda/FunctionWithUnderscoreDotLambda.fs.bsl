@@ -10,7 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None),
                   Named (SynIdent (myFunc, None), false, None, (1,4--1,10)),
                   None,
                   DotLambda
