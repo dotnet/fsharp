@@ -38,7 +38,9 @@ test(S<MyStructGenericWithNoConstraint<int>>(MyStructGenericWithNoConstraint<int
 let _ = Test<int>()
 let _ = Test<MyStruct>()
 let _ = Test<MyStructGeneric<int>>()
+let _ = Test<MyStructGeneric<MyStructGeneric<MyStructGeneric<int>>>>()
 let _ = Test<MyStructGenericWithNoConstraint<int>>()
+let _ = Test<MyStructGenericWithNoConstraint<MyStructGenericWithNoConstraint<int>>>()
         """
         |> typecheck
         |> shouldSucceed
@@ -54,6 +56,14 @@ let test (x: 'T when 'T : unmanaged) = ()
 let x = struct(1, 2)
 test x
 test (struct(1, 2))
+test (struct(1, 2, 3))
+test (struct(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, struct(12,13)))
+
+// test that constraint is being propagated
+let functionUsingTestInternally (struct(a,b) as s) =
+    test s
+
+functionUsingTestInternally (struct(42,42))
         """
         |> typecheck
         |> shouldSucceed
@@ -84,10 +94,23 @@ test(S<MyRecdGenericWithNoConstraint<int>>({ X = 1; Y = 1 }))
 let x = struct {| X = 1; Y = 1 |}
 test(x)
 test(struct {| X = 1; Y = 1 |})
+
+// test that constraint is being propagated
+let createAndTestAnonRecd (x) = 
+    let created = struct{|OnlyValue = x|}
+    test(created)
+    ()
+
+createAndTestAnonRecd 15
+createAndTestAnonRecd (struct{|Nested = 15|})
+createAndTestAnonRecd (struct{|Nested = struct(15,S<MyRecdGeneric<int>>({ X = 1; Y = 1 }))|})
+
 let _ = Test<int>()
 let _ = Test<MyRecd>()
 let _ = Test<MyRecdGeneric<int>>()
+let _ = Test<MyRecdGeneric<MyRecdGeneric<MyRecdGeneric<int>>>>()
 let _ = Test<MyRecdGenericWithNoConstraint<int>>()
+let _ = Test<MyRecdGenericWithNoConstraint<MyRecdGenericWithNoConstraint<int>>>()
         """
         |> typecheck
         |> shouldSucceed
@@ -109,7 +132,7 @@ type Result<'T,'TError> =
     | Ok of ok: 'T
     | Error of error: 'TError
 [<Struct>]
-type ResultC<'T,'TError> =
+type ResultC<'T,'TError when 'T: unmanaged and 'TError: unmanaged> =
     | OkC of ok: 'T
     | ErrorC of error: 'TError
 [<Struct>]
@@ -123,14 +146,29 @@ test(C 1)
 test(CC 1)
 test(Ok 1)
 test(Error 2)
-test(OkC 1)
-test(ErrorC 1)
+test(ResultC<int,int>.OkC 1)
+test(ResultC<int,int>.ErrorC 1)
 let _ = Test<SingleCaseUnion>()
 let _ = Test<MultiCaseUnion>()
 let _ = Test<Single<int>>()
+let _ = Test<Single<Single<Single<int>>>>()
+let _ = Test<Single<SingleC<Single<MultiCaseUnion>>>>()
 let _ = Test<SingleC<int>>()
+let _ = Test<SingleC<SingleC<int>>>()
 let _ = Test<Result<int, byte>>()
+let _ = Test<Result<Result<int, byte>, Single<MultiCaseUnion>>>()
 let _ = Test<ResultC<int, byte>>()
+
+// test that constraint is being propagated
+let resultCreatingFunction (x) = 
+    try
+        let capturedVal = Ok x
+        test capturedVal
+        capturedVal
+    with _ -> Error 15
+
+let _ = resultCreatingFunction A
+
         """
         |> typecheck
         |> shouldSucceed
@@ -185,10 +223,26 @@ let _ = Test<NonStructRecdC<int>>()
         (Error 43, Line 1, Col 34, Line 1, Col 48, "The constraints 'unmanaged' and 'not struct' are inconsistent")]
 
     [<Fact>]
-    let ``Modreq is emitted for unmanaged type parameters`` () =
+    let ``Modreq is not emitted for unmanaged type parameters`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct> = struct end"
         |> compile
         |> shouldSucceed
-        |> verifyIL ["foo"]
+        |> verifyIL ["""
+    .class public abstract auto ansi sealed Test
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+      .class sequential ansi serializable sealed nested public beforefieldinit Test`1<valuetype T>
+             extends [runtime]System.ValueType
+      {
+        .pack 0
+        .size 1
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+      } 
+    
+    }"""]
     // let ``Attribute is emitted for unmanaged`` () = ignore
     // let ``C# <-> F# cross-project unmanaged usage`` () = ignore
