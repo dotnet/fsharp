@@ -3064,7 +3064,8 @@ type AnonRecdTypeInfo =
       mutable TupInfo: TupInfo
       mutable SortedIds: Syntax.Ident[]
       mutable Stamp: Stamp
-      mutable SortedNames: string[] }
+      mutable SortedNames: string[]
+      mutable IlTypeName: int64 }
 
     /// Create an AnonRecdTypeInfo from the basic data
     static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo

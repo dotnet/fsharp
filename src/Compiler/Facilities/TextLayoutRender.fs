@@ -59,6 +59,7 @@ module WordL =
     let keywordAbstract = wordL TaggedText.keywordAbstract
     let keywordOverride = wordL TaggedText.keywordOverride
     let keywordEnum = wordL TaggedText.keywordEnum
+    let keywordInline = wordL TaggedText.keywordInline
 
 module LeftL =
     let leftParen = leftL TaggedText.leftParen

@@ -878,26 +878,19 @@ type TcGlobals(
   let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
-  let mutable generatedAttribsCache = []
-  let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
-  let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let debuggerNonUserCodeAttribute = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
   let addGeneratedAttrs (attrs: ILAttributes) =
-    let attribs =
-       match generatedAttribsCache with
-       | [] ->
-            let res = [
-                if not noDebugAttributes then
-                    mkCompilerGeneratedAttribute()
-                    mkDebuggerNonUserCodeAttribute()
-                ]
-            generatedAttribsCache <- res
-            res
-       | res -> res
-    mkILCustomAttrs (attrs.AsList() @ attribs)
+      if Array.isEmpty generatedAttributes then
+          attrs
+      else
+          match attrs.AsArray() with
+          | [||] -> mkILCustomAttrsFromArray generatedAttributes
+          | attrs -> mkILCustomAttrsFromArray (Array.append attrs generatedAttributes)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
@@ -911,15 +904,9 @@ type TcGlobals(
             ILType.Value (mkILNonGenericTySpec tref)
         mkILCustomAttribute (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
-  let mkDebuggerBrowsableNeverAttribute() =
-      match debuggerBrowsableNeverAttributeCache with
-      | None ->
-          let res = tref_DebuggerBrowsableAttribute 0
-          debuggerBrowsableNeverAttributeCache <- Some res
-          res
-      | Some res -> res
+  let debuggerBrowsableNeverAttribute = tref_DebuggerBrowsableAttribute 0
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrsFromArray (Array.append (attrs.AsArray()) [| debuggerBrowsableNeverAttribute |])
 
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
 
@@ -1522,6 +1509,7 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
+  member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1837,13 +1825,7 @@ type TcGlobals(
 
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
-  member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
-
-  member _.mkDebuggerStepThroughAttribute() =
-      mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
-
-  member _.mkDebuggableAttribute jitOptimizerDisabled =
-      mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
+  member _.DebuggerBrowsableNeverAttribute = debuggerBrowsableNeverAttribute
 
   member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
@@ -1858,9 +1840,9 @@ type TcGlobals(
 
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
-  member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+  member _.CompilerGeneratedAttribute = compilerGeneratedAttribute
 
-  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+  member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])

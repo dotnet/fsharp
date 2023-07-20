@@ -12,6 +12,16 @@
         <target state="translated">Açık deyimleri her zaman en üst düzeye yerleştir</target>
         <note />
       </trans-unit>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="new">Background analysis</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Capture_Identifiers_When_Parsing">
         <source>Capture identifiers while parsing</source>
         <target state="new">Capture identifiers while parsing</target>

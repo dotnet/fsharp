@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net7.0</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -143,6 +143,7 @@
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
+    <Compile Include="ErrorMessages\TailCallAttribute.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
@@ -250,6 +251,7 @@
     <Compile Include="Signatures\SeqTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
+    <Compile Include="Signatures\ImpliedSignatureHashTests.fs" />
     <Compile Include="Signatures\NestedTypeTests.fs" />
     <Compile Include="Signatures\MissingDiagnostic.fs" />
     <Compile Include="Signatures\HashConstraintTests.fs" />
