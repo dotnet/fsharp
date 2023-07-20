@@ -1751,7 +1751,7 @@ type ITypecheckResultsSink =
 
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
 
-    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: (Item -> bool) option -> unit
 
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
 
@@ -2141,12 +2141,28 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 capturedExprTypings.Add((ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
-            if allowedRange m then
-                if replace then
-                    remove m
+            if isAlreadyDone endPos item m || not (allowedRange m) then () else
 
-                if not (isAlreadyDone endPos item m) then
-                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+            let cnr = CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
+
+            match replace with
+            | None ->
+                capturedNameResolutions.Add(cnr)
+
+            | Some f ->
+                match item with
+                | Item.MethodGroup _ ->
+                    match capturedMethodGroupResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                    | -1 -> ()
+                    | i -> capturedMethodGroupResolutions.RemoveAt(i)
+                | _ -> ()
+
+                match capturedNameResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                | i when i >= 0 ->
+                    if f capturedNameResolutions[i].Item then
+                        capturedNameResolutions[i] <- cnr
+                | _ ->
+                    capturedNameResolutions.Add(cnr)
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
@@ -2197,17 +2213,17 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, false)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, None)
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+let CallNameResolutionSinkReplacing (sink: TcResultsSink) f (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, true)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, Some f)
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
@@ -3039,33 +3055,48 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m innerSearch with
                     | Result _ as res -> res
                     | _ ->
-                        let failingCase =
-                            match typeError with
-                            | Some e -> raze e
+                        match typeError with
+                        | Some e -> raze e
+                        | _ ->
+                            let tyconSearch () =
+                                let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                                if isNil tcrefs then NoResultsOrUsefulErrors else
+
+                                let tcrefs = ResolveUnqualifiedTyconRefs nenv tcrefs
+                                let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
+                                CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
+                                |> CollectResults success
+
+                            match tyconSearch () with
+                            | Result ((resInfo, tcref) :: _) ->
+                                let item = Item.Types(id.idText, [ generalizedTyconRef ncenv.g tcref ])
+                                success (resInfo, item)
+
                             | _ ->
-                                let suggestNamesAndTypes (addToBuffer: string -> unit) =
-                                    for e in nenv.eUnqualifiedItems do
-                                        if canSuggestThisItem e.Value then
-                                            addToBuffer e.Value.DisplayName
 
-                                    for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                                        if IsEntityAccessible ncenv.amap m ad e.Value then
-                                            addToBuffer e.Value.DisplayName
+                            let suggestNamesAndTypes (addToBuffer: string -> unit) =
+                                for e in nenv.eUnqualifiedItems do
+                                    if canSuggestThisItem e.Value then
+                                        addToBuffer e.Value.DisplayName
 
-                                    for kv in nenv.ModulesAndNamespaces fullyQualified do
-                                        for modref in kv.Value do
-                                            if IsEntityAccessible ncenv.amap m ad modref then
-                                                addToBuffer modref.DisplayName
+                                for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                                    if IsEntityAccessible ncenv.amap m ad e.Value then
+                                        addToBuffer e.Value.DisplayName
 
-                                    // check if the user forgot to use qualified access
-                                    for e in nenv.eTyconsByDemangledNameAndArity do                                    
-                                        let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
-                                        if hasRequireQualifiedAccessAttribute then
-                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
-                                                addToBuffer (e.Value.DisplayName + "." + id.idText)
+                                for kv in nenv.ModulesAndNamespaces fullyQualified do
+                                    for modref in kv.Value do
+                                        if IsEntityAccessible ncenv.amap m ad modref then
+                                            addToBuffer modref.DisplayName
 
-                                raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
-                        failingCase
+                                // check if the user forgot to use qualified access
+                                for e in nenv.eTyconsByDemangledNameAndArity do                                    
+                                    let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                                    if hasRequireQualifiedAccessAttribute then
+                                        if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
+                                            addToBuffer (e.Value.DisplayName + "." + id.idText)
+
+                            raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
+
                 match res with 
                 | Exception e -> raze e
                 | Result (resInfo, item) -> 

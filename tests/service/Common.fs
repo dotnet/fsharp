@@ -376,7 +376,7 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
     |> List.ofArray
 
 let getSymbolUses (results: FSharpCheckFileResults) =
-    results.GetAllUsesOfAllSymbolsInFile()
+    results.GetAllUsesOfAllSymbolsInFile() |> List.ofSeq
 
 let getSymbolUsesFromSource (source: string) =
     let _, typeCheckResults = getParseAndCheckResults source
