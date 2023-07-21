@@ -3442,12 +3442,12 @@ let ``Test Project24 all symbols`` () =
     allUses |> shouldEqual
           [|("TypeWithProperties", "file1", ((4, 5), (4, 23)), ["defn"], ["class"]);
             ("``.ctor``", "file1", ((4, 5), (4, 23)), ["defn"], ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["defn"], ["member"; "getter"]);
+            ("NameGetSet", "file1", ((6, 13), (6, 16)), ["defn"], ["member"; "getter"]);
             ("int", "file1", ((7, 20), (7, 23)), ["type"], ["abbrev"]);
-            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["defn"], ["member"; "setter"]);
-            ("NameGet", "file1", ((9, 13), (9, 20)), ["defn"], ["member"; "getter"]);
+            ("NameGetSet", "file1", ((7, 12), (7, 15)), ["defn"], ["member"; "setter"]);
+            ("NameGet", "file1", ((10, 13), (10, 16)), ["defn"], ["member"; "getter"]);
             ("int", "file1", ((11, 20), (11, 23)), ["type"], ["abbrev"]);
-            ("NameGet", "file1", ((9, 13), (9, 20)), ["defn"], ["member"; "setter"]);
+            ("NameGet", "file1", ((11, 12), (11, 15)), ["defn"], ["member"; "setter"]);
             ("int", "file1", ((14, 21), (14, 24)), ["type"], ["abbrev"]);
             ("NameSet", "file1", ((13, 13), (13, 20)), ["defn"], ["member"; "setter"]);
             ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["defn"],
@@ -3463,14 +3463,20 @@ let ``Test Project24 all symbols`` () =
              ["member"; "setter"]);
             ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["defn"],
              ["member"; "getter"]);
-            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"],
+            ("AutoPropGetSet", "file1", ((28, 39), (28, 42)), ["defn"],
              ["member"; "getter"]);
-            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"], ["member"; "setter"])
+            ("AutoPropGetSet", "file1", ((28, 44), (28, 47)), ["defn"], ["member"; "setter"])
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["defn"],
              ["member"; "getter"]);
-            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"],
+            ("StaticAutoPropGetSet", "file1", ((31, 52), (31, 55)), ["defn"],
              ["member"; "getter"])
-            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"], ["member"; "setter"]);
+            ("StaticAutoPropGetSet", "file1", ((31, 57), (31, 60)), ["defn"], ["member"; "setter"])
+            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["defn"], ["member"; "prop"]);
+            ("NameGet", "file1", ((9, 13), (9, 20)), ["defn"], ["member"; "prop"])
+            ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["defn"], ["member"; "prop"]);
+            ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["defn"], ["member"; "prop"]);
+            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"], ["member"; "prop"])
+            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"], ["member"; "prop"]);
             ("x", "file1", ((5, 11), (5, 12)), ["defn"], []);
             ("int", "file1", ((7, 20), (7, 23)), ["type"], ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), ["defn"], []);
@@ -3488,10 +3494,10 @@ let ``Test Project24 all symbols`` () =
             ("v", "file1", ((25, 18), (25, 19)), ["defn"], []);
             ("``AutoPropGet@``", "file1", ((27, 15), (27, 26)), [], ["compgen"]);
             ("``AutoPropGetSet@``", "file1", ((28, 15), (28, 29)), [], ["compgen";"mutable"]);
-            ("v", "file1", ((28, 15), (28, 29)), ["defn"], []);
+            ("v", "file1", ((28, 44), (28, 47)), ["defn"], []);
             ("``StaticAutoPropGet@``", "file1", ((30, 22), (30, 39)), [], ["compgen"]);
             ("``StaticAutoPropGetSet@``", "file1", ((31, 22), (31, 42)), [],
-             ["compgen";"mutable"]); ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
+             ["compgen";"mutable"]); ("v", "file1", ((31, 57), (31, 60)), ["defn"], []);
             ("``.cctor``", "file1", ((4, 5), (4, 23)), ["defn"], ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), [],
              ["member"; "ctor"]);
@@ -3555,12 +3561,12 @@ let ``Test symbol uses of properties with both getters and setters`` () =
     getAllSymbolUses |> shouldEqual
           [|("TypeWithProperties", "file1", ((4, 5), (4, 23)), ["class"]);
             ("``.ctor``", "file1", ((4, 5), (4, 23)), ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["member"; "getter"]);
+            ("NameGetSet", "file1", ((6, 13), (6, 16)), ["member"; "getter"]);
             ("int", "file1", ((7, 20), (7, 23)), ["abbrev"])
-            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["member"; "setter"]);
-            ("NameGet", "file1", ((9, 13), (9, 20)), ["member"; "getter"]);
+            ("NameGetSet", "file1", ((7, 12), (7, 15)), ["member"; "setter"]);
+            ("NameGet", "file1", ((10, 13), (10, 16)), ["member"; "getter"]);
             ("int", "file1", ((11, 20), (11, 23)), ["abbrev"])
-            ("NameGet", "file1", ((9, 13), (9, 20)), ["member"; "setter"]);
+            ("NameGet", "file1", ((11, 12), (11, 15)), ["member"; "setter"]);
             ("int", "file1", ((14, 21), (14, 24)), ["abbrev"]);
             ("NameSet", "file1", ((13, 13), (13, 20)), ["member"; "setter"]);
             ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["member"; "getter"]);
@@ -3572,12 +3578,18 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("int", "file1", ((25, 21), (25, 24)), ["abbrev"]);
             ("StaticNameSet", "file1", ((24, 18), (24, 31)), ["member"; "setter"]);
             ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["member"; "getter"]);
-            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "getter"])
-            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "setter"]);
+            ("AutoPropGetSet", "file1", ((28, 39), (28, 42)), ["member"; "getter"])
+            ("AutoPropGetSet", "file1", ((28, 44), (28, 47)), ["member"; "setter"]);
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["member"; "getter"]);
-            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)),
+            ("StaticAutoPropGetSet", "file1", ((31, 52), (31, 55)),
              ["member"; "getter"])
-            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["member"; "setter"])
+            ("StaticAutoPropGetSet", "file1", ((31, 57), (31, 60)), ["member"; "setter"])
+            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["member"; "prop"])
+            ("NameGet", "file1", ((9, 13), (9, 20)), ["member"; "prop"])
+            ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["member"; "prop"])
+            ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["member"; "prop"])
+            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "prop"])
+            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["member"; "prop"])
             ("x", "file1", ((5, 11), (5, 12)), []);
             ("int", "file1", ((7, 20), (7, 23)), ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), []);
@@ -3595,10 +3607,10 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("v", "file1", ((25, 18), (25, 19)), []);
             ("``AutoPropGet@``", "file1", ((27, 15), (27, 26)), ["compgen"]);
             ("``AutoPropGetSet@``", "file1", ((28, 15), (28, 29)), ["compgen";"mutable"]);
-            ("v", "file1", ((28, 15), (28, 29)), []);
+            ("v", "file1", ((28, 44), (28, 47)), []);
             ("``StaticAutoPropGet@``", "file1", ((30, 22), (30, 39)), ["compgen"]);
             ("``StaticAutoPropGetSet@``", "file1", ((31, 22), (31, 42)), ["compgen";"mutable"]);
-            ("v", "file1", ((31, 22), (31, 42)), []);
+            ("v", "file1", ((31, 57), (31, 60)), []);
             ("``.cctor``", "file1", ((4, 5), (4, 23)), ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), ["member"; "ctor"]);
             ("NameGetSet", "file1", ((33, 9), (33, 40)), ["member"; "prop"]);
@@ -3639,8 +3651,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("PropertyTest", "file1", ((2, 7), (2, 19)), ["module"])|]
 
     let getSampleSymbolUseOpt =
-        backgroundTypedParse1.GetSymbolUseAtLocation(9,20,"",["get_NameGet"])
-
+        backgroundTypedParse1.GetSymbolUseAtLocation(9,20,"",["NameGet"])
 
     let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
 
@@ -3649,7 +3660,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 
         |> Array.map (fun s -> (Project24.cleanFileName s.FileName, tups s.Range))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((9, 13), (9, 20))); ("file1", ((36, 9), (36, 37)))|]
+    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((10, 13), (10, 16))); ("file1", ((9, 13), (9, 20))); ("file1", ((36, 9), (36, 37)))|]
 
 #if NO_CHECK_USE_OF_FSHARP_DATA_DLL
 #endif

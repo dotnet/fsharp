@@ -413,15 +413,15 @@ module TyconDefinitionHash =
 
             let specializedHash =
                 match repr with
-                | TFSharpRecdRepr _ -> fieldsHash ()
-                | TFSharpUnionRepr _ -> hashUnionCases (g, observer) tycon.UnionCasesArray
-                | TFSharpObjectRepr {
-                                        fsobjmodel_kind = TFSharpDelegate slotSig
-                                    } -> hashFsharpDelegate g slotSig
-                | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } -> hashFsharpEnum tycon
-                | TFSharpObjectRepr {
-                                        fsobjmodel_kind = TFSharpClass | TFSharpInterface | TFSharpStruct as tfor
-                                    } ->
+                | TFSharpTyconRepr { fsobjmodel_kind = TFSharpRecord } -> fieldsHash ()
+                | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } -> hashUnionCases (g, observer) tycon.UnionCasesArray
+                | TFSharpTyconRepr {
+                                       fsobjmodel_kind = TFSharpDelegate slotSig
+                                   } -> hashFsharpDelegate g slotSig
+                | TFSharpTyconRepr { fsobjmodel_kind = TFSharpEnum } -> hashFsharpEnum tycon
+                | TFSharpTyconRepr {
+                                       fsobjmodel_kind = TFSharpClass | TFSharpInterface | TFSharpStruct as tfor
+                                   } ->
                     iimplsHash () @@ fieldsHash () @@ membersHash () @@ inheritsHash ()
                     |> pipeToHash (
                         match tfor with

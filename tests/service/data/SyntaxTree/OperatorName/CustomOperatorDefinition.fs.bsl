@@ -14,7 +14,7 @@ ImplFile
                      SynValInfo
                        ([[SynArgInfo ([], false, Some a)];
                          [SynArgInfo ([], false, Some b)]],
-                        SynArgInfo ([], false, None)), None),
+                        SynArgInfo ([], false, None)), None, None),
                   LongIdent
                     (SynLongIdent
                        ([op_Addition], [],

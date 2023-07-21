@@ -561,6 +561,8 @@ module SyntaxTraversal =
                         | None -> traverseSynExpr synExpr
                         | x -> x
 
+                | SynExpr.DotLambda (expr = e) -> traverseSynExpr e
+
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
