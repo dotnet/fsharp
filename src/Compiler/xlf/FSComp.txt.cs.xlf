@@ -32,11 +32,6 @@
         <target state="translated">Pokud typ používá atribut [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Další konstruktor není povolený.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAnonymousRecordFields">
-        <source>Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</source>
-        <target state="new">Label '{0}' is part of anonymous record. Use {{| expr with {1} = ... |}} instead.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
         <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
         <target state="translated">FSharp.Core.AutoOpenAttribute by neměl mít alias.</target>
@@ -45,6 +40,11 @@
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Pokud typ používá atribut [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Konstruktor s argumenty není povolený.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>Label '{0}' is part of anonymous record. Use {{| {1} with {2} = ... |}} instead.</source>
+        <target state="new">Label '{0}' is part of anonymous record. Use {{| {1} with {2} = ... |}} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
