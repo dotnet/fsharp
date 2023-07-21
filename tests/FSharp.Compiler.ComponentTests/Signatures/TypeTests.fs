@@ -184,3 +184,39 @@ type EConverter () =
             let valText = mfv.GetValSignatureText(canReadSymbolUse.DisplayContext, canReadSymbolUse.Range).Value
             Assert.Equal("override CanRead: bool", valText)
         | _ -> ()
+
+[<Fact>]
+let ``Property with unit getter and regular setter`` () =
+    FSharp """
+module Lib
+
+type Foo =
+  member x.Bar with get () = 5 and set v = ignore<int> v
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Lib
+
+type Foo =
+
+  member Bar: int with get, set"""
+
+[<Fact>]
+let ``Property with indexed getter and regular setter`` () =
+    FSharp """
+module Lib
+
+type Foo =
+  member x.Bar with get (a:int) = 5 and set (a:int) v = ignore<int> v
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Lib
+
+type Foo =
+
+  member Bar: a: int -> int with get
+
+  member Bar: a: int -> int with set"""

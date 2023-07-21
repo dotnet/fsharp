@@ -86,7 +86,7 @@ type Item =
     | Event of EventInfo
 
     /// Represents the resolution of a name to a property
-    | Property of string * PropInfo list
+    | Property of name: string * info: PropInfo list * sourceIdentifierRange: range option
 
     /// Represents the resolution of a name to a group of methods.
     | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
@@ -246,6 +246,13 @@ type NameResolutionEnv =
 type FullyQualifiedFlag =
     | FullyQualified
     | OpenQualified
+
+/// Indicates whether an identifier (single or long) is followed by an extra dot. Typically used
+/// to provide better tooling and error reporting.
+[<RequireQualifiedAccess>]
+type ExtraDotAfterIdentifier =
+    | Yes
+    | No
 
 [<RequireQualifiedAccess>]
 type BulkAdd =
@@ -708,6 +715,7 @@ val internal ResolvePatternLongIdent:
     nenv: NameResolutionEnv ->
     numTyArgsOpt: TypeNameResolutionInfo ->
     lid: Ident list ->
+    extraDotAtTheEnd: ExtraDotAfterIdentifier ->
         Item
 
 /// Resolve a long identifier representing a type name
