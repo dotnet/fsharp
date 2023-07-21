@@ -299,8 +299,17 @@ module internal Salsa =
         newProjectSite
         
     /// Token types.
-    type TokenType = Text | Keyword | Comment | Identifier | String | Number | InactiveCode | PreprocessorKeyword | Operator
-        with override this.ToString() =
+    type TokenType =
+        | Text 
+        | Keyword 
+        | Comment 
+        | Identifier 
+        | String 
+        | Number 
+        | InactiveCode 
+        | PreprocessorKeyword 
+        | Operator
+        override this.ToString() =
             match this with
             | Text                  -> "Text"
             | Keyword               -> "Keyword"

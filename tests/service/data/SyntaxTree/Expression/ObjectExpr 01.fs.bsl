@@ -9,7 +9,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None,
+                     None),
                   LongIdent
                     (SynLongIdent ([create], [], [None]), None, None,
                      Pats [Paren (Const (Unit, (3,11--3,13)), (3,11--3,13))],
@@ -31,7 +32,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([_; ToString], [(5,18--5,19)], [None; None]),
@@ -64,7 +65,7 @@ ImplFile
                                    SynValInfo
                                      ([[SynArgInfo ([], false, None)];
                                        [SynArgInfo ([], false, Some s)]],
-                                      SynArgInfo ([], false, None)), None),
+                                      SynArgInfo ([], false, None)), None, None),
                                 LongIdent
                                   (SynLongIdent
                                      ([_; Foo1], [(7,18--7,19)], [None; None]),
@@ -96,7 +97,7 @@ ImplFile
                                    SynValInfo
                                      ([[SynArgInfo ([], false, None)];
                                        [SynArgInfo ([], false, Some s)]],
-                                      SynArgInfo ([], false, None)), None),
+                                      SynArgInfo ([], false, None)), None, None),
                                 LongIdent
                                   (SynLongIdent
                                      ([_; Foo2], [(10,18--10,19)], [None; None]),

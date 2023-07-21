@@ -23,9 +23,9 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (x, None), false, None, (6,4--6,5)), None,
-                  Const (Int32 1, (6,8--6,9)), (6,4--6,5), Yes (6,0--6,9),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Named (SynIdent (x, None), false, None, (6,4--6,5)),
+                  None, Const (Int32 1, (6,8--6,9)), (6,4--6,5), Yes (6,0--6,9),
                   { LeadingKeyword = Let (6,0--6,3)
                     InlineKeyword = None
                     EqualsRange = Some (6,6--6,7) })], (6,0--6,9))],

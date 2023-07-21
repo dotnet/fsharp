@@ -770,6 +770,9 @@ type SynExpr =
     /// F# syntax: expr.ident.ident
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    /// F# syntax: _.ident.ident
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
@@ -1174,7 +1177,13 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        /// Is only populated during type-checking when an property has both a getter and setter.
+        /// It is used to track the fact that the getter and setter are part of the same property when they are desugared.
+        transformedFromProperty: Ident option
 
     member SynValInfo: SynValInfo
 

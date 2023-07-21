@@ -10,8 +10,9 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (n, None), false, None, (2,4--2,5)), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Named (SynIdent (n, None), false, None, (2,4--2,5)),
+                  None,
                   Const
                     (Measure
                        (Decimal 1.0M, (2,8--2,12),
@@ -26,8 +27,9 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (m, None), false, None, (3,4--3,5)), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Named (SynIdent (m, None), false, None, (3,4--3,5)),
+                  None,
                   Const
                     (Measure
                        (Double 7.0, (3,8--3,13),

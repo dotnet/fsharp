@@ -618,6 +618,8 @@ type SynExpr =
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
     | Set of targetExpr: SynExpr * rhsExpr: SynExpr * range: range
@@ -755,6 +757,7 @@ type SynExpr =
         | SynExpr.DotIndexedGet (range = m)
         | SynExpr.DotIndexedSet (range = m)
         | SynExpr.DotGet (range = m)
+        | SynExpr.DotLambda (range = m)
         | SynExpr.DotSet (range = m)
         | SynExpr.Set (range = m)
         | SynExpr.DotNamedIndexedPropertySet (range = m)
@@ -1023,9 +1026,13 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        transformedFromProperty: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
