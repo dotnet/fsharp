@@ -170,7 +170,7 @@ type SynConst =
     | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     /// Source Line, File, and Path Identifiers
     /// Containing both the original value as the evaluated value.
@@ -193,13 +193,13 @@ type SynMeasure =
     | Seq of measures: SynMeasure list * range: range
 
     /// A division of two units of measure, e.g. 'kg / m'
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
     /// The '1' unit of measure
-    | One
+    | One of range: range
 
     /// An anonymous (inferred) unit of measure
     | Anon of range: range
@@ -214,11 +214,11 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
 [<RequireQualifiedAccess>]

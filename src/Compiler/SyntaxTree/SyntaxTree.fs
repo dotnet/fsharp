@@ -158,7 +158,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     | SourceIdentifier of constant: string * value: string * range: range
 
@@ -178,11 +178,11 @@ type SynMeasure =
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
-    | One
+    | One of range: range
 
     | Anon of range: range
 
@@ -193,11 +193,11 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =

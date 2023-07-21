@@ -1841,21 +1841,23 @@ module ParsedInput =
                 List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
-            | SynExpr.Const (SynConst.Measure (_, _, m), _) -> walkMeasure m
+            | SynExpr.Const(constant = SynConst.Measure (synMeasure = m)) -> walkMeasure m
             | _ -> ()
 
         and walkMeasure measure =
             match measure with
-            | SynMeasure.Product (m1, m2, _)
-            | SynMeasure.Divide (m1, m2, _) ->
+            | SynMeasure.Product (m1, m2, _) ->
                 walkMeasure m1
+                walkMeasure m2
+            | SynMeasure.Divide (m1, m2, _) ->
+                m1 |> Option.iter walkMeasure
                 walkMeasure m2
             | SynMeasure.Named (longIdent, _) -> addLongIdent longIdent
             | SynMeasure.Seq (ms, _) -> List.iter walkMeasure ms
             | SynMeasure.Paren (m, _)
             | SynMeasure.Power (m, _, _) -> walkMeasure m
             | SynMeasure.Var (ty, _) -> walkTypar ty
-            | SynMeasure.One
+            | SynMeasure.One _
             | SynMeasure.Anon _ -> ()
 
         and walkSimplePat spat =
