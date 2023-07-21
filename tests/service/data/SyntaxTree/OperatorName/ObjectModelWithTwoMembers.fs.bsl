@@ -23,7 +23,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None),
+                                None, None),
                              Named
                                (SynIdent (allowInto, None), false, None,
                                 (3,16--3,25)), None,
@@ -49,7 +49,7 @@ ImplFile
                                       MemberKind = PropertyGet },
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)]; []],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([_; AllowIntoPattern], [(4,12--4,13)],
@@ -78,7 +78,7 @@ ImplFile
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some v)]],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([_; AllowIntoPattern], [(4,12--4,13)],

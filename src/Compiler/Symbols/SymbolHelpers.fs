@@ -99,7 +99,10 @@ module internal SymbolHelpers =
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> Some (rangeOfRecdField preferFlag (ucref.FieldByIndex(fieldIndex)))
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
-        | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
+        | Item.Property(info = pinfos; sourceIdentifierRange = mNameOpt)      ->
+            match mNameOpt with
+            | Some m -> Some m
+            | None -> rangeOfPropInfo preferFlag pinfos.Head 
         | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.map (rangeOfEntityRef preferFlag))
         | Item.CustomOperation (_, _, Some minfo)  -> rangeOfMethInfo g preferFlag minfo
         | Item.Trait _ -> None
@@ -162,7 +165,7 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             finfo.DeclaringTyconRef |> computeCcuOfTyconRef
 
-        | Item.Property(_, pinfos)              -> 
+        | Item.Property(info = pinfos)              -> 
             pinfos |> List.tryPick (fun pinfo -> 
                 pinfo.ArbitraryValRef 
                 |> Option.bind ccuOfValRef
@@ -297,7 +300,7 @@ module internal SymbolHelpers =
         | Item.ModuleOrNamespaces(modref :: _) ->
             mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
 
-        | Item.Property(_, pinfo :: _) ->
+        | Item.Property(info = pinfo :: _) ->
             mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
 
         | Item.Event einfo ->
@@ -330,7 +333,7 @@ module internal SymbolHelpers =
         // These empty lists are not expected to occur
         | Item.CtorGroup (_, [])
         | Item.MethodGroup (_, [], _)
-        | Item.Property (_, [])
+        | Item.Property (info = [])
         | Item.ModuleOrNamespaces []
         | Item.UnqualifiedType []
         | Item.Types(_, []) ->
@@ -449,7 +452,7 @@ module internal SymbolHelpers =
                   g.unionCaseRefEq ur1 ur2
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
-              | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
+              | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
                   (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
@@ -493,7 +496,7 @@ module internal SymbolHelpers =
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
               | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
               | Item.Event evt -> evt.ComputeHashCode()
-              | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
+              | Item.Property(info = pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
 
               // These are not expected to occur, see InEqualityRelation and ItemWhereTypIsPreferred
@@ -561,7 +564,7 @@ module internal SymbolHelpers =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> buildString (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> buildString (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
-        | Item.Property(_, pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
+        | Item.Property(info = pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
         | Item.CtorGroup(_, minfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
         | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
@@ -588,7 +591,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, []) 
         | Item.MethodGroup(_, [], _) 
         | Item.ModuleOrNamespaces []
-        | Item.Property(_, []) -> ""
+        | Item.Property(info = []) -> ""
 
     /// Output the description of a language item
     let rec GetXmlCommentForItem (infoReader: InfoReader) m item = 
@@ -638,7 +641,7 @@ module internal SymbolHelpers =
             let doc = if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
 
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = pinfos.Head
             let doc = if pinfo.HasDirectXmlComment || pinfo.XmlDoc.NonEmpty then Some pinfo.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
@@ -879,7 +882,7 @@ module internal SymbolHelpers =
                 | _ -> modref.Deref.CompiledRepresentationForNamedType.FullName |> Some
             | [] ->  None // Pathological case of the above
 
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             match pinfo with 
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
@@ -896,7 +899,7 @@ module internal SymbolHelpers =
 #if !NO_TYPEPROVIDERS
             | ProvidedProp _ -> None
 #endif
-        | Item.Property(_, []) -> None // Pathological case of the above
+        | Item.Property(info = []) -> None // Pathological case of the above
                    
         | Item.Event einfo -> 
             match einfo with 
@@ -963,7 +966,7 @@ module internal SymbolHelpers =
         | Item.Value v -> if isForallFunctionTy g v.Type then [item] else []
         | Item.UnionCase(ucr, _) -> if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase ecr -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_TYPEPROVIDERS
