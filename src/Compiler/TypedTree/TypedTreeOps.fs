@@ -2004,6 +2004,37 @@ let isEnumTy g ty =
     | ValueNone -> false
     | ValueSome tcref -> tcref.IsEnumTycon
 
+let isSignedIntegerTy g ty =
+    typeEquivAux EraseMeasures g g.sbyte_ty ty || 
+    typeEquivAux EraseMeasures g g.int16_ty ty || 
+    typeEquivAux EraseMeasures g g.int32_ty ty || 
+    typeEquivAux EraseMeasures g g.nativeint_ty ty || 
+    typeEquivAux EraseMeasures g g.int64_ty ty 
+
+let isUnsignedIntegerTy g ty =
+    typeEquivAux EraseMeasures g g.byte_ty ty || 
+    typeEquivAux EraseMeasures g g.uint16_ty ty || 
+    typeEquivAux EraseMeasures g g.uint32_ty ty || 
+    typeEquivAux EraseMeasures g g.unativeint_ty ty || 
+    typeEquivAux EraseMeasures g g.uint64_ty ty 
+
+let isIntegerTy g ty =
+    isSignedIntegerTy g ty || 
+    isUnsignedIntegerTy g ty
+
+/// float or float32 or float<_> or float32<_> 
+let isFpTy g ty =
+    typeEquivAux EraseMeasures g g.float_ty ty || 
+    typeEquivAux EraseMeasures g g.float32_ty ty 
+
+/// decimal or decimal<_>
+let isDecimalTy g ty = 
+    typeEquivAux EraseMeasures g g.decimal_ty ty
+
+let isNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
+
+let isNumericType g ty = isNonDecimalNumericType g ty || isDecimalTy g ty
+
 let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_, _, parentFormalTypars, methFormalTypars, _, formalRetTy)) = 
     let methTyInst = mkTyparInst methFormalTypars methTyInst
     let parentTyInst = mkTyparInst parentFormalTypars parentTyInst
