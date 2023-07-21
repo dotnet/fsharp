@@ -19,7 +19,18 @@ module AnonRecd =
         |> shouldFail
         |> withErrorCode 3522
         |> withMessage "The field 'A' appears multiple times in this record expression."
-
+    
+    [<Fact>]
+    let ``Anonymous Records incomplete`` () =
+        Fsx """
+let x () : {| A: int; B: string  |} =  {| A = 123 |}
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 40, Line 2, Col 53, "This anonymous record does not have enough fields. Add the missing fields [B].")
+        ]
+        
     [<Fact>]
     let ``Anonymous Records with duplicate labels - Copy and update expression`` () =
         FSharp """
@@ -73,11 +84,10 @@ type T = { ff : int }
 
 let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         """
-        |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 4, Col 52, Line 4, Col 54, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+            (Error 3578, Line 4, Col 52, Line 4, Col 54, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -85,11 +95,10 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         Fsx """
 let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         """
-        |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 52, Line 2, Col 54, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+            (Error 3578, Line 2, Col 52, Line 2, Col 54, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -97,11 +106,23 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         Fsx """
 let t3 (t1: struct {| gu: string; ff: int |}) = { t1 with ff = 3 }
         """
-        |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 59, Line 2, Col 61, "Label 'ff' is part of anonymous record. Use {| expr with ff = ... |} instead.")
+            (Error 3578, Line 2, Col 59, Line 2, Col 61, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
+        ]
+        
+    [<Fact>]
+    let ``This expression was expected to have an anonymous with various properties Record but has a record`` () =
+        Fsx """
+let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3578, Line 2, Col 44, Line 2, Col 45, "Label 'A' is part of anonymous record. Use {| r with A = ... |} instead.")
+            (Error 39, Line 2, Col 51, Line 2, Col 52, "The record label 'B' is not defined.")
+            (Error 3578, Line 2, Col 58, Line 2, Col 59, "Label 'C' is part of anonymous record. Use {| r with C = ... |} instead.")
         ]
     
     [<Fact>]
