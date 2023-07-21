@@ -977,6 +977,11 @@
         <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。未預期的錯誤 '{0}'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="new">(Suggested name)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>

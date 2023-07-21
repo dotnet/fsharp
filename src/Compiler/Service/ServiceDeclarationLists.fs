@@ -66,6 +66,7 @@ type ToolTipText =
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
+    | SuggestedName
     | Field
     | Property
     | Method of isExtension : bool
@@ -1035,10 +1036,12 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.NameInCode = textInCode
 
     member _.Description = 
-        match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+        match kind, info with
+        | CompletionItemKind.SuggestedName, _ ->
+            ToolTipText [ ToolTipElement.Single ([| tagText (FSComp.SR.suggestedName()) |], FSharpXmlDoc.None) ]
+        | _, Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
             ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None None))
-        | Choice2Of2 result -> 
+        | _, Choice2Of2 result -> 
             result
 
     member _.Glyph = glyph 

@@ -105,9 +105,9 @@ type InterfaceData =
         | InterfaceData.ObjExpr (StripParenTypes ty, _) ->
             let rec (|RationalConst|) =
                 function
-                | SynRationalConst.Integer i -> string i
-                | SynRationalConst.Rational (numerator, denominator, _) -> sprintf "(%i/%i)" numerator denominator
-                | SynRationalConst.Negate (RationalConst s) -> sprintf "- %s" s
+                | SynRationalConst.Integer (value = i) -> string i
+                | SynRationalConst.Rational (numerator = numerator; denominator = denominator) -> sprintf "(%i/%i)" numerator denominator
+                | SynRationalConst.Negate (rationalConst = (RationalConst s)) -> sprintf "- %s" s
 
             let rec (|TypeIdent|_|) =
                 function

@@ -571,6 +571,11 @@ module List =
         | [ _ ] -> true
         | _ -> false
 
+    let prependIfSome x l =
+        match x with
+        | Some x -> x :: l
+        | _ -> l
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

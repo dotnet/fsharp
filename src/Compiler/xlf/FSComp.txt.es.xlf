@@ -977,6 +977,11 @@
         <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. Error inesperado: "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="new">(Suggested name)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
         <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
