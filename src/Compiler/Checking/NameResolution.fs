@@ -2463,20 +2463,24 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
         success (resInfo, Item.DelegateCtor ty)
     else
         let ctorInfos = GetIntrinsicConstructorInfosOfType ncenv.InfoReader m ty
-        let defaultStructCtorInfo =
-            if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
-                isStructTy g ty &&
-                not (isRecdTy g ty) &&
-                not (isUnionTy g ty))
-            then
-                [DefaultStructCtor(g, ty)]
-            else []
-        if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
-            raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
+        if isNil ctorInfos && isInterfaceTy g ty then
+            let tcref = tcrefOfAppTy g ty
+            success (resInfo, Item.Types(tcref.DisplayName, [ty]))
         else
-            let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
-            let metadataTy = convertToTypeWithMetadataIfPossible g ty
-            success (resInfo, Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos)))
+            let defaultStructCtorInfo =
+                if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
+                    isStructTy g ty &&
+                    not (isRecdTy g ty) &&
+                    not (isUnionTy g ty))
+                then
+                    [DefaultStructCtor(g, ty)]
+                else []
+            if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
+                raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
+            else
+                let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
+                let metadataTy = convertToTypeWithMetadataIfPossible g ty
+                success (resInfo, Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos)))
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
 let ResolveObjectConstructor (ncenv: NameResolver) denv m ad ty =
@@ -3061,33 +3065,49 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m innerSearch with
                     | Result _ as res -> res
                     | _ ->
-                        let failingCase =
-                            match typeError with
-                            | Some e -> raze e
-                            | _ ->
-                                let suggestNamesAndTypes (addToBuffer: string -> unit) =
-                                    for e in nenv.eUnqualifiedItems do
-                                        if canSuggestThisItem e.Value then
-                                            addToBuffer e.Value.DisplayName
 
-                                    for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                                        if IsEntityAccessible ncenv.amap m ad e.Value then
-                                            addToBuffer e.Value.DisplayName
+                    match typeError with
+                    | Some e -> raze e
+                    | _ ->
 
-                                    for kv in nenv.ModulesAndNamespaces fullyQualified do
-                                        for modref in kv.Value do
-                                            if IsEntityAccessible ncenv.amap m ad modref then
-                                                addToBuffer modref.DisplayName
+                    let tyconSearch () =
+                        let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                        if isNil tcrefs then NoResultsOrUsefulErrors else
 
-                                    // check if the user forgot to use qualified access
-                                    for e in nenv.eTyconsByDemangledNameAndArity do                                    
-                                        let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
-                                        if hasRequireQualifiedAccessAttribute then
-                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
-                                                addToBuffer (e.Value.DisplayName + "." + id.idText)
+                        let tcrefs = ResolveUnqualifiedTyconRefs nenv tcrefs
+                        let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
+                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
+                        |> CollectResults success
 
-                                raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
-                        failingCase
+                    match tyconSearch () with
+                    | Result ((resInfo, tcref) :: _) ->
+                        let item = Item.Types(id.idText, [ generalizedTyconRef ncenv.g tcref ])
+                        success (resInfo, item)
+                    | _ ->
+
+                    let suggestNamesAndTypes (addToBuffer: string -> unit) =
+                        for e in nenv.eUnqualifiedItems do
+                            if canSuggestThisItem e.Value then
+                                addToBuffer e.Value.DisplayName
+
+                        for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                            if IsEntityAccessible ncenv.amap m ad e.Value then
+                                addToBuffer e.Value.DisplayName
+
+                        for kv in nenv.ModulesAndNamespaces fullyQualified do
+                            for modref in kv.Value do
+                                if IsEntityAccessible ncenv.amap m ad modref then
+                                    addToBuffer modref.DisplayName
+
+                        // check if the user forgot to use qualified access
+                        for e in nenv.eTyconsByDemangledNameAndArity do                                    
+                            let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
+                            if hasRequireQualifiedAccessAttribute then
+                                if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
+                                    addToBuffer (e.Value.DisplayName + "." + id.idText)
+
+                    raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
+
                 match res with 
                 | Exception e -> raze e
                 | Result (resInfo, item) -> 
