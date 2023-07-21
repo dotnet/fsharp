@@ -397,28 +397,10 @@ let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.unativeint_ty ty ||
     (isEnumTy g ty && isNativeIntegerTy g (underlyingTypeOfEnumTy g ty))
 
-let isSignedIntegerTy g ty =
-    typeEquivAux EraseMeasures g g.sbyte_ty ty || 
-    typeEquivAux EraseMeasures g g.int16_ty ty || 
-    typeEquivAux EraseMeasures g g.int32_ty ty || 
-    typeEquivAux EraseMeasures g g.nativeint_ty ty || 
-    typeEquivAux EraseMeasures g g.int64_ty ty 
-
-let isUnsignedIntegerTy g ty =
-    typeEquivAux EraseMeasures g g.byte_ty ty || 
-    typeEquivAux EraseMeasures g g.uint16_ty ty || 
-    typeEquivAux EraseMeasures g g.uint32_ty ty || 
-    typeEquivAux EraseMeasures g g.unativeint_ty ty || 
-    typeEquivAux EraseMeasures g g.uint64_ty ty 
-
 let rec IsIntegerOrIntegerEnumTy g ty =
     isSignedIntegerTy g ty || 
     isUnsignedIntegerTy g ty || 
     (isEnumTy g ty && IsIntegerOrIntegerEnumTy g (underlyingTypeOfEnumTy g ty))
-    
-let isIntegerTy g ty =
-    isSignedIntegerTy g ty || 
-    isUnsignedIntegerTy g ty 
     
 let isStringTy g ty = typeEquiv g g.string_ty ty 
 
@@ -426,24 +408,11 @@ let isCharTy g ty = typeEquiv g g.char_ty ty
 
 let isBoolTy g ty = typeEquiv g g.bool_ty ty 
 
-/// float or float32 or float<_> or float32<_> 
-let isFpTy g ty =
-    typeEquivAux EraseMeasures g g.float_ty ty || 
-    typeEquivAux EraseMeasures g g.float32_ty ty 
-
-/// decimal or decimal<_>
-let isDecimalTy g ty = 
-    typeEquivAux EraseMeasures g g.decimal_ty ty
-
 let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
 
-let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
-
-let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
-
-let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
+let IsRelationalType g ty = isNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
@@ -1517,12 +1486,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units
       | [], [ty], false, "get_Zero", [] 
-          when IsNumericType g ty || isCharTy g ty -> 
+          when isNumericType g ty || isCharTy g ty -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy ty
           return TTraitBuiltIn
 
       | [], [ty], false, "get_One", [] 
-          when IsNumericType g ty || isCharTy g ty -> 
+          when isNumericType g ty || isCharTy g ty -> 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy ty
           return TTraitBuiltIn
