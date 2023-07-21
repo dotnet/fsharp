@@ -390,3 +390,6 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         |> asExe
         |> compileAndRun
         |> verifyOutput "MultiCaseUnion"
+
+
+        // TODO tests - interop other direction
