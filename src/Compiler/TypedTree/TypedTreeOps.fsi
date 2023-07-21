@@ -655,6 +655,8 @@ val isAnonRecdTy: TcGlobals -> TType -> bool
 
 val isUnionTy: TcGlobals -> TType -> bool
 
+val isStructUnionTy: TcGlobals -> TType -> bool
+
 val isReprHiddenTy: TcGlobals -> TType -> bool
 
 val isFSharpObjModelTy: TcGlobals -> TType -> bool

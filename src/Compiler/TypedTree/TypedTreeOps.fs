@@ -829,6 +829,8 @@ let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonI
 
 let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon | _ -> false)
 
+let isStructUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon && tcref.Deref.entity_flags.IsStructRecordOrUnionType | _ -> false)
+
 let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsHiddenReprTycon | _ -> false)
 
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsFSharpObjectModelTycon | _ -> false)
@@ -1969,6 +1971,9 @@ let isForallFunctionTy g ty =
 // - Any pointer-type.
 // - Any generic user-defined struct-type that can be statically determined to be 'unmanaged' at construction.
 let rec isUnmanagedTy g ty =
+    let isUnmanagedRecordField tinst rf  =
+        isUnmanagedTy g (actualTyOfRecdField tinst rf)
+
     let ty = stripTyEqnsAndMeasureEqns g ty
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
@@ -1988,9 +1993,14 @@ let rec isUnmanagedTy g ty =
             let tycon = tcref.Deref
             if tycon.IsEnumTycon then
                 true
+            elif isStructUnionTy g ty then
+                let tinst = mkInstForAppTy g ty 
+                tcref.UnionCasesAsRefList            
+                |> List.forall (fun c -> c |> actualTysOfUnionCaseFields tinst |> List.forall (isUnmanagedTy g))
             elif tycon.IsStructOrEnumTycon then
                 let tinst = mkInstForAppTy g ty
-                tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g (actualTyOfRecdField tinst r))
+                tycon.AllInstanceFieldsAsList 
+                |> List.forall (isUnmanagedRecordField tinst)
             else false
     | ValueNone ->
         if isStructTupleTy g ty then

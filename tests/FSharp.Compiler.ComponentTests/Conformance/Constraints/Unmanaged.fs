@@ -9,6 +9,45 @@ open FSharp.Test
 module Unmanaged =
 
     [<Fact>]
+    let ``voption considered unmanaged when inner type is unmanaged`` () = 
+        Fsx """
+let test (x: 'T when 'T : unmanaged) = ()
+test (ValueSome 15)
+test (ValueSome (ValueSome 42))
+test (ValueSome (struct {|Field = 42|}))
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``voption not considered unmanaged when inner type is reference type`` () = 
+        Fsx """
+let test (x: 'T when 'T : unmanaged) = ()
+test (ValueSome "xxx")
+test (ValueSome (ValueSome "xxx"))
+test (ValueSome (struct {|Field = Some 42|}))
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+                Error 1, Line 3, Col 17, Line 3, Col 22, "A generic construct requires that the type 'string' is an unmanaged type"
+                Error 1, Line 4, Col 28, Line 4, Col 33, "A generic construct requires that the type 'string' is an unmanaged type"
+                Error 1, Line 5, Col 35, Line 5, Col 42, "A generic construct requires that the type ''a option' is an unmanaged type" ]
+
+    [<Fact>]
+    let ``Option not considered unmanaged`` () = 
+        Fsx """
+let test (x: 'T when 'T : unmanaged) = ()
+test (None)
+test (Some 42 )
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+                        Error 1, Line 3, Col 7, Line 3, Col 11, "A generic construct requires that the type ''a option' is an unmanaged type"
+                        Error 1, Line 4, Col 7, Line 4, Col 14, "A generic construct requires that the type ''a option' is an unmanaged type" ]
+
+    [<Fact>]
     let ``User-defined struct types considered unmanaged when all members are unmanaged`` () =
         Fsx """
 [<Struct>]
@@ -152,8 +191,8 @@ test(MultiCaseUnion.A)
 test(MultiCaseUnion.B)
 test(C 1)
 test(CC 1)
-test(Ok 1)
-test(Error 2)
+test(Result<int,int>.Ok 1)
+test(Result<int,int>.Error 2)
 test(ResultC<int,int>.OkC 1)
 test(ResultC<int,int>.ErrorC 1)
 test(DuUnix 132456)
@@ -185,6 +224,27 @@ let _ = resultCreatingFunction A
         |> ignore
 
     [<Fact>]
+    let ``Typechecker can handle recursive unions passed in and will not stack overflow`` () =
+        Fsx """
+type RefTree =
+    | Tip
+    | Node of i:int * left:RefTree * right:RefTree
+
+[<Struct>]
+type StructTree =
+    | Tip
+    | Node of i:int * left:StructTree * right:StructTree
+
+[<Struct>]
+type ComboTree =
+    | Tip
+    | Node of i:int * left:RefTree * right:RefTree
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [Error 954, Line 7, Col 6, Line 7, Col 16, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation"]
+
+    [<Fact>]
     let ``Generic user-defined type with non-unmanaged types is NOT considered unmanaged`` () =
         Fsx """
 type NonStructRecd = { X: int }
@@ -200,6 +260,9 @@ type S<'T> = { x: W<'T> }
 type X<'T> =
     val Z : 'T
     new (x) = { Z = x }
+
+[<Struct>]
+type MyDu<'T1,'T2> = DuA of first:'T1 | DuB of second:'T2
  
 [<Struct>]
 type A<'T, 'U> =
@@ -211,18 +274,18 @@ test (A<obj, int>())
 let foo<'T> () = test (A<'T, obj>())
 let _ = Test<obj>()
 let _ = Test<NonStructRecd>()
-let _ = Test<NonStructRecdC<int>>()
+let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-             (Error 1, Line 20, Col 6, Line 20, Col 33, "A generic construct requires that the type 'S<obj>' is an unmanaged type")
-             (Error 193, Line 21, Col 6, Line 21, Col 14, "A generic construct requires that the type 'X<'a>' is an unmanaged type")
-             (Error 193, Line 22, Col 7, Line 22, Col 20, "A generic construct requires that the type 'A<obj,int>' is an unmanaged type")
-             (Error 193, Line 23, Col 24, Line 23, Col 36, "A generic construct requires that the type 'A<'T,obj>' is an unmanaged type")
-             (Error 1, Line 24, Col 9, Line 24, Col 18, "A generic construct requires that the type 'obj' is an unmanaged type")
-             (Error 1, Line 25, Col 9, Line 25, Col 28, "A generic construct requires that the type 'NonStructRecd' is an unmanaged type")
-             (Error 1, Line 26, Col 9, Line 26, Col 34, "A generic construct requires that the type 'NonStructRecdC<int>' is an unmanaged type")]
+                       Error 1, Line 23, Col 6, Line 23, Col 33, "A generic construct requires that the type 'S<obj>' is an unmanaged type"
+                       Error 193, Line 24, Col 6, Line 24, Col 14, "A generic construct requires that the type 'X<'a>' is an unmanaged type"
+                       Error 193, Line 25, Col 7, Line 25, Col 20, "A generic construct requires that the type 'A<obj,int>' is an unmanaged type"
+                       Error 193, Line 26, Col 24, Line 26, Col 36, "A generic construct requires that the type 'A<'T,obj>' is an unmanaged type"
+                       Error 1, Line 27, Col 9, Line 27, Col 18, "A generic construct requires that the type 'obj' is an unmanaged type"
+                       Error 1, Line 28, Col 9, Line 28, Col 28, "A generic construct requires that the type 'NonStructRecd' is an unmanaged type"
+                       Error 1, Line 29, Col 9, Line 29, Col 49, "A generic construct requires that the type 'string' is an unmanaged type" ]
 
     [<Fact>]
     let ``Disallow both 'unmanaged' and 'not struct' constraints`` () =
@@ -299,3 +362,31 @@ let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         |> compile
         |> shouldFail
         |> withDiagnostics [(Error 1, Line 3, Col 13, Line 3, Col 45, "A generic construct requires that the type 'string' is an unmanaged type")]
+
+    [<Fact>]
+    let ``F# can consume C#-defined unmanaged constraint and call method with modreq`` () = 
+        let csLib =
+            CSharp """
+namespace CsLib
+{ 
+    public record struct CsharpStruct<T>(T item) where T:unmanaged
+    {
+        public static string Hi<TOther>() where TOther:unmanaged
+            {
+                return typeof(TOther).Name;
+            }}}"""
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        let app = FSharp """module MyFsharpApp
+open CsLib
+[<Struct>]
+type MultiCaseUnion = A | B of i:int
+let _ = new CsharpStruct<MultiCaseUnion>(B 42)
+printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
+        """     |> withReferences [csLib]
+
+        app
+        |> asExe
+        |> compileAndRun
+        |> verifyOutput "MultiCaseUnion"

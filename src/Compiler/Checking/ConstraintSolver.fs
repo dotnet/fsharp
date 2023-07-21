@@ -2463,6 +2463,13 @@ and SolveTypeIsUnmanaged (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                 return! destStructAnonRecdTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
             else if isStructTupleTy g ty then
                 return! destStructTupleTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else if isStructUnionTy g ty then
+                let tcref = tryTcrefOfAppTy g ty |> ValueOption.get
+                let tinst = mkInstForAppTy g ty
+                return!
+                    tcref.UnionCasesAsRefList            
+                    |> List.collect (actualTysOfUnionCaseFields tinst)
+                    |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
             else
                 if isUnmanagedTy g ty then
                     return! CompleteD
