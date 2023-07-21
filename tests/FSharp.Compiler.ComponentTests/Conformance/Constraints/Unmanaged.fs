@@ -209,9 +209,9 @@ let _ = Test<Result<Result<int, byte>, Single<MultiCaseUnion>>>()
 let _ = Test<ResultC<int, byte>>()
 
 // test that constraint is being propagated
-let resultCreatingFunction (x) = 
+let resultCreatingFunction (x:'a) = 
     try
-        let capturedVal = Ok x
+        let capturedVal = Result<'a,int>.Ok x
         test capturedVal
         capturedVal
     with _ -> Error 15
