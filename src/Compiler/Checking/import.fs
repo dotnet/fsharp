@@ -465,10 +465,18 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) )
-            let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m) :: constraints) else constraints
-            let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m) :: constraints) else constraints
-            let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m) :: constraints) else constraints
+            let constraints = 
+                [ for ilTy in gp.Constraints do
+                    TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m)
+                  if gp.HasReferenceTypeConstraint then
+                    TyparConstraint.IsReferenceType(m)
+                  if gp.HasNotNullableValueTypeConstraint then
+                    TyparConstraint.IsNonNullableStruct(m)
+                  if gp.HasDefaultConstructorConstraint then
+                    TyparConstraint.RequiresDefaultConstructor(m)
+                  if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
+                    TyparConstraint.IsUnmanaged(m) ]            
+
             tp.SetConstraints constraints)
         tps
 

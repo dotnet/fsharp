@@ -4,6 +4,7 @@ namespace Conformance.Constraints
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test
 
 module Unmanaged =
 
@@ -282,5 +283,19 @@ let _ = Test<NonStructRecdC<int>>()
 
 
 
+    [<Fact>]
+    let ``Consume C#-defined unmanaged constraint incorrectly in F# - report error`` () = 
+        let csLib =
+            CSharp "namespace CsLib{ public record struct CsharpStruct<T>(T item) where T:unmanaged;}"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
 
-    // let ``C# <-> F# cross-project unmanaged usage`` () = ignore
+        let app = FSharp """module MyFsharpApp
+open CsLib
+let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
+        """     |> withReferences [csLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [(Error 1, Line 3, Col 13, Line 3, Col 45, "A generic construct requires that the type 'string' is an unmanaged type")]
