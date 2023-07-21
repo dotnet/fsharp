@@ -67,13 +67,15 @@ type Project() =
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case2``() =
         let compileItems = [@"A\B\D\foo.fs"; @"A\B\C\bar.fs"]
         let expect = Tree("References", ANYTREE,
-                     Tree("A", 
-                         Tree("B",
-                             Tree("D", 
-                                 Tree("foo.fs", Nil, Nil),
-                             Tree("C", 
-                                 Tree("bar.fs", Nil, Nil),
-                                 Nil)), Nil), Nil))
+                        Tree("A", 
+                            Tree("B",
+                                Tree("D", 
+                                    Tree("foo.fs", Nil, Nil),
+                                    Tree("C",
+                                        Tree("bar.fs", Nil, Nil),Nil)
+                                ), 
+                                Nil),
+                            Nil))
         // no alphabetization of files or folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, "", expect)
 
@@ -86,11 +88,14 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("B",
-                         Tree("foo.fs", Nil, Nil),
-                     Tree("A", 
-                         Tree("bar.fs", Nil, Nil),
-                         Nil)))
+                        Tree("B",
+                            Tree("foo.fs", Nil, Nil),
+                            Tree("A", 
+                                Tree("bar.fs", Nil, Nil),
+                                Nil
+                            )
+                        )
+                     )
         // Including folder should not put folder at front of other folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
@@ -103,10 +108,13 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("foo.fs", Nil,
-                     Tree("A", 
-                         Tree("bar.fs", Nil, Nil),
-                         Nil)))
+                        Tree("foo.fs", Nil,
+                            Tree("A", 
+                                Tree("bar.fs", Nil, Nil),
+                                Nil
+                            )
+                        )
+                     )
         // Including folder should not put folder at front of files
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
@@ -124,11 +132,15 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("foo.fs", Nil,
-                     Tree("A", 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.fs", Nil, Nil)),
-                         Nil)))
+                        Tree("foo.fs", Nil,
+                            Tree("A", 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.fs", Nil, Nil)
+                                ),
+                                Nil
+                            )
+                        )
+                     )
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
 
@@ -141,10 +153,13 @@ type Project() =
                 project.AddLinkedItem(project, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("Folder", 
-                            Tree("foo.fs",Nil,Nil), 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.fs", Nil,Nil))))
+                            Tree("Folder", 
+                                Tree("foo.fs",Nil,Nil), 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.fs", Nil,Nil)
+                                )
+                            )
+                         )
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -163,10 +178,10 @@ type Project() =
                 project.AddLinkedItem(folder, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("bar.fs", Nil,
-                         Tree("Folder", 
-                            Tree("foo.fs", Nil,
-                            Tree("qux.fs", Nil,Nil)), Nil)))
+                            Tree("bar.fs", Nil,
+                               Tree("Folder", 
+                                Tree("foo.fs", Nil,
+                                    Tree("qux.fs", Nil,Nil)), Nil)))
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -187,10 +202,10 @@ type Project() =
                 )
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("Folder", 
-                            Tree("foo.fs",Nil,Nil), 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.resx", Nil,Nil))))
+                            Tree("Folder", 
+                                Tree("foo.fs",Nil,Nil), 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.resx", Nil,Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -282,12 +297,7 @@ type Project() =
     member private this.SampleEmptyFolderEntity = ([FolderItem @"MyFolder\"], fun t -> Tree("MyFolder", Nil, t))
 
     member private this.SampleFolderWithItemsEntity = ([CompileItem @"MyFolder\x1.fs"; CompileItem @"MyFolder\Sub\x2.fs"; CompileItem @"MyFolder\x3.fs"], 
-                                                       fun t -> Tree("MyFolder", 
-                                                                    Tree("x1.fs", Nil, 
-                                                                    Tree("Sub", 
-                                                                        Tree("x2.fs", Nil, Nil), 
-                                                                    Tree("x3.fs", Nil, Nil))),
-                                                                t))
+                                                       fun t -> Tree("MyFolder",Tree("x1.fs", Nil, Tree("Sub", Tree("x2.fs", Nil, Nil), Tree("x3.fs", Nil, Nil))), t))
 
     [<Test>]
     member public this.``SpecificVersion.OptionsSavedToFsprojFile``() =
@@ -441,14 +451,14 @@ type Project() =
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
             // ensure things look right at start
             let expect = Tree("References", ANYTREE,
-                         otherTreeMaker(
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         Tree("after.fs", Nil, Nil))))
+                            otherTreeMaker(
+                                Tree("A", 
+                                    Tree("foo.fs", Nil,
+                                        Tree("B",
+                                            Tree("qux.fs", Nil, Nil),
+                                            Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                        Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             let foo = TheTests.FindNodeWithCaption(project, "A")
             TheTests.EnsureMoveUpEnabled(foo)
@@ -456,14 +466,14 @@ type Project() =
             TheTests.MoveUp(foo)
             // test that it moved up in solution explorer
             let expect = Tree("References", ANYTREE,
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         otherTreeMaker(
-                         Tree("after.fs", Nil, Nil))))
+                            Tree("A", 
+                                Tree("foo.fs", Nil,
+                                    Tree("B",
+                                        Tree("qux.fs", Nil, Nil),
+                                        Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                otherTreeMaker(
+                                    Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild) 
             // test that it moved up in MSBuild
             SaveProject(project)
@@ -494,14 +504,14 @@ type Project() =
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
             // ensure things look right at start
             let expect = Tree("References", ANYTREE,
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         otherTreeMaker(
-                         Tree("after.fs", Nil, Nil))))
+                            Tree("A",
+                                Tree("foo.fs", Nil,
+                                    Tree("B",
+                                        Tree("qux.fs", Nil, Nil),
+                                        Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                    otherTreeMaker(
+                                        Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             let foo = TheTests.FindNodeWithCaption(project, "A")
             TheTests.EnsureMoveDownEnabled(foo)
@@ -509,14 +519,14 @@ type Project() =
             TheTests.MoveDown(foo)
             // test that it moved down in solution explorer
             let expect = Tree("References", ANYTREE,
-                         otherTreeMaker(
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         Tree("after.fs", Nil, Nil))))
+                            otherTreeMaker(
+                                Tree("A", 
+                                    Tree("foo.fs", Nil,
+                                        Tree("B",
+                                            Tree("qux.fs", Nil, Nil),
+                                            Tree("Empty", Nil,
+                                                Tree("zot.fs", Nil, Nil)))),
+                                    Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild) 
             // test that it moved down in MSBuild
             SaveProject(project)
@@ -735,11 +745,10 @@ type Project() =
                 // ensure right in solution explorer
                 let expect = 
                     Tree("References", ANYTREE,
-                    Tree("file1.fs", Nil,
-                    Tree("Folder1", 
-                       Tree("file2.fs", Nil,
-                       Tree("renamedNested2.fs", Nil, Nil)),
-                    Nil)))
+                        Tree("file1.fs", Nil,
+                            Tree("Folder1", 
+                                Tree("file2.fs", Nil,
+                                    Tree("renamedNested2.fs", Nil, Nil)), Nil)))
                 TheTests.AssertSameTree (expect, project.FirstChild)
 
             finally

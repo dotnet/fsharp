@@ -1696,3 +1696,13 @@ module rec Compiler =
 
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
+
+
+    let getImpliedSignatureHash cUnit = 
+        let tcResults = cUnit |> typecheckResults
+        let hash = tcResults.CalculateSignatureHash()
+        match hash with
+        | Some h -> h
+        | None -> failwith "Implied signature hash returned 'None' which should not happen"
+        
+          

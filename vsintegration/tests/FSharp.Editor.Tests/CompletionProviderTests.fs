@@ -20,7 +20,7 @@ module CompletionProviderTests =
     let filePath = "C:\\test.fs"
 
     let mkGetInfo documentId =
-        fun () -> documentId, filePath, [], (Some "preview")
+        fun () -> documentId, filePath, [], (Some "preview"), None
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
@@ -111,7 +111,16 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, CancellationToken.None)
+            CompletionUtils.getDefaultCompletionListSpan (
+                sourceText,
+                caretPosition,
+                documentId,
+                filePath,
+                [],
+                None,
+                None,
+                CancellationToken.None
+            )
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -1129,6 +1138,31 @@ type A<'lType> = { Field: l }
         VerifyCompletionList(fileContents, "Field: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list at record declaration site contains type parameter and record`` () =
+        let fileContents =
+            """
+type ARecord<'keyType> = {
+    Field: key
+    Field2: AR
+    Field3: ARecord<ke
+}
+    with
+        static member Create () = { F }
+        member x.F () = typeof<AR
+        member _.G = typeof<ke
+
+let x = { F }
+"""
+
+        VerifyCompletionList(fileContents, ": key", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, ": AR", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, ": ARecord<ke", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, "typeof<AR", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "Create () = { F", [ "Field"; "Field2"; "Field3" ], [])
+        VerifyCompletionList(fileContents, "let x = { F", [ "Field"; "Field2"; "Field3" ], [])
+
+    [<Fact>]
     let ``No completion on record stub with no fields at declaration site`` () =
         let fileContents =
             """
@@ -1191,14 +1225,29 @@ type A<'lType> =
         VerifyCompletionList(fileContents, "of l", [ "LanguagePrimitives"; "List"; "lType" ], [ "let"; "log" ])
 
     [<Fact>]
-    let ``Completion list on union case type at declaration site contains type parameter`` () =
+    let ``Completion list at union declaration site contains type parameter and union`` () =
         let fileContents =
             """
-type A<'keyType> =
+type AUnion<'keyType> =
     | Case of key
+    | Case2 of AU
+    | Case3 of AUnion<ke
+
+    with
+        static member Create () = Cas
+        member x.F () = typeof<AU
+        member _.G = typeof<ke
+
+let x = c
 """
 
         VerifyCompletionList(fileContents, "of key", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "of AU", [ "AUnion" ], [])
+        VerifyCompletionList(fileContents, "of AUnion<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "typeof<AU", [ "AUnion" ], [])
+        VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "= Cas", [ "Case"; "Case2"; "Case3" ], [])
+        VerifyCompletionList(fileContents, "let x = c", [ "Case"; "Case2"; "Case3" ], [])
 
     [<Fact>]
     let ``Completion list on a union identifier and a dot in a match clause contains union cases`` () =
@@ -1283,11 +1332,15 @@ type A = l
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
+let [<Literal>] lit = 1
+
 type A =
     | C = 0
+    | D = l
 """
 
         VerifyNoCompletionList(fileContents, "| C")
+        VerifyCompletionList(fileContents, "| D = l", [ "lit" ], [])
 
     [<Fact>]
     let ``Completion list in generic function body contains type parameter`` () =

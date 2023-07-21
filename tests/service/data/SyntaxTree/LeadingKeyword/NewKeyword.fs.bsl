@@ -29,7 +29,7 @@ ImplFile
                                       MemberKind = Constructor },
                                SynValInfo
                                  ([[SynArgInfo ([], false, Some message)]],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent ([new], [], [None]), None,
                                Some (SynValTyparDecls (None, false)),
