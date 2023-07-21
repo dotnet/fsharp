@@ -45,6 +45,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides

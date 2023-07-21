@@ -1822,22 +1822,6 @@ module TastDefinitionPrinting =
             match getter.ArbitraryValRef, setter.ArbitraryValRef with
             | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
             | _ -> false
-
-        let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
-            if not (pinfo.HasGetter && pinfo.HasSetter) then
-                None
-            else
-                match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
-                | Some getValRef, Some setValRef ->
-                    if getValRef.Accessibility <> setValRef.Accessibility then
-                        Some (getValRef, setValRef)
-                    else
-                        match getValRef.ValReprInfo with
-                        | Some getValReprInfo when
-                            // Getter has an index parameter
-                            getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
-                        | _ -> None 
-                | _ -> None
         
         match pinfo.ArbitraryValRef with
         | Some vref ->

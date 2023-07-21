@@ -187,6 +187,11 @@
         <target state="translated">Атрибут сборки "{0}" ссылается на сборку конструктора "{1}", которая не может быть загружена или не существует. Получено исключение: {2} — {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">дополнительные преобразования на основе типа</target>
@@ -862,6 +867,11 @@
         <target state="translated">Неоднозначный доступ к этому элементу. Заключите операцию создания объекта в круглые скобки, например (new Объект(аргументы)).Элемент</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Неожиданное завершение входных данных ветви "else if" или "elif" условного выражения. Ожидается "elif &lt;expr&gt; then &lt;expr&gt; " или "else if &lt;expr&gt; then &lt;expr&gt;"</target>
@@ -965,6 +975,16 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">Не удалось определить пакет SDK .NET для этого скрипта. Если сценарий находится в каталоге с использованием файла "global.json", убедитесь, что установлен соответствующий пакет SDK .NET. Непредвиденная ошибка "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="new">(Suggested name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">

@@ -25,7 +25,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
-                               None),
+                               None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; B], [(3,22--3,23)], [None; None]), None,
@@ -53,7 +53,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; A], [(4,15--4,16)], [None; None]), None,
@@ -80,7 +80,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; C], [(5,17--5,18)], [None; None]), None,
@@ -107,7 +107,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; D], [(6,16--6,17)], [None; None]), None,
