@@ -1799,7 +1799,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (tyIdent: Ident option) (flds: ((Ident list * Ident) * 'T) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
@@ -1813,7 +1813,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
         |> List.choose (fun (fld, fldExpr) ->
             try
                 let fldPath, fldId = fld
-                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
+                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty tyIdent fldPath fldId allFields
                 Some(fld, frefSet, fldExpr)
             with e ->
                 errorRecoveryNoRange e
@@ -7386,7 +7386,11 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         match flds with
         | [] -> []
         | _ ->
-            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
+            let tyIdent =
+                match withExprOpt with
+                | Some (SynExpr.Ident ident, _) -> Some ident
+                | _ -> None
+            match BuildFieldMap cenv env hasOrigExpr overallTy tyIdent flds mWholeExpr with
             | None -> []
             | Some(tinst, tcref, _, fldsList) ->
 

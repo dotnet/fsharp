@@ -3749,17 +3749,16 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
 
         [(resInfo, item)]
         
-let ResolveAnonRecField (g: TcGlobals) ty (fldId: Ident) =
-    if (TryFindAnonRecdFieldOfType g ty fldId.idText).IsSome then
-        error(Error(FSComp.SR.chkAnonymousRecordFields(fldId.idText, fldId.idText), fldId.idRange))
-    else
-        error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
+let ResolveAnonRecField (g: TcGlobals) ty (tyIdent: Ident option) (fldId: Ident) =
+    match TryFindAnonRecdFieldOfType g ty fldId.idText, tyIdent with
+    | Some item, Some tpId ->
+        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(item.DisplayNameCore, tpId.idText, fldId.idText), fldId.idRange))
+    | _, _ -> error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
 
-let ResolveField sink (ncenv: NameResolver) nenv ad ty mp id allFields =
+let ResolveField sink (ncenv: NameResolver) nenv ad ty (tyIdent: Ident option) mp id allFields =
     let checker = ResultTyparChecker(fun () -> true)
     if isAnonRecdTy ncenv.g ty || isStructAnonRecdTy ncenv.g ty then
-        ResolveAnonRecField ncenv.g ty id
-        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, ResolutionInfo.Empty, checker)
+        ResolveAnonRecField ncenv.g ty tyIdent id
         []
     else
         let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
