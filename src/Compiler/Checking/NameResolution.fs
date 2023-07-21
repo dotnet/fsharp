@@ -201,9 +201,6 @@ type Item =
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
 
-    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
-    | FakeInterfaceCtor of TType
-
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
 
@@ -276,8 +273,7 @@ type Item =
             | ValueSome tcref -> tcref.DisplayNameCore
             | _ -> nm
             |> DemangleGenericTypeName
-        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
-        | Item.FakeInterfaceCtor ty
+        |Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.DelegateCtor ty ->
             match ty with 
             | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
@@ -1786,8 +1782,7 @@ let (|EntityUse|_|) (item: Item) =
     | Item.UnqualifiedType (tcref :: _) -> Some tcref
     | Item.ExnCase tcref -> Some tcref
     | Item.Types(_, [AbbrevOrAppTy tcref])
-    | Item.DelegateCtor(AbbrevOrAppTy tcref)
-    | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
+    | Item.DelegateCtor(AbbrevOrAppTy tcref) -> Some tcref
     | Item.CtorGroup(_, ctor :: _) ->
         match ctor.ApparentEnclosingType with
         | AbbrevOrAppTy tcref -> Some tcref
@@ -2229,7 +2224,6 @@ let CheckAllTyparsInferrable amap m item =
 
     | Item.Trait _
     | Item.CtorGroup _
-    | Item.FakeInterfaceCtor _
     | Item.DelegateCtor _
     | Item.Types _
     | Item.ModuleOrNamespaces _
@@ -2469,23 +2463,20 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
         success (resInfo, Item.DelegateCtor ty)
     else
         let ctorInfos = GetIntrinsicConstructorInfosOfType ncenv.InfoReader m ty
-        if isNil ctorInfos && isInterfaceTy g ty then
-            success (resInfo, Item.FakeInterfaceCtor ty)
+        let defaultStructCtorInfo =
+            if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
+                isStructTy g ty &&
+                not (isRecdTy g ty) &&
+                not (isUnionTy g ty))
+            then
+                [DefaultStructCtor(g, ty)]
+            else []
+        if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
+            raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
         else
-            let defaultStructCtorInfo =
-                if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
-                    isStructTy g ty &&
-                    not (isRecdTy g ty) &&
-                    not (isUnionTy g ty))
-                then
-                    [DefaultStructCtor(g, ty)]
-                else []
-            if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
-                raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
-            else
-                let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
-                let metadataTy = convertToTypeWithMetadataIfPossible g ty
-                success (resInfo, Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos)))
+            let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
+            let metadataTy = convertToTypeWithMetadataIfPossible g ty
+            success (resInfo, Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos)))
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
 let ResolveObjectConstructor (ncenv: NameResolver) denv m ad ty =
@@ -4500,7 +4491,6 @@ let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
         match ResolveObjectConstructor ncenv (DisplayEnv.Empty g) m ad ty with
         | Result item ->
             match item with
-            | Item.FakeInterfaceCtor _ -> None
             | Item.CtorGroup(nm, ctorInfos) ->
                 let ctors =
                     ctorInfos
@@ -5301,7 +5291,6 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                    | _ -> ()
 
            | Item.DelegateCtor _
-           | Item.FakeInterfaceCtor _
            | Item.CtorGroup _
            | Item.UnqualifiedType _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
