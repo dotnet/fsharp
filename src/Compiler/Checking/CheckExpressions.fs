@@ -8509,9 +8509,13 @@ and TcTypeItemThen (cenv: cenv) overallTy occ env nm ty tpenv mItem tinstEnclosi
         else
             error(Error(FSComp.SR.tcInvalidUseOfTypeName(), m))
 
-    let reportTypeUsage ty =
+    let reportTypeUsage ty m replacing =
         let item = Item.Types(nm, [ty])
-        CallNameResolutionSinkReplacing cenv.tcSink (function Item.CtorGroup _ -> false | _ -> true) (mItem, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
+        let filter = (function Item.CtorGroup _ -> false | _ -> true)
+        if replacing then
+            CallNameResolutionSinkReplacing cenv.tcSink filter (m, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
+        else
+            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, getInst ty, occ, env.eAccessRights)
 
     match delayed with
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedDotLookup (longId, mLongId) :: otherDelayed ->
@@ -8519,19 +8523,21 @@ and TcTypeItemThen (cenv: cenv) overallTy occ env nm ty tpenv mItem tinstEnclosi
         // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args
         // and replace them by 'tyargs'
         let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs occ WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs ty tinstEnclosing tyargs
+        reportTypeUsage ty mExprAndTypeArgs false
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
         let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
         TcItemThen cenv overallTy occ env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) None otherDelayed
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
-        reportTypeUsage ty
+        reportTypeUsage ty mItem true
+        reportTypeUsage ty mExprAndTypeArgs false
 
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
         let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs occ WarnOnIWSAM.Yes env tpenv mItem mExprAndTypeArgs ty tinstEnclosing tyargs
         reportWrongTypeUsageError ty mItem mExprAndTypeArgs
 
     | _ ->
-        reportTypeUsage ty
+        reportTypeUsage ty mItem true 
         reportWrongTypeUsageError ty mItem mItem
 
 and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed =
