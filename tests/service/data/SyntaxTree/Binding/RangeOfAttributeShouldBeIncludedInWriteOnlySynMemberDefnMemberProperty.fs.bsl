@@ -42,7 +42,7 @@ ImplFile
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyWriteOnlyProperty], [(4,15--4,16)],

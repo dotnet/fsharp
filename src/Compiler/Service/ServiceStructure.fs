@@ -562,19 +562,15 @@ module Structure =
                     binding
 
                 match valData with
-                | SynValData (Some {
-                                       MemberKind = SynMemberKind.Constructor
-                                   },
-                              _,
-                              _) ->
+                | SynValData(memberFlags = Some {
+                                                    MemberKind = SynMemberKind.Constructor
+                                                }) ->
                     let collapse = Range.endToEnd synPat.Range d.Range
                     rcheck Scope.New Collapse.Below d.Range collapse
 
-                | SynValData (Some {
-                                       MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
-                                   },
-                              _,
-                              _) ->
+                | SynValData(memberFlags = Some {
+                                                    MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
+                                                }) ->
                     let range = mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
 
                     let collapse =

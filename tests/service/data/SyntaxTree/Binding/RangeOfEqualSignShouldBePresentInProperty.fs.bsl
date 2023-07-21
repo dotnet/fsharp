@@ -32,7 +32,7 @@ ImplFile
                                       MemberKind = PropertyGet },
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)]; []],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyReadWriteProperty], [(3,15--3,16)],
@@ -62,7 +62,7 @@ ImplFile
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyReadWriteProperty], [(3,15--3,16)],

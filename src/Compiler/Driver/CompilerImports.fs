@@ -220,9 +220,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
             else
                 data
 
-        [
-            WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
-        ]
+        [ WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]         
     else
         []
 

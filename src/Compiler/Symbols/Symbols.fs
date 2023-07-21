@@ -283,7 +283,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.Event einfo -> 
             FSharpMemberOrFunctionOrValue(cenv, E einfo, item) :> _
             
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             FSharpMemberOrFunctionOrValue(cenv, P pinfo, item) :> _
             
         | Item.MethodGroup(_, minfo :: _, _) -> 
@@ -337,7 +337,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.CustomOperation (_, _, None) 
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
-        | Item.Property (_, [])
+        | Item.Property (info = [])
         | Item.MethodGroup (_, [], _)
         | Item.CtorGroup (_, [])
         // These cases cover misc. corned cases (non-symbol types)
@@ -585,7 +585,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
     member _.FSharpDelegateSignature =
         checkIsResolved()
         match entity.TypeReprInfo with 
-        | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
+        | TFSharpTyconRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
             | TFSharpDelegate ss -> FSharpDelegateSignature(cenv, ss)
             | _ -> invalidOp "not a delegate type"
@@ -664,7 +664,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
            let events = cenv.infoReader.GetImmediateIntrinsicEventsOfType (None, AccessibleFromSomeFSharpCode, range0, entityTy)
 
            for pinfo in props do
-                yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
 
            for einfo in events do
                 yield FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
@@ -679,10 +679,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                    match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentEnclosingEntity with
                    | SynMemberKind.PropertyGet, Parent tcref -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g tcref, Some vref, None)
-                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
                    | SynMemberKind.PropertySet, Parent p -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g p, None, Some vref)
-                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
                    | _ -> ()
 
                elif not v.IsMember then
@@ -2365,14 +2365,20 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
 
         let stringValOfPropInfo (p: PropInfo) =
-            let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
-            let withGetSet =
-                if p.HasGetter && p.HasSetter then "with get, set"
-                elif p.HasGetter then "with get"
-                elif p.HasSetter then "with set"
-                else ""
-                
-            $"member val %s{p.DisplayName}: %s{t} %s{withGetSet}"
+            match p with
+            | DifferentGetterAndSetter(getValRef, setValRef) ->
+                let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                $"{g}\n{s}"
+            | _ ->
+                let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                let withGetSet =
+                    if p.HasGetter && p.HasSetter then "with get, set"
+                    elif p.HasGetter then "with get"
+                    elif p.HasSetter then "with set"
+                    else ""
+
+                $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
 
         match d with
         | E _ -> None
