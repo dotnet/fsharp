@@ -362,6 +362,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.IndexFromEnd (expr, _) -> visit expr continuation
         | SynExpr.ComputationExpr (expr = expr) -> visit expr continuation
         | SynExpr.Lambda (args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
+        | SynExpr.DotLambda (expr = expr) -> visit expr continuation
         | SynExpr.MatchLambda (matchClauses = clauses) -> List.collect visitSynMatchClause clauses |> continuation
         | SynExpr.Match (expr = expr; clauses = clauses) ->
             visit expr (fun exprNodes ->

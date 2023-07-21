@@ -957,8 +957,8 @@ module MutRecBindingChecking =
 
                         | Some (SynMemberDefn.Member (bind, m)), _ ->
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
-                            let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
-                            let (SynValData(memberFlagsOpt, _, _)) = valSynData 
+                            let NormalizedBinding(valSynData = valSynData) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
+                            let (SynValData(memberFlags = memberFlagsOpt)) = valSynData 
 
                             match tcref.TypeOrMeasureKind with
                             | TyparKind.Type -> ()
@@ -992,6 +992,32 @@ module MutRecBindingChecking =
                         
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
+
+                // Report any desugared properties
+                if defnAs.Length > 1 then
+                    for b1, b2 in List.pairwise defnAs do
+                        match b1, b2 with
+                        | TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some getPropertyIdent; memberFlags = Some mf))
+                            RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
+                          },
+                          TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some setPropertyIdent))
+                            RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
+                          } when Range.equals getPropertyIdent.idRange setPropertyIdent.idRange ->
+                            match  vGet.ApparentEnclosingEntity with
+                            | ParentNone -> ()
+                            | Parent parentRef ->
+                            let apparentEnclosingType =  generalizedTyconRef g parentRef
+                            let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
+                            let item =
+                                Item.Property(
+                                    getPropertyIdent.idText,
+                                    [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
+                                    Some getPropertyIdent.idRange
+                                )
+                            CallNameResolutionSink cenv.tcSink (getPropertyIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                        | _ -> ()
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
@@ -4229,8 +4255,6 @@ module TcDeclarations =
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                 let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
-                let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
-                let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
                 let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
 
@@ -4247,7 +4271,20 @@ module TcDeclarations =
                             let rhsExpr = SynExpr.Ident fldId
                             let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                             let attribs = mkAttributeList attribs mMemberPortion
+                            let headPatIds =
+                                let id =
+                                    match mGetSetOpt with
+                                    | Some (GetSetKeywords.GetSet(get = mGet)) -> Ident(id.idText, mGet)
+                                    | _ -> id
+                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                            let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                            let binding =
+                                match mGetSetOpt with
+                                | Some (GetSetKeywords.GetSet _) ->
+                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
+                                    updatePropertyIdentInSynBinding id binding
+                                | _ -> binding
                             SynMemberDefn.Member (binding, mMemberPortion) 
                         yield getter
                     | _ -> ()
@@ -4256,11 +4293,26 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = ident("v", mMemberPortion)
+                            let vId = 
+                                match mGetSetOpt with
+                                | Some (GetSetKeywords.GetSet(set = mSet)) -> ident("v", mSet)
+                                | _ -> ident("v", mMemberPortion)
+                            let headPatIds =
+                                let id =
+                                    match mGetSetOpt with
+                                    | Some (GetSetKeywords.GetSet(set = mSet)) -> Ident(id.idText, mSet)
+                                    | _ -> id
+                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
-                            SynMemberDefn.Member (binding, mMemberPortion) 
+                            let binding =
+                                match mGetSetOpt with
+                                | Some (GetSetKeywords.GetSet _) ->
+                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
+                                    updatePropertyIdentInSynBinding id binding
+                                | _ -> binding
+                            SynMemberDefn.Member (binding, mMemberPortion)
                         yield setter 
                     | _ -> ()]
             | SynMemberDefn.Interface (ty, mWith, Some membs, m) -> 
@@ -4310,7 +4362,7 @@ module TcDeclarations =
 
             let isConcrete = 
                 members |> List.exists (function 
-                    | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), _) -> not memberFlags.IsDispatchSlot 
+                    | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), _) -> not memberFlags.IsDispatchSlot 
                     | SynMemberDefn.Interface (members=defOpt) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
                     | SynMemberDefn.ImplicitCtor _ -> true

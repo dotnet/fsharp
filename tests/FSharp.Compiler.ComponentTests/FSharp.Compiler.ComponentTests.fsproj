@@ -184,6 +184,7 @@
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
+    <Compile Include="Language\DotLambdaTests.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
@@ -192,6 +193,7 @@
 	<Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <Compile Include="ConstraintSolver\ObjInference.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />

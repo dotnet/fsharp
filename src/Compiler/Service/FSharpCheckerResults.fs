@@ -1764,27 +1764,12 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some (items, denv, _, m) ->
-                        let mkToolTipText (items: CompletionItem list) =
-                            ToolTipText(
-                                items
-                                |> List.map (fun x ->
-                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                            )
-
-                        match items with
-                        | [ getItem; setItem ] ->
-                            match getItem.Item, setItem.Item with
-                            | Item.Value vr1, Item.Value vr2 when vr1.PropertyName = vr2.PropertyName ->
-                                let getItem =
-                                    if (vr1.CompiledName None).StartsWith "get_" then
-                                        getItem
-                                    else
-                                        setItem
-
-                                mkToolTipText [ getItem ]
-                            | _ -> mkToolTipText items
-                        | items -> mkToolTipText items)
+                        ToolTipText(
+                            items
+                            |> List.map (fun x ->
+                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                        ))
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
@@ -1989,7 +1974,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Property (name, ILProp propInfo :: _) ->
+                        | Item.Property (name, ILProp propInfo :: _, _) ->
                             let methInfo =
                                 if propInfo.HasGetter then Some propInfo.GetterMethod
                                 elif propInfo.HasSetter then Some propInfo.SetterMethod
@@ -2060,7 +2045,7 @@ type internal TypeCheckInfo
                             // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                             | Item.CtorGroup (name, ProvidedMeth _ :: _)
                             | Item.MethodGroup (name, ProvidedMeth _ :: _, _)
-                            | Item.Property (name, ProvidedProp _ :: _) -> FindDeclFailureReason.ProvidedMember name
+                            | Item.Property (name, ProvidedProp _ :: _, _) -> FindDeclFailureReason.ProvidedMember name
                             | Item.Event (ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
                             | Item.ILField (ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName
                             | ItemIsProvidedType g tcref -> FindDeclFailureReason.ProvidedType tcref.DisplayName

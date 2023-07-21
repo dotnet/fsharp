@@ -442,9 +442,15 @@ type Foo =
 
         // "X" resolves a symbol but it will either be the get or set symbol.
         // Use get_ or set_ to differentiate.
-        let xSymbol = checkResults.GetSymbolUseAtLocation(5, 14, "    member _.X", [ "X" ])
-        Assert.True xSymbol.IsSome
+        let xSymbol = checkResults.GetSymbolUsesAtLocation(5, 14, "    member _.X", [ "X" ]) |> List.exactlyOne
         
+        match xSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsProperty
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+        | symbol-> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
         let getSymbol = findSymbolUseByName "get_X" checkResults
         match getSymbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
@@ -458,7 +464,7 @@ type Foo =
         | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
 
     [<Test>]
-    let ``AutoProperty with get,set has two symbols`` () =
+    let ``AutoProperty with get,set has a single symbol!`` () =
         let _, checkResults = getParseAndCheckResults """
 namespace Foo
 
@@ -466,17 +472,42 @@ type Foo =
     member val AutoPropGetSet = 0 with get, set
 """
 
-        let getSymbol = findSymbolUseByName "get_AutoPropGetSet" checkResults
-        let setSymbol = findSymbolUseByName "set_AutoPropGetSet" checkResults
+        let autoPropertySymbolUse =
+            checkResults.GetSymbolUsesAtLocation(5, 29, "    member val AutoPropGetSet = 0 with get, set", ["AutoPropGetSet"])
+            |> List.exactlyOne
+       
+        match autoPropertySymbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.True mfv.IsProperty
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+            Assert.True (mfv.GetterMethod.CompiledName.StartsWith("get_"))
+            Assert.True (mfv.SetterMethod.CompiledName.StartsWith("set_"))
+            assertRange (5, 15) (5, 29) autoPropertySymbolUse.Range
 
-        match getSymbol.Symbol, setSymbol.Symbol with
+        | _ -> Assert.Fail "Symbol was not FSharpMemberOrFunctionOrValue"
+
+        let getSymbol =
+            checkResults.GetSymbolUsesAtLocation(5, 42, "    member val AutoPropGetSet = 0 with get, set", ["get"])
+            |> List.map (fun su -> su.Symbol)
+            |> List.exactlyOne
+
+        // Two symbols for the setter: the set function and the compiler generated v parameter
+        let setSymbols =
+            checkResults.GetSymbolUsesAtLocation(5, 47, "    member val AutoPropGetSet = 0 with get, set", ["set"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbol, setSymbols with
         | :? FSharpMemberOrFunctionOrValue as getMfv,
-          (:? FSharpMemberOrFunctionOrValue as setMfv) ->
-            Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
+          [ :? FSharpMemberOrFunctionOrValue as setVMfv 
+            :? FSharpMemberOrFunctionOrValue as setMfv ] ->
+            Assert.True(getMfv.CompiledName.StartsWith("get_"))
+            Assert.AreEqual("v", setVMfv.DisplayName)
+            Assert.True(setMfv.CompiledName.StartsWith("set_"))
         | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
         
     [<Test>]
-    let ``Multiple symbols are resolved for property`` () =
+    let ``Single symbol is resolved for property`` () =
         let source = """
 type X(y: string) =
     member val Y = y with get, set
@@ -488,10 +519,11 @@ type X(y: string) =
             |> List.map (fun su -> su.Symbol)
 
         match symbolUses with
-        | [ :? FSharpMemberOrFunctionOrValue as setMfv
-            :? FSharpMemberOrFunctionOrValue as getMfv ] ->
-            Assert.AreEqual("set_Y", setMfv.CompiledName)
-            Assert.AreEqual("get_Y", getMfv.CompiledName)
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsProperty
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+            assertRange (3, 15) (3, 16) mfv.SignatureLocation.Value
         | _ -> Assert.Fail "Expected symbols"
 
     [<Test>]
@@ -523,98 +555,113 @@ type internal SR () =
             Assert.AreEqual("SR", entity.DisplayName)
         | _ -> Assert.Fail "Expected symbols"
 
-module Expressions =
     [<Test>]
-    let ``Unresolved record field 01`` () =
+    let ``AutoProperty with get has get symbol attached to property name`` () =
         let _, checkResults = getParseAndCheckResults """
-type R =
-    { F1: int
-      F2: int }
+namespace Foo
 
-{ F = 1
-  F2 = 1 }
+type Foo() =
+    member val Bar = 0 with get
 """
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
 
-    [<Test>]
-    let ``Unresolved record field 02`` () =
-        let _, checkResults = getParseAndCheckResults """
-[<RequireQualifiedAccess>]
-type R =
-    { F1: int
-      F2: int }
+        let autoPropertySymbolUses =
+            checkResults.GetSymbolUsesAtLocation(5, 18, "    member val Bar = 0 with get", ["Bar"])
+            |> List.map (fun su -> su.Symbol)
 
-{ F1 = 1
-  R.F2 = 1 }
-"""
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
+        match autoPropertySymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertyGetterMethod
+            assertRange (5, 15) (5, 18) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
 
     [<Test>]
-    let ``Unresolved record field 03`` () =
+    let ``Property with get has symbol attached to property name`` () =
         let _, checkResults = getParseAndCheckResults """
-[<RequireQualifiedAccess>]
-type R =
-    { F1: int
-      F2: int }
+namespace F
 
-{ R.F2 = 1
-  F1 = 1 }
+type Foo() =
+    let mutable b = 0
+    member this.Count with get () = b
 """
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with get () = b", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertyGetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
 
     [<Test>]
-    let ``Unresolved record field 04`` () =
+    let ``Property with set has symbol attached to property name`` () =
         let _, checkResults = getParseAndCheckResults """
-type R =
-    { F1: int
-      F2: int }
+namespace F
 
-match Unchecked.defaultof<R> with
-{ F = 1
-  F2 = 1 } -> ()
+type Foo() =
+    let mutable b = 0
+    member this.Count with set (v:int) = b <- v
 """
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
+
+        let _all = checkResults.GetAllUsesOfAllSymbolsInFile()
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with set (v:int) = b <- v", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsPropertySetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
+        
+    [<Test>]
+    let ``Property with set/get has property symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace F
+
+type Foo() =
+    let mutable b = 0
+    member this.Count with set (v:int) = b <- v and get () = b
+"""
+
+        let getSymbolUses =
+            checkResults.GetSymbolUsesAtLocation(6, 21, "    member this.Count with set (v:int) = b <- v", ["Count"])
+            |> List.map (fun su -> su.Symbol)
+
+        match getSymbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as mfv ] ->
+            Assert.True mfv.IsProperty
+            Assert.True mfv.HasGetterMethod
+            Assert.True mfv.HasSetterMethod
+            assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
+        | symbols -> Assert.Fail $"Unexpected symbols, got %A{symbols}"
 
     [<Test>]
-    let ``Unresolved record field 05`` () =
+    let ``Property usage is reported properly`` () =
         let _, checkResults = getParseAndCheckResults """
-[<RequireQualifiedAccess>]
-type R =
-    { F1: int
-      F2: int }
+module X
 
-match Unchecked.defaultof<R> with
-{ F = 1
-  R.F2 = 1 } -> ()
+type Foo() =
+    let mutable b = 0
+    member x.Name
+        with get() = 0
+        and set (v: int) = ()
+
+ignore (Foo().Name)
 """
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
 
+        let propertySymbolUse =
+            checkResults.GetSymbolUsesAtLocation(6, 17, "    member x.Name", ["Name"])
+            |> List.map (fun su -> su.Symbol)
+            |> List.exactlyOne
 
-    [<Test>]
-    let ``Unresolved record field 06`` () =
-        let _, checkResults = getParseAndCheckResults """
-[<RequireQualifiedAccess>]
-type R =
-    { F1: int
-      F2: int }
-
-match Unchecked.defaultof<R> with
-{ R.F2 = 1
-  F = 1 } -> ()
-"""
-        getSymbolUses checkResults
-        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
-        |> shouldEqual true
+        let usages =  checkResults.GetUsesOfSymbolInFile(propertySymbolUse)
+        Assert.AreEqual(3, usages.Length)
+        Assert.True usages.[0].IsFromDefinition
+        Assert.True usages.[1].IsFromDefinition
+        Assert.True usages.[2].IsFromUse
 
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
@@ -678,3 +725,29 @@ type BAttribute() =
 let a ([<B>] c: int) : int = 0
 """
             (7, 5, "let a ([<B>] c: int) : int = 0", "a")
+
+    [<Test>]
+    let ``Signature text for auto property`` () =
+        assertSignature
+            "member AutoPropGetSet: int with get, set"
+            """
+module T
+
+type Foo() =
+    member val AutoPropGetSet = 0 with get, set
+"""
+            (5, 29, "    member val AutoPropGetSet = 0 with get, set", "AutoPropGetSet")
+
+    [<Test>]
+    let ``Signature text for property`` () =
+        assertSignature
+            "member X: y: int -> string with get\nmember X: a: int -> float with set"
+            """
+module T
+
+type Foo() =
+    member _.X
+            with get (y: int) : string = ""
+            and set (a: int) (b: float) = ()
+"""
+            (5, 14, "    member _.X", "X")

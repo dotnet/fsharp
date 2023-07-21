@@ -182,6 +182,11 @@
         <target state="translated">無法載入組件屬性 '{0}' 參考的設計工具組件 '{1}' 或其不存在。回報的例外狀況: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">其他類型導向轉換</target>
@@ -857,6 +862,11 @@
         <target state="translated">此成員存取不明確。請在物件建立前後加上括弧，例如「(new SomeType(args)).MemberName」</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">條件運算式的 'else if' 或 'elif' 分支中出現未預期的輸入結尾。 預期為 'elif &lt;expr&gt; then &lt;expr&gt;' 或 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
@@ -960,6 +970,11 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。未預期的錯誤 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">

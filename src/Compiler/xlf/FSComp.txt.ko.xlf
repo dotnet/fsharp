@@ -182,6 +182,11 @@
         <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">추가 형식-디렉션 변환</target>
@@ -857,6 +862,11 @@
         <target state="translated">이 구성원 액세스가 모호합니다. 개체 생성 주위에 괄호를 사용하세요. 예: '(새로운 SomeType(인수)).MemberName'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">조건식의 'else if' 또는 'elif' 분기에서 입력이 예기치 않게 끝났습니다. 'elif &lt;expr&gt; then &lt;expr&gt;' 또는 'else if &lt;expr&gt; then &lt;expr&gt;'이 필요합니다.</target>
@@ -960,6 +970,11 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. 예기치 않은 오류 '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">

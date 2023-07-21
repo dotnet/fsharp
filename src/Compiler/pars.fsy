@@ -365,6 +365,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left pat_app
 %left pat_args
 %left PREFIX_OP
+%right dot_lambda
 %left DOT QMARK
 %left HIGH_PRECEDENCE_BRACK_APP
 %left HIGH_PRECEDENCE_PAREN_APP
@@ -2053,7 +2054,7 @@ classDefnMember:
        let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
        let mEquals = rhs parseState 6
        let expr = $7
-       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
+       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
        let vis = $2
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
        // Check that 'SynPatForConstructorDecl' matches this correctly
@@ -2069,7 +2070,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let m = unionRanges (rhs parseState 1) mEnd |> unionRangeWithXmlDoc xmlDoc
        let expr = arbExpr ("new1", mEnd.EndRange)
-       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
+       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], $2, rhs parseState 3)
        assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
@@ -2083,7 +2084,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let m = unionRanges (rhs parseState 1) mEnd |> unionRangeWithXmlDoc xmlDoc
        let expr = arbExpr ("new2", mEnd.EndRange)
-       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
+       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], $2, rhs parseState 3)
        assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
@@ -2095,7 +2096,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let pat = patFromParseError (SynPat.Wild(mNew.EndRange))
        let expr = arbExpr ("new3", mNew.EndRange)
-       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat pat], SynInfo.unnamedRetVal), None)
+       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat pat], SynInfo.unnamedRetVal), None, None)
        let vis = $2
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [pat], vis, rhs parseState 3)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
@@ -3278,25 +3279,25 @@ rationalConstant:
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if fst $3 = 0 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
       if (snd $1) || (snd $3) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Rational(fst $1, fst $3, lhs parseState) }
+      SynRationalConst.Rational(fst $1, rhs parseState 1, fst $3, rhs parseState 3, lhs parseState) }
 
   | MINUS INT32 INFIX_STAR_DIV_MOD_OP INT32
     { if $3 <> "/" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if fst $4 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
       if (snd $2) || (snd $4) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, fst $4, lhs parseState)) }
+      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, rhs parseState 2, fst $4, rhs parseState 4, lhs parseState), lhs parseState) }
 
   | INT32
     { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Integer(fst $1) }
+      SynRationalConst.Integer(fst $1, lhs parseState) }
 
   | MINUS INT32
     { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Integer(fst $2)) }
+      SynRationalConst.Negate(SynRationalConst.Integer(fst $2, rhs parseState 2), lhs parseState) }
 
 atomicUnsignedRationalConstant:
   | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-            SynRationalConst.Integer(fst $1) }
+            SynRationalConst.Integer(fst $1, lhs parseState) }
 
   | LPAREN rationalConstant rparen
     { $2 }
@@ -3305,14 +3306,17 @@ atomicRationalConstant:
   | atomicUnsignedRationalConstant { $1 }
 
   | MINUS atomicUnsignedRationalConstant
-    { SynRationalConst.Negate($2) }
+    { SynRationalConst.Negate($2, lhs parseState) }
 
 constant:
   | rawConstant
     { $1, rhs parseState 1 }
 
   | rawConstant HIGH_PRECEDENCE_TYAPP measureTypeArg
-    { SynConst.Measure($1, rhs parseState 1, $3), lhs parseState }
+    { let synMeasure, trivia = $3 
+      let mConstant = rhs parseState 1
+      let m = unionRanges mConstant trivia.GreaterRange
+      SynConst.Measure($1, rhs parseState 1, synMeasure, trivia), m }
 
 bindingPattern:
   | headBindingPattern
@@ -4791,6 +4795,23 @@ argExpr:
         arg }
 
 atomicExpr:
+  | UNDERSCORE DOT atomicExpr %prec dot_lambda
+      { let mUnderscore  = rhs parseState 1
+        let mDot  = rhs parseState 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (unionRanges mUnderscore  mDot )
+        let expr, hpa = $3
+        let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
+        SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }
+
+  | UNDERSCORE DOT appExpr recover %prec dot_lambda
+      { let mUnderscore  = rhs parseState 1
+        let mDot  = rhs parseState 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (unionRanges mUnderscore  mDot )
+        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnderScoreDotLambdaNonAtomic())
+        let expr = $3
+        let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
+        SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }    
+        
   | atomicExpr HIGH_PRECEDENCE_BRACK_APP atomicExpr
       { let arg1, _ = $1
         let arg2, hpa = $3
@@ -5839,7 +5860,11 @@ appTypeCon:
 appTypeConPower:
   | appTypeCon INFIX_AT_HAT_OP atomicRationalConstant
     { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator())
-      if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+      if $2 = "^-" then
+          let afterMinus = (rhs parseState 2).EndRange
+          let beforeMinus = mkRange afterMinus.FileName (mkPos afterMinus.EndLine (afterMinus.EndColumn - 1)) afterMinus.End
+          let m = unionRanges beforeMinus (rhs parseState 3)  // include MINUS in Negate range
+          SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
       else SynType.MeasurePower($1, $3, lhs parseState) }
 
   | appTypeCon
@@ -5996,7 +6021,11 @@ powerType:
 
   | atomTypeOrAnonRecdType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator())
-       if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+       if $2 = "^-" then
+           let afterMinus = (rhs parseState 2).EndRange
+           let beforeMinus = mkRange afterMinus.FileName (mkPos afterMinus.EndLine (afterMinus.EndColumn - 1)) afterMinus.End
+           let m = unionRanges beforeMinus (rhs parseState 3)  // include MINUS in Negate range
+           SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynType.MeasurePower($1, $3, lhs parseState) }
 
 
@@ -6189,10 +6218,16 @@ dummyTypeArg:
 
 measureTypeArg:
   | LESS measureTypeExpr GREATER
-     { $2 }
+     { let mLess = rhs parseState 1
+       let mGreater = rhs parseState 3
+       let trivia = { LessRange = mLess; GreaterRange = mGreater }
+       $2, trivia }
 
   | LESS UNDERSCORE GREATER
-     { SynMeasure.Anon(lhs parseState) }
+     { let mLess = rhs parseState 1
+       let mGreater = rhs parseState 3
+       let trivia = { LessRange = mLess; GreaterRange = mGreater } 
+       SynMeasure.Anon(rhs parseState 2), trivia }
 
 measureTypeAtom:
   | path
@@ -6211,12 +6246,17 @@ measureTypePower:
 
   | measureTypeAtom INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-       if $2 = "^-" then SynMeasure.Power($1, SynRationalConst.Negate($3), lhs parseState)
+       if $2 = "^-" then
+           let afterMinus = (rhs parseState 2).EndRange
+           let beforeMinus = mkRange afterMinus.FileName (mkPos afterMinus.EndLine (afterMinus.EndColumn - 1)) afterMinus.End
+           let m = unionRanges beforeMinus (rhs parseState 3)  // include MINUS in Negate range
+           SynMeasure.Power($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynMeasure.Power($1, $3, lhs parseState) }
 
   | INT32
      { if fst $1 <> 1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedIntegerLiteralForUnitOfMeasure())
-       SynMeasure.One }
+       let m = rhs parseState 1
+       SynMeasure.One(m) }
 
 measureTypeSeq:
   | measureTypePower
@@ -6235,11 +6275,11 @@ measureTypeExpr:
   | measureTypeExpr INFIX_STAR_DIV_MOD_OP measureTypeExpr
     { if $2 <> "*" && $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if $2 = "*" then SynMeasure.Product($1, $3, lhs parseState)
-      else SynMeasure.Divide($1, $3, lhs parseState) }
+      else SynMeasure.Divide(Some $1, $3, lhs parseState) }
 
   | INFIX_STAR_DIV_MOD_OP measureTypeExpr
      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-       SynMeasure.Divide(SynMeasure.One, $2, lhs parseState) }
+       SynMeasure.Divide(None, $2, lhs parseState) }
 
 typar:
   | QUOTE ident
