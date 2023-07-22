@@ -5798,6 +5798,8 @@ let ``detects unnamed fields in DU and exceptions`` () =
         if expected <> warns then
             let postmortem = System.IO.Path.ChangeExtension(file, ".err")
             System.IO.File.WriteAllText(postmortem, warns)
-            printfn $"expected:\n{expected}\ngot:\n{warns}"
-            printfn $"please compare\n{baseline}\nwith\n{postmortem}"
+            let message =
+                $"expected:\n{expected}\ngot:\n{warns}\n"
+                + $"please compare\n{baseline}\nwith\n{postmortem}"
+            failwith message
         
