@@ -22,3 +22,6 @@ module Outer =
     exception InnerException1 of int
     exception InnerException2 of ok: int * okok: string
     exception InnerException3 of int * noOkCase: string
+
+    type PrivateDU = private PrivateCase1 of int * string
+    exception private PrivateException of int * string
