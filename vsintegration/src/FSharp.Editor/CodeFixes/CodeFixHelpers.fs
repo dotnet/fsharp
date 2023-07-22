@@ -15,9 +15,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Symbols
-
 open CancellableTasks
 
 [<RequireQualifiedAccess>]
@@ -74,38 +71,6 @@ module internal CodeFixHelpers =
                 }),
             name
         )
-
-    let getUnusedSymbol textSpan (document: Document) codeFixName =
-        cancellableTask {
-            let! token = CancellableTask.getCurrentCancellationToken ()
-            let! sourceText = document.GetTextAsync token
-
-            let ident = sourceText.ToString textSpan
-
-            // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes
-            if PrettyNaming.IsIdentifierName ident then
-                let! lexerSymbol =
-                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
-
-                let range =
-                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-
-                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
-
-                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
-
-                return
-                    lexerSymbol
-                    |> Option.bind (fun symbol ->
-                        checkResults.GetSymbolUseAtLocation(range.StartLine, range.EndColumn, lineText, symbol.FullIsland))
-                    |> Option.bind (fun symbolUse ->
-                        match symbolUse.Symbol with
-                        | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> Some symbolUse.Symbol
-                        | _ -> None)
-            else
-                return None
-        }
 
 [<AutoOpen>]
 module internal CodeFixExtensions =
