@@ -5765,3 +5765,39 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
     assemblyNames |> should contain "Dapper.dll"
+
+
+[<Test>]
+let ``detects unnamed fields in DU and exceptions`` () =
+    let file = __SOURCE_DIRECTORY__ + "/data/analysis/unammed-fields/unammed.members.diagnostics.fsx"
+    let baseline = System.IO.Path.ChangeExtension(file, ".bsl")
+    let input = 
+        file
+        |> System.IO.File.ReadAllText
+        |> SourceText.ofString 
+    let checker = FSharpChecker.Create(keepAssemblyContents=true)
+    
+    let projOptions, diagnostics = 
+        checker.GetProjectOptionsFromScript(file, input)
+        |> Async.RunSynchronously
+    
+    let parseResults, checkFileAnswer = 
+        checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
+        |> Async.RunSynchronously
+    
+    match checkFileAnswer with
+    | FSharpCheckFileAnswer.Aborted -> failwith $"unexpected check file results for {file}"
+    | FSharpCheckFileAnswer.Succeeded results -> 
+        let warns = 
+            Naming.getUnnamedDiscriminatedUnionAndExceptionFields(results, false)
+            |> Async.RunSynchronously
+            |> Seq.toArray
+            |> Seq.map string
+            |> String.concat "\n"
+        let expected = System.IO.File.ReadAllText baseline
+        if expected <> warns then
+            let postmortem = System.IO.Path.ChangeExtension(file, ".err")
+            System.IO.File.WriteAllText(postmortem, warns)
+            printfn $"expected:\n{expected}\ngot:\n{warns}"
+            printfn $"please compare\n{baseline}\nwith\n{postmortem}"
+        

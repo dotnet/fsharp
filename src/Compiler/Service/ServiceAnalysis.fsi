@@ -31,3 +31,7 @@ module public UnusedDeclarations =
 
     /// Get all unused declarations in a file
     val getUnusedDeclarations: checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<seq<range>>
+
+
+module public Naming =
+    val getUnnamedDiscriminatedUnionAndExceptionFields : checkFileResults: FSharpCheckFileResults * isScriptFile : bool -> Async<seq<range>>

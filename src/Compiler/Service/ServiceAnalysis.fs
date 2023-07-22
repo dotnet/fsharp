@@ -451,3 +451,44 @@ module UnusedDeclarations =
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges
         }
+
+module public Naming =
+    [<TailCall>]
+    let rec checkDeclaration declaration =
+        match declaration with
+        | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue _ -> Seq.empty
+        | FSharpImplementationFileDeclaration.InitAction _ -> Seq.empty
+        | FSharpImplementationFileDeclaration.Entity(entity, _declarations) ->
+            seq {
+                for case in entity.UnionCases do
+                    // lenient on non public members
+                    if not case.Accessibility.IsPublic then () else
+                    // lenient on single field cases
+                    if case.Fields.Count <= 1 then () else
+                    for field in case.Fields do
+                        if field.IsNameGenerated || isNull field.Name || System.String.Empty = field.Name then
+                            field.DeclarationLocation
+                            match field.ImplementationLocation with
+                            | None -> ()
+                            | Some range -> range
+                            match field.SignatureLocation with
+                            | None -> ()
+                            | Some range -> range
+                for declaration in _declarations do
+                    yield! checkDeclaration declaration
+            }
+    let getUnnamedDiscriminatedUnionAndExceptionFields (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
+        async {
+            // be lenient in case of script
+            if isScriptFile then return Seq.empty else
+            match checkFileResults.ImplementationFile with
+            | None -> return Seq.empty
+            | Some checkResults ->
+                return (seq {
+                    for d in checkResults.Declarations do
+                        yield! checkDeclaration d
+                }
+                |> Seq.distinct
+                //|> Seq.sort // not comparable
+                )
+        }
