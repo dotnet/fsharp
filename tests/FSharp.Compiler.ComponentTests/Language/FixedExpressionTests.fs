@@ -129,3 +129,74 @@ let pinIt (thing: int) =
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'""")
         ]
+
+// FS-1081 - Extend fixed expressions
+module ExtendedFixedExpressions =
+    [<Fact>]
+    let ``Pin int byref parmeter`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (thing: byref<int>) =
+    use ptr = fixed &thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
+        
+    [<Fact>]
+    let ``Pin int inref parmeter`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (thing: inref<int>) =
+    use ptr = fixed &thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
+        
+    [<Fact>]
+    let ``Pin int outref parmeter`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (thing: outref<int>) =
+    use ptr = fixed &thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
+        
+    [<Fact>]
+    let ``Pin int byref local variable`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt () =
+    let mutable thing = 42
+    use ptr = fixed &thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
+        |> withDiagnostics [
+            (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]

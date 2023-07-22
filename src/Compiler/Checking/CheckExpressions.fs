@@ -10276,7 +10276,9 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                     | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
                     | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
                     | TOp.RefAddrGet _, _, _ -> true
+                    | TOp.LValueOp (LValueOperation.LAddrOf _, _), _, _ -> true
                     | _ -> false
+            | Expr.Val _ -> true
             | _ -> false
         if not okByRef then
             error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
