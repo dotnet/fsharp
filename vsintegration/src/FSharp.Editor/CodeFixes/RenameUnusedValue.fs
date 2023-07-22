@@ -34,13 +34,11 @@ module UnusedCodeFixHelper =
 
                 let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
 
-                let! _, checkResults = 
-                    document.GetFSharpParseAndCheckResultsAsync codeFixName
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
 
                 return
                     lexerSymbol
-                    |> Option.bind (fun symbol ->
-                        checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> Option.bind (fun symbol -> checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
                     |> Option.bind (fun symbolUse ->
                         match symbolUse.Symbol with
                         | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> Some symbolUse.Symbol
@@ -81,7 +79,6 @@ type internal PrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstruc
                             Changes = [ TextChange(TextSpan(context.Span.Start, 0), "_") ]
                         })
             }
-
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
 type internal RenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
