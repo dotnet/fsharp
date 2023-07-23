@@ -8,6 +8,7 @@ module Tests.Service.Symbols
 #endif
 
 open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -751,3 +752,17 @@ type Foo() =
             and set (a: int) (b: float) = ()
 """
             (5, 14, "    member _.X", "X")
+            
+module AnonymousRecord =
+    [<Test>]
+    let ``Anonymous record copy-and-update symbols`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f (r: {| A: int; C: int |}) =
+    { r with A = 1; B = 2; C = 3 }
+"""
+        assertHasSymbolUsages [ "A"; "C" ] checkResults
+        dumpDiagnostics checkResults |> shouldEqual [
+            "(3,13--3,14): Label 'A' is part of anonymous record. Use {| r with A = ... |} instead."
+            "(3,20--3,21): The record label 'B' is not defined."
+            "(3,27--3,28): Label 'C' is part of anonymous record. Use {| r with C = ... |} instead."
+        ]
