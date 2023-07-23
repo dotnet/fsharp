@@ -750,7 +750,6 @@ val internal ResolveField:
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
     ty: TType ->
-    tyIdent: Ident option ->
     mp: Ident list ->
     id: Ident ->
     allFields: Ident list ->

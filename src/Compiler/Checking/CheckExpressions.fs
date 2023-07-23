@@ -1796,6 +1796,14 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
+let private CheckCopyUpdateSyntaxInAnonRecords sink (g: TcGlobals) ty (tyIdent: Ident option) (fldId: Ident) nenv ad =
+    match TryFindAnonRecdFieldOfType g ty fldId.idText, tyIdent with
+    | Some item, Some tpId ->
+        CallNameResolutionSink sink (fldId.idRange, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
+        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(item.DisplayNameCore, tpId.idText, fldId.idText), fldId.idRange))
+    | _, _ ->
+        error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
+
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
 //-------------------------------------------------------------------------
@@ -1813,10 +1821,14 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (tyIdent: Ident option) (flds: (
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.choose (fun (fld, fldExpr) ->
+            let fldPath, fldId = fld
             try
-                let fldPath, fldId = fld
-                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty tyIdent fldPath fldId allFields
-                Some(fld, frefSet, fldExpr)
+                if isAnonRecdTy cenv.g ty || isStructAnonRecdTy cenv.g ty then
+                    CheckCopyUpdateSyntaxInAnonRecords cenv.tcSink cenv.g ty tyIdent fldId env.eNameResEnv ad
+                    None
+                else
+                    let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
+                    Some(fld, frefSet, fldExpr)
             with e ->
                 errorRecoveryNoRange e
                 None

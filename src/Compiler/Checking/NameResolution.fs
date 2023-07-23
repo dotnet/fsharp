@@ -3748,26 +3748,16 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             errorR(Error(FSComp.SR.nrInvalidFieldLabel(), (List.head rest).idRange))
 
         [(resInfo, item)]
-        
-let ResolveAnonRecField (g: TcGlobals) ty (tyIdent: Ident option) (fldId: Ident) =
-    match TryFindAnonRecdFieldOfType g ty fldId.idText, tyIdent with
-    | Some item, Some tpId ->
-        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(item.DisplayNameCore, tpId.idText, fldId.idText), fldId.idRange))
-    | _, _ -> error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
 
-let ResolveField sink (ncenv: NameResolver) nenv ad ty (tyIdent: Ident option) mp id allFields =
+let ResolveField sink (ncenv: NameResolver) nenv ad ty mp (id: Ident) allFields =
     let checker = ResultTyparChecker(fun () -> true)
-    if isAnonRecdTy ncenv.g ty || isStructAnonRecdTy ncenv.g ty then
-        ResolveAnonRecField ncenv.g ty tyIdent id
-        []
-    else
-        let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
-        // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
-        // info is only non-empty if there was a unique resolution of the field)
-        res
-        |> List.map (fun (resInfo, rfref) ->
-            ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
-            rfref)
+    let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
+    // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
+    // info is only non-empty if there was a unique resolution of the field)
+    res
+    |> List.map (fun (resInfo, rfref) ->
+        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
+        rfref)
 
 /// Resolve a long identifier representing a nested record field.
 ///
