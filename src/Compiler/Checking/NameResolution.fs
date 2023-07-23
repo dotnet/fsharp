@@ -3749,11 +3749,11 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
 
         [(resInfo, item)]
 
-let ResolveField sink (ncenv: NameResolver) nenv ad ty mp (id: Ident) allFields =
-    let checker = ResultTyparChecker(fun () -> true)
+let ResolveField sink ncenv nenv ad ty mp id allFields =
     let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
+    let checker = ResultTyparChecker(fun () -> true)
     res
     |> List.map (fun (resInfo, rfref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
