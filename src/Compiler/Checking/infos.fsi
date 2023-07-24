@@ -1089,3 +1089,5 @@ val PropInfosEquivByNameAndSig:
 val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
+
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) option

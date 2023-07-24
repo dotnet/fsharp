@@ -1,7 +1,7 @@
 
-neg62.fs(5,3,5,28): typecheck error FS0902: Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.
+neg62.fs(5,3,5,28): typecheck error FS0902: For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.
 
-neg62.fs(8,3,8,19): typecheck error FS0902: Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.
+neg62.fs(8,3,8,19): typecheck error FS0902: For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.
 
 neg62.fs(11,3,11,12): typecheck error FS0963: This definition may only be used in a type with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 
@@ -17,7 +17,7 @@ neg62.fs(28,5,28,18): typecheck error FS0960: 'let' and 'do' bindings must come 
 
 neg62.fs(31,5,31,32): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 
-neg62.fs(31,5,31,32): typecheck error FS0902: Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.
+neg62.fs(31,5,31,32): typecheck error FS0902: For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.
 
 neg62.fs(34,5,34,25): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 

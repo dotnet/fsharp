@@ -10,9 +10,9 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (a, None), false, None, (3,4--3,5)), None,
-                  Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,0--3,10),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Named (SynIdent (a, None), false, None, (3,4--3,5)),
+                  None, Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,0--3,10),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,6--3,7) })], (3,0--3,10));
@@ -71,7 +71,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None),
                   Named (SynIdent (b, None), false, None, (11,4--11,5)), None,
                   Const (Unit, (11,8--11,10)), (11,4--11,5), Yes (11,0--11,10),
                   { LeadingKeyword = Let (11,0--11,3)
