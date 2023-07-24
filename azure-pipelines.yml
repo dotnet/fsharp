@@ -360,7 +360,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:OtherFlags='$(OtherFlags) --strict-indentation+'
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
             displayName: Build
 
           - task: PublishBuildArtifacts@1
