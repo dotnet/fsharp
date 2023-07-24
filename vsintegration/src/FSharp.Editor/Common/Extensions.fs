@@ -362,39 +362,3 @@ type Async with
 
             task.Result
         | _ -> Async.RunSynchronously(computation, ?cancellationToken = cancellationToken)
-
-[<RequireQualifiedAccess>]
-module IEnumerator =
-    let inline chooseV f (e: IEnumerator<'T>) =
-        let mutable started = false
-        let mutable curr = None
-
-        let get () =
-            check started
-
-            match curr with
-            | None -> alreadyFinished ()
-            | Some x -> x
-
-        { new IEnumerator<'U> with
-            member _.Current = get ()
-          interface IEnumerator with
-              member _.Current = box (get ())
-
-              member _.MoveNext() =
-                  if not started then
-                      started <- true
-
-                  curr <- None
-
-                  while (curr.IsNone && e.MoveNext()) do
-                      curr <- f e.Current
-
-                  Option.isSome curr
-
-              member _.Reset() =
-                  noReset ()
-          interface System.IDisposable with
-              member _.Dispose() =
-                  e.Dispose()
-        }
