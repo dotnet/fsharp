@@ -172,7 +172,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion                
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

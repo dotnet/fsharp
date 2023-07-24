@@ -5572,11 +5572,11 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | _ -> false)
 
     let emitUnmanagedInIlOutput =
-        cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop) &&
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.IsUnmanaged _ -> true
-            | _ -> false)
+        cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop)
+        && tp.Constraints
+           |> List.exists (function
+               | TyparConstraint.IsUnmanaged _ -> true
+               | _ -> false)
 
     let tpName =
         // use the CompiledName if given
