@@ -166,7 +166,7 @@
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
         <note />
-	  </trans-unit>
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Todas las ramas de una expresión 'if' deben devolver valores implícitamente convertibles al tipo de la primera rama, que aquí es una tupla de longitud {0} de tipo\n    {1}    \nEsta rama devuelve una tupla de longitud {2} de tipo\n    {3}    \n</target>
@@ -450,6 +450,11 @@
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="translated">Compatibilidad con try-with en expresiones secuenciales</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop betwee C#'s and F#'s unmanaged generic constraint</source>
+        <target state="new">Interop betwee C#'s and F#'s unmanaged generic constraint</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">

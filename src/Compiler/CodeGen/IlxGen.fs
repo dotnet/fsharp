@@ -5571,7 +5571,8 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | TyparConstraint.RequiresDefaultConstructor _ -> true
             | _ -> false)
 
-    let unmanagedConstraint =
+    let emitUnmanagedInIlOutput =
+        cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop) &&
         tp.Constraints
         |> List.exists (function
             | TyparConstraint.IsUnmanaged _ -> true
@@ -5607,7 +5608,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
     let attributeList =
         let defined = GenAttrs cenv eenv tp.Attribs
 
-        if unmanagedConstraint then
+        if emitUnmanagedInIlOutput then
             (GetIsUnmanagedAttribute g) :: defined
         else
             defined
@@ -5620,7 +5621,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
     {
         Name = tpName
         Constraints =
-            if unmanagedConstraint then
+            if emitUnmanagedInIlOutput then
                 (modreqValueType () :: subTypeConstraints)
             else
                 subTypeConstraints
@@ -5628,7 +5629,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
         CustomAttrsStored = storeILCustomAttrs tpAttrs
         MetadataIndex = NoMetadataIdx
         HasReferenceTypeConstraint = refTypeConstraint
-        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint || unmanagedConstraint
+        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint || emitUnmanagedInIlOutput
         HasDefaultConstructorConstraint = defaultConstructorConstraint
     }
 

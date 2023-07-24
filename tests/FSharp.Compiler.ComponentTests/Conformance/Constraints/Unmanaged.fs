@@ -335,6 +335,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<Fact>]
     let ``Multi constraint IL test together with struct and interface constraints`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct and 'T:>System.IComparable> = struct end"
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -362,6 +363,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<Fact>]
     let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = struct(x,1)"
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -392,6 +394,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
 open CsLib
 let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         """     |> withReferences [csLib]
+                |> withLangVersionPreview
 
         app
         |> compile
@@ -422,14 +425,16 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         """     |> withReferences [csLib]
 
         app
+        |> withLangVersionPreview
         |> asExe
         |> compile
         |> run
         |> verifyOutput "MultiCaseUnion"
 
     [<Fact>]
-    let ``F# generates modreq for C# to consume`` () = 
+    let ``FSharp generates modreq for CSharp to consume in preview`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -437,6 +442,20 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
   {
     .param type TUnmanaged 
       .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ret
+  } """]
+
+    [<Fact>]
+    let ``FSharp does not generate modreq for VBNET to consume in v7`` () = 
+        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+      .method public static void  testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
+  {
     
     .maxstack  8
     IL_0000:  ret
@@ -452,6 +471,7 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
     val Item : 'TInner   
     with static member Hi() = typeof<'TInner>.Name"""
             |> asLibrary
+            |> withLangVersionPreview
             |> withName "fsLib"
 
         let app = 
@@ -497,6 +517,7 @@ module FsharpPreparedData =
     let structDuExample2 = B "42"
     """
             |> asLibrary
+            |> withLangVersionPreview
             |> withName "fsLib"
 
         let app = 
