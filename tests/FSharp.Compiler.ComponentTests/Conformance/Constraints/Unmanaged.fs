@@ -333,8 +333,8 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         (Error 43, Line 1, Col 34, Line 1, Col 48, "The constraints 'unmanaged' and 'not struct' are inconsistent")]
 
     [<Fact>]
-    let ``IsUnmanagedAttribute Attribute is emitted and generated for unmanaged constraint on type`` () =
-        Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct> = struct end"
+    let ``Multi constraint IL test together with struct and interface constraints`` () =
+        Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct and 'T:>System.IComparable> = struct end"
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -342,7 +342,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
            extends [runtime]System.Object
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-      .class sequential ansi serializable sealed nested public beforefieldinit Test`1<valuetype T>
+      .class sequential ansi serializable sealed nested public beforefieldinit Test`1<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType), [runtime]System.IComparable) T>
              extends [runtime]System.ValueType
       {
         .pack 0
@@ -355,7 +355,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
           .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
       } 
     
-    }""";"""
+    } """;"""
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
        extends [runtime]System.Attribute"""]
 
@@ -365,21 +365,19 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
-      .method public static valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32> 
-          testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
-  {
-    .param type TUnmanaged 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  newobj     instance void valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32>::.ctor(!0,
-                                                                                                          !1)
-    IL_0007:  ret
-  } """;"""
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
-       extends [runtime]System.Attribute"""]
+    .method public static valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32> 
+              testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
+      {
+        .param type TUnmanaged 
+          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.1
+        IL_0002:  newobj     instance void valuetype [runtime]System.ValueTuple`2<!!TUnmanaged,int32>::.ctor(!0,
+                                                                                                                    !1)
+        IL_0007:  ret
+      }"""]
 
 
 
@@ -429,5 +427,103 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         |> run
         |> verifyOutput "MultiCaseUnion"
 
+    [<Fact>]
+    let ``F# generates modreq for C# to consume`` () = 
+        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+      .method public static void  testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
+  {
+    .param type TUnmanaged 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ret
+  } """]
 
-        // TODO tests - interop other direction
+
+    [<Fact>]
+    let ``C# can consume F#-defined struct with unmanaged constraint - valid`` () =
+        let fsharpLib = 
+            Fs """namespace MyFsLib
+[<Struct>]
+type FsharpStructWrapper<'TInner when 'TInner: unmanaged> = 
+    val Item : 'TInner   
+    with static member Hi() = typeof<'TInner>.Name"""
+            |> asLibrary
+            |> withName "fsLib"
+
+        let app = 
+            CSharp """
+    using System;
+    using MyFsLib;
+    public record struct CSharpStruct(int first, long second);
+    public class C {
+        public static void Main() {
+            var text = FsharpStructWrapper<CSharpStruct>.Hi();
+            Console.Write(text);
+        }
+    }
+            """
+            |> withReferences [fsharpLib]
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> asExe
+            |> withName "myCsharpApp"
+
+        app
+        |> compile
+        |> run
+        |> verifyOutput "CSharpStruct"
+
+    [<Fact>]
+    let ``C# can consume F#-defined struct with unmanaged constraint - and report error when invalid`` () =
+        let fsharpLib = 
+            Fs """namespace MyFsLib
+[<Struct>]
+type FsharpStructWrapper<'T when 'T: unmanaged> = 
+    val Item : 'T    
+    with static member Hi() = typeof<'T>.Name
+
+[<Struct>]
+type MultiDu = A | B of s:string
+
+module FsharpFunc = 
+    let test (x: 'T when 'T : unmanaged) = ()
+
+module FsharpPreparedData = 
+    let structTuple = struct(1,2,"42")
+    let structDuExample1 = A
+    let structDuExample2 = B "42"
+    """
+            |> asLibrary
+            |> withName "fsLib"
+
+        let app = 
+            CSharp """
+    using System;
+    using MyFsLib;
+    public record struct CSharpStructWithString(int first, string second);
+    public class C {
+        public static void Main() {
+            var text = FsharpStructWrapper<CSharpStructWithString>.Hi();
+            FsharpFunc.test(FsharpPreparedData.structTuple);
+            FsharpFunc.test(FsharpPreparedData.structDuExample1);
+            FsharpFunc.test(FsharpPreparedData.structDuExample2);
+            Console.WriteLine(text);
+        }
+    }
+            """
+            |> withReferences [fsharpLib]
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> asExe
+            |> withName "myCsharpApp"
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+                 Error 8377, Line 6, Col 44, Line 6, Col 66, "The type 'CSharpStructWithString' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'FsharpStructWrapper<T>'"
+                 Error 8377, Line 7, Col 24, Line 7, Col 28, "The type '(int, int, string)' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'FsharpFunc.test<T>(T)'"
+                 Error 8377, Line 8, Col 24, Line 8, Col 28, "The type 'MultiDu' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'FsharpFunc.test<T>(T)'"
+                 Error 8377, Line 9, Col 24, Line 9, Col 28, "The type 'MultiDu' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'FsharpFunc.test<T>(T)'" ]

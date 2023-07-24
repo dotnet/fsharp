@@ -5614,14 +5614,21 @@ and GenGenericParam cenv eenv (tp: Typar) =
 
     let tpAttrs = mkILCustomAttrs (attributeList)
 
+    let modreqValueType () =
+        ILType.Modified(true, g.iltyp_UnmanagedType.TypeRef, g.iltyp_ValueType)
+
     {
         Name = tpName
-        Constraints = subTypeConstraints
+        Constraints =
+            if unmanagedConstraint then
+                (modreqValueType () :: subTypeConstraints)
+            else
+                subTypeConstraints
         Variance = NonVariant
         CustomAttrsStored = storeILCustomAttrs tpAttrs
         MetadataIndex = NoMetadataIdx
         HasReferenceTypeConstraint = refTypeConstraint
-        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint
+        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint || unmanagedConstraint
         HasDefaultConstructorConstraint = defaultConstructorConstraint
     }
 
