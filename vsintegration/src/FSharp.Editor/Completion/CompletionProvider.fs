@@ -168,9 +168,14 @@ type internal FSharpCompletionProvider
             let partialName = QuickParse.GetPartialLongNameEx(line, caretLineColumn - 1)
 
             let inline getAllSymbols () =
-                [ for assemblySymbol in getAllSymbols checkFileResults do
-                    if assemblySymbol.FullName.Contains(".") && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName) then
-                        yield assemblySymbol ]
+                [
+                    for assemblySymbol in getAllSymbols checkFileResults do
+                        if
+                            assemblySymbol.FullName.Contains(".")
+                            && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName)
+                        then
+                            yield assemblySymbol
+                ]
 
             let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
 
@@ -368,7 +373,7 @@ type internal FSharpCompletionProvider
         ) : Task<CompletionDescription> =
 
         match completionItem.Properties.TryGetValue IndexPropName with
-        | true, completionItemIndexStr when int completionItemIndexStr >=  declarationItems.Length ->
+        | true, completionItemIndexStr when int completionItemIndexStr >= declarationItems.Length ->
             Task.FromResult CompletionDescription.Empty
         | true, completionItemIndexStr ->
             // TODO: Not entirely sure why do we use tasks here, since everything here is synchronous.
@@ -383,21 +388,13 @@ type internal FSharpCompletionProvider
                 let documentation = List()
                 let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
-                XmlDocumentation.BuildDataTipText(
-                    documentationBuilder,
-                    collector,
-                    collector,
-                    collector,
-                    collector,
-                    collector,
-                    description
-                )
+                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description)
 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
             }
             |> CancellableTask.start cancellationToken
 
-        | _ ->    
+        | _ ->
             match completionItem.Properties.TryGetValue KeywordDescription with
             | true, keywordDescription -> Task.FromResult(CompletionDescription.FromText(keywordDescription))
             | false, _ -> Task.FromResult(CompletionDescription.Empty)
