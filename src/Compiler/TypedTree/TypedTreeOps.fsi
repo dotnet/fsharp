@@ -1698,6 +1698,27 @@ val isClassTy: TcGlobals -> TType -> bool
 /// Determine if a type is an enum type
 val isEnumTy: TcGlobals -> TType -> bool
 
+/// Determine if a type is a signed integer type
+val isSignedIntegerTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is an unsigned integer type
+val isUnsignedIntegerTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is an integer type
+val isIntegerTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a floating point type
+val isFpTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a decimal type
+val isDecimalTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a non-decimal numeric type type
+val isNonDecimalNumericType: TcGlobals -> TType -> bool
+
+/// Determine if a type is a numeric type type
+val isNumericType: TcGlobals -> TType -> bool
+
 /// Determine if a type is a struct, record or union type
 val isStructRecordOrUnionTyconTy: TcGlobals -> TType -> bool
 

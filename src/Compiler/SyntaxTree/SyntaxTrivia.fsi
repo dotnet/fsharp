@@ -513,3 +513,9 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia
+
+/// Represents additional information for SynConst.Measure
+[<NoEquality; NoComparison>]
+type SynMeasureConstantTrivia =
+    { LessRange: range
+      GreaterRange: range }
