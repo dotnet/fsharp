@@ -9,6 +9,43 @@ open FSharp.Test
 module Unmanaged =
 
     [<Fact>]
+    let ``Struct with private field can be unmanaged`` () = 
+        Fsx """
+[<Struct>]
+type Test<'T when 'T: unmanaged> =
+    val element: 'T
+type DoubleType<'T> =
+    struct
+        val x: float
+        val private y: 'T
+    end
+let _ = Test<DoubleType<int>>()
+let _ = Test<DoubleType<DoubleType<byte>>>()
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Struct with private managed field cannot be unmanaged`` () = 
+        Fsx """
+[<Struct>]
+type Test<'T when 'T: unmanaged> =
+    val element: 'T
+type DoubleType<'T> =
+    struct
+        val x: float
+        val private y: 'T
+    end
+let _ = Test<DoubleType<string>>()
+let _ = Test<DoubleType<DoubleType<int option>>>()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+                   Error 1, Line 10, Col 9, Line 10, Col 33, "A generic construct requires that the type 'DoubleType<string>' is an unmanaged type"
+                   Error 1, Line 11, Col 9, Line 11, Col 49, "A generic construct requires that the type 'DoubleType<DoubleType<int option>>' is an unmanaged type" ]
+   
+    [<Fact>]
     let ``voption considered unmanaged when inner type is unmanaged`` () = 
         Fsx """
 let test (x: 'T when 'T : unmanaged) = ()
@@ -388,7 +425,8 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
 
         app
         |> asExe
-        |> compileAndRun
+        |> compile
+        |> run
         |> verifyOutput "MultiCaseUnion"
 
 
