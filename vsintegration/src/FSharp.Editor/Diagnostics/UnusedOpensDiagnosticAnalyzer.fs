@@ -22,11 +22,13 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
     static member GetUnusedOpenRanges(document: Document) : Async<Option<range list>> =
         asyncMaybe {
             do! Option.guard document.Project.IsFSharpCodeFixesUnusedOpensEnabled
-            let! sourceText = document.GetTextAsync()
+            let! ct = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(ct)
+
 
             let! _, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
-                |> CancellableTask.start CancellationToken.None
+                |> CancellableTask.start ct
 
             let! unusedOpens =
                 UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()))

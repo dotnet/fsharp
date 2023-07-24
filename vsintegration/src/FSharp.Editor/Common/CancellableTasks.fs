@@ -1058,11 +1058,11 @@ module CancellableTasks =
 
         let inline startWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask<_>) = start CancellationToken.None ctask
 
-        let inline runSyncronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+        let inline runSynchronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
             let task = start ct ctask
             task.GetAwaiter().GetResult()
 
-        let inline runSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+        let inline runSynchronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
             let task = startWithoutCancellation ctask
             task.GetAwaiter().GetResult()
 
@@ -1070,11 +1070,11 @@ module CancellableTasks =
 
         let inline startAsTaskWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask<_>) = (ctask CancellationToken.None) :> Task
 
-        let inline runAsTaskSyncronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+        let inline runAsTaskSynchronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
             let task = startAsTask ct ctask
             task.GetAwaiter().GetResult()
 
-        let inline runAsTaskSyncronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+        let inline runAsTaskSynchronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
             let task = startAsTaskWithoutCancellation ctask
             task.GetAwaiter().GetResult()
 

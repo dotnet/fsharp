@@ -168,14 +168,14 @@ module WorkspaceTests =
 
     let assertEmptyDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
-        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> CancellableTask.runSyncronouslyWithoutCancellation
+        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
         
         Assert.IsEmpty(parseResults.Diagnostics)
         Assert.IsEmpty(checkResults.Diagnostics)
 
     let assertHasDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
-        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> CancellableTask.runSyncronouslyWithoutCancellation
+        let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
         
         Assert.IsEmpty(parseResults.Diagnostics)
         Assert.IsNotEmpty(checkResults.Diagnostics)

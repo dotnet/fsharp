@@ -982,7 +982,7 @@ module internal Tokenizer =
 
     [<Literal>]
     let private doubleBackTickDelimiter = "``"
-    
+
     /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
         let text = sourceText.GetSubText(span).ToString()
