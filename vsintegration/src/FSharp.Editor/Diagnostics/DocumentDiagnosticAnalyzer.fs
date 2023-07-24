@@ -115,7 +115,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                         let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
                         iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
-            
+
                 return iab.ToImmutable()
         }
 
@@ -124,17 +124,13 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
         member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMetadata then
                 Task.FromResult ImmutableArray.Empty
-            else 
-                cancellableTask {
-                    return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                }
+            else
+                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) }
                 |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
                 Task.FromResult ImmutableArray.Empty
-            else 
-                cancellableTask {
-                    return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                }
+            else
+                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) }
                 |> CancellableTask.start cancellationToken

@@ -21,6 +21,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
     let getDefinesAndLangVersion (doc: Microsoft.CodeAnalysis.Document) =
         asyncMaybe {
             let! ct = Async.CancellationToken |> liftAsync
+
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
                 |> CancellableTask.start ct

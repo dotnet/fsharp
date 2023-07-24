@@ -215,9 +215,11 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 else
                     let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                     let! implSourceText = implDoc.GetTextAsync()
+
                     let! _, checkFileResults =
                         implDoc.GetFSharpParseAndCheckResultsAsync(userOpName)
                         |> CancellableTask.start ct
+
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                     let! implSymbol = symbolUses |> Array.tryHead
                     let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(implSourceText, implSymbol.Range)
@@ -234,6 +236,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         asyncMaybe {
             let filePath = document.FilePath
             let! ct = Async.CancellationToken |> liftAsync
+
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
@@ -263,7 +266,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> CancellableTask.start ct
+            let! _, checkFileResults =
+                originDocument.GetFSharpParseAndCheckResultsAsync(userOpName)
+                |> CancellableTask.start ct
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(
@@ -513,7 +518,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         asyncMaybe {
 
                             let! ct = Async.CancellationToken |> liftAsync
-                            
+
                             let! _, checkResults =
                                 tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
                                 |> CancellableTask.start ct
@@ -978,4 +983,5 @@ type FSharpCrossLanguageSymbolNavigationService() =
                     return FSharpNavigableLocation(metadataAsSource, location, project) :> IFSharpNavigableLocation
                 else
                     return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken

@@ -46,7 +46,7 @@ module GoToDefinitionServiceTests =
 
             let _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (userOpName))
-                 |> CancellableTask.runSynchronouslyWithoutCancellation
+                |> CancellableTask.runSynchronouslyWithoutCancellation
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(

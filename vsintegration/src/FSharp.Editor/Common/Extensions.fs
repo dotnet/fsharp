@@ -314,11 +314,7 @@ module List =
     let rec tryFindV predicate list =
         match list with
         | [] -> ValueNone
-        | h :: t ->
-            if predicate h then
-                ValueSome h
-            else
-                tryFindV predicate t
+        | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
 
 [<RequireQualifiedAccess>]
 module Exception =

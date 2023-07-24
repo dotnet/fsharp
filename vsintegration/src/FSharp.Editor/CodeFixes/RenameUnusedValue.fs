@@ -26,6 +26,7 @@ module UnusedCodeFixHelper =
         if PrettyNaming.IsIdentifierName ident then
             asyncMaybe {
                 let! ct = Async.CancellationToken |> liftAsync
+
                 let! lexerSymbol =
                     document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
 

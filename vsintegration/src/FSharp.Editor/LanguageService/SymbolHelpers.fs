@@ -21,9 +21,11 @@ module internal SymbolHelpers =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
             let! ct = Async.CancellationToken |> liftAsync
+
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(userOpName)
                 |> CancellableTask.start ct
+
             let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
@@ -86,11 +88,12 @@ module internal SymbolHelpers =
                 let tasks =
                     [|
                         for project in projects do
-                            yield project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects") |> CancellableTask.startAsTask ct
+                            yield
+                                project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects")
+                                |> CancellableTask.startAsTask ct
                     |]
 
-                do!
-                    Task.WhenAll tasks
+                do! Task.WhenAll tasks
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }

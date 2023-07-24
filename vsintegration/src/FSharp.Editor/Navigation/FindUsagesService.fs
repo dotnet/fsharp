@@ -64,7 +64,6 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpFindUsagesService))
                 |> CancellableTask.start context.CancellationToken
 
-
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
 

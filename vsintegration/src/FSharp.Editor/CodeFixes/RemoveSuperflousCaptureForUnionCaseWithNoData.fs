@@ -26,7 +26,10 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataCodeFixProvider [<Imp
         backgroundTask {
 
             let! sourceText = document.GetTextAsync(ct)
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(CodeFix.RemoveSuperfluousCapture) |> CancellableTask.start ct
+
+            let! _, checkResults =
+                document.GetFSharpParseAndCheckResultsAsync(CodeFix.RemoveSuperfluousCapture)
+                |> CancellableTask.start ct
 
             let changes =
                 seq {

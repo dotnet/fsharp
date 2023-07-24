@@ -191,6 +191,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let! ct = Async.CancellationToken |> liftAsync
+
             let! parseResults, checkFileResults =
                 context.Document.GetFSharpParseAndCheckResultsAsync(nameof (ImplementInterfaceCodeFixProvider))
                 |> CancellableTask.start ct

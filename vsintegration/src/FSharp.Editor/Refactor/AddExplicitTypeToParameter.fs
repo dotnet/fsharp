@@ -45,7 +45,6 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
                 |> CancellableTask.start ct
 
-
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(
                     fcsTextLineNumber,

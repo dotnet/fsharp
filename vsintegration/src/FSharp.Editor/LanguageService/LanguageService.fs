@@ -190,6 +190,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                              DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache
                                 )
+
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
@@ -200,7 +201,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                                 document.GetFSharpCompilationOptionsAsync(nameof (workspace.WorkspaceChanged))
 
                                             do! checker.NotifyFileChanged(document.FilePath, options)
-                                        } |> CancellableTask.startAsTask CancellationToken.None |> ignore)
+                                        }
+                                        |> CancellableTask.startAsTask CancellationToken.None
+                                        |> ignore)
 
                             checker
 

@@ -88,7 +88,7 @@ module private CheckerExtensions =
 
                     let! results =
                         match freshResults with
-                        | Some x -> CancellableTask.singleton(Some x)
+                        | Some x -> CancellableTask.singleton (Some x)
                         | None ->
                             cancellableTask {
                                 match checker.TryGetRecentCheckResultsForFile(filePath, options, userOpName = userOpName) with
@@ -156,10 +156,7 @@ type Document with
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
                         return
-                            ProjectCache.Projects.GetValue(
-                                this.Project,
-                                ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result)
-                            )
+                            ProjectCache.Projects.GetValue(this.Project, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
                 }
 
     /// Get the compilation defines from F# project that is associated with the given F# document.
@@ -296,8 +293,7 @@ type Project with
                 match declarationDocument with
                 | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
                     cancellableTask {
-                        let! _, _, _, options =
-                            document.GetFSharpCompilationOptionsAsync(userOpName)
+                        let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName)
 
                         let signatureFile =
                             if not (document.FilePath |> isSignatureFile) then
@@ -327,8 +323,7 @@ type Project with
                     |> Task.WhenAll
             else
                 for doc in documents do
-                    do!
-                        doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
+                    do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
         }
 
     member this.GetFSharpCompilationOptionsAsync() =
@@ -336,8 +331,7 @@ type Project with
             raise (OperationCanceledException("Project is not a FSharp project."))
         else
             match ProjectCache.Projects.TryGetValue(this) with
-            | true, result ->
-                CancellableTask.singleton result
+            | true, result -> CancellableTask.singleton result
             | _ ->
                 cancellableTask {
 
@@ -347,8 +341,7 @@ type Project with
                     let projectOptionsManager = service.FSharpProjectOptionsManager
 
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
-                    | None ->
-                        return raise (OperationCanceledException("FSharp project options not found."))
+                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
                     | Some (parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)

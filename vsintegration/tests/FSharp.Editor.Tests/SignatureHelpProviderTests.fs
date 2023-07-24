@@ -107,7 +107,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
-             |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let actual =
             let paramInfoLocations =
@@ -154,7 +154,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
-             |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
             let rec loop ch pos =
@@ -497,7 +497,7 @@ M.f
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
-             |> CancellableTask.runSynchronouslyWithoutCancellation
+            |> CancellableTask.runSynchronouslyWithoutCancellation
 
         let adjustedColumnInSource =
             let rec loop ch pos =

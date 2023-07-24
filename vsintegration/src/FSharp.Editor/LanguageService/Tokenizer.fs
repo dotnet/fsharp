@@ -695,7 +695,7 @@ module internal Tokenizer =
             strictIndentation,
             cancellationToken: CancellationToken
         ) : ResizeArray<ClassifiedSpan> =
-        
+
         let result = new ResizeArray<ClassifiedSpan>()
 
         try
@@ -713,9 +713,11 @@ module internal Tokenizer =
 
             for lineData, _ in lineDataResults do
                 for token in lineData.ClassifiedSpans do
-                    if (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)
-                    || textSpan.Contains(token.TextSpan.Start)
-                    || textSpan.Contains(token.TextSpan.End - 1) then
+                    if
+                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)
+                        || textSpan.Contains(token.TextSpan.Start)
+                        || textSpan.Contains(token.TextSpan.End - 1)
+                    then
                         result.Add token
 
         with
@@ -724,7 +726,7 @@ module internal Tokenizer =
 
         result
 
-    let inline (||>) struct(arg1, arg2) ([<InlineIfLambda>] func: 'T1 -> 'T2 -> 'T3) = func arg1 arg2
+    let inline (||>) struct (arg1, arg2) ([<InlineIfLambda>] func: 'T1 -> 'T2 -> 'T3) = func arg1 arg2
 
     /// Returns symbol at a given position.
     let private getSymbolFromSavedTokens
@@ -763,7 +765,7 @@ module internal Tokenizer =
                     Other
             else
                 Other
-        
+
         // Operators: Filter out overlapped operators (>>= operator is tokenized as three distinct tokens: GREATER, GREATER, EQUALS.
         // Each of them has MatchedLength = 3. So, we take the first GREATER and skip the other two).
         //
@@ -807,7 +809,9 @@ module internal Tokenizer =
                     | _ ->
                         let draftToken =
                             match lastToken with
-                            | ValueSome { Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind } when token.IsIdentifier ->
+                            | ValueSome {
+                                            Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind
+                                        } when token.IsIdentifier ->
                                 {
                                     Kind = kind
                                     LeftColumn = token.LeftColumn - 1
@@ -815,8 +819,8 @@ module internal Tokenizer =
                                 }
                             // ^ operator
                             | ValueSome {
-                                       Kind = LexerSymbolKind.StaticallyResolvedTypeParameter
-                                   } ->
+                                            Kind = LexerSymbolKind.StaticallyResolvedTypeParameter
+                                        } ->
                                 {
                                     Kind = LexerSymbolKind.Operator
                                     LeftColumn = token.LeftColumn - 1
@@ -997,7 +1001,6 @@ module internal Tokenizer =
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
-
 
     let isDoubleBacktickIdent (s: string) =
         let doubledDelimiter = 2 * doubleBackTickDelimiter.Length

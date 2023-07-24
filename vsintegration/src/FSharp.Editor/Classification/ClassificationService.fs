@@ -108,8 +108,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         let f (dataItem: SemanticClassificationItem) =
             let items =
                 match lookup.TryGetValue dataItem.Range.StartLine with
-                | true, items ->
-                    items
+                | true, items -> items
                 | _ ->
                     let items = ResizeArray()
                     lookup.[dataItem.Range.StartLine] <- items

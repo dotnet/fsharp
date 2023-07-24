@@ -25,7 +25,6 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             let! ct = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(ct)
 
-
             let! _, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
                 |> CancellableTask.start ct

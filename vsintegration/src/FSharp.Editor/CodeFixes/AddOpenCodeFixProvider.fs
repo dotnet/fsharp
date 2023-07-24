@@ -14,7 +14,6 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open CancellableTasks
 
-
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
