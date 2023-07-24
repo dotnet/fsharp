@@ -16,17 +16,15 @@ open FSharp.Compiler.Syntax
 
 open CancellableTasks
 
-module UnusedCodeFixHelper =
-    let getUnusedSymbol textSpan (document: Document) codeFixName =
-        cancellableTask {
-            let! token = CancellableTask.getCurrentCancellationToken ()
-            let! sourceText = document.GetTextAsync token
+[<AutoOpen>]
+module private UnusedCodeFixHelper =
+    let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
+        let ident = sourceText.ToString textSpan
 
-            let ident = sourceText.ToString textSpan
-
-            // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes
-            if PrettyNaming.IsIdentifierName ident then
+        // Prefixing operators and backticked identifiers does not make sense.
+        // We have to use the additional check for backticks
+        if PrettyNaming.IsIdentifierName ident then
+            cancellableTask {
                 let! lexerSymbol =
                     document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
 
@@ -43,9 +41,9 @@ module UnusedCodeFixHelper =
                         match symbolUse.Symbol with
                         | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> Some symbolUse.Symbol
                         | _ -> None)
-            else
-                return None
-        }
+            }
+        else
+            CancellableTask.singleton None
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.PrefixUnusedValue); Shared>]
 type internal PrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
@@ -68,7 +66,8 @@ type internal PrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstruc
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! symbol = UnusedCodeFixHelper.getUnusedSymbol context.Span context.Document CodeFix.PrefixUnusedValue
+                let! sourceText = context.GetSourceTextAsync()
+                let! symbol = getUnusedSymbol context.Span context.Document sourceText CodeFix.PrefixUnusedValue
 
                 return
                     symbol
@@ -101,7 +100,8 @@ type internal RenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstruc
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! symbol = UnusedCodeFixHelper.getUnusedSymbol context.Span context.Document CodeFix.RenameUnusedValue
+                let! sourceText = context.GetSourceTextAsync()
+                let! symbol = getUnusedSymbol context.Span context.Document sourceText CodeFix.RenameUnusedValue
 
                 return
                     symbol
