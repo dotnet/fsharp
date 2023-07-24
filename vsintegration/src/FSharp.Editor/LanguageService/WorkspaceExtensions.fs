@@ -33,17 +33,17 @@ module private CheckerExtensions =
                 allowStaleResults: bool,
                 userOpName: string
             ) =
-            async {
-                let! ct = Async.CancellationToken
+            cancellableTask {
+                let! ct = CancellableTask.getCurrentCancellationToken ()
 
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(ct)
+                let! textVersion = document.GetTextVersionAsync(ct)
 
                 let filePath = document.FilePath
                 let textVersionHash = textVersion.GetHashCode()
 
                 let parseAndCheckFile =
-                    async {
+                    cancellableTask {
                         let! (parseResults, checkFileAnswer) =
                             checker.ParseAndCheckFileInProject(
                                 filePath,
@@ -60,7 +60,7 @@ module private CheckerExtensions =
                     }
 
                 let tryGetFreshResultsWithTimeout () =
-                    async {
+                    cancellableTask {
                         let! worker =
                             Async.StartChild(
                                 async {
@@ -88,9 +88,9 @@ module private CheckerExtensions =
 
                     let! results =
                         match freshResults with
-                        | Some x -> async.Return(Some x)
+                        | Some x -> CancellableTask.singleton(Some x)
                         | None ->
-                            async {
+                            cancellableTask {
                                 match checker.TryGetRecentCheckResultsForFile(filePath, options, userOpName = userOpName) with
                                 | Some (parseResults, checkFileResults, _) -> return Some(parseResults, checkFileResults)
                                 | None -> return! parseAndCheckFile
@@ -110,7 +110,7 @@ module private CheckerExtensions =
                 userOpName: string,
                 ?allowStaleResults: bool
             ) =
-            async {
+            cancellableTask {
                 let allowStaleResults =
                     match allowStaleResults with
                     | Some b -> b

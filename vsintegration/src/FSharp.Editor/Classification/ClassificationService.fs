@@ -108,7 +108,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         let f (dataItem: SemanticClassificationItem) =
             let items =
                 match lookup.TryGetValue dataItem.Range.StartLine with
-                | true, items -> items
+                | true, items ->
+                    items
                 | _ ->
                     let items = ResizeArray()
                     lookup.[dataItem.Range.StartLine] <- items
@@ -118,7 +119,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         d.ForEach(f)
 
-        Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
+        lookup :> IReadOnlyDictionary<_, _>
 
     let semanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
