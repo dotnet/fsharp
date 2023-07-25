@@ -697,12 +697,15 @@ module internal Tokenizer =
             fileName: string option,
             defines: string list,
             langVersion,
+            strictIndentation,
             cancellationToken: CancellationToken
         ) : ResizeArray<ClassifiedSpan> =
         let result = new ResizeArray<ClassifiedSpan>()
 
         try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName, langVersion)
+            let sourceTokenizer =
+                FSharpSourceTokenizer(defines, fileName, langVersion, strictIndentation)
+
             let lines = sourceText.Lines
             let sourceTextData = getSourceTextData (documentKey, defines, lines.Count)
 
@@ -899,10 +902,13 @@ module internal Tokenizer =
             fileName: string,
             defines: string list,
             langVersion,
+            strictIndentation,
             cancellationToken
         ) =
         let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName, langVersion)
+
+        let sourceTokenizer =
+            FSharpSourceTokenizer(defines, Some fileName, langVersion, strictIndentation)
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData =
             getSourceTextData (documentKey, defines, sourceText.Lines.Count)
@@ -915,10 +921,19 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
-                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken)
+                getCachedSourceLineData (
+                    documentKey,
+                    sourceText,
+                    position,
+                    fileName,
+                    defines,
+                    langVersion,
+                    strictIndentation,
+                    cancellationToken
+                )
 
             lineData.SavedTokens
         with ex ->
@@ -936,12 +951,22 @@ module internal Tokenizer =
             wholeActivePatterns: bool,
             allowStringToken: bool,
             langVersion,
+            strictIndentation,
             cancellationToken
         ) : LexerSymbol option =
 
         try
             let lineData, textLinePos, lineContents =
-                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken)
+                getCachedSourceLineData (
+                    documentKey,
+                    sourceText,
+                    position,
+                    fileName,
+                    defines,
+                    langVersion,
+                    strictIndentation,
+                    cancellationToken
+                )
 
             getSymbolFromSavedTokens (
                 fileName,

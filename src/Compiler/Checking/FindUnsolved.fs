@@ -39,6 +39,7 @@ let accTy cenv _env (mFallback: range) ty =
             | _ -> ()
             cenv.unsolved <- tp :: cenv.unsolved)
 
+/// Walk type arguments, collecting type variables
 let accTypeInst cenv env mFallback tyargs =
     tyargs |> List.iter (accTy cenv env mFallback)
 
@@ -129,20 +130,25 @@ let rec accExpr (cenv: cenv) (env: env) expr =
     | Expr.DebugPoint (_, innerExpr) ->
         accExpr cenv env innerExpr
 
+/// Walk methods, collecting type variables
 and accMethods cenv env baseValOpt l =
     List.iter (accMethod cenv env baseValOpt) l
 
+/// Walk a method, collecting type variables
 and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs, bodyExpr, _m)) =
     vs |> List.iterSquared (accVal cenv env)
     accExpr cenv env bodyExpr
 
+/// Walk interface implementations, collecting type variables
 and accIntfImpls cenv env baseValOpt (mFallback: range) l =
     List.iter (accIntfImpl cenv env baseValOpt mFallback) l
 
+/// Walk an interface implementation, collecting type variables
 and accIntfImpl cenv env (baseValOpt: Val option) (mFallback: range) (ty, overrides) =
     accTy cenv env mFallback ty
     accMethods cenv env baseValOpt overrides
 
+/// Walk an operation, collecting type variables
 and accOp cenv env (op, tyargs, args, m) =
     // Special cases
     accTypeInst cenv env m tyargs
@@ -160,11 +166,13 @@ and accOp cenv env (op, tyargs, args, m) =
         accTypeInst cenv env m retTys
     | _ ->    ()
 
+/// Walk a trait call, collecting type variables
 and accTraitInfo cenv env (mFallback : range) (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
     argTys |> accTypeInst cenv env mFallback
     retTy |> Option.iter (accTy cenv env mFallback)
     tys |> List.iter (accTy cenv env mFallback)
 
+/// Walk lambdas, collecting type variables
 and accLambdas cenv env valReprInfo expr exprTy =
     match stripDebugPoints expr with
     | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env valReprInfo bodyExpr exprTy
@@ -179,26 +187,32 @@ and accLambdas cenv env valReprInfo expr exprTy =
     | _ ->
         accExpr cenv env expr
 
+/// Walk a list of expressions, collecting type variables
 and accExprs cenv env exprs =
     exprs |> List.iter (accExpr cenv env)
 
+/// Walk match targets, collecting type variables
 and accTargets cenv env m ty targets =
     Array.iter (accTarget cenv env m ty) targets
 
+/// Walk a match target, collecting type variables
 and accTarget cenv env _m _ty (TTarget(_vs, e, _)) =
     accExpr cenv env e
 
+/// Walk a decision tree, collecting type variables
 and accDTree cenv env dtree =
     match dtree with
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest
     | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
+/// Walk a switch, collecting type variables
 and accSwitch cenv env (e, cases, dflt, m) =
     accExpr cenv env e
     cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim m; accDTree cenv env e)
     dflt |> Option.iter (accDTree cenv env)
 
+/// Walk a discriminator, collecting type variables
 and accDiscrim cenv env d mFallback =
     match d with
     | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env mFallback tinst
@@ -211,6 +225,7 @@ and accDiscrim cenv env d mFallback =
         accTypeInst cenv env mFallback tys
     | DecisionTreeTest.Error _ -> ()
 
+/// Walk an attribute, collecting type variables
 and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) =
     args |> List.iter (fun (AttribExpr(expr1, expr2)) ->
         accExpr cenv env expr1
@@ -220,33 +235,41 @@ and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) =
         accExpr cenv env expr2
         accTy cenv env m ty)
 
+/// Walk a list of attributes, collecting type variables
 and accAttribs cenv env attribs =
     List.iter (accAttrib cenv env) attribs
 
+/// Walk a value representation info, collecting type variables
 and accValReprInfo cenv env (ValReprInfo(_, args, ret)) =
     args |> List.iterSquared (accArgReprInfo cenv env)
     ret |> accArgReprInfo cenv env
 
+/// Walk an argument representation info, collecting type variables
 and accArgReprInfo cenv env (argInfo: ArgReprInfo) =
     accAttribs cenv env argInfo.Attribs
 
+/// Walk a value, collecting type variables
 and accVal cenv env v =
     v.Attribs |> accAttribs cenv env
     v.ValReprInfo |> Option.iter (accValReprInfo cenv env)
     v.Type |> accTy cenv env v.Range
 
+/// Walk a binding, collecting type variables
 and accBind cenv env (bind: Binding) =
     accVal cenv env bind.Var
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
     accLambdas cenv env valReprInfo bind.Expr bind.Var.Type
 
+/// Walk a list of bindings, collecting type variables
 and accBinds cenv env binds =
     binds |> List.iter (accBind cenv env)
 
+/// Walk a record field of a type constructor, collecting type variables
 let accTyconRecdField cenv env _tycon (rfield:RecdField) =
     accAttribs cenv env rfield.PropertyAttribs
     accAttribs cenv env rfield.FieldAttribs
 
+/// Walk a type constructor, collecting type variables
 let accTycon cenv env (tycon:Tycon) =
     accAttribs cenv env tycon.Attribs
     abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env)
@@ -256,12 +279,15 @@ let accTycon cenv env (tycon:Tycon) =
           accAttribs cenv env uc.Attribs
           uc.RecdFieldsArray |> Array.iter (accTyconRecdField cenv env tycon))
 
+/// Walk a list of type constructors, collecting type variables
 let accTycons cenv env tycons =
     List.iter (accTycon cenv env) tycons
 
+/// Walk a list of module or namespace definitions, collecting type variables
 let rec accModuleOrNamespaceDefs cenv env defs =
     List.iter (accModuleOrNamespaceDef cenv env) defs
 
+/// Walk a module or namespace definition, collecting type variables
 and accModuleOrNamespaceDef cenv env def =
     match def with
     | TMDefRec(_, _opens, tycons, mbinds, _m) ->
@@ -272,9 +298,11 @@ and accModuleOrNamespaceDef cenv env def =
     | TMDefOpens _ -> ()
     | TMDefs defs -> accModuleOrNamespaceDefs cenv env defs
 
+/// Walk a list of module or namespace bindings, collecting type variables
 and accModuleOrNamespaceBinds cenv env xs =
     List.iter (accModuleOrNamespaceBind cenv env) xs
 
+/// Walk a module or namespace binding, collecting type variables
 and accModuleOrNamespaceBind cenv env x =
     match x with
     | ModuleOrNamespaceBinding.Binding bind ->
@@ -283,6 +311,7 @@ and accModuleOrNamespaceBind cenv env x =
         accTycon cenv env mspec
         accModuleOrNamespaceDef cenv env rhs
 
+/// Find all unsolved inference variables after type inference for an entire file
 let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
     let cenv =
         { g =g
