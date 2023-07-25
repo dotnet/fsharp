@@ -5769,7 +5769,7 @@ let ``References from #r nuget are included in script project options`` () =
 
 [<Test>]
 let ``detects unnamed fields in DU and exceptions`` () =
-    let file = __SOURCE_DIRECTORY__ + "/data/analysis/unammed-fields/unammed.members.diagnostics.fsx"
+    let file = __SOURCE_DIRECTORY__ + "/data/analysis/unammed-fields/unnamed.members.diagnostics.fsx"
     let baseline = System.IO.Path.ChangeExtension(file, ".bsl")
     let input = 
         file
