@@ -104,7 +104,7 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list * string option),
+            getInfo: (unit -> DocumentId * string * string list * string option * bool option),
             intelliSenseOptions: IntelliSenseOptions,
             cancellationToken: CancellationToken
         ) =
@@ -130,13 +130,14 @@ type internal FSharpCompletionProvider
             then
                 false
             else
-                let documentId, filePath, defines, langVersion = getInfo ()
+                let documentId, filePath, defines, langVersion, strictIndentation = getInfo ()
 
                 CompletionUtils.shouldProvideCompletion (
                     documentId,
                     filePath,
                     defines,
                     langVersion,
+                    strictIndentation,
                     sourceText,
                     triggerPosition,
                     cancellationToken
@@ -298,8 +299,10 @@ type internal FSharpCompletionProvider
         let getInfo () =
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
-            (documentId, document.FilePath, defines, Some langVersion)
+
+            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+
+            (documentId, document.FilePath, defines, Some langVersion, strictIndentation)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(
             sourceText,
@@ -329,7 +332,8 @@ type internal FSharpCompletionProvider
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
 
             let! sourceText = context.Document.GetTextAsync(ct)
-            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+
+            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
             let shouldProvideCompetion =
                 CompletionUtils.shouldProvideCompletion (
@@ -337,6 +341,7 @@ type internal FSharpCompletionProvider
                     document.FilePath,
                     defines,
                     Some langVersion,
+                    strictIndentation,
                     sourceText,
                     context.Position,
                     ct

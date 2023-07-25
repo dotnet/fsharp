@@ -60,6 +60,7 @@ type public ToolTipText =
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =
+    | SuggestedName
     | Field
     | Property
     | Method of isExtension: bool

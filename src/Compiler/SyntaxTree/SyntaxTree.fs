@@ -4,7 +4,6 @@ namespace rec FSharp.Compiler.Syntax
 
 open System
 open System.Diagnostics
-open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -159,7 +158,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     | SourceIdentifier of constant: string * value: string * range: range
 
@@ -179,11 +178,11 @@ type SynMeasure =
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
     | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
-    | One
+    | One of range: range
 
     | Anon of range: range
 
@@ -194,11 +193,11 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =
@@ -619,6 +618,8 @@ type SynExpr =
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
     | Set of targetExpr: SynExpr * rhsExpr: SynExpr * range: range
@@ -756,6 +757,7 @@ type SynExpr =
         | SynExpr.DotIndexedGet (range = m)
         | SynExpr.DotIndexedSet (range = m)
         | SynExpr.DotGet (range = m)
+        | SynExpr.DotLambda (range = m)
         | SynExpr.DotSet (range = m)
         | SynExpr.Set (range = m)
         | SynExpr.DotNamedIndexedPropertySet (range = m)
@@ -1024,9 +1026,13 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        transformedFromProperty: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =

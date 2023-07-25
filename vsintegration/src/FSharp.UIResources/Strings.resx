@@ -276,4 +276,10 @@
   <data name="Show_Return_Type_Hints" xml:space="preserve">
     <value>Display return type hints (preview)</value>
   </data>
+  <data name="Analyze_full_solution_on_background" xml:space="preserve">
+    <value>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</value>
+  </data>
+  <data name="Background_analysis" xml:space="preserve">
+    <value>Background analysis</value>
+  </data>
 </root>
