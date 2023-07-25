@@ -4066,12 +4066,12 @@ declExpr:
       { raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsAssertIsNotFirstClassValue()) }
 
   | WHILE whileExprCore 
-      { $2 (rhs parseState 1, false) }
+      { SynExpr.While ($2 (rhs parseState 1)) }
 
   | WHILE_BANG whileExprCore 
       { let mKeyword = rhs parseState 1
         parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.WhileBang mKeyword
-        $2 (mKeyword, true) }
+        SynExpr.WhileBang ($2 mKeyword) }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock doneDeclEnd
       { let mFor = rhs parseState 1
@@ -4469,80 +4469,62 @@ declExpr:
 
 whileExprCore:
   | declExpr doToken typedSequentialExprBlock doneDeclEnd
-    { fun (mKeyword, isBang) ->
+    { fun mKeyword ->
         let mWhileHeader = unionRanges mKeyword $1.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader 
         let mWhileAll = unionRanges mKeyword $4
 
-        if isBang then
-            SynExpr.WhileBang (spWhile, $1, $3, mWhileAll)
-        else
-            SynExpr.While (spWhile, $1, $3, mWhileAll) }
+        spWhile, $1, $3, mWhileAll }
 
   | declExpr doToken typedSequentialExprBlock recover
-    { fun (mKeyword, isBang) ->
+    { fun mKeyword ->
         if not $4 then reportParseErrorAt mKeyword (FSComp.SR.parsUnexpectedEndOfFileWhile ())
         let mWhileHeader = unionRanges mKeyword $1.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader 
         let mWhileAll = unionRanges mKeyword $3.Range
 
-        if isBang then
-            SynExpr.WhileBang (spWhile, $1, $3, mWhileAll)
-        else
-            SynExpr.While (spWhile, $1, $3, mWhileAll) }
+        spWhile, $1, $3, mWhileAll }
 
   | declExpr doToken error doneDeclEnd
     { let mWhileBodyArb = rhs parseState 3
     
-      fun (mKeyword, isBang) ->
+      fun mKeyword ->
         let mWhileHeader = unionRanges mKeyword $1.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader 
         let mWhileAll = unionRanges mKeyword $4
         let bodyArb = arbExpr ("whileBody1", mWhileBodyArb)
 
-        if isBang then
-            SynExpr.WhileBang (spWhile, $1, bodyArb, mWhileAll)
-        else
-            SynExpr.While (spWhile, $1, bodyArb, mWhileAll) }
+        spWhile, $1, bodyArb, mWhileAll }
 
   | declExpr recover
-    { fun (mKeyword, isBang) ->
+    { fun mKeyword ->
         reportParseErrorAt mKeyword (FSComp.SR.parsWhileDoExpected())
         let mWhileHeader = unionRanges mKeyword $1.Range
         let spWhile = DebugPointAtWhile.Yes mWhileHeader 
         let mWhileAll = mWhileHeader
         let bodyArb = arbExpr ("whileBody2", $1.Range.EndRange)
 
-        if isBang then
-            SynExpr.WhileBang (spWhile, $1, bodyArb, mWhileAll) 
-        else
-            SynExpr.While (spWhile, $1, bodyArb, mWhileAll) }
+        spWhile, $1, bodyArb, mWhileAll }
 
   | recover
-    { fun (mKeyword, isBang) ->
+    { fun mKeyword ->
         if not $1 then reportParseErrorAt mKeyword (FSComp.SR.parsUnexpectedEndOfFileWhile ())
         let spWhile = DebugPointAtWhile.Yes mKeyword
         let expr1 = arbExpr ("whileLoop1", mKeyword.EndRange)
         let expr2 = arbExpr ("whileLoop2", mKeyword.EndRange)
         
-        if isBang then
-            SynExpr.WhileBang (spWhile, expr1, expr2, mKeyword)
-        else
-            SynExpr.While (spWhile, expr1, expr2, mKeyword) }
+        spWhile, expr1, expr2, mKeyword }
 
   | error doneDeclEnd
     { let mWhileBodyArb = rhs parseState 1
     
-      fun (mKeyword, isBang) ->
+      fun mKeyword ->
         let spWhile = DebugPointAtWhile.Yes mKeyword
         let expr1 = arbExpr ("whileGuard1", mKeyword.EndRange)
         let expr2 = arbExpr ("whileBody3", mWhileBodyArb.EndRange)
         let mWhileAll = unionRanges mKeyword $2
         
-        if isBang then
-            SynExpr.WhileBang (spWhile, expr1, expr2, mWhileAll)
-        else
-            SynExpr.While (spWhile, expr1, expr2, mWhileAll) } 
+        spWhile, expr1, expr2, mWhileAll } 
 
 dynamicArg:
   | IDENT
