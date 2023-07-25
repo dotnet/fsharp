@@ -43,8 +43,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
-        <source>Label '{0}' is part of anonymous record. Use {{| {1} with {2} = ... |}} instead.</source>
-        <target state="new">Label '{0}' is part of anonymous record. Use {{| {1} with {2} = ... |}} instead.</target>
+        <source>'{0}' is part of an anonymous record. Use {{| expr with {1} = ... |}} instead.</source>
+        <target state="new">'{0}' is part of an anonymous record. Use {{| expr with {1} = ... |}} instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">

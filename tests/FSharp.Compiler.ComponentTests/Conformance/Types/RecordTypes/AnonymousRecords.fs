@@ -87,7 +87,7 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 4, Col 52, Line 4, Col 54, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
+            (Error 3578, Line 4, Col 52, Line 4, Col 54, "'ff' is part of an anonymous record. Use {| expr with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -98,7 +98,7 @@ let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 52, Line 2, Col 54, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
+            (Error 3578, Line 2, Col 52, Line 2, Col 54, "'ff' is part of an anonymous record. Use {| expr with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -109,7 +109,7 @@ let t3 (t1: struct {| gu: string; ff: int |}) = { t1 with ff = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 59, Line 2, Col 61, "Label 'ff' is part of anonymous record. Use {| t1 with ff = ... |} instead.")
+            (Error 3578, Line 2, Col 59, Line 2, Col 61, "'ff' is part of an anonymous record. Use {| expr with ff = ... |} instead.")
         ]
         
     [<Fact>]
@@ -120,9 +120,9 @@ let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3578, Line 2, Col 44, Line 2, Col 45, "Label 'A' is part of anonymous record. Use {| r with A = ... |} instead.")
+            (Error 3578, Line 2, Col 44, Line 2, Col 45, "'A' is part of an anonymous record. Use {| expr with A = ... |} instead.")
             (Error 39, Line 2, Col 51, Line 2, Col 52, "The record label 'B' is not defined.")
-            (Error 3578, Line 2, Col 58, Line 2, Col 59, "Label 'C' is part of anonymous record. Use {| r with C = ... |} instead.")
+            (Error 3578, Line 2, Col 58, Line 2, Col 59, "'C' is part of an anonymous record. Use {| expr with C = ... |} instead.")
         ]
     
     [<Fact>]

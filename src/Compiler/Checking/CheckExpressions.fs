@@ -1796,12 +1796,12 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
-let private CheckCopyUpdateSyntaxInAnonRecords sink (g: TcGlobals) ty (tyIdent: Ident option) (fldId: Ident) nenv ad =
-    match TryFindAnonRecdFieldOfType g ty fldId.idText, tyIdent with
-    | Some item, Some tpId ->
+let private CheckCopyUpdateSyntaxInAnonRecords sink (g: TcGlobals) ty (fldId: Ident) nenv ad =
+    match TryFindAnonRecdFieldOfType g ty fldId.idText with
+    | Some item ->
         CallNameResolutionSink sink (fldId.idRange, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
-        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(item.DisplayNameCore, tpId.idText, fldId.idText), fldId.idRange))
-    | _, _ ->
+        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(fldId.idText, fldId.idText), fldId.idRange))
+    | None ->
         error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
 
 //-------------------------------------------------------------------------
@@ -1809,7 +1809,7 @@ let private CheckCopyUpdateSyntaxInAnonRecords sink (g: TcGlobals) ty (tyIdent: 
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty (tyIdent: Ident option) (flds: ((Ident list * Ident) * 'T) list) m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
@@ -1824,7 +1824,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (tyIdent: Ident option) (flds: (
             let fldPath, fldId = fld
             try
                 if isAnonRecdTy cenv.g ty || isStructAnonRecdTy cenv.g ty then
-                    CheckCopyUpdateSyntaxInAnonRecords cenv.tcSink cenv.g ty tyIdent fldId env.eNameResEnv ad
+                    CheckCopyUpdateSyntaxInAnonRecords cenv.tcSink cenv.g ty fldId env.eNameResEnv ad
                     None
                 else
                     let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
@@ -7400,11 +7400,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         match flds with
         | [] -> []
         | _ ->
-            let tyIdent =
-                match withExprOpt with
-                | Some (SynExpr.Ident ident, _) -> Some ident
-                | _ -> None
-            match BuildFieldMap cenv env hasOrigExpr overallTy tyIdent flds mWholeExpr with
+            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
             | None -> []
             | Some(tinst, tcref, _, fldsList) ->
 
