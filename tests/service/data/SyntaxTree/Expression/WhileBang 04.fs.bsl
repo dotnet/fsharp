@@ -21,13 +21,13 @@ ImplFile
                            YieldOrReturn
                              ((false, true), Const (Bool true, (4,26--4,30)),
                               (4,19--4,30)), (4,17--4,32)), (4,11--4,32)),
-                     ArbitraryAfterError ("whileBody1", (5,0--5,0)), (4,4--5,0)),
-                  (3,4--3,5), Yes (3,0--5,0), { LeadingKeyword = Let (3,0--3,3)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (3,6--3,7) })],
-              (3,0--5,0))],
+                     ArbitraryAfterError ("whileBody1", (5,0--5,0)), (4,4--4,35)),
+                  (3,4--3,5), Yes (3,0--4,35), { LeadingKeyword = Let (3,0--3,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (3,6--3,7) })],
+              (3,0--4,35))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--5,0), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--4,35), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
