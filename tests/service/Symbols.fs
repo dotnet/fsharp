@@ -761,27 +761,15 @@ module X
 let f (x: {| A: int |}) =
     {| x with A = 1 |}
 """
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
 
-        let fstSymbol =
-            checkResults.GetSymbolUsesAtLocation(3, 14, "    {| x with A = 1 |}", ["A"])
-            |> Array.ofSeq
-            |> Array.filter(fun su ->
-                match su.Symbol with
-                | :? FSharpField as f when f.IsAnonRecordField -> true
-                | _ -> false)
-            |> Array.head
-            
-        let sndSymbol =
-            checkResults.GetSymbolUsesAtLocation(4, 15, "   let f (x: {| A: int |})", ["A"])
-            |> Array.ofSeq
-            |> Array.filter(fun su ->
-                match su.Symbol with
-                | :? FSharpField as f when f.IsAnonRecordField -> true
-                | _ -> false)
-            |> Array.head
-            
-        Assert.NotNull fstSymbol
-        Assert.NotNull sndSymbol
+        Assert.AreEqual(2, getSymbolUses.Length)
         
     [<Test>]
     let ``Anonymous record copy-and-update symbols usages`` () =
