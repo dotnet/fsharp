@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
-        <source>Interop betwee C#'s and F#'s unmanaged generic constraint</source>
-        <target state="new">Interop betwee C#'s and F#'s unmanaged generic constraint</target>
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
