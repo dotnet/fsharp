@@ -560,6 +560,8 @@ type TcConfigBuilder =
         /// If true - every expression in quotations will be augmented with full debug info (fileName, location in file)
         mutable emitDebugInfoInQuotations: bool
 
+        mutable strictIndentation: bool option
+
         mutable exename: string option
 
         // If true - the compiler will copy FSharp.Core.dll along the produced binaries
@@ -815,6 +817,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
+            strictIndentation = None
         }
 
     member tcConfigB.FxResolver =
@@ -1215,6 +1218,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
+    member _.strictIndentation = data.strictIndentation
     member _.primaryAssembly = data.primaryAssembly
     member _.noFeedback = data.noFeedback
     member _.stackReserveSize = data.stackReserveSize

@@ -119,6 +119,12 @@ type SynExprLambdaTrivia =
 
     static member Zero: SynExprLambdaTrivia
 
+/// Represents additional information for SynExpr.DotLambda
+[<NoEquality; NoComparison>]
+type SynExprDotLambdaTrivia =
+    { UnderscoreRange: range
+      DotRange: range }
+
 /// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
@@ -509,3 +515,9 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia
+
+/// Represents additional information for SynConst.Measure
+[<NoEquality; NoComparison>]
+type SynMeasureConstantTrivia =
+    { LessRange: range
+      GreaterRange: range }

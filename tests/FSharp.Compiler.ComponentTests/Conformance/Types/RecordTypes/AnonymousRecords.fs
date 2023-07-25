@@ -65,3 +65,26 @@ type ErrorResponse =
             Error 10, Line 7, Col 12, Line 7, Col 14, "Unexpected symbol '|}' in field declaration. Expected identifier or other token."
             Error 10, Line 10, Col 17, Line 10, Col 21, "Incomplete structured construct at or before this point in field declaration. Expected identifier or other token."
         ]
+
+    [<Fact>]
+    let ``Nested anonymous records where outer label = concatenated inner labels (see secondary issue reported in 6411)`` () =
+        FSharp """
+module NestedAnonRecds
+
+let x = {| abcd = {| ab = 4; cd = 1 |} |}
+"""
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Wrong update syntax`` () =
+        Fsx """
+let f (r: {| A: int |}) =
+    { r with A = 1 }
+"""
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 3, Col 14, Line 3, Col 15, "The record label 'A' is not defined.")
+        ]

@@ -736,7 +736,9 @@ type LexFilterImpl (
     //--------------------------------------------------------------------------
 
     let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
-    let strictIndentation = lexbuf.SupportsFeature LanguageFeature.StrictIndentation
+
+    let strictIndentation =
+        lexbuf.StrictIndentation |> Option.defaultWith (fun _ -> lexbuf.SupportsFeature LanguageFeature.StrictIndentation)
 
     //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 

@@ -45,6 +45,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
@@ -61,6 +62,9 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
+    | WhileBang
 
 /// LanguageVersion management
 type LanguageVersion =
