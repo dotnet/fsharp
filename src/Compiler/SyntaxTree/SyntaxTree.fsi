@@ -196,7 +196,7 @@ type SynMeasure =
     | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
     /// The '1' unit of measure
     | One of range: range

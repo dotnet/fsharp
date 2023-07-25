@@ -180,7 +180,7 @@ type SynMeasure =
 
     | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
 
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
     | One of range: range
 
