@@ -187,13 +187,13 @@ type SynMeasure =
     | Named of longId: LongIdent * range: range
 
     /// A product of two units of measure, e.g. 'kg * m'
-    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * opRange: range * measure2: SynMeasure * range: range
 
     /// A sequence of several units of measure, e.g. 'kg m m'
     | Seq of measures: SynMeasure list * range: range
 
     /// A division of two units of measure, e.g. 'kg / m'
-    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * opRange: range * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
     | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
