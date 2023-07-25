@@ -1709,6 +1709,7 @@ type ItemOccurence =
     | RelatedText
     /// This is a usage of a module or namespace name in open statement
     | Open
+    | WrongUse
 
 type FormatStringCheckContext =
     { SourceText: ISourceText
@@ -4008,6 +4009,14 @@ let NeedsWorkAfterResolution namedItem =
     | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)
     | _ -> false
 
+let isWrongItemInExpr item =
+    match item with
+    | Item.Types _ -> true
+    | _ -> false
+    // | Item.TypeVar(s, typar) -> failwith "todo"
+    // | Item.ModuleOrNamespaces entityRefs -> failwith "todo"
+    // | Item.UnqualifiedType entityRefs -> failwith "todo"
+
 /// Specifies additional work to do after an item has been processed further in type checking.
 [<RequireQualifiedAccess>]
 type AfterResolution =
@@ -4070,6 +4079,11 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
         | Some _ ->
             if NeedsWorkAfterResolution item then
                 AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item, tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
+
+            elif isWrongItemInExpr item then
+               CallNameResolutionSink sink (itemRange, nenv, item, emptyTyparInst, ItemOccurence.WrongUse, ad)
+               AfterResolution.DoNothing
+
             else
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing

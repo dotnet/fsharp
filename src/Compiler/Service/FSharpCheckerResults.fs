@@ -483,6 +483,8 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
+        | CNR (_, ItemOccurence.WrongUse, _, _, _, _) :: _, _ -> NameResResult.Empty
+
         | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)

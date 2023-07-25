@@ -382,6 +382,7 @@ type internal ItemOccurence =
     | Implemented
     | RelatedText
     | Open
+    | WrongUse
 
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual: TcGlobals -> Item -> Item -> bool
