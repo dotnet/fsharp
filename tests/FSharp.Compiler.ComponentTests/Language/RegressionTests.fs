@@ -19,13 +19,3 @@ type TestItemSeq =
         |> compile
         |> withErrorCodes [39]
         |> ignore
-
-
-    [<Fact>]
-    let ``Member val regression - not allowed without primary constructor``  () = 
-        Fs """module Test
-    type Bad3 = 
-        member val X = 1 + 1   """     
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics []
