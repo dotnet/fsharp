@@ -1870,9 +1870,9 @@ let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
 let isFSharpObjModelRefTy g ty = 
     isFSharpObjModelTy g ty && 
     let tcref = tcrefOfAppTy g ty
-    match tcref.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
+    match tcref.FSharpTyconRepresentationData.fsobjmodel_kind with 
     | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> true
-    | TFSharpStruct | TFSharpEnum -> false
+    | TFSharpUnion | TFSharpRecord | TFSharpStruct | TFSharpEnum -> false
 
 let isFSharpClassTy g ty =
     match tryTcrefOfAppTy g ty with
@@ -2003,6 +2003,37 @@ let isEnumTy g ty =
     match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tcref.IsEnumTycon
+
+let isSignedIntegerTy g ty =
+    typeEquivAux EraseMeasures g g.sbyte_ty ty || 
+    typeEquivAux EraseMeasures g g.int16_ty ty || 
+    typeEquivAux EraseMeasures g g.int32_ty ty || 
+    typeEquivAux EraseMeasures g g.nativeint_ty ty || 
+    typeEquivAux EraseMeasures g g.int64_ty ty 
+
+let isUnsignedIntegerTy g ty =
+    typeEquivAux EraseMeasures g g.byte_ty ty || 
+    typeEquivAux EraseMeasures g g.uint16_ty ty || 
+    typeEquivAux EraseMeasures g g.uint32_ty ty || 
+    typeEquivAux EraseMeasures g g.unativeint_ty ty || 
+    typeEquivAux EraseMeasures g g.uint64_ty ty 
+
+let isIntegerTy g ty =
+    isSignedIntegerTy g ty || 
+    isUnsignedIntegerTy g ty
+
+/// float or float32 or float<_> or float32<_> 
+let isFpTy g ty =
+    typeEquivAux EraseMeasures g g.float_ty ty || 
+    typeEquivAux EraseMeasures g g.float32_ty ty 
+
+/// decimal or decimal<_>
+let isDecimalTy g ty = 
+    typeEquivAux EraseMeasures g g.decimal_ty ty
+
+let isNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
+
+let isNumericType g ty = isNonDecimalNumericType g ty || isDecimalTy g ty
 
 let actualReturnTyOfSlotSig parentTyInst methTyInst (TSlotSig(_, _, parentFormalTypars, methFormalTypars, _, formalRetTy)) = 
     let methTyInst = mkTyparInst methFormalTypars methTyInst
@@ -4177,10 +4208,9 @@ module DebugPrint =
 
     let tyconReprL (repr, tycon: Tycon) = 
         match repr with 
-        | TFSharpRecdRepr _ ->
-            tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL(tagText ";")) |> aboveListL
-
-        | TFSharpObjectRepr r -> 
+        | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } -> 
+            tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+        | TFSharpTyconRepr r -> 
             match r.fsobjmodel_kind with 
             | TFSharpDelegate _ ->
                 wordL(tagText "delegate ...")
@@ -4215,7 +4245,6 @@ module DebugPrint =
 
                 if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
 
-        | TFSharpUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
         | TAsmRepr _ -> wordL(tagText "(# ... #)")
         | TMeasureableRepr ty -> typeL ty
         | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
@@ -4497,7 +4526,7 @@ module DebugPrint =
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TFSharpInterface -> true | _ -> false) -> []
+                | TFSharpTyconRepr r when (match r.fsobjmodel_kind with TFSharpInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
             // if TFSharpInterface, the iimpls should be printed as inherited interfaces 
@@ -4738,7 +4767,7 @@ let ComputeRemappingFromInferredSignatureToExplicitSignature g mty msigty =
 /// virtual slots to aid with finding this babies.
 let abstractSlotValRefsOfTycons (tycons: Tycon list) =  
     tycons 
-    |> List.collect (fun tycon -> if tycon.IsFSharpObjectModelTycon then tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots else []) 
+    |> List.collect (fun tycon -> if tycon.IsFSharpObjectModelTycon then tycon.FSharpTyconRepresentationData.fsobjmodel_vslots else []) 
 
 let abstractSlotValsOfTycons (tycons: Tycon list) =  
     abstractSlotValRefsOfTycons tycons 
@@ -5085,10 +5114,11 @@ and accLocalTyconRepr opts b fvs =
     if Zset.contains b fvs.FreeLocalTyconReprs then fvs
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
-and accUsedRecdOrUnionTyconRepr opts (tc: Tycon) fvs = 
-    if match tc.TypeReprInfo with TFSharpObjectRepr _ | TFSharpRecdRepr _ | TFSharpUnionRepr _ -> true | _ -> false
-    then accLocalTyconRepr opts tc fvs
-    else fvs
+and accUsedRecdOrUnionTyconRepr opts (tc: Tycon) fvs =
+    if (match tc.TypeReprInfo with TFSharpTyconRepr _ -> true | _ -> false) then
+        accLocalTyconRepr opts tc fvs
+    else
+        fvs
 
 and accFreeUnionCaseRef opts ucref fvs =   
     if not opts.includeUnionCases then fvs else
@@ -5993,19 +6023,17 @@ and remapUnionCases ctxt tmenv (x: TyconUnionData) =
 
 and remapFsObjData ctxt tmenv x = 
     { 
+        fsobjmodel_cases = remapUnionCases ctxt tmenv x.fsobjmodel_cases
         fsobjmodel_kind = 
-            match x.fsobjmodel_kind with 
+            (match x.fsobjmodel_kind with 
             | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
-            | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind
+            | _ -> x.fsobjmodel_kind)
         fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
-        fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv
-    } 
+        fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
 
 and remapTyconRepr ctxt tmenv repr = 
     match repr with 
-    | TFSharpObjectRepr x -> TFSharpObjectRepr (remapFsObjData ctxt tmenv x)
-    | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields ctxt tmenv x)
-    | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases ctxt tmenv x)
+    | TFSharpTyconRepr x -> TFSharpTyconRepr (remapFsObjData ctxt tmenv x)
     | TILObjectRepr _ -> failwith "cannot remap IL type definitions"
 #if !NO_TYPEPROVIDERS
     | TProvidedNamespaceRepr _ -> repr

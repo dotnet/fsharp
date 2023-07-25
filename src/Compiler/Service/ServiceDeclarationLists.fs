@@ -66,6 +66,7 @@ type ToolTipText =
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
+    | SuggestedName
     | Field
     | Property
     | Method of isExtension : bool
@@ -320,7 +321,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# and .NET properties
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
@@ -520,7 +521,7 @@ module DeclarationListHelpers =
 
         // We don't expect these cases
         | Item.Types (_, []) 
-        | Item.Property (_, []) 
+        | Item.Property (info = []) 
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
@@ -798,7 +799,7 @@ module internal DescriptionListsImpl =
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap, m)
             let propTy = pinfo.GetPropertyType(amap, m) 
 
@@ -874,7 +875,7 @@ module internal DescriptionListsImpl =
         | Item.OtherName _
         | Item.MethodGroup(_, [], _)
         | Item.CtorGroup(_,[])
-        | Item.Property(_,[]) -> 
+        | Item.Property(info = []) -> 
             [], emptyL
 
 
@@ -883,15 +884,15 @@ module internal DescriptionListsImpl =
          /// Find the glyph for the given representation.    
          let reprToGlyph repr = 
             match repr with
-            | TFSharpObjectRepr om -> 
+            | TFSharpTyconRepr om -> 
                 match om.fsobjmodel_kind with 
+                | TFSharpUnion -> FSharpGlyph.Union
+                | TFSharpRecord -> FSharpGlyph.Type
                 | TFSharpClass -> FSharpGlyph.Class
                 | TFSharpInterface -> FSharpGlyph.Interface
                 | TFSharpStruct -> FSharpGlyph.Struct
                 | TFSharpDelegate _ -> FSharpGlyph.Delegate
                 | TFSharpEnum -> FSharpGlyph.Enum
-            | TFSharpRecdRepr _ -> FSharpGlyph.Type
-            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct
@@ -999,7 +1000,7 @@ module internal DescriptionListsImpl =
             if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase(ecr) -> 
             if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_TYPEPROVIDERS
@@ -1035,10 +1036,12 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.NameInCode = textInCode
 
     member _.Description = 
-        match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+        match kind, info with
+        | CompletionItemKind.SuggestedName, _ ->
+            ToolTipText [ ToolTipElement.Single ([| tagText (FSComp.SR.suggestedName()) |], FSharpXmlDoc.None) ]
+        | _, Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
             ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None None))
-        | Choice2Of2 result -> 
+        | _, Choice2Of2 result -> 
             result
 
     member _.Glyph = glyph 
@@ -1112,7 +1115,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
-                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
+                | Item.Property(info = pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)

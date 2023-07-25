@@ -111,7 +111,9 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+
+                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
                 let classifiedSpans =
@@ -122,6 +124,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                         Some document.Name,
                         defines,
                         Some langVersion,
+                        strictIndentation,
                         cancellationToken
                     )
 

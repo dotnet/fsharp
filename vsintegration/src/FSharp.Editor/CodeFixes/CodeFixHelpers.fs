@@ -83,8 +83,26 @@ module internal CodeFixExtensions =
 
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
-                match! codeFix.GetCodeFixIfAppliesAsync ctx.Document ctx.Span with
+                match! codeFix.GetCodeFixIfAppliesAsync ctx with
                 | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
                 | None -> ()
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
+
+        member ctx.GetSourceTextAsync() =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                return! ctx.Document.GetTextAsync cancellationToken
+            }
+
+        member ctx.GetSquigglyTextAsync() =
+            cancellableTask {
+                let! sourceText = ctx.GetSourceTextAsync()
+                return sourceText.GetSubText(ctx.Span).ToString()
+            }
+
+        member ctx.GetErrorRangeAsync() =
+            cancellableTask {
+                let! sourceText = ctx.GetSourceTextAsync()
+                return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
+            }

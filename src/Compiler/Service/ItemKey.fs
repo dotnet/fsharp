@@ -383,7 +383,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString info.EventName
             writeEntityRef info.DeclaringTyconRef
 
-        | Item.Property (nm, infos) ->
+        | Item.Property (nm, infos, _) ->
             writeString ItemKeyTags.itemProperty
             writeString nm
 

@@ -471,6 +471,8 @@ type TcConfigBuilder =
 
         mutable emitDebugInfoInQuotations: bool
 
+        mutable strictIndentation: bool option
+
         mutable exename: string option
 
         mutable copyFSharpCore: CopyFSharpCoreFlag
@@ -807,6 +809,8 @@ type TcConfig =
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
     member FxResolver: FxResolver
+
+    member strictIndentation: bool option
 
     member ComputeIndentationAwareSyntaxInitialStatus: string -> bool
 
