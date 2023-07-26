@@ -64,6 +64,7 @@ type LanguageFeature =
     | DiagnosticForObjInference
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
+    | WhileBang
 
 /// LanguageVersion management
 type LanguageVersion =
