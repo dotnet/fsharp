@@ -542,7 +542,7 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
     try
         let rs =
             match metadataOfTycon deref, minfo with
-            | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
+            | ILTypeMetadata (TILObjectReprData(scope=scoref)), ILMeth(ilMethInfo=ILMethInfo(ilMethodDef=ilMethod)) ->
                 match ilMethod.ParameterTypes with
                 | firstTy :: _ ->
                     match firstTy with
