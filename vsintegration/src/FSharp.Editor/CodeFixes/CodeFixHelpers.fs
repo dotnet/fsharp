@@ -121,7 +121,7 @@ module IFSharpCodeFixProviderExtensions =
         static member private Action =
             Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-        member private this.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) = 
+        member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) = 
             cancellableTask {
                 let sw = Stopwatch.StartNew()
 
@@ -134,7 +134,7 @@ module IFSharpCodeFixProviderExtensions =
                     // See: https://github.com/dotnet/fsharp/issues/15620
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
                     |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
-                    |> Seq.map (fun context -> this.GetCodeFixIfAppliesAsync context)
+                    |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
                     |> Seq.map (fun task -> task token)
                     |> Task.WhenAll
 
