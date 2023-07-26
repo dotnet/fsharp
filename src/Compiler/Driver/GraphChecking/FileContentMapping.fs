@@ -462,6 +462,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
         | SynExpr.DoBang (expr, _) -> visit expr continuation
+        | SynExpr.WhileBang (whileExpr = whileExpr; doExpr = doExpr) ->
+            visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly (typeArgs = typeArgs; args = args; retTy = retTy) ->
             let typeNodes = List.collect visitSynType (typeArgs @ retTy)
             let continuations = List.map visit args

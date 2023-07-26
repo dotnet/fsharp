@@ -378,6 +378,7 @@ module internal TokenClassifications =
         | INLINE
         | WHEN
         | WHILE
+        | WHILE_BANG
         | WITH
         | IF
         | THEN
@@ -1362,6 +1363,7 @@ type FSharpTokenKind =
     | ColonEquals
     | When
     | While
+    | WhileBang
     | With
     | Hash
     | Ampersand
@@ -1572,6 +1574,7 @@ type FSharpToken =
         | SEMICOLON -> FSharpTokenKind.SemicolonSemicolon
         | WHEN -> FSharpTokenKind.When
         | WHILE -> FSharpTokenKind.While
+        | WHILE_BANG -> FSharpTokenKind.WhileBang
         | WITH -> FSharpTokenKind.With
         | HASH -> FSharpTokenKind.Hash
         | AMP -> FSharpTokenKind.Ampersand
