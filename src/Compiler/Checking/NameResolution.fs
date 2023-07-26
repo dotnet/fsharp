@@ -537,25 +537,52 @@ let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) 
     not minfo.IsExtensionMember &&
     (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
     MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+    
+let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =                
+    try
+        let rs =
+            match metadataOfTycon deref, minfo with
+            | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
+                match ilMethod.ParameterTypes with
+                | firstTy :: _ ->
+                    match firstTy with
+                    | ILType.Boxed  tspec | ILType.Value tspec ->
+                        let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
+                        if Import.CanImportILTypeRef amap m tref then
+                            let tcref = tref |> Import.ImportILTypeRef amap m
+                            if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
+                            else Some tcref
+                        else None
+                    | _ -> None
+                | _ -> None
+            | _ ->
+                // The results are indexed by the TyconRef of the first 'this' argument, if any.
+                // So we need to go and crack the type of the 'this' argument.
+                let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
+                match thisTy with
+                | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
+                | _ -> None
+        Some rs
+    with e -> // Import of the ILType may fail, if so report the error and skip on
+        errorRecovery e m
+        None
 
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
+    let pri = NextExtensionMethodPriority()
     
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let ty = generalizedTyconRef g tcrefOfStaticClass
-      
         let csharpStyleExtensionMembers = 
             if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
                 protectAssemblyExploration [] (fun () ->
+                    let ty = generalizedTyconRef g tcrefOfStaticClass
                     GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
                     |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
             else
                 []
 
         if not csharpStyleExtensionMembers.IsEmpty then
-            let pri = NextExtensionMethodPriority()
-
             [ for minfo in csharpStyleExtensionMembers do
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
@@ -568,37 +595,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
                 //
                 // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
                 // methods for tuple occur in C# code)
-                let thisTyconRef =
-                 try
-                    let rs =
-                        match metadataOfTycon tcrefOfStaticClass.Deref, minfo with
-                        | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
-                            match ilMethod.ParameterTypes with
-                            | firstTy :: _ ->
-                                match firstTy with
-                                | ILType.Boxed  tspec | ILType.Value tspec ->
-                                    let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
-                                    if Import.CanImportILTypeRef amap m tref then
-                                        let tcref = tref |> Import.ImportILTypeRef amap m
-                                        if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                        else Some tcref
-                                    else None
-                                | _ -> None
-                            | _ -> None
-                        | _ ->
-                            // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                            // So we need to go and crack the type of the 'this' argument.
-                            let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
-                            match thisTy with
-                            | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
-                            | _ -> None
-
-                    Some rs
-
-                  with e -> // Import of the ILType may fail, if so report the error and skip on
-                    errorRecovery e m
-                    None
-
+                let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
                 match thisTyconRef with
                 | None -> ()
                 | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
@@ -607,7 +604,6 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
             []
     else
         if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass then
-            let pri = NextExtensionMethodPriority()
             let ty = generalizedTyconRef g tcrefOfStaticClass
             let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
             
@@ -623,34 +619,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
                     //
                     // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
                     // methods for tuple occur in C# code)
-                    let thisTyconRef =
-                     try
-                        let rs =
-                            match metadataOfTycon tcrefOfStaticClass.Deref, minfo with
-                            | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
-                                match ilMethod.ParameterTypes with
-                                | firstTy :: _ ->
-                                    match firstTy with
-                                    | ILType.Boxed  tspec | ILType.Value tspec ->
-                                        let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
-                                        if Import.CanImportILTypeRef amap m tref then
-                                            let tcref = tref |> Import.ImportILTypeRef amap m
-                                            if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                            else Some tcref
-                                        else None
-                                    | _ -> None
-                                | _ -> None
-                            | _ ->
-                                // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                                // So we need to go and crack the type of the 'this' argument.
-                                let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
-                                match thisTy with
-                                | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
-                                | _ -> None
-                        Some rs
-                      with e -> // Import of the ILType may fail, if so report the error and skip on
-                        errorRecovery e m
-                        None
+                    let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
                     match thisTyconRef with
                     | None -> ()
                     | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
