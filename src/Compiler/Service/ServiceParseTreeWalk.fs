@@ -512,7 +512,8 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.While (_spWhile, synExpr, synExpr2, _range) ->
+                | SynExpr.While (_spWhile, synExpr, synExpr2, _range)
+                | SynExpr.WhileBang (_spWhile, synExpr, synExpr2, _range) ->
                     [
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
@@ -561,12 +562,15 @@ module SyntaxTraversal =
                         | None -> traverseSynExpr synExpr
                         | x -> x
 
+                | SynExpr.DotLambda (expr = e) -> traverseSynExpr e
+
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     |> pick expr
 
-                | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList) ->
+                | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList)
+                | SynExpr.MatchBang (expr = synExpr; clauses = synMatchClauseList) ->
                     [
                         yield dive synExpr synExpr.Range traverseSynExpr
                         yield!
@@ -575,7 +579,8 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Do (synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.Do (synExpr, _)
+                | SynExpr.DoBang (synExpr, _) -> traverseSynExpr synExpr
 
                 | SynExpr.Assert (synExpr, _range) -> traverseSynExpr synExpr
 
@@ -759,17 +764,6 @@ module SyntaxTraversal =
                         yield dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
                     |> pick expr
-
-                | SynExpr.MatchBang (expr = synExpr; clauses = synMatchClauseList) ->
-                    [
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield!
-                            synMatchClauseList
-                            |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
-                    ]
-                    |> pick expr
-
-                | SynExpr.DoBang (synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.LibraryOnlyILAssembly _ -> None
 

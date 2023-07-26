@@ -566,7 +566,7 @@ let mkSynMemberDefnGetSet
                 (mBindLhs, attrs)
                 ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
 
-            let (SynValData (_, valSynInfo, _)) = valSynData
+            let (SynValData (valInfo = valSynInfo)) = valSynData
 
             // Setters have all arguments tupled in their internal TAST form, though they don't appear to be
             // tupled from the syntax
@@ -616,7 +616,7 @@ let mkSynMemberDefnGetSet
                     // should be unreachable, cover just in case
                     raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
 
-            let valSynData = SynValData(Some(memFlags), valSynInfo, None)
+            let valSynData = SynValData(Some(memFlags), valSynInfo, None, None)
 
             // Fold together the information from the first lambda pattern and the get/set binding
             // This uses the 'this' variable from the first and the patterns for the get/set binding,
