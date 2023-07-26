@@ -174,11 +174,11 @@ type SynMeasure =
 
     | Named of longId: LongIdent * range: range
 
-    | Product of measure1: SynMeasure * asteriskRange: range * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * mAsterisk: range * measure2: SynMeasure * range: range
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure option * slashRange: range * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * mSlash: range * measure2: SynMeasure * range: range
 
     | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
