@@ -184,8 +184,7 @@ let visitSynValSig (SynValSig (attributes = attributes; synType = synType; synEx
     ]
 
 let visitSynField (SynField (attributes = attributes; fieldType = fieldType)) =
-    visitSynAttributes attributes
-    @ visitSynType fieldType
+    visitSynAttributes attributes @ visitSynType fieldType
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     [
@@ -289,9 +288,7 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparIsEquatable _ -> []
     | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> visitSynType typeName
     | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> visitSynType typeName
-    | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
-        visitSynType typars
-        @ visitSynMemberSig memberSig
+    | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) -> visitSynType typars @ visitSynMemberSig memberSig
     | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
     | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
@@ -582,12 +579,8 @@ let visitSynArgPats (argPat: SynArgPats) =
 let visitSynSimplePat (pat: SynSimplePat) =
     match pat with
     | SynSimplePat.Id _ -> []
-    | SynSimplePat.Attrib (pat, attributes, _) ->
-        visitSynSimplePat pat
-        @ visitSynAttributes attributes
-    | SynSimplePat.Typed (pat, t, _) ->
-        visitSynSimplePat pat
-        @ visitSynType t
+    | SynSimplePat.Attrib (pat, attributes, _) -> visitSynSimplePat pat @ visitSynAttributes attributes
+    | SynSimplePat.Typed (pat, t, _) -> visitSynSimplePat pat @ visitSynType t
 
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
@@ -611,8 +604,7 @@ let visitBinding (SynBinding (attributes = attributes; headPat = headPat; return
     ]
 
 let visitSynBindingReturnInfo (SynBindingReturnInfo (typeName = typeName; attributes = attributes)) =
-    visitSynAttributes attributes
-    @ visitSynType typeName
+    visitSynAttributes attributes @ visitSynType typeName
 
 let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     match ms with

@@ -713,7 +713,7 @@ module ParsedInput =
 
         and walkExprWithKind parentKind expr =
             match expr with
-            | SynExpr.LongIdent (longDotId = SynLongIdent (id = [ ident ]; trivia = [ Some _ ])) ->
+            | SynExpr.LongIdent(longDotId = SynLongIdent (id = [ ident ]; trivia = [ Some _ ])) ->
                 ifPosInRange ident.idRange (fun _ -> Some(EntityKind.FunctionOrValue false))
 
             | SynExpr.LongIdent (longDotId = SynLongIdent (dotRanges = dotRanges); range = r) ->
