@@ -193,7 +193,7 @@ type SynMeasure =
     | Seq of measures: SynMeasure list * range: range
 
     /// A division of two units of measure, e.g. 'kg / m'
-    | Divide of measure1: SynMeasure option * opRange: range * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * slashRange: range * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
     | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
