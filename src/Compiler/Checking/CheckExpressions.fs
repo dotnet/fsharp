@@ -10265,7 +10265,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
     let g = cenv.g
 
     warning(PossibleUnverifiableCode mBinding)
-
+    
     match overallExprTy with
     | ty when isByrefTy g ty ->
         let okByRef =
@@ -10336,7 +10336,22 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                     zero)
                 zero)
 
-    | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+    | _ ->
+        
+        let getPinnableReferenceMInfo =
+            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
+            |> List.map (fun mInfo -> mInfo, mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst))
+            |> List.tryFind (fun (mInfo, paramDatas) ->
+                // GetPinnableReference must be a parameterless method with a byref or inref return value
+                match paramDatas with
+                | [[]] when isByrefTy g (mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst)) -> true
+                | _ -> false
+            )
+        System.Diagnostics.Debugger.Break()
+        if Option.isSome getPinnableReferenceMInfo then
+            fixedExpr
+        else
+            error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
