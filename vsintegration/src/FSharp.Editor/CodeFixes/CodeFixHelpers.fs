@@ -117,6 +117,10 @@ module internal CodeFixExtensions =
 module IFSharpCodeFixProviderExtensions =
     type IFSharpCodeFixProvider with
 
+        // this is not used anywhere, it's just needed to create the context
+        static member private Action =
+            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
         member provider.RegisterFsharpFixAll() =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 cancellableTask {
@@ -125,16 +129,12 @@ module IFSharpCodeFixProviderExtensions =
                     let! token = CancellableTask.getCurrentCancellationToken ()
                     let! sourceText = doc.GetTextAsync token
 
-                    // this is not used anywhere, it's just needed to create the context
-                    let action =
-                        Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
-
                     let! codeFixOpts =
                         allDiagnostics
                         // The distiction is to avoid collisions of compiler and analyzer diags
                         // See: https://github.com/dotnet/fsharp/issues/15620
                         |> Seq.distinctBy (fun d -> d.Id, d.Location)
-                        |> Seq.map (fun diag -> CodeFixContext(doc, diag, action, token))
+                        |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
                         |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
                         |> Seq.map (fun task -> task token)
                         |> Task.WhenAll
