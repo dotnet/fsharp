@@ -187,7 +187,7 @@ type SynMeasure =
     | Named of longId: LongIdent * range: range
 
     /// A product of two units of measure, e.g. 'kg * m'
-    | Product of measure1: SynMeasure * opRange: range * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * asteriskRange: range * measure2: SynMeasure * range: range
 
     /// A sequence of several units of measure, e.g. 'kg m m'
     | Seq of measures: SynMeasure list * range: range
