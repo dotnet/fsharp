@@ -130,8 +130,10 @@ module IFSharpCodeFixProviderExtensions =
 
                 let! codeFixOpts =
                     allDiagnostics
-                    // The distiction is to avoid collisions of compiler and analyzer diags
+                    // The distiction is to avoid collisions of compiler and analyzer diags.
                     // See: https://github.com/dotnet/fsharp/issues/15620
+                    // TODO: this crops the diags on a very high level,
+                    // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
                     |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
                     |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
