@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Diagnostics
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
@@ -292,6 +291,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             // Capture the body of a lambda, often nested in a call to a collection function
             | SynExpr.Lambda (body = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
+            | SynExpr.DotLambda (expr = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
             | SynExpr.Do (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             | SynExpr.Assert (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
@@ -425,6 +426,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+                    | SynBinding(expr = SynExpr.DotLambda _) when skipLambdas -> defaultTraverse binding
 
                     // Skip manually type-annotated bindings
                     | SynBinding(returnInfo = Some (SynBindingReturnInfo _)) -> defaultTraverse binding
@@ -533,6 +535,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynBinding.SynBinding (expr = expr; range = range) when Position.posEq range.Start pos ->
                         match expr with
                         | SynExpr.Lambda _ -> Some range
+                        | SynExpr.DotLambda _ -> Some range
                         | _ -> None
                     | _ -> defaultTraverse binding
             }
@@ -667,6 +670,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         match expr with
                         | SynExpr.ArbitraryAfterError _
                         | SynExpr.LongIdent _
+                        | SynExpr.DotLambda _
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
@@ -796,7 +800,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             for SynInterfaceImpl (bindings = bs) in is do
                                 yield! walkBinds bs
 
-                        | SynExpr.While (spWhile, e1, e2, _) ->
+                        | SynExpr.While (spWhile, e1, e2, _)
+                        | SynExpr.WhileBang (spWhile, e1, e2, _) ->
                             yield! walkWhileSeqPt spWhile
                             yield! walkExpr false e1
                             yield! walkExpr true e2
@@ -828,7 +833,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
 
-                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
+                        | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
+
+                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl)
+                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind
                             yield! walkExpr false inpExpr
 
@@ -910,14 +918,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true eAndBang
 
                             yield! walkExpr true bodyExpr
-
-                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = clauses) ->
-                            yield! walkBindSeqPt spBind
-                            yield! walkExpr false inpExpr
-
-                            for SynMatchClause (whenExpr = whenExpr; resultExpr = resExpr) in clauses do
-                                yield! walkExprOpt true whenExpr
-                                yield! walkExpr true resExpr
                 ]
 
             // Process a class declaration or F# type declaration

@@ -189,7 +189,7 @@ type Bar = {
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 9 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
 
 
 [<Test>]
@@ -410,5 +410,5 @@ type Bar() =
             |> Array.map (fun taggedText -> taggedText.Text)
             |> String.concat ""
 
-        Assert.AreEqual("member Bar.Foo: string", toolTipText)
+        Assert.AreEqual("property Bar.Foo: string with get, set", toolTipText)
     | _ -> Assert.Fail $"Expected group, got {items.[0]}"

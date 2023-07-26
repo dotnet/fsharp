@@ -76,7 +76,19 @@ type SynExprLambdaTrivia =
     static member Zero: SynExprLambdaTrivia = { ArrowRange = None }
 
 [<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia = { InKeyword: range option }
+type SynExprDotLambdaTrivia =
+    {
+        UnderscoreRange: range
+        DotRange: range
+    }
+
+[<NoEquality; NoComparison>]
+type SynExprLetOrUseTrivia =
+    {
+        InKeyword: range option
+    }
+
+    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None }
 
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
@@ -388,3 +400,10 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }
+
+[<NoEquality; NoComparison>]
+type SynMeasureConstantTrivia =
+    {
+        LessRange: range
+        GreaterRange: range
+    }
