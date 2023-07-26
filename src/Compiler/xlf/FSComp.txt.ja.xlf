@@ -467,6 +467,11 @@
         <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="new">'while!' expression</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for ループのワイルド カード</target>
@@ -565,6 +570,11 @@
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">オブジェクトがパターンまたはバインディング内の指定された型であるかどうかを確認するために使用されます。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
