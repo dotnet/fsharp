@@ -184,7 +184,8 @@ let visitSynValSig (SynValSig (attributes = attributes; synType = synType; synEx
     ]
 
 let visitSynField (SynField (attributes = attributes; fieldType = fieldType)) =
-    [ yield! visitSynAttributes attributes; yield! visitSynType fieldType ]
+    visitSynAttributes attributes
+    @ visitSynType fieldType
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     [
@@ -270,33 +271,29 @@ let visitSynValTyparDecls (SynValTyparDecls (typars = typars)) =
 let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
     match td with
     | SynTyparDecls.PostfixList (decls, constraints, _) ->
-        [
-            yield! List.collect visitSynTyparDecl decls
-            yield! List.collect visitSynTypeConstraint constraints
-        ]
+        List.collect visitSynTyparDecl decls
+        @ List.collect visitSynTypeConstraint constraints
     | SynTyparDecls.PrefixList (decls = decls) -> List.collect visitSynTyparDecl decls
     | SynTyparDecls.SinglePrefix (decl = decl) -> visitSynTyparDecl decl
 
 let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
 
 let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
-    [
-        match tc with
-        | SynTypeConstraint.WhereSelfConstrained _
-        | SynTypeConstraint.WhereTyparIsValueType _
-        | SynTypeConstraint.WhereTyparIsReferenceType _
-        | SynTypeConstraint.WhereTyparIsUnmanaged _
-        | SynTypeConstraint.WhereTyparSupportsNull _
-        | SynTypeConstraint.WhereTyparIsComparable _
-        | SynTypeConstraint.WhereTyparIsEquatable _ -> ()
-        | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> yield! visitSynType typeName
-        | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> yield! visitSynType typeName
-        | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
-            yield! visitSynType typars
-            yield! visitSynMemberSig memberSig
-        | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
-        | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
-    ]
+    match tc with
+    | SynTypeConstraint.WhereSelfConstrained _
+    | SynTypeConstraint.WhereTyparIsValueType _
+    | SynTypeConstraint.WhereTyparIsReferenceType _
+    | SynTypeConstraint.WhereTyparIsUnmanaged _
+    | SynTypeConstraint.WhereTyparSupportsNull _
+    | SynTypeConstraint.WhereTyparIsComparable _
+    | SynTypeConstraint.WhereTyparIsEquatable _ -> []
+    | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> visitSynType typeName
+    | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> visitSynType typeName
+    | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
+        visitSynType typars
+        @ visitSynMemberSig memberSig
+    | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
+    | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
@@ -585,8 +582,12 @@ let visitSynArgPats (argPat: SynArgPats) =
 let visitSynSimplePat (pat: SynSimplePat) =
     match pat with
     | SynSimplePat.Id _ -> []
-    | SynSimplePat.Attrib (pat, attributes, _) -> [ yield! visitSynSimplePat pat; yield! visitSynAttributes attributes ]
-    | SynSimplePat.Typed (pat, t, _) -> [ yield! visitSynSimplePat pat; yield! visitSynType t ]
+    | SynSimplePat.Attrib (pat, attributes, _) ->
+        visitSynSimplePat pat
+        @ visitSynAttributes attributes
+    | SynSimplePat.Typed (pat, t, _) ->
+        visitSynSimplePat pat
+        @ visitSynType t
 
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
@@ -610,7 +611,8 @@ let visitBinding (SynBinding (attributes = attributes; headPat = headPat; return
     ]
 
 let visitSynBindingReturnInfo (SynBindingReturnInfo (typeName = typeName; attributes = attributes)) =
-    [ yield! visitSynAttributes attributes; yield! visitSynType typeName ]
+    visitSynAttributes attributes
+    @ visitSynType typeName
 
 let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     match ms with
