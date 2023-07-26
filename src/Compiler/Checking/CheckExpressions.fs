@@ -5745,10 +5745,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
     | SynExpr.DoBang (_, m)
-    | SynExpr.LetOrUseBang  (range=m) ->
-        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
-
-    | SynExpr.MatchBang (range=m) ->
+    | SynExpr.MatchBang (range = m)
+    | SynExpr.WhileBang (range = m)
+    | SynExpr.LetOrUseBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     // Part of 'T.Ident
@@ -8780,6 +8779,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.MatchBang _
         | SynExpr.LetOrUseBang _
         | SynExpr.DoBang _
+        | SynExpr.WhileBang _
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _
