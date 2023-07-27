@@ -111,9 +111,13 @@ type Point = { mutable X: int; mutable Y: int }
 let pinIt (thing: Point) =
     use ptr = fixed &thing.X
     NativePtr.get ptr 0
+    
+let p = { X = 10; Y = 20 }
+let xCopy = pinIt p
+if xCopy <> p.X then failwith "xCopy was not equal to X"
 """
         |> withOptions ["--nowarn:9"]
-        |> compile
+        |> compileExeAndRun
         |> verifyIL ["""
   .method public static int32  pinIt(class FixedExpressions/Point thing) cil managed
   {
@@ -152,9 +156,14 @@ type Point =
     member this.PinIt() =
         use ptr = fixed &this.X
         NativePtr.get ptr 0
+        
+let p = Point(10,20)
+let xCopy = p.PinIt()
+if xCopy <> p.X then failwith "xCopy was not equal to X"
 """
         |> withOptions ["--nowarn:9"]
-        |> compile
+        |> compileExeAndRun
+        |> shouldSucceed
         |> verifyIL ["""
     .method public hidebysig instance int32 
             PinIt() cil managed
@@ -186,11 +195,16 @@ module FixedExpressions
 open Microsoft.FSharp.NativeInterop
 
 let pinIt (arr: char[]) =
-    use ptr = fixed &arr[42]
+    use ptr = fixed &arr[0]
     NativePtr.get ptr 0
+    
+let x = [|'a';'b';'c'|]
+let y = pinIt x
+if y <> 'a' then failwithf "y did not equal first element of x"
 """
         |> withOptions ["--nowarn:9"]
-        |> compile
+        |> compileExeAndRun
+        |> shouldSucceed
         |> verifyIL ["""
   .method public static char  pinIt(char[] arr) cil managed
   {
@@ -199,19 +213,112 @@ let pinIt (arr: char[]) =
     .locals init (native int V_0,
              char& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.s   42
-    IL_0003:  ldelema    [runtime]System.Char
-    IL_0008:  stloc.1
-    IL_0009:  ldloc.1
-    IL_000a:  conv.i
-    IL_000b:  stloc.0
-    IL_000c:  ldloc.0
-    IL_000d:  ldc.i4.0
-    IL_000e:  conv.i
-    IL_000f:  sizeof     [runtime]System.Char
-    IL_0015:  mul
-    IL_0016:  add
-    IL_0017:  ldobj      [runtime]System.Char
-    IL_001c:  ret
+    IL_0001:  ldc.i4.0
+    IL_0002:  ldelema    [runtime]System.Char
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
+    IL_0009:  conv.i
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     [runtime]System.Char
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      [runtime]System.Char
+    IL_001b:  ret
   } """ ]
         
+module ExtendedFixedExpressions =
+    [<Fact>]
+    let ``Pin int byref of parameter`` () = 
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (thing: byref<int>) =
+    use ptr = fixed &thing
+    NativePtr.get ptr 0
+    
+let mutable x = 42
+let xCopy = pinIt &x
+if x <> xCopy then failwith "xCopy was not the same as x" 
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static int32  pinIt(int32& thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             int32& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.1
+    IL_0002:  ldarg.0
+    IL_0003:  conv.i
+    IL_0004:  stloc.0
+    IL_0005:  ldloc.0
+    IL_0006:  ldc.i4.0
+    IL_0007:  conv.i
+    IL_0008:  sizeof     [runtime]System.Int32
+    IL_000e:  mul
+    IL_000f:  add
+    IL_0010:  ldobj      [runtime]System.Int32
+    IL_0015:  ret
+  }  """]
+        
+    [<Fact>]
+    let ``Pin int byref of local variable`` () = 
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (x: int) =
+    let mutable thing = x + 1
+    use ptr = fixed &thing
+    let thingCopy = NativePtr.get ptr 0
+    if thingCopy <> thing then failwith "thingCopy was not the same as thing"
+    
+pinIt 100
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  pinIt(int32 x) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32 V_0,
+             native int V_1,
+             int32& pinned V_2,
+             int32 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.1
+    IL_0002:  add
+    IL_0003:  stloc.0
+    IL_0004:  ldloca.s   V_0
+    IL_0006:  stloc.2
+    IL_0007:  ldloca.s   V_0
+    IL_0009:  conv.i
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     [runtime]System.Int32
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      [runtime]System.Int32
+    IL_001b:  stloc.3
+    IL_001c:  ldloc.3
+    IL_001d:  ldloc.0
+    IL_001e:  beq.s      IL_002b
+
+    IL_0020:  ldstr      "thingCopy was not the same as thing"
+    IL_0025:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+    IL_002a:  throw
+
+    IL_002b:  ret
+  } """ ]
