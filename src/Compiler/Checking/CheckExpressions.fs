@@ -10340,17 +10340,31 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         
         let getPinnableReferenceMInfo =
             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
-            |> List.map (fun mInfo -> mInfo, mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst))
-            |> List.tryFind (fun (mInfo, paramDatas) ->
+            // |> List.map (fun mInfo -> mInfo, mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst))
+            |> List.tryPick (fun mInfo ->
                 // GetPinnableReference must be a parameterless method with a byref or inref return value
-                match paramDatas with
-                | [[]] when isByrefTy g (mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst)) -> true
-                | _ -> false
+                match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
+                | [[]], retTy when isByrefTy g retTy -> Some (mInfo, retTy)
+                | _ -> None
             )
-        System.Diagnostics.Debugger.Break()
-        if Option.isSome getPinnableReferenceMInfo then
-            fixedExpr
-        else
+        
+        match getPinnableReferenceMInfo with
+        | Some (mInfo, pinnedByrefTy) ->
+            // fixedExpr
+            let elemTy = destByrefTy g pinnedByrefTy
+            UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
+            
+            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse [] [ fixedExpr ] [] None
+            
+            assert (typeEquiv cenv.g actualRetTy pinnedByrefTy)
+            
+            let result =
+                mkCompGenLetIn mBinding "pinnedByref" overallExprTy pinnableReference (fun (v, ve) ->
+                    v.SetIsFixed()
+                    mkConvToNativeInt g ve mBinding)
+            System.Diagnostics.Debugger.Break()
+            result
+        | None ->
             error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
 

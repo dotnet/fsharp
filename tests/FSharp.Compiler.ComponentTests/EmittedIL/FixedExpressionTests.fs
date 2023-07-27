@@ -322,3 +322,110 @@ pinIt 100
 
     IL_002b:  ret
   } """ ]
+        
+    [<Fact>]
+    let ``Pin Span`` () =
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+
+let pinIt (thing: Span<char>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let span = Span("The quick brown fox jumped over the lazy dog".ToCharArray())
+    let x = pinIt span
+    if x <> 'T' then failwith "x did not equal the first char of the span"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  pinIt(int32 x) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32 V_0,
+             native int V_1,
+             int32& pinned V_2,
+             int32 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.1
+    IL_0002:  add
+    IL_0003:  stloc.0
+    IL_0004:  ldloca.s   V_0
+    IL_0006:  stloc.2
+    IL_0007:  ldloca.s   V_0
+    IL_0009:  conv.i
+    IL_000a:  stloc.1
+    IL_000b:  ldloc.1
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     [runtime]System.Int32
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      [runtime]System.Int32
+    IL_001b:  stloc.3
+    IL_001c:  ldloc.3
+    IL_001d:  ldloc.0
+    IL_001e:  beq.s      IL_002b
+
+    IL_0020:  ldstr      "thingCopy was not the same as thing"
+    IL_0025:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+    IL_002a:  throw
+
+    IL_002b:  ret
+  } """ ]
+        
+    [<Fact>]
+    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () = 
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+
+type RefField<'T>(_value) =
+    let mutable _value = _value
+    member this.Value = _value
+    member this.GetPinnableReference () : byref<'T> = &_value
+
+let pinIt (thing: RefField<int>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let x = RefField(42)
+    let y = pinIt x
+    if y <> x.Value then failwith "y did not equal x value"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static int32  pinIt(class FixedExpressions/RefField`1<int32> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             class FixedExpressions/RefField`1<int32> pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  ldflda     !0 class FixedExpressions/RefField`1<int32>::_value@7
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
+    IL_0008:  conv.i
+    IL_0009:  stloc.0
+    IL_000a:  ldloc.0
+    IL_000b:  ldc.i4.0
+    IL_000c:  conv.i
+    IL_000d:  sizeof     [runtime]System.Int32
+    IL_0013:  mul
+    IL_0014:  add
+    IL_0015:  ldobj      [runtime]System.Int32
+    IL_001a:  ret
+  } """ ]
