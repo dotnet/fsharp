@@ -29,7 +29,7 @@ open Microsoft.FSharp.NativeInterop
 let pinIt (arr: char[]) =
     use ptr = fixed arr
     NativePtr.get ptr 0
-    """
+"""
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -46,7 +46,7 @@ open Microsoft.FSharp.NativeInterop
 let pinIt (arr: char[]) =
     use ptr = fixed &arr[1]
     NativePtr.get ptr 0
-    """
+"""
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -65,7 +65,7 @@ type Point = { mutable X: int; mutable Y: int }
 let pinIt (thing: Point) =
     use ptr = fixed &thing.X
     NativePtr.get ptr 0
-    """
+"""
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -105,7 +105,7 @@ open Microsoft.FSharp.NativeInterop
 let pinIt (thing: obj) =
     use ptr = fixed thing
     NativePtr.get ptr 0
-    """
+"""
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -319,7 +319,7 @@ type StrangeType<'T>(_value) =
 let pinIt (thing: StrangeType<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
-    """
+"""
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
