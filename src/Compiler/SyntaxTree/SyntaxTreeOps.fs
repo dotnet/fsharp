@@ -906,7 +906,8 @@ let rec synExprContainsError inpExpr =
             walkBinds bs || walkBinds binds
 
         | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
-        | SynExpr.While (_, e1, e2, _) -> walkExpr e1 || walkExpr e2
+        | SynExpr.While (_, e1, e2, _)
+        | SynExpr.WhileBang (_, e1, e2, _) -> walkExpr e1 || walkExpr e2
 
         | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
 
@@ -914,7 +915,8 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.Lambda (body = e) -> walkExpr e
 
-        | SynExpr.Match (expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
+        | SynExpr.Match (expr = e; clauses = cl)
+        | SynExpr.MatchBang (expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
         | SynExpr.LetOrUse (bindings = bs; body = e) -> walkBinds bs || walkExpr e
 
@@ -943,8 +945,6 @@ let rec synExprContainsError inpExpr =
         | SynExpr.DotIndexedSet (e1, indexArgs, e2, _, _, _) -> walkExpr e1 || walkExpr indexArgs || walkExpr e2
 
         | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-
-        | SynExpr.MatchBang (expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
         | SynExpr.LetOrUseBang (rhs = e1; body = e2; andBangs = es) ->
             walkExpr e1

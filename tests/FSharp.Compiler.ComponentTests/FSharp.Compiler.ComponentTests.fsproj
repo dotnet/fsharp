@@ -186,6 +186,7 @@
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="Language\DotLambdaTests.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
+    <Compile Include="Language\WhileBangTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
