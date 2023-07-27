@@ -763,7 +763,7 @@ val internal ResolveNestedField:
     ad: AccessorDomain ->
     recdTy: TType ->
     lid: Ident list ->
-        Ident list * (Ident * AnonRecdTypeInfo option) list
+        Ident list * (Ident * AnonRecdTypeInfo option * Item option) list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:

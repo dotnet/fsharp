@@ -1801,7 +1801,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'U * 'T) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
@@ -1810,9 +1810,9 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     let fldCount = flds.Length
 
     let fldResolutions =
-        let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
+        let allFields = flds |> List.map (fun ((_, ident), _, _) -> ident)
         flds
-        |> List.choose (fun (fld, fldExpr) ->
+        |> List.choose (fun (fld, _, fldExpr) ->
             try
                 let fldPath, fldId = fld
                 let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
@@ -7378,11 +7378,11 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     raise (ReportedError None)
 
                 match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
-                | _, [ id ], _ -> ([], id), exprBeingAssigned
+                | _, [ id ], _ -> ([], id), None, exprBeingAssigned
                 | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
-                | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
+                | _ -> List.frontAndBack synLongId.LongIdent, None, exprBeingAssigned)
 
-        let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
+        let flds = if hasOrigExpr then GroupUpdatesToNestedFields cenv.tcSink env.NameEnv env.AccessRights flds else flds
 
         match flds with
         | [] -> []
@@ -7528,11 +7528,11 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
         |> List.map (fun (synLongIdent, _, exprBeingAssigned) ->
             match synLongIdent.LongIdent with
             | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
-            | [ id ] -> ([], id), Some exprBeingAssigned
+            | [ id ] -> ([], id), None, Some exprBeingAssigned
             | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))
-        |> GroupUpdatesToNestedFields
+        |> GroupUpdatesToNestedFields cenv.tcSink env.NameEnv env.AccessRights
 
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.choose snd
+    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.choose p33
 
     let origExprIsStruct =
         match tryDestAnonRecdTy g origExprTy with
@@ -7549,7 +7549,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
     ///   - Choice2Of2 for a binding coming from the original expression
     let unsortedIdAndExprsAll =
         [|
-            for (_, id), e in unsortedFieldIdsAndSynExprsGiven do
+            for (_, id), _, e in unsortedFieldIdsAndSynExprsGiven do
                 yield (id, Choice1Of2 e)
             match tryDestAnonRecdTy g origExprTy with
             | ValueSome (anonInfo, tinst) ->

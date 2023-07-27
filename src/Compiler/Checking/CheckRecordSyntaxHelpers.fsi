@@ -3,12 +3,17 @@
 module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val GroupUpdatesToNestedFields:
-    fields: ((Ident list * Ident) * SynExpr option) list -> ((Ident list * Ident) * SynExpr option) list
+    sink: TcResultsSink ->
+    nenv: NameResolutionEnv ->
+    ad: AccessibilityLogic.AccessorDomain ->
+    fields: ((Ident list * Ident) * Item option * SynExpr option) list ->
+        ((Ident list * Ident) * Item option * SynExpr option) list
 
 val TransformAstForNestedUpdates<'a> :
     cenv: TcFileState ->
@@ -17,4 +22,4 @@ val TransformAstForNestedUpdates<'a> :
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * (range * 'a) ->
-        (Ident list * Ident) * SynExpr option
+        (Ident list * Ident) * Item option * SynExpr option
