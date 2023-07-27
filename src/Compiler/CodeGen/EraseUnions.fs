@@ -334,6 +334,8 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
+let basicTypes (ilg:ILGlobals) = [|ilg.typ_Bool;ilg.typ_Byte;ilg.typ_SByte;ilg.typ_Char;ilg.typ_Int16;ilg.typ_Int32;ilg.typ_UInt16;ilg.typ_UInt32 |]
+
 /// The compilation for struct unions relies on generating a set of constructors.
 /// If necessary some fake types are added to the constructor parameters to distinguish the signature.
 let rec extraTysAndInstrsForStructCtor (ilg: ILGlobals) cidx =
@@ -345,9 +347,15 @@ let rec extraTysAndInstrsForStructCtor (ilg: ILGlobals) cidx =
     | 4 -> [ ilg.typ_Int16 ], [ mkLdcInt32 0 ]
     | 5 -> [ ilg.typ_Int32 ], [ mkLdcInt32 0 ]
     | 6 -> [ ilg.typ_UInt16 ], [ mkLdcInt32 0 ]
+    | 7 -> [ ilg.typ_UInt32 ], [ mkLdcInt32 0 ]
     | _ ->
-        let tys, instrs = extraTysAndInstrsForStructCtor ilg (cidx - 7)
-        (ilg.typ_UInt32 :: tys, mkLdcInt32 0 :: instrs)
+        let mod8 = cidx % 8
+        let div8 = cidx / 8
+
+        let matchingType = (basicTypes ilg)[mod8]
+
+        let tys, instrs = extraTysAndInstrsForStructCtor ilg (div8)
+        (matchingType :: tys, mkLdcInt32 0 :: instrs)
 
 let takesExtraParams (alts: IlxUnionCase[]) =
     alts.Length > 1
@@ -388,6 +396,9 @@ let convNewDataInstrInternal ilg cuspec cidx =
             | _ -> [], []
 
         let ctorFieldTys = alt.FieldTypes |> Array.toList
+
+        let justTomasTestingThings = 
+            []
 
         let extraTys, extraInstrs =
             if takesExtraParams cuspec.AlternativesArray then

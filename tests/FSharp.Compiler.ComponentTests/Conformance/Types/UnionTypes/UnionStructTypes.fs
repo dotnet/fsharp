@@ -14,7 +14,7 @@ type StructUnion =
     | A
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -26,7 +26,7 @@ type StructUnion =
     | A
     | B of b: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -39,7 +39,7 @@ type StructUnion =
     | B of string
     | C
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -52,7 +52,7 @@ type StructUnion =
     | B of b: string
     | C
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -65,7 +65,7 @@ type StructUnion =
     | B of b: string
     | C of bool
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -78,7 +78,7 @@ type StructUnion =
     | B
     | C of bool
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -90,7 +90,7 @@ type NotATree =
     | Empty
     | Children of struct (int * string)
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -102,7 +102,7 @@ type NotATree =
     | Empty
     | Children of struct (int * string)
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -114,7 +114,7 @@ type NotATree =
     | Empty
     | Children of a: struct (int * string)
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -127,7 +127,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -144,7 +144,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -161,7 +161,7 @@ type StructUnion =
     | B of b: string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -178,7 +178,7 @@ type StructUnion =
     | B of b: string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -191,7 +191,7 @@ type StructUnion =
     | B of b: string
     | C of c: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed    
         
     [<Fact>]
@@ -203,7 +203,7 @@ type StructUnion =
     | A of Item: int
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -218,7 +218,7 @@ type StructUnion =
     | A of Item: int
     | B of Item: string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -233,7 +233,7 @@ type StructUnion =
     | A of Item: int
     | B of item : string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -245,7 +245,7 @@ type StructUnion =
     | A of item: int
     | B of item: string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -260,7 +260,7 @@ type StructUnion =
     | A of Item: int * string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -276,7 +276,7 @@ type StructUnion =
     | A of Item: int * item: string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -292,7 +292,7 @@ type StructUnion =
     | A of Item: int * item: string
     | B of item: string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -308,7 +308,7 @@ type StructUnion =
     | A of Item: int * string
     | B of item: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -320,7 +320,7 @@ type StructUnion =
     | A of item: string * int
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -332,7 +332,7 @@ type StructUnion =
     | A of item: string * item: int
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3176, Line 5, Col 27, Line 5, Col 31, "Named field 'item' is used more than once.")
@@ -347,7 +347,7 @@ type StructUnion =
     | A of Item: string * Item: int
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3176, Line 5, Col 27, Line 5, Col 31, "Named field 'Item' is used more than once.")
@@ -360,7 +360,7 @@ namespace Foo
 [<Struct>]
 type StructUnion = A of a: int | B of b:string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -372,7 +372,7 @@ type StructUnion =
     | A of a: int
     | B of b: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -384,7 +384,7 @@ type StructUnion =
     | A of a: int * a1: string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -396,7 +396,7 @@ type StructUnion =
     | A of int * string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -408,7 +408,7 @@ type StructUnion =
     | A of a: int * string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
    
     [<Fact>]
@@ -420,7 +420,7 @@ type StructUnion =
     | A of int * a1: string
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -432,7 +432,7 @@ type StructUnion =
     | A of int
     | B of b: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -444,7 +444,7 @@ type StructUnion =
     | A of a: int * a1: string
     | B of b: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -454,7 +454,7 @@ namespace Foo
 [<Struct>]
 type StructUnion = A of int | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 4, Col 25, Line 4, Col 28, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -469,7 +469,7 @@ type StructUnion =
     | A of a: int
     | B of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
          
     [<Fact>]
@@ -482,7 +482,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -500,7 +500,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -518,7 +518,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -536,7 +536,7 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -554,7 +554,7 @@ type StructUnion =
     | B of b: string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -567,7 +567,7 @@ type StructUnion =
     | B of string
     | C of c: string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -580,7 +580,7 @@ type StructUnion =
     | B of b: string
     | C of string
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -593,7 +593,7 @@ type StructUnion =
     | B of string * b: string
     | C of c: string * string * c3: int
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
@@ -614,7 +614,7 @@ type StructUnion =
     | B of b1: string * b: string
     | C of c: string * c1: string * c3: int
         """
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -624,8 +624,39 @@ namespace Foo
 [<Struct>]
 type StructUnion = A of X:int | B of Y:StructUnion
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 954, Line 4, Col 6, Line 4, Col 17, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
         ]
+
+    [<InlineData(49)>]
+    [<InlineData(50)>]
+    [<InlineData(65)>]
+    [<InlineData(100)>]
+    [<InlineData(500)>]
+    [<InlineData(1000)>]
+    [<Theory>]
+    let ``Struct DU compilation does not embarassingly fail when having many data-less cases`` (countOfCases:int) =
+        let codeSb = 
+            System.Text.StringBuilder("""
+module Foo
+[<Struct>]
+type StructUnion = 
+"""         )
+        
+        for i=1 to countOfCases do
+            codeSb.AppendLine($"  | Case{i}") |> ignore
+        
+        codeSb.AppendLine($"""
+[<EntryPoint>]
+let main _argv = 
+    printf "%%A" Case{countOfCases}
+    0""") |> ignore
+
+        Fs (codeSb.ToString())
+        |> asExe
+        |> compile
+        |> run
+        |> shouldSucceed
+        |> verifyOutput $"Case{countOfCases}"
