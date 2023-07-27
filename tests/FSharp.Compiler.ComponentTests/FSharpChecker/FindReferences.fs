@@ -31,21 +31,23 @@ let createProject() = SyntheticProject.Create(impFile())
 [<Fact>]
 let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's constructors`` () =
     createProject().Workflow
-        {        
+        {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-             
+
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(7, 11, "type MyType() =", ["MyType"]).Value
                 let references = 
-                    typeCheckResult.GetUsesOfSymbolInFile(symbolUse.Symbol) 
+                    typeCheckResult.GetUsesOfSymbolInFile(symbolUse.Symbol)
                     |> Array.sortBy (fun su -> su.Range.StartLine)
                     |> Array.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn, deriveOccurence su)
 
-                Assert.Equal<(int*int*int*Occurence)>(
-                    [| 7,5,11,Definition
-                       8,25,31,InType
-                       10,8,14,Use
-                       11,12,18,Use
-                    |],references)  )           
+                Assert.Equal<int * int * int * Occurence>(
+                    [| 7, 5, 11, Definition
+                       8, 25, 31, InType
+                       10, 8, 14, Use
+                       11, 12, 18, InType
+                       11, 12, 18, Use
+                    |], references)
+            )
         }
 
 

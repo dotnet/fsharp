@@ -1720,7 +1720,7 @@ type ITypecheckResultsSink =
 
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
 
-    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: (Item -> bool) option -> unit
 
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
 
@@ -2110,12 +2110,28 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 capturedExprTypings.Add((ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
-            if allowedRange m then
-                if replace then
-                    remove m
+            if isAlreadyDone endPos item m || not (allowedRange m) then () else
 
-                if not (isAlreadyDone endPos item m) then
-                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+            let cnr = CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m)
+
+            match replace with
+            | None ->
+                capturedNameResolutions.Add(cnr)
+
+            | Some f ->
+                match item with
+                | Item.MethodGroup _ ->
+                    match capturedMethodGroupResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                    | -1 -> ()
+                    | i -> capturedMethodGroupResolutions.RemoveAt(i)
+                | _ -> ()
+
+                match capturedNameResolutions.FindLastIndex(fun cnr -> equals cnr.Range m) with
+                | i when i >= 0 ->
+                    if f capturedNameResolutions[i].Item then
+                        capturedNameResolutions[i] <- cnr
+                | _ ->
+                    capturedNameResolutions.Add(cnr)
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
@@ -2166,17 +2182,17 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
 let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, false)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, None)
 
 let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+let CallNameResolutionSinkReplacing (sink: TcResultsSink) f (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, true)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, Some f)
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =

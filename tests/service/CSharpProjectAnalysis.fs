@@ -142,8 +142,7 @@ let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
     |> shouldEqual 
         [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
           "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
-          "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";
-          "CSharpGenericOuterClass`1"; "int"; "CSharpGenericOuterClass`1"; "InnerClass";
+          "InnerEnum"; "field Case1"; "CSharpGenericOuterClass`1"; "int"; "InnerClass";
           "member StaticMember"; "NestedEnumClass"|]
 
 [<Test>]
