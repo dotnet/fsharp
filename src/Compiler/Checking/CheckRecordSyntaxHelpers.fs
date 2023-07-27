@@ -37,12 +37,12 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
                 let reducedRecd =
                     (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, aFlds @ bFlds, m)))
 
-                groupIfNested (reducedRecd :: res) ys
+                groupIfNested res (reducedRecd :: ys)
             | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, aFlds, m, trivia))), (_, Some (SynExpr.AnonRecd (recordFields = bFlds))) ->
                 let reducedRecd =
                     (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, aFlds @ bFlds, m, trivia)))
 
-                groupIfNested (reducedRecd :: res) ys
+                groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
 
     fields
