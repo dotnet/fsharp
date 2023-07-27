@@ -1796,14 +1796,6 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
-let private CheckCopyUpdateSyntaxInAnonRecords sink (g: TcGlobals) ty (fldId: Ident) nenv ad =
-    match TryFindAnonRecdFieldOfType g ty fldId.idText with
-    | Some item ->
-        CallNameResolutionSink sink (fldId.idRange, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
-        error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(fldId.idText, fldId.idText), fldId.idRange))
-    | None ->
-        error(UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, fldId, NoSuggestions))
-
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
 //-------------------------------------------------------------------------
@@ -1816,19 +1808,14 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     if isNil flds then invalidArg "flds" "BuildFieldMap"
 
     let fldCount = flds.Length
-
     let fldResolutions =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.choose (fun (fld, fldExpr) ->
-            let fldPath, fldId = fld
             try
-                if isAnonRecdTy cenv.g ty || isStructAnonRecdTy cenv.g ty then
-                    CheckCopyUpdateSyntaxInAnonRecords cenv.tcSink cenv.g ty fldId env.eNameResEnv ad
-                    None
-                else
-                    let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
-                    Some(fld, frefSet, fldExpr)
+                let fldPath, fldId = fld
+                let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
+                Some(fld, frefSet, fldExpr)
             with e ->
                 errorRecoveryNoRange e
                 None
@@ -7396,21 +7383,41 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
+        // Check if the overall type is an anon record type and if so raise an copy-update syntax error
+        // let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
+        if isAnonRecdTy cenv.g overallTy || isStructAnonRecdTy cenv.g overallTy then
+            for fld, _ in flds do
+                let _, fldId = fld
+                match TryFindAnonRecdFieldOfType g overallTy fldId.idText with
+                | Some item ->
+                    CallNameResolutionSink cenv.tcSink (fldId.idRange, env.eNameResEnv, item, emptyTyparInst, ItemOccurence.UseInType, env.eAccessRights)
+                | None -> ()
 
-        match flds with
-        | [] -> []
-        | _ ->
-            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
-            | None -> []
-            | Some(tinst, tcref, _, fldsList) ->
+            try
+                let firstPartRange = mkRange mWholeExpr.FileName mWholeExpr.Start (mkPos mWholeExpr.StartLine (mWholeExpr.StartColumn + 1))
+                // Use the  left { in the expression
+                error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), firstPartRange))
+            with _ ->
+                // Use the  right } in the expression
+                let lastPartRange = mkRange mWholeExpr.FileName (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn - 1)) (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn))
+                error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), lastPartRange))
+            []
+        else
+            // If the overall type is a record type build a map of the fields
+            match flds with
+            | [] -> []
+            | _ ->
+                match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
+                | None -> []
+                | Some(tinst, tcref, _, fldsList) ->
 
-            let gtyp = mkAppTy tcref tinst
-            UnifyTypes cenv env mWholeExpr overallTy gtyp
+                let gtyp = mkAppTy tcref tinst
+                UnifyTypes cenv env mWholeExpr overallTy gtyp
 
-            [ for n, v in fldsList do
-                match v with
-                | Some v -> yield n, v
-                | None -> () ]
+                [ for n, v in fldsList do
+                    match v with
+                    | Some v -> yield n, v
+                    | None -> () ]
 
     let withExprInfoOpt =
         match withExprOptChecked with
