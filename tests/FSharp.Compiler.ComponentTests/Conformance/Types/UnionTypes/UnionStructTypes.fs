@@ -630,33 +630,110 @@ type StructUnion = A of X:int | B of Y:StructUnion
             (Error 954, Line 4, Col 6, Line 4, Col 17, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
         ]
 
-    [<InlineData(49)>]
-    [<InlineData(50)>]
-    [<InlineData(65)>]
-    [<InlineData(100)>]
-    [<InlineData(500)>]
-    [<InlineData(1000)>]
-    [<Theory>]
-    let ``Struct DU compilation does not embarassingly fail when having many data-less cases`` (countOfCases:int) =
+
+    let createMassiveStructDuProgram countOfCases =
         let codeSb = 
             System.Text.StringBuilder("""
 module Foo
-[<Struct>]
+[<Struct;NoEquality;NoComparison>]
 type StructUnion = 
 """         )
+
+        let basicTypes = [|"";"";"int";"string";"byte";"System.Uri";"int[]";"option<int>";"voption<int>";"System.Uri[]"|]
         
         for i=1 to countOfCases do
-            codeSb.AppendLine($"  | Case{i}") |> ignore
+            let t = basicTypes[i%basicTypes.Length]
+            if t = "" then 
+                codeSb.AppendLine($"  | Case{i}") |> ignore
+            else
+                codeSb.AppendLine($"  | Case{i} of field1_{i}:{t} * field2_{i}:{t}") |> ignore
         
         codeSb.AppendLine($"""
 [<EntryPoint>]
 let main _argv = 
-    printf "%%A" Case{countOfCases}
+    printf "%%A" (Case{countOfCases} (Unchecked.defaultof<_>,Unchecked.defaultof<_>))
     0""") |> ignore
 
         Fs (codeSb.ToString())
+        
+
+    [<InlineData(5)>]
+    [<InlineData(15)>]
+    [<InlineData(65)>]
+    [<Theory>]
+    let ``Struct DU compilation does not embarassingly fail when having many data-less cases`` (countOfCases:int) =
+        createMassiveStructDuProgram countOfCases
         |> asExe
         |> compile
         |> run
         |> shouldSucceed
-        |> verifyOutput $"Case{countOfCases}"
+        |> verifyOutput $"Case{countOfCases} (null, null)"
+
+
+    [<Fact>]
+    let ``Struct DU compilation - have a look at IL for massive cases`` () =
+        createMassiveStructDuProgram 15
+        |> asExe
+        |> compile
+        |> verifyIL [(*This is case-agnostic constructor used for data-less cases, just fills in the _tag property*)"""
+            instance void  .ctor(int32 _tag) cil managed
+    {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                              class [runtime]System.Type) = ( 01 00 60 06 00 00 0F 46 6F 6F 2B 53 74 72 75 63   
+                                                                                                                                                     74 55 6E 69 6F 6E 00 00 )                         
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldarg.1
+      IL_0002:  stfld      int32 Foo/StructUnion::_tag
+      IL_0007:  ret
+    } """;(*This is getter for a data-less case, just calling into the constructor above*)"""
+            get_Case11() cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 0A 00 00 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.s   10
+      IL_0002:  newobj     instance void Foo/StructUnion::.ctor(int32)
+      IL_0007:  ret
+    }""";(*This is a 'maker method' New{CaseName} used for cases which do have fields associated with them, + the _tag gets initialized*)"""
+            NewCase3(string _field1_3,
+                     string _field2_3) cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 
+      
+      .maxstack  2
+      .locals init (valuetype Foo/StructUnion V_0)
+      IL_0000:  ldloca.s   V_0
+      IL_0002:  initobj    Foo/StructUnion
+      IL_0008:  ldloca.s   V_0
+      IL_000a:  ldc.i4.2
+      IL_000b:  stfld      int32 Foo/StructUnion::_tag
+      IL_0010:  ldloca.s   V_0
+      IL_0012:  ldarg.0
+      IL_0013:  stfld      string Foo/StructUnion::_field1_3
+      IL_0018:  ldloca.s   V_0
+      IL_001a:  ldarg.1
+      IL_001b:  stfld      string Foo/StructUnion::_field2_3
+      IL_0020:  ldloc.0
+      IL_0021:  ret
+    } 
+
+    .method public hidebysig instance bool 
+            get_IsCase3() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance int32 Foo/StructUnion::get_Tag()
+      IL_0006:  ldc.i4.2
+      IL_0007:  ceq
+      IL_0009:  ret
+    } 
+"""]
