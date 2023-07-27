@@ -121,7 +121,7 @@ module IFSharpCodeFixProviderExtensions =
         static member private Action =
             Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-        member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) = 
+        member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
             cancellableTask {
                 let sw = Stopwatch.StartNew()
 
@@ -164,6 +164,6 @@ module IFSharpCodeFixProviderExtensions =
             }
 
         member provider.RegisterFsharpFixAll() =
-            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 provider.FixAllAsync fixAllCtx doc allDiagnostics
                 |> CancellableTask.start fixAllCtx.CancellationToken)
