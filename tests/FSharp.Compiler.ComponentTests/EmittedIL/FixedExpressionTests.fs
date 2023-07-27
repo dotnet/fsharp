@@ -1,4 +1,4 @@
-module EmittedIL.FixedExpressionTests
+namespace EmittedIL.FixedExpressionTests
 
 open Xunit
 open FSharp.Compiler.Diagnostics
@@ -324,6 +324,50 @@ pinIt 100
   } """ ]
         
     [<Fact>]
+    let ``Pin Span via manual GetPinnableReference call`` () =
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+
+let pinIt (thing: Span<char>) =
+    use ptr = fixed &thing.GetPinnableReference()
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let span = Span("The quick brown fox jumped over the lazy dog".ToCharArray())
+    let x = pinIt span
+    if x <> 'T' then failwith "x did not equal the first char of the span"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static char  pinIt(valuetype [runtime]System.Span`1<char> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             char& pinned V_1)
+    IL_0000:  ldarga.s   thing
+    IL_0002:  call       instance !0& valuetype [runtime]System.Span`1<char>::GetPinnableReference()
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
+    IL_0009:  conv.i
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     [runtime]System.Char
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      [runtime]System.Char
+    IL_001b:  ret
+  } """ ]
+        
+    [<Fact>]
     let ``Pin Span`` () =
         FSharp """
 module FixedExpressions
@@ -345,40 +389,26 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static void  pinIt(int32 x) cil managed
+  .method public static char  pinIt(valuetype [runtime]System.Span`1<char> thing) cil managed
   {
     
     .maxstack  5
-    .locals init (int32 V_0,
-             native int V_1,
-             int32& pinned V_2,
-             int32 V_3)
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  add
-    IL_0003:  stloc.0
-    IL_0004:  ldloca.s   V_0
-    IL_0006:  stloc.2
-    IL_0007:  ldloca.s   V_0
+    .locals init (native int V_0,
+             char& pinned V_1)
+    IL_0000:  ldarga.s   thing
+    IL_0002:  call       instance !0& valuetype [runtime]System.Span`1<char>::GetPinnableReference()
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
     IL_0009:  conv.i
-    IL_000a:  stloc.1
-    IL_000b:  ldloc.1
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
     IL_000c:  ldc.i4.0
     IL_000d:  conv.i
-    IL_000e:  sizeof     [runtime]System.Int32
+    IL_000e:  sizeof     [runtime]System.Char
     IL_0014:  mul
     IL_0015:  add
-    IL_0016:  ldobj      [runtime]System.Int32
-    IL_001b:  stloc.3
-    IL_001c:  ldloc.3
-    IL_001d:  ldloc.0
-    IL_001e:  beq.s      IL_002b
-
-    IL_0020:  ldstr      "thingCopy was not the same as thing"
-    IL_0025:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-    IL_002a:  throw
-
-    IL_002b:  ret
+    IL_0016:  ldobj      [runtime]System.Char
+    IL_001b:  ret
   } """ ]
         
     [<Fact>]
@@ -413,7 +443,7 @@ let main _ =
     
     .maxstack  5
     .locals init (native int V_0,
-             class FixedExpressions/RefField`1<int32> pinned V_1)
+             int32& pinned V_1)
     IL_0000:  ldarg.0
     IL_0001:  ldflda     !0 class FixedExpressions/RefField`1<int32>::_value@7
     IL_0006:  stloc.1
@@ -428,4 +458,151 @@ let main _ =
     IL_0014:  add
     IL_0015:  ldobj      [runtime]System.Int32
     IL_001a:  ret
+  } """ ]
+        
+
+    [<Fact>]
+    let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
+        let csLib =
+            CSharp """
+namespace CSharpLib
+{
+    public class PinnableReference<T>
+    {
+        private T _value;
+
+        public T Value
+        {
+            get => _value;
+            set => _value = value;
+        }
+
+        public PinnableReference(T value)
+        {
+            this._value = value;
+        }
+
+        public ref T GetPinnableReference()
+        {
+            return ref _value;
+        }
+    }
+}
+"""         |> withName "CsLib"
+        
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+open CSharpLib
+
+let pinIt (thing: PinnableReference<int>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let x = PinnableReference(42)
+    let y = pinIt x
+    if y <> x.Value then failwith "y did not equal x value"
+    0
+"""
+        |> withReferences [csLib]
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static int32  pinIt(class [CsLib]CSharpLib.PinnableReference`1<int32> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             int32& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance !0& class [CsLib]CSharpLib.PinnableReference`1<int32>::GetPinnableReference()
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
+    IL_0008:  conv.i
+    IL_0009:  stloc.0
+    IL_000a:  ldloc.0
+    IL_000b:  ldc.i4.0
+    IL_000c:  conv.i
+    IL_000d:  sizeof     [runtime]System.Int32
+    IL_0013:  mul
+    IL_0014:  add
+    IL_0015:  ldobj      [runtime]System.Int32
+    IL_001a:  ret
+  } """ ]
+
+    [<Fact>]
+    let ``Pin C# byref struct type with method GetPinnableReference : unit -> byref<T>`` () =
+        // TODO: Could be a good idea to test a version of this type written in F# too once we get ref fields in byref-like structs:
+        // https://github.com/fsharp/fslang-suggestions/issues/1143
+        let csLib =
+            CSharp """
+namespace CsLib
+{
+    public ref struct RefField<T>
+    {
+        private readonly ref T _value;
+
+        public T Value
+        {
+            get => _value;
+            set => _value = value;
+        }
+
+        public RefField(ref T value)
+        {
+            this._value = ref value;
+        }
+
+        public ref T GetPinnableReference() => ref _value;
+    }
+}
+
+"""         |> withName "CsLib" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open CsLib
+
+let pinIt (refField: RefField<int>) =
+    use ptr = fixed refField
+    NativePtr.get ptr 0
+
+[<EntryPoint>]
+let main _ =
+    let mutable x = 42
+    let refToX = new RefField<_>(&x)
+    let y = pinIt refToX
+    if y <> x then failwith "y did not equal x"
+    0
+"""
+        |> withReferences [csLib]
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static int32  pinIt(valuetype [CsLib]CsLib.RefField`1<int32> refField) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             int32& pinned V_1)
+    IL_0000:  ldarga.s   refField
+    IL_0002:  call       instance !0& valuetype [CsLib]CsLib.RefField`1<int32>::GetPinnableReference()
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
+    IL_0009:  conv.i
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     [runtime]System.Int32
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      [runtime]System.Int32
+    IL_001b:  ret
   } """ ]

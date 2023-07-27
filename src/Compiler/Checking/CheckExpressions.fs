@@ -10268,20 +10268,20 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
     
     match overallExprTy with
     | ty when isByrefTy g ty ->
-        let okByRef =
-            match stripDebugPoints (stripExpr fixedExpr) with
-            | Expr.Op (op, tyargs, args, _) ->
-                    match op, tyargs, args with
-                    | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
-                    | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
-                    | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
-                    | TOp.RefAddrGet _, _, _ -> true
-                    | TOp.LValueOp (LValueOperation.LAddrOf _, _), _, _ -> true
-                    | _ -> false
-            | Expr.Val _ -> true
-            | _ -> false
-        if not okByRef then
-            error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+        // let okByRef =
+        //     match stripDebugPoints (stripExpr fixedExpr) with
+        //     | Expr.Op (op, tyargs, args, _) ->
+        //             match op, tyargs, args with
+        //             | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
+        //             | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
+        //             | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
+        //             | TOp.RefAddrGet _, _, _ -> true
+        //             | TOp.LValueOp (LValueOperation.LAddrOf _, _), _, _ -> true
+        //             | _ -> false
+        //     | Expr.Val _ -> true
+        //     | _ -> false
+        // if not okByRef then
+        //     error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
         let elemTy = destByrefTy g overallExprTy
         UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
@@ -10340,7 +10340,6 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         
         let getPinnableReferenceMInfo =
             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
-            // |> List.map (fun mInfo -> mInfo, mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst))
             |> List.tryPick (fun mInfo ->
                 // GetPinnableReference must be a parameterless method with a byref or inref return value
                 match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
@@ -10358,12 +10357,9 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             
             assert (typeEquiv cenv.g actualRetTy pinnedByrefTy)
             
-            let result =
-                mkCompGenLetIn mBinding "pinnedByref" overallExprTy pinnableReference (fun (v, ve) ->
-                    v.SetIsFixed()
-                    mkConvToNativeInt g ve mBinding)
-            System.Diagnostics.Debugger.Break()
-            result
+            mkCompGenLetIn mBinding "pinnedByref" pinnedByrefTy pinnableReference (fun (v, ve) ->
+                v.SetIsFixed()
+                mkConvToNativeInt g ve mBinding)
         | None ->
             error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
