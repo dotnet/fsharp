@@ -78,7 +78,7 @@ let [<Literal>] chars = 'a' + 'b' - 'a'
         |> shouldSucceed
         |> verifyIL [
             """.field public static literal float64 bytesInMegabyte = float64(1048576.1000000001)"""
-            """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576)"""
+            """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576.)"""
             """.field public static literal float64 bytesInKilobyte = float64(1024.10009765625)"""
             """.field public static literal float32 secondsInDayPlusThree = float32(86403.102)"""
             """.field public static literal char chars = char(0x0062)"""
