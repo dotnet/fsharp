@@ -283,7 +283,7 @@ if x <> xCopy then failwith "xCopy was not the same as x"
     IL_000f:  add
     IL_0010:  ldobj      [runtime]System.Int32
     IL_0015:  ret
-  }  """]
+  }  """ ]
         
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of local variable`` langVersion = 

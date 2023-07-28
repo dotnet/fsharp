@@ -271,6 +271,36 @@ let pinIt (thing: outref<int>) =
     [<Theory>]
     [<InlineData("7.0", false)>]
     [<InlineData("preview", true)>]
+    let ``Pin address of explicit field on this with default constructor class syntax`` (langVersion, featureShouldActivate) =
+        // I think F# 7 and lower should have allowed this and that this was really just a bug, but we should preserve the existing behavior
+        // when turning the feature off
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+type Point() =
+    let mutable value = 42
+    
+    member this.PinIt() =
+        let ptr = fixed &value
+        NativePtr.get ptr 0
+"""
+        |> withLangVersion langVersion
+        |> ignoreWarnings
+        |> typecheck
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 8, Col 13, Line 8, Col 16, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 9, Col 9, Line 9, Col 22, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
+        
+    [<Theory>]
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
     let ``Pin int byref local variable`` (langVersion, featureShouldActivate) =
         featureShouldActivate |> ignore
         Fsx """
