@@ -53,7 +53,7 @@ let [<Literal>] bitwise2 = 1y ^^^ (3y + ~~~4y)
             """.field public static literal int64 bytesInKilobyte2 = int64(0x400)"""
             """.field public static literal int32 secondsInDayPlusThree = int32(0x00015183)"""
             """.field public static literal uint16 bitwise = uint16(0x0001)"""
-            """.field public static literal int8 bitwise2 = int8(0x0009)"""
+            """.field public static literal int8 bitwise2 = int8(0xFF)"""
         ]
 
     [<Fact>]
