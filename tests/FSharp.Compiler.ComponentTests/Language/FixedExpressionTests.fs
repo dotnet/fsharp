@@ -192,9 +192,9 @@ let pinIt<'a when 'a : unmanaged> (thing: 'a) =
 // FS-1081 - Extend fixed expressions
 module ExtendedFixedExpressions =
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin int byref parmeter`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin int byref parmeter`` (langVersion, featureShouldActivate) =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -205,16 +205,22 @@ let pinIt (thing: byref<int>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin int inref parmeter`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin int inref parmeter`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -225,16 +231,22 @@ let pinIt (thing: inref<int>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin int outref parmeter`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin int outref parmeter`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -245,16 +257,22 @@ let pinIt (thing: outref<int>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin int byref local variable`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin int byref local variable`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -266,17 +284,23 @@ let pinIt () =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
 
 #if NETCOREAPP
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin Span`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin Span`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open System
 open Microsoft.FSharp.NativeInterop
@@ -288,17 +312,23 @@ let pinIt (thing: Span<char>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
 #endif
     
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin custom struct byref type without GetPinnableReference method - illegal`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin custom struct byref type without GetPinnableReference method - illegal`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -314,16 +344,22 @@ let pinIt (thing: BoringRefField<char>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 9, Line 10, Col 9, Line 10, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3207, Line 10, Col 9, Line 10, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldFail
+                    |> withDiagnostics [
+                        (Warning 9, Line 10, Col 9, Line 10, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Error 3207, Line 10, Col 9, Line 10, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+                    ])
+            else
+                shouldFail
 
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -338,16 +374,22 @@ let pinIt (thing: RefField<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -362,16 +404,22 @@ let pinIt (thing: RefField<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
@@ -390,16 +438,22 @@ let pinIt (thing: RefField<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference with parameters - illegal`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with method GetPinnableReference with parameters - illegal`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -414,16 +468,22 @@ let pinIt (thing: StrangeType<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldFail
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+                    ])
+            else
+                shouldFail
 
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference with non-byref return type - illegal`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with method GetPinnableReference with non-byref return type - illegal`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -438,16 +498,22 @@ let pinIt (thing: StrangeType<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldFail
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+                    ])
+            else
+                shouldFail
 
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -464,16 +530,22 @@ let pinIt (thing: RefField<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldSucceed
+                    |> withDiagnostics [
+                        (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                    ])
+            else
+                shouldFail
         
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with private method GetPinnableReference - illegal`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with private method GetPinnableReference - illegal`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -488,16 +560,22 @@ let pinIt (thing: StrangeType<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldFail
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+                    ])
+            else
+                shouldFail
 
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin type with static method GetPinnableReference - illegal`` langVersion =
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin type with static method GetPinnableReference - illegal`` (langVersion, featureShouldActivate) =
+        featureShouldActivate |> ignore
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -512,8 +590,13 @@ let pinIt (thing: StrangeType<'T>) =
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
-        ]
+        |>  if featureShouldActivate then
+                (fun comp ->
+                    comp
+                    |> shouldFail
+                    |> withDiagnostics [
+                        (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+                        (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+                    ])
+            else
+                shouldFail
