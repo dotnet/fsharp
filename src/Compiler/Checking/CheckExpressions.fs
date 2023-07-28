@@ -10266,23 +10266,20 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
     warning(PossibleUnverifiableCode mBinding)
 
-    let activateExtendedFixedBindings = g.langVersion.SupportsFeature LanguageFeature.ExtendedFixedBindings
-
     match overallExprTy with
     | ty when isByrefTy g ty ->
-        if not activateExtendedFixedBindings then
-            let okByRef =
-                match stripDebugPoints (stripExpr fixedExpr) with
-                | Expr.Op (op, tyargs, args, _) ->
-                        match op, tyargs, args with
-                        | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
-                        | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
-                        | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
-                        | TOp.RefAddrGet _, _, _ -> true
-                        | _ -> false
-                | _ -> false
-            if not okByRef then
-                error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+        let okByRef =
+            match stripDebugPoints (stripExpr fixedExpr) with
+            | Expr.Op (op, tyargs, args, _) ->
+                    match op, tyargs, args with
+                    | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
+                    | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
+                    | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
+                    | TOp.RefAddrGet _, _, _ -> true
+                    | _ -> false
+            | _ -> false
+        if not okByRef then
+            checkLanguageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
 
         let elemTy = destByrefTy g overallExprTy
         UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
@@ -10337,7 +10334,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                     zero)
                 zero)
 
-    | _ when activateExtendedFixedBindings ->
+    | _ ->
         
         let getPinnableReferenceMInfo =
             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
@@ -10350,6 +10347,8 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         
         match getPinnableReferenceMInfo with
         | Some mInfo ->
+            checkLanguageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
+            
             let mInst = FreshenMethInfo mBinding mInfo
             let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
             
@@ -10361,8 +10360,6 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                 mkConvToNativeInt g ve mBinding)
         | None ->
             error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
-        
-    | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
