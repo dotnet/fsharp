@@ -328,6 +328,7 @@ pinIt 100
     IL_0027:  ret
   } """ ]
         
+#if NETCOREAPP
     [<Fact>]
     let ``Pin Span via manual GetPinnableReference call`` () =
         FSharp """
@@ -415,6 +416,7 @@ let main _ =
     IL_0016:  ldobj      [runtime]System.Char
     IL_001b:  ret
   } """ ]
+#endif
         
     [<Fact>]
     let ``Pin generic ReadOnlySpan`` () =
