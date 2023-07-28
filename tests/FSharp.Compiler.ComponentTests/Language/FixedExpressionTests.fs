@@ -130,6 +130,38 @@ let pinIt (thing: int) =
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
+    [<Fact>]
+    let ``Pin generic - illegal`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt (thing: 'a) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+        
+    [<Fact>]
+    let ``Pin generic with unmanaged - illegal`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+let pinIt<'a when 'a : unmanaged> (thing: 'a) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+
 // FS-1081 - Extend fixed expressions
 module ExtendedFixedExpressions =
     [<Fact>]
