@@ -10340,24 +10340,22 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         
         let getPinnableReferenceMInfo =
             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
-            |> List.tryPick (fun mInfo ->
+            |> List.tryFind (fun mInfo ->
                 // GetPinnableReference must be a parameterless method with a byref or inref return value
                 match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
-                | [[]], retTy when isByrefTy g retTy -> Some (mInfo, retTy)
-                | _ -> None
+                | [[]], retTy when isByrefTy g retTy -> true
+                | _ -> false
             )
         
         match getPinnableReferenceMInfo with
-        | Some (mInfo, pinnedByrefTy) ->
-            // fixedExpr
-            let elemTy = destByrefTy g pinnedByrefTy
+        | Some mInfo ->
+            let mInst = FreshenMethInfo mBinding mInfo
+            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
+            
+            let elemTy = destByrefTy g actualRetTy
             UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
             
-            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse [] [ fixedExpr ] [] None
-            
-            assert (typeEquiv cenv.g actualRetTy pinnedByrefTy)
-            
-            mkCompGenLetIn mBinding "pinnedByref" pinnedByrefTy pinnableReference (fun (v, ve) ->
+            mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
                 v.SetIsFixed()
                 mkConvToNativeInt g ve mBinding)
         | None ->
