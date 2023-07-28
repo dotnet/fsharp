@@ -737,6 +737,7 @@ type TcGlobals(
   let v_bitwise_unary_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LogicalNot"                        , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_bitwise_shift_left_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LeftShift"                         , None                 , None          , [vara],     mk_shiftop_ty varaTy)
   let v_bitwise_shift_right_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RightShift"                        , None                 , None          , [vara],     mk_shiftop_ty varaTy)
+  let v_exponentiation_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Exponentiation"                    , None                 , None          , [vara;varb],     ([[varaTy];[varbTy]], varaTy))
   let v_unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_subtraction_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -1550,6 +1551,7 @@ type TcGlobals(
   member val bitwise_unary_not_vref     = ValRefForIntrinsic v_bitwise_unary_not_info
   member val bitwise_shift_left_vref    = ValRefForIntrinsic v_bitwise_shift_left_info
   member val bitwise_shift_right_vref   = ValRefForIntrinsic v_bitwise_shift_right_info
+  member val exponentiation_vref        = ValRefForIntrinsic v_exponentiation_info
   member val unchecked_addition_vref    = ValRefForIntrinsic v_unchecked_addition_info
   member val unchecked_unary_plus_vref  = ValRefForIntrinsic v_unchecked_unary_plus_info
   member val unchecked_unary_minus_vref = ValRefForIntrinsic v_unchecked_unary_minus_info
@@ -1894,7 +1896,7 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
+        let info = v_exponentiation_info
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
     | "Atan2", [aty;_], Some bty, [_;_] ->
