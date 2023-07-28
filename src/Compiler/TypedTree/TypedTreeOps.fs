@@ -9818,6 +9818,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
             x
     | SpecificUnopExpr g g.bitwise_unary_not_vref arg1 ->
         checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
         
         match v1 with
         | IntegerConstExpr ->
