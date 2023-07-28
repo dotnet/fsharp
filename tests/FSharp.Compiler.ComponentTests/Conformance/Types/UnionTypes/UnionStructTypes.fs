@@ -752,10 +752,17 @@ let main args =
     0 """
         |> asExe
         |> compile
-        |> verifyIL ["abc"]
-        //|> shouldSucceed
-        //|> run
-        //|> verifyOutput "MyValueSome 42"
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "MyValueSome 42"
+
+    [<Literal>]
+    let sysDiagnostics = 
+    #if NETCOREAPP
+        "[runtime]System.Diagnostics"
+    #else
+        "System.Diagnostics"
+    #endif
 
     [<Fact>]
     let ``Struct DU compilation - have a look at IL for massive cases`` () =
@@ -765,7 +772,7 @@ let main args =
         |> verifyIL [(*This is case-agnostic constructor used for data-less cases, just fills in the _tag property*)"""
             instance void  .ctor(int32 _tag) cil managed
     {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+      .custom instance void """+sysDiagnostics+""".CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype """+sysDiagnostics+""".CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                               class [runtime]System.Type) = ( 01 00 60 06 00 00 0F 46 6F 6F 2B 53 74 72 75 63   
                                                                                                                                                      74 55 6E 69 6F 6E 00 00 )                         
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -793,7 +800,7 @@ let main args =
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 
       
-      .maxstack  2
+      .maxstack  3
       .locals init (valuetype Foo/StructUnion V_0)
       IL_0000:  ldloca.s   V_0
       IL_0002:  initobj    Foo/StructUnion

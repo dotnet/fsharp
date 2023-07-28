@@ -924,7 +924,7 @@ let convAlternativeDef
                             |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type))
                             |> Array.toList,
                             mkILReturn baseTy,
-                            mkMethodBody (true, locals, fields.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
+                            mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
                         )
                         |> addMethodGeneratedAttrs
                         |> addAltAttribs
