@@ -7,8 +7,10 @@ open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
 module Legacy =
-    [<Fact>]
-    let ``Pin naked string``() = 
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked string`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -17,6 +19,7 @@ let pinIt (str: string) =
     use ptr = fixed str
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
         |> verifyIL ["""
@@ -49,8 +52,10 @@ let pinIt (str: string) =
      IL_0021:  ret
    }""" ]
 
-    [<Fact>]
-    let ``Pin naked array`` () = 
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked array`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -59,6 +64,7 @@ let pinIt (arr: char[]) =
     use ptr = fixed arr
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
         |> verifyIL ["""
@@ -100,8 +106,10 @@ let pinIt (arr: char[]) =
     IL_002e:  ret
   } """ ]
 
-    [<Fact>]
-    let ``Pin address of record field`` () = 
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of record field`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -116,6 +124,7 @@ let p = { X = 10; Y = 20 }
 let xCopy = pinIt p
 if xCopy <> p.X then failwith "xCopy was not equal to X"
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
         |> verifyIL ["""
@@ -141,8 +150,10 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
     IL_001a:  ret
   } """ ]
 
-    [<Fact>]
-    let ``Pin address of explicit field on this`` () = 
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of explicit field on this`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -161,6 +172,7 @@ let p = Point(10,20)
 let xCopy = p.PinIt()
 if xCopy <> p.X then failwith "xCopy was not equal to X"
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
         |> shouldSucceed
@@ -188,8 +200,10 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
       IL_001a:  ret
     } """ ]
         
-    [<Fact>]
-    let ``Pin address of array element`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of array element`` langVersion =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -202,6 +216,7 @@ let x = [|'a';'b';'c'|]
 let y = pinIt x
 if y <> 'a' then failwithf "y did not equal first element of x"
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
         |> shouldSucceed
@@ -230,8 +245,8 @@ if y <> 'a' then failwithf "y did not equal first element of x"
   } """ ]
         
 module ExtendedFixedExpressions =
-    [<Fact>]
-    let ``Pin int byref of parameter`` () = 
+    [<Theory; InlineData("preview")>]
+    let ``Pin int byref of parameter`` langVersion =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -244,8 +259,8 @@ let mutable x = 42
 let xCopy = pinIt &x
 if x <> xCopy then failwith "xCopy was not the same as x" 
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -270,8 +285,8 @@ if x <> xCopy then failwith "xCopy was not the same as x"
     IL_0015:  ret
   }  """]
         
-    [<Fact>]
-    let ``Pin int byref of local variable`` () = 
+    [<Theory; InlineData("preview")>]
+    let ``Pin int byref of local variable`` langVersion = 
         FSharp """
 module FixedExpressions
 open System.Runtime.CompilerServices
@@ -289,8 +304,8 @@ let pinIt (x: int) =
     
 pinIt 100
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -331,8 +346,8 @@ pinIt 100
   } """ ]
         
 #if NETCOREAPP
-    [<Fact>]
-    let ``Pin Span via manual GetPinnableReference call`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin Span via manual GetPinnableReference call`` langVersion =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -349,8 +364,8 @@ let main _ =
     if x <> 'T' then failwith "x did not equal the first char of the span"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -376,8 +391,8 @@ let main _ =
     IL_001b:  ret
   } """ ]
         
-    [<Fact>]
-    let ``Pin Span`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin Span`` langVersion =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -394,8 +409,8 @@ let main _ =
     if x <> 'T' then failwith "x did not equal the first char of the span"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -421,8 +436,8 @@ let main _ =
     IL_001b:  ret
   } """ ]
         
-    [<Fact>]
-    let ``Pin generic ReadOnlySpan`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin generic ReadOnlySpan`` langVersion =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -439,8 +454,8 @@ let main _ =
     if x <> 'T' then failwith "x did not equal the first char of the span"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -467,8 +482,8 @@ let main _ =
   } """ ]
 #endif
         
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () = 
+    [<Theory; InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -490,8 +505,8 @@ let main _ =
     if y <> x.Value then failwith "y did not equal x value"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -517,8 +532,8 @@ let main _ =
     IL_001a:  ret
   } """ ]
         
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` () = 
+    [<Theory; InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion = 
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -540,8 +555,8 @@ let main _ =
     if y <> x.Value then failwith "y did not equal x value"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -567,8 +582,8 @@ let main _ =
     IL_001a:  ret
   } """ ]
 
-    [<Fact>]
-    let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
         FSharp """
 module FixedExpressions
@@ -599,8 +614,8 @@ let main _ =
     if y <> x.Value then failwith "y did not equal x value"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -629,8 +644,8 @@ let main _ =
     IL_0027:  ret
   } """ ]
     
-    [<Fact>]
-    let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         let csLib =
             CSharp """
 public class PinnableReference<T>
@@ -671,9 +686,9 @@ let main _ =
     if y <> x.Value then failwith "y did not equal x value"
     0
 """
+        |> withLangVersion langVersion
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -700,8 +715,8 @@ let main _ =
   } """ ]
 
 #if NETCOREAPP
-    [<Fact>]
-    let ``Pin C# byref struct type with method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin C# byref struct type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         // TODO: Could be a good idea to test a version of this type written in F# too once we get ref fields in byref-like structs:
         // https://github.com/fsharp/fslang-suggestions/issues/1143
         let csLib =
@@ -747,9 +762,9 @@ let main _ =
     if y <> x then failwith "y did not equal x"
     0
 """
+        |> withLangVersion langVersion
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -776,8 +791,8 @@ let main _ =
   } """ ]
 #endif
         
-    [<Fact>]
-    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory; InlineData("preview")>]
+    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         Fsx """
 module FixedExpressions
 open System.Runtime.CompilerServices
@@ -802,8 +817,8 @@ let main _ =
     if y <> x then failwith "y did not equal x"
     0
 """
+        |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""

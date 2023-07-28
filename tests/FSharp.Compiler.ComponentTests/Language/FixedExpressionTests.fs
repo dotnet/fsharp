@@ -4,8 +4,10 @@ open Xunit
 open FSharp.Test.Compiler
 
 module Legacy =
-    [<Fact>]
-    let ``Pin naked string`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked string`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -13,6 +15,7 @@ let pinIt (str: string) =
     use ptr = fixed str
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -21,8 +24,10 @@ let pinIt (str: string) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin naked array`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked array`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -30,6 +35,7 @@ let pinIt (arr: char[]) =
     use ptr = fixed arr
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -38,8 +44,10 @@ let pinIt (arr: char[]) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin address of array element`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of array element`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -47,6 +55,7 @@ let pinIt (arr: char[]) =
     use ptr = fixed &arr[1]
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -55,8 +64,10 @@ let pinIt (arr: char[]) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin address of record field`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of record field`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -66,6 +77,7 @@ let pinIt (thing: Point) =
     use ptr = fixed &thing.X
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -74,8 +86,10 @@ let pinIt (thing: Point) =
             (Warning 9, Line 8, Col 5, Line 8, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin address of explicit field on this`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin address of explicit field on this`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -89,6 +103,7 @@ type Point =
         use ptr = fixed &this.X
         NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -97,8 +112,10 @@ type Point =
             (Warning 9, Line 12, Col 9, Line 12, Col 22, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
 
-    [<Fact>]
-    let ``Pin naked object - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked object - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -106,6 +123,7 @@ let pinIt (thing: obj) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -114,8 +132,10 @@ let pinIt (thing: obj) =
         ]
         
 
-    [<Fact>]
-    let ``Pin naked int - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked int - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -123,6 +143,7 @@ let pinIt (thing: int) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -130,8 +151,10 @@ let pinIt (thing: int) =
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-    [<Fact>]
-    let ``Pin generic - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin generic - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -139,6 +162,7 @@ let pinIt (thing: 'a) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -146,8 +170,10 @@ let pinIt (thing: 'a) =
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
         
-    [<Fact>]
-    let ``Pin generic with unmanaged - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin generic with unmanaged - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -155,6 +181,7 @@ let pinIt<'a when 'a : unmanaged> (thing: 'a) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -164,8 +191,10 @@ let pinIt<'a when 'a : unmanaged> (thing: 'a) =
 
 // FS-1081 - Extend fixed expressions
 module ExtendedFixedExpressions =
-    [<Fact>]
-    let ``Pin int byref parmeter`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin int byref parmeter`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -173,6 +202,7 @@ let pinIt (thing: byref<int>) =
     use ptr = fixed &thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -181,8 +211,10 @@ let pinIt (thing: byref<int>) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin int inref parmeter`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin int inref parmeter`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -190,6 +222,7 @@ let pinIt (thing: inref<int>) =
     use ptr = fixed &thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -198,8 +231,10 @@ let pinIt (thing: inref<int>) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin int outref parmeter`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin int outref parmeter`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -207,6 +242,7 @@ let pinIt (thing: outref<int>) =
     use ptr = fixed &thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -215,8 +251,10 @@ let pinIt (thing: outref<int>) =
             (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin int byref local variable`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin int byref local variable`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -225,6 +263,7 @@ let pinIt () =
     use ptr = fixed &thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -234,8 +273,10 @@ let pinIt () =
         ]
 
 #if NETCOREAPP
-    [<Fact>]
-    let ``Pin Span`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin Span`` langVersion =
         Fsx """
 open System
 open Microsoft.FSharp.NativeInterop
@@ -244,6 +285,7 @@ let pinIt (thing: Span<char>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -253,8 +295,10 @@ let pinIt (thing: Span<char>) =
         ]
 #endif
     
-    [<Fact>]
-    let ``Pin custom struct byref type without GetPinnableReference method - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin custom struct byref type without GetPinnableReference method - illegal`` langVersion =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -267,6 +311,7 @@ let pinIt (thing: BoringRefField<char>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
@@ -275,8 +320,10 @@ let pinIt (thing: BoringRefField<char>) =
             (Error 3207, Line 10, Col 9, Line 10, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -288,6 +335,7 @@ let pinIt (thing: RefField<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -296,8 +344,10 @@ let pinIt (thing: RefField<'T>) =
             (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -309,6 +359,7 @@ let pinIt (thing: RefField<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -317,8 +368,10 @@ let pinIt (thing: RefField<'T>) =
             (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         Fsx """
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
@@ -334,6 +387,7 @@ let pinIt (thing: RefField<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -342,8 +396,10 @@ let pinIt (thing: RefField<'T>) =
             (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference with parameters - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference with parameters - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -355,6 +411,7 @@ let pinIt (thing: StrangeType<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
     """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
@@ -363,8 +420,10 @@ let pinIt (thing: StrangeType<'T>) =
             (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-    [<Fact>]
-    let ``Pin type with method GetPinnableReference with non-byref return type - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with method GetPinnableReference with non-byref return type - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -376,6 +435,7 @@ let pinIt (thing: StrangeType<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
@@ -384,8 +444,10 @@ let pinIt (thing: StrangeType<'T>) =
             (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-    [<Fact>]
-    let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -399,6 +461,7 @@ let pinIt (thing: RefField<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldSucceed
@@ -407,8 +470,10 @@ let pinIt (thing: RefField<'T>) =
             (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
-    [<Fact>]
-    let ``Pin type with private method GetPinnableReference - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with private method GetPinnableReference - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -420,6 +485,7 @@ let pinIt (thing: StrangeType<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
@@ -428,8 +494,10 @@ let pinIt (thing: StrangeType<'T>) =
             (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-    [<Fact>]
-    let ``Pin type with static method GetPinnableReference - illegal`` () =
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin type with static method GetPinnableReference - illegal`` langVersion =
         Fsx """
 open Microsoft.FSharp.NativeInterop
 
@@ -441,6 +509,7 @@ let pinIt (thing: StrangeType<'T>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
 """
+        |> withLangVersion langVersion
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
