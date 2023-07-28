@@ -252,8 +252,9 @@ let pinIt (thing: Span<char>) =
             (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
 #endif
-        
-    let ``Pin custom byref type without GetPinnableReference method - illegal`` () =
+    
+    [<Fact>]
+    let ``Pin custom struct byref type without GetPinnableReference method - illegal`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -269,6 +270,10 @@ let pinIt (thing: BoringRefField<char>) =
         |> ignoreWarnings
         |> typecheck
         |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 10, Col 9, Line 10, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 10, Col 9, Line 10, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
 
     [<Fact>]
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () =
