@@ -273,9 +273,12 @@ if x <> xCopy then failwith "xCopy was not the same as x"
     let ``Pin int byref of local variable`` () = 
         FSharp """
 module FixedExpressions
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
 
-let fail () = failwith "thingCopy was not the same as thing" |> ignore
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let fail () =
+    failwith "thingCopy was not the same as thing"
 
 let pinIt (x: int) =
     let mutable thing = x + 1
@@ -289,15 +292,14 @@ pinIt 100
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static void  pinIt(int32 x) cil managed
+.method public static void  pinIt(int32 x) cil managed
   {
     
     .maxstack  5
     .locals init (int32 V_0,
              native int V_1,
              int32& pinned V_2,
-             int32 V_3,
-             object V_4)
+             int32 V_3)
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.1
     IL_0002:  add
@@ -317,23 +319,13 @@ pinIt 100
     IL_001b:  stloc.3
     IL_001c:  ldloc.3
     IL_001d:  ldloc.0
-    IL_001e:  beq.s      IL_0039
+    IL_001e:  beq.s      IL_0027
 
-    IL_0020:  ldc.i4.0
-    IL_0021:  brfalse.s  IL_002b
+    IL_0020:  call       !!0 FixedExpressions::fail<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+    IL_0025:  pop
+    IL_0026:  ret
 
-    IL_0023:  ldnull
-    IL_0024:  unbox.any  [runtime]System.Object
-    IL_0029:  br.s       IL_0036
-
-    IL_002b:  ldstr      "thingCopy was not the same as thing"
-    IL_0030:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-    IL_0035:  throw
-
-    IL_0036:  stloc.s    V_4
-    IL_0038:  ret
-
-    IL_0039:  ret
+    IL_0027:  ret
   } """ ]
         
     [<Fact>]
