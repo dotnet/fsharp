@@ -367,3 +367,45 @@ let pinIt (thing: RefField<'T>) =
             (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
+        
+    [<Fact>]
+    let ``Pin type with private method GetPinnableReference - illegal`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+type StrangeType<'T>(_value) =
+    let mutable _value = _value
+    member private this.GetPinnableReference() : byref<'T> = _value
+
+let pinIt (thing: StrangeType<'T>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'""")
+        ]
+
+    [<Fact>]
+    let ``Pin type with static method GetPinnableReference - illegal`` () =
+        Fsx """
+open Microsoft.FSharp.NativeInterop
+
+type StrangeType<'T>(_value) =
+    let mutable _value = _value
+    static member GetPinnableReference() : byref<'T> = Unchecked.defaultof<'T>
+
+let pinIt (thing: StrangeType<'T>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+"""
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'""")
+        ]

@@ -606,3 +606,55 @@ let main _ =
     IL_0016:  ldobj      [runtime]System.Int32
     IL_001b:  ret
   } """ ]
+        
+    [<Fact>]
+    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` () =
+        Fsx """
+module FixedExpressions
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.NativeInterop
+
+type RefField<'T> = { mutable _value: 'T }
+
+[<Extension>]
+type RefFieldExtensions =
+    [<Extension>]
+    static member GetPinnableReference(refField: RefField<'T>) : byref<'T> = &refField._value 
+
+let pinIt (thing: RefField<'T>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let mutable x = 42
+    let refToX = { _value = x }
+    let y = pinIt refToX
+    if y <> x then failwith "y did not equal x"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static !!a  pinIt<T,a>(class FixedExpressions/RefField`1<!!T> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             !!a& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  ldflda     !0 class FixedExpressions/RefField`1<!!a>::_value@
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
+    IL_0008:  conv.i
+    IL_0009:  stloc.0
+    IL_000a:  ldloc.0
+    IL_000b:  ldc.i4.0
+    IL_000c:  conv.i
+    IL_000d:  sizeof     !!a
+    IL_0013:  mul
+    IL_0014:  add
+    IL_0015:  ldobj      !!a
+    IL_001a:  ret
+  } """ ]

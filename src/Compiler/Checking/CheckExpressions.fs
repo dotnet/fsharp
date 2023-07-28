@@ -10343,7 +10343,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             |> List.tryFind (fun mInfo ->
                 // GetPinnableReference must be a parameterless method with a byref or inref return value
                 match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
-                | [[]], retTy when isByrefTy g retTy -> true
+                | [[]], retTy when isByrefTy g retTy && mInfo.IsInstance -> true
                 | _ -> false
             )
         
