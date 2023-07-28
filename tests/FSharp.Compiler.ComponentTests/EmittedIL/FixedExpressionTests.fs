@@ -625,27 +625,24 @@ let main _ =
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
         let csLib =
             CSharp """
-namespace CsLib
+public class PinnableReference<T>
 {
-    public class PinnableReference<T>
+    private T _value;
+
+    public T Value
     {
-        private T _value;
+        get => _value;
+        set => _value = value;
+    }
 
-        public T Value
-        {
-            get => _value;
-            set => _value = value;
-        }
+    public PinnableReference(T value)
+    {
+        this._value = value;
+    }
 
-        public PinnableReference(T value)
-        {
-            this._value = value;
-        }
-
-        public ref T GetPinnableReference()
-        {
-            return ref _value;
-        }
+    public ref T GetPinnableReference()
+    {
+        return ref _value;
     }
 }
 """         |> withName "CsLib"
@@ -654,7 +651,6 @@ namespace CsLib
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
 open System
-open CsLib
 
 let pinIt (thing: PinnableReference<int>) =
     use ptr = fixed thing
@@ -672,14 +668,14 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static int32  pinIt(class [CsLib]CsLib.PinnableReference`1<int32> thing) cil managed
+  .method public static int32  pinIt(class [CsLib]PinnableReference`1<int32> thing) cil managed
   {
     
     .maxstack  5
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance !0& class [CsLib]CsLib.PinnableReference`1<int32>::GetPinnableReference()
+    IL_0001:  callvirt   instance !0& class [CsLib]PinnableReference`1<int32>::GetPinnableReference()
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
