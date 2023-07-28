@@ -9822,7 +9822,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         
         match v1 with
         | IntegerConstExpr ->
-            EvalArithUnOp ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore2, ignore2) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
+            EvalArithUnOp ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore, ignore) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
