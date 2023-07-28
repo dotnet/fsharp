@@ -245,6 +245,7 @@ let xCopy = pinIt &x
 if x <> xCopy then failwith "xCopy was not the same as x" 
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -289,6 +290,7 @@ let pinIt (x: int) =
 pinIt 100
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -348,6 +350,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -392,6 +395,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -436,6 +440,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -486,6 +491,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -535,6 +541,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -593,6 +600,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -665,6 +673,7 @@ let main _ =
 """
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -740,6 +749,7 @@ let main _ =
 """
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -793,6 +803,7 @@ let main _ =
     0
 """
         |> withOptions ["--nowarn:9"]
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
