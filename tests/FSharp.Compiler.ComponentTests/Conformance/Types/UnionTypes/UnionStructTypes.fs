@@ -691,6 +691,71 @@ type TagOnlyDu = SingleCaseDuCase
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Generic struct DU works`` ()  =
+        Fsx """
+namespace Foo
+[<Struct;NoEquality;NoComparison>]
+type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T * int
+        """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Struct DU ValueOption keeps working`` ()  =
+        Fsx """
+module VOTests
+
+let nothing = ValueNone
+let someInt = ValueSome 42
+let someSomeInt = ValueSome (ValueSome 2112)
+
+let matchOnVO arg =
+    match arg with
+    | ValueNone -> 333
+    | ValueSome 42 -> 666
+    | ValueSome anyOther -> 999
+
+let result1 = matchOnVO nothing
+let result2 = matchOnVO someInt
+
+printf $"{result1};{result2}"
+
+        """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "333;666"
+
+    [<Fact>]
+    let ``Custom ValueOption keeps working`` () = 
+        Fsx """
+module XX
+open System
+
+[<NoEquality; NoComparison>]
+[<Struct>]
+type ThisIsMyValueOptionType<'T> =
+    | MyValueNone 
+    | MyValueSome of Item:'T
+
+    static member None = MyValueNone
+    static member Some (value) = MyValueSome(value)
+
+        
+        
+let x = ThisIsMyValueOptionType<int>.Some(42)
+[<EntryPoint>]
+let main args =
+    printf "%A" x
+    0 """
+        |> asExe
+        |> compile
+        |> verifyIL ["abc"]
+        //|> shouldSucceed
+        //|> run
+        //|> verifyOutput "MyValueSome 42"
 
     [<Fact>]
     let ``Struct DU compilation - have a look at IL for massive cases`` () =

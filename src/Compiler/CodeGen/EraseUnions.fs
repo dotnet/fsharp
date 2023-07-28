@@ -894,7 +894,7 @@ let convAlternativeDef
                                 [
                                     ldloca
                                     ILInstr.I_initobj baseTy
-                                    if (repr.DiscriminationTechnique info) = IntegerTag then
+                                    if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
                                         ldloca
                                         mkLdcInt32 num
                                         mkSetTagToField g.ilg cuspec baseTy
