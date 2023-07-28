@@ -75,6 +75,7 @@ type LanguageFeature =
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | WhileBang
+    | ExtendedFixedBindings
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -173,6 +174,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.WhileBang, previewVersion
+                LanguageFeature.ExtendedFixedBindings, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -303,6 +305,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
+        | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

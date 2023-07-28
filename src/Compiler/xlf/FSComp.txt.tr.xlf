@@ -267,6 +267,11 @@
         <target state="translated">tür daha ölçü birimlerini destekler</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>Extends fixed expressions to byrefs, inrefs, and GetPinnableReference().</source>
+        <target state="new">Extends fixed expressions to byrefs, inrefs, and GetPinnableReference().</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="new">Extended string interpolation similar to C# raw string literals.</target>

@@ -65,6 +65,7 @@ type LanguageFeature =
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | WhileBang
+    | ExtendedFixedBindings
 
 /// LanguageVersion management
 type LanguageVersion =
