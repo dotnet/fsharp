@@ -21,16 +21,27 @@ module AnonRecd =
         |> withMessage "The field 'A' appears multiple times in this record expression."
     
     [<Fact>]
-    let ``Anonymous Records incomplete`` () =
+    let ``Anonymous Record missing single field`` () =
         Fsx """
 let x () : {| A: int; B: string  |} =  {| A = 123 |}
 """
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 40, Line 2, Col 53, "This anonymous record does not have enough fields. Add the missing fields [B].")
+            (Error 1, Line 2, Col 40, Line 2, Col 53, "This anonymous record is missing field B.")
         ]
         
+    [<Fact>]
+    let ``Anonymous Record missing multiple fields`` () =
+        Fsx """
+let x () : {| A: int; B: string; C: int  |} =  {| A = 123 |}
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 48, Line 2, Col 61, "This anonymous record is missing fields B, C.")
+        ]
+
     [<Fact>]
     let ``Anonymous Records with duplicate labels - Copy and update expression`` () =
         FSharp """
