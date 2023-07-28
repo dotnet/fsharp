@@ -78,7 +78,7 @@ let [<Literal>] chars = 'a' + 'b' - 'a'
         |> shouldSucceed
         |> verifyIL [
             """.field public static literal float64 bytesInMegabyte = float64(1048576.1000000001)"""
-            if System.OperatingSystem.IsWindows() then
+            if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
                 """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576.)"""
             else
                 """.field public static literal float32 'bytesInMegabyte\'' = float32(1048576)"""
