@@ -561,6 +561,67 @@ let main _ =
   } """ ]
 
     [<Fact>]
+    let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` () =
+        // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
+        FSharp """
+module FixedExpressions
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.NativeInterop
+open System
+
+[<Struct; IsByRefLike>]
+type ArrayElementRef<'T> =
+    private { Values: 'T[]; Index: int }
+    
+    static member Create(values: 'T[], index) =
+        if index > values.Length then
+            raise (ArgumentOutOfRangeException(nameof(index), ""))
+        { Values = values; Index = index }
+    member this.Value = this.Values[this.Index]
+    member this.GetPinnableReference () : byref<'T> = &this.Values[this.Index]
+
+let pinIt (thing: ArrayElementRef<'a>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+
+[<EntryPoint>]
+let main _ =
+    let arr = [|'a';'b';'c'|]
+    let x = ArrayElementRef.Create(arr, 1)
+    let y = pinIt x
+    if y <> x.Value then failwith "y did not equal x value"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static !!a  pinIt<a>(valuetype FixedExpressions/ArrayElementRef`1<!!a> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             !!a& pinned V_1)
+    IL_0000:  ldarga.s   thing
+    IL_0002:  ldfld      !0[] valuetype FixedExpressions/ArrayElementRef`1<!!a>::Values@
+    IL_0007:  ldarga.s   thing
+    IL_0009:  ldfld      int32 valuetype FixedExpressions/ArrayElementRef`1<!!a>::Index@
+    IL_000e:  ldelema    !!a
+    IL_0013:  stloc.1
+    IL_0014:  ldloc.1
+    IL_0015:  conv.i
+    IL_0016:  stloc.0
+    IL_0017:  ldloc.0
+    IL_0018:  ldc.i4.0
+    IL_0019:  conv.i
+    IL_001a:  sizeof     !!a
+    IL_0020:  mul
+    IL_0021:  add
+    IL_0022:  ldobj      !!a
+    IL_0027:  ret
+  } """ ]
+    
+    [<Fact>]
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
         let csLib =
             CSharp """
