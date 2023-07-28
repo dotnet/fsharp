@@ -1934,42 +1934,63 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
     let ty2 = List.item fieldNum argTys
     mkf, ty2
     
+let rec (|SynPatIdentInfo|_|) (synPat: SynPat) =
+    match synPat with
+    | SynPat.Or(lhsPat=SynPatIdentInfo lhsIdents; rhsPat= SynPatIdentInfo rhsIdents; range=_m) ->
+        Some(lhsIdents @ rhsIdents)
+    | SynPat.LongIdent(longDotId=SynLongIdent(id = idents); range=m) ->
+        match idents with
+        | [] -> None
+        | rest ->
+            let idents =
+                rest
+                |> List.map(fun c -> c.idText)
+                |> String.concat "."
+            Some [ (idents, m) ]
+            
+    | SynPat.Const(_constant, _range) -> None
+    | SynPat.Wild _range -> None
+    | SynPat.Named(_ident, _isThisVal, _accessibility, _range) -> None
+    | SynPat.Typed(_pat, _targetType, _range) -> None
+    | SynPat.Attrib(_pat, _attributes, _range) -> None
+    | SynPat.ListCons(_lhsPat, _rhsPat, _range, _trivia) -> None
+    | SynPat.Ands(_pats, _range) -> None
+    | SynPat.As(_lhsPat, _rhsPat, _range)-> None
+    | SynPat.Tuple(_isStruct, _elementPats, _commaRanges, _range) -> None
+    | SynPat.Paren(_pat, _range) -> None
+    | SynPat.ArrayOrList(_isArray,_elementPats, _range) -> None
+    | SynPat.Record(_fieldPats, _range) -> None
+    | SynPat.Null _range-> None
+    | SynPat.OptionalVal(_ident, _range) -> None
+    | SynPat.IsInst(_pat, _range)-> None
+    | SynPat.QuoteExpr(_expr, _range) -> None
+    | SynPat.DeprecatedCharRange(_startChar, _endChar, _range) -> None
+    | SynPat.InstanceMember(_thisId, _memberId, _toolingId, _accessibility, _range) -> None
+    | SynPat.FromParseError(_pat, _range) -> None
+    | synPat ->
+        match synPat with
+        | SynPatIdentInfo idents -> Some idents
+        | _ -> None
+    
 let private CheckForDuFieldDuplicates clauses =
     match clauses with
     | [] -> ()
-    | clause :: clauses ->
-        // TODO: This seems to be a good case for a ActivePattern
-        let (SynMatchClause(_synPat, _synWhenExprOpt, _synResultExpr, _patm, _spTgt, _)) = clause
-        for cls in clauses do
-            let (SynMatchClause(synPat, _synWhenExprOpt, _synResultExpr, _patm, _spTgt, _)) = cls
+    | headClause :: tailClauses ->
+        let (SynMatchClause(pat=synPat)) = headClause
+        let fstClause =
             match synPat with
-            | SynPat.Or(pat1, _pat2, _m, _) ->
-                match pat1 with
-                | SynPat.Or(_lhsPat, _rhsPat, m, _trivia) -> warning (RuleNeverMatched m)
-                | SynPat.Const(_constant, _range) -> ()
-                | SynPat.Wild _range -> ()
-                | SynPat.Named(_ident, _isThisVal, _accessibility, _range) -> ()
-                | SynPat.Typed(_pat, _targetType, _range) -> ()
-                | SynPat.Attrib(_pat, _attributes, _range) -> ()
-                | SynPat.ListCons(_lhsPat, _rhsPat, _range, _trivia) -> ()
-                | SynPat.Ands(_pats, _range) -> ()
-                | SynPat.As(_lhsPat, _rhsPat, _range) -> ()
-                | SynPat.LongIdent(_longDotId, _extraId, _typarDecls, _argPats, _accessibility, _m) -> ()
-                | SynPat.Tuple(_isStruct, _elementPats, _commaRanges, _range) -> ()
-                | SynPat.Paren(_pat, _range) -> ()
-                | SynPat.ArrayOrList(_isArray,_elementPats, _range) -> ()
-                | SynPat.Record(_fieldPats, _range) -> ()
-                | SynPat.Null _range -> ()
-                | SynPat.OptionalVal(_ident, _range) -> ()
-                | SynPat.IsInst(_pat, _range) -> ()
-                | SynPat.QuoteExpr(_expr, _range) -> ()
-                | SynPat.DeprecatedCharRange(_startChar, _endChar, _range) -> ()
-                | SynPat.InstanceMember(_thisId, _memberId, _toolingId, _accessibility, _range) -> ()
-                | SynPat.FromParseError(_pat, _range) -> ()
-                
-            //| SynPat.LongIdent(_synLongIdent, _identOption, _synValTyparDeclsOption, _synArgPats, _synAccessOption, m) -> warning (RuleNeverMatched m)
-            | _rest -> ()
-            ()
+            | SynPatIdentInfo [ (clause, _) ] ->
+                  clause
+            | _ -> ""
+            
+        for cls in tailClauses do
+            let (SynMatchClause(pat=synPat)) = cls
+            match synPat with
+            | SynPatIdentInfo clauses ->
+                for clause, m in clauses do
+                    if clause = fstClause then
+                        warning (RuleNeverMatched m) 
+            | _ -> ()
 
 //-------------------------------------------------------------------------
 // Helpers for generalizing type variables

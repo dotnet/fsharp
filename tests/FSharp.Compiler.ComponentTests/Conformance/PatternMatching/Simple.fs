@@ -148,7 +148,7 @@ let isEven x =
         |> shouldSucceed
     
     [<Fact>]
-    let ``Duplicate DU cases in match should be a compiler warning or error`` () =
+    let ``Duplicate fully qualified du cases in match should be a compiler warning or error in lang preview`` () =
         Fsx """
 type Number = 
 | One 
@@ -166,8 +166,30 @@ let isEven x =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-             (Warning 26, Line 10, Col 6, Line 11, Col 16, "This rule will never be matched")
+             (Warning 26, Line 11, Col 6, Line 11, Col 16, "This rule will never be matched")
         ]
+        
+    [<Fact>]
+    let ``Duplicate fully du cases in match should be a compiler warning or error in lang preview`` () =
+            Fsx """
+    type Number = 
+    | One 
+    | Two 
+    | Three
+    
+    let isEven x = 
+       match x with
+       | Two -> true
+       | One
+       | Two
+       | Three -> false
+            """     
+            |> withLangVersionPreview
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                 (Warning 26, Line 11, Col 10, Line 11, Col 13, "This rule will never be matched")
+            ]
 
 //     [<Fact>]
 //     let ``Duplicate cases in match statement not producing compiler warnings if grouped`` () =
@@ -185,10 +207,10 @@ let isEven x =
 // | A l  //and here
 // | B l -> l
 //         """     
+//         |> withLangVersionPreview
 //         |> typecheck
 //         |> shouldFail
 //         |> withDiagnostics [
-//             (Warning 26, Line 12, Col 3, Line 12, Col 6, "This rule will never be matched")
 //         ]
 //         
 //     [<Fact>]
