@@ -671,14 +671,22 @@ let main _argv =
 
 
     [<Fact>]
-    let ``Single case DU keeps working`` ()  =
+    let ``Single case DU wrapper works`` ()  =
+        Fsx """
+namespace Foo
+
+[<Struct;NoEquality;NoComparison>]
+type DuWithData = SingleCase of field:int
+        """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Single case DU marker works`` ()  =
         Fsx """
 namespace Foo
 [<Struct;NoEquality;NoComparison>]
 type TagOnlyDu = SingleCaseDuCase
-
-[<Struct;NoEquality;NoComparison>]
-type DuWithData = SingleCase of field:int
         """
         |> compile
         |> shouldSucceed

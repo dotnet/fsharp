@@ -359,7 +359,10 @@ let convNewDataInstrInternal ilg cuspec cidx =
 
         instrs
         @ [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, (ctorFieldTys @ tagfields))) ]
-    elif cuspecRepr.RepresentAlternativeAsStructValue cuspec then
+    elif
+        cuspecRepr.RepresentAlternativeAsStructValue cuspec
+        && cuspecRepr.DiscriminationTechnique cuspec = IntegerTag
+    then
         // Structs with fields should be created using maker methods (mkMakerName), only field-less cases are created this way
         assert (alt.IsNullary)
         let baseTy = baseTyOfUnionSpec cuspec
@@ -891,9 +894,10 @@ let convAlternativeDef
                                 [
                                     ldloca
                                     ILInstr.I_initobj baseTy
-                                    ldloca
-                                    mkLdcInt32 num
-                                    mkSetTagToField g.ilg cuspec baseTy
+                                    if (repr.DiscriminationTechnique info) = IntegerTag then
+                                        ldloca
+                                        mkLdcInt32 num
+                                        mkSetTagToField g.ilg cuspec baseTy
                                     for i in 0 .. fields.Length - 1 do
                                         ldloca
                                         mkLdarg (uint16 i)
