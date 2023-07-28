@@ -1933,6 +1933,43 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
 
     let ty2 = List.item fieldNum argTys
     mkf, ty2
+    
+let private CheckForDuFieldDuplicates clauses =
+    match clauses with
+    | [] -> ()
+    | clause :: clauses ->
+        // TODO: This seems to be a good case for a ActivePattern
+        let (SynMatchClause(_synPat, _synWhenExprOpt, _synResultExpr, _patm, _spTgt, _)) = clause
+        for cls in clauses do
+            let (SynMatchClause(synPat, _synWhenExprOpt, _synResultExpr, _patm, _spTgt, _)) = cls
+            match synPat with
+            | SynPat.Or(pat1, _pat2, _m, _) ->
+                match pat1 with
+                | SynPat.Or(_lhsPat, _rhsPat, m, _trivia) -> warning (RuleNeverMatched m)
+                | SynPat.Const(_constant, _range) -> ()
+                | SynPat.Wild _range -> ()
+                | SynPat.Named(_ident, _isThisVal, _accessibility, _range) -> ()
+                | SynPat.Typed(_pat, _targetType, _range) -> ()
+                | SynPat.Attrib(_pat, _attributes, _range) -> ()
+                | SynPat.ListCons(_lhsPat, _rhsPat, _range, _trivia) -> ()
+                | SynPat.Ands(_pats, _range) -> ()
+                | SynPat.As(_lhsPat, _rhsPat, _range) -> ()
+                | SynPat.LongIdent(_longDotId, _extraId, _typarDecls, _argPats, _accessibility, _m) -> ()
+                | SynPat.Tuple(_isStruct, _elementPats, _commaRanges, _range) -> ()
+                | SynPat.Paren(_pat, _range) -> ()
+                | SynPat.ArrayOrList(_isArray,_elementPats, _range) -> ()
+                | SynPat.Record(_fieldPats, _range) -> ()
+                | SynPat.Null _range -> ()
+                | SynPat.OptionalVal(_ident, _range) -> ()
+                | SynPat.IsInst(_pat, _range) -> ()
+                | SynPat.QuoteExpr(_expr, _range) -> ()
+                | SynPat.DeprecatedCharRange(_startChar, _endChar, _range) -> ()
+                | SynPat.InstanceMember(_thisId, _memberId, _toolingId, _accessibility, _range) -> ()
+                | SynPat.FromParseError(_pat, _range) -> ()
+                
+            //| SynPat.LongIdent(_synLongIdent, _identOption, _synValTyparDeclsOption, _synArgPats, _synAccessOption, m) -> warning (RuleNeverMatched m)
+            | _rest -> ()
+            ()
 
 //-------------------------------------------------------------------------
 // Helpers for generalizing type variables
@@ -10236,6 +10273,9 @@ and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynE
     patf' (TcPatPhase2Input (values, true)), whenExprOpt, NameMap.range vspecMap, envinner, tpenv
 
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
+    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningForDuDuplicateFields then
+        CheckForDuFieldDuplicates clauses
+    
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses

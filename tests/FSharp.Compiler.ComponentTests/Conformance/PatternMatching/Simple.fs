@@ -127,3 +127,116 @@ match CaseA with
                 Warning 104, Line 10, Col 7, Line 10, Col 12, "Enums may take values outside known cases. For example, the value 'CaseB (enum<E> (0))' may indicate a case not covered by the pattern(s)."
                 Warning 25, Line 10, Col 7, Line 10, Col 12, "Incomplete pattern matches on this expression. For example, the value 'CaseA' may indicate a case not covered by the pattern(s)."]
    
+    
+    [<Fact>]
+    let ``Duplicate DU cases in match does not show a compiler warning or error in version 7`` () =
+        Fsx """
+type Number = 
+| One 
+| Two 
+| Three
+
+let isEven x = 
+   match x with
+   | Number.Two -> true
+   | Number.One
+   | Number.Two
+   | Number.Three -> false
+        """     
+        |> withLangVersion70
+        |> typecheck
+        |> shouldSucceed
+    
+    [<Fact>]
+    let ``Duplicate DU cases in match should be a compiler warning or error`` () =
+        Fsx """
+type Number = 
+| One 
+| Two 
+| Three
+
+let isEven x = 
+   match x with
+   | Number.Two -> true
+   | Number.One
+   | Number.Two
+   | Number.Three -> false
+        """     
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+             (Warning 26, Line 10, Col 6, Line 11, Col 16, "This rule will never be matched")
+        ]
+
+//     [<Fact>]
+//     let ``Duplicate cases in match statement not producing compiler warnings if grouped`` () =
+//         Fsx """
+// type Foo = 
+//     | A of int list
+//     | B of int list
+//     | C of float list
+//     | D of float list
+//
+// let foo = function
+// | A _ //Note the A Case is repeated
+// | C _
+// | D _ -> []
+// | A l  //and here
+// | B l -> l
+//         """     
+//         |> typecheck
+//         |> shouldFail
+//         |> withDiagnostics [
+//             (Warning 26, Line 12, Col 3, Line 12, Col 6, "This rule will never be matched")
+//         ]
+//         
+//     [<Fact>]
+//     let ``Duplicate cases in match statement not producing compiler warnings any grouping`` () =
+//         Fsx """
+// type Foo = 
+//     | A of int list
+//     | B of int list
+//     | C of float list
+//     | D of float list
+//
+// let foo = function
+// | A _ -> []
+// | C _ -> []
+// | D _ -> []
+// | A l
+// | B l -> l
+//         """     
+//         |> typecheck
+//         |> shouldFail
+//         |> withDiagnostics [
+//             (Warning 26, Line 12, Col 3, Line 12, Col 6, "This rule will never be matched")   
+//         ]
+//         
+//     [<Fact>]
+//     let ``FS0026 "This rule will never be matched" not fired for combined match branches`` () =
+//         Fsx """
+// match None with 
+// | Some _ -> ()
+// | Some "" -> ()   // FS0026 This rule will never be matched
+// | None -> ()
+// | _ -> () 
+//         """     
+//         |> typecheck
+//         |> shouldFail
+//         |> withDiagnostics [
+//         ]
+//
+//     [<Fact>]
+//     let ``FS0026 "This rule will never be matched" not fired for combined match branches 2`` () =
+//         Fsx """
+// match None with 
+// | Some _ 
+// | Some "" -> ()   // does not raise warning FS0026 This rule will never be matched
+// | None 
+// | _ -> ()         // does not raise warning FS0026 This rule will never be matched
+//         """     
+//         |> typecheck
+//         |> shouldFail
+//         |> withDiagnostics [
+//         ]

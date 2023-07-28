@@ -65,6 +65,7 @@ type LanguageFeature =
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | WhileBang
+    | WarningForDuDuplicateFields
 
 /// LanguageVersion management
 type LanguageVersion =

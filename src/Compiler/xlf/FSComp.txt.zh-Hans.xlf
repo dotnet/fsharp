@@ -452,6 +452,11 @@
         <target state="translated">支持在序列表达式中试用</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningForDuDuplicateFields">
+        <source>Raises warnings when a DU has duplicate fields.</source>
+        <target state="new">Raises warnings when a DU has duplicate fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">复制和更新记录表达式更改记录的所有字段时引发警告。</target>

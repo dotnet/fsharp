@@ -452,6 +452,11 @@
         <target state="translated">支援循序運算式中的 try-with</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningForDuDuplicateFields">
+        <source>Raises warnings when a DU has duplicate fields.</source>
+        <target state="new">Raises warnings when a DU has duplicate fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">當複製和更新記錄運算式變更記錄的所有欄位時引發警告。</target>

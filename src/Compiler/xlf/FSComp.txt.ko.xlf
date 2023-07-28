@@ -452,6 +452,11 @@
         <target state="translated">시퀀스 식에서 try-with 지원</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningForDuDuplicateFields">
+        <source>Raises warnings when a DU has duplicate fields.</source>
+        <target state="new">Raises warnings when a DU has duplicate fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">레코드 복사 및 업데이트 식이 레코드의 모든 필드를 변경할 때 경고를 발생합니다.</target>
