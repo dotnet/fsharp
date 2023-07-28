@@ -671,6 +671,20 @@ let main _argv =
 
 
     [<Fact>]
+    let ``Single case DU keeps working`` ()  =
+        Fsx """
+namespace Foo
+[<Struct;NoEquality;NoComparison>]
+type TagOnlyDu = SingleCaseDuCase
+
+[<Struct;NoEquality;NoComparison>]
+type DuWithData = SingleCase of field:int
+        """
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
     let ``Struct DU compilation - have a look at IL for massive cases`` () =
         createMassiveStructDuProgram 15
         |> asExe
