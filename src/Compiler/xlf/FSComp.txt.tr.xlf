@@ -7793,8 +7793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Geçersiz 'fixed' kullanımı. 'fixed' yalnızca 'use x = fixed expr' biçimindeki bir bildirimde kullanılabilir. Burada ifade bir dizi, bir alanın adresi, bir dizi öğesinin adresi veya bir dizedir</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="needs-review-translation">Geçersiz 'fixed' kullanımı. 'fixed' yalnızca 'use x = fixed expr' biçimindeki bir bildirimde kullanılabilir. Burada ifade bir dizi, bir alanın adresi, bir dizi öğesinin adresi veya bir dizedir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">

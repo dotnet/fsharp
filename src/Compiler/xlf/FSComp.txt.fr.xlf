@@ -7793,8 +7793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Utilisation non valide de 'fixed'. Utilisez uniquement 'fixed' dans une déclaration de la forme 'use x = fixed expr' où l'expression est un tableau, l'adresse d'un champ, l'adresse d'un élément de tableau ou une chaîne</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="needs-review-translation">Utilisation non valide de 'fixed'. Utilisez uniquement 'fixed' dans une déclaration de la forme 'use x = fixed expr' où l'expression est un tableau, l'adresse d'un champ, l'adresse d'un élément de tableau ou une chaîne</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
