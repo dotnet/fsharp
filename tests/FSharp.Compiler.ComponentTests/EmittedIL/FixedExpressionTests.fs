@@ -412,6 +412,50 @@ let main _ =
   } """ ]
         
     [<Fact>]
+    let ``Pin generic ReadOnlySpan`` () =
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+
+let pinIt (thing: ReadOnlySpan<'a>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let span = ReadOnlySpan("The quick brown fox jumped over the lazy dog".ToCharArray())
+    let x = pinIt span
+    if x <> 'T' then failwith "x did not equal the first char of the span"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static !!a  pinIt<a>(valuetype [runtime]System.ReadOnlySpan`1<!!a> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             !!a& pinned V_1)
+    IL_0000:  ldarga.s   thing
+    IL_0002:  call       instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) valuetype [runtime]System.ReadOnlySpan`1<!!a>::GetPinnableReference()
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
+    IL_0009:  conv.i
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     !!a
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      !!a
+    IL_001b:  ret
+  } """ ]
+        
+    [<Fact>]
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () = 
         FSharp """
 module FixedExpressions
@@ -460,6 +504,54 @@ let main _ =
     IL_001a:  ret
   } """ ]
         
+    [<Fact>]
+    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` () = 
+        FSharp """
+module FixedExpressions
+open Microsoft.FSharp.NativeInterop
+open System
+
+type ReadonlyRefField<'T>(_value) =
+    let mutable _value = _value
+    member this.Value = _value
+    member this.GetPinnableReference () : inref<'T> = &_value
+
+let pinIt (thing: ReadonlyRefField<int>) =
+    use ptr = fixed thing
+    NativePtr.get ptr 0
+    
+[<EntryPoint>]
+let main _ =
+    let x = ReadonlyRefField(42)
+    let y = pinIt x
+    if y <> x.Value then failwith "y did not equal x value"
+    0
+"""
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static int32  pinIt(class FixedExpressions/ReadonlyRefField`1<int32> thing) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             int32& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  ldflda     !0 class FixedExpressions/ReadonlyRefField`1<int32>::_value@7
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
+    IL_0008:  conv.i
+    IL_0009:  stloc.0
+    IL_000a:  ldloc.0
+    IL_000b:  ldc.i4.0
+    IL_000c:  conv.i
+    IL_000d:  sizeof     [runtime]System.Int32
+    IL_0013:  mul
+    IL_0014:  add
+    IL_0015:  ldobj      [runtime]System.Int32
+    IL_001a:  ret
+  } """ ]
 
     [<Fact>]
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
