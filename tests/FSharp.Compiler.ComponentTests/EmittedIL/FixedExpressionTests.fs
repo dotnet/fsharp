@@ -416,7 +416,6 @@ let main _ =
     IL_0016:  ldobj      [runtime]System.Char
     IL_001b:  ret
   } """ ]
-#endif
         
     [<Fact>]
     let ``Pin generic ReadOnlySpan`` () =
@@ -461,6 +460,7 @@ let main _ =
     IL_0016:  ldobj      !!a
     IL_001b:  ret
   } """ ]
+#endif
         
     [<Fact>]
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` () = 
@@ -564,7 +564,7 @@ let main _ =
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` () =
         let csLib =
             CSharp """
-namespace CSharpLib
+namespace CsLib
 {
     public class PinnableReference<T>
     {
@@ -593,7 +593,7 @@ namespace CSharpLib
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
 open System
-open CSharpLib
+open CsLib
 
 let pinIt (thing: PinnableReference<int>) =
     use ptr = fixed thing
@@ -611,14 +611,14 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static int32  pinIt(class [CsLib]CSharpLib.PinnableReference`1<int32> thing) cil managed
+  .method public static int32  pinIt(class [CsLib]CsLib.PinnableReference`1<int32> thing) cil managed
   {
     
     .maxstack  5
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance !0& class [CsLib]CSharpLib.PinnableReference`1<int32>::GetPinnableReference()
+    IL_0001:  callvirt   instance !0& class [CsLib]CsLib.PinnableReference`1<int32>::GetPinnableReference()
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
@@ -633,6 +633,7 @@ let main _ =
     IL_001a:  ret
   } """ ]
 
+#if NETCOREAPP
     [<Fact>]
     let ``Pin C# byref struct type with method GetPinnableReference : unit -> byref<T>`` () =
         // TODO: Could be a good idea to test a version of this type written in F# too once we get ref fields in byref-like structs:
@@ -660,7 +661,8 @@ namespace CsLib
     }
 }
 
-"""         |> withName "CsLib" |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+"""         |> withName "CsLib"
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
         FSharp """
 module FixedExpressions
@@ -705,6 +707,7 @@ let main _ =
     IL_0016:  ldobj      [runtime]System.Int32
     IL_001b:  ret
   } """ ]
+#endif
         
     [<Fact>]
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` () =
