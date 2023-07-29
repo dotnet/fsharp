@@ -3685,8 +3685,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        | _ ->
-            lookup()
+        | ValueNone -> lookup()
     | _ ->
         let lid = (mp@[id])
         let tyconSearch ad () =

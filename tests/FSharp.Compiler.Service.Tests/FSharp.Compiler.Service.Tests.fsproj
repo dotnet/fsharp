@@ -97,6 +97,9 @@
     <Compile Include="..\service\PrettyNaming.fs">
       <Link>PrettyNaming.fs</Link>
     </Compile>
+    <Compile Include="..\service\RangeTests.fs">
+      <Link>RangeTests.fs</Link>
+    </Compile>
     <Compile Include="TooltipTests.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
