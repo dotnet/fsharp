@@ -748,4 +748,7 @@ let x = X.M1(Y())
         |> withOptions ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic ((Error 3395, Line 6, Col 14, Line 6, Col 17, "This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'."))
+        |> withDiagnostics [
+            (Error 3395, Line 6, Col 14, Line 6, Col 17, "This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'.")
+            (Error 3395, Line 6, Col 14, Line 6, Col 15, "This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'.")
+        ]
