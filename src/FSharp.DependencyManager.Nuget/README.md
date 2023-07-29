@@ -8,6 +8,11 @@ Since .NET 5.0, `dotnet fsi` ships with dependency manager plugins support that 
 #r "myextension: my extension parameters"
 ```
 
+The initial [RFC](https://github.com/fsharp/fslang-design/blob/main/tooling/FST-1027-fsi-references.md) for this feature overviews how it is designed.
+
+The current implementation follows pattern that can be deducted by refering to [implementation in DependencyProvider.fs](https://github.com/dotnet/fsharp/blob/b9687a58cee795a94eb88cf84e309767cc25f6cb/src/Compiler/DependencyManager/DependencyProvider.fs#L145-L322); due to the system working without having a staticically linked dependency, it uses a late binding approach leveraging runtime reflection to identify if an extension conforms to patterns understood by the specifics of the compiler implementation.
+
+
 # `#r "nuget:"` [nuget](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.DependencyManager.Nuget)
 
 Reference nuget packages, ships by default with `dotnet fsi`.
