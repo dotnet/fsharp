@@ -10294,23 +10294,20 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             // For reference types:
             // let ptr: nativeptr<elem> =
             //   if isNull expr then
-            //     expr
+            //     (nativeint) expr
             //   else
             //     let pinned x = &(expr: 'a).GetPinnableReference()
             //     (nativeint) x
             
+            let pinnedBinding =
+                mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
+                    v.SetIsFixed()
+                    mkConvToNativeInt g ve mBinding)
+            
             if isStructTy g overallExprTy then
-                Some (
-                    mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
-                        v.SetIsFixed()
-                        mkConvToNativeInt g ve mBinding))
+                Some pinnedBinding
             else
-                Some (
-                    mkNullTest g mBinding fixedExpr (
-                        mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
-                            v.SetIsFixed()
-                            mkConvToNativeInt g ve mBinding))
-                        fixedExpr)
+                Some (mkNullTest g mBinding fixedExpr pinnedBinding fixedExpr)
         | None ->
             None
 
