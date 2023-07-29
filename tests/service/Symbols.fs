@@ -8,6 +8,7 @@ module Tests.Service.Symbols
 #endif
 
 open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -751,3 +752,76 @@ type Foo() =
             and set (a: int) (b: float) = ()
 """
             (5, 14, "    member _.X", "X")
+            
+module AnonymousRecord =
+    [<Test>]
+    let ``Anonymous record copy-and-update symbols usage`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+let f (x: {| A: int |}) =
+    { x with A = 1 }
+"""
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(2, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous anon record copy-and-update symbols usage`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+let f (x: {| A: int |}) =
+    {| x with A = 1 |}
+"""
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(2, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous record copy-and-update symbols usages`` () =
+        let _, checkResults = getParseAndCheckResults """
+        
+module X
+let f (r: {| A: int; C: int |}) =
+    { r with A = 1; B = 2; C = 3 }
+"""
+
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(4, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous anon record copy-and-update symbols usages`` () =
+        let _, checkResults = getParseAndCheckResults """
+        
+module X
+let f (r: {| A: int; C: int |}) =
+    {| r with A = 1; B = 2; C = 3 |}
+"""
+
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(5, getSymbolUses.Length)
