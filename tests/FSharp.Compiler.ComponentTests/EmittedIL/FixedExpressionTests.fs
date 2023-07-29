@@ -349,7 +349,7 @@ pinIt 100
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-.method public static void  pinIt(int32 x) cil managed
+  .method public static void  pinIt(int32 x) cil managed
   {
     
     .maxstack  5
@@ -527,11 +527,13 @@ let main _ =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
+open System.Runtime.CompilerServices
 open System
 
 type RefField<'T>(_value) =
     let mutable _value = _value
     member this.Value = _value
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.GetPinnableReference () : byref<'T> = &_value
 
 let pinIt (thing: RefField<int>) =
@@ -557,7 +559,7 @@ let main _ =
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  ldflda     !0 class FixedExpressions/RefField`1<int32>::_value@7
+    IL_0001:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
@@ -577,11 +579,13 @@ let main _ =
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
+open System.Runtime.CompilerServices
 open System
 
 type ReadonlyRefField<'T>(_value) =
     let mutable _value = _value
     member this.Value = _value
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.GetPinnableReference () : inref<'T> = &_value
 
 let pinIt (thing: ReadonlyRefField<int>) =
@@ -607,7 +611,7 @@ let main _ =
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  ldflda     !0 class FixedExpressions/ReadonlyRefField`1<int32>::_value@7
+    IL_0001:  callvirt   instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) class FixedExpressions/ReadonlyRefField`1<int32>::GetPinnableReference()
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
@@ -640,6 +644,7 @@ type ArrayElementRef<'T> =
             raise (ArgumentOutOfRangeException(nameof(index), ""))
         { Values = values; Index = index }
     member this.Value = this.Values[this.Index]
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     member this.GetPinnableReference () : byref<'T> = &this.Values[this.Index]
 
 let pinIt (thing: ArrayElementRef<'a>) =
@@ -666,22 +671,19 @@ let main _ =
     .locals init (native int V_0,
              !!a& pinned V_1)
     IL_0000:  ldarga.s   thing
-    IL_0002:  ldfld      !0[] valuetype FixedExpressions/ArrayElementRef`1<!!a>::Values@
-    IL_0007:  ldarga.s   thing
-    IL_0009:  ldfld      int32 valuetype FixedExpressions/ArrayElementRef`1<!!a>::Index@
-    IL_000e:  ldelema    !!a
-    IL_0013:  stloc.1
-    IL_0014:  ldloc.1
-    IL_0015:  conv.i
-    IL_0016:  stloc.0
-    IL_0017:  ldloc.0
-    IL_0018:  ldc.i4.0
-    IL_0019:  conv.i
-    IL_001a:  sizeof     !!a
-    IL_0020:  mul
-    IL_0021:  add
-    IL_0022:  ldobj      !!a
-    IL_0027:  ret
+    IL_0002:  call       instance !0& valuetype FixedExpressions/ArrayElementRef`1<!!a>::GetPinnableReference()
+    IL_0007:  stloc.1
+    IL_0008:  ldloc.1
+    IL_0009:  conv.i
+    IL_000a:  stloc.0
+    IL_000b:  ldloc.0
+    IL_000c:  ldc.i4.0
+    IL_000d:  conv.i
+    IL_000e:  sizeof     !!a
+    IL_0014:  mul
+    IL_0015:  add
+    IL_0016:  ldobj      !!a
+    IL_001b:  ret
   } """ ]
     
     [<Theory; InlineData("preview")>]
@@ -835,14 +837,14 @@ let main _ =
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         Fsx """
 module FixedExpressions
-open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
+open System.Runtime.CompilerServices
 
 type RefField<'T> = { mutable _value: 'T }
 
 [<Extension>]
 type RefFieldExtensions =
-    [<Extension>]
+    [<Extension; MethodImpl(MethodImplOptions.NoInlining)>]
     static member GetPinnableReference(refField: RefField<'T>) : byref<'T> = &refField._value 
 
 let pinIt (thing: RefField<'T>) =
@@ -869,7 +871,7 @@ let main _ =
     .locals init (native int V_0,
              !!a& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  ldflda     !0 class FixedExpressions/RefField`1<!!a>::_value@
+    IL_0001:  call       !!0& FixedExpressions/RefFieldExtensions::GetPinnableReference<!!1>(class FixedExpressions/RefField`1<!!0>)
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
@@ -883,8 +885,3 @@ let main _ =
     IL_0015:  ldobj      !!a
     IL_001a:  ret
   } """ ]
-
-    // let runtimeHasStringGetPinnableReference =
-    //     let strType = typeof<string>
-    //     strType.
-    //     ()
