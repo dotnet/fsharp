@@ -114,7 +114,7 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Error 685, Line 14, Col 3, Line 14, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
             (Error 685, Line 26, Col 3, Line 26, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
-            (Error 685, Line 28, Col 1, Line 28, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
+            (Error 685, Line 28, Col 3, Line 28, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
         ]
 
     // SOURCE=E_RequiresExplicitTypeArguments02.fs SCFLAGS="--test:ErrorRanges"	# E_RequiresExplicitTypeArguments02.fs
