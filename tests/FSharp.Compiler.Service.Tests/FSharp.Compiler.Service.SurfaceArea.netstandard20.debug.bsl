@@ -10039,8 +10039,13 @@ FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range range0
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeCmdArgs
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeN(System.String, Int32)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range rangeStartup
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range shiftEnd(Int32, Int32, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range shiftStart(Int32, Int32, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range trimRangeToLine(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range unionRanges(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range withEnd(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range withStart(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range withStartEnd(FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] get_posOrder()
 FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Position] posOrder
 FSharp.Compiler.Text.RangeModule: System.Collections.Generic.IComparer`1[FSharp.Compiler.Text.Range] get_rangeOrder()
