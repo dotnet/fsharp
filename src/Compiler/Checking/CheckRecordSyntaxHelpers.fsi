@@ -9,11 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val GroupUpdatesToNestedFields:
-    sink: TcResultsSink ->
-    nenv: NameResolutionEnv ->
-    ad: AccessibilityLogic.AccessorDomain ->
-    fields: ((Ident list * Ident) * Item option * SynExpr option) list ->
-        ((Ident list * Ident) * Item option * SynExpr option) list
+    fields: ((Ident list * Ident) * SynExpr option) list -> ((Ident list * Ident) * SynExpr option) list
 
 val TransformAstForNestedUpdates<'a> :
     cenv: TcFileState ->
@@ -22,4 +18,4 @@ val TransformAstForNestedUpdates<'a> :
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * (range * 'a) ->
-        (Ident list * Ident) * Item option * SynExpr option
+        (Ident list * Ident) * SynExpr option

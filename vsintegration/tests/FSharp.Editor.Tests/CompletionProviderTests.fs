@@ -1577,6 +1577,19 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
         )
 
     [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal, recursive, generic`` () =
+        let fileContents =
+            """
+type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
+
+let fz (a: RecordA<int>) = { a with Zoo.F = 1; Zoo.Zoo.B = 2; F } 
+"""
+
+        VerifyCompletionListExactly(fileContents, "with Zoo.F", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "Zoo.Zoo.B", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "; F", [ "Bar"; "Foo"; "Zoo" ])
+
+    [<Fact>]
     let ``Anonymous record fields have higher priority than methods`` () =
         let fileContents =
             """

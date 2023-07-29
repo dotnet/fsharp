@@ -11,7 +11,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-open Internal.Utilities.Library.Extras
 
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///
@@ -27,50 +26,28 @@ open Internal.Utilities.Library.Extras
 /// which we here convert to
 ///
 /// { x with A = { x.A with B = 10; C = "" } }
-let GroupUpdatesToNestedFields sink nenv ad (fields: ((Ident list * Ident) * Item option * SynExpr option) list) =
+let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
     let rec groupIfNested res xs =
         match xs with
         | [] -> res
         | x :: [] -> x :: res
         | x :: y :: ys ->
-            // Merging { x with A = { x.A with B = 10 }; A = { x.A with C = "" } }   into   { x with A = { x.A with B = 10; C = "" } }
-            //                                           ^
-            //                                           |
-            //                                            -------
-            //                                                   |
-            // { x with A.B = 10; A.C = "" }                     |
-            //                    ^                              |
-            //                    |                              |
-            //                     ------------                  |
-            //                                 |                 |
-            //                           ______________    _______________
-            // We're losing track of the original range of this identifier after this point,
-            // so report it to the name resolution environment
             match x, y with
-            | (lidwid, item, Some (SynExpr.Record (baseInfo, copyInfo, fields1, m1))),
-              (_, _, Some (SynExpr.Record (recordFields = fields2; range = m2))) ->
+            | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, fields1, m))), (_, Some (SynExpr.Record (recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, item, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m1.MakeSynthetic())))
-
-                match item with
-                | Some item -> CallNameResolutionSink sink (m2, nenv, item, [], ItemOccurence.Use, ad)
-                | _ -> ()
+                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
 
                 groupIfNested res (reducedRecd :: ys)
-            | (lidwid, item, Some (SynExpr.AnonRecd (isStruct, copyInfo, fields1, m1, trivia))),
-              (_, _, Some (SynExpr.AnonRecd (recordFields = fields2; range = m2))) ->
+            | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, fields1, m, trivia))),
+              (_, Some (SynExpr.AnonRecd (recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, item, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m1.MakeSynthetic(), trivia)))
-
-                match item with
-                | Some item -> CallNameResolutionSink sink (m2, nenv, item, [], ItemOccurence.Use, ad)
-                | _ -> ()
+                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
 
                 groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
 
     fields
-    |> List.groupBy (fun ((_, field), _, _) -> field.idText)
+    |> List.groupBy (fun ((_, field), _) -> field.idText)
     |> List.collect (fun (_, fields) ->
         if fields.Length < 2 then
             fields
@@ -79,8 +56,8 @@ let GroupUpdatesToNestedFields sink nenv ad (fields: ((Ident list * Ident) * Ite
 
 /// Expands a long identifier into nested copy-and-update expressions.
 ///
-/// `{ x with A.B = 0 }` becomes `{ x with A = { x.A with B = 0 } }`
-let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIdent) exprBeingAssigned withExpr =
+/// `{ x with A.B = 0; A.C = "" }` becomes `{ x with A = { x.A with B = 0 }; A = { x.A with C = "" } }`
+let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid: LongIdent) exprBeingAssigned withExpr =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
             let rec buildLid res (id: Ident) =
@@ -126,37 +103,46 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
             Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None))
         | _ -> None
 
-    let rec synExprRecd copyInfo (id: Ident) fields exprBeingAssigned =
-        match fields with
+    let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
+        match innerFields with
         | [] -> failwith "unreachable"
-        | (fieldId, anonInfo, _) :: rest ->
+        | (fieldId: Ident, item) :: rest ->
+            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, [], ItemOccurence.Use, env.AccessRights)
+
+            let fieldId = ident (fieldId.idText, fieldId.idRange.MakeSynthetic())
+
             let nestedField =
                 if rest.IsEmpty then
                     exprBeingAssigned
                 else
                     synExprRecd copyInfo fieldId rest exprBeingAssigned
 
-            match anonInfo with
-            | Some {
-                       AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                   } ->
+            match item with
+            | Item.AnonRecdField(anonInfo = {
+                                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
+                                            }) ->
                 let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
-                SynExpr.AnonRecd(isStruct, copyInfo id, fields, id.idRange, { OpeningBraceRange = range0 })
+                SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
                         SynExprRecordField((LongIdentWithDots([ fieldId ], []), true), None, Some nestedField, None)
                     ]
 
-                SynExpr.Record(None, copyInfo id, fields, id.idRange)
+                SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange)
 
     let access, fields =
         ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
 
     match access, fields with
     | _, [] -> failwith "unreachable"
-    | accessIds, [ (fieldId, _, item) ] -> (accessIds, fieldId), item, Some exprBeingAssigned
-    | accessIds, (fieldId, _, item) :: rest ->
+    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
+    | accessIds, (outerFieldId, item) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
-        (accessIds, fieldId), item, Some(synExprRecd (recdExprCopyInfo (fields |> List.map p13) withExpr) fieldId rest exprBeingAssigned)
+        CallNameResolutionSink cenv.tcSink (outerFieldId.idRange, env.NameEnv, item, [], ItemOccurence.Use, env.AccessRights)
+
+        let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
+
+        (accessIds, outerFieldId),
+        Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
