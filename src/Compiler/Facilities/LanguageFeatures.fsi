@@ -66,6 +66,7 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | WhileBang
     | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
 
 /// LanguageVersion management
 type LanguageVersion =

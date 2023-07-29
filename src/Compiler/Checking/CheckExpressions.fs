@@ -10264,6 +10264,33 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
     let g = cenv.g
 
+    let tryBuildGetPinnableReferenceCall () =
+        let getPinnableReferenceMInfo =
+            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
+            |> List.tryFind (fun mInfo ->
+                // GetPinnableReference must be a parameterless method with a byref or inref return value
+                match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
+                | [[]], retTy when isByrefTy g retTy && mInfo.IsInstance -> true
+                | _ -> false
+            )
+        
+        match getPinnableReferenceMInfo with
+        | Some mInfo ->
+            checkLanguageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
+            
+            let mInst = FreshenMethInfo mBinding mInfo
+            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
+            
+            let elemTy = destByrefTy g actualRetTy
+            UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
+            
+            Some (
+                mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
+                    v.SetIsFixed()
+                    mkConvToNativeInt g ve mBinding))
+        | None ->
+            None
+
     warning(PossibleUnverifiableCode mBinding)
 
     match overallExprTy with
@@ -10288,20 +10315,29 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             mkConvToNativeInt g ve mBinding)
 
     | ty when isStringTy g ty ->
-        let charPtrTy = mkNativePtrTy g g.char_ty
-        UnifyTypes cenv env mBinding charPtrTy overallPatTy
-        //
-        //    let ptr: nativeptr<char> =
-        //        let pinned s = str
-        //        (nativeptr)s + get_OffsettoStringData()
+        let getPinnableRefCall =
+            if g.langVersion.SupportsFeature LanguageFeature.PreferStringGetPinnableReference then
+                tryBuildGetPinnableReferenceCall ()
+            else
+                None
+        
+        match getPinnableRefCall with
+        | Some expr -> expr
+        | None ->
+            let charPtrTy = mkNativePtrTy g g.char_ty
+            UnifyTypes cenv env mBinding charPtrTy overallPatTy
+            //
+            //    let ptr: nativeptr<char> =
+            //        let pinned s = str
+            //        (nativeptr)s + get_OffsettoStringData()
 
-        mkCompGenLetIn mBinding "pinnedString" g.string_ty fixedExpr (fun (v, ve) ->
-            v.SetIsFixed()
-            let addrOffset = BuildOffsetToStringData cenv env mBinding
-            let stringAsNativeInt = mkConvToNativeInt g ve mBinding
-            let plusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ g.nativeint_ty ]), [], [stringAsNativeInt; addrOffset], mBinding)
-            // check for non-null
-            mkNullTest g mBinding ve plusOffset ve)
+            mkCompGenLetIn mBinding "pinnedString" g.string_ty fixedExpr (fun (v, ve) ->
+                v.SetIsFixed()
+                let addrOffset = BuildOffsetToStringData cenv env mBinding
+                let stringAsNativeInt = mkConvToNativeInt g ve mBinding
+                let plusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ g.nativeint_ty ]), [], [stringAsNativeInt; addrOffset], mBinding)
+                // check for non-null
+                mkNullTest g mBinding ve plusOffset ve)
 
     | ty when isArray1DTy g ty ->
         let elemTy = destArrayTy g overallExprTy
@@ -10335,31 +10371,9 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                 zero)
 
     | _ ->
-        
-        let getPinnableReferenceMInfo =
-            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
-            |> List.tryFind (fun mInfo ->
-                // GetPinnableReference must be a parameterless method with a byref or inref return value
-                match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
-                | [[]], retTy when isByrefTy g retTy && mInfo.IsInstance -> true
-                | _ -> false
-            )
-        
-        match getPinnableReferenceMInfo with
-        | Some mInfo ->
-            checkLanguageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
-            
-            let mInst = FreshenMethInfo mBinding mInfo
-            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
-            
-            let elemTy = destByrefTy g actualRetTy
-            UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
-            
-            mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
-                v.SetIsFixed()
-                mkConvToNativeInt g ve mBinding)
-        | None ->
-            error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+        match tryBuildGetPinnableReferenceCall () with
+        | Some expr -> expr
+        | None -> error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and

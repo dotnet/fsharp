@@ -1,5 +1,6 @@
 namespace EmittedIL.FixedExpressionTests
 
+open System.Reflection
 open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
@@ -8,9 +9,20 @@ open FSharp.Test.Compiler
 
 module Legacy =
     [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Pin naked string`` langVersion = 
+    [<InlineData("7.0", false)>]
+    [<InlineData("preview", true)>]
+    let ``Pin naked string`` (langVersion, featureShouldActivate) =
+        let runtimeSupportsStringGetPinnableReference =
+            typeof<string>.GetMethods()
+            |> Seq.exists (fun m -> m.Name = "GetPinnableReference")
+        
+// Sanity check precondition: if .Net Framework were to ever get GetPinnableReference, we'll know here
+#if NETCOREAPP3_0_OR_GREATER
+        Assert.True(runtimeSupportsStringGetPinnableReference)
+#else
+        Assert.False(runtimeSupportsStringGetPinnableReference)
+#endif
+        
         FSharp """
 module FixedExpressions
 open Microsoft.FSharp.NativeInterop
@@ -22,7 +34,35 @@ let pinIt (str: string) =
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
-        |> verifyIL ["""
+        |>  if featureShouldActivate && runtimeSupportsStringGetPinnableReference then
+                (fun comp ->
+                    comp
+                    |> verifyIL ["""
+  .method public static char  pinIt(string str) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             char& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
+    IL_0008:  conv.i
+    IL_0009:  stloc.0
+    IL_000a:  ldloc.0
+    IL_000b:  ldc.i4.0
+    IL_000c:  conv.i
+    IL_000d:  sizeof     [runtime]System.Char
+    IL_0013:  mul
+    IL_0014:  add
+    IL_0015:  ldobj      [runtime]System.Char
+    IL_001a:  ret
+  } """ ])
+            else
+                (fun comp ->
+                    comp
+                    |> verifyIL ["""
    .method public static char  pinIt(string str) cil managed
    {
      
@@ -50,7 +90,7 @@ let pinIt (str: string) =
      IL_001b:  add
      IL_001c:  ldobj      [runtime]System.Char
      IL_0021:  ret
-   }""" ]
+   } """ ])
 
     [<Theory>]
     [<InlineData("7.0")>]
@@ -843,3 +883,8 @@ let main _ =
     IL_0015:  ldobj      !!a
     IL_001a:  ret
   } """ ]
+
+    // let runtimeHasStringGetPinnableReference =
+    //     let strType = typeof<string>
+    //     strType.
+    //     ()

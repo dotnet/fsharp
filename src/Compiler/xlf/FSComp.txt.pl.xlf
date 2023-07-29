@@ -377,6 +377,11 @@
         <target state="translated">zarządzanie pakietami</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">formatowanie danych binarnych dla liczb całkowitych</target>

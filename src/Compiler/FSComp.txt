@@ -1580,6 +1580,7 @@ featureStrictIndentation,"Raises errors on incorrect indentation, allows better 
 featureChkNotTailRecursive,"Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way."
 featureWhileBang,"'while!' expression"
 featureExtendedFixedBindings,"extended fixed expressions for byrefs, inrefs, and GetPinnableReference"
+featurePreferStringGetPinnableReference,"prefer String.GetPinnableReference in fixed bindings"
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
