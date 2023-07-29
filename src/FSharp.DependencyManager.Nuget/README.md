@@ -1,3 +1,5 @@
+<!-- this content is pointed at by url https://aka.ms/dotnetdepmanager please keep the F# team in the loop to update the redirect if the file is moved -->
+
 # `dotnet fsi` Dependency Manager Plugins
 
 Since .NET 5.0, `dotnet fsi` ships with dependency manager plugins support that can be called like so:
