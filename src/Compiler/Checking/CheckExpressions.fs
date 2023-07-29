@@ -10264,6 +10264,8 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
     let g = cenv.g
 
+    // Search for GetPinnableReference (like https://learn.microsoft.com/en-us/dotnet/api/system.span-1.getpinnablereference?view=net-7.0)
+    // on the target expression, and, if it exists, call it
     let tryBuildGetPinnableReferenceCall () =
         let getPinnableReferenceMInfo =
             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
@@ -10284,10 +10286,31 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             let elemTy = destByrefTy g actualRetTy
             UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
             
-            Some (
-                mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
-                    v.SetIsFixed()
-                    mkConvToNativeInt g ve mBinding))
+            // For value types:
+            // let ptr: nativeptr<elem> =
+            //   let pinned x = &(expr: 'a).GetPinnableReference()
+            //   (nativeint) x
+            
+            // For reference types:
+            // let ptr: nativeptr<elem> =
+            //   if isNull expr then
+            //     expr
+            //   else
+            //     let pinned x = &(expr: 'a).GetPinnableReference()
+            //     (nativeint) x
+            
+            if isStructTy g overallExprTy then
+                Some (
+                    mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
+                        v.SetIsFixed()
+                        mkConvToNativeInt g ve mBinding))
+            else
+                Some (
+                    mkNullTest g mBinding fixedExpr (
+                        mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
+                            v.SetIsFixed()
+                            mkConvToNativeInt g ve mBinding))
+                        fixedExpr)
         | None ->
             None
 

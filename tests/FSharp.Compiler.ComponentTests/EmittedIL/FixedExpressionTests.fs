@@ -45,19 +45,25 @@ let pinIt (str: string) =
     .locals init (native int V_0,
              char& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
-    IL_0006:  stloc.1
-    IL_0007:  ldloc.1
-    IL_0008:  conv.i
-    IL_0009:  stloc.0
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.0
-    IL_000c:  conv.i
-    IL_000d:  sizeof     [runtime]System.Char
-    IL_0013:  mul
-    IL_0014:  add
-    IL_0015:  ldobj      [runtime]System.Char
-    IL_001a:  ret
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     [runtime]System.Char
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      [runtime]System.Char
+    IL_0020:  ret
   } """ ])
             else
                 (fun comp ->
@@ -559,19 +565,25 @@ let main _ =
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
-    IL_0006:  stloc.1
-    IL_0007:  ldloc.1
-    IL_0008:  conv.i
-    IL_0009:  stloc.0
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.0
-    IL_000c:  conv.i
-    IL_000d:  sizeof     [runtime]System.Int32
-    IL_0013:  mul
-    IL_0014:  add
-    IL_0015:  ldobj      [runtime]System.Int32
-    IL_001a:  ret
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     [runtime]System.Int32
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      [runtime]System.Int32
+    IL_0020:  ret
   } """ ]
         
     [<Theory; InlineData("preview")>]
@@ -611,19 +623,25 @@ let main _ =
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) class FixedExpressions/ReadonlyRefField`1<int32>::GetPinnableReference()
-    IL_0006:  stloc.1
-    IL_0007:  ldloc.1
-    IL_0008:  conv.i
-    IL_0009:  stloc.0
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.0
-    IL_000c:  conv.i
-    IL_000d:  sizeof     [runtime]System.Int32
-    IL_0013:  mul
-    IL_0014:  add
-    IL_0015:  ldobj      [runtime]System.Int32
-    IL_001a:  ret
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) class FixedExpressions/ReadonlyRefField`1<int32>::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     [runtime]System.Int32
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      [runtime]System.Int32
+    IL_0020:  ret
   } """ ]
 
     [<Theory; InlineData("preview")>]
@@ -741,19 +759,25 @@ let main _ =
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  callvirt   instance !0& class [CsLib]PinnableReference`1<int32>::GetPinnableReference()
-    IL_0006:  stloc.1
-    IL_0007:  ldloc.1
-    IL_0008:  conv.i
-    IL_0009:  stloc.0
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.0
-    IL_000c:  conv.i
-    IL_000d:  sizeof     [runtime]System.Int32
-    IL_0013:  mul
-    IL_0014:  add
-    IL_0015:  ldobj      [runtime]System.Int32
-    IL_001a:  ret
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance !0& class [CsLib]PinnableReference`1<int32>::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     [runtime]System.Int32
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      [runtime]System.Int32
+    IL_0020:  ret
   } """ ]
 
 #if NETCOREAPP
@@ -871,17 +895,23 @@ let main _ =
     .locals init (native int V_0,
              !!a& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  call       !!0& FixedExpressions/RefFieldExtensions::GetPinnableReference<!!1>(class FixedExpressions/RefField`1<!!0>)
-    IL_0006:  stloc.1
-    IL_0007:  ldloc.1
-    IL_0008:  conv.i
-    IL_0009:  stloc.0
-    IL_000a:  ldloc.0
-    IL_000b:  ldc.i4.0
-    IL_000c:  conv.i
-    IL_000d:  sizeof     !!a
-    IL_0013:  mul
-    IL_0014:  add
-    IL_0015:  ldobj      !!a
-    IL_001a:  ret
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  call       !!0& FixedExpressions/RefFieldExtensions::GetPinnableReference<!!1>(class FixedExpressions/RefField`1<!!0>)
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     !!a
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      !!a
+    IL_0020:  ret
   } """ ]
