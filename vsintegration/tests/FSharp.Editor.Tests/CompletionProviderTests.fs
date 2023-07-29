@@ -1718,3 +1718,36 @@ match U1 (1, A) with
         VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
         VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
         VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
+
+    [<Fact>]
+    let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
+        let fileContents =
+            """
+module G =
+    let a = 1
+
+    [<Literal>]
+    let b = 1
+
+    let c () = ()
+
+type A =
+    | B of a: int
+    | C of float
+
+    static member Aug () = ()
+
+for G. in [] do
+
+let y x =
+    match x with
+    | [ B G. ] -> ()
+    | A.
+
+for Some ((0, C System.Double. ))
+"""
+
+        VerifyCompletionListExactly(fileContents, "for G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| [ B G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| A.", [ "B"; "C" ])
+        VerifyCompletionList(fileContents, "for Some ((0, C System.Double.", [ "Epsilon"; "MaxValue" ], [ "Abs" ])

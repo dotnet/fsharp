@@ -1268,6 +1268,7 @@ module ParsedInput =
                 TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(None, id.Range))) pos
             | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
                 TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range))) pos
+            | [] when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
             | _ ->
                 pats
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)

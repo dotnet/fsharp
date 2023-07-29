@@ -1530,6 +1530,9 @@ type internal TypeCheckInfo
                             |> List.filter (fun item ->
                                 match item.Item with
                                 | Item.Value v -> v.LiteralValue.IsSome
+                                | Item.ILField field -> field.LiteralValue.IsSome
+                                | Item.MethodGroup _
+                                | Item.Property _ -> false
                                 | _ -> true)
 
                         filtered, denv, range)
