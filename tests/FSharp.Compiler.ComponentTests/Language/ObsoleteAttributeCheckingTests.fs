@@ -1165,3 +1165,98 @@ let modified = { myOuter with Ctx = { myOuter.Ctx with ccont = 5 } }
             (Error 101, Line 6, Col 30, Line 6, Col 33, "This construct is deprecated. Use Field2 instead")
             (Error 101, Line 7, Col 31, Line 7, Col 34, "This construct is deprecated. Use Field2 instead")
         ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in an object expression`` () =
+        Fsx """
+open System
+type IFirst =
+  [<Obsolete("Use G instead")>]
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 21, Line 13, Col 26, "This construct is deprecated. Use G instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in an object expression`` () =
+        Fsx """
+open System
+type IFirst =
+  [<Obsolete("Use G instead", true)>]
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in interface that is used in an object expression`` () =
+        Fsx """
+open System
+[<Obsolete("Use G instead")>]
+type IFirst =
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in interface that is used in an object expression`` () =
+        Fsx """
+open System
+[<Obsolete("Use G instead", true)>]
+type IFirst =
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
+            (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
+            (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+        ]
