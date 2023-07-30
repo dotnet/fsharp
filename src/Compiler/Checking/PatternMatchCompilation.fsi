@@ -25,10 +25,10 @@ type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range
     | TPat_as of Pattern * PatternValBinding * range
-    | TPat_disjs of Pattern list * range
+    | TPat_disjs of patterns: Pattern list * range: range
     | TPat_conjs of Pattern list * range
     | TPat_query of (Expr * TType list * bool * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
-    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
+    | TPat_unioncase of unionCase: UnionCaseRef * inst: TypeInst * patterns: Pattern list * range: range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of TupInfo * Pattern list * TType list * range
     | TPat_array of Pattern list * TType * range

@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
+open FSharp.Compiler.Features
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -40,10 +41,10 @@ type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range  (* note = TPat_disjs([], m), but we haven't yet removed that duplication *)
     | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
-    | TPat_disjs of  Pattern list * range
+    | TPat_disjs of  patterns: Pattern list * range: range
     | TPat_conjs of  Pattern list * range
     | TPat_query of (Expr * TType list * bool * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
-    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
+    | TPat_unioncase of unionCase: UnionCaseRef * inst: TypeInst * patterns: Pattern list * range: range
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
@@ -1736,9 +1737,62 @@ let isProblematicClause (clause: MatchClause) =
     let ips = if isPatternDisjunctive clause.Pattern then Array.append ips ips else ips
     // Look for multiple decision points.
     // We don't mind about the last logical decision point
-    ips.Length > 0 && Array.exists id ips[0..ips.Length-2] 
+    ips.Length > 0 && Array.exists id ips[0..ips.Length-2]
+    
+let rec (|PatternInfo|_|) pattern =
+    match pattern with
+    | Pattern.TPat_unioncase(union, _tps, _patterns, m) ->
+        Some([(union.CaseName, m)])
+    | TPat_const(_const, _range) -> None
+    | TPat_wild _range -> None
+    | TPat_as(_pattern, _patternValBinding, _range) -> None
+    | TPat_disjs(patterns, _range) ->
+        let res =
+            patterns
+            |> List.choose(fun p ->
+                match p with
+                | PatternInfo pats -> Some pats
+                | _ -> None)
+            |> List.concat
+        Some res
+    | TPat_conjs(_patterns, _range) -> None
+    | TPat_query(_foo, _pattern, _range) -> None
+    | TPat_exnconstr(_entityRef, _patterns, _range) -> None
+    | TPat_tuple(_tupInfo, _patterns, _tTypes, _range) -> None
+    | TPat_array(_patterns, _tType, _range) -> None
+    | TPat_recd(_entityRef, _tTypes, _patterns,_range) -> None
+    | TPat_range(_c, _c1, _range) -> None
+    | TPat_null _range -> None
+    | TPat_isinst(_tType, _type, _patternOption, _range) -> None
+    | TPat_error _range -> None
+    // | pat ->
+    //     match pat with
+    //     | PatternInfo idents -> Some idents
+    //     | _ -> None
+    
+let private CheckForDuFieldDuplicates (clauses: MatchClause list) =
+    match clauses with
+    | [] -> ()
+    | headClause :: tailClauses ->
+        let (MatchClause(pattern, _exprOption, _decisionTreeTarget, _range)) = headClause
+        let fstClause =
+            match pattern with
+            | PatternInfo [ (clause, _) ] -> clause
+            | _ -> ""
+            
+        for cls in tailClauses do
+            let (MatchClause(pattern, _exprOption, _decisionTreeTarget, _range)) = cls
+            match pattern with
+            | PatternInfo clauses ->
+                
+                for clause, m in clauses do
+                    if clause = fstClause then
+                        warning (RuleNeverMatched m) 
+            | _ -> ()
 
-let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+let rec CompilePattern (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+    if g.langVersion.SupportsFeature LanguageFeature.WarningForDuDuplicateFields then
+        CheckForDuFieldDuplicates clausesL
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
 
