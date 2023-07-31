@@ -1083,7 +1083,12 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         let message =
             match anonInfo1.SortedNames, anonInfo2.SortedNames with
             | Subset missingFields ->
-                FSComp.SR.tcAnonRecdFieldNameSubset(string missingFields)
+                match missingFields with
+                | [missingField] ->
+                    FSComp.SR.tcAnonRecdSingleFieldNameSubset(string missingField)
+                | _ ->
+                    let missingFields = String.concat ", " missingFields
+                    FSComp.SR.tcAnonRecdMultipleFieldsNameSubset(string missingFields)
             | Superset extraFields ->
                 FSComp.SR.tcAnonRecdFieldNameSuperset(string extraFields)
             | Overlap (missingFields, extraFields) ->
