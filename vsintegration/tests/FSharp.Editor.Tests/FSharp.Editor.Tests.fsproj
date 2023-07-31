@@ -49,6 +49,12 @@
     <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinitionTests.fs" />
     <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpressionTests.fs" />
     <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtractionTests.fs" />
+    <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocationTests.fs" />
+    <Compile Include="CodeFixes\RemoveUnusedBindingTests.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoDataTests.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

@@ -1,35 +1,28 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Editor.Tests.CodeFixes.FSharpWrapExpressionInParenthesesFixProviderTests
+module FSharp.Editor.Tests.CodeFixes.AddNewKeywordToDisposableConstructorInvocationTests
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = WrapExpressionInParenthesesCodeFixProvider()
-
-// Test case is taken from the original PR:
-// https://github.com/dotnet/fsharp/pull/10460
+let private codeFix = AddNewKeywordCodeFixProvider()
 
 [<Fact>]
-let ``Fixes FS0597`` () =
+let ``Fixes FS0760`` () =
     let code =
         """
-let rng = System.Random()
-
-printfn "Hello %d" rng.Next(5)
+let sr = System.IO.StreamReader "test.txt"
 """
 
     let expected =
         Some
             {
-                Message = "Wrap expression in parentheses"
+                Message = "Add 'new' keyword"
                 FixedCode =
                     """
-let rng = System.Random()
-
-printfn "Hello %d" (rng.Next(5))
+let sr = new System.IO.StreamReader "test.txt"
 """
             }
 

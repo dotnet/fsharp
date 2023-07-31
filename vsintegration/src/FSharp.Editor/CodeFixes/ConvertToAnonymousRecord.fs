@@ -16,7 +16,7 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
 
     static let title = SR.ConvertToAnonymousRecord()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS3578")
 
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 

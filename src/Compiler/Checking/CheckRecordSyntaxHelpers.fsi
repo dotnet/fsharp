@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree

@@ -633,6 +633,10 @@ val destAnyParTy: TcGlobals -> TType -> Typar
 
 val destMeasureTy: TcGlobals -> TType -> Measure
 
+val destAnonRecdTy: TcGlobals -> TType -> AnonRecdTypeInfo * TTypes
+
+val destStructAnonRecdTy: TcGlobals -> TType -> TTypes
+
 val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
 val isFunTy: TcGlobals -> TType -> bool
@@ -650,6 +654,8 @@ val isStructAnonRecdTy: TcGlobals -> TType -> bool
 val isAnonRecdTy: TcGlobals -> TType -> bool
 
 val isUnionTy: TcGlobals -> TType -> bool
+
+val isStructUnionTy: TcGlobals -> TType -> bool
 
 val isReprHiddenTy: TcGlobals -> TType -> bool
 

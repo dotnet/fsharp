@@ -1,16 +1,14 @@
 ﻿
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
 open FSharp.Compiler.Tokenization
-open FsUnit
-open NUnit.Framework
+open FSharp.Test
+open Xunit
 
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None, None)
 
@@ -30,7 +28,7 @@ let tokenizeLines (lines:string[]) =
       let tokenizer = sourceTok.CreateLineTokenizer(line)
       yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]
 
-[<Test>]
+[<Fact>]
 let ``Tokenizer test - simple let with string``() =
     let tokenizedLines = 
       tokenizeLines
@@ -56,9 +54,9 @@ let ``Tokenizer test - simple let with string``() =
     if actual <> expected then 
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
-        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
-[<Test>]
+[<Fact>]
 let ``Tokenizer test 2 - single line non-nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
@@ -121,10 +119,9 @@ let ``Tokenizer test 2 - single line non-nested string interpolation``() =
     if actual <> expected then 
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
-        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
-
-[<Test>]
+[<Fact>]
 let ``Tokenizer test - multiline non-nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
@@ -147,9 +144,9 @@ let ``Tokenizer test - multiline non-nested string interpolation``() =
     if actual <> expected then 
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
-        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
-[<Test>]
+[<Fact>]
 // checks nested '{' and nested single-quote strings
 let ``Tokenizer test - multi-line nested string interpolation``() =
     let tokenizedLines = 
@@ -189,9 +186,9 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
     if actual <> expected then 
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
-        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
-[<Test>]
+[<Fact>]
 let ``Tokenizer test - single-line nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
@@ -212,10 +209,9 @@ let ``Tokenizer test - single-line nested string interpolation``() =
     if actual <> expected then 
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
-        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+        actual |> Assert.shouldBeEqualWith expected (sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
-
-[<Test>]
+[<Fact>]
 let ``Unfinished idents``() =
     let tokenizedLines =
       tokenizeLines
@@ -232,4 +228,4 @@ let ``Unfinished idents``() =
          ["IDENT", "``a`"]
          ["IDENT", "```"]]
 
-    actual |> shouldEqual expected
+    actual |> Assert.shouldBe expected

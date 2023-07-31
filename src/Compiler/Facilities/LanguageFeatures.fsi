@@ -64,6 +64,7 @@ type LanguageFeature =
     | DiagnosticForObjInference
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
+    | UnmanagedConstraintCsharpInterop
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
