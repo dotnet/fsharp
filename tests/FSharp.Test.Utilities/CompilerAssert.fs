@@ -290,6 +290,9 @@ module rec CompilerAssertHelpers =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
+                |> Option.orElseWith (fun () -> 
+                    deps 
+                    |> Array.tryFind (fun (x: string) -> args.Name.StartsWith(Path.GetFileNameWithoutExtension(x) + ", Version")))
                 |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))

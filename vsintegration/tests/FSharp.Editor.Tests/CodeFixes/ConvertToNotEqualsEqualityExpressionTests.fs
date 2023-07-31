@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = ConvertToNotEqualsEqualityExpressionCodeFixProvider()
-let private diagnostic = 0043 // The type doesn't support the value...
 
 [<Fact>]
 let ``Fixes FS0043 for C# inequality operator`` () =
@@ -27,7 +26,7 @@ let areNotEqual (x: int) (y: int) = x <> y
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -42,6 +41,6 @@ let x : RecordType = null
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

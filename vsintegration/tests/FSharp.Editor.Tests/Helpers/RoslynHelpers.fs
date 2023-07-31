@@ -338,11 +338,20 @@ type RoslynTestHelpers private () =
 
         solution, checker
 
-    static member GetFsDocument code =
-        // without this lib some symbols are not loaded
+    static member GetFsDocument(code, ?customProjectOption: string) =
+        let customProjectOptions =
+            customProjectOption
+            |> Option.map (fun o -> [| o |])
+            |> Option.defaultValue (Array.empty)
+
         let options =
             { RoslynTestHelpers.DefaultProjectOptions with
-                OtherOptions = [| "--targetprofile:netcore" |]
+                OtherOptions =
+                    [|
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    |]
+                    |> Array.append customProjectOptions
             }
 
         RoslynTestHelpers.CreateSolution(code, options = options)
