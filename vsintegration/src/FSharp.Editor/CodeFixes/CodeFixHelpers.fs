@@ -2,7 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -17,7 +19,7 @@ open CancellableTasks
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let private reportCodeFixTelemetry
+    let reportCodeFixTelemetry
         (diagnostics: ImmutableArray<Diagnostic>)
         (doc: Document)
         (staticName: string)
@@ -106,3 +108,62 @@ module internal CodeFixExtensions =
                 let! sourceText = ctx.GetSourceTextAsync()
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
             }
+
+// This cannot be an extension on the code fix context
+// because the underlying GetFixAllProvider method doesn't take the context in.
+#nowarn "3511" // state machine not statically compilable
+
+[<AutoOpen>]
+module IFSharpCodeFixProviderExtensions =
+    type IFSharpCodeFixProvider with
+
+        // this is not used anywhere, it's just needed to create the context
+        static member private Action =
+            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
+        member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
+            cancellableTask {
+                let sw = Stopwatch.StartNew()
+
+                let! token = CancellableTask.getCurrentCancellationToken ()
+                let! sourceText = doc.GetTextAsync token
+
+                let! codeFixOpts =
+                    allDiagnostics
+                    // The distiction is to avoid collisions of compiler and analyzer diags.
+                    // See: https://github.com/dotnet/fsharp/issues/15620
+                    // TODO: this crops the diags on a very high level,
+                    // a proper fix is needed.
+                    |> Seq.distinctBy (fun d -> d.Id, d.Location)
+                    |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
+                    |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
+                    |> Seq.map (fun task -> task token)
+                    |> Task.WhenAll
+
+                let codeFixes = codeFixOpts |> Seq.choose id
+                let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
+                let updatedDoc = doc.WithText(sourceText.WithChanges changes)
+
+                let name =
+                    codeFixes
+                    |> Seq.tryHead
+                    |> Option.map (fun fix -> fix.Name)
+                    // Now, I cannot see this happening.
+                    // How could a bulk code fix get activated for zero changes?
+                    // But since that's for telemetry purposes,
+                    // let's be on the safe side.
+                    |> Option.defaultValue "UnknownCodeFix"
+
+                CodeFixHelpers.reportCodeFixTelemetry
+                    allDiagnostics
+                    updatedDoc
+                    name
+                    [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
+
+                return updatedDoc
+            }
+
+        member provider.RegisterFsharpFixAll() =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                provider.FixAllAsync fixAllCtx doc allDiagnostics
+                |> CancellableTask.start fixAllCtx.CancellationToken)

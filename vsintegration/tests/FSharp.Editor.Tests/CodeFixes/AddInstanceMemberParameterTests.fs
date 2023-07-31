@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = AddInstanceMemberParameterCodeFixProvider()
-let private diagnostic = 0673 // This instance member needs a parameter to represent the object being invoked...
 
 [<Fact>]
 let ``Fixes FS0673`` () =
@@ -29,6 +28,6 @@ type UsefulTestHarness() =
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

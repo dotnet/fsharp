@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = ChangeRefCellDerefToNotExpressionCodeFixProvider()
-let private diagnostic = 0001 // Type mismatch...
 
 [<Fact>]
 let ``Fixes FS0001 for invalid negation syntax`` () =
@@ -27,7 +26,7 @@ let myNot (value: bool) = not value
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -40,6 +39,6 @@ let one, two = 1, 2, 3
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

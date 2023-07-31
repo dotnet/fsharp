@@ -3,9 +3,9 @@ module Tests.Service.TreeVisitorTests
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Syntax
-open NUnit.Framework
+open Xunit
 
-[<Test>]
+[<Fact>]
 let ``Visit type test`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
@@ -21,7 +21,7 @@ let ``Visit type test`` () =
     SyntaxTraversal.Traverse(mkPos 1 3, parseTree, visitor)
     |> Option.iter (fun _ -> failwith "Should not visit type")
 
-[<Test>]
+[<Fact>]
 let ``Visit record definition test`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
@@ -34,7 +34,7 @@ let ``Visit record definition test`` () =
     | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
-[<Test>]
+[<Fact>]
 let ``Visit union definition test`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
@@ -47,7 +47,7 @@ let ``Visit union definition test`` () =
     | Some [ SynUnionCase (ident = SynIdent(id1,_)); SynUnionCase (ident = SynIdent(id2,_)) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit union definition"
 
-[<Test>]
+[<Fact>]
 let ``Visit enum definition test`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
@@ -60,7 +60,7 @@ let ``Visit enum definition test`` () =
     | Some [ SynEnumCase (ident = SynIdent (id1, _)); SynEnumCase (ident = SynIdent (id2, _)) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit enum definition"
 
-[<Test>]
+[<Fact>]
 let ``Visit recursive let binding`` () =
     let visitor =
         { new SyntaxVisitorBase<_>() with
