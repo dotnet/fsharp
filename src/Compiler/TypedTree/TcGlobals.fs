@@ -165,6 +165,8 @@ let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.Compiler
 [<Literal>]
 let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
 [<Literal>]
+let tname_UnmanagedType = "System.Runtime.InteropServices.UnmanagedType"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -336,6 +338,7 @@ type TcGlobals(
   static let isInEmbeddableKnownSet name =
       match name with
       | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
       | _ -> false
@@ -1415,6 +1418,7 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
@@ -1423,6 +1427,7 @@ type TcGlobals(
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 

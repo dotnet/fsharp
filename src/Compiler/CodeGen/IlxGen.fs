@@ -5555,7 +5555,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
     let refTypeConstraint =
         tp.Constraints
         |> List.exists (function
-            | TyparConstraint.IsReferenceType _ -> true
+            | TyparConstraint.IsReferenceType _
             | TyparConstraint.SupportsNull _ -> true
             | _ -> false)
 
@@ -5570,6 +5570,13 @@ and GenGenericParam cenv eenv (tp: Typar) =
         |> List.exists (function
             | TyparConstraint.RequiresDefaultConstructor _ -> true
             | _ -> false)
+
+    let emitUnmanagedInIlOutput =
+        cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop)
+        && tp.Constraints
+           |> List.exists (function
+               | TyparConstraint.IsUnmanaged _ -> true
+               | _ -> false)
 
     let tpName =
         // use the CompiledName if given
@@ -5598,16 +5605,31 @@ and GenGenericParam cenv eenv (tp: Typar) =
         else
             nm
 
-    let tpAttrs = mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)
+    let attributeList =
+        let defined = GenAttrs cenv eenv tp.Attribs
+
+        if emitUnmanagedInIlOutput then
+            (GetIsUnmanagedAttribute g) :: defined
+        else
+            defined
+
+    let tpAttrs = mkILCustomAttrs (attributeList)
+
+    let modreqValueType () =
+        ILType.Modified(true, g.iltyp_UnmanagedType.TypeRef, g.iltyp_ValueType)
 
     {
         Name = tpName
-        Constraints = subTypeConstraints
+        Constraints =
+            if emitUnmanagedInIlOutput then
+                (modreqValueType () :: subTypeConstraints)
+            else
+                subTypeConstraints
         Variance = NonVariant
         CustomAttrsStored = storeILCustomAttrs tpAttrs
         MetadataIndex = NoMetadataIdx
         HasReferenceTypeConstraint = refTypeConstraint
-        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint
+        HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint || emitUnmanagedInIlOutput
         HasDefaultConstructorConstraint = defaultConstructorConstraint
     }
 

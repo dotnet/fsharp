@@ -2490,6 +2490,7 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
         (if gp.HasReferenceTypeConstraint then 0x0004 else 0x0000) |||
         (if gp.HasNotNullableValueTypeConstraint then 0x0008 else 0x0000) |||
         (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000)
+   
 
     let mdVersionMajor, _ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
     if (mdVersionMajor = 1) then
