@@ -1711,3 +1711,4 @@ featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only fun
 3570,tcStaticBindingInExtrinsicAugmentation,"Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."
 3571,pickleFsharpCoreBackwardsCompatible,"Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: %s . Context: \n %s "
 3577,tcOverrideUsesMultipleArgumentsInsteadOfTuple,"This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c')."
+3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."

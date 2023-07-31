@@ -32,6 +32,69 @@ let band = {| Name = "The Velvet Underground" |}
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``Fixes FS3578 for anon records`` () =
+    let code =
+        """
+let t3 (t1: {| gu: string; ff: int |}) = { t1 with ff = 3 }
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Convert to Anonymous Record"
+                FixedCode =
+                    """
+let t3 (t1: {| gu: string; ff: int |}) = {| t1 with ff = 3 |}
+"""
+            }
+
+    let actual = codeFix |> tryFix code 3578
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS3578 for struct anon records`` () =
+    let code =
+        """
+let t3 (t1: struct {| gu: string; ff: int |}) = { t1 with ff = 3 }
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Convert to Anonymous Record"
+                FixedCode =
+                    """
+let t3 (t1: struct {| gu: string; ff: int |}) = {| t1 with ff = 3 |}
+"""
+            }
+
+    let actual = codeFix |> tryFix code 3578
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS3578 for anon records with multiple fields`` () =
+    let code =
+        """
+let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Convert to Anonymous Record"
+                FixedCode =
+                    """
+let f (r: {| A: int; C: int |}) = {| r with A = 1; B = 2; C = 3 |}
+"""
+            }
+
+    let actual = codeFix |> tryFix code 3578
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``Doesn't fix FS0039 for random undefined identifiers`` () =
     let code =
         """

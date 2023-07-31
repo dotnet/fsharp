@@ -42,6 +42,11 @@
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用带参数的构造函数。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">参数重复。此方法中多次使用了参数“{0}”。</target>

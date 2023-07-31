@@ -42,6 +42,11 @@
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir.Bağımsız değişkenlere sahip oluşturucuya izin verilmez.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Yinelenen parametre. '{0}' parametresi bu metotta bir kereden fazla kullanıldı.</target>

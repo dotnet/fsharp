@@ -42,6 +42,11 @@
         <target state="translated">Jeśli typ używa obu [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;] atrybutów, oznacza to, że jest statyczny. Konstruktor z argumentami jest niedozwolony.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Zduplikowany parametr. Parametr „{0}” został użyty więcej niż raz w tej metodzie.</target>
