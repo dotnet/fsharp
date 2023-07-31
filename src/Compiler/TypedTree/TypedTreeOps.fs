@@ -3783,6 +3783,12 @@ let (|IntegerConstExpr|_|) expr =
     | Expr.Const (Const.UInt64 _, _, _) -> Some ()
     | _ -> None
 
+let (|FloatConstExpr|_|) expr =
+    match expr with
+    | Expr.Const (Const.Single _, _, _)
+    | Expr.Const (Const.Double _, _, _) -> Some ()
+    | _ -> None
+
 let (|SpecificBinopExpr|_|) g vrefReqd expr = 
     match expr with 
     | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> Some (arg1, arg2)
@@ -9598,7 +9604,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    valRefEq g vref g.bitwise_unary_not_vref ||
                    valRefEq g vref g.enum_vref)
              -> checkExpr vrefs arg
-        // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&
+        // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&, |||, ^^^
         | BinopExpr g (vref, arg1, arg2) 
              when (valRefEq g vref g.equals_operator_vref ||
                    valRefEq g vref g.compare_operator_vref ||
@@ -9611,12 +9617,13 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    valRefEq g vref g.unchecked_addition_vref ||
                    valRefEq g vref g.unchecked_multiply_vref ||
                    valRefEq g vref g.unchecked_subtraction_vref ||
-        // Note: division and modulus can raise exceptions, so are not included
+                   // Note: division and modulus can raise exceptions, so are not included
                    valRefEq g vref g.bitwise_shift_left_vref ||
                    valRefEq g vref g.bitwise_shift_right_vref ||
                    valRefEq g vref g.bitwise_xor_vref ||
                    valRefEq g vref g.bitwise_and_vref ||
-                   valRefEq g vref g.bitwise_or_vref) &&
+                   valRefEq g vref g.bitwise_or_vref ||
+                   valRefEq g vref g.exponentiation_vref) &&
                    (not (typeEquiv g (tyOfExpr g arg1) g.string_ty) && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty) )
                 -> checkExpr vrefs arg1 && checkExpr vrefs arg2 
         | Expr.Val (vref, _, _) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
@@ -9802,6 +9809,36 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         match v1 with
         | IntegerConstExpr ->
             EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificBinopExpr g g.bitwise_xor_vref (arg1, arg2) ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithBinOp ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificBinopExpr g g.exponentiation_vref (arg1, arg2) ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+        match v1 with
+        | FloatConstExpr ->
+            EvalArithBinOp (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** )) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificUnopExpr g g.bitwise_unary_not_vref arg1 ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+        
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithUnOp ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore, ignore) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x

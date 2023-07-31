@@ -65,6 +65,7 @@ type LanguageFeature =
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
+    | WhileBang
 
 /// LanguageVersion management
 type LanguageVersion =

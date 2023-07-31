@@ -75,6 +75,7 @@ type LanguageFeature =
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
+    | WhileBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -173,6 +174,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
+                LanguageFeature.WhileBang, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -303,6 +305,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
+        | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
