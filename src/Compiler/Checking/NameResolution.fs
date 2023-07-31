@@ -178,7 +178,7 @@ type Item =
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
-    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+    | AnonRecdField of anonInfo: AnonRecdTypeInfo * tys: TTypes * fieldIndex: int * range: range
 
     // The following are never in the items table but are valid results of binding
     // an identifier in different circumstances.
@@ -3685,8 +3685,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        | _ ->
-            lookup()
+        | ValueNone -> lookup()
     | _ ->
         let lid = (mp@[id])
         let tyconSearch ad () =
@@ -3746,7 +3745,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         match tryDestAnonRecdTy g ty with
         | ValueSome (anonInfo, tys) ->
             match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id.idText) with
-            | Some index -> OneSuccess (Choice2Of2 (anonInfo, tys[index]))
+            | Some index -> OneSuccess (Item.AnonRecdField (anonInfo, tys, index, m))
             | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalStringOfType nenv.eDisplayEnv ty, id.idText), m))
         | _ ->
             let otherRecordFields ty =
@@ -3761,7 +3760,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 
             if isRecdTy g ty then 
                 match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
-                | ValueSome (RecdFieldInfo (_, rfref)) -> OneSuccess (Choice1Of2 rfref)
+                | ValueSome info -> OneSuccess (Item.RecdField info)
                 | _ ->
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels addToBuffer = 
@@ -3777,14 +3776,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                     // Eliminate duplicates arising from multiple 'open' 
                     fields 
                     |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
-                    |> List.map Choice1Of2
+                    |> List.map (fun rfref -> Item.RecdField (FreshenRecdFieldRef ncenv m rfref))
                     |> success
                 | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecordFields ty))
-
-    let anonRecdInfoF field =
-        match field with
-        | Choice1Of2 _ -> None
-        | Choice2Of2 (anonInfo, _) -> Some anonInfo
 
     match lid with
     | [] -> [], []
@@ -3792,7 +3786,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         let res =
             lookupField recdTy id
             |> ForceRaise
-            |> List.map (fun x -> id, anonRecdInfoF x)
+            |> List.map (fun x -> id, x)
 
         [], res
     | id :: _ ->
@@ -3800,10 +3794,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | id :: rest ->
                 lookupField recdTy id
-                |?> List.map (fun x ->
-                    match x with
-                    | Choice1Of2 rfref -> None, id, rfref.RecdField.FormalType, rest
-                    | Choice2Of2 (anonInfo, fldTy) -> Some anonInfo, id, fldTy, rest)
+                |?> List.map (fun x -> id, x, rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -3819,7 +3810,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs
                     |?> List.choose (fun x ->
                         match x with
-                        | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest -> Some (None, fieldId, rfref.RecdField.FormalType, rest)
+                        | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
                         | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -3830,9 +3821,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    None, fieldId, rfinfo.RecdField.FormalType, restAfterField)
+                    fieldId, Item.RecdField rfinfo, restAfterField)
 
-        let anonRecdInfo, fieldId, fieldTy, rest =
+        let fieldId, item, rest =
             let search =
                 if isAnonRecdTy then
                     fieldSearch ()
@@ -3850,24 +3841,29 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 lid |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
 
         match rest with
-        | [] -> idsBeforeField, [ (fieldId, anonRecdInfo) ]
+        | [] -> idsBeforeField, [ (fieldId, item) ]
         | _ ->  
-            let rec nestedFieldSearch fields ty lid =
+            let rec nestedFieldSearch fields parentTy lid =
                 match lid with
                 | [] -> fields
                 | id :: rest ->
-                    let resolved = lookupField ty id |> ForceRaise
+                    let resolved = lookupField parentTy id |> ForceRaise
                     let fieldTy =
                         match resolved with
-                        | [ Choice1Of2 rfref ] -> rfref.RecdField.FormalType
-                        | [ Choice2Of2 (_, fieldTy) ] -> fieldTy
-                        | _ -> ty
+                        | [ Item.RecdField info ] -> info.FieldType
+                        | [ Item.AnonRecdField (_, tys, index, _) ] -> tys[index]
+                        | _ -> parentTy
 
-                    let resolved = resolved |> List.map (fun x -> id, anonRecdInfoF x)
-
+                    let resolved = resolved |> List.map (fun x -> id, x)
                     nestedFieldSearch (fields @ resolved) fieldTy rest
 
-            idsBeforeField, (fieldId, anonRecdInfo) :: (nestedFieldSearch [] fieldTy rest)
+            let fieldTy =
+                match item with
+                | Item.RecdField info -> info.FieldType
+                | Item.AnonRecdField (_, tys, index, _) -> tys[index]
+                | _ -> g.obj_ty
+
+            idsBeforeField, (fieldId, item) :: (nestedFieldSearch [] fieldTy rest)
 
 /// Resolve F#/IL "." syntax in expressions (2).
 ///
