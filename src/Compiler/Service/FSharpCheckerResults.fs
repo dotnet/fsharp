@@ -1531,9 +1531,12 @@ type internal TypeCheckInfo
                                 match item.Item with
                                 | Item.Value v -> v.LiteralValue.IsSome
                                 | Item.ILField field -> field.LiteralValue.IsSome
-                                | Item.MethodGroup _
-                                | Item.Property _ -> false
-                                | _ -> true)
+                                | Item.ActivePatternCase _
+                                | Item.ModuleOrNamespaces _
+                                | Item.NewDef _
+                                | Item.Types _
+                                | Item.UnionCase _ -> true
+                                | _ -> false)
 
                         filtered, denv, range)
 

@@ -1608,10 +1608,13 @@ let [<Literal>] logLit = 1
 
 type DU = A of logField: int
 
+let (|Even|Odd|) input = Odd
+
 match A 1 with
 | A l -> ()
 """
 
+        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false" ])
         VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
 
     [<Fact>]
