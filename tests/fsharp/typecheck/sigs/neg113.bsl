@@ -1,5 +1,5 @@
 
-neg113.fs(5,50,5,61): typecheck error FS0001: This anonymous record does not have enough fields. Add the missing fields [b].
+neg113.fs(5,50,5,61): typecheck error FS0001: This anonymous record is missing field 'b'.
 
 neg113.fs(7,41,7,52): typecheck error FS0001: This is the wrong anonymous record. It should have the fields [b].
 

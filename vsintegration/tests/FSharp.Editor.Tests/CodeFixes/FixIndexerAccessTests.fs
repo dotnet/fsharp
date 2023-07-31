@@ -1,33 +1,35 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Editor.Tests.CodeFixes.AddInstanceMemberParameterTests
+module FSharp.Editor.Tests.CodeFixes.FixIndexerAccessTests
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = AddInstanceMemberParameterCodeFixProvider()
+let private codeFix = RemoveDotFromIndexerAccessOptInCodeFixProvider()
 
 [<Fact>]
-let ``Fixes FS0673`` () =
+let ``Fixes FS3366`` () =
     let code =
         """
-type UsefulTestHarness() =
-    member FortyTwo = 42
+let list = [ 42 ]
+
+let _ = list.[0]
 """
 
     let expected =
         Some
             {
-                Message = "Add missing instance member parameter"
+                Message = "The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code."
                 FixedCode =
                     """
-type UsefulTestHarness() =
-    member x.FortyTwo = 42
+let list = [ 42 ]
+
+let _ = list[0]
 """
             }
 
-    let actual = codeFix |> tryFix code Auto
+    let actual = codeFix |> tryFix code (WithOption "--warnon:3366")
 
     Assert.Equal(expected, actual)
