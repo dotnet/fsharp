@@ -47,7 +47,7 @@ let t3 (t1: {| gu: string; ff: int |}) = {| t1 with ff = 3 |}
 """
             }
 
-    let actual = codeFix |> tryFix code 3578
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -68,7 +68,7 @@ let t3 (t1: struct {| gu: string; ff: int |}) = {| t1 with ff = 3 |}
 """
             }
 
-    let actual = codeFix |> tryFix code 3578
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -89,7 +89,7 @@ let f (r: {| A: int; C: int |}) = {| r with A = 1; B = 2; C = 3 |}
 """
             }
 
-    let actual = codeFix |> tryFix code 3578
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
