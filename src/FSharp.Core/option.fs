@@ -190,8 +190,9 @@ module ValueOption =
         | ValueNone -> value
         | ValueSome v -> v
 
+    // We're deliberately not using InlineIfLambda, because benchmarked code ends up slightly slower at the time of writing (.NET 8 Preview)
     [<CompiledName("DefaultWith")>]
-    let inline defaultWith ([<InlineIfLambda>] defThunk) voption =
+    let inline defaultWith defThunk voption =
         match voption with
         | ValueNone -> defThunk ()
         | ValueSome v -> v
