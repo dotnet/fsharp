@@ -1,15 +1,12 @@
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
 module Tests.Service.StructureTests
 #endif
 
 open System.IO
-open NUnit.Framework
-open FSharp.Compiler.EditorServices
+open Xunit
 open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
@@ -55,10 +52,10 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
         printfn "AST:\n%+A" ast
         reraise()
 
-[<Test>]
+[<Fact>]
 let ``empty file``() = "" => []
 
-[<Test>]
+[<Fact>]
 let ``nested module``() =
     """
 module MyModule =
@@ -71,7 +68,7 @@ module Module =
     => [ (2, 0, 3, 6), (2, 15, 3, 6)
          (5, 0, 7, 6), (6, 13, 7, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``module with multiline function``() =
     """
 module MyModule =
@@ -82,7 +79,7 @@ module MyModule =
          (3, 4, 4, 13), (3, 13, 4, 13)
          (3, 8, 4, 13), (3, 13, 4, 13) ]
 
-[<Test>]
+[<Fact>]
 let ``DU``() =
     """
 type Color =
@@ -93,7 +90,7 @@ type Color =
     => [ (2, 5, 5, 10), (2, 11, 5, 10)
          (3, 4, 5, 10), (3, 4, 5, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``DU with interface``() =
     """
 type Color =
@@ -111,7 +108,7 @@ type Color =
          (8, 8, 9, 55), (8, 27, 9, 55)
          (8, 15, 9, 55), (8, 27, 9, 55) ]
 
-[<Test>]
+[<Fact>]
 let ``record with interface``() =
     """
 type Color =
@@ -133,7 +130,7 @@ type Color =
       (9, 8, 10, 55), (9, 27, 10, 55)
       (9, 15, 10, 55), (9, 27, 10, 55) ]
 
-[<Test>]
+[<Fact>]
 let ``type with a do block``() =
     """
 type Color() =   // 2
@@ -148,7 +145,7 @@ type Color() =   // 2
          (3, 8, 4, 10), (3, 13, 4, 10)
          (6, 4, 8, 10), (6, 6, 8, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``complex outlining test``() =
     """
 module MyModule =       // 2
@@ -194,7 +191,7 @@ module MyModule =       // 2
          (26, 23, 27, 63), (26, 35, 27, 63) ]
 
     
-[<Test>]
+[<Fact>]
 let ``open statements``() =
     """
 open M             
@@ -231,7 +228,7 @@ open H
          (17, 8, 18, 14), (17, 8, 18, 14)
          (21, 0, 26, 6), (21, 0, 26, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``hash directives``() =
     """
 #r @"a"   
@@ -260,7 +257,7 @@ let x = 1
     => [ (2, 3, 8, 6), (2, 3, 8, 6)
          (11, 3, 23, 6), (11, 3, 23, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``nested let bindings``() =
     """
 let f x =       // 2
@@ -275,7 +272,7 @@ let f x =       // 2
          (3, 8, 6, 10), (3, 11, 6, 10)
          (4, 12, 5, 14), (4, 13, 5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``match``() =
     """
 match None with     // 2
@@ -293,7 +290,7 @@ match None with     // 2
          (6, 4, 10, 10), (6, 19, 10, 10)
          (9, 8, 10, 10), (8, 10, 10, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``matchbang``() =
     """
 async {                                   // 2
@@ -314,7 +311,7 @@ async {                                   // 2
          (7, 8, 11, 14), (7, 23, 11, 14)
          (10, 12, 11, 14), (9, 14, 11, 14) ]
          
-[<Test>]
+[<Fact>]
 let ``computation expressions``() =
     """
 seq {              // 2
@@ -330,7 +327,7 @@ seq {              // 2
          (6, 4, 7, 18), (6, 4, 7, 18)
          (6, 11, 7, 18), (6, 16, 7, 17) ]
 
-[<Test>]
+[<Fact>]
 let ``list``() =
     """
 let _ = 
@@ -341,7 +338,7 @@ let _ =
        (2, 4, 4, 9), (2, 5, 4, 9)
        (3, 4, 4, 9), (3, 5, 4, 8) ]
 
-[<Test>]
+[<Fact>]
 let ``object expressions``() =
     """
 let _ =
@@ -352,7 +349,7 @@ let _ =
          (2, 4, 4, 34), (2, 5, 4, 34)
          (3, 4, 4, 34), (3, 28, 4, 34) ]
          
-[<Test>]
+[<Fact>]
 let ``try - with``() =
     """
 try           // 2
@@ -370,7 +367,7 @@ with _ ->     // 5
          (6, 4, 8, 6), (5, 6, 8, 6)
          (6, 8, 7, 10), (6, 11, 7, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``try - finally``() =
     """
 try           // 2
@@ -386,7 +383,7 @@ finally       // 5
          (5, 0, 8, 6), (5, 7, 8, 6)
          (6, 8, 7, 10), (6, 11, 7, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``if - then - else``() =
     """
 if true then
@@ -403,7 +400,7 @@ else
          (3, 8, 4, 10), (3, 11, 4, 10)
          (7, 8, 8, 10), (7, 11, 8, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``code quotation``() =
     """
 <@
@@ -412,7 +409,7 @@ let ``code quotation``() =
 """
     => [ (2, 0, 4, 10), (2, 2, 4, 8) ]
 
-[<Test>]
+[<Fact>]
 let ``raw code quotation``() =
     """
 <@@
@@ -421,7 +418,7 @@ let ``raw code quotation``() =
 """
     => [ (2, 0, 4, 11), (2, 3, 4, 8) ]
 
-[<Test>]
+[<Fact>]
 let ``match lambda aka function``() =
     """
 function
@@ -431,7 +428,7 @@ function
     => [ (2, 0, 4, 10), (2, 8, 4, 10)
          (3, 8, 4, 10), (3, 3, 4, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``match guarded clause``() =
     """
 let matchwith num =
@@ -444,7 +441,7 @@ let matchwith num =
           (3, 4, 5, 13), (3, 18, 5, 13)
           (4, 11, 5, 13), (4, 7, 5, 13) ]
 
-[<Test>]
+[<Fact>]
 let ``for loop``() =
     """
 for x = 100 downto 10 do
@@ -453,7 +450,7 @@ for x = 100 downto 10 do
 """
     => [ (2, 0, 4, 6), (2, 0, 4, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``for each``() =
     """
 for x in 0 .. 100 -> 
@@ -463,7 +460,7 @@ for x in 0 .. 100 ->
     =>  [ (2, 0, 4, 14), (2, 0, 4, 14)
           (2, 18, 4, 14), (2, 18, 4, 14) ]
    
-[<Test>]
+[<Fact>]
 let ``tuple``() =
     """
 ( 20340
@@ -472,7 +469,7 @@ let ``tuple``() =
 """
     => [ (2, 2, 4, 8), (2, 2, 4, 8) ]
 
-[<Test>]
+[<Fact>]
 let ``do!``() =
     """
 do! 
@@ -481,7 +478,7 @@ do!
 """
     =>  [ (2, 0, 4, 18), (2, 3, 4, 18) ]
 
-[<Test>]
+[<Fact>]
 let ``cexpr yield yield!``() =
     """
 cexpr{
@@ -498,7 +495,7 @@ cexpr{
           (4, 8, 8, 17), (4, 14, 8, 16)
           (5, 20, 7, 26), (5, 20, 7, 26) ]
 
-[<Test>]
+[<Fact>]
 let ``XML doc comments``() =
     """
 /// Line 1
@@ -523,7 +520,7 @@ module M =
          (12, 4, 13, 15), (13, 11, 13, 15)
          (12, 4, 13, 15), (13, 11, 13, 15) ]
          
-[<Test>]
+[<Fact>]
 let ``regular comments``() =
     """
 // Line 1
@@ -545,7 +542,7 @@ module M =
          (7, 9, 11, 19), (7, 11, 11, 19)
          (8, 8, 10, 17), (8, 8, 10, 17) ]
          
-[<Test>]
+[<Fact>]
 let ``XML doc and regular comments in one block``() =
     """
 // Line 1
@@ -562,7 +559,7 @@ let ``XML doc and regular comments in one block``() =
          (4, 0, 5, 10), (4, 0, 5, 10)
          (7, 0, 10, 10), (7, 0, 10, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``constructor call``() =
     """
 module M =
@@ -577,7 +574,7 @@ module M =
          (4, 8, 6, 14), (4, 25, 6, 14)
          (5, 12, 6, 13), (5, 12, 6, 13) ]
 
-[<Test>]
+[<Fact>]
 let ``Top level module`` () =
     """
 module TopLevelModule
@@ -588,7 +585,7 @@ module Nested =
     => [ (2, 7, 5, 15), (2, 21, 5, 15)
          (4, 0, 5, 15), (4, 13, 5, 15) ]
 
-[<Test>]
+[<Fact>]
 let ``Top level namespace`` () =
     """
 namespace TopLevelNamespace.Another
@@ -598,7 +595,7 @@ module Nested =
 """
     => [ (4, 0, 5, 15), (4, 13, 5, 15) ]
 
-[<Test>]
+[<Fact>]
 let ``Multiple namespaces`` () =
     """
 namespace TopLevelNamespace.Another
@@ -614,7 +611,7 @@ module NestedModule =
     => [ (4, 0, 5, 15), (4, 13, 5, 15)
          (9, 0, 10, 15), (9, 19, 10, 15) ]
 
-[<Test>]
+[<Fact>]
 let ``Member val`` () =
     """
 type T() =
@@ -638,7 +635,7 @@ type T() =
          (10, 4, 11, 10), (10, 4, 11, 10)
          (13, 4, 15, 10), (13, 4, 15, 10) ]
 
-[<Test>]
+[<Fact>]
 let ``Secondary constructors`` () =
     """
 type T() =
@@ -661,7 +658,7 @@ type T() =
          (9, 4, 11, 12), (10, 10, 11, 12) ]
 
 
-[<Test>]
+[<Fact>]
 let ``Abstract members`` () =
     """
 type T() =
