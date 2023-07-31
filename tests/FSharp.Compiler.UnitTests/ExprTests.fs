@@ -7,6 +7,7 @@ module FSharp.Compiler.Service.Tests.ExprTests
 #endif
 
 open Xunit
+open FSharp.Test
 open System
 open System.IO
 open System.Text
@@ -19,7 +20,6 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
-open FSharp.Test
 open TestFramework
 
 type FSharpCore =

@@ -6,13 +6,13 @@ module FSharp.Compiler.Service.Tests.PerfTests
 #endif
 
 open Xunit
+open FSharp.Test
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
-open FSharp.Test
 
 // Create an interactive checker instance
 let internal checker = FSharpChecker.Create()

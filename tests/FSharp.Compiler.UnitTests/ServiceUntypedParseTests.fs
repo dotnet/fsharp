@@ -6,6 +6,7 @@ module Tests.Service.ServiceUntypedParseTests
 #endif
 
 open System.IO
+open FSharp.Test
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
@@ -13,7 +14,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open Xunit
-open FSharp.Test
 
 let [<Literal>] private Marker = "(* marker *)"
 
