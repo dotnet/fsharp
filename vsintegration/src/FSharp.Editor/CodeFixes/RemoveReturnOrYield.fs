@@ -28,9 +28,10 @@ type internal RemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
 
                 return
                     parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
-                    |> Option.bind (fun exprRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, exprRange))
-                    |> Option.map (fun exprSpan -> [ TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) ])
-                    |> Option.map (fun changes ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun exprRange -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, exprRange))
+                    |> ValueOption.map (fun exprSpan -> [ TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) ])
+                    |> ValueOption.map (fun changes ->
                         let title =
                             let text = sourceText.GetSubText(context.Span).ToString()
 
