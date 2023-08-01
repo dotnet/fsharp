@@ -3,7 +3,6 @@ namespace FSharp.Test
 module Assert =
     open FluentAssertions
     open System.Collections
-    open System.Text
     open System.IO
 
     let inline shouldBeEqualWith (expected : ^T) (message: string) (actual: ^U) =
@@ -13,6 +12,9 @@ module Assert =
         actual.Should().BeEquivalentTo(expected, "") |> ignore
 
     let inline shouldBe (expected : ^T) (actual : ^U) =
+        actual.Should().Be(expected, "") |> ignore
+
+    let inline shouldEqual (expected : ^T) (actual : ^T) =
         actual.Should().Be(expected, "") |> ignore
 
     let inline shouldBeEmpty (actual : ^T when ^T :> IEnumerable) =
@@ -66,7 +68,7 @@ module Assert =
             Some msg
 
     /// Same as 'shouldBe' but goes pairwise over the collections. Lengths must be equal.
-    let shouldBePairwiseEqual (x: seq<_>) (y: seq<_>) =
+    let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
         // using enumerators, because Seq.iter2 allows different lengths silently
         let ex = x.GetEnumerator()
         let ey = y.GetEnumerator()
@@ -76,7 +78,7 @@ module Assert =
             countx <- countx + 1
             if ey.MoveNext() then
                 county <- county + 1
-                ey.Current |> shouldBe ex.Current
+                ey.Current |> shouldEqual ex.Current
 
         while ex.MoveNext() do countx <- countx + 1
         while ey.MoveNext() do county <- county + 1

@@ -849,12 +849,12 @@ let ``Test Unoptimized Declarations Project1`` () =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldBePairwiseEqual (Utils.filterHack expected)
+      |> Assert.shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldBePairwiseEqual (Utils.filterHack expected2)
+      |> Assert.shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
@@ -985,12 +985,12 @@ let ``Test Optimized Declarations Project1`` () =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldBePairwiseEqual (Utils.filterHack expected)
+      |> Assert.shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldBePairwiseEqual (Utils.filterHack expected2)
+      |> Assert.shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
@@ -1100,11 +1100,11 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
 
         // fail test on first line that fails, show difference in output window
         resultUnoptFiltered
-        |> Assert.shouldBePairwiseEqual expectedUnoptFiltered
+        |> Assert.shouldPairwiseEqual expectedUnoptFiltered
 
         // fail test on first line that fails, show difference in output window
         resultOptFiltered
-        |> Assert.shouldBePairwiseEqual expectedOptFiltered
+        |> Assert.shouldPairwiseEqual expectedOptFiltered
     end
 
 [<Fact>]
@@ -3313,7 +3313,7 @@ let ``Test ProjectForWitnesses1`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldBePairwiseEqual expected
+      |> Assert.shouldPairwiseEqual expected
 
 
 [<Fact>]
@@ -3425,7 +3425,7 @@ let ``Test ProjectForWitnesses2`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldBePairwiseEqual expected
+      |> Assert.shouldPairwiseEqual expected
 
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
@@ -3480,7 +3480,7 @@ let ``Test ProjectForWitnesses3`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldBePairwiseEqual expected
+      |> Assert.shouldPairwiseEqual expected
 
 [<Fact>]
 let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
@@ -3571,4 +3571,4 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldBePairwiseEqual expected
+      |> Assert.shouldPairwiseEqual expected
