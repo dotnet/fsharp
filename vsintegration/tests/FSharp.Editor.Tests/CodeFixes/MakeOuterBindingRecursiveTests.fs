@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = MakeOuterBindingRecursiveCodeFixProvider()
-let private diagnostic = 0039 // Something is not defined...
 
 [<Fact>]
 let ``Fixes FS0039 for recursive functions`` () =
@@ -33,7 +32,7 @@ let rec factorial n =
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -46,6 +45,6 @@ let f = g
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

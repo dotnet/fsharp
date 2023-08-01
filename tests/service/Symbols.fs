@@ -8,6 +8,7 @@ module Tests.Service.Symbols
 #endif
 
 open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -751,3 +752,189 @@ type Foo() =
             and set (a: int) (b: float) = ()
 """
             (5, 14, "    member _.X", "X")
+            
+module AnonymousRecord =
+    [<Test>]
+    let ``Anonymous record copy-and-update symbols usage`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+let f (x: {| A: int |}) =
+    { x with A = 1 }
+"""
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(2, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous anon record copy-and-update symbols usage`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+let f (x: {| A: int |}) =
+    {| x with A = 1 |}
+"""
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(2, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous record copy-and-update symbols usages`` () =
+        let _, checkResults = getParseAndCheckResults """
+        
+module X
+let f (r: {| A: int; C: int |}) =
+    { r with A = 1; B = 2; C = 3 }
+"""
+
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(4, getSymbolUses.Length)
+        
+    [<Test>]
+    let ``Anonymous anon record copy-and-update symbols usages`` () =
+        let _, checkResults = getParseAndCheckResults """
+        
+module X
+let f (r: {| A: int; C: int |}) =
+    {| r with A = 1; B = 2; C = 3 |}
+"""
+
+        let getSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Array.ofSeq
+            |> Array.filter(fun su ->
+                match su.Symbol with
+                | :? FSharpField as f when f.IsAnonRecordField -> true
+                | _ -> false)
+
+        Assert.AreEqual(5, getSymbolUses.Length)
+
+    [<Test>]
+    let ``Symbols for fields in nested copy-and-update are present`` () =
+        let _, checkResults = getParseAndCheckResults """
+type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
+
+let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
+"""
+
+        let line = "let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }"
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 47, line, [ "Zoo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Zoo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 44) (4, 47) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 51, line, [ "Foo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Foo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 48) (4, 51) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 60, line, [ "Zoo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Zoo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 57) (4, 60) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 64, line, [ "Zoo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Zoo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 61) (4, 64) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 68, line, [ "Bar" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Bar", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 65) (4, 68) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 77, line, [ "Zoo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Zoo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 74) (4, 77) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 81, line, [ "Bar" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Bar", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 78) (4, 81) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"
+
+
+        let fieldSymbolUse =
+            checkResults.GetSymbolUsesAtLocation(4, 90, line, [ "Foo" ])
+            |> List.exactlyOne
+       
+        match fieldSymbolUse.Symbol with
+        | :? FSharpField as field ->
+            Assert.AreEqual ("Foo", field.Name)
+            Assert.AreEqual ("RecordA`1", field.DeclaringEntity.Value.CompiledName)
+            assertRange (4, 87) (4, 90) fieldSymbolUse.Range
+
+        | _ -> Assert.Fail "Symbol was not FSharpField"

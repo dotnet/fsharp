@@ -83,7 +83,12 @@ type SynExprDotLambdaTrivia =
     }
 
 [<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia = { InKeyword: range option }
+type SynExprLetOrUseTrivia =
+    {
+        InKeyword: range option
+    }
+
+    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None }
 
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =

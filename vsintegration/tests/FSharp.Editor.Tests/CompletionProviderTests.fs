@@ -1577,6 +1577,19 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
         )
 
     [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal, recursive, generic`` () =
+        let fileContents =
+            """
+type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
+
+let fz (a: RecordA<int>) = { a with Zoo.F = 1; Zoo.Zoo.B = 2; F } 
+"""
+
+        VerifyCompletionListExactly(fileContents, "with Zoo.F", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "Zoo.Zoo.B", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "; F", [ "Bar"; "Foo"; "Zoo" ])
+
+    [<Fact>]
     let ``Anonymous record fields have higher priority than methods`` () =
         let fileContents =
             """
@@ -1595,10 +1608,13 @@ let [<Literal>] logLit = 1
 
 type DU = A of logField: int
 
+let (|Even|Odd|) input = Odd
+
 match A 1 with
 | A l -> ()
 """
 
+        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false" ])
         VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
 
     [<Fact>]
@@ -1705,3 +1721,36 @@ match U1 (1, A) with
         VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
         VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
         VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
+
+    [<Fact>]
+    let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
+        let fileContents =
+            """
+module G =
+    let a = 1
+
+    [<Literal>]
+    let b = 1
+
+    let c () = ()
+
+type A =
+    | B of a: int
+    | C of float
+
+    static member Aug () = ()
+
+for G. in [] do
+
+let y x =
+    match x with
+    | [ B G. ] -> ()
+    | A.
+
+for Some ((0, C System.Double. ))
+"""
+
+        VerifyCompletionListExactly(fileContents, "for G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| [ B G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| A.", [ "B"; "C" ])
+        VerifyCompletionList(fileContents, "for Some ((0, C System.Double.", [ "Epsilon"; "MaxValue" ], [ "Abs" ])

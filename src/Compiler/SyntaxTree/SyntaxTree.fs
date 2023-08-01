@@ -174,13 +174,13 @@ type SynMeasure =
 
     | Named of longId: LongIdent * range: range
 
-    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * mAsterisk: range * measure2: SynMeasure * range: range
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure option * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * mSlash: range * measure2: SynMeasure * range: range
 
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
     | One of range: range
 
@@ -684,6 +684,8 @@ type SynExpr =
 
     | DoBang of expr: SynExpr * range: range
 
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
+
     | LibraryOnlyILAssembly of
         ilCode: obj *  // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public
         typeArgs: SynType list *
@@ -783,6 +785,7 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range = m)
         | SynExpr.MatchBang (range = m)
         | SynExpr.DoBang (range = m)
+        | SynExpr.WhileBang (range = m)
         | SynExpr.Fixed (range = m)
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
