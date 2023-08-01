@@ -1090,7 +1090,12 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                     let missingFields = String.concat ", " missingFields
                     FSComp.SR.tcAnonRecdMultipleFieldsNameSubset(string missingFields)
             | Superset extraFields ->
-                FSComp.SR.tcAnonRecdFieldNameSuperset(string extraFields)
+                match extraFields with
+                | [extraField] ->
+                    FSComp.SR.tcAnonRecdSingleFieldNameSuperset(string extraField)
+                | _ ->
+                    let extraFields = String.concat ", " extraFields
+                    FSComp.SR.tcAnonRecdMultipleFieldsNameSuperset(string extraFields)
             | Overlap (missingFields, extraFields) ->
                 FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
             | CompletelyDifferent missingFields ->
