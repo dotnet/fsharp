@@ -367,7 +367,7 @@ type MailboxProcessorType() =
             failwith <| sprintf "Exected both good and bad async's to be cancelled afteMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
 
     [<Fact>]
-    member this.StartImmediateStartsOnNewThread() =
+    member this.StartImmediateStartsOnCurrentThread() =
         /// Gets the current thread's ID and name
         let getThreadInfo () =
             let currentThread = Thread.CurrentThread
@@ -385,12 +385,14 @@ type MailboxProcessorType() =
         // Start a MailboxProcessor with StartImmediate and have it wait for a single message
         // requesting the information of the thread that it is running on
         let mailbox = MailboxProcessor<StartImmediateMessage>.StartImmediate(fun inbox -> async{
+            let threadInfo = getThreadInfo ()
+            
             // Block until a single message is received
             let! message = inbox.Receive()
 
             // Reply with the MailboxProcessor's thread information
             match message with
-            | GetThreadInfo reply -> reply.Reply (getThreadInfo ())
+            | GetThreadInfo reply -> reply.Reply threadInfo
         })
 
         // Get the MailboxProcessor's thread information
