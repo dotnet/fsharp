@@ -1983,7 +1983,7 @@ let rec isUnmanagedTy g ty =
                     isEq g.int16_tcr || isEq g.uint16_tcr ||
                     isEq g.int32_tcr || isEq g.uint32_tcr ||
                     isEq g.int64_tcr || isEq g.uint64_tcr ||
-                    isEq g.char_tcr ||
+                    isEq g.char_tcr || isEq g.voidptr_tcr ||
                     isEq g.float32_tcr ||
                     isEq g.float_tcr ||
                     isEq g.decimal_tcr ||

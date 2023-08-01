@@ -25,7 +25,7 @@ type internal AddNewKeywordCodeFixProvider() =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             CancellableTask.singleton (
-                Some
+                ValueSome
                     {
                         Name = CodeFix.AddNewKeyword
                         Message = title
