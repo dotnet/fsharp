@@ -227,7 +227,7 @@ module TypeMemberRanges =
 type T =
     member x.Foo() = ()
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 23) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 23) ]
 
     
     [<Fact>]
@@ -236,7 +236,7 @@ type T =
 type T =
     static member Foo() = ()
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 28) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 28) ]
 
 
     [<Fact>]
@@ -246,7 +246,7 @@ type T =
     [<Foo>]
     static member Foo() = ()
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (4, 28) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (4, 28) ]
 
 
     [<Fact>]
@@ -255,7 +255,7 @@ type T =
 type T =
     member x.P = ()
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 19) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 19) ]
 
 
     [<Fact>]
@@ -264,7 +264,7 @@ type T =
 type T =
     member x.P with set (value) = v <- value
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 44) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 44) ]
 
     
     [<Fact>]
@@ -275,7 +275,7 @@ type T =
         with get () = x
         and set (value) = x <- value
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (5, 36) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (5, 36) ]
 
 
     [<Fact>]
@@ -284,7 +284,7 @@ type T =
 type T =
     member val Property1 = ""
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 29) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 29) ]
 
 
     [<Fact>]
@@ -293,7 +293,7 @@ type T =
 type T =
     member val Property1 = "" with get, set
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 29) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 29) ]
 
     
     [<Fact>]
@@ -303,8 +303,8 @@ type T =
     abstract P: int
     abstract M: unit -> unit
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 19)
-                                                       (4, 4), (4, 28) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 19)
+                                                          (4, 4), (4, 28) ]
 
     [<Fact>]
     let ``Member range 10 - Val field``() =
@@ -312,7 +312,7 @@ type T =
 type T =
     val x: int
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 14) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 14) ]
 
 
     [<Fact>]
@@ -321,7 +321,7 @@ type T =
 type T =
     new (x:int) = ()
 """
-        getTypeMemberRange source |> Assert.shouldBe [ (3, 4), (3, 20) ]
+        getTypeMemberRange source |> Assert.shouldEqual [ (3, 4), (3, 20) ]
 
 
 [<Fact>]
@@ -337,7 +337,7 @@ let y = !x
         res
         |> tups
         |> fst
-        |> Assert.shouldBe (3, 8)
+        |> Assert.shouldEqual (3, 8)
     | None ->
         failwith "No deref operator found in source."
 
@@ -354,7 +354,7 @@ let y = !(x)
         res
         |> tups
         |> fst
-        |> Assert.shouldBe (3, 8)
+        |> Assert.shouldEqual (3, 8)
     | None ->
         failwith "No deref operator found in source."
 
@@ -372,7 +372,7 @@ let y = !(x = false)
         res
         |> tups
         |> fst
-        |> Assert.shouldBe (3, 8)
+        |> Assert.shouldEqual (3, 8)
     | None ->
         failwith "No deref operator found in source."
 
@@ -387,7 +387,7 @@ let x = { Name = "Hello" }
     | Some res ->
         res
         |> tups
-        |> Assert.shouldBe ((2, 8), (2, 26))
+        |> Assert.shouldEqual ((2, 8), (2, 26))
     | None ->
         failwith "No range of record found in source."
 
@@ -414,7 +414,7 @@ f 12
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 2)]
+            |> Assert.shouldEqual [(3, 2)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -430,7 +430,7 @@ f 1 2 3
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 2); (3, 4); (3, 6)]
+            |> Assert.shouldEqual [(3, 2); (3, 4); (3, 6)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -446,7 +446,7 @@ f (1) (2) (3)
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 2); (3, 6); (3, 10)]
+            |> Assert.shouldEqual [(3, 2); (3, 6); (3, 10)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -462,7 +462,7 @@ f ((1)) (((2))) ((((3))))
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 3); (3, 10); (3, 19)]
+            |> Assert.shouldEqual [(3, 3); (3, 10); (3, 19)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -488,7 +488,7 @@ f 12
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 2)]
+            |> Assert.shouldEqual [(3, 2)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -505,7 +505,7 @@ f t
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(4, 2)]
+            |> Assert.shouldEqual [(4, 2)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -521,7 +521,7 @@ f (1, 2)
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 3); (3, 6)]
+            |> Assert.shouldEqual [(3, 3); (3, 6)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -538,7 +538,7 @@ f t
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(4, 2)]
+            |> Assert.shouldEqual [(4, 2)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -554,7 +554,7 @@ f ((1, 2))
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 4); (3, 7)]
+            |> Assert.shouldEqual [(3, 4); (3, 7)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -570,7 +570,7 @@ f (1, 2)
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 3); (3, 6)]
+            |> Assert.shouldEqual [(3, 3); (3, 6)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -586,7 +586,7 @@ f (f 1 2) 3
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 2); (3, 10)]
+            |> Assert.shouldEqual [(3, 2); (3, 10)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -602,7 +602,7 @@ f (f 1 2) 3
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(3, 5); (3, 7)]
+            |> Assert.shouldEqual [(3, 5); (3, 7)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -617,7 +617,7 @@ let addStr x y = string x + y
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(2, 24)]
+            |> Assert.shouldEqual [(2, 24)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -632,7 +632,7 @@ let addStr x y = x + string y
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(2, 28)]
+            |> Assert.shouldEqual [(2, 28)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -647,7 +647,7 @@ let addStr x y = string x + string y
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(2, 24)]
+            |> Assert.shouldEqual [(2, 24)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -657,7 +657,7 @@ let addStr x y = string x + string y
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> Assert.shouldBe [(2, 35)]
+            |> Assert.shouldEqual [(2, 35)]
         | None ->
             failwith "No arguments found in source code"
 
@@ -750,7 +750,7 @@ sqrt 12.0
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((2, 0), (2, 4))
+            |> Assert.shouldEqual ((2, 0), (2, 4))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application``() =
@@ -765,7 +765,7 @@ f 1 2 3
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 0), (3, 1))
+            |> Assert.shouldEqual ((3, 0), (3, 1))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application but at function itself``() =
@@ -780,7 +780,7 @@ f 1 2 3
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 0), (3, 1))
+            |> Assert.shouldEqual ((3, 0), (3, 1))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in pipeline``() =
@@ -794,7 +794,7 @@ f 1 2 3
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((2, 11), (2, 19))
+            |> Assert.shouldEqual ((2, 11), (2, 19))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline``() =
@@ -810,7 +810,7 @@ f 1 2 3
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 3), (3, 14))
+            |> Assert.shouldEqual ((3, 3), (3, 14))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline, no qualification``() =
@@ -825,7 +825,7 @@ f 1 2 3
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 3), (3, 5))
+            |> Assert.shouldEqual ((3, 3), (3, 5))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - incomplete infix app``() =
@@ -841,7 +841,7 @@ add2 1 2
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 17), (3, 18))
+            |> Assert.shouldEqual ((3, 17), (3, 18))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =
@@ -858,7 +858,7 @@ async {
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((4, 11), (4, 16))
+            |> Assert.shouldEqual ((4, 11), (4, 16))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - binding``() =
@@ -878,7 +878,7 @@ let mapped =
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((6, 18), (6, 21))
+            |> Assert.shouldEqual ((6, 18), (6, 21))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - if expression``() =
@@ -902,7 +902,7 @@ let mapped =
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((7, 12), (7, 15))
+            |> Assert.shouldEqual ((7, 12), (7, 15))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expression``() =
@@ -926,7 +926,7 @@ let mapped =
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((7, 12), (7, 15))
+            |> Assert.shouldEqual ((7, 12), (7, 15))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expr``() =
@@ -950,7 +950,7 @@ let mapped =
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((9, 18), (9, 21))
+            |> Assert.shouldEqual ((9, 18), (9, 21))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match case``() =
@@ -974,7 +974,7 @@ let mapped =
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((11, 19), (11, 22))
+            |> Assert.shouldEqual ((11, 19), (11, 22))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call``() =
@@ -989,7 +989,7 @@ C.Yeet(1, 2, sqrt)
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 13), (3, 17))
+            |> Assert.shouldEqual ((3, 13), (3, 17))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call - parenthesized lambda``() =
@@ -1004,7 +1004,7 @@ C.Yeet(1, 2, (fun x -> sqrt))
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 23), (3, 27))
+            |> Assert.shouldEqual ((3, 23), (3, 27))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - generic-typed app``() =
@@ -1019,7 +1019,7 @@ f<int>
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((3, 0), (3, 1))
+            |> Assert.shouldEqual ((3, 0), (3, 1))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a list that is used as an argument - Sequential and ArrayOrListComputed``() =
@@ -1039,7 +1039,7 @@ let test () = div [] [
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((5, 8), (5, 13))
+            |> Assert.shouldEqual ((5, 8), (5, 13))
 
     [<Fact>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - yielding in a list that is used as an argument, after semicolon - Sequential and ComputationExpr``() =
@@ -1086,7 +1086,7 @@ seq { 5; int "6" } |> Seq.sum
         | Some range ->
             range
             |> tups
-            |> Assert.shouldBe ((2, 9), (2, 12))
+            |> Assert.shouldEqual ((2, 9), (2, 12))
 
 
 module PipelinesAndArgs =
@@ -1119,7 +1119,7 @@ let square x = x *
         match res with
         | Some (ident, numArgs) ->
             (ident.idText, numArgs)
-            |> Assert.shouldBe ("op_PipeRight", 1)
+            |> Assert.shouldEqual ("op_PipeRight", 1)
         | None ->
             failwith "No pipeline found"
                 
@@ -1133,7 +1133,7 @@ let square x = x *
         match res with
         | Some (ident, numArgs) ->
             (ident.idText, numArgs)
-            |> Assert.shouldBe ("op_PipeRight2", 2)
+            |> Assert.shouldEqual ("op_PipeRight2", 2)
         | None ->
             failwith "No pipeline found"
 
@@ -1147,7 +1147,7 @@ let square x = x *
         match res with
         | Some (ident, numArgs) ->
             (ident.idText, numArgs)
-            |> Assert.shouldBe ("op_PipeRight3", 3)
+            |> Assert.shouldEqual ("op_PipeRight3", 3)
         | None ->
             failwith "No pipeline found"
 
@@ -1188,7 +1188,7 @@ let f x =
     | Some range ->
         range
         |> tups
-        |> Assert.shouldBe ((3, 11), (3, 12))
+        |> Assert.shouldEqual ((3, 11), (3, 12))
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1212,7 +1212,7 @@ let x = y => y + 1
     | Some (overallRange, argRange, exprRange) ->
         [overallRange; argRange; exprRange]
         |> List.map tups
-        |> Assert.shouldBe [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
+        |> Assert.shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1227,7 +1227,7 @@ let x = y => y + 1
     | Some (overallRange, argRange, exprRange) ->
         [overallRange; argRange; exprRange]
         |> List.map tups
-        |> Assert.shouldBe [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
+        |> Assert.shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1242,7 +1242,7 @@ let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - parenthesized lambda``() =
     | Some (overallRange, argRange, exprRange) ->
         [overallRange; argRange; exprRange]
         |> List.map tups
-        |> Assert.shouldBe [((2, 21), (2, 31)); ((2, 21), (2, 22)); ((2, 26), (2, 31))]
+        |> Assert.shouldEqual [((2, 21), (2, 31)); ((2, 21), (2, 22)); ((2, 26), (2, 31))]
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1257,7 +1257,7 @@ let x = nameof x
     | Some range ->
         range
         |> tups
-        |> Assert.shouldBe ((2, 4), (2, 5))
+        |> Assert.shouldEqual ((2, 4), (2, 5))
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1276,7 +1276,7 @@ let mySum xs acc =
     | Some range ->
         range
         |> tups
-        |> Assert.shouldBe ((2, 4), (2, 9))
+        |> Assert.shouldEqual ((2, 4), (2, 9))
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1295,7 +1295,7 @@ let f x =
     | Some range ->
         range
         |> tups
-        |> Assert.shouldBe ((4, 8), (4, 9))
+        |> Assert.shouldEqual ((4, 8), (4, 9))
     | None ->
         failwith "Expected to get a range back, but got none."
 
@@ -1316,7 +1316,7 @@ let f x =
     | Some range ->
         range
         |> tups
-        |> Assert.shouldBe ((6, 8), (6, 9))
+        |> Assert.shouldEqual ((6, 8), (6, 9))
     | None ->
         failwith "Expected to get a range back, but got none."
 

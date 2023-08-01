@@ -733,12 +733,12 @@ let ``Test Unoptimized Declarations Project1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 3 // recursive value warning
-    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 2
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
     let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles[1]
 
@@ -868,12 +868,12 @@ let ``Test Optimized Declarations Project1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 3 // recursive value warning
-    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldBe FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
 
-    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldBe 2
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
     let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[1]
 
@@ -1034,8 +1034,8 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
             printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
             errors.AppendLine e.Message |> ignore
 
-        errors.ToString() |> Assert.shouldBe ""
-        wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 0
+        errors.ToString() |> Assert.shouldEqual ""
+        wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
 
         let resultUnoptimized =
             wholeProjectResults.AssemblyContents.ImplementationFiles[0].Declarations
@@ -3199,9 +3199,9 @@ let ``Test expressions of declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 0
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     // This should not stack overflow
@@ -3219,9 +3219,9 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 0
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
 
-    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
 
     // This should not stack overflow
@@ -3282,7 +3282,7 @@ let ``Test ProjectForWitnesses1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3338,10 +3338,10 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldBe "callX$W"
-            argTypes.Count |> Assert.shouldBe 1
+            nm |> Assert.shouldEqual "callX$W"
+            argTypes.Count |> Assert.shouldEqual 1
             let argText = argTypes[0].Type.ToString()
-            argText |> Assert.shouldBe "type ^T -> ^U -> ^V"
+            argText |> Assert.shouldEqual "type ^T -> ^U -> ^V"
     end
 
 
@@ -3357,14 +3357,14 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldBe "callXY$W"
-            argTypes.Count |> Assert.shouldBe 2
+            nm |> Assert.shouldEqual "callXY$W"
+            argTypes.Count |> Assert.shouldEqual 2
             let argName1 = argTypes[0].Name
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argText1 |> Assert.shouldBe "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
-            argText2 |> Assert.shouldBe "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText1 |> Assert.shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText2 |> Assert.shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
     end
 
 
@@ -3406,8 +3406,8 @@ let ``Test ProjectForWitnesses2`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 0
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3461,8 +3461,8 @@ let ``Test ProjectForWitnesses3`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldBe 0
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3504,16 +3504,16 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldBe "Sum$W"
-            argTypes.Count |> Assert.shouldBe 2
+            nm |> Assert.shouldEqual "Sum$W"
+            argTypes.Count |> Assert.shouldEqual 2
             let argName1 = argTypes[0].Name
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argName1 |> Assert.shouldBe (Some "get_Zero")
-            argText1 |> Assert.shouldBe "type Microsoft.FSharp.Core.unit -> ^T"
-            argName2 |> Assert.shouldBe (Some "op_Addition")
-            argText2 |> Assert.shouldBe "type ^T -> ^T -> ^T"
+            argName1 |> Assert.shouldEqual (Some "get_Zero")
+            argText1 |> Assert.shouldEqual "type Microsoft.FSharp.Core.unit -> ^T"
+            argName2 |> Assert.shouldEqual (Some "op_Addition")
+            argText2 |> Assert.shouldEqual "type ^T -> ^T -> ^T"
     end
 
 //---------------------------------------------------------------------------------------------------------
@@ -3557,7 +3557,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
 
     Assert.Equal(wholeProjectResults.Diagnostics.Length, 0)
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldBe 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
