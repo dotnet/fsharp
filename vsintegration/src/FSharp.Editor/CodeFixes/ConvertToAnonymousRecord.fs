@@ -29,8 +29,9 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
 
                 return
                     parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
-                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
-                    |> Option.map (fun span ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    |> ValueOption.map (fun span ->
                         {
                             Name = CodeFix.ConvertToAnonymousRecord
                             Message = title

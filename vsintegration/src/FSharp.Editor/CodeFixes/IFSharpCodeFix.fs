@@ -15,4 +15,4 @@ type FSharpCodeFix =
     }
 
 type IFSharpCodeFixProvider =
-    abstract member GetCodeFixIfAppliesAsync: context: CodeFixContext -> CancellableTask<FSharpCodeFix option>
+    abstract member GetCodeFixIfAppliesAsync: context: CodeFixContext -> CancellableTask<FSharpCodeFix voption>

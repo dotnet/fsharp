@@ -29,7 +29,7 @@ type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
                 // probably not the 100% robust way to do that
                 // but actually we could also just implement the code fix for this case as well
                 if errorText.StartsWith "exception " then
-                    return None
+                    return ValueNone
                 else
                     let upperCased = string (Char.ToUpper errorText[0]) + errorText.Substring(1)
 
@@ -37,7 +37,7 @@ type internal ProposeUppercaseLabelCodeFixProvider [<ImportingConstructor>] () =
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion upperCased)
 
                     return
-                        (Some
+                        (ValueSome
                             {
                                 Name = CodeFix.ProposeUppercaseLabel
                                 Message = title
