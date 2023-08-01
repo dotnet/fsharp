@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Immutable
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -37,7 +38,7 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
         then
             context.RegisterFsharpFix(this)
         else
-            task { return () }
+            Task.CompletedTask
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
