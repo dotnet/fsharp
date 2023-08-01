@@ -137,7 +137,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
 
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 

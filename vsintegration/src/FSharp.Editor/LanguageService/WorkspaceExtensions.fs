@@ -34,7 +34,7 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             cancellableTask {
-                let! ct = CancellableTask.getCurrentCancellationToken ()
+                let! ct = CancellableTask.getCancellationToken ()
 
                 let! sourceText = document.GetTextAsync(ct)
                 let! textVersion = document.GetTextVersionAsync(ct)
@@ -147,7 +147,7 @@ type Document with
                 cancellableTask {
                     let service = this.Project.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
-                    let! ct = CancellableTask.getCurrentCancellationToken ()
+                    let! ct = CancellableTask.getCancellationToken ()
 
                     match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
                     | None -> return raise (OperationCanceledException("FSharp project options not found."))
@@ -279,7 +279,7 @@ type Project with
     member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName) =
         cancellableTask {
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let declarationLocation =
                 symbol.SignatureLocation
@@ -335,7 +335,7 @@ type Project with
             | _ ->
                 cancellableTask {
 
-                    let! ct = CancellableTask.getCurrentCancellationToken ()
+                    let! ct = CancellableTask.getCancellationToken ()
 
                     let service = this.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager

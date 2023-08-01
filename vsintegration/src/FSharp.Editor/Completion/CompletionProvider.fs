@@ -156,7 +156,7 @@ type internal FSharpCompletionProvider
         cancellableTask {
             let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let! sourceText = document.GetTextAsync(ct)
             let textLines = sourceText.Lines
@@ -322,7 +322,7 @@ type internal FSharpCompletionProvider
             use _logBlock =
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let document = context.Document
 

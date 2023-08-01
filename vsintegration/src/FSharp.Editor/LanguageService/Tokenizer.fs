@@ -851,10 +851,14 @@ module internal Tokenizer =
                 | SymbolLookupKind.Precise -> 0
                 | SymbolLookupKind.Greedy -> 1
 
-            draftTokens
-            |> List.filter (fun x ->
-                x.LeftColumn <= linePos.Character
-                && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
+            [
+                for x in draftTokens do
+                    if
+                        x.LeftColumn <= linePos.Character
+                        && (x.RightColumn + rightColumnCorrection) >= linePos.Character
+                    then
+                        yield x
+            ]
 
         // Select IDENT token. If failed, select OPERATOR token.
         let symbol =
@@ -922,7 +926,7 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
+    let inline tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
                 getCachedSourceLineData (

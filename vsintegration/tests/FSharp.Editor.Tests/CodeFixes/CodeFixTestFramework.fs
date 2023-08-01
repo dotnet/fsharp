@@ -40,7 +40,7 @@ let getRelevantDiagnostic (document: Document) =
 
 let createTestCodeFixContext (code: string) document (mode: Mode) =
     cancellableTask {
-        let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+        let! cancellationToken = CancellableTask.getCancellationToken ()
 
         let sourceText = SourceText.From code
 

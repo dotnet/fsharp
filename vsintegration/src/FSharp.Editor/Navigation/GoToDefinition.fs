@@ -286,10 +286,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | FindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
                 let projectOpt =
                     originDocument.Project.Solution.Projects
-                    |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                    |> Seq.tryFindV (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
 
                 match projectOpt with
-                | Some project ->
+                | ValueSome project ->
                     let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, (fun _ -> true))
 
                     let roslynSymbols =
@@ -513,7 +513,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
 
                 match tmpShownDocOpt with
-                | Some tmpShownDoc ->
+                | ValueSome tmpShownDoc ->
                     let goToAsync =
                         asyncMaybe {
 
@@ -544,7 +544,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 // We really should rely on symbol equality within FCS instead of doing it here,
                                 //     but the generated metadata as source isn't perfect for symbol equality.
                                 checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
-                                |> Seq.tryFind (fun x ->
+                                |> Seq.tryFindV (fun x ->
                                     match x.Symbol, targetSymbolUse.Symbol with
                                     | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
                                         symbol1.DisplayName = symbol2.DisplayName
@@ -569,7 +569,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         symbol1.DisplayName = symbol2.DisplayName
                                         && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
                                     | _ -> false)
-                                |> Option.map (fun x -> x.Range)
+                                |> ValueOption.map (fun x -> x.Range)
+                                |> Option.ofValueOption
 
                             let span =
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with

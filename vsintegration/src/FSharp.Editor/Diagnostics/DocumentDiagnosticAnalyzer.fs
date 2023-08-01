@@ -67,7 +67,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             use _eventDuration =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let! sourceText = document.GetTextAsync(ct)
             let filePath = document.FilePath

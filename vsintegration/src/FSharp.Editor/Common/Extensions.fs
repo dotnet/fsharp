@@ -293,7 +293,19 @@ module Option =
 [<RequireQualifiedAccess>]
 module Seq =
 
-    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+    let inline toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+
+    let inline tryFindV ([<InlineIfLambda>] predicate) (source: seq<'T>) =
+        use e = source.GetEnumerator()
+        let mutable res = ValueNone
+
+        while (ValueOption.isNone res && e.MoveNext()) do
+            let c = e.Current
+
+            if predicate c then
+                res <- ValueSome c
+
+        res
 
 [<RequireQualifiedAccess>]
 module Array =

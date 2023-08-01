@@ -202,9 +202,9 @@ module internal CompletionUtils =
 
             match
                 classifiedSpans
-                |> Seq.tryFind (fun cs -> isBacktickIdentifier cs && cs.TextSpan.IntersectsWith caretIndex)
+                |> Seq.tryFindV (fun cs -> isBacktickIdentifier cs && cs.TextSpan.IntersectsWith caretIndex)
             with
-            | Some backtickIdentifier ->
+            | ValueSome backtickIdentifier ->
                 // Backtick enclosed identifier found intersecting with caret, use its span.
                 backtickIdentifier.TextSpan
             | _ ->

@@ -22,7 +22,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : CancellableTask<string> =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken ()
             let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
 
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -109,7 +109,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
