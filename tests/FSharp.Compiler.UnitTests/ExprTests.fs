@@ -21,6 +21,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open TestFramework
+open Assert
 
 type FSharpCore =
     | FC45
@@ -733,12 +734,12 @@ let ``Test Unoptimized Declarations Project1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 3 // recursive value warning
-    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 2
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
     let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles[1]
 
@@ -849,12 +850,12 @@ let ``Test Unoptimized Declarations Project1`` () =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
@@ -868,12 +869,12 @@ let ``Test Optimized Declarations Project1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 3 // recursive value warning
-    wholeProjectResults.Diagnostics[0].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[1].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics[2].Severity |> Assert.shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Diagnostics[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
-    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldEqual 2
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
     let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[1]
 
@@ -985,12 +986,12 @@ let ``Test Optimized Declarations Project1`` () =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> Assert.shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
@@ -1034,8 +1035,8 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
             printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
             errors.AppendLine e.Message |> ignore
 
-        errors.ToString() |> Assert.shouldEqual ""
-        wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
+        errors.ToString() |> shouldEqual ""
+        wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
         let resultUnoptimized =
             wholeProjectResults.AssemblyContents.ImplementationFiles[0].Declarations
@@ -1100,11 +1101,11 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
 
         // fail test on first line that fails, show difference in output window
         resultUnoptFiltered
-        |> Assert.shouldPairwiseEqual expectedUnoptFiltered
+        |> shouldPairwiseEqual expectedUnoptFiltered
 
         // fail test on first line that fails, show difference in output window
         resultOptFiltered
-        |> Assert.shouldPairwiseEqual expectedOptFiltered
+        |> shouldPairwiseEqual expectedOptFiltered
     end
 
 [<Fact>]
@@ -3199,9 +3200,9 @@ let ``Test expressions of declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     // This should not stack overflow
@@ -3219,9 +3220,9 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
 
     // This should not stack overflow
@@ -3282,7 +3283,7 @@ let ``Test ProjectForWitnesses1`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3313,7 +3314,7 @@ let ``Test ProjectForWitnesses1`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldPairwiseEqual expected
+      |> shouldPairwiseEqual expected
 
 
 [<Fact>]
@@ -3338,10 +3339,10 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldEqual "callX$W"
-            argTypes.Count |> Assert.shouldEqual 1
+            nm |> shouldEqual "callX$W"
+            argTypes.Count |> shouldEqual 1
             let argText = argTypes[0].Type.ToString()
-            argText |> Assert.shouldEqual "type ^T -> ^U -> ^V"
+            argText |> shouldEqual "type ^T -> ^U -> ^V"
     end
 
 
@@ -3357,14 +3358,14 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldEqual "callXY$W"
-            argTypes.Count |> Assert.shouldEqual 2
+            nm |> shouldEqual "callXY$W"
+            argTypes.Count |> shouldEqual 2
             let argName1 = argTypes[0].Name
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argText1 |> Assert.shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
-            argText2 |> Assert.shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText1 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText2 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
     end
 
 
@@ -3406,8 +3407,8 @@ let ``Test ProjectForWitnesses2`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3425,7 +3426,7 @@ let ``Test ProjectForWitnesses2`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldPairwiseEqual expected
+      |> shouldPairwiseEqual expected
 
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
@@ -3461,8 +3462,8 @@ let ``Test ProjectForWitnesses3`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
 
-    wholeProjectResults.Diagnostics.Length |> Assert.shouldEqual 0
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3480,7 +3481,7 @@ let ``Test ProjectForWitnesses3`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldPairwiseEqual expected
+      |> shouldPairwiseEqual expected
 
 [<Fact>]
 let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
@@ -3504,16 +3505,16 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
-            nm |> Assert.shouldEqual "Sum$W"
-            argTypes.Count |> Assert.shouldEqual 2
+            nm |> shouldEqual "Sum$W"
+            argTypes.Count |> shouldEqual 2
             let argName1 = argTypes[0].Name
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argName1 |> Assert.shouldEqual (Some "get_Zero")
-            argText1 |> Assert.shouldEqual "type Microsoft.FSharp.Core.unit -> ^T"
-            argName2 |> Assert.shouldEqual (Some "op_Addition")
-            argText2 |> Assert.shouldEqual "type ^T -> ^T -> ^T"
+            argName1 |> shouldEqual (Some "get_Zero")
+            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit -> ^T"
+            argName2 |> shouldEqual (Some "op_Addition")
+            argText2 |> shouldEqual "type ^T -> ^T -> ^T"
     end
 
 //---------------------------------------------------------------------------------------------------------
@@ -3557,7 +3558,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
 
     Assert.Equal(wholeProjectResults.Diagnostics.Length, 0)
 
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> Assert.shouldEqual 1
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
@@ -3571,4 +3572,4 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> Assert.shouldPairwiseEqual expected
+      |> shouldPairwiseEqual expected
