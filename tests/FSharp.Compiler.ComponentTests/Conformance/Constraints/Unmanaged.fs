@@ -9,6 +9,32 @@ open FSharp.Test
 module Unmanaged =
 
     [<Fact>]
+    let ``voidptr is unmanaged`` () = 
+        Fsx """
+[<Struct>]
+type Test<'T when 'T: unmanaged> =
+    val element: 'T
+
+let test (x: 'T when 'T : unmanaged) = ()
+
+test (NativeInterop.NativePtr.nullPtr<voidptr>)
+test (NativeInterop.NativePtr.nullPtr<voidptr> |> NativeInterop.NativePtr.toVoidPtr)
+let _ = Test<voidptr voption>()
+        """
+        |> withNoWarn 9
+        |> typecheck
+        |> shouldSucceed
+    
+
+    [<Fact>]
+    let ``nativeptr of voidptr works`` () = 
+        Fsx """
+let myVal : nativeptr<voidptr> =  Unchecked.defaultof<_>
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Struct with private field can be unmanaged`` () = 
         Fsx """
 [<Struct>]
