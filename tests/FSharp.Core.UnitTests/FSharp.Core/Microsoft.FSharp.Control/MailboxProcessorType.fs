@@ -385,6 +385,7 @@ type MailboxProcessorType() =
         // Start a MailboxProcessor with StartImmediate and have it wait for a single message
         // requesting the information of the thread that it is running on
         let mailbox = MailboxProcessor<StartImmediateMessage>.StartImmediate(fun inbox -> async{
+            // Get the MailboxProcessor's thread immediately after starting it
             let threadInfo = getThreadInfo ()
             
             // Block until a single message is received
