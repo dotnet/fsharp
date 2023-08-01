@@ -505,8 +505,10 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static !!a  pinIt<a>(valuetype [runtime]System.ReadOnlySpan`1<!!a> thing) cil managed
+  .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype [runtime]System.ReadOnlySpan`1<!!a> thing) cil managed
   {
+    .param type a 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
@@ -682,8 +684,10 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static !!a  pinIt<a>(valuetype FixedExpressions/ArrayElementRef`1<!!a> thing) cil managed
+  .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype FixedExpressions/ArrayElementRef`1<!!a> thing) cil managed
   {
+    .param type a 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
@@ -888,8 +892,10 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static !!a  pinIt<T,a>(class FixedExpressions/RefField`1<!!T> thing) cil managed
+  .method public static !!a  pinIt<T,valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(class FixedExpressions/RefField`1<!!T> thing) cil managed
   {
+    .param type a 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
