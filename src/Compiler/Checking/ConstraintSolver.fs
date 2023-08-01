@@ -1087,6 +1087,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                 | [missingField] ->
                     FSComp.SR.tcAnonRecdSingleFieldNameSubset(string missingField)
                 | _ ->
+                    let missingFields = missingFields |> List.map(sprintf "'%s'")
                     let missingFields = String.concat ", " missingFields
                     FSComp.SR.tcAnonRecdMultipleFieldsNameSubset(string missingFields)
             | Superset extraFields ->
@@ -1094,6 +1095,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                 | [extraField] ->
                     FSComp.SR.tcAnonRecdSingleFieldNameSuperset(string extraField)
                 | _ ->
+                    let extraFields = extraFields |> List.map(sprintf "'%s'")
                     let extraFields = String.concat ", " extraFields
                     FSComp.SR.tcAnonRecdMultipleFieldsNameSuperset(string extraFields)
             | Overlap (missingFields, extraFields) ->
@@ -1103,6 +1105,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                 | [missingField] ->
                     FSComp.SR.tcAnonRecdSingleFieldNameDifferent(missingField)
                 | _ ->
+                    let missingFields = missingFields |> List.map(sprintf "'%s'")
                     let missingFields = String.concat ", " missingFields
                     FSComp.SR.tcAnonRecdMultipleFieldNameDifferent(missingFields)
         

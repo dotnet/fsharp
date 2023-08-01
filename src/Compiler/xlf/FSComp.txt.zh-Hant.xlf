@@ -1033,18 +1033,18 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameDifferent">
-        <source>This anonymous record should have fields '{0}'.</source>
-        <target state="new">This anonymous record should have fields '{0}'.</target>
+        <source>This anonymous record should have fields {0}.</source>
+        <target state="new">This anonymous record should have fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
-        <source>This anonymous record is missing fields '{0}'.</source>
-        <target state="new">This anonymous record is missing fields '{0}'.</target>
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="new">This anonymous record is missing fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
-        <source>This anonymous record has extra fields. Remove fields '{0}'.</source>
-        <target state="new">This anonymous record has extra fields. Remove fields '{0}'.</target>
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameDifferent">

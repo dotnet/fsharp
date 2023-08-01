@@ -39,7 +39,7 @@ let x () : {| A: int; B: string; C: int  |} =  {| A = 123 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 48, Line 2, Col 61, "This anonymous record is missing fields 'B, C'.")
+            (Error 1, Line 2, Col 48, Line 2, Col 61, "This anonymous record is missing fields 'B', 'C'.")
         ]
         
     [<Fact>]
@@ -61,7 +61,7 @@ let x () : {| A: int  |} =  {| A = 123 ; B = ""; C = 1 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 29, Line 2, Col 58, "This anonymous record has extra fields. Remove fields 'B, C'.")
+            (Error 1, Line 2, Col 29, Line 2, Col 58, "This anonymous record has extra fields. Remove fields 'B', 'C'.")
         ]
         
     [<Fact>]
@@ -83,7 +83,7 @@ let x() = ({| b = 2; c = 3 |} = {| a = 2 |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b, c'.")
+            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b', 'c'.")
         ]
 
     [<Fact>]
