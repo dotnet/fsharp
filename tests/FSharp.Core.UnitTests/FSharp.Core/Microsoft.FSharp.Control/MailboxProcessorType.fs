@@ -391,6 +391,11 @@ type MailboxProcessorType() =
             // Block until a single message is received
             let! message = inbox.Receive()
 
+            // Because the let! forces the asynchronous call Receive, the MailboxProcessor
+            // is not guaranteed to be on the same thread that it started on afterwards.
+            // In other words, placing getThreadInfo here or afterward will cause this test
+            // to fail.
+
             // Reply with the MailboxProcessor's thread information
             match message with
             | GetThreadInfo reply -> reply.Reply threadInfo
