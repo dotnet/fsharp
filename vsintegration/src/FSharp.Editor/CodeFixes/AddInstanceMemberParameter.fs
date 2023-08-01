@@ -29,4 +29,4 @@ type internal AddInstanceMemberParameterCodeFixProvider() =
                     Changes = [ TextChange(TextSpan(context.Span.Start, 0), "x.") ]
                 }
 
-            CancellableTask.singleton (Some codeFix)
+            CancellableTask.singleton (ValueSome codeFix)
