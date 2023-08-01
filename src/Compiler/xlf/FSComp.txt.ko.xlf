@@ -167,6 +167,11 @@
         <target state="translated">'{0}' 인수가 일치하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">'if' 식의 모든 분기는 첫 번째 분기의 유형으로 암시적으로 변환 가능한 값을 반환해야 합니다. 여기서는 형식이 \n    {1}이고 길이가 {0}인 튜플입니다.    \n이 분기는 형식이 \n    {3}이고 길이가 {2}인 튜플을 반환합니다.    \n</target>
@@ -450,6 +455,11 @@
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="translated">시퀀스 식에서 try-with 지원</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -1017,19 +1027,24 @@
         <target state="translated">잘못된 익명 레코드입니다. {0} 필드가 있어야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">이 익명 레코드에 필드가 부족합니다. 누락된 필드 {0}을(를) 추가하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
+        <target state="needs-review-translation">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">익명 레코드 형식 선언이 잘못되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields '{0}'.</source>
+        <target state="new">This anonymous record is missing fields '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="new">This anonymous record is missing field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">

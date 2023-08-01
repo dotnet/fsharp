@@ -1530,7 +1530,13 @@ type internal TypeCheckInfo
                             |> List.filter (fun item ->
                                 match item.Item with
                                 | Item.Value v -> v.LiteralValue.IsSome
-                                | _ -> true)
+                                | Item.ILField field -> field.LiteralValue.IsSome
+                                | Item.ActivePatternCase _
+                                | Item.ModuleOrNamespaces _
+                                | Item.NewDef _
+                                | Item.Types _
+                                | Item.UnionCase _ -> true
+                                | _ -> false)
 
                         filtered, denv, range)
 

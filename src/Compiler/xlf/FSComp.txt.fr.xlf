@@ -167,6 +167,11 @@
         <target state="translated">L'argument '{0}' ne correspond pas</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Toutes les branches d’une expression « if » doivent retourner des valeurs implicitement convertibles au type de la première branche, qui est ici un tuple de longueur {0} de type\n    {1}    \nCette branche renvoie un tuple de longueur {2} de type\n    {3}    \n</target>
@@ -450,6 +455,11 @@
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="translated">Prise en charge de try-with dans les expressions de séquence</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -1017,19 +1027,24 @@
         <target state="translated">Il s'agit de l'enregistrement anonyme incorrect. Il doit contenir les champs {0}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">Cet enregistrement anonyme ne contient pas suffisamment de champs. Ajoutez les champs manquants {0}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Cet enregistrement anonyme a trop de champs. Supprimez les champs supplémentaires {0}.</target>
+        <target state="needs-review-translation">Cet enregistrement anonyme a trop de champs. Supprimez les champs supplémentaires {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Déclaration de type d'enregistrement anonyme non valide.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields '{0}'.</source>
+        <target state="new">This anonymous record is missing fields '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="new">This anonymous record is missing field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">

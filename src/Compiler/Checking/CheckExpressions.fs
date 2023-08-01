@@ -4674,7 +4674,7 @@ and TcMeasuresAsTuple (cenv: cenv) newOk checkConstraints occ env (tpenv: Unscop
         | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
-        | _ -> failwith "inpossible"
+        | _ -> failwith "impossible"
     gather args tpenv Measure.One
 
 and TcTypesOrMeasures optKinds (cenv: cenv) newOk checkConstraints occ env tpenv args m =
@@ -6555,7 +6555,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
 
 // Check a record construction expression
-and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoOpt objTy fldsList m =
+and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv withExprInfoOpt objTy fldsList m =
     let g = cenv.g
 
     let tcref, tinst = destAppTy g objTy
@@ -6634,9 +6634,10 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
 
     // Check accessibility: this is also done in BuildFieldMap, but also need to check
     // for fields in { new R with a=1 and b=2 } constructions and { r with a=1 } copy-and-update expressions
-    rfrefs |> List.iter (fun rfref ->
+    for rfref in rfrefs do
         CheckRecdFieldAccessible cenv.amap m env.eAccessRights rfref |> ignore
-        CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult)
+        if isObjExpr then
+            CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult
 
     let args = List.map snd fldsList
 
@@ -6929,7 +6930,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynIdent(id,_), _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
-        TcRecordConstruction cenv objTy env tpenv None objTy fldsList mWholeExpr
+        TcRecordConstruction cenv objTy true env tpenv None objTy fldsList mWholeExpr
     else
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
@@ -7462,7 +7463,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
         mkDefault (mWholeExpr, overallTy), tpenv
     else
-        let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+        let expr, tpenv = TcRecordConstruction cenv overallTy false env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
         let expr =
             match superInitExprOpt  with
