@@ -1669,7 +1669,7 @@ let CompilePatternBasic
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
 
         clauses |> List.iteri (fun i c ->
-            if not (used.Contains i) then warning (RuleNeverMatched c.Range))
+            if not (used.Contains i) then warning (RuleNeverMatched c.Pattern.Range))
 
     dtree, targets
 
