@@ -1254,6 +1254,7 @@ module ParsedInput =
     //
     let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
+        | SynPat.LongIdent (longDotId = id) when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
         | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = id) ->
             pats
             |> List.tryPick (fun (patId, _, pat) ->
