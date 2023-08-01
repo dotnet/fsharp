@@ -1010,18 +1010,38 @@ type internal TypeCheckInfo
 
     /// Gets all methods that a type can, but has not yet, overriden. Object methods are not included.
     let GetOverridableMethods pos enclosingTypeNameRange inheritTypeNameRange =
-        let methodNotAlreadyOverridden (alreadyOverriddenMethods: MethInfo list) (candidate: MethInfo) g =
+        let areSlotParamsEqual slotParams candidateSlotParams =
+            List.forall2
+                (fun (list1: SlotParam list) (list2: SlotParam list) ->
+                    list1.Length = list2.Length
+                    && List.forall2 (fun (TSlotParam (paramType = ty1)) (TSlotParam (paramType = ty2)) -> typeEquiv g ty1 ty2) list1 list2)
+
+                slotParams
+                candidateSlotParams
+
+        let methodNotAlreadyOverridden (alreadyOverriddenMethods: MethInfo list) (candidateMeth: MethInfo) =
+            let candidateSlot = candidateMeth.GetSlotSig(amap, range0)
+
             alreadyOverriddenMethods
             |> List.forall (fun x ->
-                if candidate.DisplayName <> x.DisplayName then
-                    true
-                else
-                    match x, candidate with
-                    | FSMeth (valRef = vref1), FSMeth (valRef = vref2) ->
-                        match stripTyEqns g vref1.Type, stripTyEqns g vref2.Type with
-                        | TType_fun (rangeType = ty1), TType_fun (rangeType = ty2) -> not (typeEquiv g ty1 ty2)
-                        | _ -> not (typeEquiv g vref1.Type vref2.Type)
-                    | _ -> false)
+                match x with
+                | FSMeth (valRef = valref) ->
+                    x.ImplementedSlotSignatures
+                    |> List.forall (fun slot ->
+                        if
+                            slot.Name <> candidateSlot.Name
+                            || slot.FormalParams.Length <> candidateSlot.FormalParams.Length
+                        then
+                            true
+                        else
+                            let slot = ReparentSlotSigToUseMethodTypars g range0 valref slot
+
+                            match slot.FormalReturnType, candidateSlot.FormalReturnType with
+                            | None, None -> not (areSlotParamsEqual slot.FormalParams candidateSlot.FormalParams)
+                            | Some returnTy1, Some returnTy2 when typeEquiv g returnTy1 returnTy2 ->
+                                not (areSlotParamsEqual slot.FormalParams candidateSlot.FormalParams)
+                            | _ -> true)
+                | _ -> false)
 
         let (nenv, ad), m = GetBestEnvForPos pos
 
@@ -1030,7 +1050,7 @@ type internal TypeCheckInfo
             |> ResizeArray.tryPick (fun r ->
                 match r.Item with
                 | Item.Types (_, ty :: _) when equals r.Range enclosingTypeNameRange ->
-                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap inheritTypeNameRange ty
+                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap enclosingTypeNameRange ty
                     |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
                     |> Some
                 | _ -> None)
@@ -1049,18 +1069,15 @@ type internal TypeCheckInfo
                         FindMemberFlag.IgnoreOverrides
                         inheritTypeNameRange
                         ty
-                    |> List.choose (fun x ->
-                        if
-                            not x.IsFinal
-                            && not (tyconRefEq g x.DeclaringTyconRef g.system_Object_tcref)
-                            && methodNotAlreadyOverridden alreadyOverridden x g
-                        then
-                            Item.MethodGroup(x.DisplayName, [ x ], None)
-                            |> ItemWithNoInst
-                            |> CompletionItem ValueNone ValueNone
-                            |> Some
-                        else
-                            None)
+                    |> List.filter (fun x ->
+                        not x.IsFinal
+                        && not (tyconRefEq g x.DeclaringTyconRef g.system_Object_tcref)
+                        && methodNotAlreadyOverridden alreadyOverridden x)
+                    |> List.groupBy (fun x -> x.DisplayName)
+                    |> List.map (fun (name, overloads) ->
+                        Item.MethodGroup(name, overloads, None)
+                        |> ItemWithNoInst
+                        |> CompletionItem ValueNone ValueNone)
 
                 Some(meths, nenv.DisplayEnv, m)
             | _ -> None)
