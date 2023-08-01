@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="needs-review-translation">Questo record anonimo contiene troppi campi. Rimuovere i campi aggiuntivi {0}.</target>
+        <target state="translated">Questo record anonimo contiene troppi campi. Rimuovere i campi aggiuntivi {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">

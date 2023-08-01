@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="needs-review-translation">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
+        <target state="translated">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
