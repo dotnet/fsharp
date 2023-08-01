@@ -165,6 +165,8 @@ let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.Compiler
 [<Literal>]
 let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
 [<Literal>]
+let tname_UnmanagedType = "System.Runtime.InteropServices.UnmanagedType"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -336,6 +338,7 @@ type TcGlobals(
   static let isInEmbeddableKnownSet name =
       match name with
       | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
       | _ -> false
@@ -737,6 +740,7 @@ type TcGlobals(
   let v_bitwise_unary_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LogicalNot"                        , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_bitwise_shift_left_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LeftShift"                         , None                 , None          , [vara],     mk_shiftop_ty varaTy)
   let v_bitwise_shift_right_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RightShift"                        , None                 , None          , [vara],     mk_shiftop_ty varaTy)
+  let v_exponentiation_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Exponentiation"                    , None                 , None          , [vara;varb],     ([[varaTy];[varbTy]], varaTy))
   let v_unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_subtraction_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -1414,6 +1418,7 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
@@ -1422,6 +1427,7 @@ type TcGlobals(
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
@@ -1550,6 +1556,7 @@ type TcGlobals(
   member val bitwise_unary_not_vref     = ValRefForIntrinsic v_bitwise_unary_not_info
   member val bitwise_shift_left_vref    = ValRefForIntrinsic v_bitwise_shift_left_info
   member val bitwise_shift_right_vref   = ValRefForIntrinsic v_bitwise_shift_right_info
+  member val exponentiation_vref        = ValRefForIntrinsic v_exponentiation_info
   member val unchecked_addition_vref    = ValRefForIntrinsic v_unchecked_addition_info
   member val unchecked_unary_plus_vref  = ValRefForIntrinsic v_unchecked_unary_plus_info
   member val unchecked_unary_minus_vref = ValRefForIntrinsic v_unchecked_unary_minus_info
@@ -1894,7 +1901,7 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
+        let info = v_exponentiation_info
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
     | "Atan2", [aty;_], Some bty, [_;_] ->

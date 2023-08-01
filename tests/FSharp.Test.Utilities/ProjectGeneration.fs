@@ -40,6 +40,9 @@ let private projectRoot = "test-projects"
 
 let private defaultFunctionName = "f"
 
+type Reference = {
+    Name: string 
+    Version: string option }
 
 module ReferenceHelpers =
 
@@ -59,39 +62,39 @@ module ReferenceHelpers =
             for nugetSource in nugetSourceOpt |> Option.toList do
                 $"#i \"nuget:{nugetSource}\""
 
-            for name, versionOpt in references do
-                let version = versionOpt |> Option.map (sprintf ", %s") |> Option.defaultValue ""
-                $"#r \"nuget: %s{name}{version}\""
+            for reference: Reference in references do
+                let version = reference.Version |> Option.map (sprintf ", %s") |> Option.defaultValue ""
+                $"#r \"nuget: %s{reference.Name}{version}\""
         }
         |> String.concat "\n"
 
-    let getFrameworkReference (name, versionOpt) =
+    let runtimeList = lazy (            
+        // You can see which versions of the .NET runtime are currently installed with the following command.
+        let psi =
+            ProcessStartInfo("dotnet", "--list-runtimes", RedirectStandardOutput = true, UseShellExecute = false)
 
-        let getRuntimeList () =
-            // You can see which versions of the .NET runtime are currently installed with the following command.
-            let psi =
-                ProcessStartInfo("dotnet", "--list-runtimes", RedirectStandardOutput = true, UseShellExecute = false)
+        let proc = Process.Start(psi)
+        proc.WaitForExit()
 
-            let proc = Process.Start(psi)
-            proc.WaitForExit()
+        let output =
+            seq {
+                while not proc.StandardOutput.EndOfStream do
+                    proc.StandardOutput.ReadLine()
+            }
 
-            let output =
-                seq {
-                    while not proc.StandardOutput.EndOfStream do
-                        proc.StandardOutput.ReadLine()
-                }
+        /// Regex for output like: Microsoft.AspNetCore.App 5.0.13 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
+        let listRuntimesRegex = Regex("([^\s]+) ([^\s]+) \[(.*?)\\]")
 
-            /// Regex for output like: Microsoft.AspNetCore.App 5.0.13 [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]
-            let listRuntimesRegex = Regex("([^\s]+) ([^\s]+) \[(.*?)\\]")
+        output
+        |> Seq.map (fun x ->
+            let matches = listRuntimesRegex.Match(x)
+            let (version: string) = matches.Groups.[2].Value
 
-            output
-            |> Seq.map (fun x ->
-                let matches = listRuntimesRegex.Match(x)
-                let (version: string) = matches.Groups.[2].Value
+            { Name = matches.Groups.[1].Value
+              Version = version
+              Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) }))
 
-                { Name = matches.Groups.[1].Value
-                  Version = version
-                  Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) })
+    let getFrameworkReference (reference: Reference) =
 
         let createRuntimeLoadScript blockedDlls (r: Runtime) =
             let dir = r.Path
@@ -136,17 +139,17 @@ module ReferenceHelpers =
               contains "System.IO.Compression.Native" ]
 
         let runTimeLoadScripts =
-            getRuntimeList ()
+            runtimeList.Value
             |> Seq.map (fun runtime -> runtime.Name, (runtime, createRuntimeLoadScript blockedDlls runtime))
             |> Seq.groupBy fst
             |> Seq.map (fun (name, runtimes) -> name, runtimes |> Seq.map snd |> Seq.toList)
             |> Map
 
         runTimeLoadScripts
-        |> Map.tryFind name
+        |> Map.tryFind reference.Name
         |> Option.map (
             List.filter (fun (r, _) ->
-                match versionOpt with
+                match reference.Version with
                 | Some v -> r.Version = v
                 | None -> not (r.Version.Contains "preview"))
             >> List.sortByDescending (fun (r, _) -> r.Version)
@@ -154,7 +157,7 @@ module ReferenceHelpers =
         |> Option.bind List.tryHead
         |> Option.map snd
         |> Option.defaultWith (fun () ->
-            failwith $"Couldn't find framework reference {name} {versionOpt}. Available Runtimes: \n"
+            failwith $"Couldn't find framework reference {reference.Name} {reference.Version}. Available Runtimes: \n"
             + (runTimeLoadScripts
                |> Map.toSeq
                |> Seq.map snd
@@ -217,6 +220,8 @@ let sourceFile fileId deps =
 let OptionsCache = ConcurrentDictionary()
 
 
+
+
 type SyntheticProject =
     { Name: string
       ProjectDir: string
@@ -225,8 +230,8 @@ type SyntheticProject =
       RecursiveNamespace: bool
       OtherOptions: string list
       AutoAddModules: bool
-      NugetReferences: (string * string option) list
-      FrameworkReferences: (string * string option) list }
+      NugetReferences: Reference list
+      FrameworkReferences: Reference list }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -425,13 +430,13 @@ let private renderFsProj (p: SyntheticProject) =
         <ItemGroup>
         """
 
-        for fwr, v in p.FrameworkReferences do
-            let version = v |> Option.map (fun v -> $" Version=\"{v}\"") |> Option.defaultValue ""
-            $"<FrameworkReference Include=\"{fwr}\"{version}/>"
+        for reference in p.FrameworkReferences do
+            let version = reference.Version |> Option.map (fun v -> $" Version=\"{v}\"") |> Option.defaultValue ""
+            $"<FrameworkReference Include=\"{reference.Name}\"{version}/>"
 
-        for nr, v in p.NugetReferences do
-            let version = v |> Option.map (fun v -> $" Version=\"{v}\"") |> Option.defaultValue ""
-            $"<PackageReference Include=\"{nr}\"{version}/>"
+        for reference in p.NugetReferences do
+            let version = reference.Version |> Option.map (fun v -> $" Version=\"{v}\"") |> Option.defaultValue ""
+            $"<PackageReference Include=\"{reference.Name}\"{version}/>"
 
         for f in p.SourceFiles do
             if f.HasSignatureFile then
@@ -1237,11 +1242,11 @@ type SyntheticProject with
                   projectDir ++ node.Attributes["Include"].InnerText ]
             |> List.partition (fun path -> path.EndsWith ".fsi")
         let signatureFiles = set signatureFiles
-
+        
         let parseReferences refType =
             [ for node in fsproj.DocumentElement.SelectNodes($"//{refType}") do
-                  node.Attributes["Include"].InnerText,
-                  node.Attributes["Version"] |> Option.ofObj |> Option.map (fun x -> x.InnerText) ]
+                 { Name = node.Attributes["Include"].InnerText
+                   Version = node.Attributes["Version"] |> Option.ofObj |> Option.map (fun x -> x.InnerText) } ]
 
         let name = Path.GetFileNameWithoutExtension projectFile
 

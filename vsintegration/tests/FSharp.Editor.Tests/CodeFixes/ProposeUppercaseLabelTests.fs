@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = ProposeUppercaseLabelCodeFixProvider()
-let private diagnostic = 0053 // ... must be uppercase identifiers ...
 
 [<Fact>]
 let ``Fixes FS0053 for discriminated unions`` () =
@@ -27,7 +26,7 @@ type MyNumber = Number of int
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -48,6 +47,6 @@ exception LowException of string
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

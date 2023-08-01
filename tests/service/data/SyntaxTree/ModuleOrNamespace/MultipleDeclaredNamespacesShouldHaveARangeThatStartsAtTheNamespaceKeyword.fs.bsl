@@ -26,13 +26,13 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((9,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (x, None), false, None, (9,4--9,5)), None,
-                  Const (Int32 42, (9,8--9,10)), (9,4--9,5), Yes (9,0--9,10),
-                  { LeadingKeyword = Let (9,0--9,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (9,6--9,7) })], (9,0--9,10))],
-          PreXmlDocEmpty, [], None, (7,0--9,10),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None), Named (SynIdent (x, None), false, None, (9,4--9,5)),
+                  None, Const (Int32 42, (9,8--9,10)), (9,4--9,5),
+                  Yes (9,0--9,10), { LeadingKeyword = Let (9,0--9,3)
+                                     InlineKeyword = None
+                                     EqualsRange = Some (9,6--9,7) })],
+              (9,0--9,10))], PreXmlDocEmpty, [], None, (7,0--9,10),
           { LeadingKeyword = Namespace (7,0--7,9) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

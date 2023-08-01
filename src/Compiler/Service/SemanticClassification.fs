@@ -268,7 +268,7 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.RecordField
 
-                        | Item.Property (_, pinfo :: _), _, m ->
+                        | Item.Property(info = pinfo :: _), _, m ->
                             if not pinfo.IsIndexer then
                                 add m SemanticClassificationType.Property
 

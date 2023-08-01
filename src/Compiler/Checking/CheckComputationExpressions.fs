@@ -111,6 +111,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryFinally (tryExpr=body)
             | SynExpr.LetOrUse (body=body)
             | SynExpr.While (doExpr=body)
+            | SynExpr.WhileBang (doExpr=body)
             | SynExpr.ForEach (bodyExpr=body) ->
                 YieldFree body
 
@@ -142,6 +143,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryFinally (tryExpr=body)
             | SynExpr.LetOrUse (body=body)
             | SynExpr.While (doExpr=body)
+            | SynExpr.WhileBang (doExpr=body)
             | SynExpr.ForEach (bodyExpr=body) ->
                 YieldFree body
 
@@ -177,7 +179,8 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
         | SynExpr.Do _ 
         | SynExpr.MatchBang _ 
         | SynExpr.LetOrUseBang _ 
-        | SynExpr.While _ -> false
+        | SynExpr.While _
+        | SynExpr.WhileBang _ -> false
         | _ -> true
 
     let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc = 
@@ -1027,6 +1030,36 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         [ mkSynDelay2 guardExpr; 
                           mkSynCall "Delay" mWhile [mkSynDelay innerComp.Range holeFill]])) )
 
+        | SynExpr.WhileBang (spWhile, guardExpr, innerComp, mOrig) -> 
+            let mGuard = guardExpr.Range
+            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | _ -> mGuard
+            let mGuard = mGuard.MakeSynthetic()
+
+            // 'while!' is hit just before each time the guard is called
+            let guardExpr = 
+                match spWhile with
+                | DebugPointAtWhile.Yes _ ->
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.No -> guardExpr
+
+            let rewrittenWhileExpr =
+                let idFirst = mkSynId mGuard (CompilerGeneratedName "first")
+                let patFirst = mkSynPatVar None idFirst
+
+                let body =
+                    let idCond = mkSynId mGuard (CompilerGeneratedName "cond")
+                    let patCond = mkSynPatVar None idCond
+                    let condBinding = mkSynBinding (Xml.PreXmlDoc.Empty, patCond) (None, false, true, mGuard, DebugPointAtBinding.NoneAtSticky, None, SynExpr.Ident idFirst, mGuard, [], [], None, SynBindingTrivia.Zero)  
+                    let setCondExpr = SynExpr.Set (SynExpr.Ident idCond, SynExpr.Ident idFirst, mGuard)
+                    let bindCondExpr = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtSticky, false, true, patFirst, guardExpr, [], setCondExpr, mGuard, SynExprLetOrUseBangTrivia.Zero)
+
+                    let whileExpr = SynExpr.While (DebugPointAtWhile.No, SynExpr.Ident idCond, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bindCondExpr, mWhile), mOrig)
+                    SynExpr.LetOrUse (false, false, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
+
+                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtSticky, false, true, patFirst, guardExpr, [], body, mGuard, SynExprLetOrUseBangTrivia.Zero)
+
+            tryTrans CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
+
         | SynExpr.TryFinally (innerComp, unwindExpr, _mTryToLast, spTry, spFinally, trivia) ->
 
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Try) | _ -> trivia.TryKeyword
@@ -1737,7 +1770,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
         | _ -> None
 
-    /// Check is an expression has no computation expression constructs
+    /// Check if an expression has no computation expression constructs
     and isSimpleExpr comp =
 
         match comp with 
@@ -1745,6 +1778,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.ForEach _ -> false
         | SynExpr.For _ -> false
         | SynExpr.While _ -> false
+        | SynExpr.WhileBang _ -> false
         | SynExpr.TryFinally _ -> false
         | SynExpr.ImplicitZero _ -> false
         | OptionalSequential (JoinOrGroupJoinOrZipClause _, _) -> false

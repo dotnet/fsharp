@@ -580,6 +580,7 @@ type internal BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
+                    let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -589,7 +590,8 @@ type internal BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             flatErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let res =
@@ -598,6 +600,8 @@ type internal BackgroundCompiler
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
+                let! ct = Async.CancellationToken
+
                 let parseDiagnostics, parseTree, anyErrors =
                     ParseAndCheckFile.parseFile (
                         sourceText,
@@ -606,7 +610,8 @@ type internal BackgroundCompiler
                         userOpName,
                         false,
                         flatErrors,
-                        captureIdentifiersWhenParsing
+                        captureIdentifiersWhenParsing,
+                        ct
                     )
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
@@ -903,6 +908,7 @@ type internal BackgroundCompiler
                         )
 
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+                    let! ct = NodeCode.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -912,7 +918,8 @@ type internal BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             captureIdentifiersWhenParsing,
-                            builder.TcConfig.flatErrors
+                            builder.TcConfig.flatErrors,
+                            ct
                         )
 
                     let parseResults =

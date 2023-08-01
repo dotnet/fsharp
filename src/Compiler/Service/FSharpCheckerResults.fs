@@ -49,11 +49,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AbstractIL
-open System.Reflection.PortableExecutable
-open FSharp.Compiler.CreateILModule
-open FSharp.Compiler.IlxGen
-open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -929,7 +924,7 @@ type internal TypeCheckInfo
                         None
                 | id :: rest ->
                     match fields |> List.tryFind (fun f -> f.LogicalName = id) with
-                    | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
+                    | Some f -> dive f.FieldType denv ad m rest true wasPathEmpty
                     | _ ->
                         // Field name can be optionally qualified.
                         // If we haven't matched a field name yet, keep peeling off the prefix.
@@ -1188,6 +1183,85 @@ type internal TypeCheckInfo
 
     let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
 
+    let CompletionItemSuggestedName displayName =
+        {
+            ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
+            MinorPriority = 0
+            Type = None
+            Kind = CompletionItemKind.SuggestedName
+            IsOwnMember = false
+            Unresolved = None
+        }
+
+    /// Checks whether the suggested name is unused.
+    /// In the future we could use an increasing numeric suffix for conflict resolution
+    let CreateCompletionItemForSuggestedPatternName (pos: pos) name =
+        if String.IsNullOrWhiteSpace name then
+            None
+        else
+            let name = String.lowerCaseFirstChar name
+
+            let unused =
+                sResolutions.CapturedNameResolutions
+                |> ResizeArray.forall (fun r ->
+                    match r.Item with
+                    | Item.Value vref when r.Pos.Line = pos.Line -> vref.DisplayName <> name
+                    | _ -> true)
+
+            if unused then
+                Some(CompletionItemSuggestedName name)
+            else
+                None
+
+    /// Suggest name based on type
+    let SuggestNameBasedOnType g pos ty =
+        if isNumericType g ty then
+            CreateCompletionItemForSuggestedPatternName pos "num"
+        else
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) ->
+                CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
+            | _ -> None
+
+    /// Suggest names based on field name and type, add them to the list
+    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName completions =
+        let field =
+            match indexOrName with
+            | Choice1Of2 index ->
+                // Index is None when parentheses were not used, i.e. "| Some v ->" - suggest a name only when the case has a single field
+                match uci.UnionCase.RecdFieldsArray, index with
+                | [| field |], None -> Some field
+                | [| _ |], Some _
+                | _, None -> None
+                | arr, Some index -> arr |> Array.tryItem index
+            | Choice2Of2 name -> uci.UnionCase.RecdFieldsArray |> Array.tryFind (fun x -> x.DisplayName = name)
+
+        field
+        |> Option.map (fun field ->
+            let ty =
+                // If the field type is generic, suggest a name based on the solution
+                if isTyparTy g field.FormalType then
+                    sResolutions.CapturedNameResolutions
+                    |> ResizeArray.tryPick (fun r ->
+                        match r.Item with
+                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqns vref.Type)
+                        | _ -> None)
+                    |> Option.defaultValue field.FormalType
+                else
+                    field.FormalType
+
+            let fieldName =
+                // If the field has not been given an explicit name, do not suggest the generated one
+                if field.rfield_name_generated then
+                    ""
+                else
+                    field.DisplayName
+
+            completions
+            |> List.prependIfSome (SuggestNameBasedOnType g caseIdPos ty)
+            |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
+        |> Option.defaultValue completions
+
     let getItem (x: ItemWithInst) = x.Item
 
     let GetDeclaredItems
@@ -1436,10 +1510,10 @@ type internal TypeCheckInfo
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
+        let pos = mkPos line colAtEndOfNamesAndResidue
+
         // Look for a "special" completion context
         let completionContext =
-            let pos = mkPos line colAtEndOfNamesAndResidue
-
             // If the completion context we have computed higher up the stack is for the same position,
             // reuse it, otherwise recompute
             match completionContextAtPos with
@@ -1654,7 +1728,7 @@ type internal TypeCheckInfo
                     m)
 
             // Completion at '(x: ...)"
-            | Some CompletionContext.PatternType
+            | Some CompletionContext.Type
             // Completion at  '| Case1 of ...'
             | Some CompletionContext.UnionCaseFieldsDeclaration
             // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
@@ -1687,6 +1761,57 @@ type internal TypeCheckInfo
                         | _ -> false),
                     denv,
                     m)
+
+            | Some (CompletionContext.Pattern patternContext) ->
+                let declaredItems =
+                    GetDeclaredItems(
+                        parseResultsOpt,
+                        lineStr,
+                        origLongIdentOpt,
+                        colAtEndOfNamesAndResidue,
+                        residueOpt,
+                        lastDotPos,
+                        line,
+                        loc,
+                        filterCtors,
+                        resolveOverloads,
+                        false,
+                        getAllSymbols
+                    )
+                    |> Option.map (fun (items, denv, range) ->
+                        let filtered =
+                            items
+                            |> List.filter (fun item ->
+                                match item.Item with
+                                | Item.Value v -> v.LiteralValue.IsSome
+                                | Item.ILField field -> field.LiteralValue.IsSome
+                                | Item.ActivePatternCase _
+                                | Item.ModuleOrNamespaces _
+                                | Item.NewDef _
+                                | Item.Types _
+                                | Item.UnionCase _ -> true
+                                | _ -> false)
+
+                        filtered, denv, range)
+
+                let indexOrName, caseIdRange =
+                    match patternContext with
+                    | PatternContext.PositionalUnionCaseField (index, m) -> Choice1Of2 index, m
+                    | PatternContext.NamedUnionCaseField (name, m) -> Choice2Of2 name, m
+                    | PatternContext.Other -> Choice1Of2 None, range0
+
+                // No special handling for PatternContext.Other other than filtering out non-literal values
+                if equals caseIdRange range0 then
+                    declaredItems
+                else
+                    GetCapturedNameResolutions caseIdRange.End ResolveOverloads.Yes
+                    |> ResizeArray.tryPick (fun r ->
+                        match r.Item with
+                        | Item.UnionCase (uci, _) ->
+                            let list = declaredItems |> Option.map p13 |> Option.defaultValue []
+                            Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName list, r.DisplayEnv, r.Range)
+                        | _ -> None)
+                    |> Option.orElse declaredItems
 
             // Other completions
             | cc ->
@@ -2018,27 +2143,12 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some (items, denv, _, m) ->
-                        let mkToolTipText (items: CompletionItem list) =
-                            ToolTipText(
-                                items
-                                |> List.map (fun x ->
-                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                            )
-
-                        match items with
-                        | [ getItem; setItem ] ->
-                            match getItem.Item, setItem.Item with
-                            | Item.Value vr1, Item.Value vr2 when vr1.PropertyName = vr2.PropertyName ->
-                                let getItem =
-                                    if (vr1.CompiledName None).StartsWith "get_" then
-                                        getItem
-                                    else
-                                        setItem
-
-                                mkToolTipText [ getItem ]
-                            | _ -> mkToolTipText items
-                        | items -> mkToolTipText items)
+                        ToolTipText(
+                            items
+                            |> List.map (fun x ->
+                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                        ))
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
@@ -2243,7 +2353,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.Property (name, ILProp propInfo :: _) ->
+                        | Item.Property (name, ILProp propInfo :: _, _) ->
                             let methInfo =
                                 if propInfo.HasGetter then Some propInfo.GetterMethod
                                 elif propInfo.HasSetter then Some propInfo.SetterMethod
@@ -2314,7 +2424,7 @@ type internal TypeCheckInfo
                             // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                             | Item.CtorGroup (name, ProvidedMeth _ :: _)
                             | Item.MethodGroup (name, ProvidedMeth _ :: _, _)
-                            | Item.Property (name, ProvidedProp _ :: _) -> FindDeclFailureReason.ProvidedMember name
+                            | Item.Property (name, ProvidedProp _ :: _, _) -> FindDeclFailureReason.ProvidedMember name
                             | Item.Event (ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
                             | Item.ILField (ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName
                             | ItemIsProvidedType g tcref -> FindDeclFailureReason.ProvidedType tcref.DisplayName
@@ -2583,7 +2693,7 @@ module internal ParseAndCheckFile =
 
         IndentationAwareSyntaxStatus(indentationSyntaxStatus, true)
 
-    let createLexerFunction fileName options lexbuf (errHandler: DiagnosticsHandler) =
+    let createLexerFunction fileName options lexbuf (errHandler: DiagnosticsHandler) (ct: CancellationToken) =
         let indentationSyntaxStatus = getLightSyntaxStatus fileName options
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
@@ -2611,12 +2721,25 @@ module internal ParseAndCheckFile =
         let tokenizer =
             LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
 
-        (fun _ -> tokenizer.GetToken())
+        if ct.CanBeCanceled then
+            (fun _ ->
+                ct.ThrowIfCancellationRequested()
+                tokenizer.GetToken())
+        else
+            (fun _ -> tokenizer.GetToken())
 
     let createLexbuf langVersion strictIndentation sourceText =
         UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), strictIndentation, sourceText)
 
-    let matchBraces (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
+    let matchBraces
+        (
+            sourceText: ISourceText,
+            fileName,
+            options: FSharpParsingOptions,
+            userOpName: string,
+            suggestNamesForErrors: bool,
+            ct: CancellationToken
+        ) =
         // Make sure there is an DiagnosticsLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
         let delayedLogger = CapturingDiagnosticsLogger("matchBraces")
         use _ = UseDiagnosticsLogger delayedLogger
@@ -2630,7 +2753,7 @@ module internal ParseAndCheckFile =
             let errHandler =
                 DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
 
-            let lexfun = createLexerFunction fileName options lexbuf errHandler
+            let lexfun = createLexerFunction fileName options lexbuf errHandler ct
 
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
@@ -2723,7 +2846,8 @@ module internal ParseAndCheckFile =
             userOpName: string,
             suggestNamesForErrors: bool,
             flatErrors: bool,
-            identCapture: bool
+            identCapture: bool,
+            ct: CancellationToken
         ) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
 
@@ -2740,7 +2864,7 @@ module internal ParseAndCheckFile =
         let parseResult =
             usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
 
-                let lexfun = createLexerFunction fileName options lexbuf errHandler
+                let lexfun = createLexerFunction fileName options lexbuf errHandler ct
 
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase)
@@ -2760,7 +2884,9 @@ module internal ParseAndCheckFile =
                         identCapture,
                         Some userOpName
                     )
-                with e ->
+                with
+                | :? OperationCanceledException -> reraise ()
+                | e ->
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
@@ -3593,6 +3719,8 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let parsingOptions =
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
+            let! ct = Cancellable.token ()
+
             let parseErrors, parsedInput, anyErrors =
                 ParseAndCheckFile.parseFile (
                     sourceText,
@@ -3601,7 +3729,8 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     userOpName,
                     suggestNamesForErrors,
                     tcConfig.flatErrors,
-                    tcConfig.captureIdentifiersWhenParsing
+                    tcConfig.captureIdentifiersWhenParsing,
+                    ct
                 )
 
             let dependencyFiles = [||] // interactions have no dependencies

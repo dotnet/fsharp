@@ -678,7 +678,8 @@ module internal ParseAndCheckFile =
         userOpName: string *
         suggestNamesForErrors: bool *
         flatErrors: bool *
-        identCapture: bool ->
+        identCapture: bool *
+        ct: CancellationToken ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:
@@ -686,7 +687,8 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        ct: CancellationToken ->
             (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.
