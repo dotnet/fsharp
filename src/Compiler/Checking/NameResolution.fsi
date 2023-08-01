@@ -71,7 +71,7 @@ type Item =
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
-    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+    | AnonRecdField of anonInfo: AnonRecdTypeInfo * tys: TTypes * fieldIndex: int * range: range
 
     // The following are never in the items table but are valid results of binding
     // an identifier in different circumstances.
@@ -763,7 +763,7 @@ val internal ResolveNestedField:
     ad: AccessorDomain ->
     recdTy: TType ->
     lid: Ident list ->
-        Ident list * (Ident * AnonRecdTypeInfo option) list
+        Ident list * (Ident * Item) list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:

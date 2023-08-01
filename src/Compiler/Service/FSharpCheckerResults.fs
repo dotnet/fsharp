@@ -670,7 +670,7 @@ type internal TypeCheckInfo
                         None
                 | id :: rest ->
                     match fields |> List.tryFind (fun f -> f.LogicalName = id) with
-                    | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
+                    | Some f -> dive f.FieldType denv ad m rest true wasPathEmpty
                     | _ ->
                         // Field name can be optionally qualified.
                         // If we haven't matched a field name yet, keep peeling off the prefix.

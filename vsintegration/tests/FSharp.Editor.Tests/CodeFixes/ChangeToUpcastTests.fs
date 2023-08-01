@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = ChangeToUpcastCodeFixProvider()
-let private diagnostic = 3198 // The conversion is an upcast, not a downcast...
 
 // Test cases are taken from the original PR:
 // https://github.com/dotnet/fsharp/pull/10463
@@ -36,7 +35,7 @@ let Thing : IFoo = Foo() :> IFoo
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code (Manual("Foo() :?> IFoo", 3198))
 
     Assert.Equal(expected, actual)
 
@@ -63,7 +62,7 @@ let Thing : IFoo = upcast Foo()
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code (Manual("downcast Foo()", 3198))
 
     Assert.Equal(expected, actual)
 
@@ -80,6 +79,6 @@ let Thing : IdowncastFoo = Foo() :?> IdowncastFoo
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code (Manual("Foo() :?> IdowncastFoo", 3198))
 
     Assert.Equal(expected, actual)

@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;net8.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
@@ -27,6 +27,7 @@
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
+    <Compile Include="PrettyNaming.fs" />
     <Compile Include="..\..\tests\service\FsUnit.fs">
       <Link>CompilerService\FsUnit.fs</Link>
     </Compile>
@@ -46,9 +47,7 @@
     <Compile Include="..\..\tests\service\ProjectAnalysisTests.fs">
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\TokenizerTests.fs">
-      <Link>CompilerService\TokenizerTests.fs</Link>
-    </Compile>
+    <Compile Include="TokenizerTests.fs" />
 <!-- TODO:  Fix this test
     <Compile Include="..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
@@ -75,9 +74,7 @@
     <Compile Include="..\..\tests\service\ServiceUntypedParseTests.fs">
       <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\TreeVisitorTests.fs">
-      <Link>CompilerService\TreeVisitorTests.fs</Link>
-    </Compile>
+    <Compile Include="TreeVisitorTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
