@@ -1008,6 +1008,63 @@ type internal TypeCheckInfo
             |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
         |> Option.defaultValue completions
 
+    /// Gets all methods that a type can, but has not yet, overriden. Object methods are not included.
+    let GetOverridableMethods pos enclosingTypeNameRange inheritTypeNameRange =
+        let methodNotAlreadyOverridden (alreadyOverriddenMethods: MethInfo list) (candidate: MethInfo) g =
+            alreadyOverriddenMethods
+            |> List.forall (fun x ->
+                if candidate.DisplayName <> x.DisplayName then
+                    true
+                else
+                    match x, candidate with
+                    | FSMeth (valRef = vref1), FSMeth (valRef = vref2) ->
+                        match stripTyEqns g vref1.Type, stripTyEqns g vref2.Type with
+                        | TType_fun (rangeType = ty1), TType_fun (rangeType = ty2) -> not (typeEquiv g ty1 ty2)
+                        | _ -> not (typeEquiv g vref1.Type vref2.Type)
+                    | _ -> false)
+
+        let (nenv, ad), m = GetBestEnvForPos pos
+
+        let alreadyOverridden =
+            sResolutions.CapturedNameResolutions
+            |> ResizeArray.tryPick (fun r ->
+                match r.Item with
+                | Item.Types (_, ty :: _) when equals r.Range enclosingTypeNameRange ->
+                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap inheritTypeNameRange ty
+                    |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+                    |> Some
+                | _ -> None)
+            |> Option.defaultValue []
+
+        sResolutions.CapturedNameResolutions
+        |> ResizeArray.tryPick (fun r ->
+            match r.Item with
+            | Item.Types (_, ty :: _) when equals r.Range inheritTypeNameRange ->
+                let meths =
+                    GetIntrinsicMethInfosOfType
+                        infoReader
+                        None
+                        ad
+                        TypeHierarchy.AllowMultiIntfInstantiations.No
+                        FindMemberFlag.IgnoreOverrides
+                        inheritTypeNameRange
+                        ty
+                    |> List.choose (fun x ->
+                        if
+                            not x.IsFinal
+                            && not (tyconRefEq g x.DeclaringTyconRef g.system_Object_tcref)
+                            && methodNotAlreadyOverridden alreadyOverridden x g
+                        then
+                            Item.MethodGroup(x.DisplayName, [ x ], None)
+                            |> ItemWithNoInst
+                            |> CompletionItem ValueNone ValueNone
+                            |> Some
+                        else
+                            None)
+
+                Some(meths, nenv.DisplayEnv, m)
+            | _ -> None)
+
     let getItem (x: ItemWithInst) = x.Item
 
     let GetDeclaredItems
@@ -1559,6 +1616,9 @@ type internal TypeCheckInfo
                         | _ -> None)
                     |> Option.orElse declaredItems
 
+            | Some (CompletionContext.MethodOverride (enclosingTypeNameRange, inheritTypeNameRange)) ->
+                GetOverridableMethods pos enclosingTypeNameRange inheritTypeNameRange
+
             // Other completions
             | cc ->
                 match residueOpt |> Option.bind Seq.tryHead with
@@ -1664,7 +1724,10 @@ type internal TypeCheckInfo
                         |> Option.map (fun parsedInput ->
                             ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
 
-                    let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
+                    let isAttributeApplication =
+                        match ctx with
+                        | Some CompletionContext.AttributeApplication -> true
+                        | _ -> false
 
                     DeclarationListInfo.Create(
                         infoReader,

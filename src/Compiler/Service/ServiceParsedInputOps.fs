@@ -9,6 +9,7 @@ open System.Text.RegularExpressions
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -96,6 +97,9 @@ type CompletionContext =
 
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
+
+    /// Completing a method override (e.g. override this.ToStr|)
+    | MethodOverride of enclosingTypeNameRange: range * inheritTypeNameRange: range
 
 type ShortIdent = string
 
@@ -1412,9 +1416,45 @@ module ParsedInput =
 
                     | _ -> None
 
-                member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
+                member _.VisitBinding(path, defaultTraverse, (SynBinding (headPat = headPat; trivia = trivia) as synBinding)) =
+
+                    let isOverride leadingKeyword =
+                        match leadingKeyword with
+                        | SynLeadingKeyword.Override _ -> true
+                        | _ -> false
+
+                    let overrideContextOrInvalid path =
+                        let overrideCtx =
+                            match path with
+                            | _ :: SyntaxNode.SynTypeDefn (SynTypeDefn (typeInfo = SynComponentInfo(longId = [ enclosingType ])
+                                                                        typeRepr = SynTypeDefnRepr.ObjectModel (members = members))) :: _ ->
+                                members
+                                |> List.tryPick (fun memb ->
+                                    match memb with
+                                    | SynMemberDefn.ImplicitInherit (inheritType = inheritType) ->
+                                        Some(CompletionContext.MethodOverride(enclosingType.idRange, inheritType.Range))
+                                    | _ -> None)
+                            | _ -> None
+
+                        overrideCtx |> Option.orElseWith (fun () -> Some CompletionContext.Invalid)
 
                     match headPat with
+
+                    // override _.|
+                    | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContextOrInvalid path
+
+                    // override this.|
+                    | SynPat.Named(ident = SynIdent (ident = thisId)) when
+                        isOverride trivia.LeadingKeyword && thisId.idRange.End.IsAdjacentTo pos
+                        ->
+                        overrideContextOrInvalid path
+
+                    // override this.ToStr|
+                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                        isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                        ->
+                        overrideContextOrInvalid path
+
                     | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                         if rangeContainsPos lidwd.Range pos then
                             // let fo|o x = ()
@@ -1423,10 +1463,12 @@ module ParsedInput =
                             pats
                             |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
                             |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
                     | SynPat.Named (range = range)
                     | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
                         // let fo|o = 1
                         Some CompletionContext.Invalid
+
                     | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
