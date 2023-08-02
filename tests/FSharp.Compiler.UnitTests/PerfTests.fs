@@ -17,6 +17,7 @@ open Assert
 
 // Create an interactive checker instance
 let internal checker = FSharpChecker.Create()
+let internal syncRoot = obj()
 
 module internal Project1 =
 
@@ -38,8 +39,8 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "starting test..."
     let backgroundParseCount = ref 0
     let backgroundCheckCount = ref 0
-    checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
-    checker.FileParsed.Add (fun x -> incr backgroundParseCount)
+    checker.FileChecked.Add (fun _ -> lock syncRoot (fun () -> incr backgroundCheckCount))
+    checker.FileParsed.Add (fun _ -> lock syncRoot (fun () -> incr backgroundParseCount))
 
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     let pB, tB = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
@@ -69,9 +70,9 @@ let ``Test request for parse and check doesn't check whole project`` () =
     (backgroundCheckCount.Value  <= 10) |> shouldEqual true // only two extra typechecks of files
 
     printfn "checking (pD - pC) = %d" (pD - pC)
-    Assert.Equal(0, pD - pC)
+    pD - pC |> shouldEqual 0
     printfn "checking (tD - tC) = %d" (tD - tC)
-    Assert.Equal(1, tD - tC)
+    tD - tC |> shouldEqual 1
 
     printfn "CheckFileInProject()..."
     let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames[7], 0, Project1.fileSources2[7], Project1.options)  |> Async.RunImmediate
