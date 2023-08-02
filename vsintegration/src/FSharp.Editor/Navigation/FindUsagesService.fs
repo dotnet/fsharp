@@ -128,7 +128,7 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
                                     externalDefinitionItem
                                 else
                                     definitionItems
-                                    |> List.tryFindV (fun (_, projectId) -> doc.Project.Id = projectId)
+                                    |> List.tryFindV (fun (_, filePath) -> doc.Project.FilePath = filePath)
                                     |> ValueOption.map (fun (definitionItem, _) -> definitionItem)
                                     |> ValueOption.defaultValue externalDefinitionItem
 
