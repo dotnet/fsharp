@@ -615,10 +615,11 @@ module ParsedInput =
             ifPosInRange ident.idRange (fun _ -> Some EntityKind.Type)
 
         and walkTyparDecl typarDecl =
-            let (SynTyparDecl (Attributes attrs, typar)) = typarDecl
+            let (SynTyparDecl (Attributes attrs, typar, intersectionContraints, _)) = typarDecl
 
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
+            |> Option.orElseWith (fun () -> intersectionContraints |> List.tryPick walkType)
 
         and walkTypeConstraint cx =
             match cx with
@@ -697,6 +698,7 @@ module ParsedInput =
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.StaticConstantExpr (e, _) -> walkExpr e
             | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Intersection (types = types) -> List.tryPick walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.LongIdent _
@@ -1254,6 +1256,7 @@ module ParsedInput =
     //
     let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
+        | SynPat.LongIdent (longDotId = id) when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
         | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = id) ->
             pats
             |> List.tryPick (fun (patId, _, pat) ->
@@ -1650,9 +1653,10 @@ module ParsedInput =
             addLongIdentWithDots attr.TypeName
             walkExpr attr.ArgExpr
 
-        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar)) =
+        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar, intersectionConstraints, _)) =
             List.iter walkAttribute attrs
             walkTypar typar
+            List.iter walkType intersectionConstraints
 
         and walkTypeConstraint cx =
             match cx with
@@ -1740,6 +1744,7 @@ module ParsedInput =
             | SynType.StaticConstantNamed (ident, value, _) ->
                 walkType ident
                 walkType value
+            | SynType.Intersection (types = types) -> List.iter walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.Var _

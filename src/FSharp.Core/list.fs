@@ -453,10 +453,13 @@ module List =
 
     [<CompiledName("Contains")>]
     let inline contains value source =
+        let equalityCheck listElement =
+            value = listElement
+
         let rec contains e xs1 =
             match xs1 with
             | [] -> false
-            | h1 :: t1 -> e = h1 || contains e t1
+            | h1 :: t1 -> equalityCheck h1 || contains e t1
 
         contains value source
 
