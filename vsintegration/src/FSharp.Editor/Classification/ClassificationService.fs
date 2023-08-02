@@ -205,7 +205,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         result,
                         cancellationToken
                     )
-                    
+
             }
             |> CancellableTask.startAsTask cancellationToken
 
