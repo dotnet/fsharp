@@ -374,7 +374,12 @@ type SynBindingKind =
 
 /// Represents the explicit declaration of a type parameter
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of
+        attributes: SynAttributes *
+        typar: SynTypar *
+        intersectionConstraints: SynType list *
+        trivia: SynTyparDeclTrivia
 
 /// The unchecked abstract syntax tree of F# type constraints
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -520,6 +525,11 @@ type SynType =
 
     /// A type arising from a parse error
     | FromParseError of range: range
+
+    /// F# syntax: x: #I1 & #I2
+    /// F# syntax: x: 't & #I1 & #I2
+    /// Shorthand for x: 't when 't :> I1 and 't :> I2
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

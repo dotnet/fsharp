@@ -2637,7 +2637,7 @@ module EstablishTypeDefinitionCores =
         suppressErrorReporting (fun () -> 
             synTypars|> List.forall (fun synTypar ->
                 try
-                    let (SynTyparDecl(Attributes synAttrs, _)) = synTypar
+                    let (SynTyparDecl (attributes = Attributes synAttrs)) = synTypar
                     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
                     HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
                 with _ -> false))
@@ -4049,7 +4049,7 @@ module TcDeclarations =
                     if tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl(_, SynTypar(ident = untypedIdent))) ->
+                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = SynTypar (ident = untypedIdent))) ->
                             typar.SetIdent(untypedIdent)
                         )
 

@@ -308,7 +308,8 @@ type SynBindingKind =
     | Do
 
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeConstraint =
@@ -366,13 +367,28 @@ type SynTyparDecls =
 
     member x.Constraints =
         match x with
-        | PostfixList (constraints = constraints) -> constraints
+        | PostfixList (decls = decls; constraints = constraints) ->
+            // Synthesize SynTypeConstraints implied with any intersection constraints in SynTyparDecl
+            // The parser makes sure we're only dealing with hash constraints here
+            let intersectionConstraints =
+                decls
+                |> List.collect (fun (SynTyparDecl (typar = tp; intersectionConstraints = tys)) ->
+                    tys
+                    |> List.map (fun ty ->
+                        let ty =
+                            match ty with
+                            | SynType.HashConstraint (ty, _) -> ty
+                            | _ -> ty
+
+                        SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, ty.Range)))
+
+            List.append intersectionConstraints constraints
         | _ -> []
 
     member x.Range =
         match x with
         | PostfixList (range = range)
-        | PrefixList (range = range) -> range
+        | PrefixList (range = range)
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -442,6 +458,8 @@ type SynType =
 
     | FromParseError of range: range
 
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -461,6 +479,7 @@ type SynType =
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
         | SynType.Or (range = m)
+        | SynType.Intersection (range = m)
         | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
