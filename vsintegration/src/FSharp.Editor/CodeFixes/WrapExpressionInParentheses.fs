@@ -33,4 +33,4 @@ type internal WrapExpressionInParenthesesCodeFixProvider() =
                         ]
                 }
 
-            CancellableTask.singleton (Some codeFix)
+            CancellableTask.singleton (ValueSome codeFix)
