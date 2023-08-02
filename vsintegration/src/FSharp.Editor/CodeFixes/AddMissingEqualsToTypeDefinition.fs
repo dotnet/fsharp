@@ -30,18 +30,18 @@ type internal AddMissingEqualsToTypeDefinitionCodeFixProvider() =
 
                 // this should eliminate 99.9% of germs
                 if not <| message.Contains "=" then
-                    return None
+                    return ValueNone
                 else
 
                     let! range = context.GetErrorRangeAsync()
                     let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof AddMissingEqualsToTypeDefinitionCodeFixProvider)
 
                     if not <| parseResults.IsPositionWithinTypeDefinition range.Start then
-                        return None
+                        return ValueNone
 
                     else
                         return
-                            Some
+                            ValueSome
                                 {
                                     Name = CodeFix.AddMissingEqualsToTypeDefinition
                                     Message = title

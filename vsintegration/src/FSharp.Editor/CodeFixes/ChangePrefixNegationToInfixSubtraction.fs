@@ -37,10 +37,10 @@ type internal ChangePrefixNegationToInfixSubtractionCodeFixProvider() =
                 let pos = findNextNonWhitespacePos sourceText (context.Span.End + 1)
 
                 if sourceText[pos] <> '-' then
-                    return None
+                    return ValueNone
                 else
                     return
-                        Some
+                        ValueSome
                             {
                                 Name = CodeFix.ChangePrefixNegationToInfixSubtraction
                                 Message = title

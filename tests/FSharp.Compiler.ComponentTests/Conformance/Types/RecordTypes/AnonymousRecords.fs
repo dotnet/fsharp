@@ -41,6 +41,28 @@ let x () : {| A: int; B: string; C: int  |} =  {| A = 123 |}
         |> withDiagnostics [
             (Error 1, Line 2, Col 48, Line 2, Col 61, "This anonymous record is missing fields 'B, C'.")
         ]
+        
+    [<Fact>]
+    let ``Anonymous Record with extra field`` () =
+        Fsx """
+let x () : {| A: int; B: string  |} =  {| A = 123; B = ""; C = 1 |}
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 40, Line 2, Col 68, "This anonymous record has an extra field. Remove field 'C'.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Record with extra fields`` () =
+        Fsx """
+let x () : {| A: int  |} =  {| A = 123 ; B = ""; C = 1 |}
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 29, Line 2, Col 58, "This anonymous record has extra fields. Remove fields 'B, C'.")
+        ]
 
     [<Fact>]
     let ``Anonymous Records with duplicate labels - Copy and update expression`` () =

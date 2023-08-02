@@ -1037,11 +1037,6 @@
         <target state="translated">잘못된 익명 레코드입니다. {0} 필드가 있어야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="needs-review-translation">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">익명 레코드 형식 선언이 잘못되었습니다.</target>
@@ -1052,9 +1047,19 @@
         <target state="new">This anonymous record is missing fields '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields '{0}'.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
         <source>This anonymous record is missing field '{0}'.</source>
         <target state="new">This anonymous record is missing field '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
