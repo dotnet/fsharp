@@ -458,7 +458,7 @@ type SynType =
 
     | FromParseError of range: range
 
-    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTypeIntersectionTrivia
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     member x.Range =
         match x with

@@ -529,7 +529,7 @@ type SynType =
     /// F# syntax: x: #I1 & #I2
     /// F# syntax: x: 't & #I1 & #I2
     /// Shorthand for x: 't when 't :> I1 and 't :> I2
-    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTypeIntersectionTrivia
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

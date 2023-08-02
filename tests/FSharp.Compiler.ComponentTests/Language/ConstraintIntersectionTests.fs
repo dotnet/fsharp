@@ -82,6 +82,6 @@ let y (f: #seq<int> & System.IDisposable) = ()
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        Error 3568, Line 2, Col 25, Line 2, Col 43, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
-        Error 3568, Line 4, Col 23, Line 4, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
+        Error 3572, Line 2, Col 25, Line 2, Col 43, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
+        Error 3572, Line 4, Col 23, Line 4, Col 41, "Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
     ]
