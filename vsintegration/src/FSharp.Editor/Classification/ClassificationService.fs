@@ -120,8 +120,6 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         lookup :> IReadOnlyDictionary<_, _>
 
-   
-
     let semanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
 
@@ -164,15 +162,14 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 use _eventDuration =
                     TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
-                
+
                 if not isOpenDocument then
                     // If called concurrently, it'll likely race here (in both getting and setting/adding to underlying dictionary)
                     // But we don't really care for such small caches, will change the implementation if it shows that it's a problem.
                     match! syntacticClassificationCache.TryGetValueAsync document with
                     | ValueSome classifiedSpansDict ->
                         match classifiedSpansDict.TryGetValue(textSpan) with
-                        | true, classifiedSpans ->
-                            result.AddRange (classifiedSpans)
+                        | true, classifiedSpans -> result.AddRange(classifiedSpans)
                         | _ ->
                             let classifiedSpans =
                                 getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
@@ -185,12 +182,10 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
 
                         let classifiedSpansDict = Dictionary<TextSpan, ImmutableArray<ClassifiedSpan>>()
-                        
-                        do! 
-                            syntacticClassificationCache.SetAsync(document, classifiedSpansDict)
 
-                        do
-                            classifiedSpansDict[textSpan] <- classifiedSpans
+                        do! syntacticClassificationCache.SetAsync(document, classifiedSpansDict)
+
+                        do classifiedSpansDict[textSpan] <- classifiedSpans
 
                         result.AddRange(classifiedSpans)
                 else

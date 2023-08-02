@@ -198,7 +198,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
                 for navResults in results do
                     for navResult in navResults do
-                        results'.Add navResult 
+                        results'.Add navResult
 
                 return results'.MoveToImmutable()
 

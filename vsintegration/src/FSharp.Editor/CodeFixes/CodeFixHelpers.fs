@@ -167,11 +167,9 @@ module IFSharpCodeFixProviderExtensions =
                     // TODO: this crops the diags on a very high level,
                     // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
-                    |> Seq.map (
-                        fun diag -> 
-                            let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
-                            provider.GetCodeFixIfAppliesAsync context
-                    )
+                    |> Seq.map (fun diag ->
+                        let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
+                        provider.GetCodeFixIfAppliesAsync context)
                     |> CancellableTask.whenAll
 
                 let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
