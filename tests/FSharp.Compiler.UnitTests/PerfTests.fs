@@ -33,7 +33,6 @@ module internal Project1 =
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
-
 [<Fact>]
 let ``Test request for parse and check doesn't check whole project`` () =
     printfn "starting test..."
