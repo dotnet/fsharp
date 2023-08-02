@@ -525,6 +525,7 @@ type SynTyparDeclTrivia =
     }
 
     static member Zero: SynTyparDeclTrivia
+
 /// Represents additional information for SynConst.Measure
 [<NoEquality; NoComparison>]
 type SynMeasureConstantTrivia =

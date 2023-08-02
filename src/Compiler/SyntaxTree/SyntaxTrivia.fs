@@ -408,6 +408,7 @@ type SynTyparDeclTrivia =
     }
 
     static member Zero: SynTyparDeclTrivia = { AmpersandRanges = [] }
+
 type SynMeasureConstantTrivia =
     {
         LessRange: range
