@@ -35,7 +35,7 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = doc.GetTextVersionAsync ct
-            cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
+            do cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
         }
 
     interface IDisposable with
