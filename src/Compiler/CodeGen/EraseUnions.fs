@@ -1265,7 +1265,7 @@ let mkClassUnionDef
 
                     let fieldsToBeAddedIntoType =
                         alt.FieldDefs
-                        |> Array.filter (fun f -> fieldsEmitted.Add(struct(f.LowerName,f.Type)))
+                        |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
 
                     let fields = fieldsToBeAddedIntoType |> Array.map mkUnionCaseFieldId |> Array.toList
 
@@ -1283,7 +1283,6 @@ let mkClassUnionDef
         ]
         |> List.unzip3
         |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
-
 
     let selfAndTagFields =
         [
