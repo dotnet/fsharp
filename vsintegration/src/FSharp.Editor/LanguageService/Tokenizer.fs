@@ -897,7 +897,7 @@ module internal Tokenizer =
                     FullIsland = partialName.QualifyingIdents @ [ identStr ]
                 })
 
-        Option.ofValueOption symbol
+        ValueOption.toOption symbol
 
     let private getCachedSourceLineData
         (

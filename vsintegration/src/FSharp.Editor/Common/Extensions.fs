@@ -285,11 +285,6 @@ module Option =
         else
             None
 
-    let inline ofValueOption vo =
-        match vo with
-        | ValueSome v -> Some(v)
-        | ValueNone -> None
-
 [<RequireQualifiedAccess>]
 module ValueOption =
 
@@ -325,10 +320,7 @@ module Seq =
 
         let rec loop i =
             if ie.MoveNext() then
-                if predicate ie.Current then
-                    ValueSome i
-                else
-                    loop (i + 1)
+                if predicate ie.Current then ValueSome i else loop (i + 1)
             else
                 ValueNone
 
@@ -347,16 +339,13 @@ module Array =
         state
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
-    
+
     let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
-    
+
         let rec loop i =
-            if i >= array.Length then
-                ValueNone
-            else if predicate array.[i] then
-                ValueSome array[i]
-            else
-                loop (i + 1)
+            if i >= array.Length then ValueNone
+            else if predicate array.[i] then ValueSome array[i]
+            else loop (i + 1)
 
         loop 0
 

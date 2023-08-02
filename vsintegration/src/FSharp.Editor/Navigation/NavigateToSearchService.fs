@@ -200,7 +200,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                     for navResult in navResults do
                         results'.Add navResult
 
-                return results'.MoveToImmutable()
+                return results'.ToImmutable()
 
             }
             |> CancellableTask.start cancellationToken
