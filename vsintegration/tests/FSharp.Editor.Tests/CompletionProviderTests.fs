@@ -1754,3 +1754,101 @@ for Some ((0, C System.Double. ))
         VerifyCompletionListExactly(fileContents, "| [ B G.", [ "b" ])
         VerifyCompletionListExactly(fileContents, "| A.", [ "B"; "C" ])
         VerifyCompletionList(fileContents, "for Some ((0, C System.Double.", [ "Epsilon"; "MaxValue" ], [ "Abs" ])
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if there is a sealed override higher up in the hierarchy`` () =
+        let fileContents =
+            """
+[<AbstractClass>]
+type A () =
+    inherit System.Dynamic.SetIndexBinder (null)
+
+    override _.a
+
+[<AbstractClass>]
+type B () =
+    inherit System.Dynamic.DynamicMetaObjectBinder ()
+
+    override x.
+"""
+
+        // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
+        VerifyCompletionListExactly(
+            fileContents,
+            "override _.a",
+            [
+                "BindDelegate"
+                "Equals"
+                "FallbackSetIndex"
+                "Finalize"
+                "GetHashCode"
+                "ToString"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.",
+            [
+                "Bind"
+                "BindDelegate"
+                "Equals"
+                "Finalize"
+                "GetHashCode"
+                "get_ReturnType"
+                "ToString"
+            ]
+        )
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if it is already overridden in the same type`` () =
+        let fileContents =
+            """
+type G<'a> () =
+    override _.
+
+    override x.ToString () = ""
+
+[<AbstractClass]
+type A () =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+
+    member NotVirtual () = ()
+
+type B () =
+    inherit A ()
+
+    override A1 () = ()
+    override x.b
+
+type C () =
+    inherit A () =
+
+    override A1 () = ()
+    override x.c
+    override A1 s = ()
+"""
+
+        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals"; "Finalize"; "GetHashCode" ])
+        VerifyCompletionListExactly(fileContents, "override x.b", [ "A1"; "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+        VerifyCompletionListExactly(fileContents, "override x.c", [ "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+
+    [<Fact>]
+    let ``Completion list for override is empty when the caret is on the self identifier`` () =
+        let fileContents =
+            """
+type A () =
+    override a
+
+type B () =
+    override _
+
+type C () =
+    override c.b () = ()
+"""
+
+        VerifyNoCompletionList(fileContents, "override a")
+        VerifyNoCompletionList(fileContents, "override _")
+        VerifyNoCompletionList(fileContents, "override c")

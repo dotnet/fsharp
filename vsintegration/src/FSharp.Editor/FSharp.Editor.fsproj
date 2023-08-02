@@ -126,9 +126,10 @@
     <Compile Include="CodeFixes\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFixes\RemoveSuperflousCaptureForUnionCaseWithNoData.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoData.fs" />
     <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
-    <Compile Include="CodeFixes\RenameUnusedValue.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
     <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />

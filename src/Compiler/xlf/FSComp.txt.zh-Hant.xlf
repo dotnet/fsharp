@@ -232,6 +232,11 @@
         <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">預設介面成員使用</target>
@@ -812,6 +817,11 @@
         <target state="translated">「套件管理」功能需要語言版本 5.0 或更新版本</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">插補字串無效。此插補字串運算式填滿為空白，必須有運算式。</target>
@@ -1027,11 +1037,6 @@
         <target state="translated">此為錯誤的匿名記錄。其應有欄位 {0}。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="needs-review-translation">此匿名記錄有太多欄位。請移除額外的欄位 {0}。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">匿名記錄型別宣告無效。</target>
@@ -1042,9 +1047,19 @@
         <target state="new">This anonymous record is missing fields '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields '{0}'.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
         <source>This anonymous record is missing field '{0}'.</source>
         <target state="new">This anonymous record is missing field '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -8478,8 +8493,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">套件管理員金鑰 '{0}' 未在 {1} 中註冊。目前已註冊: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">套件管理員金鑰 '{0}' 未在 {1} 中註冊。目前已註冊: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

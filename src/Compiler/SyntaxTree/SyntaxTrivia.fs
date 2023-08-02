@@ -402,6 +402,14 @@ type SynMemberSigMemberTrivia =
     static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }
 
 [<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia = { AmpersandRanges = [] }
+
+[<NoEquality; NoComparison>]
 type SynMeasureConstantTrivia =
     {
         LessRange: range

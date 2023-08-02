@@ -28,7 +28,7 @@ type internal RemoveDotFromIndexerAccessOptInCodeFixProvider() =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             CancellableTask.singleton (
-                Some
+                ValueSome
                     {
                         Name = CodeFix.RemoveIndexerDotBeforeBracket
                         Message = title
