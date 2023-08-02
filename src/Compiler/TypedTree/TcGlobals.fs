@@ -165,6 +165,8 @@ let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.Compiler
 [<Literal>]
 let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
 [<Literal>]
+let tname_UnmanagedType = "System.Runtime.InteropServices.UnmanagedType"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -336,6 +338,7 @@ type TcGlobals(
   static let isInEmbeddableKnownSet name =
       match name with
       | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
       | _ -> false
@@ -737,6 +740,7 @@ type TcGlobals(
   let v_bitwise_unary_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LogicalNot"                        , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_bitwise_shift_left_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LeftShift"                         , None                 , None          , [vara],     mk_shiftop_ty varaTy)
   let v_bitwise_shift_right_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RightShift"                        , None                 , None          , [vara],     mk_shiftop_ty varaTy)
+  let v_exponentiation_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Exponentiation"                    , None                 , None          , [vara;varb],     ([[varaTy];[varbTy]], varaTy))
   let v_unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_subtraction_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -878,26 +882,19 @@ type TcGlobals(
   let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
-  let mutable generatedAttribsCache = []
-  let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
-  let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let debuggerNonUserCodeAttribute = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
+  let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
   let addGeneratedAttrs (attrs: ILAttributes) =
-    let attribs =
-       match generatedAttribsCache with
-       | [] ->
-            let res = [
-                if not noDebugAttributes then
-                    mkCompilerGeneratedAttribute()
-                    mkDebuggerNonUserCodeAttribute()
-                ]
-            generatedAttribsCache <- res
-            res
-       | res -> res
-    mkILCustomAttrs (attrs.AsList() @ attribs)
+      if Array.isEmpty generatedAttributes then
+          attrs
+      else
+          match attrs.AsArray() with
+          | [||] -> mkILCustomAttrsFromArray generatedAttributes
+          | attrs -> mkILCustomAttrsFromArray (Array.append attrs generatedAttributes)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
@@ -911,15 +908,9 @@ type TcGlobals(
             ILType.Value (mkILNonGenericTySpec tref)
         mkILCustomAttribute (findSysILTypeRef tname_DebuggerBrowsableAttribute, [typ_DebuggerBrowsableState], [ILAttribElem.Int32 n], [])
 
-  let mkDebuggerBrowsableNeverAttribute() =
-      match debuggerBrowsableNeverAttributeCache with
-      | None ->
-          let res = tref_DebuggerBrowsableAttribute 0
-          debuggerBrowsableNeverAttributeCache <- Some res
-          res
-      | Some res -> res
+  let debuggerBrowsableNeverAttribute = tref_DebuggerBrowsableAttribute 0
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrsFromArray (Array.append (attrs.AsArray()) [| debuggerBrowsableNeverAttribute |])
 
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
 
@@ -1427,6 +1418,7 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_UnmanagedType   = findSysILTypeRef tname_UnmanagedType |> mkILNonGenericValueTy  
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
@@ -1435,6 +1427,7 @@ type TcGlobals(
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
@@ -1522,6 +1515,7 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
+  member val attrib_TailCallAttribute                      = mk_MFCore_attrib "TailCallAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1562,6 +1556,7 @@ type TcGlobals(
   member val bitwise_unary_not_vref     = ValRefForIntrinsic v_bitwise_unary_not_info
   member val bitwise_shift_left_vref    = ValRefForIntrinsic v_bitwise_shift_left_info
   member val bitwise_shift_right_vref   = ValRefForIntrinsic v_bitwise_shift_right_info
+  member val exponentiation_vref        = ValRefForIntrinsic v_exponentiation_info
   member val unchecked_addition_vref    = ValRefForIntrinsic v_unchecked_addition_info
   member val unchecked_unary_plus_vref  = ValRefForIntrinsic v_unchecked_unary_plus_info
   member val unchecked_unary_minus_vref = ValRefForIntrinsic v_unchecked_unary_minus_info
@@ -1837,13 +1832,7 @@ type TcGlobals(
 
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
-  member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
-
-  member _.mkDebuggerStepThroughAttribute() =
-      mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
-
-  member _.mkDebuggableAttribute jitOptimizerDisabled =
-      mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
+  member _.DebuggerBrowsableNeverAttribute = debuggerBrowsableNeverAttribute
 
   member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
@@ -1858,9 +1847,9 @@ type TcGlobals(
 
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
-  member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+  member _.CompilerGeneratedAttribute = compilerGeneratedAttribute
 
-  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+  member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
@@ -1912,7 +1901,7 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_Exponentiation", None, None, [vara; varb], ([[varaTy]; [varbTy]], varaTy))
+        let info = v_exponentiation_info
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
     | "Atan2", [aty;_], Some bty, [_;_] ->

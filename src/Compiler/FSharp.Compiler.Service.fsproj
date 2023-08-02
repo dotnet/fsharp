@@ -337,6 +337,8 @@
     <Compile Include="Checking\QuotationTranslator.fs" />
     <Compile Include="Checking\PostInferenceChecks.fsi" />
     <Compile Include="Checking\PostInferenceChecks.fs" />
+    <Compile Include="Checking\TailCallChecks.fsi" />
+    <Compile Include="Checking\TailCallChecks.fs" />
     <Compile Include="Checking\CheckBasics.fsi" />
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
@@ -351,6 +353,8 @@
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
+	<Compile Include="Checking\SignatureHash.fsi" />
+	<Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -415,8 +419,6 @@
     <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
     <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
     <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
-    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
-    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
     <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />

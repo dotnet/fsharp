@@ -55,6 +55,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
@@ -72,6 +73,10 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
     | ConstraintIntersectionOnFlexibleTypes
+    | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
+    | UnmanagedConstraintCsharpInterop
+    | WhileBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -149,6 +154,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+                LanguageFeature.AccessorFunctionShorthand, previewVersion
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
                 LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
@@ -165,9 +171,12 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
                 LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
                 LanguageFeature.DiagnosticForObjInference, previewVersion
+                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
+                LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, previewVersion
-
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
+                LanguageFeature.WhileBang, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -274,6 +283,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
+        | LanguageFeature.AccessorFunctionShorthand -> FSComp.SR.featureAccessorFunctionShorthand ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
@@ -292,8 +302,13 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
         | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
+
+        | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
+        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
+        | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
+        | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

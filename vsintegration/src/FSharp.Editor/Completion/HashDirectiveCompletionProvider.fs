@@ -68,7 +68,7 @@ type internal HashDirectiveCompletionProvider
         let documentId = workspace.GetDocumentIdInCurrentContext(text.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
 
-        let defines, langVersion =
+        let defines, langVersion, strictIndentation =
             projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
 
         let textLines = text.Lines
@@ -81,6 +81,7 @@ type internal HashDirectiveCompletionProvider
             Some document.FilePath,
             defines,
             Some langVersion,
+            strictIndentation,
             CancellationToken.None
         )
 

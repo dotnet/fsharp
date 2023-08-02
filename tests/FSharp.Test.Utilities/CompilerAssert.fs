@@ -290,6 +290,9 @@ module rec CompilerAssertHelpers =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
+                |> Option.orElseWith (fun () -> 
+                    deps 
+                    |> Array.tryFind (fun (x: string) -> args.Name.StartsWith(Path.GetFileNameWithoutExtension(x) + ", Version")))
                 |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
@@ -335,6 +338,9 @@ module rec CompilerAssertHelpers =
             OriginalLoadReferences = []
             Stamp = None
         }
+
+    let defaultProjectOptionsForFilePath path (targetFramework: TargetFramework) =
+        { defaultProjectOptions targetFramework with SourceFiles = [| path |] }
 
     let rawCompile outputFilePath isExe options (targetFramework: TargetFramework) (sources: SourceCodeFileKind list) =
         let args =
@@ -804,7 +810,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     /// Parses and type checks the given source. Fails if type checker is aborted.
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
-            let defaultOptions = defaultProjectOptions TargetFramework.Current
+            let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
             checker.ParseAndCheckFileInProject(
                 name,
                 0,

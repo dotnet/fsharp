@@ -168,6 +168,9 @@ module internal CodeFix =
     let AddMissingFunKeyword = "AddMissingFunKeyword"
 
     [<Literal>]
+    let ProposeUppercaseLabel = "ProposeUppercaseLabel"
+
+    [<Literal>]
     let AddNewKeyword = "AddNewKeyword"
 
     [<Literal>]

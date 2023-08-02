@@ -119,6 +119,12 @@ type SynExprLambdaTrivia =
 
     static member Zero: SynExprLambdaTrivia
 
+/// Represents additional information for SynExpr.DotLambda
+[<NoEquality; NoComparison>]
+type SynExprDotLambdaTrivia =
+    { UnderscoreRange: range
+      DotRange: range }
+
 /// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
@@ -126,6 +132,8 @@ type SynExprLetOrUseTrivia =
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+    static member Zero: SynExprLetOrUseTrivia
 
 /// Represents additional information for SynExpr.LetOrUseBang
 [<NoEquality; NoComparison>]
@@ -219,10 +227,16 @@ type SynPatListConsTrivia =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnLeadingKeyword =
     | Type of range
+
     | And of range
-    // Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
+
+    /// Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
     | StaticType of staticRange: range * typeRange: range
+
+    /// Produced during type checking, should not be used in actual parsed trees.
     | Synthetic
+
+    member Range: range
 
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
@@ -519,3 +533,8 @@ type SynTyparDeclTrivia =
     }
 
     static member Zero: SynTyparDeclTrivia
+/// Represents additional information for SynConst.Measure
+[<NoEquality; NoComparison>]
+type SynMeasureConstantTrivia =
+    { LessRange: range
+      GreaterRange: range }

@@ -38,16 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="needs-review-translation">块结构指南;
-显示 F# 代码的结构指南;
-大纲;
-显示 F# 代码的大纲和可折叠节点;
-内联提示;
-显示内联类型提示(预览);
-显示返回类型提示(预览);
-显示内联参数名称提示(预览);啤酒;
-实时缓冲区;
-使用实时(未保存)缓冲区进行检查</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">

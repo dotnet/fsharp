@@ -12,6 +12,16 @@
         <target state="translated">Placer toujours les instructions open au niveau supérieur</target>
         <note />
       </trans-unit>
+      <trans-unit id="Analyze_full_solution_on_background">
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
+        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Background_analysis">
+        <source>Background analysis</source>
+        <target state="new">Background analysis</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Capture_Identifiers_When_Parsing">
         <source>Capture identifiers while parsing</source>
         <target state="new">Capture identifiers while parsing</target>
@@ -139,7 +149,7 @@
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">Afficher les conseils de type de retour en ligne (préversion)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

@@ -571,6 +571,11 @@ module List =
         | [ _ ] -> true
         | _ -> false
 
+    let prependIfSome x l =
+        match x with
+        | Some x -> x :: l
+        | _ -> l
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
@@ -624,7 +629,7 @@ module ValueOptionInternal =
         | Some x -> ValueSome x
         | None -> ValueNone
 
-    let inline bind f x =
+    let inline bind ([<InlineIfLambda>] f) x =
         match x with
         | ValueSome x -> f x
         | ValueNone -> ValueNone

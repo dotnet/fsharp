@@ -388,7 +388,7 @@ type PhasedDiagnostic with
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
             | _ ->
-                (severity = FSharpDiagnosticSeverity.Info)
+                (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational
@@ -1188,6 +1188,7 @@ type Exception with
                 | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
                 | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
                 | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WHILE_BANG -> SR.GetString("Parser.TOKEN.WHILE.BANG")
                 | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
                 | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
                 | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")

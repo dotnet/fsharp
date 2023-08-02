@@ -367,7 +367,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] =
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion strictIndentation m : IL.ILInstr[] =
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -376,13 +376,13 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL
     [||]
 #else
     try
-        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
+        AsciiParser.ilInstrs AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
     with _ ->
         errorR (Error(FSComp.SR.astParseEmbeddedILError (), m))
         [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion strictIndentation m =
     ignore s
 
 #if NO_INLINE_IL_PARSER
@@ -390,7 +390,7 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
     try
-        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
+        AsciiParser.ilType AsciiLexer.token (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, s))
     with RecoverableParseError ->
         errorR (Error(FSComp.SR.astParseEmbeddedILTypeError (), m))
         IL.PrimaryAssemblyILGlobals.typ_Object
@@ -566,7 +566,7 @@ let mkSynMemberDefnGetSet
                 (mBindLhs, attrs)
                 ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
 
-            let (SynValData (_, valSynInfo, _)) = valSynData
+            let (SynValData (valInfo = valSynInfo)) = valSynData
 
             // Setters have all arguments tupled in their internal TAST form, though they don't appear to be
             // tupled from the syntax
@@ -616,7 +616,7 @@ let mkSynMemberDefnGetSet
                     // should be unreachable, cover just in case
                     raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
 
-            let valSynData = SynValData(Some(memFlags), valSynInfo, None)
+            let valSynData = SynValData(Some(memFlags), valSynInfo, None, None)
 
             // Fold together the information from the first lambda pattern and the get/set binding
             // This uses the 'this' variable from the first and the patterns for the get/set binding,
@@ -1090,3 +1090,62 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
     | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
+
+let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
+    match access with
+    | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
+    | _ -> ()
+
+    let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+    let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+    SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
+
+let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
+    let mWith, (getSet, getSetOpt) = accessors
+    let memberRange = unionRanges rangeStart expr.Range |> unionRangeWithXmlDoc xmlDoc
+    let flags, leadingKeyword = flags
+    let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
+    let memberFlags: SynMemberFlags = flags SynMemberKind.Member
+    let memberFlagsForSet = flags SynMemberKind.PropertySet
+    let isStatic = not memberFlags.IsInstance
+
+    let trivia =
+        {
+            LeadingKeyword = leadingKeyword
+            WithKeyword = mWith
+            EqualsRange = mEquals
+            GetSetKeywords = getSetOpt
+        }
+
+    SynMemberDefn.AutoProperty(
+        attribs,
+        isStatic,
+        ident,
+        typ,
+        getSet,
+        memberFlags,
+        memberFlagsForSet,
+        xmlDoc,
+        access,
+        expr,
+        memberRange,
+        trivia
+    )
+
+let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attribs mStaticOpt =
+    let isStatic = Option.isSome mStaticOpt
+    let mValDecl = unionRanges rangeStart typ.Range |> unionRangeWithXmlDoc xmlDoc
+
+    let leadingKeyword =
+        match mStaticOpt with
+        | None -> SynLeadingKeyword.Val mVal
+        | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+
+    let fld =
+        SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
+
+    SynMemberDefn.ValField(fld, mValDecl)
+
+let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })

@@ -1,35 +1,45 @@
 ﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
-open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
+open Internal.Utilities.Library
 
-/// <summary>Find a path in the Trie.</summary>
-/// <remarks>This function could be cached in future if performance is an issue.</remarks>
-let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
+/// <summary>Find a path from a starting TrieNode and return the end node or None</summary>
+let queryTriePartial (trie: TrieNode) (path: LongIdentifier) : TrieNode option =
     let rec visit (currentNode: TrieNode) (path: LongIdentifier) =
         match path with
-        | [] -> failwith "path should not be empty"
-        | [ lastNodeFromPath ] ->
-            match currentNode.Children.TryGetValue(lastNodeFromPath) with
-            | false, _ -> QueryTrieNodeResult.NodeDoesNotExist
-            | true, childNode ->
-                if Set.isEmpty childNode.Files then
-                    QueryTrieNodeResult.NodeDoesNotExposeData
-                else
-                    QueryTrieNodeResult.NodeExposesData(childNode.Files)
+        // When we get through all partial identifiers, we've reached the node the full path points to.
+        | [] -> Some currentNode
+        // More segments to get through
         | currentPath :: restPath ->
             match currentNode.Children.TryGetValue(currentPath) with
-            | false, _ -> QueryTrieNodeResult.NodeDoesNotExist
+            | false, _ -> None
             | true, childNode -> visit childNode restPath
 
     visit trie path
 
-let queryTrieMemoized (trie: TrieNode) : QueryTrie =
-    Internal.Utilities.Library.Tables.memoize (queryTrie trie)
+let mapNodeToQueryResult (node: TrieNode option) : QueryTrieNodeResult =
+    match node with
+    | Some finalNode ->
+        if Set.isEmpty finalNode.Files then
+            QueryTrieNodeResult.NodeDoesNotExposeData
+        else
+            QueryTrieNodeResult.NodeExposesData(finalNode.Files)
+    | None -> QueryTrieNodeResult.NodeDoesNotExist
+
+/// <summary>Find a path in the Trie.</summary>
+let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
+    queryTriePartial trie path |> mapNodeToQueryResult
+
+/// <summary>Same as 'queryTrie' but allows passing in a path combined from two parts, avoiding list allocation.</summary>
+let queryTrieDual (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
+    match queryTriePartial trie path1 with
+    | Some intermediateNode -> queryTriePartial intermediateNode path2
+    | None -> None
+    |> mapNodeToQueryResult
 
 /// Process namespace declaration.
-let processNamespaceDeclaration (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie path
+let processNamespaceDeclaration (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
+    let queryResult = queryTrie trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -38,8 +48,8 @@ let processNamespaceDeclaration (queryTrie: QueryTrie) (path: LongIdentifier) (s
 
 /// Process an "open" statement.
 /// The statement could link to files and/or should be tracked as an open namespace.
-let processOpenPath (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie path
+let processOpenPath (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
+    let queryResult = queryTrie trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -47,9 +57,7 @@ let processOpenPath (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileCo
     | QueryTrieNodeResult.NodeExposesData files -> state.AddOpenNamespace(path, files)
 
 /// Process an identifier.
-let processIdentifier (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie path
-
+let processIdentifier (queryResult: QueryTrieNodeResult) (state: FileContentQueryState) : FileContentQueryState =
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
     | QueryTrieNodeResult.NodeDoesNotExposeData ->
@@ -59,26 +67,26 @@ let processIdentifier (queryTrie: QueryTrie) (path: LongIdentifier) (state: File
     | QueryTrieNodeResult.NodeExposesData files -> state.AddDependencies files
 
 /// Typically used to fold FileContentEntry items over a FileContentQueryState
-let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
+let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
     match entry with
     | FileContentEntry.TopLevelNamespace (topLevelPath, content) ->
         let state =
             match topLevelPath with
             | [] -> state
-            | _ -> processNamespaceDeclaration queryTrie topLevelPath state
+            | _ -> processNamespaceDeclaration trie topLevelPath state
 
-        List.fold (processStateEntry queryTrie) state content
+        List.fold (processStateEntry trie) state content
 
     | FileContentEntry.OpenStatement path ->
         // An open statement can directly reference file or be a partial open statement
         // Both cases need to be processed.
-        let stateAfterFullOpenPath = processOpenPath queryTrie path state
+        let stateAfterFullOpenPath = processOpenPath trie path state
 
-        // Any existing open statement could be extended with the current path (if that node where to exists in the trie)
+        // Any existing open statement could be extended with the current path (if that node were to exists in the trie)
         // The extended path could add a new link (in case of a module or namespace with types)
-        // It might also not add anything at all (in case it the extended path is still a partial one)
+        // It might also not add anything at all (in case the extended path is still a partial one)
         (stateAfterFullOpenPath, state.OpenNamespaces)
-        ||> Set.fold (fun acc openNS -> processOpenPath queryTrie [ yield! openNS; yield! path ] acc)
+        ||> Set.fold (fun acc openNS -> processOpenPath trie [ yield! openNS; yield! path ] acc)
 
     | FileContentEntry.PrefixedIdentifier path ->
         match path with
@@ -91,15 +99,17 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             ||> Array.fold (fun state takeParts ->
                 let path = List.take takeParts path
                 // process the name was if it were a FQN
-                let stateAfterFullIdentifier = processIdentifier queryTrie path state
+                let stateAfterFullIdentifier = processIdentifier (queryTrieDual trie [] path) state
 
                 // Process the name in combination with the existing open namespaces
                 (stateAfterFullIdentifier, state.OpenNamespaces)
-                ||> Set.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc))
+                ||> Set.fold (fun acc openNS ->
+                    let queryResult = queryTrieDual trie openNS path
+                    processIdentifier queryResult acc))
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
-        let nestedState = List.fold (processStateEntry queryTrie) state nestedContent
+        let nestedState = List.fold (processStateEntry trie) state nestedContent
         // Afterward we are only interested in the found dependencies in the nested module
         let foundDependencies =
             Set.union state.FoundDependencies nestedState.FoundDependencies
@@ -123,11 +133,11 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
 /// This function returns an array with a potential extra dependencies that makes sure that any such namespaces can be resolved (if they exists).
 /// For each unused namespace `open` we return at most one file that defines that namespace.</para>
 /// </remarks>
-let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
+let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: FileContentQueryState) =
     // For each opened namespace, if none of already resolved dependencies define it, return the top-most file that defines it.
     Set.toArray result.OpenedNamespaces
     |> Array.choose (fun path ->
-        match queryTrie path with
+        match queryTrie trie path with
         | QueryTrieNodeResult.NodeExposesData _
         | QueryTrieNodeResult.NodeDoesNotExist -> None
         | QueryTrieNodeResult.NodeDoesNotExposeData ->
@@ -170,7 +180,6 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             | ParsedInput.SigFile _ -> Some f)
 
     let trie = TrieMapping.mkTrie trieInput
-    let queryTrie: QueryTrie = queryTrieMemoized trie
 
     let fileContents =
         files
@@ -180,6 +189,23 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             else
                 FileContentMapping.mkFileContent file)
 
+    // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
+    let fsharpCoreImplicitDependency =
+        if compilingFSharpCore then
+            let filename = "prim-types-prelude.fsi"
+
+            let implicitDepIdx =
+                files
+                |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
+
+            match implicitDepIdx with
+            | Some idx -> Some idx
+            | None ->
+                exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
+                |> raise
+        else
+            None
+
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then
             // First file cannot have any dependencies.
@@ -187,7 +213,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
         else
             let fileContent = fileContents[file.Idx]
 
-            let knownFiles = [ 0 .. (file.Idx - 1) ] |> set
+            let knownFiles = [| 0 .. (file.Idx - 1) |] |> set
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
             let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
             // Start by listing root-level dependencies.
@@ -197,10 +223,10 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             let depsResult =
                 initialDepsResult
                 // Seq is faster than List in this case.
-                ||> Seq.fold (processStateEntry queryTrie)
+                ||> Seq.fold (processStateEntry trie)
 
             // Add missing links for cases where an unused open namespace did not create a link.
-            let ghostDependencies = collectGhostDependencies file.Idx trie queryTrie depsResult
+            let ghostDependencies = collectGhostDependencies file.Idx trie depsResult
 
             // Add a link from implementation files to their signature files.
             let signatureDependency =
@@ -208,31 +234,17 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
-            // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
-            let fsharpCoreImplicitDependencies =
-                let filename = "prim-types-prelude.fsi"
-
-                let implicitDepIdx =
-                    files
-                    |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
-
-                [|
-                    if compilingFSharpCore then
-                        match implicitDepIdx with
-                        | Some idx ->
-                            if file.Idx > idx then
-                                yield idx
-                        | None ->
-                            exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
-                            |> raise
-                |]
+            let fsharpCoreImplicitDependencyForThisFile =
+                match fsharpCoreImplicitDependency with
+                | Some depIdx when file.Idx > depIdx -> [| depIdx |]
+                | _ -> [||]
 
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
-                    yield! fsharpCoreImplicitDependencies
+                    yield! fsharpCoreImplicitDependencyForThisFile
                 |]
                 |> Array.distinct
 
