@@ -70,6 +70,9 @@ type public CompletionContext =
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
 
+    /// Completing a method override (e.g. override this.ToStr|)
+    | MethodOverride of enclosingTypeNameRange: range
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }
