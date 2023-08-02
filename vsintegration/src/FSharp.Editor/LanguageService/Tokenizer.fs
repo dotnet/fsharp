@@ -684,7 +684,7 @@ module internal Tokenizer =
         ]
 
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
-    let getClassifiedSpans
+    let classifySpans
         (
             documentKey: DocumentId,
             sourceText: SourceText,
@@ -693,10 +693,9 @@ module internal Tokenizer =
             defines: string list,
             langVersion,
             strictIndentation,
+            result: ResizeArray<ClassifiedSpan>,
             cancellationToken: CancellationToken
-        ) : ResizeArray<ClassifiedSpan> =
-
-        let result = new ResizeArray<ClassifiedSpan>()
+        ) : unit =
 
         try
             let sourceTokenizer =
@@ -724,7 +723,7 @@ module internal Tokenizer =
         | :? OperationCanceledException -> reraise ()
         | ex -> Assert.Exception(ex)
 
-        result
+        ()
 
     let inline (||>) struct (arg1, arg2) ([<InlineIfLambda>] func: 'T1 -> 'T2 -> 'T3) = func arg1 arg2
 

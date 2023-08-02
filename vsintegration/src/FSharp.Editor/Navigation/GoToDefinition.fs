@@ -570,7 +570,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
                                     | _ -> false)
                                 |> ValueOption.map (fun x -> x.Range)
-                                |> Option.ofValueOption
+                                |> ValueOption.toOption
 
                             let span =
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with

@@ -116,17 +116,19 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
-                let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (
-                        document.Id,
-                        sourceText,
-                        textLine.Span,
-                        Some document.Name,
-                        defines,
-                        Some langVersion,
-                        strictIndentation,
-                        cancellationToken
-                    )
+                let classifiedSpans = ResizeArray<_>()
+
+                Tokenizer.classifySpans (
+                    document.Id,
+                    sourceText,
+                    textLine.Span,
+                    Some document.Name,
+                    defines,
+                    Some langVersion,
+                    strictIndentation,
+                    classifiedSpans,
+                    cancellationToken
+                )
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             }

@@ -172,7 +172,9 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     match! syntacticClassificationCache.TryGetValueAsync document with
                     | ValueSome classifiedSpansDict ->
                         match classifiedSpansDict.TryGetValue(textSpan) with
-                        | true, classifiedSpans -> result.AddRange(classifiedSpans)
+                        | true, _ ->
+                            // if we already classified these spans in the _closed_ document, don't add them to result again
+                            ()
                         | _ ->
                             let classifiedSpans =
                                 getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
@@ -192,18 +194,18 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                         result.AddRange(classifiedSpans)
                 else
-                    result.AddRange(
-                        Tokenizer.getClassifiedSpans (
-                            document.Id,
-                            sourceText,
-                            textSpan,
-                            Some(document.FilePath),
-                            defines,
-                            Some langVersion,
-                            strictIndentation,
-                            cancellationToken
-                        )
+                    Tokenizer.classifySpans (
+                        document.Id,
+                        sourceText,
+                        textSpan,
+                        Some(document.FilePath),
+                        defines,
+                        Some langVersion,
+                        strictIndentation,
+                        result,
+                        cancellationToken
                     )
+                    
             }
             |> CancellableTask.startAsTask cancellationToken
 
