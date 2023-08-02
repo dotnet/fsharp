@@ -1032,9 +1032,14 @@
         <target state="translated">Declaração inválida de tipo de Registro Anônimo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdMultipleFieldNameDifferent">
-        <source>This anonymous record should have fields {0}, not {1}.</source>
-        <target state="new">This anonymous record should have fields {0}, not {1}.</target>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
@@ -1047,9 +1052,14 @@
         <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdSingleFieldNameDifferent">
-        <source>This anonymous record should have field '{0}', not '{1}'.</source>
-        <target state="new">This anonymous record should have field '{0}', not '{1}'.</target>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">

@@ -1106,13 +1106,22 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                 let missingFields, usedFields = missingFields
                 match missingFields, usedFields with
                 | [ missingField ], [ usedField ] ->
-                    FSComp.SR.tcAnonRecdSingleFieldNameDifferent(missingField, usedField)
-                | _ ->
+                    FSComp.SR.tcAnonRecdSingleFieldNameSingleDifferent(missingField, usedField)
+                | [ missingField ], usedFields ->
+                    let usedFields = usedFields |> List.map(sprintf "'%s'")
+                    let usedFields = String.concat ", " usedFields
+                    FSComp.SR.tcAnonRecdSingleFieldNameMultipleDifferent(missingField, usedFields)
+                | missingFields, [ usedField ] ->
+                    let missingFields = missingFields |> List.map(sprintf "'%s'")
+                    let missingFields = String.concat ", " missingFields
+                    FSComp.SR.tcAnonRecdMultipleFieldNameSingleDifferent(missingFields, usedField)
+                
+                | missingFields, usedFields ->
                     let missingFields = missingFields |> List.map(sprintf "'%s'")
                     let missingFields = String.concat ", " missingFields
                     let usedFields = usedFields |> List.map(sprintf "'%s'")
                     let usedFields = String.concat ", " usedFields
-                    FSComp.SR.tcAnonRecdMultipleFieldNameDifferent(missingFields, usedFields)
+                    FSComp.SR.tcAnonRecdMultipleFieldNameMultipleDifferent(missingFields, usedFields)
         
         ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 

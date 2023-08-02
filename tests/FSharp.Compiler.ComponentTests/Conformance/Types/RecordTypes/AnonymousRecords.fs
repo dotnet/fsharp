@@ -72,7 +72,18 @@ let x() = ({| b = 2 |} = {| a = 2 |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 26, Line 2, Col 37, "This anonymous record should have field 'b', not 'a'.")
+            (Error 1, Line 2, Col 26, Line 2, Col 37, "This anonymous record should have field 'b' but here has field 'a'.")
+        ]
+        
+    [<Fact>]
+    let ``Using the wrong anon record with single field 2`` () =
+        Fsx """
+let x() = ({| b = 2 |} = {| a = 2; c = "" |} )
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 26, Line 2, Col 45, "This anonymous record should have field 'b' but here has fields 'a', 'c'.")
         ]
         
     [<Fact>]
@@ -83,7 +94,7 @@ let x() = ({| b = 2; c = 3 |} = {| a = 2 |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b', 'c', not 'a'.")
+            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b', 'c'; but here has field 'a'.")
         ]
         
     [<Fact>]
@@ -94,7 +105,7 @@ let x() = ({| b = 2; c = 3 |} = {| a = 2; d = "" |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 33, Line 2, Col 52, "This anonymous record should have fields 'b', 'c', not 'a', 'd'.")
+            (Error 1, Line 2, Col 33, Line 2, Col 52, "This anonymous record should have fields 'b', 'c'; but here has fields 'a', 'd'.")
         ]
         
     [<Fact>]
