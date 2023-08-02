@@ -266,6 +266,11 @@ F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 
         <target state="translated">사용하지 않는 열려 있는 선언 제거</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">열려 있는 선언을 제거할 수 있습니다.</target>

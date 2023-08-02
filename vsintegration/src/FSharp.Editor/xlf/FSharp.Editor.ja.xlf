@@ -266,6 +266,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
         <target state="translated">未使用の Open 宣言を削除する</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Open 宣言は削除できます。</target>

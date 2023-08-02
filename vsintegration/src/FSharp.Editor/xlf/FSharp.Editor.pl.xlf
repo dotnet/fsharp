@@ -266,6 +266,11 @@ Podkreślenie kreską;</target>
         <target state="translated">Usuń nieużywane otwarte deklaracje</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Otwarte deklaracje można usuwać.</target>

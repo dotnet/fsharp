@@ -268,6 +268,11 @@ Subrayado de guion;</target>
         <target state="translated">Quitar declaraciones abiertas no usadas</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Las declaraciones abiertas se pueden quitar.</target>
