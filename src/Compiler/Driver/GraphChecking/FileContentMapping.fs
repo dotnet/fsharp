@@ -261,6 +261,9 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map visit [ lhsType; rhsType ]
             Continuation.concatenate continuations continuation
         | SynType.FromParseError _ -> continuation []
+        | SynType.Intersection (types = types) ->
+            let continuations = List.map visit types
+            Continuation.concatenate continuations continuation
 
     visit t id
 
@@ -275,7 +278,8 @@ let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
     | SynTyparDecls.PrefixList (decls = decls) -> List.collect visitSynTyparDecl decls
     | SynTyparDecls.SinglePrefix (decl = decl) -> visitSynTyparDecl decl
 
-let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
+let visitSynTyparDecl (SynTyparDecl (attributes = attributes; intersectionConstraints = constraints)) =
+    visitSynAttributes attributes @ List.collect visitSynType constraints
 
 let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     match tc with
