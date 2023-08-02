@@ -4306,8 +4306,8 @@ and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
 
 and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let g = cenv.g
-    let (SynTyparDecl(Attributes synAttrs, synTypar)) = synTyparDecl
-    let (SynTypar(id, _, _)) = synTypar
+    let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
+    let (SynTypar (ident = id)) = synTypar
 
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
@@ -4383,6 +4383,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
 
     | SynType.HashConstraint(synInnerTy, m) ->
         TcTypeHashConstraint cenv env newOk checkConstraints occ tpenv synInnerTy m
+
+    | SynType.Intersection (tp, tys, m, _) ->
+        TcIntersectionConstraint cenv env newOk checkConstraints occ tpenv tp tys m
 
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
@@ -4567,6 +4570,29 @@ and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
     let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
+    tp.AsType, tpenv
+
+// (x: 't & #I1 & #I2)
+// (x: #I1 & #I2)
+and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTypar synTys m =
+    let tp, tpenv =
+        match synTypar with
+        | Some synTypar -> TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv synTypar
+        | _ -> TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m, tpenv
+
+    let typarTy = mkTyparTy tp
+
+    let tpenv =
+        synTys
+        |> List.fold (fun tpenv ty ->
+            match ty with
+            | SynType.HashConstraint (ty, m) ->
+                let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv ty
+                AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty typarTy
+                tpenv
+            | _ -> tpenv
+        ) tpenv
+
     tp.AsType, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
