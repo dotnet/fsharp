@@ -320,6 +320,20 @@ module Seq =
 
         res
 
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) (source: seq<_>) =
+        use ie = source.GetEnumerator()
+
+        let rec loop i =
+            if ie.MoveNext() then
+                if predicate ie.Current then
+                    ValueSome i
+                else
+                    loop (i + 1)
+            else
+                ValueNone
+
+        loop 0
+
 [<RequireQualifiedAccess>]
 module Array =
     let inline foldi ([<InlineIfLambda>] folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
@@ -333,6 +347,18 @@ module Array =
         state
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
+    
+    let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
+    
+        let rec loop i =
+            if i >= array.Length then
+                ValueNone
+            else if predicate array.[i] then
+                ValueSome array[i]
+            else
+                loop (i + 1)
+
+        loop 0
 
 [<RequireQualifiedAccess>]
 module List =
