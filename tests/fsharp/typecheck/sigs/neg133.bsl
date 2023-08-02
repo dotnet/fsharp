@@ -17,7 +17,7 @@ neg133.fs(57,7,57,14): typecheck error FS0026: This rule will never be matched
 
 neg133.fs(63,7,63,14): typecheck error FS0026: This rule will never be matched
 
-neg133.fs(69,7,69,21): typecheck error FS0026: This rule will never be matched
+neg133.fs(69,7,69,16): typecheck error FS0026: This rule will never be matched
 
 neg133.fs(76,10,76,19): typecheck error FS0957: One or more of the declared type parameters for this type extension have a missing or wrong type constraint not matching the original type constraints on 'A<_,_,_>'
 
