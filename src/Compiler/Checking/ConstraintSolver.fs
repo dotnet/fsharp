@@ -1078,7 +1078,9 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
             elif Set.intersect first second <> Set.empty then
                 Overlap(firstOnly, secondOnly)
             else
-                CompletelyDifferent(Seq.toList first)
+                let first = Set.toList first
+                let second = Set.toList second
+                CompletelyDifferent(first, second)
         
         let message =
             match anonInfo1.SortedNames, anonInfo2.SortedNames with
@@ -1101,13 +1103,16 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
             | Overlap (missingFields, extraFields) ->
                 FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
             | CompletelyDifferent missingFields ->
-                match missingFields with
-                | [missingField] ->
-                    FSComp.SR.tcAnonRecdSingleFieldNameDifferent(missingField)
+                let missingFields, usedFields = missingFields
+                match missingFields, usedFields with
+                | [ missingField ], [ usedField ] ->
+                    FSComp.SR.tcAnonRecdSingleFieldNameDifferent(missingField, usedField)
                 | _ ->
                     let missingFields = missingFields |> List.map(sprintf "'%s'")
                     let missingFields = String.concat ", " missingFields
-                    FSComp.SR.tcAnonRecdMultipleFieldNameDifferent(missingFields)
+                    let usedFields = usedFields |> List.map(sprintf "'%s'")
+                    let usedFields = String.concat ", " usedFields
+                    FSComp.SR.tcAnonRecdMultipleFieldNameDifferent(missingFields, usedFields)
         
         ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 

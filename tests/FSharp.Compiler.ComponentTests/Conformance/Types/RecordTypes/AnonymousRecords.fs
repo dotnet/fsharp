@@ -72,7 +72,7 @@ let x() = ({| b = 2 |} = {| a = 2 |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 26, Line 2, Col 37, "This anonymous record should have field 'b'.")
+            (Error 1, Line 2, Col 26, Line 2, Col 37, "This anonymous record should have field 'b', not 'a'.")
         ]
         
     [<Fact>]
@@ -83,8 +83,27 @@ let x() = ({| b = 2; c = 3 |} = {| a = 2 |} )
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b', 'c'.")
+            (Error 1, Line 2, Col 33, Line 2, Col 44, "This anonymous record should have fields 'b', 'c', not 'a'.")
         ]
+        
+    [<Fact>]
+    let ``Using the wrong anon record with multiple fields 2`` () =
+        Fsx """
+let x() = ({| b = 2; c = 3 |} = {| a = 2; d = "" |} )
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 2, Col 33, Line 2, Col 52, "This anonymous record should have fields 'b', 'c', not 'a', 'd'.")
+        ]
+        
+    [<Fact>]
+    let ``Two anon records with no fields`` () =
+        Fsx """
+let x() = ({||} = {||})
+"""
+        |> compile
+        |> shouldSucceed
 
     [<Fact>]
     let ``Anonymous Records with duplicate labels - Copy and update expression`` () =

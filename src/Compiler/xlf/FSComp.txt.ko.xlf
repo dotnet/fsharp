@@ -1033,8 +1033,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameDifferent">
-        <source>This anonymous record should have fields {0}.</source>
-        <target state="new">This anonymous record should have fields {0}.</target>
+        <source>This anonymous record should have fields {0}, not {1}.</source>
+        <target state="new">This anonymous record should have fields {0}, not {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
@@ -1048,8 +1048,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameDifferent">
-        <source>This anonymous record should have field '{0}'.</source>
-        <target state="new">This anonymous record should have field '{0}'.</target>
+        <source>This anonymous record should have field '{0}', not '{1}'.</source>
+        <target state="new">This anonymous record should have field '{0}', not '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
