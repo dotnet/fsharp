@@ -22,6 +22,11 @@ type Mode =
     | WithOption of CustomProjectOption: string
     | Manual of Squiggly: string * Number: int
 
+let inline toOption o =
+    match o with
+    | ValueSome v -> Some v
+    | _ -> None
+
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
@@ -73,6 +78,7 @@ let tryFix (code: string) mode (fixProvider: IFSharpCodeFixProvider) =
 
         return
             (result
+             |> toOption
              |> Option.map (fun codeFix ->
                  {
                      Message = codeFix.Message

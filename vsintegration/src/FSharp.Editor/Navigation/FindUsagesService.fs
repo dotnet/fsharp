@@ -86,6 +86,10 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
                 }
                 |> liftAsync
 
+            let declarationSpans =
+                declarationSpans
+                |> List.distinctBy (fun x -> x.Document.FilePath, x.Document.Project.FilePath)
+
             let isExternal = declarationSpans |> List.isEmpty
 
             let displayParts =
@@ -99,7 +103,7 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
 
             let definitionItems =
                 declarationSpans
-                |> List.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.Id)
+                |> List.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.FilePath)
 
             for definitionItem, _ in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync

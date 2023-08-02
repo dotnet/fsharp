@@ -291,6 +291,19 @@ module Option =
         | ValueNone -> None
 
 [<RequireQualifiedAccess>]
+module ValueOption =
+
+    let inline ofOption o =
+        match o with
+        | Some v -> ValueSome v
+        | _ -> ValueNone
+
+    let inline toOption o =
+        match o with
+        | ValueSome v -> Some v
+        | _ -> None
+
+[<RequireQualifiedAccess>]
 module Seq =
 
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()

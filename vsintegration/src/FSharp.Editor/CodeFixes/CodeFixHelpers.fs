@@ -15,7 +15,39 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+
 open CancellableTasks
+
+module internal UnusedCodeFixHelper =
+    let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
+        let ident = sourceText.ToString textSpan
+
+        // Prefixing operators and backticked identifiers does not make sense.
+        // We have to use the additional check for backticks
+        if PrettyNaming.IsIdentifierName ident then
+            cancellableTask {
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
+
+                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
+
+                return
+                    lexerSymbol
+                    |> Option.bind (fun symbol -> checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> ValueOption.ofOption
+                    |> ValueOption.bind (fun symbolUse ->
+                        match symbolUse.Symbol with
+                        | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> ValueSome symbolUse.Symbol
+                        | _ -> ValueNone)
+            }
+        else
+            CancellableTask.singleton ValueNone
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
@@ -86,8 +118,8 @@ module internal CodeFixExtensions =
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
                 match! codeFix.GetCodeFixIfAppliesAsync ctx with
-                | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
-                | None -> ()
+                | ValueSome codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
+                | ValueNone -> ()
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
@@ -142,7 +174,7 @@ module IFSharpCodeFixProviderExtensions =
                     )
                     |> CancellableTask.whenAll
 
-                let codeFixes = codeFixOpts |> Seq.choose id
+                let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
                 let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
                 let updatedDoc = doc.WithText(sourceText.WithChanges changes)
 
