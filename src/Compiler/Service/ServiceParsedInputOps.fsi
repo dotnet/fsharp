@@ -71,7 +71,7 @@ type public CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range * inheritTypeNameRange: range
+    | MethodOverride of enclosingTypeNameRange: range
 
 type public ModuleKind =
     { IsAutoOpen: bool

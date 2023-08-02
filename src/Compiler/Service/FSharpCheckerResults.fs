@@ -1008,78 +1008,45 @@ type internal TypeCheckInfo
             |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
         |> Option.defaultValue completions
 
-    /// Gets all methods that a type can, but has not yet, overriden. Object methods are not included.
-    let GetOverridableMethods pos enclosingTypeNameRange inheritTypeNameRange =
-        let areSlotParamsEqual slotParams candidateSlotParams =
-            List.forall2
-                (fun (list1: SlotParam list) (list2: SlotParam list) ->
-                    list1.Length = list2.Length
-                    && List.forall2 (fun (TSlotParam (paramType = ty1)) (TSlotParam (paramType = ty2)) -> typeEquiv g ty1 ty2) list1 list2)
-
-                slotParams
-                candidateSlotParams
-
-        let methodNotAlreadyOverridden (alreadyOverriddenMethods: MethInfo list) (candidateMeth: MethInfo) =
-            let candidateSlot = candidateMeth.GetSlotSig(amap, range0)
-
-            alreadyOverriddenMethods
-            |> List.forall (fun x ->
-                match x with
-                | FSMeth (valRef = valref) ->
-                    x.ImplementedSlotSignatures
-                    |> List.forall (fun slot ->
-                        if
-                            slot.Name <> candidateSlot.Name
-                            || slot.FormalParams.Length <> candidateSlot.FormalParams.Length
-                        then
-                            true
-                        else
-                            let slot = ReparentSlotSigToUseMethodTypars g range0 valref slot
-
-                            match slot.FormalReturnType, candidateSlot.FormalReturnType with
-                            | None, None -> not (areSlotParamsEqual slot.FormalParams candidateSlot.FormalParams)
-                            | Some returnTy1, Some returnTy2 when typeEquiv g returnTy1 returnTy2 ->
-                                not (areSlotParamsEqual slot.FormalParams candidateSlot.FormalParams)
-                            | _ -> true)
-                | _ -> false)
+    /// Gets all methods that a type can override, but has not yet done so.
+    let GetOverridableMethods pos typeNameRange =
+        let isMethodOverridable alreadyOverridden (candidate: MethInfo) =
+            not candidate.IsFinal
+            && not (
+                alreadyOverridden
+                |> List.exists (MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate)
+            )
 
         let (nenv, ad), m = GetBestEnvForPos pos
-
-        let alreadyOverridden =
-            sResolutions.CapturedNameResolutions
-            |> ResizeArray.tryPick (fun r ->
-                match r.Item with
-                | Item.Types (_, ty :: _) when equals r.Range enclosingTypeNameRange ->
-                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap enclosingTypeNameRange ty
-                    |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
-                    |> Some
-                | _ -> None)
-            |> Option.defaultValue []
 
         sResolutions.CapturedNameResolutions
         |> ResizeArray.tryPick (fun r ->
             match r.Item with
-            | Item.Types (_, ty :: _) when equals r.Range inheritTypeNameRange ->
-                let meths =
+            | Item.Types (_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+                let superTy =
+                    (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+
+                let overriddenMethods =
+                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
+                    |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+
+                let overridableMethods =
                     GetIntrinsicMethInfosOfType
                         infoReader
                         None
                         ad
                         TypeHierarchy.AllowMultiIntfInstantiations.No
-                        FindMemberFlag.IgnoreOverrides
-                        inheritTypeNameRange
-                        ty
-                    |> List.filter (fun x ->
-                        not x.IsFinal
-                        && not (tyconRefEq g x.DeclaringTyconRef g.system_Object_tcref)
-                        && methodNotAlreadyOverridden alreadyOverridden x)
+                        FindMemberFlag.PreferOverrides
+                        range0
+                        superTy
+                    |> List.filter (isMethodOverridable overriddenMethods)
                     |> List.groupBy (fun x -> x.DisplayName)
                     |> List.map (fun (name, overloads) ->
                         Item.MethodGroup(name, overloads, None)
                         |> ItemWithNoInst
                         |> CompletionItem ValueNone ValueNone)
 
-                Some(meths, nenv.DisplayEnv, m)
+                Some(overridableMethods, nenv.DisplayEnv, m)
             | _ -> None)
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1633,8 +1600,7 @@ type internal TypeCheckInfo
                         | _ -> None)
                     |> Option.orElse declaredItems
 
-            | Some (CompletionContext.MethodOverride (enclosingTypeNameRange, inheritTypeNameRange)) ->
-                GetOverridableMethods pos enclosingTypeNameRange inheritTypeNameRange
+            | Some (CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
 
             // Other completions
             | cc ->

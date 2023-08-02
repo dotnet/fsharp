@@ -99,7 +99,7 @@ type CompletionContext =
     | Pattern of context: PatternContext
 
     /// Completing a method override (e.g. override this.ToStr|)
-    | MethodOverride of enclosingTypeNameRange: range * inheritTypeNameRange: range
+    | MethodOverride of enclosingTypeNameRange: range
 
 type ShortIdent = string
 
@@ -1423,37 +1423,28 @@ module ParsedInput =
                         | SynLeadingKeyword.Override _ -> true
                         | _ -> false
 
-                    let overrideContextOrInvalid path =
-                        let overrideCtx =
-                            match path with
-                            | _ :: SyntaxNode.SynTypeDefn (SynTypeDefn (typeInfo = SynComponentInfo(longId = [ enclosingType ])
-                                                                        typeRepr = SynTypeDefnRepr.ObjectModel (members = members))) :: _ ->
-                                members
-                                |> List.tryPick (fun memb ->
-                                    match memb with
-                                    | SynMemberDefn.ImplicitInherit (inheritType = inheritType) ->
-                                        Some(CompletionContext.MethodOverride(enclosingType.idRange, inheritType.Range))
-                                    | _ -> None)
-                            | _ -> None
-
-                        overrideCtx |> Option.orElseWith (fun () -> Some CompletionContext.Invalid)
+                    let overrideContext path =
+                        match path with
+                        | _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
+                            Some(CompletionContext.MethodOverride enclosingType.idRange)
+                        | _ -> Some CompletionContext.Invalid
 
                     match headPat with
 
                     // override _.|
-                    | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContextOrInvalid path
+                    | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
 
                     // override this.|
-                    | SynPat.Named(ident = SynIdent (ident = thisId)) when
-                        isOverride trivia.LeadingKeyword && thisId.idRange.End.IsAdjacentTo pos
+                    | SynPat.Named(ident = SynIdent (ident = selfId)) when
+                        isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
                         ->
-                        overrideContextOrInvalid path
+                        overrideContext path
 
                     // override this.ToStr|
                     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
                         isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
                         ->
-                        overrideContextOrInvalid path
+                        overrideContext path
 
                     | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
                         if rangeContainsPos lidwd.Range pos then
