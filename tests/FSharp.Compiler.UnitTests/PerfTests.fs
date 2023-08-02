@@ -69,9 +69,9 @@ let ``Test request for parse and check doesn't check whole project`` () =
     (backgroundCheckCount.Value  <= 10) |> shouldEqual true // only two extra typechecks of files
 
     printfn "checking (pD - pC) = %d" (pD - pC)
-    (pD - pC) |> shouldEqual 0
+    Assert.Equal(0, pD - pC)
     printfn "checking (tD - tC) = %d" (tD - tC)
-    (tD - tC) |> shouldEqual 1
+    Assert.Equal(1, tD - tC)
 
     printfn "CheckFileInProject()..."
     let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames[7], 0, Project1.fileSources2[7], Project1.options)  |> Async.RunImmediate

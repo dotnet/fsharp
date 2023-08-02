@@ -68,7 +68,7 @@ module Assert =
             Some msg
 
     /// Same as 'shouldBe' but goes pairwise over the collections. Lengths must be equal.
-    let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
+    let shouldPairwiseEqual (x: seq<'T>) (y: seq<'T>) =
         // using enumerators, because Seq.iter2 allows different lengths silently
         let ex = x.GetEnumerator()
         let ey = y.GetEnumerator()
