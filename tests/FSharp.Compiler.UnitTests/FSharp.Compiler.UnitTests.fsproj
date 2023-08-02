@@ -53,7 +53,9 @@
       <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
     </Compile>
 -->
-    <Compile Include="PerfTests.fs" />
+    <Compile Include="..\..\tests\service\PerfTests.fs">
+      <Link>CompilerService\PerfTests.fs</Link>
+    </Compile>
     <Compile Include="..\..\tests\service\InteractiveCheckerTests.fs">
       <Link>CompilerService\InteractiveCheckerTests.fs</Link>
     </Compile>

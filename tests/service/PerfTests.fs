@@ -1,23 +1,24 @@
 ﻿#if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/xunit.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
+#load "FsUnit.fs"
+#load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.PerfTests
 #endif
 
-open Xunit
-open FSharp.Test
+
+open NUnit.Framework
+open FsUnit
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
-open Assert
 
 // Create an interactive checker instance
 let internal checker = FSharpChecker.Create()
-let internal syncRoot = obj()
 
 module internal Project1 =
 
@@ -34,13 +35,15 @@ module internal Project1 =
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
-[<Fact>]
+
+[<Test>]
 let ``Test request for parse and check doesn't check whole project`` () =
+
     printfn "starting test..."
     let backgroundParseCount = ref 0
     let backgroundCheckCount = ref 0
-    checker.FileChecked.Add (fun _ -> lock syncRoot (fun () -> incr backgroundCheckCount))
-    checker.FileParsed.Add (fun _ -> lock syncRoot (fun () -> incr backgroundParseCount))
+    checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
+    checker.FileParsed.Add (fun x -> incr backgroundParseCount)
 
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     let pB, tB = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
@@ -70,9 +73,9 @@ let ``Test request for parse and check doesn't check whole project`` () =
     (backgroundCheckCount.Value  <= 10) |> shouldEqual true // only two extra typechecks of files
 
     printfn "checking (pD - pC) = %d" (pD - pC)
-    pD - pC |> shouldEqual 0
+    (pD - pC) |> shouldEqual 0
     printfn "checking (tD - tC) = %d" (tD - tC)
-    tD - tC |> shouldEqual 1
+    (tD - tC) |> shouldEqual 1
 
     printfn "CheckFileInProject()..."
     let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames[7], 0, Project1.fileSources2[7], Project1.options)  |> Async.RunImmediate
