@@ -30,8 +30,9 @@ type internal UseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor
 
                 return
                     parseResults.TryRangeOfStringInterpolationContainingPos errorRange.Start
-                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
-                    |> Option.map (fun span ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    |> ValueOption.map (fun span ->
                         let interpolation = sourceText.GetSubText(span).ToString()
 
                         {
