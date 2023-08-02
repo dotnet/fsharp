@@ -76,6 +76,7 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | WhileBang
+    | ReuseSameFieldsInStructUnions
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -175,6 +176,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.StrictIndentation, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.WhileBang, previewVersion
+                LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -306,6 +308,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
+        | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

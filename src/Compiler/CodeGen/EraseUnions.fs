@@ -1225,6 +1225,8 @@ let mkClassUnionDef
                 |> Array.tryFindIndex (fun t -> t.IsNullary)
                 |> Option.defaultValue -1
 
+            let fieldsEmitted = new HashSet<_>()
+
             for cidx, alt in Array.indexed cud.UnionCases do
                 if
                     repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
@@ -1261,6 +1263,12 @@ let mkClassUnionDef
                                 |> addMethodGeneratedAttrs
                             ]
 
+                    let fieldsToBeAddedIntoType =
+                        alt.FieldDefs
+                        |> Array.filter (fun f -> fieldsEmitted.Add(struct(f.LowerName,f.Type)))
+
+                    let fields = fieldsToBeAddedIntoType |> Array.map mkUnionCaseFieldId |> Array.toList
+
                     let props, meths =
                         mkMethodsAndPropertiesForFields
                             (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
@@ -1269,12 +1277,13 @@ let mkClassUnionDef
                             cud.DebugImports
                             cud.HasHelpers
                             baseTy
-                            alt.FieldDefs
+                            fieldsToBeAddedIntoType
 
                     yield (fields, (ctor @ meths), props)
         ]
         |> List.unzip3
         |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
+
 
     let selfAndTagFields =
         [
