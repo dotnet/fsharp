@@ -232,6 +232,11 @@
         <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">využití člena výchozího rozhraní</target>
@@ -810,6 +815,11 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
         <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0 nebo vyšší.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -8483,8 +8493,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
