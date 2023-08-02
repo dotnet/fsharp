@@ -125,7 +125,9 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     // We don't really care here about concurrency in neither DocumentCahce, nor underlying hashmap.
     let syntacticClassificationCache =
-        new DocumentCache<Dictionary<TextSpan, ImmutableArray<ClassifiedSpan>>>("fsharp-syntactic-classification-cache")
+        new DocumentCache<Dictionary<TextSpan, ImmutableArray<ClassifiedSpan>>>(
+        "fsharp-syntactic-classification-cache",
+        CacheItemPolicy(SlidingExpiration = (TimeSpan.FromMinutes 5)))
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
