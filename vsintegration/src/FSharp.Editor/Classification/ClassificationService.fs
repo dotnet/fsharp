@@ -123,13 +123,6 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
     let semanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
 
-    // We don't really care here about concurrency in neither DocumentCahce, nor underlying hashmap.
-    let syntacticClassificationCache =
-        new DocumentCache<Dictionary<TextSpan, ImmutableArray<ClassifiedSpan>>>(
-            "fsharp-syntactic-classification-cache",
-            CacheItemPolicy(SlidingExpiration = (TimeSpan.FromMinutes 5))
-        )
-
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
@@ -167,32 +160,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
 
                 if not isOpenDocument then
-                    // If called concurrently, it'll likely race here (in both getting and setting/adding to underlying dictionary)
-                    // But we don't really care for such small caches, will change the implementation if it shows that it's a problem.
-                    match! syntacticClassificationCache.TryGetValueAsync document with
-                    | ValueSome classifiedSpansDict ->
-                        match classifiedSpansDict.TryGetValue(textSpan) with
-                        | true, _ ->
-                            // if we already classified these spans in the _closed_ document, don't add them to result again
-                            ()
-                        | _ ->
-                            let classifiedSpans =
-                                getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
-
-                            classifiedSpansDict.Add(textSpan, classifiedSpans)
-                            result.AddRange(classifiedSpans)
-                    | ValueNone ->
-
-                        let classifiedSpans =
-                            getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
-
-                        let classifiedSpansDict = Dictionary<TextSpan, ImmutableArray<ClassifiedSpan>>()
-
-                        do! syntacticClassificationCache.SetAsync(document, classifiedSpansDict)
-
-                        do classifiedSpansDict[textSpan] <- classifiedSpans
-
-                        result.AddRange(classifiedSpans)
+                    let classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
+                    result.AddRange(classifiedSpans)
                 else
                     Tokenizer.classifySpans (
                         document.Id,
@@ -204,8 +173,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         strictIndentation,
                         result,
                         cancellationToken
-                    )
-                    
+                    )  
             }
             |> CancellableTask.startAsTask cancellationToken
 

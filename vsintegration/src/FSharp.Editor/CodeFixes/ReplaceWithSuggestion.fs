@@ -30,6 +30,8 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (set
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (ReplaceWithSuggestionCodeFixProvider))
                 |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
+                |> liftAsync
 
             // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)

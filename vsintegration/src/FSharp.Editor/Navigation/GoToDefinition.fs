@@ -199,6 +199,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! _, checkFileResults =
                 originDocument.GetFSharpParseAndCheckResultsAsync(nameof (GoToDefinition))
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! fsSymbolUse =
                 checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
@@ -219,6 +221,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     let! _, checkFileResults =
                         implDoc.GetFSharpParseAndCheckResultsAsync(userOpName)
                         |> CancellableTask.start ct
+                        |> Async.AwaitTask
+                        |> liftAsync
 
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                     let! implSymbol = symbolUses |> Array.tryHead
@@ -243,6 +247,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 let! _, checkFileResults =
                     document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument")
                     |> CancellableTask.start ct
+                    |> Async.AwaitTask
+                    |> liftAsync
 
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                 let! implSymbol = symbolUses |> Array.tryHead
@@ -269,6 +275,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! _, checkFileResults =
                 originDocument.GetFSharpParseAndCheckResultsAsync(userOpName)
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(
@@ -522,6 +530,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             let! _, checkResults =
                                 tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
                                 |> CancellableTask.start ct
+                                |> Async.AwaitTask
+                                |> liftAsync
 
                             let! r =
                                 let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =

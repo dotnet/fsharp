@@ -28,6 +28,8 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             let! _, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! unusedOpens =
                 UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()))
