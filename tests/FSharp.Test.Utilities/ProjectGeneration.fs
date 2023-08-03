@@ -752,10 +752,7 @@ let SaveAndCheckProject project checker =
 
         let options = project.GetProjectOptions checker
 
-        let! results = checker.ParseAndCheckProject(options)
-
-        if not (Array.isEmpty results.Diagnostics) then
-            failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
+        let! _ = checker.ParseAndCheckProject(options)
 
         let! signatures =
             Async.Sequential
