@@ -1032,9 +1032,9 @@
         <target state="translated">字段“{0}”在此记录表达式中多次出现。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">此匿名记录不正确。它应具有字段 {0}。</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -1042,14 +1042,34 @@
         <target state="translated">匿名记录类型声明无效。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
-        <source>This anonymous record is missing fields '{0}'.</source>
-        <target state="new">This anonymous record is missing fields '{0}'.</target>
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="new">This anonymous record is missing fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
-        <source>This anonymous record has extra fields. Remove fields '{0}'.</source>
-        <target state="new">This anonymous record has extra fields. Remove fields '{0}'.</target>
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
@@ -8395,11 +8415,6 @@
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
         <target state="translated">两个匿名记录类型来自不同的程序集“{0}”和“{1}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">此匿名记录与预期的形状不完全匹配。请添加缺少的字段 {0} 并删除额外的字段 {1}。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
