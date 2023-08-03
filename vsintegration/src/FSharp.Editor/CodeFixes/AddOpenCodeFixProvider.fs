@@ -71,8 +71,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             let! parseResults, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (AddOpenCodeFixProvider))
                 |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
-                |> liftAsync
 
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)

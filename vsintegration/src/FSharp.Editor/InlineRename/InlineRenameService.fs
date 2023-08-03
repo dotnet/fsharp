@@ -174,8 +174,6 @@ type internal InlineRenameService [<ImportingConstructor>] () =
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
                 |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
 
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(

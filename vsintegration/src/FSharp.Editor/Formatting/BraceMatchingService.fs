@@ -47,8 +47,6 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
                 let! checker, _, parsingOptions, _ =
                     document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
                     |> CancellableTask.start cancellationToken
-                    |> Async.AwaitTask
-                    |> liftAsync
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 

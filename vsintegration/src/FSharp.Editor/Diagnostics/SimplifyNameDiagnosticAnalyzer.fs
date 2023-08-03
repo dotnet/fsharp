@@ -59,8 +59,6 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                         let! _, checkResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof (SimplifyNameDiagnosticAnalyzer))
                             |> CancellableTask.start cancellationToken
-                            |> Async.AwaitTask
-                            |> liftAsync
 
                         let! result =
                             SimplifyNames.getSimplifiableNames (

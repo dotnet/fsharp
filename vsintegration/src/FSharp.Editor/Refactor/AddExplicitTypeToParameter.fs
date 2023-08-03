@@ -44,8 +44,6 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
                 |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
 
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(

@@ -47,8 +47,6 @@ type internal AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<Importin
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
                 |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
-                |> liftAsync
 
             let decl =
                 checkFileResults.GetDeclarationLocation(

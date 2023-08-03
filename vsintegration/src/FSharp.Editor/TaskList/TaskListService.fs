@@ -25,8 +25,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
                 |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
 
             return
                 CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions,

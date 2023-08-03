@@ -25,8 +25,6 @@ module internal SymbolHelpers =
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(userOpName)
                 |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
 
             let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 

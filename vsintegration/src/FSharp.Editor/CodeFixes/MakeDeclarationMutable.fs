@@ -46,8 +46,6 @@ type internal MakeDeclarationMutableFixProvider [<ImportingConstructor>] () =
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (MakeDeclarationMutableFixProvider))
                 |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
-                |> liftAsync
 
             let decl =
                 checkFileResults.GetDeclarationLocation(
