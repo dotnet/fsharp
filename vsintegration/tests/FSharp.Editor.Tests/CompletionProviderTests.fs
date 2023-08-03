@@ -1744,7 +1744,12 @@ match PositionalUnionCaseField (None, 0, range0) with
         // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
         // - suggested name based on the first field's identifier and a suggested name based on the first field's type
         // - names of all fields
-        VerifyCompletionList(fileContents, "NamedUnionCaseField (x", [ "string"; "fieldName"; "caseIdRange" ], [ "range"; "fieldIndex"; "referencedFields"; "isTheOnlyField" ])
+        VerifyCompletionList(
+            fileContents,
+            "NamedUnionCaseField (x",
+            [ "string"; "fieldName"; "caseIdRange" ],
+            [ "range"; "fieldIndex"; "referencedFields"; "isTheOnlyField" ]
+        )
 
     [<Fact>]
     let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
