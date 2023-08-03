@@ -1669,7 +1669,20 @@ let CompilePatternBasic
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
 
         clauses |> List.iteri (fun i c ->
-            if not (used.Contains i) then warning (RuleNeverMatched c.Pattern.Range))
+            let mBound =
+                match c.BoundVals, c.GuardExpr with
+                | [], Some guard -> guard.Range
+                | [ bounds ], None -> bounds.Id.idRange
+                | [ _ ], Some guard -> guard.Range
+                | rest, _ ->
+                    rest
+                    |> List.tryHead
+                    |> Option.map (fun b -> b.Id.idRange)
+                    |> Option.defaultValue c.Pattern.Range
+                
+            let m  = withStartEnd c.Range.Start mBound.End c.Pattern.Range
+                
+            if not (used.Contains i) then warning (RuleNeverMatched m))
 
     dtree, targets
 
