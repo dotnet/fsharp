@@ -1668,19 +1668,25 @@ let CompilePatternBasic
     if warnOnUnused then
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
 
+        // Account for bounds(as) and guards(when) used in clauses
         clauses |> List.iteri (fun i c ->
-            let mBound =
+            let m =
                 match c.BoundVals, c.GuardExpr with
-                | [], Some guard -> guard.Range
-                | [ bounds ], None -> bounds.Id.idRange
-                | [ _ ], Some guard -> guard.Range
-                | rest, _ ->
-                    rest
-                    |> List.tryHead
-                    |> Option.map (fun b -> b.Id.idRange)
-                    |> Option.defaultValue c.Pattern.Range
+                | [], Some guard -> Some guard.Range
+                | [ bound ], None -> Some bound.Id.idRange
+                | [ _ ], Some guard -> Some guard.Range
+                | rest, None ->
+                    match rest with
+                    | head :: _ -> Some head.Id.idRange
+                    | _ -> Some c.Pattern.Range
+                | _ -> None
                 
-            let m  = withStartEnd c.Range.Start mBound.End c.Pattern.Range
+            let m =
+                match m with
+                | None -> c.Range
+                | Some m -> m
+                
+            let m  = withStartEnd c.Range.Start m.End m
                 
             if not (used.Contains i) then warning (RuleNeverMatched m))
 
