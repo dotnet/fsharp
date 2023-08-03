@@ -72,6 +72,7 @@ type LanguageFeature =
     | WarningWhenMultipleRecdTypeChoice
     | ImprovedImpliedArgumentNames
     | DiagnosticForObjInference
+    | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
@@ -175,6 +176,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, previewVersion
                 LanguageFeature.StrictIndentation, previewVersion
+                LanguageFeature.ConstraintIntersectionOnFlexibleTypes, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.WhileBang, previewVersion
                 LanguageFeature.ExtendedFixedBindings, previewVersion
@@ -307,6 +309,7 @@ type LanguageVersion(versionText) =
 
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
+        | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
