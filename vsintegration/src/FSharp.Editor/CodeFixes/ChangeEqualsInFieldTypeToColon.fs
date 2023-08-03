@@ -43,14 +43,14 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
                 let! spanText = context.GetSquigglyTextAsync()
 
                 if spanText <> "=" then
-                    return None
+                    return ValueNone
 
                 else
                     let! errorRange = context.GetErrorRangeAsync()
                     let! isInRecord = errorRange |> isInRecord context.Document
 
                     if not isInRecord then
-                        return None
+                        return ValueNone
 
                     else
                         let codeFix =
@@ -60,5 +60,5 @@ type internal ChangeEqualsInFieldTypeToColonCodeFixProvider() =
                                 Changes = [ TextChange(TextSpan(context.Span.Start, context.Span.Length), ":") ]
                             }
 
-                        return (Some codeFix)
+                        return (ValueSome codeFix)
             }
