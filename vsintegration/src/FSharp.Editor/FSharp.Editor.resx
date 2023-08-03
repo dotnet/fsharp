@@ -280,6 +280,12 @@ Use live (unsaved) buffers for checking</value>
   <data name="UseUpcastOperator" xml:space="preserve">
     <value>Use ':&gt;' operator</value>
   </data>
+  <data name="UnexpectedEqualsInFieldExpectedColon" xml:space="preserve">
+    <value>Unexpected symbol '=' in field declaration. Expected ':' or other token.</value>
+  </data>
+  <data name="ChangeEqualsInFieldTypeToColon" xml:space="preserve">
+    <value>Use ':' for type in field declaration</value>
+  </data>
   <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
     <value>Add missing '=' to type definition</value>
   </data>
