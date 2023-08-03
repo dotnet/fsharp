@@ -52,12 +52,15 @@ type RecordContext =
 
 [<RequireQualifiedAccess>]
 type PatternContext =
-    /// Completing union case field in a pattern (e.g. fun (Some v|) -> )
+    /// Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> )
     /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
-    | PositionalUnionCaseField of fieldIndex: int option * caseIdRange: range
+    | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
 
-    /// Completing union case field in a pattern (e.g. fun (Some (Value = v|) -> )
+    /// Completing union case field pattern (e.g. fun (Some (Value = v| )) -> )
     | NamedUnionCaseField of fieldName: string * caseIdRange: range
+
+    /// Completing union case field identifier in a pattern (e.g. fun (Case (field1 = a; fie| )) -> )
+    | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
     /// Any other position in a pattern that does not need special handling
     | Other
@@ -1261,20 +1264,33 @@ module ParsedInput =
     let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
         | SynPat.LongIdent (longDotId = id) when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
-        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = id) ->
+        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = caseId; range = m) when rangeContainsPos m pos ->
             pats
-            |> List.tryPick (fun (patId, _, pat) ->
-                if rangeContainsPos patId.idRange pos then
-                    Some CompletionContext.Invalid
+            |> List.tryPick (fun (fieldId, _, pat) ->
+                if rangeContainsPos fieldId.idRange pos then
+                    let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
+                    Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
-                    let context = Some(PatternContext.NamedUnionCaseField(patId.idText, id.Range))
+                    let context = Some(PatternContext.NamedUnionCaseField(fieldId.idText, caseId.Range))
                     TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
-        | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id) ->
+        | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id; range = m) when rangeContainsPos m pos ->
             match pats with
-            | [ SynPat.Named _ as pat ] ->
-                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(None, id.Range))) pos
-            | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
-                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range))) pos
+
+            // fun (Some v| ) ->
+            | [ SynPat.Named _ ] -> Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(None, true, id.Range)))
+
+            // fun (Case (a| )) ->
+            // This could either be the first positional field pattern or the user might want to use named pairs
+            | [ SynPat.Paren (SynPat.Named _, _) ] ->
+                Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some 0, true, id.Range)))
+
+            // fun (Case (a| , b)) ->
+            | [ SynPat.Paren (SynPat.Tuple (elementPats = pats) as pat, _) ] ->
+                let context =
+                    Some(PatternContext.PositionalUnionCaseField(Some 0, pats.Length = 1, id.Range))
+
+                TryGetCompletionContextInPattern false pat context pos
+
             | _ ->
                 pats
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
@@ -1288,8 +1304,8 @@ module ParsedInput =
             |> List.tryPick (fun (i, pat) ->
                 let context =
                     match previousContext with
-                    | Some (PatternContext.PositionalUnionCaseField (_, caseIdRange)) ->
-                        Some(PatternContext.PositionalUnionCaseField(Some i, caseIdRange))
+                    | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)) ->
+                        Some(PatternContext.PositionalUnionCaseField(Some i, isTheOnlyField, caseIdRange))
                     | _ ->
                         // No preceding LongIdent => this is a tuple deconstruction
                         None
