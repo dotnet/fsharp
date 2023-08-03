@@ -21,8 +21,12 @@ ImplFile
                        (SynValTyparDecls
                           (Some
                              (PostfixList
-                                ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                  SynTyparDecl ([], SynTypar (T2, None, false))],
+                                ([SynTyparDecl
+                                    ([], SynTypar (T1, None, false), [],
+                                     { AmpersandRanges = [] });
+                                  SynTyparDecl
+                                    ([], SynTypar (T2, None, false), [],
+                                     { AmpersandRanges = [] })],
                                  [WhereTyparSupportsMember
                                     (Paren
                                        (Or

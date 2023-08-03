@@ -173,7 +173,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         strictIndentation,
                         result,
                         cancellationToken
-                    )  
+                    )
             }
             |> CancellableTask.startAsTask cancellationToken
 

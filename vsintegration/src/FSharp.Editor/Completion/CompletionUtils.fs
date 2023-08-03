@@ -192,8 +192,18 @@ module internal CompletionUtils =
             // the majority of common cases.
 
             let classifiedSpans = ResizeArray<_>()
-                
-            Tokenizer.classifySpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, strictIndentation, classifiedSpans, ct)
+
+            Tokenizer.classifySpans (
+                documentId,
+                sourceText,
+                line.Span,
+                Some filePath,
+                defines,
+                langVersion,
+                strictIndentation,
+                classifiedSpans,
+                ct
+            )
 
             let inline isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier

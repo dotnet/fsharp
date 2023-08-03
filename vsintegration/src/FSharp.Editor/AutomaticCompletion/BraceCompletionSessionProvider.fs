@@ -500,6 +500,7 @@ type EditorBraceCompletionSessionFactory() =
 
         position = 0
         || (let colorizationData = ResizeArray<_>()
+
             Tokenizer.classifySpans (
                 document.Id,
                 sourceCode,
@@ -510,7 +511,7 @@ type EditorBraceCompletionSessionFactory() =
                 None,
                 colorizationData,
                 cancellationToken
-                )
+            )
 
             colorizationData.Count = 0
             || colorizationData.Exists(fun classifiedSpan ->
