@@ -22,9 +22,13 @@ ImplFile
                         Range = (2,0--2,29) }],
                      Some
                        (PostfixList
-                          ([SynTyparDecl ([], SynTypar (context, None, false));
-                            SynTyparDecl ([], SynTypar (a, None, false))], [],
-                           (3,8--3,22))), [], [Foo],
+                          ([SynTyparDecl
+                              ([], SynTypar (context, None, false), [],
+                               { AmpersandRanges = [] });
+                            SynTyparDecl
+                              ([], SynTypar (a, None, false), [],
+                               { AmpersandRanges = [] })], [], (3,8--3,22))), [],
+                     [Foo],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None, (3,5--3,8)),
                   Simple
@@ -71,9 +75,13 @@ ImplFile
                         Range = (6,4--6,37) }],
                      Some
                        (PostfixList
-                          ([SynTyparDecl ([], SynTypar (context, None, false));
-                            SynTyparDecl ([], SynTypar (a, None, false))], [],
-                           (6,41--6,55))), [], [Bar],
+                          ([SynTyparDecl
+                              ([], SynTypar (context, None, false), [],
+                               { AmpersandRanges = [] });
+                            SynTyparDecl
+                              ([], SynTypar (a, None, false), [],
+                               { AmpersandRanges = [] })], [], (6,41--6,55))),
+                     [], [Bar],
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None, (6,38--6,41)),
                   Simple

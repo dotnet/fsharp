@@ -220,6 +220,8 @@ type public FSharpParsingOptions =
 
         IndentationAwareSyntax: bool option
 
+        StrictIndentation: bool option
+
         CompilingFSharpCore: bool
 
         IsExe: bool
@@ -428,6 +430,8 @@ type public FSharpCheckFileResults =
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
 
+    member internal CalculateSignatureHash: unit -> int option
+
     /// Internal constructor
     static member internal MakeEmpty:
         fileName: string * creationErrors: FSharpDiagnostic[] * keepAssemblyContents: bool -> FSharpCheckFileResults
@@ -540,7 +544,8 @@ module internal ParseAndCheckFile =
         userOpName: string *
         suggestNamesForErrors: bool *
         flatErrors: bool *
-        identCapture: bool ->
+        identCapture: bool *
+        ct: CancellationToken ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:
@@ -548,7 +553,8 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        ct: CancellationToken ->
             (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.

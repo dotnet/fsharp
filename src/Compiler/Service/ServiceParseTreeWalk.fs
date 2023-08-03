@@ -186,7 +186,6 @@ type SyntaxVisitorBase<'T>() =
 
 /// A range of utility functions to assist with traversing an AST
 module SyntaxTraversal =
-
     // treat ranges as though they are half-open: [,)
     let rangeContainsPosLeftEdgeInclusive (m1: range) p =
         if posEq m1.Start m1.End then
@@ -329,18 +328,31 @@ module SyntaxTraversal =
                 let traversePat = traversePat path
 
                 match e with
+                | SynExpr.LongIdentSet (expr = synExpr)
+                | SynExpr.DotGet (expr = synExpr)
+                | SynExpr.Do (expr = synExpr)
+                | SynExpr.DoBang (expr = synExpr)
+                | SynExpr.Assert (expr = synExpr)
+                | SynExpr.Fixed (expr = synExpr)
+                | SynExpr.DebugPoint (innerExpr = synExpr)
+                | SynExpr.AddressOf (expr = synExpr)
+                | SynExpr.TraitCall (argExpr = synExpr)
+                | SynExpr.Lazy (expr = synExpr)
+                | SynExpr.InferredUpcast (expr = synExpr)
+                | SynExpr.InferredDowncast (expr = synExpr)
+                | SynExpr.YieldOrReturn (expr = synExpr)
+                | SynExpr.YieldOrReturnFrom (expr = synExpr)
+                | SynExpr.FromParseError (expr = synExpr)
+                | SynExpr.DiscardAfterMissingQualificationAfterDot (expr = synExpr)
+                | SynExpr.IndexFromEnd (expr = synExpr)
+                | SynExpr.New (expr = synExpr)
+                | SynExpr.ArrayOrListComputed (expr = synExpr)
+                | SynExpr.TypeApp (expr = synExpr)
+                | SynExpr.DotLambda (expr = synExpr)
+                | SynExpr.Quote (quotedExpr = synExpr)
+                | SynExpr.Paren (expr = synExpr) -> traverseSynExpr synExpr
 
-                | SynExpr.Paren (synExpr, _, _, _parenRange) -> traverseSynExpr synExpr
-
-                | SynExpr.Quote (_synExpr, _, synExpr2, _, _range) ->
-                    [ //dive synExpr synExpr.Range traverseSynExpr // TODO, what is this?
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.Const (_synConst, _range) -> None
-
-                | SynExpr.InterpolatedString (parts, _, _) ->
+                | SynExpr.InterpolatedString (contents = parts) ->
                     [
                         for part in parts do
                             match part with
@@ -349,13 +361,13 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Typed (synExpr, synType, _range) ->
+                | SynExpr.Typed (expr = synExpr; targetType = synType) ->
                     match traverseSynExpr synExpr with
                     | None -> traverseSynType synType
                     | x -> x
 
-                | SynExpr.Tuple (_, synExprList, _, _range)
-                | SynExpr.ArrayOrList (_, synExprList, _range) ->
+                | SynExpr.Tuple (exprs = synExprList)
+                | SynExpr.ArrayOrList (exprs = synExprList) ->
                     synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
 
                 | SynExpr.AnonRecd (copyInfo = copyOpt; recordFields = fields) ->
@@ -380,7 +392,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Record (inheritOpt, copyOpt, fields, _range) ->
+                | SynExpr.Record (baseInfo = inheritOpt; copyInfo = copyOpt; recordFields = fields) ->
                     [
                         let diveIntoSeparator offsideColumn scPosOpt copyOpt =
                             match scPosOpt with
@@ -485,7 +497,6 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.ObjExpr (objType = ty; argOptions = baseCallOpt; bindings = binds; members = ms; extraImpls = ifaces) ->
                     let binds = unionBindingAndMembers binds ms
 
@@ -512,22 +523,7 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.While (_spWhile, synExpr, synExpr2, _range) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.For (identBody = synExpr; toBody = synExpr2; doBody = synExpr3) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                        dive synExpr3 synExpr3.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, synPat, synExpr, synExpr2, _range) ->
+                | SynExpr.ForEach (pat = synPat; enumExpr = synExpr; bodyExpr = synExpr2) ->
                     [
                         dive synPat synPat.Range traversePat
                         dive synExpr synExpr.Range traverseSynExpr
@@ -535,9 +531,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.ArrayOrListComputed (_, synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.ComputationExpr (_, synExpr, _range) ->
+                | SynExpr.ComputationExpr (expr = synExpr) ->
                     // now parser treats this syntactic expression as computation expression
                     // { identifier }
                     // here we detect this situation and treat ComputationExpr  { Identifier } as attempt to create record
@@ -554,19 +548,19 @@ module SyntaxTraversal =
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
 
-                | SynExpr.Lambda (args = synSimplePats; body = synExpr) ->
-                    match synSimplePats with
-                    | SynSimplePats.SimplePats (pats = pats) ->
-                        match traverseSynSimplePats path pats with
-                        | None -> traverseSynExpr synExpr
-                        | x -> x
+                | SynExpr.Lambda (args = SynSimplePats.SimplePats (pats = pats); body = synExpr) ->
+                    match traverseSynSimplePats path pats with
+                    | None -> traverseSynExpr synExpr
+                    | x -> x
 
-                | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
+                | SynExpr.MatchLambda (matchClauses = synMatchClauseList) ->
                     synMatchClauseList
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     |> pick expr
 
-                | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList) ->
+                | SynExpr.TryWith (tryExpr = synExpr; withCases = synMatchClauseList)
+                | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList)
+                | SynExpr.MatchBang (expr = synExpr; clauses = synMatchClauseList) ->
                     [
                         yield dive synExpr synExpr.Range traverseSynExpr
                         yield!
@@ -575,17 +569,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Do (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.Assert (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.Fixed (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.DebugPoint (_, _, synExpr) -> traverseSynExpr synExpr
-
-                | SynExpr.Dynamic _ -> None
-
-                | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
+                | SynExpr.App (isInfix = isInfix; funcExpr = synExpr; argExpr = synExpr2) ->
                     if isInfix then
                         [
                             dive synExpr2 synExpr2.Range traverseSynExpr
@@ -599,9 +583,7 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.LetOrUse (isRecursive, _, synBindingList, synExpr, range, _) ->
+                | SynExpr.LetOrUse (isRecursive = isRecursive; bindings = synBindingList; body = synExpr; range = range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | None ->
                         [
@@ -613,33 +595,6 @@ module SyntaxTraversal =
                         |> pick expr
                     | x -> x
 
-                | SynExpr.TryWith (tryExpr = synExpr; withCases = synMatchClauseList) ->
-                    [
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield!
-                            synMatchClauseList
-                            |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
-                    ]
-                    |> pick expr
-
-                | SynExpr.TryFinally (tryExpr = synExpr; finallyExpr = synExpr2) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.Lazy (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.SequentialOrImplicitYield (_sequencePointInfoForSequential, synExpr, synExpr2, _, _range)
-
-                | SynExpr.Sequential (_sequencePointInfoForSequential, _, synExpr, synExpr2, _range) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
                 | SynExpr.IfThenElse (ifExpr = synExpr; thenExpr = synExpr2; elseExpr = synExprOpt) ->
                     [
                         yield dive synExpr synExpr.Range traverseSynExpr
@@ -650,26 +605,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.Ident _ident -> None
-
-                | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
-
-                | SynExpr.Typar (_typar, _range) -> None
-
-                | SynExpr.LongIdentSet (_longIdent, synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.DotGet (synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.Set (synExpr, synExpr2, _)
-
-                | SynExpr.DotSet (synExpr, _, synExpr2, _) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.IndexRange (expr1, _, expr2, _, _, _) ->
+                | SynExpr.IndexRange (expr1 = expr1; expr2 = expr2) ->
                     [
                         match expr1 with
                         | Some e -> dive e e.Range traverseSynExpr
@@ -680,71 +616,40 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.IndexFromEnd (e, _) -> traverseSynExpr e
-
-                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) ->
-                    [
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield dive indexArgs indexArgs.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.DotIndexedSet (synExpr, indexArgs, synExpr2, _, _range, _range2) ->
-                    [
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield dive indexArgs indexArgs.Range traverseSynExpr
-                        yield dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) ->
+                | SynExpr.Set (targetExpr = synExpr1; rhsExpr = synExpr2)
+                | SynExpr.DotSet (targetExpr = synExpr1; rhsExpr = synExpr2)
+                | SynExpr.TryFinally (tryExpr = synExpr1; finallyExpr = synExpr2)
+                | SynExpr.SequentialOrImplicitYield (expr1 = synExpr1; expr2 = synExpr2)
+                | SynExpr.Sequential (expr1 = synExpr1; expr2 = synExpr2)
+                | SynExpr.While (whileExpr = synExpr1; doExpr = synExpr2)
+                | SynExpr.WhileBang (whileExpr = synExpr1; doExpr = synExpr2)
+                | SynExpr.DotIndexedGet (objectExpr = synExpr1; indexArgs = synExpr2)
+                | SynExpr.JoinIn (lhsExpr = synExpr1; rhsExpr = synExpr2)
+                | SynExpr.NamedIndexedPropertySet (expr1 = synExpr1; expr2 = synExpr2) ->
                     [
                         dive synExpr1 synExpr1.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
                     |> pick expr
 
-                | SynExpr.NamedIndexedPropertySet (_longIdent, synExpr, synExpr2, _range) ->
+                | SynExpr.For (identBody = synExpr1; toBody = synExpr2; doBody = synExpr3)
+                | SynExpr.DotIndexedSet (objectExpr = synExpr1; indexArgs = synExpr2; valueExpr = synExpr3)
+                | SynExpr.DotNamedIndexedPropertySet (targetExpr = synExpr1; argExpr = synExpr2; rhsExpr = synExpr3) ->
                     [
-                        dive synExpr synExpr.Range traverseSynExpr
-                        dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
-                | SynExpr.DotNamedIndexedPropertySet (synExpr, _longIdent, synExpr2, synExpr3, _range) ->
-                    [
-                        dive synExpr synExpr.Range traverseSynExpr
+                        dive synExpr1 synExpr1.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                         dive synExpr3 synExpr3.Range traverseSynExpr
                     ]
                     |> pick expr
 
-                | SynExpr.TypeTest (synExpr, synType, _range)
-
-                | SynExpr.Upcast (synExpr, synType, _range)
-
-                | SynExpr.Downcast (synExpr, synType, _range) ->
+                | SynExpr.TypeTest (expr = synExpr; targetType = synType)
+                | SynExpr.Upcast (expr = synExpr; targetType = synType)
+                | SynExpr.Downcast (expr = synExpr; targetType = synType) ->
                     [
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synType synType.Range traverseSynType
                     ]
                     |> pick expr
-
-                | SynExpr.InferredUpcast (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.InferredDowncast (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.Null _range -> None
-
-                | SynExpr.AddressOf (_, synExpr, _range, _range2) -> traverseSynExpr synExpr
-
-                | SynExpr.TraitCall (_synTyparList, _synMemberSig, synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.ImplicitZero _range -> None
-
-                | SynExpr.YieldOrReturn (_, synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.YieldOrReturnFrom (_, synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.LetOrUseBang (pat = synPat; rhs = synExpr; andBangs = andBangSynExprs; body = synExpr2) ->
                     [
@@ -760,30 +665,18 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.MatchBang (expr = synExpr; clauses = synMatchClauseList) ->
-                    [
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield!
-                            synMatchClauseList
-                            |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
-                    ]
-                    |> pick expr
-
-                | SynExpr.DoBang (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.LibraryOnlyILAssembly _ -> None
-
-                | SynExpr.LibraryOnlyStaticOptimization _ -> None
-
-                | SynExpr.LibraryOnlyUnionCaseFieldGet _ -> None
-
-                | SynExpr.LibraryOnlyUnionCaseFieldSet _ -> None
-
-                | SynExpr.ArbitraryAfterError (_debugStr, _range) -> None
-
-                | SynExpr.FromParseError (synExpr, _range) -> traverseSynExpr synExpr
-
-                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> traverseSynExpr synExpr
+                | SynExpr.Dynamic _
+                | SynExpr.Ident _
+                | SynExpr.LongIdent _
+                | SynExpr.Typar _
+                | SynExpr.Const _
+                | SynExpr.Null _
+                | SynExpr.ImplicitZero _
+                | SynExpr.LibraryOnlyILAssembly _
+                | SynExpr.LibraryOnlyStaticOptimization _
+                | SynExpr.LibraryOnlyUnionCaseFieldGet _
+                | SynExpr.LibraryOnlyUnionCaseFieldSet _
+                | SynExpr.ArbitraryAfterError _ -> None
 
             visitor.VisitExpr(origPath, traverseSynExpr origPath, defaultTraverse, expr)
 
@@ -845,6 +738,7 @@ module SyntaxTraversal =
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Paren (innerType = t)
                 | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
+                | SynType.Intersection (types = types) -> List.tryPick (traverseSynType path) types
                 | SynType.StaticConstantNull _
                 | SynType.Anon _
                 | SynType.AnonRecd _

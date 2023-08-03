@@ -2371,3 +2371,19 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: P
 let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod, Some pinfo) else None)
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
+
+let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
+    if not (pinfo.HasGetter && pinfo.HasSetter) then
+        None
+    else
+        match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
+        | Some getValRef, Some setValRef ->
+            if getValRef.Accessibility <> setValRef.Accessibility then
+                Some (getValRef, setValRef)
+            else
+                match getValRef.ValReprInfo with
+                | Some getValReprInfo when
+                    // Getter has an index parameter
+                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
+                | _ -> None 
+        | _ -> None

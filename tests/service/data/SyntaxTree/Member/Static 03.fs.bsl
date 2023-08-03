@@ -31,7 +31,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P1], [(4,21--4,22)], [None; None]),
@@ -60,7 +60,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
-                               None),
+                               None, None),
                             FromParseError (Wild (5,23--5,23), (5,23--5,23)),
                             None,
                             ArbitraryAfterError
@@ -90,7 +90,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
+                                  SynArgInfo ([], false, None)), None, None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P3], [(6,21--6,22)], [None; None]),

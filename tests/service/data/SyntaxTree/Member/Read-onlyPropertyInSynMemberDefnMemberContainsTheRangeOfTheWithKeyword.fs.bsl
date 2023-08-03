@@ -35,7 +35,7 @@ ImplFile
                                       MemberKind = PropertyGet },
                                   SynValInfo
                                     ([[SynArgInfo ([], false, None)]; []],
-                                     SynArgInfo ([], false, None)), None),
+                                     SynArgInfo ([], false, None)), None, None),
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyReadProperty], [(5,15--5,16)],

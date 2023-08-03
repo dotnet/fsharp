@@ -2,9 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
-open System.Text.RegularExpressions
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -17,6 +17,12 @@ type internal ChangePrefixNegationToInfixSubtractionCodeFixProvider() =
 
     static let title = SR.ChangePrefixNegationToInfixSubtraction()
 
+    static let rec findNextNonWhitespacePos (sourceText: SourceText) pos =
+        if pos < sourceText.Length && Char.IsWhiteSpace sourceText[pos] then
+            findNextNonWhitespacePos sourceText (pos + 1)
+        else
+            pos
+
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0003"
 
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
@@ -28,19 +34,16 @@ type internal ChangePrefixNegationToInfixSubtractionCodeFixProvider() =
 
                 // in a line like "... x  -1 ...",
                 // squiggly goes for "x", not for "-", hence we search for "-"
-                let remainingText = $"{sourceText.GetSubText(context.Span.End)}"
-                let pattern = @"^\s+(-)"
+                let pos = findNextNonWhitespacePos sourceText (context.Span.End + 1)
 
-                match Regex.Match(remainingText, pattern) with
-                | m when m.Success ->
-                    let spacePlace = context.Span.End + m.Groups[1].Index + 1
-
+                if sourceText[pos] <> '-' then
+                    return ValueNone
+                else
                     return
-                        Some
+                        ValueSome
                             {
                                 Name = CodeFix.ChangePrefixNegationToInfixSubtraction
                                 Message = title
-                                Changes = [ TextChange(TextSpan(spacePlace, 0), " ") ]
+                                Changes = [ TextChange(TextSpan(pos + 1, 0), " ") ]
                             }
-                | _ -> return None
             }

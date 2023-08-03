@@ -26,10 +26,10 @@ type internal ConvertToNotEqualsEqualityExpressionCodeFixProvider() =
                 let! text = context.GetSquigglyTextAsync()
 
                 if text <> "!=" then
-                    return None
+                    return ValueNone
                 else
                     return
-                        Some
+                        ValueSome
                             {
                                 Name = CodeFix.ConvertToNotEqualsEqualityExpression
                                 Message = title

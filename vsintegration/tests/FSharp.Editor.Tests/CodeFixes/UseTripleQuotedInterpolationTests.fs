@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = UseTripleQuotedInterpolationCodeFixProvider()
-let private diagnostic = 3373 // ... invalid interpolated string ...
 
 [<Fact>]
 let ``Fixes FS3373`` () =
@@ -29,6 +28,6 @@ let createMsg x = $"Review in {x} {pluralize x "day"}"
                     + "\r\n"
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
