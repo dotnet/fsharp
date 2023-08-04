@@ -2076,6 +2076,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesA
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionWithinRecordDefinition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionWithinTypeDefinition(FSharp.Compiler.Text.Position)
