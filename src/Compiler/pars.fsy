@@ -76,7 +76,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <bool> LESS GREATER /* here the bool indicates if the tokens are part of a type application or type parameter declaration, e.g. C<int>, detected by the lex filter */
 %token <string> PERCENT_OP BINDER
 %token <string * bool> LQUOTE RQUOTE RQUOTE_DOT
-%token BAR_BAR UPCAST DOWNCAST NULL RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
+%token BAR_BAR UPCAST DOWNCAST RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
 %token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT DOT_DOT_HAT
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG
 %token LAZY OLAZY MATCH MATCH_BANG MUTABLE NEW OF
@@ -86,7 +86,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token SEMICOLON_SEMICOLON LARROW EQUALS LBRACK LBRACK_BAR LBRACE_BAR LBRACK_LESS
 %token BAR_RBRACK BAR_RBRACE UNDERSCORE
 %token BAR RBRACK RBRACE_COMING_SOON RBRACE_IS_HERE MINUS DOLLAR
-%token GREATER_RBRACK STRUCT SIG
+%token GREATER_RBRACK STRUCT SIG NULL
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
 %token MAYBENULL__ NOTNULL__ WITHNULL__
@@ -342,7 +342,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
-%nonassoc typar_not_null
+%left typar_not_null
 %left OR BAR_BAR JOIN_IN
 %left AND
 %left AND_BANG

@@ -1,1 +1,1 @@
-type C<'T when 'T: not null> = class end
+type C<'T when 'T: null> = class end
