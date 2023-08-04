@@ -109,10 +109,10 @@ module internal MetadataAsSource =
             let documentId = workspace.GetDocumentIdInCurrentContext(textContainer)
 
             match box documentId with
-            | null -> None
-            | _ -> solution.GetDocument(documentId) |> Some
+            | null -> ValueNone
+            | _ -> solution.GetDocument(documentId) |> ValueSome
         else
-            None
+            ValueNone
 
 [<Sealed>]
 [<Export(typeof<FSharpMetadataAsSourceService>); Composition.Shared>]
@@ -157,8 +157,8 @@ type FSharpMetadataAsSourceService() =
         projsArr |> Array.iter (fun pair -> clear pair.Key pair.Value)
 
     member _.ShowDocument(projInfo: ProjectInfo, filePath: string, text: Text.SourceText) =
-        match projInfo.Documents |> Seq.tryFind (fun doc -> doc.FilePath = filePath) with
-        | Some document ->
+        match projInfo.Documents |> Seq.tryFindV (fun doc -> doc.FilePath = filePath) with
+        | ValueSome document ->
             let _ =
                 let directoryName = Path.GetDirectoryName(filePath)
 
@@ -175,4 +175,4 @@ type FSharpMetadataAsSourceService() =
             projs.[filePath] <- projectContext
 
             MetadataAsSource.showDocument (filePath, Path.GetFileName(filePath), serviceProvider)
-        | _ -> None
+        | _ -> ValueNone

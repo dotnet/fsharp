@@ -28,7 +28,7 @@ module FSharpFindUsagesService =
         (symbolUse: range)
         =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken()
             let! sourceText = doc.GetTextAsync(cancellationToken)
 
             match declarationRange, RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
@@ -41,7 +41,7 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                         else
                             definitionItems
-                            |> Array.tryFind (fun (_, projectId) -> doc.Project.Id = projectId)
+                            |> Array.tryFind (snd >> (=) doc.Project.FilePath)
                             |> Option.map (fun (definitionItem, _) -> definitionItem)
                             |> Option.defaultValue externalDefinitionItem
 
@@ -61,7 +61,7 @@ module FSharpFindUsagesService =
         else
             cancellableTask {
                 let documentIds = solution.GetDocumentIdsWithFilePath(range.FileName)
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken()
 
                 let tasks =
                     [|
@@ -69,7 +69,7 @@ module FSharpFindUsagesService =
                             let t =
                                 cancellableTask {
                                     let doc = solution.GetDocument(documentId)
-                                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                                    let! cancellationToken = CancellableTask.getCancellationToken()
                                     let! sourceText = doc.GetTextAsync(cancellationToken)
 
                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
@@ -96,18 +96,17 @@ module FSharpFindUsagesService =
             userOp: string
         ) : CancellableTask<unit> =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken()
             let! sourceText = document.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
 
-            let! symbol =
-                document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, "findReferencedSymbolsAsync")
-
-            match symbol with
+            match! document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOp) with
             | None -> ()
             | Some symbol ->
-                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOp)
+
+                let! _, checkFileResults =
+                    document.GetFSharpParseAndCheckResultsAsync(userOp)
 
                 let symbolUse =
                     checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
@@ -132,6 +131,10 @@ module FSharpFindUsagesService =
                         | Some range -> cancellableTask { return! rangeToDocumentSpans (document.Project.Solution, range) }
                         | None -> CancellableTask.singleton [||]
 
+                    let declarationSpans =
+                        declarationSpans
+                        |> Array.distinctBy (fun x -> x.Document.FilePath, x.Document.Project.FilePath)
+
                     let isExternal = declarationSpans |> Array.isEmpty
 
                     let displayParts =
@@ -145,7 +148,7 @@ module FSharpFindUsagesService =
 
                     let definitionItems =
                         declarationSpans
-                        |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.Id)
+                        |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.FilePath)
 
                     let tasks =
                         [|

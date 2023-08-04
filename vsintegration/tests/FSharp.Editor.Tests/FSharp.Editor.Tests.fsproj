@@ -55,6 +55,7 @@
     <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColonTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

@@ -32,7 +32,7 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! token = CancellableTask.getCurrentCancellationToken ()
+                let! token = CancellableTask.getCancellationToken ()
 
                 let! sourceText = context.Document.GetTextAsync token
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveUnusedBindingCodeFixProvider)
@@ -58,7 +58,7 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
                         let keywordStartColumn = keywordEndColumn - 2 // removes 'let' or 'use'
                         let fullSpan = TextSpan(keywordStartColumn, span.End - keywordStartColumn)
 
-                        Some(TextChange(fullSpan, ""))
+                        ValueSome(TextChange(fullSpan, ""))
 
                     | Some (SelfId range) ->
                         let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
@@ -77,15 +77,15 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
 
                         let fullSpan = TextSpan(asStart, equalStart - asStart)
 
-                        Some(TextChange(fullSpan, ""))
+                        ValueSome(TextChange(fullSpan, ""))
 
-                    | Some Member -> None
+                    | Some Member -> ValueNone
 
-                    | None -> None
+                    | None -> ValueNone
 
                 return
                     change
-                    |> Option.map (fun change ->
+                    |> ValueOption.map (fun change ->
                         {
                             Name = CodeFix.RemoveUnusedBinding
                             Message = title

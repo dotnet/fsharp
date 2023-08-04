@@ -58,21 +58,23 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
             cancellableTask {
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
 
-                let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (
-                        document.Id,
-                        sourceText,
-                        textSpan,
-                        Some(document.Name),
-                        defines,
-                        Some langVersion,
-                        strictIndentation,
-                        cancellationToken
-                    )
+                let classifiedSpans = ResizeArray<_>()
+
+                Tokenizer.classifySpans (
+                    document.Id,
+                    sourceText,
+                    textSpan,
+                    Some(document.Name),
+                    defines,
+                    Some langVersion,
+                    strictIndentation,
+                    classifiedSpans,
+                    cancellationToken
+                )
 
                 let result =
                     match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, classifiedSpans) with

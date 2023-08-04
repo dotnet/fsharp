@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Threading
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
@@ -11,6 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeDeclarationMutable); Shared>]
 type internal MakeDeclarationMutableFixProvider [<ImportingConstructor>] () =
@@ -43,6 +45,8 @@ type internal MakeDeclarationMutableFixProvider [<ImportingConstructor>] () =
 
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (MakeDeclarationMutableFixProvider))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             let decl =

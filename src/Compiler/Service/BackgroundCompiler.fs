@@ -1593,13 +1593,18 @@ type internal BackgroundCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             self.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
 
-        member this.ParseAndCheckFileInProject
+        member _.ParseAndCheckFileInProject
             (
-                _fileName: string,
-                _projectSnapshot: FSharpProjectSnapshot,
-                _userOpName: string
+                fileName: string,
+                projectSnapshot: FSharpProjectSnapshot,
+                userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
-            raise (System.NotImplementedException())
+            node {
+                let fileSnapshot = projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+                let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
+                let options = projectSnapshot.ToOptions()
+                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
+            }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             self.ParseAndCheckProject(options, userOpName)

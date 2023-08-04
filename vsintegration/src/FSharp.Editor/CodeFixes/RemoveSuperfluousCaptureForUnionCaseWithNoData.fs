@@ -42,8 +42,8 @@ type internal RemoveSuperfluousCaptureForUnionCaseWithNoDataCodeFixProvider [<Im
 
                 return
                     classifications
-                    |> Array.tryFind (fun c -> c.Type = SemanticClassificationType.UnionCase)
-                    |> Option.map (fun unionCaseItem ->
+                    |> Array.tryFindV (fun c -> c.Type = SemanticClassificationType.UnionCase)
+                    |> ValueOption.map (fun unionCaseItem ->
                         // The error/warning captures entire pattern match, like "Ns.Type.DuName bindingName". We want to keep type info when suggesting a replacement, and only remove "bindingName".
                         let typeInfoLength = unionCaseItem.Range.EndColumn - m.StartColumn
 

@@ -27,16 +27,17 @@ type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] 
                 let! diagnosticRange = context.GetErrorRangeAsync()
 
                 if not <| parseResults.IsPosContainedInApplication diagnosticRange.Start then
-                    return None
+                    return ValueNone
                 else
                     return
                         parseResults.TryRangeOfNameOfNearestOuterBindingContainingPos diagnosticRange.Start
-                        |> Option.bind (fun bindingRange -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, bindingRange))
-                        |> Option.filter (fun bindingSpan ->
+                        |> ValueOption.ofOption
+                        |> ValueOption.map (fun bindingRange -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, bindingRange))
+                        |> ValueOption.filter (fun bindingSpan ->
                             sourceText
                                 .GetSubText(bindingSpan)
                                 .ContentEquals(sourceText.GetSubText context.Span))
-                        |> Option.map (fun bindingSpan ->
+                        |> ValueOption.map (fun bindingSpan ->
                             let title =
                                 String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(bindingSpan).ToString())
 

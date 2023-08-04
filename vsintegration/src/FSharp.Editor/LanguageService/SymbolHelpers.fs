@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Concurrent
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -20,7 +19,14 @@ module internal SymbolHelpers =
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! ct = Async.CancellationToken |> liftAsync
+
+            let! _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync(userOpName)
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
+
             let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
@@ -71,20 +77,17 @@ module internal SymbolHelpers =
                 [| nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj |]
 
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken()
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 let tasks =
                     [|
                         for project in projects do
-                            yield
-                                CancellableTask.startAsTask
-                                    cancellationToken
-                                    (project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
+                            project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects") cancellationToken
                     |]
 
-                do! Task.WhenAll(tasks)
+                let! _ = Task.WhenAll tasks
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
@@ -96,7 +99,7 @@ module internal SymbolHelpers =
         (onFound: Document -> range -> CancellableTask<unit>)
         =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken()
 
             match symbolUse.GetSymbolScope currentDocument with
 

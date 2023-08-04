@@ -10,11 +10,11 @@ open System.Threading
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open CancellableTasks
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
@@ -22,10 +22,13 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
     static member GetUnusedOpenRanges(document: Document) : Async<Option<range list>> =
         asyncMaybe {
             do! Option.guard document.Project.IsFSharpCodeFixesUnusedOpensEnabled
-            let! sourceText = document.GetTextAsync()
+            let! ct = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(ct)
 
             let! _, checkResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! unusedOpens =

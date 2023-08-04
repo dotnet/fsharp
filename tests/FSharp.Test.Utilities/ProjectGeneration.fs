@@ -709,7 +709,7 @@ module ProjectOperations =
 
 module Helpers =
 
-    let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
+    let getSymbolUse fileName (source: string) (symbolName: string) snapshot (checker: FSharpChecker) =
         async {
             let lines = source.Split '\n' |> Seq.skip 1 // module definition
             let lineNumber, fullLine, colAtEndOfNames =
@@ -723,8 +723,7 @@ module Helpers =
                 |> Seq.tryPick id
                 |> Option.defaultValue (-1, "", -1)
 
-            let! results = checker.ParseAndCheckFileInProject(
-                fileName, 0, SourceText.ofString source, options)
+            let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
 
             let typeCheckResults = getTypeCheckResult results
 
@@ -739,14 +738,17 @@ module Helpers =
 
         let fileName = "test.fs"
 
-        let getSource _ = source |> SourceText.ofString |> Some |> async.Return
+        let getSource _ fileName =
+            { FileName = fileName
+              Version = "1"
+              GetSource = fun () -> source |> SourceText.ofString |> Task.FromResult }
+            |> async.Return
 
         let checker = FSharpChecker.Create(
             keepAllBackgroundSymbolUses = false,
             enableBackgroundItemKeyStoreAndSemanticClassification = true,
             enablePartialTypeChecking = true,
             captureIdentifiersWhenParsing = true,
-            documentSource = DocumentSource.Custom getSource,
             useTransparentCompiler = true)
 
         let options =
@@ -769,7 +771,9 @@ module Helpers =
                 OriginalLoadReferences = []
                 Stamp = None }
 
-        fileName, options, checker
+        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+
+        fileName, snapshot, checker
 
 open Helpers
 
@@ -1059,7 +1063,8 @@ type ProjectWorkflowBuilder
             let fileName = ctx.Project.ProjectDir ++ file.FileName
             let source = renderSourceFile ctx.Project file
             let options= ctx.Project.GetProjectOptions checker
-            return! getSymbolUse fileName source symbolName options checker
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+            return! getSymbolUse fileName source symbolName snapshot checker
         }
 
     /// Find a symbol by finding the first occurrence of the symbol name in the file

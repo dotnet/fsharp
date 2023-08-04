@@ -292,7 +292,7 @@ and mytype = MyType
 
     let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
 
-    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
     |> Async.RunSynchronously
     |> expectToFind [
         fileName, 2, 5, 11
@@ -378,7 +378,7 @@ match 2 with
 
         let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 2, 6, 10
@@ -411,7 +411,7 @@ module Two =
 
         let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
 
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
         |> Async.RunSynchronously
         |> expectToFind [
             fileName, 4, 10, 14
