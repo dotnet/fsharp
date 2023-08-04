@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
       <trans-unit id="alwaysUseTypedStringInterpolation">
-        <source>Prefer to use typed interpolated strings over untyped one.</source>
-        <target state="new">Prefer to use typed interpolated strings over untyped one.</target>
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="new">Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
