@@ -53,6 +53,8 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UseMutationWhenValueIsMutableCodeFixProvider))
                 |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(

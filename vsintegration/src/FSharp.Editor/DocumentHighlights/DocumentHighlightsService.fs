@@ -76,6 +76,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! symbolUse =
                 checkFileResults.GetSymbolUseAtLocation(

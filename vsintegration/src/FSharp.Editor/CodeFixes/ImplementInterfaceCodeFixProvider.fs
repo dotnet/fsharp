@@ -195,6 +195,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
             let! parseResults, checkFileResults =
                 context.Document.GetFSharpParseAndCheckResultsAsync(nameof (ImplementInterfaceCodeFixProvider))
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
@@ -203,6 +205,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
             let! _, _, parsingOptions, _ =
                 context.Document.GetFSharpCompilationOptionsAsync(nameof (ImplementInterfaceCodeFixProvider))
                 |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
             let langVersionOpt = Some parsingOptions.LangVersionText
