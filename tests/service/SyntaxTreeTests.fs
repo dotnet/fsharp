@@ -10,18 +10,9 @@ open FSharp.Test
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
-let nullnessTestCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree","Nullness")
 
 let allTestCases =
     Directory.EnumerateFiles(testCasesDir, "*.fs?", SearchOption.AllDirectories)
-    |> Seq.map (fun f ->
-        let fileInfo = FileInfo(f)
-        let fileName = Path.Combine(fileInfo.Directory.Name, fileInfo.Name)
-        [| fileName :> obj |])
-    |> Seq.toArray
-
-let nullnessTestCases =
-    Directory.EnumerateFiles(nullnessTestCasesDir, "*.fs?", SearchOption.AllDirectories)
     |> Seq.map (fun f ->
         let fileInfo = FileInfo(f)
         let fileName = Path.Combine(fileInfo.Directory.Name, fileInfo.Name)
@@ -161,7 +152,6 @@ let parseSourceCode (name: string, code: string) =
 ///
 /// Assuming your current directory is tests/FSharp.Compiler.Service.Tests
 [<TestCaseSource(nameof allTestCases)>]
-//[<TestCaseSource(nameof nullnessTestCases)>]
 let ParseFile fileName =
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath

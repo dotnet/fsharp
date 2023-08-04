@@ -371,8 +371,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_BRACK_APP
 %left HIGH_PRECEDENCE_PAREN_APP
 %left HIGH_PRECEDENCE_TYAPP
-%nonassoc typar_not_null
-%nonassoc type_bar_null
 
 %nonassoc prec_interaction_empty
 
@@ -2574,7 +2572,7 @@ typeConstraint:
   | typar COLON NULL
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
-  | typar COLON IDENT NULL %prec typar_not_null
+  | typar COLON IDENT NULL
       { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 
@@ -5868,7 +5866,7 @@ appType:
   | appType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | appType BAR NULL %prec type_bar_null
+  | appType BAR NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
 /*
