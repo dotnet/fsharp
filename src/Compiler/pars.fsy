@@ -256,7 +256,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 /* Lower than "if a then b" */
 %left prec_then_before
 %nonassoc prec_then_if
-%left BAR
+
 
 %right SEMICOLON prec_semiexpr_sep OBLOCKSEP
 %right prec_defn_sep
@@ -290,6 +290,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc prec_tuptyptail_prefix      /* ditto */
 %nonassoc prec_toptuptyptail_prefix      /* ditto */
 
+%left BAR
 %right RARROW
 %nonassoc IDENT LBRACK
 
@@ -371,6 +372,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_PAREN_APP
 %left HIGH_PRECEDENCE_TYAPP
 %nonassoc typar_not_null
+%nonassoc type_bar_null
 
 %nonassoc prec_interaction_empty
 
@@ -5866,7 +5868,7 @@ appType:
   | appType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | appType BAR NULL
+  | appType BAR NULL %prec type_bar_null
     { SynType.WithNull($1, false, lhs parseState) }
 
 /*
@@ -6524,12 +6526,6 @@ deprecated_opt_equals:
   | EQUALS { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () }
   | /* EMPTY */ { }
 
-opt_equals:
-  | EQUALS
-      { let mEquals = rhs parseState 1
-        Some mEquals }
-  | /* EMPTY */ { None }
-
 opt_OBLOCKSEP:
   | OBLOCKSEP { }
   | /* EMPTY */ { }
@@ -6541,10 +6537,6 @@ opt_seps:
 opt_rec:
   | REC { true }
   | /* EMPTY */ { false }
-
-opt_bar:
-  | BAR { }
-  | /* EMPTY */ { }
 
 opt_inline:
   | INLINE { Some(rhs parseState 1) }
