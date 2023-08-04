@@ -160,8 +160,8 @@ let parseSourceCode (name: string, code: string) =
 ///     Linux/macOS: export TEST_UPDATE_BSL=1 & dotnet test --filter "ParseFile"
 ///
 /// Assuming your current directory is tests/FSharp.Compiler.Service.Tests
-//[<TestCaseSource(nameof allTestCases)>]
-[<TestCaseSource(nameof nullnessTestCases)>]
+[<TestCaseSource(nameof allTestCases)>]
+//[<TestCaseSource(nameof nullnessTestCases)>]
 let ParseFile fileName =
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath
@@ -198,7 +198,7 @@ let ParseFile fileName =
             "No baseline was found"
 
     let equals = expected = actual
-    let testUpdateBSLEnv = "1" //System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
+    let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
