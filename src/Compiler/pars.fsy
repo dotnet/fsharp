@@ -2576,13 +2576,11 @@ typeConstraint:
 
   | typar COLON NULL
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
-/*
-** TODO: This rule is not triggering, faking it with __notnull for now
 
   | typar COLON IDENT NULL
       { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
-*/
+
   | typar COLON NOTNULL__
       { SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 

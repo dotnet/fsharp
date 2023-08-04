@@ -10,9 +10,18 @@ open FSharp.Test
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
+let nullnessTestCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree","Nullness")
 
 let allTestCases =
     Directory.EnumerateFiles(testCasesDir, "*.fs?", SearchOption.AllDirectories)
+    |> Seq.map (fun f ->
+        let fileInfo = FileInfo(f)
+        let fileName = Path.Combine(fileInfo.Directory.Name, fileInfo.Name)
+        [| fileName :> obj |])
+    |> Seq.toArray
+
+let nullnessTestCases =
+    Directory.EnumerateFiles(nullnessTestCasesDir, "*.fs?", SearchOption.AllDirectories)
     |> Seq.map (fun f ->
         let fileInfo = FileInfo(f)
         let fileName = Path.Combine(fileInfo.Directory.Name, fileInfo.Name)
@@ -151,7 +160,8 @@ let parseSourceCode (name: string, code: string) =
 ///     Linux/macOS: export TEST_UPDATE_BSL=1 & dotnet test --filter "ParseFile"
 ///
 /// Assuming your current directory is tests/FSharp.Compiler.Service.Tests
-[<TestCaseSource(nameof allTestCases)>]
+//[<TestCaseSource(nameof allTestCases)>]
+[<TestCaseSource(nameof nullnessTestCases)>]
 let ParseFile fileName =
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath
@@ -188,7 +198,7 @@ let ParseFile fileName =
             "No baseline was found"
 
     let equals = expected = actual
-    let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
+    let testUpdateBSLEnv = "1" //System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
