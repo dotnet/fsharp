@@ -1329,6 +1329,25 @@ type A = l
         VerifyCompletionList(fileContents, "= l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list on return type annotation contains modules and types but not keywords or functions`` () =
+        let fileContents =
+            """
+let a: l
+let b (): l
+
+type X =
+    member _.c: l
+    member x.d (): l
+    static member e: l
+"""
+
+        VerifyCompletionList(fileContents, "let a: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "let b (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member _.c: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member x.d (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "static member e: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+
+    [<Fact>]
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
