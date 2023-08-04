@@ -11,9 +11,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open CancellableTasks
 
 type internal FSharpHighlightSpan =
     {
@@ -76,6 +75,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpDocumentHighlightsService))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! symbolUse =

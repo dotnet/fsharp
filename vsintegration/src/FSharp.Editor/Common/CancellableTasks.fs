@@ -37,6 +37,15 @@ module CancellableTasks =
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Collections
 
+    [<NoComparison; NoEquality>]
+    type VolatileBarrier() =
+
+        [<VolatileField>]
+        let mutable isStopped = false
+
+        member _.Proceed = not isStopped
+        member _.Stop() = isStopped <- true
+
     /// A type that looks like an Awaiter
     type Awaiter<'Awaiter, 'TResult
         when 'Awaiter :> ICriticalNotifyCompletion
@@ -754,6 +763,56 @@ module CancellableTasks =
     [<AutoOpen>]
     module HighPriority =
 
+        let inline startAsyncImmediateAsTask computation (cancellationToken: CancellationToken) =
+            // Protect against blocking the UI thread by switching to thread pool
+            let computation =
+                match SynchronizationContext.Current with
+                | null -> computation
+                | _ ->
+                    async {
+                        do! Async.SwitchToThreadPool()
+                        return! computation
+                    }
+
+            // try not to yield if on bg thread already
+            let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+            let barrier = VolatileBarrier()
+
+            let reg =
+                cancellationToken.Register(fun _ ->
+                    if barrier.Proceed then
+                        tcs.TrySetCanceled(cancellationToken) |> ignore)
+
+            let task = tcs.Task
+
+            let disposeReg () =
+                barrier.Stop()
+
+                if not task.IsCanceled then
+                    reg.Dispose()
+
+            Async.StartWithContinuations(
+                computation,
+                continuation =
+                    (fun result ->
+                        disposeReg ()
+                        tcs.TrySetResult(result) |> ignore),
+                exceptionContinuation =
+                    (fun exn ->
+                        disposeReg ()
+
+                        match exn with
+                        | :? OperationCanceledException -> tcs.TrySetCanceled(cancellationToken) |> ignore
+                        | exn -> tcs.TrySetException(exn) |> ignore),
+                cancellationContinuation =
+                    (fun _oce ->
+                        disposeReg ()
+                        tcs.TrySetCanceled(cancellationToken) |> ignore),
+                cancellationToken = cancellationToken
+            )
+
+            task
+
         type Control.Async with
 
             /// <summary>Return an asynchronous computation that will wait for the given task to complete and return
@@ -775,7 +834,7 @@ module CancellableTasks =
 
             /// <summary>Runs an asynchronous computation, starting on the current operating system thread.</summary>
             static member inline AsCancellableTask(computation: Async<'T>) : CancellableTask<_> =
-                fun ct -> Async.StartImmediateAsTask(computation, cancellationToken = ct)
+                fun ct -> startAsyncImmediateAsTask computation ct
 
         // High priority extensions
         type CancellableTaskBuilderBase with
@@ -896,7 +955,7 @@ module CancellableTasks =
         /// This will print "2" 2 seconds from start, "3" 3 seconds from start, "5" 5 seconds from start, cease computation and then
         /// followed by "Tasks Finished".
         /// </example>
-        let inline getCurrentCancellationToken () : CancellationToken -> Task<CancellationToken> =
+        let inline getCancellationToken () : CancellationToken -> Task<CancellationToken> =
             fun ct -> Task.FromResult ct
 
         /// <summary>Lifts an item to a CancellableTask.</summary>
@@ -968,7 +1027,7 @@ module CancellableTasks =
             ([<InlineIfLambda>] right: CancellableTask<'right>)
             =
             cancellableTask {
-                let! ct = getCurrentCancellationToken ()
+                let! ct = getCancellationToken ()
                 let r1 = left ct
                 let r2 = right ct
                 let! r1 = r1
@@ -997,7 +1056,51 @@ module CancellableTasks =
 
         let inline start ct ([<InlineIfLambda>] ctask: CancellableTask<_>) = ctask ct
 
-        let inline startAsTask ct ([<InlineIfLambda>] ctask: CancellableTask<_>) = (ctask ct) :> Task
+        let inline startTask ct ([<InlineIfLambda>] ctask: CancellableTask) = ctask ct
+
+        let inline startWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask<_>) = start CancellationToken.None ctask
+
+        let inline startTaskWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask) = startTask CancellationToken.None ctask
+
+        let inline runSynchronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+            let task = start ct ctask
+            task.GetAwaiter().GetResult()
+
+        let inline runSynchronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+            let task = startWithoutCancellation ctask
+            task.GetAwaiter().GetResult()
+
+        let inline runTaskSynchronously ct ([<InlineIfLambda>] ctask: CancellableTask) =
+           let task = startTask ct ctask
+           task.GetAwaiter().GetResult()
+
+        let inline runTaskSynchronouslyWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask) =
+           let task = startTaskWithoutCancellation ctask
+           task.GetAwaiter().GetResult()
+
+        let inline startAsTask ct ([<InlineIfLambda>] ctask: CancellableTask<_>) = (start ct ctask) :> Task
+
+        let inline startAsTaskWithoutCancellation ([<InlineIfLambda>] ctask: CancellableTask<_>) = (start CancellationToken.None ctask) :> Task
+
+        let inline runAsTaskSynchronously ct ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+            let task = startAsTask ct ctask
+            task.GetAwaiter().GetResult()
+
+        let inline runAsTaskSynchronouslyWithoutCancellation  ([<InlineIfLambda>] ctask: CancellableTask<_>) =
+            let task = startAsTaskWithoutCancellation ctask
+            task.GetAwaiter().GetResult()
+
+        let inline whenAll (tasks: CancellableTask<'a> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                return! Task.WhenAll (seq { for task in tasks do yield start ct task })
+            }
+
+        let inline whenAllTasks (tasks: CancellableTask seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                return! Task.WhenAll (seq { for task in tasks do yield startTask ct task })
+            }
 
     /// <exclude />
     [<AutoOpen>]
@@ -1014,7 +1117,7 @@ module CancellableTasks =
                 ) : CancellationToken -> TaskAwaiter<'TResult1 * 'TResult2> =
 
                 cancellableTask {
-                    let! ct = CancellableTask.getCurrentCancellationToken ()
+                    let! ct = CancellableTask.getCancellationToken ()
                     let leftStarted = left ct
                     let rightStarted = right ct
                     let! leftResult = leftStarted

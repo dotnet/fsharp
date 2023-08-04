@@ -125,7 +125,7 @@ module internal CodeFixExtensions =
 
         member ctx.GetSourceTextAsync() =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 return! ctx.Document.GetTextAsync cancellationToken
             }
 
@@ -157,7 +157,7 @@ module IFSharpCodeFixProviderExtensions =
             cancellableTask {
                 let sw = Stopwatch.StartNew()
 
-                let! token = CancellableTask.getCurrentCancellationToken ()
+                let! token = CancellableTask.getCancellationToken ()
                 let! sourceText = doc.GetTextAsync token
 
                 let! codeFixOpts =
@@ -167,10 +167,10 @@ module IFSharpCodeFixProviderExtensions =
                     // TODO: this crops the diags on a very high level,
                     // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
-                    |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
-                    |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
-                    |> Seq.map (fun task -> task token)
-                    |> Task.WhenAll
+                    |> Seq.map (fun diag ->
+                        let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
+                        provider.GetCodeFixIfAppliesAsync context)
+                    |> CancellableTask.whenAll
 
                 let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
                 let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)

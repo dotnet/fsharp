@@ -28,6 +28,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Tokenization
 open System.Composition
 open System.Text.RegularExpressions
+open CancellableTasks
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -193,8 +194,12 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
             let idRange = lexerSymbol.Ident.idRange
 
+            let! ct = Async.CancellationToken |> liftAsync
+
             let! _, checkFileResults =
                 originDocument.GetFSharpParseAndCheckResultsAsync(nameof (GoToDefinition))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! fsSymbolUse =
@@ -212,7 +217,13 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 else
                     let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                     let! implSourceText = implDoc.GetTextAsync()
-                    let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+
+                    let! _, checkFileResults =
+                        implDoc.GetFSharpParseAndCheckResultsAsync(userOpName)
+                        |> CancellableTask.start ct
+                        |> Async.AwaitTask
+                        |> liftAsync
+
                     let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                     let! implSymbol = symbolUses |> Array.tryHead
                     let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(implSourceText, implSymbol.Range)
@@ -228,12 +239,15 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document) =
         asyncMaybe {
             let filePath = document.FilePath
+            let! ct = Async.CancellationToken |> liftAsync
 
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
                 let! _, checkFileResults =
                     document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument")
+                    |> CancellableTask.start ct
+                    |> Async.AwaitTask
                     |> liftAsync
 
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
@@ -251,12 +265,18 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
 
+            let! ct = Async.CancellationToken |> liftAsync
+
             let preferSignature = isSignatureFile originDocument.FilePath
 
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! _, checkFileResults =
+                originDocument.GetFSharpParseAndCheckResultsAsync(userOpName)
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(
@@ -274,10 +294,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | FindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
                 let projectOpt =
                     originDocument.Project.Solution.Projects
-                    |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                    |> Seq.tryFindV (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
 
                 match projectOpt with
-                | Some project ->
+                | ValueSome project ->
                     let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, (fun _ -> true))
 
                     let roslynSymbols =
@@ -501,11 +521,16 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
 
                 match tmpShownDocOpt with
-                | Some tmpShownDoc ->
+                | ValueSome tmpShownDoc ->
                     let goToAsync =
                         asyncMaybe {
+
+                            let! ct = Async.CancellationToken |> liftAsync
+
                             let! _, checkResults =
                                 tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
+                                |> CancellableTask.start ct
+                                |> Async.AwaitTask
                                 |> liftAsync
 
                             let! r =
@@ -529,7 +554,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 // We really should rely on symbol equality within FCS instead of doing it here,
                                 //     but the generated metadata as source isn't perfect for symbol equality.
                                 checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
-                                |> Seq.tryFind (fun x ->
+                                |> Seq.tryFindV (fun x ->
                                     match x.Symbol, targetSymbolUse.Symbol with
                                     | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
                                         symbol1.DisplayName = symbol2.DisplayName
@@ -554,7 +579,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         symbol1.DisplayName = symbol2.DisplayName
                                         && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
                                     | _ -> false)
-                                |> Option.map (fun x -> x.Range)
+                                |> ValueOption.map (fun x -> x.Range)
+                                |> ValueOption.toOption
 
                             let span =
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with
@@ -913,7 +939,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
             let path =
                 FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath documentationCommentId
 
-            backgroundTask {
+            cancellableTask {
                 let projects =
                     workspace.CurrentSolution.Projects
                     |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
@@ -921,7 +947,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
                 let mutable locations = Seq.empty
 
                 for project in projects do
-                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync(cancellationToken)
+                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
@@ -969,3 +995,4 @@ type FSharpCrossLanguageSymbolNavigationService() =
                 else
                     return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
             }
+            |> CancellableTask.start cancellationToken

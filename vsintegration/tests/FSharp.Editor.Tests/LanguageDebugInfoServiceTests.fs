@@ -52,17 +52,19 @@ let main argv =
         let sourceText = SourceText.From(code)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-        let classifiedSpans =
-            Tokenizer.getClassifiedSpans (
-                documentId,
-                sourceText,
-                TextSpan.FromBounds(0, sourceText.Length),
-                Some(fileName),
-                defines,
-                None,
-                None,
-                CancellationToken.None
-            )
+        let classifiedSpans = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
+            documentId,
+            sourceText,
+            TextSpan.FromBounds(0, sourceText.Length),
+            Some(fileName),
+            defines,
+            None,
+            None,
+            classifiedSpans,
+            CancellationToken.None
+        )
 
         let actualDataTipSpanOption =
             FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, classifiedSpans)

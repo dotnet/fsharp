@@ -118,7 +118,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         d.ForEach(f)
 
-        Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
+        lookup :> IReadOnlyDictionary<_, _>
 
     let semanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
@@ -137,7 +137,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
 
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
@@ -165,17 +165,16 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                     result.AddRange(classifiedSpans)
                 else
-                    result.AddRange(
-                        Tokenizer.getClassifiedSpans (
-                            document.Id,
-                            sourceText,
-                            textSpan,
-                            Some(document.FilePath),
-                            defines,
-                            Some langVersion,
-                            strictIndentation,
-                            cancellationToken
-                        )
+                    Tokenizer.classifySpans (
+                        document.Id,
+                        sourceText,
+                        textSpan,
+                        Some(document.FilePath),
+                        defines,
+                        Some langVersion,
+                        strictIndentation,
+                        result,
+                        cancellationToken
                     )
             }
             |> CancellableTask.startAsTask cancellationToken
