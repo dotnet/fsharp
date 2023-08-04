@@ -9,6 +9,7 @@ open System.Text.RegularExpressions
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -96,6 +97,9 @@ type CompletionContext =
 
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
+
+    /// Completing a method override (e.g. override this.ToStr|)
+    | MethodOverride of enclosingTypeNameRange: range
 
 type ShortIdent = string
 
@@ -1414,22 +1418,59 @@ module ParsedInput =
 
                     | _ -> None
 
-                member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
+                member _.VisitBinding
+                    (
+                        path,
+                        defaultTraverse,
+                        (SynBinding (headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
+                    ) =
 
-                    match headPat with
-                    | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
-                        if rangeContainsPos lidwd.Range pos then
-                            // let fo|o x = ()
+                    let isOverride leadingKeyword =
+                        match leadingKeyword with
+                        | SynLeadingKeyword.Override _ -> true
+                        | _ -> false
+
+                    let overrideContext path =
+                        match path with
+                        | _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
+                            Some(CompletionContext.MethodOverride enclosingType.idRange)
+                        | _ -> Some CompletionContext.Invalid
+
+                    match returnInfo with
+                    | Some (SynBindingReturnInfo (range = m)) when rangeContainsPos m pos -> Some CompletionContext.Type
+                    | _ ->
+                        match headPat with
+
+                        // override _.|
+                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
+
+                        // override this.|
+                        | SynPat.Named(ident = SynIdent (ident = selfId)) when
+                            isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                            ->
+                            overrideContext path
+
+                        // override this.ToStr|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                            isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path
+
+                        | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                            if rangeContainsPos lidwd.Range pos then
+                                // let fo|o x = ()
+                                Some CompletionContext.Invalid
+                            else
+                                pats
+                                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                                |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                        | SynPat.Named (range = range)
+                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
+                            // let fo|o = 1
                             Some CompletionContext.Invalid
-                        else
-                            pats
-                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
-                            |> Option.orElseWith (fun () -> defaultTraverse synBinding)
-                    | SynPat.Named (range = range)
-                    | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                        // let fo|o = 1
-                        Some CompletionContext.Invalid
-                    | _ -> defaultTraverse synBinding
+
+                        | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
                     // No completions in a directive

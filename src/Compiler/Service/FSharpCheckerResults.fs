@@ -1008,6 +1008,47 @@ type internal TypeCheckInfo
             |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
         |> Option.defaultValue completions
 
+    /// Gets all methods that a type can override, but has not yet done so.
+    let GetOverridableMethods pos typeNameRange =
+        let isMethodOverridable alreadyOverridden (candidate: MethInfo) =
+            not candidate.IsFinal
+            && not (
+                alreadyOverridden
+                |> List.exists (MethInfosEquivByNameAndSig EraseNone true g amap range0 candidate)
+            )
+
+        let (nenv, ad), m = GetBestEnvForPos pos
+
+        sResolutions.CapturedNameResolutions
+        |> ResizeArray.tryPick (fun r ->
+            match r.Item with
+            | Item.Types (_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
+                let superTy =
+                    (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+
+                let overriddenMethods =
+                    GetImmediateIntrinsicMethInfosOfType (None, ad) g amap typeNameRange ty
+                    |> List.filter (fun x -> x.IsDefiniteFSharpOverride)
+
+                let overridableMethods =
+                    GetIntrinsicMethInfosOfType
+                        infoReader
+                        None
+                        ad
+                        TypeHierarchy.AllowMultiIntfInstantiations.No
+                        FindMemberFlag.PreferOverrides
+                        range0
+                        superTy
+                    |> List.filter (isMethodOverridable overriddenMethods)
+                    |> List.groupBy (fun x -> x.DisplayName)
+                    |> List.map (fun (name, overloads) ->
+                        Item.MethodGroup(name, overloads, None)
+                        |> ItemWithNoInst
+                        |> CompletionItem ValueNone ValueNone)
+
+                Some(overridableMethods, nenv.DisplayEnv, m)
+            | _ -> None)
+
     let getItem (x: ItemWithInst) = x.Item
 
     let GetDeclaredItems
@@ -1559,6 +1600,8 @@ type internal TypeCheckInfo
                         | _ -> None)
                     |> Option.orElse declaredItems
 
+            | Some (CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
+
             // Other completions
             | cc ->
                 match residueOpt |> Option.bind Seq.tryHead with
@@ -1664,7 +1707,10 @@ type internal TypeCheckInfo
                         |> Option.map (fun parsedInput ->
                             ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
 
-                    let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
+                    let isAttributeApplication =
+                        match ctx with
+                        | Some CompletionContext.AttributeApplication -> true
+                        | _ -> false
 
                     DeclarationListInfo.Create(
                         infoReader,

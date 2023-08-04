@@ -1020,6 +1020,18 @@ type ListModule() =
         let resultStr = List.contains "....." strList
         Assert.False(resultStr)
 
+        // float List
+        let flList = [nan;infinity;5.0;-0.]     
+        Assert.False(List.contains nan flList)
+        Assert.False(List.contains 4.99 flList)
+        Assert.True(List.contains infinity flList)
+        Assert.True(List.contains 0. flList)
+
+        let flTupleList = [(nan,"text");(5.0,"wait")]
+        Assert.False(List.contains (nan,"text") flTupleList)
+        Assert.False(List.contains (5.0,"text") flTupleList)
+        Assert.True(List.contains (5.0,"wait") flTupleList)
+
         // empty List
         let emptyList:int list = [ ]
         let resultEpt = List.contains 4 emptyList
