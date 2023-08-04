@@ -37,7 +37,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let getNavigableItems (document: Document) =
         cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
@@ -146,7 +146,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let! sourceText = document.GetTextAsync ct
 
@@ -189,14 +189,19 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! ct = CancellableTask.getCurrentCancellationToken ()
-
                 let tasks =
-                    Seq.map (fun doc -> processDocument tryMatch kinds doc ct) project.Documents
+                    Seq.map (fun doc -> processDocument tryMatch kinds doc) project.Documents
 
-                let! results = Task.WhenAll(tasks)
+                let! results = CancellableTask.whenAll tasks
 
-                return results |> Array.concat |> Array.toImmutableArray
+                let results' = ImmutableArray.CreateBuilder()
+
+                for navResults in results do
+                    for navResult in navResults do
+                        results'.Add navResult
+
+                return results'.ToImmutable()
+
             }
             |> CancellableTask.start cancellationToken
 

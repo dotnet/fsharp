@@ -63,11 +63,11 @@ type internal MissingReferenceCodeFixProvider() =
 
                     let exactProjectMatches =
                         solution.Projects
-                        |> Seq.tryFind (fun project ->
+                        |> Seq.tryFindV (fun project ->
                             String.Compare(project.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0)
 
                     match exactProjectMatches with
-                    | Some refProject ->
+                    | ValueSome refProject ->
                         let codefix =
                             createCodeFix (
                                 String.Format(SR.AddProjectReference(), refProject.Name),
@@ -76,21 +76,21 @@ type internal MissingReferenceCodeFixProvider() =
                             )
 
                         context.RegisterCodeFix(codefix, ImmutableArray.Create diagnostic)
-                    | None ->
+                    | ValueNone ->
                         let metadataReferences =
                             solution.Projects
                             |> Seq.collect (fun project -> project.MetadataReferences)
-                            |> Seq.tryFind (fun ref ->
+                            |> Seq.tryFindV (fun ref ->
                                 let referenceAssemblyName = Path.GetFileNameWithoutExtension(ref.Display)
                                 String.Compare(referenceAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0)
 
                         match metadataReferences with
-                        | Some metadataRef ->
+                        | ValueSome metadataRef ->
                             let codefix =
                                 createCodeFix (String.Format(SR.AddAssemblyReference(), assemblyName), context, AddMetadataRef metadataRef)
 
                             context.RegisterCodeFix(codefix, ImmutableArray.Create diagnostic)
-                        | None -> ()
+                        | ValueNone -> ()
                 | _ -> ())
         }
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

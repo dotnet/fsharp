@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
+open CancellableTasks
 
 [<Export(typeof<IFSharpFindUsagesService>)>]
 type internal FSharpFindUsagesService [<ImportingConstructor>] () =
@@ -61,6 +62,8 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpFindUsagesService))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! symbolUse =
@@ -127,9 +130,9 @@ type internal FSharpFindUsagesService [<ImportingConstructor>] () =
                                     externalDefinitionItem
                                 else
                                     definitionItems
-                                    |> List.tryFind (snd >> (=) doc.Project.FilePath)
-                                    |> Option.map fst
-                                    |> Option.defaultValue externalDefinitionItem
+                                    |> List.tryFindV (fun (_, filePath) -> doc.Project.FilePath = filePath)
+                                    |> ValueOption.map (fun (definitionItem, _) -> definitionItem)
+                                    |> ValueOption.defaultValue externalDefinitionItem
 
                             let referenceItem =
                                 FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
