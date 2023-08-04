@@ -342,6 +342,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
+%nonassoc typar_not_null
 %left OR BAR_BAR JOIN_IN
 %left AND
 %left AND_BANG
@@ -2577,7 +2578,7 @@ typeConstraint:
   | typar COLON NULL
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
-  | typar COLON IDENT NULL
+  | typar COLON IDENT NULL %prec typar_not_null
       { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 
@@ -5869,6 +5870,9 @@ appType:
     { SynType.WithNull($1, true, lhs parseState) }
 
   | appType WITHNULL__
+    { SynType.WithNull($1, false, lhs parseState) }
+
+  | appType BAR NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
 /*
