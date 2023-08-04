@@ -453,7 +453,6 @@ module internal Tokenizer =
         member val HashCode = hashCode
         member val ClassifiedSpans = classifiedSpans
         member val SavedTokens = savedTokens
-        member val Classified = false with get, set
 
         member data.IsValid(textLine: TextLine) =
             data.LineStart = textLine.Start
@@ -663,9 +662,7 @@ module internal Tokenizer =
                     //   2. the hash codes match
                     //   3. the start-of-line lex states are the same
                     match sourceTextDataCache.[i] with
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) ->
-                        data.Classified <- true
-                        data
+                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
@@ -714,14 +711,13 @@ module internal Tokenizer =
                 getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
-                if not lineData.Classified then
-                    for token in lineData.ClassifiedSpans do
-                        if
-                            (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)
-                            || textSpan.Contains(token.TextSpan.Start)
-                            || textSpan.Contains(token.TextSpan.End - 1)
-                        then
-                            result.Add token
+                for token in lineData.ClassifiedSpans do
+                    if
+                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)
+                        || textSpan.Contains(token.TextSpan.Start)
+                        || textSpan.Contains(token.TextSpan.End - 1)
+                    then
+                        result.Add token
 
         with
         | :? OperationCanceledException -> reraise ()
