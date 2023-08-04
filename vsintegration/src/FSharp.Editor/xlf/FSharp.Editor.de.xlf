@@ -50,6 +50,11 @@ Live Buffers;
 Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="new">Use ':' for type in field declaration</target>
+        <note />
+      </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
         <source>Simplify names (remove unnecessary qualifiers);
 Always place open statements at the top level;
@@ -259,6 +264,11 @@ Strich unterstrichen;</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Nicht verwendete open-Deklarationen entfernen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">
