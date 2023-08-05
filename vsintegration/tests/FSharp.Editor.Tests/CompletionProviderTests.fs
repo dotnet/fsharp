@@ -1675,6 +1675,21 @@ let x (du: Du list) =
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
 
     [<Fact>]
+    let ``Completion list contains relevant items for the correct union case field pattern before its identifier has been typed`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * second: Result<int, string>
+
+let x du =
+    match du with
+    | C () -> ()
+    | C  (first, ) -> ()
+"""
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du" ], [ "second"; "result" ])
+        VerifyCompletionList(fileContents, "| C  (first, ", [ "second"; "result" ], [ "first"; "du" ])
+
+    [<Fact>]
     let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
         let fileContents =
             """
