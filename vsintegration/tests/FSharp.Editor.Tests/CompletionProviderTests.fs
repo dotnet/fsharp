@@ -1686,6 +1686,7 @@ let x du =
     | C () -> ()
     | C  (first, ) -> ()
 """
+
         VerifyCompletionList(fileContents, "| C (", [ "first"; "du" ], [ "second"; "result" ])
         VerifyCompletionList(fileContents, "| C  (first, ", [ "second"; "result" ], [ "first"; "du" ])
 

@@ -1277,7 +1277,7 @@ module ParsedInput =
 
             // fun (Case (| )) ->
             | [ SynPat.Paren (SynPat.Const (SynConst.Unit, _), m) ] when rangeContainsPos m pos ->
-                Some (CompletionContext.Pattern (PatternContext.PositionalUnionCaseField (Some 0, id.Range)))
+                Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some 0, id.Range)))
 
             // fun (Case (a| , b)) ->
             | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
@@ -1308,8 +1308,10 @@ module ParsedInput =
                 // Last resort - check for fun (Case (a, | )) ->
                 // That is, pos is after the last comma and before the end of the tuple
                 match previousContext, List.tryLast commas with
-                | Some (PatternContext.PositionalUnionCaseField (_, caseIdRange)), Some mComma when rangeBeforePos mComma pos && rangeContainsPos m pos ->
-                    Some (CompletionContext.Pattern (PatternContext.PositionalUnionCaseField(Some (pats.Length - 1), caseIdRange)))
+                | Some (PatternContext.PositionalUnionCaseField (_, caseIdRange)), Some mComma when
+                    rangeBeforePos mComma pos && rangeContainsPos m pos
+                    ->
+                    Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some(pats.Length - 1), caseIdRange)))
                 | _ -> None)
         | SynPat.Named (range = m) when rangeContainsPos m pos ->
             if suppressIdentifierCompletions then
@@ -1328,17 +1330,7 @@ module ParsedInput =
             TryGetCompletionContextInPattern suppressIdentifierCompletions pat1 None pos
             |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat2 None pos)
         | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some CompletionContext.Type
-        | SynPat.Wild m ->
-            if rangeContainsPos m pos && m.StartColumn <> m.EndColumn then
-                // fun (Case (_| )) ->
-                Some CompletionContext.Invalid
-            //elif  then
-            //    // fun (Case (a, | )) ->
-            //    // A synthetic SynPat.Wild with a 0-length range is inserted after a comma like this.
-            //    // We return with the context from higher up, which should in this example be PositionalUnionCaseField (Some 1, ...).
-            //    previousContext |> Option.map CompletionContext.Pattern
-            else
-                None
+        | SynPat.Wild m when rangeContainsPos m pos && m.StartColumn <> m.EndColumn -> Some CompletionContext.Invalid
         | SynPat.Typed (pat = pat; targetType = synType) ->
             if rangeContainsPos pat.Range pos then
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
