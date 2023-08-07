@@ -15,7 +15,6 @@ module DynamicTypeTest =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"dynamicTypeTest01.fs"|])>]
@@ -25,7 +24,6 @@ module DynamicTypeTest =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"dynamicTypeTest02.fs"|])>]
@@ -48,7 +46,6 @@ module DynamicTypeTest =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"dynamicTypeTest04.fs"|])>]
@@ -68,7 +65,6 @@ module DynamicTypeTest =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DynamicTestPrimType01.fs"|])>]
@@ -102,7 +98,6 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Regression01.fs"|])>]
@@ -112,7 +107,6 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Regression02.fs"|])>]
@@ -122,7 +116,6 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TwoAtOnce01.fs"|])>]
@@ -132,7 +125,6 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_RedundantPattern01.fs"|])>]

@@ -15,7 +15,6 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"arrayMatch02.fs"|])>]
@@ -25,7 +24,6 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"arrayMatch03.fs"|])>]
@@ -35,7 +33,6 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TrailingSemi01.fs"|])>]
@@ -45,4 +42,3 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore

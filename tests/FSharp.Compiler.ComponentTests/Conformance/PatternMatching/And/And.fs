@@ -15,7 +15,6 @@ module And =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern02.fs"|])>]
@@ -25,7 +24,6 @@ module And =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern03.fs"|])>]

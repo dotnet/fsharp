@@ -15,7 +15,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternOutsideMatch02.fs"|])>]
@@ -25,7 +24,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns01.fs"|])>]
@@ -35,7 +33,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns02.fs"|])>]
@@ -45,7 +42,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns03.fs"|])>]
@@ -55,7 +51,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns05.fs"|])>]
@@ -65,7 +60,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns06.fs"|])>]
@@ -75,7 +69,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns07.fs"|])>]
@@ -85,7 +78,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns08.fs"|])>]
@@ -95,7 +87,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternUnconstrained01.fs"|])>]
@@ -106,7 +97,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsHighOrderFunc01.fs"|])>]
@@ -116,7 +106,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"discUnion01.fs"|])>]
@@ -126,7 +115,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"discUnion02.fs"|])>]
@@ -136,7 +124,6 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternHasNoFields.fs"|])>]

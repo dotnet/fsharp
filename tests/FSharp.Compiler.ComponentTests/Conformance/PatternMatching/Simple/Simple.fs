@@ -17,10 +17,8 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withWarningCode 0025
-        |> withDiagnosticMessageMatches "Incomplete pattern matches on this expression. For example, the value 'Result \(_\)' may indicate a case not covered by the pattern\(s\)"
-        |> ignore
-
+        |> withSingleDiagnostic (Warning 25, Line 92, Col 13, Line 92, Col 14, "Incomplete pattern matches on this expression. For example, the value 'Result (_)' may indicate a case not covered by the pattern(s).")
+        
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     //<Expects id="FS0026" span="(32,11-32,13)" status="warning">This rule will never be matched</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Incomplete02.fs"|])>]
@@ -30,9 +28,12 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withWarningCode 0026
-        |> withDiagnosticMessageMatches "This rule will never be matched"
-        |> ignore
+        |> withDiagnostics [
+            (Warning 25, Line 14, Col 15, Line 14, Col 16, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).")
+            (Warning 25, Line 21, Col 31, Line 21, Col 39, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 31, Col 11, Line 31, Col 18, "This rule will never be matched")
+            (Warning 26, Line 32, Col 11, Line 32, Col 19, "This rule will never be matched")
+        ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     //<Expects id="FS0049" span="(10,16-10,19)" status="warning">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name</Expects>
@@ -43,10 +44,11 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withWarningCode 0049
-        |> withDiagnosticMessageMatches "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name"
-        |> ignore
-        
+        |> withDiagnostics [
+            (Warning 49, Line 9, Col 16, Line 9, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 10, Col 16, Line 10, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CodeGenReg01.fs"|])>]
     let ``Simple - CodeGenReg01_fs - --test:ErrorRanges`` compilation =
@@ -55,7 +57,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_constPattern01.fs"|])>]
@@ -125,7 +126,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns02.fs"|])>]
@@ -135,7 +135,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns03.fs"|])>]
@@ -145,7 +144,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns04.fs"|])>]
@@ -155,7 +153,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
     
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns05.fs"|])>]
@@ -165,7 +162,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns06.fs"|])>]
@@ -175,7 +171,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
     
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns07.fs"|])>]
@@ -185,7 +180,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns08.fs"|])>]
@@ -195,7 +189,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
     
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns09.fs"|])>]
@@ -205,7 +198,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns10.fs"|])>]
@@ -215,7 +207,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns11.fs"|])>]
@@ -235,7 +226,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns13.fs"|])>]
@@ -245,7 +235,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns14.fs"|])>]
@@ -255,7 +244,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns15.fs"|])>]
@@ -265,7 +253,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns16.fs"|])>]
@@ -275,7 +262,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns17.fs"|])>]
@@ -295,7 +281,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/AsPatterns)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns19.fs"|])>]
@@ -305,7 +290,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/AsPatterns)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns20.fs"|])>]
@@ -315,7 +299,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/AsPatterns)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ValueCapture01.fs"|])>]
@@ -325,7 +308,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/AsPatterns)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ValueCapture02.fs"|])>]
@@ -335,7 +317,6 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        |> ignore
 
     [<Fact>]
     let ``Enum incompleteness check should not hide an issue with outer DU pattern matching with nowarn:104 `` () = 

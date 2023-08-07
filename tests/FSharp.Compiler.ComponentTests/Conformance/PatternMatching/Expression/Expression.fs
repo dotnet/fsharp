@@ -25,7 +25,6 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"patterns01.fs"|])>]
@@ -35,7 +34,6 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"patterns02.fs"|])>]
@@ -105,7 +103,6 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"whenGuards02.fs"|])>]
@@ -115,7 +112,6 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"whenGuardss01.fs"|])>]
@@ -125,7 +121,6 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"whenGuardss02.fs"|])>]
@@ -135,4 +130,3 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore

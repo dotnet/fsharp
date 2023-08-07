@@ -90,7 +90,6 @@
     <Compile Include="Conformance\PatternMatching\Simple\Simple.fs" />
     <Compile Include="Conformance\PatternMatching\Array\Array.fs" />
     <Compile Include="Conformance\PatternMatching\And\And.fs" />
-    <Compile Include="Conformance\PatternMatching\And\And.fs" />
     <Compile Include="Conformance\PatternMatching\As\As.fs" />
     <Compile Include="Conformance\PatternMatching\ConsList\ConsList.fs" />
     <Compile Include="Conformance\PatternMatching\DynamicTypeTest\DynamicTypeTest.fs" />

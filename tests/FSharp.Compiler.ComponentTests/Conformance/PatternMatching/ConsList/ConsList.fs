@@ -15,7 +15,6 @@ module ConsList =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        |> ignore
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_consOnNonList.fs"|])>]
