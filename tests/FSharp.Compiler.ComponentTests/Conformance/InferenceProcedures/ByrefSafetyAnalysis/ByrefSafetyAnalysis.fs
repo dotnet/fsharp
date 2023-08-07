@@ -174,4 +174,56 @@ module ByrefSafetyAnalysis =
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
-
+        
+#if NET7_0_OR_GREATER
+    // SOURCE=ReturnFieldSetBySpan.fs                                                     # ReturnFieldSetBySpan.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnFieldSetBySpan.fs"|])>]
+    let``ReturnFieldSetBySpan_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    // SOURCE=ReturnSpan02.fs                                                             # ReturnSpan02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan01.fs"|])>]
+    let``ReturnSpan01_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+#endif
+        
+    // SOURCE=E_TopLevelByref.fs SCFLAGS="--test:ErrorRanges"                             # E_TopLevelByref.f
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|])>]
+    let``E_TopLevelByref_fs`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 431, Line 6, Col 5, Line 6, Col 13, "A byref typed value would be stored here. Top-level let-bound byref values are not permitted.")
+        ]
+    
+    // SOURCE=E_SpanUsedInInnerLambda01.fs SCFLAGS="--test:ErrorRanges"                   # E_SpanUsedInInnerLambda01.f
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda01.fs"|])>]
+    let``E_SpanUsedInInnerLambda01_fs`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
+        ]
+        
+    // SOURCE=E_SpanUsedInInnerLambda02.fs SCFLAGS="--test:ErrorRanges"                   # E_SpanUsedInInnerLambda02.f
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda02.fs"|])>]
+    let``E_SpanUsedInInnerLambda02_fs`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
+        ]
