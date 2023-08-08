@@ -16,7 +16,7 @@ printf $"{hello}"
         |> withWarnOn 3579
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3579, Line 3, Col 8, Line 3, Col 18, "Prefer to use typed interpolated strings over untyped one.")
+        |> withSingleDiagnostic (Warning 3579, Line 3, Col 8, Line 3, Col 18, "Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.")
 
     [<Fact>]
     let ``Do not warn on untyped interpolated strings by default``() =
