@@ -53,31 +53,32 @@ let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds 
 
         let diagnostics =
             match mode with
-            | Auto -> 
+            | Auto ->
                 getRelevantDiagnostics document
                 |> Array.filter (fun d -> diagnosticIds |> Seq.contains d.ErrorNumberText)
-            | WithOption _ -> 
-                getRelevantDiagnostics document   
+            | WithOption _ -> getRelevantDiagnostics document
             | Manual (squiggly, number) ->
                 let spanStart = code.IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
                 let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
-                [| FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range) |]
+
+                [|
+                    FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range)
+                |]
 
         let range = diagnostics[0].Range
-        let location =
-            RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)
+        let location = RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)
         let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
 
-        let roslynDiagnostics = 
+        let roslynDiagnostics =
             diagnostics
-            |> Array.map (fun diagnostic -> RoslynHelpers.ConvertError(diagnostic, location)) 
+            |> Array.map (fun diagnostic -> RoslynHelpers.ConvertError(diagnostic, location))
             |> ImmutableArray.ToImmutableArray
 
         return CodeFixContext(document, textSpan, roslynDiagnostics, mockAction, cancellationToken)
     }
 
-let tryFix (code: string) mode (fixProvider : 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
+let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
         let document = getDocument code mode

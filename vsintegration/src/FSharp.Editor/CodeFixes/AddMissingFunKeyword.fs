@@ -29,13 +29,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0010"
 
-    override this.RegisterCodeFixesAsync context = 
+    override this.RegisterCodeFixesAsync context =
         // This is a performance shortcut.
         // Since FS0010 fires all too often, we're just stopping any processing if it's a different error message.
         // The code fix logic itself still has this logic and implements it more reliably.
-        if 
+        if
             context.Diagnostics
-            |> Seq.exists (fun d -> d.Descriptor.MessageFormat.ToString().Contains "->") 
+            |> Seq.exists (fun d -> d.Descriptor.MessageFormat.ToString().Contains "->")
         then
             context.RegisterFsharpFix this
         else
