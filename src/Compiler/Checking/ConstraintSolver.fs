@@ -246,9 +246,9 @@ exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * range: range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * range: range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
 
 exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 
@@ -2713,12 +2713,12 @@ and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv
 and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 =
     SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln origTy1 ty1 ty2 id
 
-and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln actualTy expectedTy = 
+and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln expectedTy actualTy =
     TryD
-        (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln actualTy expectedTy)
+        (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln expectedTy actualTy)
         (function
         | AbortForFailedMemberConstraintResolution as err -> ErrorD err
-        | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actualTy, expectedTy, res, m)))
+        | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, res, m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv: ConstraintSolverEnv)
@@ -3459,10 +3459,10 @@ let EliminateConstraintsForGeneralizedTypars (denv: DisplayEnv) css m (trace: Op
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
+let AddCxTypeEqualsType contextInfo denv css m expected actual =
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
-        (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected)
+        (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None expected actual)
         ErrorD
     |> RaiseOperationResult
 
