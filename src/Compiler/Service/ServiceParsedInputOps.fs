@@ -1264,7 +1264,9 @@ module ParsedInput =
     let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
         | SynPat.LongIdent (longDotId = id) when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
-        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats; range = mPairs); longDotId = caseId; range = m) when rangeContainsPos m pos ->
+        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats; range = mPairs); longDotId = caseId; range = m) when
+            rangeContainsPos m pos
+            ->
             pats
             |> List.tryPick (fun (fieldId, _, pat) ->
                 if rangeContainsPos fieldId.idRange pos then
@@ -1330,7 +1332,11 @@ module ParsedInput =
                 | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)), Some mComma when
                     rangeBeforePos mComma pos && rangeContainsPos m pos
                     ->
-                    Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some(pats.Length - 1), isTheOnlyField, caseIdRange)))
+                    Some(
+                        CompletionContext.Pattern(
+                            PatternContext.PositionalUnionCaseField(Some(pats.Length - 1), isTheOnlyField, caseIdRange)
+                        )
+                    )
                 | _ -> None)
         | SynPat.Named (range = m) when rangeContainsPos m pos ->
             if suppressIdentifierCompletions then
