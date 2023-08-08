@@ -29,79 +29,6 @@ module ByrefSafetyAnalysis =
         |> withPrelude
         |> compileAndRun
     
-    // // SOURCE=MigratedTest01.fs SCFLAGS="--test:ErrorRanges"                              # MigratedTest01.fs
-    // [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest01.fs"|])>]
-    // let``MigratedTest01_fs`` compilation =
-    //     compilation
-    //     |> ignoreWarnings
-    //     |> compileExeAndRun
-    //     |> withDiagnostics [
-    //     ]
-    //     |> shouldSucceed
-    
-    // SOURCE=E_Migrated01.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest01.fs"|])>]
-    let``E_Migrated01_fs`` compilation =
-        compilation
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3224, Line 9, Col 34, Line 9, Col 40, "The byref pointer is readonly, so this write is not permitted.")
-            (Error 39, Line 12, Col 26, Line 12, Col 27, "The type 'S' is not defined.")
-            (Error 72, Line 12, Col 32, Line 12, Col 35, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Error 1, Line 16, Col 36, Line 16, Col 38, "Type mismatch. Expecting a
-    'byref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 1, Line 20, Col 36, Line 20, Col 38, "Type mismatch. Expecting a
-    'outref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
-            (Error 1, Line 25, Col 38, Line 25, Col 40, "Type mismatch. Expecting a
-    'byref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 1, Line 30, Col 38, Line 30, Col 40, "Type mismatch. Expecting a
-    'outref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
-            (Error 1, Line 35, Col 38, Line 35, Col 40, "Type mismatch. Expecting a
-    'byref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 1, Line 40, Col 38, Line 40, Col 40, "Type mismatch. Expecting a
-    'outref<'T>'    
-but given a
-    'inref<'T>'    
-The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
-            (Error 1204, Line 44, Col 34, Line 44, Col 47, "This construct is for use in the FSharp.Core library and should not be used directly")
-            (Error 3236, Line 49, Col 21, Line 49, Col 23, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
-            (Error 3236, Line 50, Col 21, Line 50, Col 23, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
-            (Error 3236, Line 56, Col 21, Line 56, Col 37, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
-            (Error 1, Line 63, Col 22, Line 63, Col 23, "This expression was expected to have type
-    'inref<System.DateTime>'    
-but here has type
-    'System.DateTime'    ")
-            (Error 39, Line 64, Col 9, Line 64, Col 14, "The value or constructor 'check' is not defined. Maybe you want one of the following:
-   Checked
-   Unchecked")
-            (Error 3238, Line 66, Col 10, Line 66, Col 15, "Byref types are not allowed to have optional type extensions.")
-            (Error 3238, Line 70, Col 10, Line 70, Col 15, "Byref types are not allowed to have optional type extensions.")
-            (Error 3238, Line 74, Col 10, Line 74, Col 16, "Byref types are not allowed to have optional type extensions.")
-            (Error 3236, Line 92, Col 21, Line 92, Col 36, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
-            (Error 1, Line 92, Col 21, Line 92, Col 36, "Type mismatch. Expecting a
-    'byref<float array>'    
-but given a
-    'inref<float array>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 3236, Line 97, Col 21, Line 97, Col 29, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
-        ]
-    
     // SOURCE=Migrated02.fs SCFLAGS="--test:ErrorRanges"                                  # Migrated02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest02.fs"|])>]
     let``MigratedTest02_fs`` compilation =
@@ -567,6 +494,231 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|])>]
     let``NoTailcallToByrefsWithModReq`` compilation =
         compilation |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CantTakeAddressOfExpressionReturningReferenceType.fs"|])>]
+    let``E_CantTakeAddressOfExpressionReturningReferenceType`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3236, Line 15, Col 17, Line 15, Col 32, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
+            (Error 1, Line 15, Col 17, Line 15, Col 32, "Type mismatch. Expecting a
+    'byref<float array>'    
+but given a
+    'inref<float array>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+            (Error 3236, Line 20, Col 17, Line 20, Col 25, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
+        ]
+    
+    
+    
+    [<Fact>]
+    let ``E_WriteToInRef`` () =
+        FSharp """let f1 (x: inref<int>) = x <- 1"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3224, Line 1, Col 26, Line 1, Col 32, "The byref pointer is readonly, so this write is not permitted.")
+        ]
+    
+    [<Fact>]
+    let ``E_WriteToInRefStructInner`` () =
+        FSharp """let f1 (x: inref<S>) = x.X <- 1"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 1, Col 18, Line 1, Col 19, "The type 'S' is not defined.")
+            (Error 72, Line 1, Col 24, Line 1, Col 27, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToByRef`` () =
+        FSharp """
+let f1 (x: byref<'T>) = 1
+let f2 (x: inref<'T>) = f1 &x    // not allowed 
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 3, Col 28, Line 3, Col 30, "Type mismatch. Expecting a
+    'byref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToOutRef`` () =
+        FSharp """
+let f1 (x: outref<'T>) = 1
+let f2 (x: inref<'T>) = f1 &x     // not allowed
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 3, Col 28, Line 3, Col 30, "Type mismatch. Expecting a
+    'outref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToByRefClassMethod`` () =
+        FSharp """
+type C() = 
+    static member f1 (x: byref<'T>) = 1
+let f2 (x: inref<'T>) = C.f1 &x // not allowed
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 30, Line 4, Col 32, "Type mismatch. Expecting a
+    'byref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToOutRefClassMethod`` () =
+        FSharp """
+type C() = 
+    static member f1 (x: byref<'T>) = 1
+let f2 (x: inref<'T>) = C.f1 &x // not allowed
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 30, Line 4, Col 32, "Type mismatch. Expecting a
+    'byref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToByRefClassMethod2`` () =
+        FSharp """
+type C() = 
+    static member f1 (x: byref<'T>) = 1
+let f2 (x: inref<'T>) = C.f1(&x) // not allowed
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 30, Line 4, Col 32, "Type mismatch. Expecting a
+    'byref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefToOutRefClassMethod2`` () =
+        FSharp """
+type C() = 
+    static member f1 (x: outref<'T>) = 1 // not allowed (not yet)
+let f2 (x: inref<'T>) = C.f1(&x) // not allowed
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 30, Line 4, Col 32, "Type mismatch. Expecting a
+    'outref<'T>'    
+but given a
+    'inref<'T>'    
+The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+        ]
+    
+    [<Fact>]
+    let ``E_UseOfLibraryOnly`` () =
+        FSharp """
+type C() = 
+    static member f1 (x: byref<'T, 'U>) = 1
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1204, Line 3, Col 26, Line 3, Col 39, "This construct is for use in the FSharp.Core library and should not be used directly")
+        ]
+    
+    [<Fact>]
+    let ``E_CantTakeAddress`` () =
+        FSharp """
+let test1 () =
+    let x = &1 // not allowed
+    let y = &2 // not allowed
+    x + y
+
+let test2_helper (x: byref<int>) = x
+let test2 () =
+    let mutable x = 1
+    let y = &test2_helper &x // not allowed
+    ()
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3236, Line 3, Col 13, Line 3, Col 15, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.");
+            (Error 3236, Line 4, Col 13, Line 4, Col 15, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.");
+            (Error 3236, Line 10, Col 13, Line 10, Col 29, "Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.")
+        ]
+    
+    [<Fact>]
+    let ``E_InRefParam_DateTime`` () =
+        FSharp """
+type C() = 
+    static member M(x: inref<System.DateTime>) = x
+let w = System.DateTime.Now
+let v =  C.M(w) // not allowed
+check "cweweoiwe51btw" v w
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 5, Col 14, Line 5, Col 15, "This expression was expected to have type
+    'inref<System.DateTime>'    
+but here has type
+    'System.DateTime'    ");
+            (Error 39, Line 6, Col 1, Line 6, Col 6, "The value or constructor 'check' is not defined. Maybe you want one of the following:
+   Checked
+   Unchecked")
+        ]
+    
+    [<Fact>]
+    let ``E_ExtensionMethodOnByrefType`` () =
+        FSharp """
+type byref<'T> with
+    member this.Test() = 1
+
+type inref<'T> with
+    member this.Test() = 1
+
+type outref<'T> with
+    member this.Test() = 1
+"""
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3238, Line 2, Col 6, Line 2, Col 11, "Byref types are not allowed to have optional type extensions.")
+            (Error 3238, Line 5, Col 6, Line 5, Col 11, "Byref types are not allowed to have optional type extensions.")
+            (Error 3238, Line 8, Col 6, Line 8, Col 12, "Byref types are not allowed to have optional type extensions.")
+        ]
+    
     
     // SOURCE=E_ByrefAsArrayElement.fs SCFLAGS="--test:ErrorRanges"                       # E_ByrefAsArrayElement.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefAsArrayElement.fs"|])>]
