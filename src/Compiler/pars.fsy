@@ -158,7 +158,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <Ident> ident
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfnList
-%type <SynArgPats * Range> atomicPatsOrNamePatPairs
+%type <SynArgPats> atomicPatsOrNamePatPairs
 %type <SynPat list> atomicPatterns
 %type <Range * SynExpr> patternResult
 %type <SynExpr> declExpr
@@ -3480,16 +3480,14 @@ conjPatternElements:
 
 namePatPairs:
    | namePatPair opt_seps
-     { [$1], lhs parseState }
+     { [$1] }
 
    | namePatPair seps namePatPairs
-     { let rs, _ = $3
-       ($1 :: rs), lhs parseState }
+     { $1 :: $3 }
 
    | namePatPair seps seps namePatPairs
-      { let rs, _ = $4
-        reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        ($1 :: rs), lhs parseState }
+      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
+        ($1 :: $4) }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -3510,39 +3508,33 @@ constrPattern:
 
   | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs %prec pat_app
       { let vis, lid = $1
-        let args, argsM = $3
-        let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
+        let m = lhs parseState
+        SynPat.LongIdent(lid, None, Some $2, $3, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
-        let args, argsM = $4
-        let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
+        let m = lhs parseState
+        SynPat.LongIdent(lid, None, Some $2, $4, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
-        let args, argsM = $4
-        let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
+        let m = lhs parseState
+        SynPat.LongIdent(lid, None, Some $2, $4, vis, m) }
 
   | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
       { let vis, lid = $1
-        let args, argsM = $2
-        let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent(lid, None, None, args, vis, m) }
+        let m = rhs2 parseState 1 2
+        SynPat.LongIdent(lid, None, None, $2, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
-        let args, argsM = $3
-        let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent(lid, None, None, args, vis, m) }
+        let m = lhs parseState
+        SynPat.LongIdent(lid, None, None, $3, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
-        let args, argsM = $3
-        let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent(lid, None, None, args, vis, m) }
+        let m = lhs parseState
+        SynPat.LongIdent(lid, None, None, $3, vis, m) }
 
   | COLON_QMARK atomTypeOrAnonRecdType %prec pat_isinst
       { SynPat.IsInst($2, lhs parseState) }
@@ -3553,14 +3545,11 @@ constrPattern:
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
       { let mParen = rhs2 parseState 1 3
-        let pats, m = $2
         let trivia = { ParenRange = mParen }
-        SynArgPats.NamePatPairs(pats, m, trivia), snd $2 }
+        SynArgPats.NamePatPairs($2, rhs parseState 2, trivia) }
 
   | atomicPatterns
-      { let mParsed = rhs parseState 1
-        let mAll = (mParsed.StartRange, $1) ||> unionRangeWithListBy (fun p -> p.Range)
-        SynArgPats.Pats $1, mAll }
+      { SynArgPats.Pats $1 }
 
 atomicPatterns:
   | atomicPattern atomicPatterns %prec pat_args

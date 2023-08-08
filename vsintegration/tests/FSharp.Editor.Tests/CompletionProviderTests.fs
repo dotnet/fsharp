@@ -1684,11 +1684,16 @@ type Du =
 let x du =
     match du with
     | C () -> ()
-    | C  (first, ) -> ()
+    | C  (ff, ) -> ()
+    | C  (first = f;) -> ()
 """
 
-        VerifyCompletionList(fileContents, "| C (", [ "first"; "du" ], [ "second"; "result" ])
-        VerifyCompletionList(fileContents, "| C  (first, ", [ "second"; "result" ], [ "first"; "du" ])
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du"; "second" ], [ "result" ])
+        VerifyCompletionList(fileContents, "| C  (ff, ", [ "second"; "result" ], [ "first"; "du" ])
+        VerifyCompletionListExactly(fileContents, "| C  (first = f;", [ "second" ])
 
     [<Fact>]
     let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
