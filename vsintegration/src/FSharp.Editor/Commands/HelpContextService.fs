@@ -22,7 +22,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : CancellableTask<string> =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken ()
             let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
 
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -53,31 +53,31 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
 
                 let getTokenAt line col =
                     if col < 0 || line < 0 then
-                        None
+                        ValueNone
                     else
                         let start = textLines.[line].Start + col
                         let span = TextSpan.FromBounds(start, start + 1)
 
                         tokens
-                        |> Seq.tryFindIndex (fun t -> t.TextSpan.Contains(span))
-                        |> Option.map (fun i -> tokens.[i])
+                        |> Seq.tryFindIndexV (fun t -> t.TextSpan.Contains(span))
+                        |> ValueOption.map (fun i -> tokens[i])
 
                 match getTokenAt line col with
-                | Some t as original -> // when col > 0 && shouldTryToFindSurroundingIdent t ->
+                | ValueSome t as original -> // when col > 0 && shouldTryToFindSurroundingIdent t ->
                     if shouldTryToFindSurroundingIdent t then
                         match getTokenAt line (col - 1) with
-                        | Some t as newInfo when not (shouldTryToFindSurroundingIdent t) -> newInfo, col - 1
+                        | ValueSome t as newInfo when not (shouldTryToFindSurroundingIdent t) -> newInfo, col - 1
                         | _ ->
                             match getTokenAt line (col + 1) with
-                            | Some t as newInfo when not (shouldTryToFindSurroundingIdent t) -> newInfo, col + 1
+                            | ValueSome t as newInfo when not (shouldTryToFindSurroundingIdent t) -> newInfo, col + 1
                             | _ -> original, col
                     else
                         original, col
                 | otherwise -> otherwise, col
 
             match tokenInformation with
-            | None -> return ""
-            | Some token ->
+            | ValueNone -> return ""
+            | ValueSome token ->
                 match token.ClassificationType with
                 | ClassificationTypeNames.Keyword
                 | ClassificationTypeNames.Operator
@@ -104,32 +104,34 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
         }
 
     interface IHelpContextService with
-        member this.Language = FSharpConstants.FSharpLanguageLongName
-        member this.Product = FSharpConstants.FSharpLanguageLongName
+        member _.Language = FSharpConstants.FSharpLanguageLongName
+        member _.Product = FSharpConstants.FSharpLanguageLongName
 
-        member this.GetHelpTermAsync(document, textSpan, cancellationToken) =
+        member _.GetHelpTermAsync(document, textSpan, cancellationToken) =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
-                let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (
-                        document.Id,
-                        sourceText,
-                        textLine.Span,
-                        Some document.Name,
-                        defines,
-                        Some langVersion,
-                        strictIndentation,
-                        cancellationToken
-                    )
+                let classifiedSpans = ResizeArray<_>()
+
+                Tokenizer.classifySpans (
+                    document.Id,
+                    sourceText,
+                    textLine.Span,
+                    Some document.Name,
+                    defines,
+                    Some langVersion,
+                    strictIndentation,
+                    classifiedSpans,
+                    cancellationToken
+                )
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             }
             |> CancellableTask.start cancellationToken
 
-        member this.FormatSymbol(_symbol) = Unchecked.defaultof<_>
+        member _.FormatSymbol(_symbol) = Unchecked.defaultof<_>

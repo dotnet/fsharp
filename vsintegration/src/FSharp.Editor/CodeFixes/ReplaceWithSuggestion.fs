@@ -13,6 +13,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ReplaceWithSuggestion); Shared>]
 type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (settings: EditorOptions) =
@@ -28,6 +29,8 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (set
 
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (ReplaceWithSuggestionCodeFixProvider))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             // This is all needed to get a declaration list
