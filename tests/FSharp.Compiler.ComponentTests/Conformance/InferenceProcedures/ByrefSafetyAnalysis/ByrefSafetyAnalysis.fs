@@ -7,28 +7,41 @@ open FSharp.Test
 open FSharp.Test.Compiler
 
 module ByrefSafetyAnalysis =
-
-    // SOURCE=MigratedTest01.fs SCFLAGS="--test:ErrorRanges"                              # MigratedTest01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest01.fs"|])>]
-    let``MigratedTest01_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> compileExeAndRun
-        |> withDiagnostics [
-            (Warning 52, Line 1219, Col 13, Line 1219, Col 25, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
-            (Warning 20, Line 1227, Col 9, Line 1227, Col 15, "The result of this expression has type 'TestMut' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            (Warning 20, Line 1423, Col 5, Line 1423, Col 10, "The result of this expression has type 'System.Collections.IEnumerator' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            (Information 3370, Line 10, Col 26, Line 10, Col 28, "The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.")
-            (Information 3370, Line 10, Col 29, Line 10, Col 30, "The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.")
+    let withPrelude =
+        withReferences [
+            FsFromPath (__SOURCE_DIRECTORY__ ++ "prelude.fs")
+            |> withName "Prelude"
         ]
-        |> shouldSucceed
+    
+    let verifyCompile compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:3370"; "--test:ErrorRanges"]
+        |> withPrelude
+        |> compile
+    
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:3370"; "--test:ErrorRanges"]
+        |> withPrelude
+        |> compileAndRun
+    
+    // // SOURCE=MigratedTest01.fs SCFLAGS="--test:ErrorRanges"                              # MigratedTest01.fs
+    // [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest01.fs"|])>]
+    // let``MigratedTest01_fs`` compilation =
+    //     compilation
+    //     |> ignoreWarnings
+    //     |> compileExeAndRun
+    //     |> withDiagnostics [
+    //     ]
+    //     |> shouldSucceed
     
     // SOURCE=E_Migrated01.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest01.fs"|])>]
     let``E_Migrated01_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
             (Error 3224, Line 9, Col 34, Line 9, Col 40, "The byref pointer is readonly, so this write is not permitted.")
@@ -90,21 +103,13 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     // SOURCE=Migrated02.fs SCFLAGS="--test:ErrorRanges"                                  # Migrated02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest02.fs"|])>]
     let``MigratedTest02_fs`` compilation =
-        compilation
-        |> ignoreWarnings
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withDiagnostics [
-            (Information 3370, Line 10, Col 26, Line 10, Col 28, "The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.")
-            (Information 3370, Line 10, Col 29, Line 10, Col 30, "The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.")
-        ]
+        compilation |> verifyCompileAndRun |> shouldSucceed
         
     // SOURCE=E_Migrated02.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest02.fs"|])>]
     let``E_Migrated02_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
             (Warning 193, Line 165, Col 9, Line 165, Col 22, "This expression is a function value, i.e. is missing arguments. Its type is byref<int> -> unit.")
@@ -182,12 +187,9 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         compilation
         |> withReferences [ csharpLib ]
-        |> ignoreWarnings
+        |> withOptions ["--nowarn:3370"]
         |> compileExeAndRun
         |> shouldSucceed
-        |> withDiagnostics [
-            (Information 3370, Line 13, Col 26, Line 13, Col 28, "The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.")
-            (Information 3370, Line 13, Col 29, Line 13, Col 30, "The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.")]
         
     // SOURCE=E_Migrated03.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest03.fs"|])>]
@@ -216,6 +218,95 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             (Error 3239, Line 45, Col 17, Line 45, Col 26, "Cannot partially apply the extension method 'Change' because the first parameter is a byref type.")
             (Error 3239, Line 46, Col 17, Line 46, Col 25, "Cannot partially apply the extension method 'Test2' because the first parameter is a byref type.")
         ]
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|])>]
+    let``TryGetValue_fs`` compilation =
+        compilation |> withPrelude |> compileExeAndRun |> shouldSucceed
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompareExchange.fs"|])>]
+    let``CompareExchange_fs`` compilation =
+        compilation
+        |> withPrelude
+        |> withOptions ["--nowarn:3370"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam.fs"|])>]
+    let``ByRefParam_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitOutAttribute.fs"|])>]
+    let``ByRefParam_ExplicitOutAttribute_fs`` compilation =
+        compilation |> withPrelude |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitInAttribute.fs"|])>]
+    let``ByRefParam_ExplicitInAttribute_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefReturn.fs"|])>]
+    let``ByRefReturn_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_ByRefReturn.fs"|])>]
+    let``Slot_ByRefReturn_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefReturn.fs"|])>]
+    let``InRefReturn_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_InRefReturn.fs"|])>]
+    let``Slot_InRefReturn_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam.fs"|])>]
+    let``OutRefParam_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_ExplicitOutAttribute.fs"|])>]
+    let``OutRefParam_ExplicitOutAttribute_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_OutRefParam.fs"|])>]
+    let``Slot_OutRefParam_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_OverloadedTest_ExplicitOutAttribute.fs"|])>]
+    let``ByRefParam_OverloadedTest_ExplicitOutAttribute_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded_ExplicitOutAttribute.fs"|])>]
+    let``OutRefParam_Overloaded_ExplicitOutAttribute_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded.fs"|])>]
+    let``OutRefParam_Overloaded_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttribute.fs"|])>]
+    let``InRefParam_ExplicitInAttribute_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttributeDateTime.fs"|])>]
+    let``InRefParam_ExplicitInAttributeDateTime_fs`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam.fs"|])>]
+    let``InRefParam`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|])>]
+    let``InRefParamOverload_ExplicitAddressOfAtCallSite`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|])>]
+    let``InRefParamOverload_ImplicitAddressOfAtCallSite`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|])>]
+    let``InRefParamOverload_ImplicitAddressOfAInRefParamOverload_ImplicitAddressOfAtCallSite2tCallSite`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+        
     
     // SOURCE=E_ByrefAsArrayElement.fs SCFLAGS="--test:ErrorRanges"                       # E_ByrefAsArrayElement.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefAsArrayElement.fs"|])>]

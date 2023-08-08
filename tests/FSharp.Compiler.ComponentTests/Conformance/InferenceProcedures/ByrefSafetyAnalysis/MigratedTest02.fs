@@ -1,7 +1,5 @@
 // #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
-#if TESTS_AS_APP
 module Core_byrefs
-#endif
 
 let test s b = if b then () else failwith s 
 

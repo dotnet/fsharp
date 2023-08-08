@@ -1,6 +1,5 @@
-#if TESTS_AS_APP
+// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
 module Core_byrefs
-#endif
 
 open System
 open System.Runtime.CompilerServices
