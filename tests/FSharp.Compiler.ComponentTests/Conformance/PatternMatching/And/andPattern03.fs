@@ -3,7 +3,7 @@
 
 open System
 
-let (|ToInt|) x =
+let (|ToInt|) (x: string) =
     let (parsed, result) = Int32.TryParse(x)
     if parsed then result
     else           -1

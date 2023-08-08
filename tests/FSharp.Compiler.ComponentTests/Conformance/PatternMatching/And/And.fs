@@ -32,16 +32,7 @@ module And =
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 41, Line 7, Col 28, Line 7, Col 45, "A unique overload for method 'TryParse' could not be determined based on type information prior to this program point. A type annotation may be needed.
-
-Known type of argument: 'a
-
-Candidates:
- - Int32.TryParse(s: ReadOnlySpan<char>, result: byref<int>) : bool
- - Int32.TryParse(s: string, result: byref<int>) : bool")
-        ]
+        |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IdentBoundTwice.fs"|])>]
