@@ -30,17 +30,19 @@ type SyntacticClassificationServiceTests() =
 
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-        let tokens =
-            Tokenizer.getClassifiedSpans (
-                documentId,
-                SourceText.From(fileContents),
-                textSpan,
-                Some(fileName),
-                defines,
-                langVersion,
-                None,
-                CancellationToken.None
-            )
+        let tokens = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
+            documentId,
+            SourceText.From(fileContents),
+            textSpan,
+            Some(fileName),
+            defines,
+            langVersion,
+            None,
+            tokens,
+            CancellationToken.None
+        )
 
         let markerPosition = fileContents.IndexOf(marker)
         Assert.True(markerPosition >= 0, $"Cannot find marker '{marker}' in file contents")

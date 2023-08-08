@@ -1329,6 +1329,25 @@ type A = l
         VerifyCompletionList(fileContents, "= l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list on return type annotation contains modules and types but not keywords or functions`` () =
+        let fileContents =
+            """
+let a: l
+let b (): l
+
+type X =
+    member _.c: l
+    member x.d (): l
+    static member e: l
+"""
+
+        VerifyCompletionList(fileContents, "let a: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "let b (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member _.c: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member x.d (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "static member e: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+
+    [<Fact>]
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
@@ -1654,6 +1673,22 @@ let x (du: Du list) =
         VerifyCompletionList(fileContents, "| [ C (first = first); C (first = f", [ "option" ], [ "first" ])
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f", [ "option" ], [ "first" ])
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
+
+    [<Fact>]
+    let ``Completion list contains relevant items for the correct union case field pattern before its identifier has been typed`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * second: Result<int, string>
+
+let x du =
+    match du with
+    | C () -> ()
+    | C  (first, ) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du" ], [ "second"; "result" ])
+        VerifyCompletionList(fileContents, "| C  (first, ", [ "second"; "result" ], [ "first"; "du" ])
 
     [<Fact>]
     let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =

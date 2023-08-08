@@ -13,6 +13,7 @@ open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open CancellableTasks
 
 type private PerDocumentSavedData =
     {
@@ -57,6 +58,8 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                         let! _, checkResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof (SimplifyNameDiagnosticAnalyzer))
+                            |> CancellableTask.start cancellationToken
+                            |> Async.AwaitTask
                             |> liftAsync
 
                         let! result =

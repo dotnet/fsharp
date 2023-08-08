@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -19,6 +20,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
+open CancellableTasks
 
 type SignatureHelpParameterInfo =
     {
@@ -607,7 +609,12 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+
+            let! parseResults, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp")
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 

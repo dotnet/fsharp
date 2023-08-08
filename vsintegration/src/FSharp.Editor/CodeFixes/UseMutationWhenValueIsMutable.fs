@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseMutationWhenValueIsMutable); Shared>]
 type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructor>] () =
@@ -51,6 +52,8 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (UseMutationWhenValueIsMutableCodeFixProvider))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! symbolUse =

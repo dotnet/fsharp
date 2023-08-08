@@ -42,17 +42,19 @@ type HelpContextServiceTests() =
                     let textLine = sourceText.Lines.GetLineFromPosition(marker)
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-                    let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (
-                            documentId,
-                            sourceText,
-                            textLine.Span,
-                            Some "test.fs",
-                            [],
-                            None,
-                            None,
-                            CancellationToken.None
-                        )
+                    let classifiedSpans = ResizeArray<_>()
+
+                    Tokenizer.classifySpans (
+                        documentId,
+                        sourceText,
+                        textLine.Span,
+                        Some "test.fs",
+                        [],
+                        None,
+                        None,
+                        classifiedSpans,
+                        CancellationToken.None
+                    )
 
                     let task =
                         FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)

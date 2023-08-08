@@ -377,13 +377,14 @@ type PhasedDiagnostic with
         | 1182 -> false // chkUnusedValue - off by default
         | 3180 -> false // abImplicitHeapAllocation - off by default
         | 3186 -> false // pickleMissingDefinition - off by default
-        | 3366 -> false //tcIndexNotationDeprecated - currently off by default
+        | 3366 -> false // tcIndexNotationDeprecated - currently off by default
         | 3517 -> false // optFailedToInlineSuggestedValue - off by default
         | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
         | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
+        | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled

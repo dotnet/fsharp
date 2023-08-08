@@ -1279,6 +1279,10 @@ module ParsedInput =
             // fun (Some v| ) ->
             | [ SynPat.Named _ ] -> Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(None, true, id.Range)))
 
+            // fun (Case (| )) ->
+            | [ SynPat.Paren (SynPat.Const (SynConst.Unit, _), m) ] when rangeContainsPos m pos ->
+                Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some 0, id.Range)))
+
             // fun (Case (a| )) ->
             // This could either be the first positional field pattern or the user might want to use named pairs
             | [ SynPat.Paren (SynPat.Named _, _) ] ->
@@ -1298,7 +1302,7 @@ module ParsedInput =
         | SynPat.ArrayOrList (elementPats = pats) ->
             pats
             |> List.tryPick (fun pat -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat None pos)
-        | SynPat.Tuple (elementPats = pats) ->
+        | SynPat.Tuple (elementPats = pats; commaRanges = commas; range = m) ->
             pats
             |> List.indexed
             |> List.tryPick (fun (i, pat) ->
@@ -1311,6 +1315,15 @@ module ParsedInput =
                         None
 
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
+            |> Option.orElseWith (fun () ->
+                // Last resort - check for fun (Case (a, | )) ->
+                // That is, pos is after the last comma and before the end of the tuple
+                match previousContext, List.tryLast commas with
+                | Some (PatternContext.PositionalUnionCaseField (_, caseIdRange)), Some mComma when
+                    rangeBeforePos mComma pos && rangeContainsPos m pos
+                    ->
+                    Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some(pats.Length - 1), caseIdRange)))
+                | _ -> None)
         | SynPat.Named (range = m) when rangeContainsPos m pos ->
             if suppressIdentifierCompletions then
                 Some CompletionContext.Invalid
@@ -1328,7 +1341,7 @@ module ParsedInput =
             TryGetCompletionContextInPattern suppressIdentifierCompletions pat1 None pos
             |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat2 None pos)
         | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some CompletionContext.Type
-        | SynPat.Wild m when rangeContainsPos m pos -> Some CompletionContext.Invalid
+        | SynPat.Wild m when rangeContainsPos m pos && m.StartColumn <> m.EndColumn -> Some CompletionContext.Invalid
         | SynPat.Typed (pat = pat; targetType = synType) ->
             if rangeContainsPos pat.Range pos then
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
@@ -1434,7 +1447,12 @@ module ParsedInput =
 
                     | _ -> None
 
-                member _.VisitBinding(path, defaultTraverse, (SynBinding (headPat = headPat; trivia = trivia) as synBinding)) =
+                member _.VisitBinding
+                    (
+                        path,
+                        defaultTraverse,
+                        (SynBinding (headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
+                    ) =
 
                     let isOverride leadingKeyword =
                         match leadingKeyword with
@@ -1447,38 +1465,41 @@ module ParsedInput =
                             Some(CompletionContext.MethodOverride enclosingType.idRange)
                         | _ -> Some CompletionContext.Invalid
 
-                    match headPat with
+                    match returnInfo with
+                    | Some (SynBindingReturnInfo (range = m)) when rangeContainsPos m pos -> Some CompletionContext.Type
+                    | _ ->
+                        match headPat with
 
-                    // override _.|
-                    | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
+                        // override _.|
+                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
 
-                    // override this.|
-                    | SynPat.Named(ident = SynIdent (ident = selfId)) when
-                        isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
-                        ->
-                        overrideContext path
+                        // override this.|
+                        | SynPat.Named(ident = SynIdent (ident = selfId)) when
+                            isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                            ->
+                            overrideContext path
 
-                    // override this.ToStr|
-                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
-                        isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
-                        ->
-                        overrideContext path
+                        // override this.ToStr|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                            isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path
 
-                    | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
-                        if rangeContainsPos lidwd.Range pos then
-                            // let fo|o x = ()
+                        | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                            if rangeContainsPos lidwd.Range pos then
+                                // let fo|o x = ()
+                                Some CompletionContext.Invalid
+                            else
+                                pats
+                                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                                |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                        | SynPat.Named (range = range)
+                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
+                            // let fo|o = 1
                             Some CompletionContext.Invalid
-                        else
-                            pats
-                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
-                            |> Option.orElseWith (fun () -> defaultTraverse synBinding)
 
-                    | SynPat.Named (range = range)
-                    | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                        // let fo|o = 1
-                        Some CompletionContext.Invalid
-
-                    | _ -> defaultTraverse synBinding
+                        | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
                     // No completions in a directive
