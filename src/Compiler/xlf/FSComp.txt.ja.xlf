@@ -1039,7 +1039,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">この匿名レコードは、予期された形状と完全には一致していません。不足しているフィールド {0} を追加し、不要なフィールド {1} を削除してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -5014,7 +5014,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">静的な値の定義は、プライマリ コンストラクターを含む型でのみ使用できます。型定義に引数を追加してください ( たとえば、'type X(args) = ...')。</target>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8514,7 +8514,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
