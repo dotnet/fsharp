@@ -16,14 +16,16 @@ module ByrefSafetyAnalysis =
     let verifyCompile compilation =
         compilation
         |> asExe
-        |> withOptions ["--nowarn:3370"; "--test:ErrorRanges"]
+        |> withNoWarn 3370
+        |> withOptions ["--test:ErrorRanges"]
         |> withPrelude
         |> compile
     
     let verifyCompileAndRun compilation =
         compilation
         |> asExe
-        |> withOptions ["--nowarn:3370"; "--test:ErrorRanges"]
+        |> withNoWarn 3370
+        |> withOptions ["--test:ErrorRanges"]
         |> withPrelude
         |> compileAndRun
     
@@ -306,7 +308,265 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|])>]
     let``InRefParamOverload_ImplicitAddressOfAInRefParamOverload_ImplicitAddressOfAtCallSite2tCallSite`` compilation =
         compilation |> verifyCompileAndRun |> shouldSucceed
+    
+    // TODO: Delete this, move into feature branch, or finish this. See: https://github.com/dotnet/fsharp/pull/7989#discussion_r369841104
+#if IMPLICIT_ADDRESS_OF
+    module FeatureImplicitAddressOf =
+        [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime.fs"|])>]
+        let``InRefParam_DateTime`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite.fs"|])>]
+        let``InRefParam_DateTime_ImplicitAddressOfAtCallSite`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite2.fs"|])>]
+        let``InRefParam_DateTime_ImplicitAddressOfAtCallSite2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite3.fs"|])>]
+        let``InRefParam_DateTime_ImplicitAddressOfAtCallSite3`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite4.fs"|])>]
+        let``InRefParam_DateTime_ImplicitAddressOfAtCallSite4`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+#endif
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs"|])>]
+    let``InRefParam_Generic_ExplicitAddressOfAttCallSite1`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
         
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs"|])>]
+    let``InRefParam_Generic_ExplicitAddressOfAttCallSite2`` compilation =
+        compilation |> verifyCompileAndRun |> shouldSucceed
+    
+    module ByrefReturn =
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestImmediateReturn.fs"|])>]
+        let``TestImmediateReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestMatchReturn.fs"|])>]
+        let``TestMatchReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestConditionalReturn.fs"|])>]
+        let``TestConditionalReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryWithReturn.fs"|])>]
+        let``TestTryWithReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryFinallyReturn.fs"|])>]
+        let``TestTryFinallyReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestOneArgument.fs"|])>]
+        let``TestOneArgument`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTwoArguments.fs"|])>]
+        let``TestTwoArguments`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam.fs"|])>]
+        let``TestRecordParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+            
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam2.fs"|])>]
+        let``TestRecordParam2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestClassParamMutableField.fs"|])>]
+        let``TestClassParamMutableField`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestArrayParam.fs"|])>]
+        let``TestArrayParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestStructParam.fs"|])>]
+        let``TestStructParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceMethod.fs"|])>]
+        let``TestInterfaceMethod`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceProperty.fs"|])>]
+        let``TestInterfaceProperty`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod.fs"|])>]
+        let``TestDelegateMethod`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestBaseCall.fs"|])>]
+        let``TestBaseCall`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod2.fs"|])>]
+        let``TestDelegateMethod2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+    module ByrefReturnMember =
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestImmediateReturn.fs"|])>]
+        let``TestImmediateReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestMatchReturn.fs"|])>]
+        let``TestMatchReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestConditionalReturn.fs"|])>]
+        let``TestConditionalReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTryWithReturn.fs"|])>]
+        let``TestTryWithReturn`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgument.fs"|])>]
+        let``TestOneArgument`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentInRefReturned.fs"|])>]
+        let``TestOneArgumentInRefReturned`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentOutRef.fs"|])>]
+        let``TestOneArgumentOutRef`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTwoArguments.fs"|])>]
+        let``TestTwoArguments`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam.fs"|])>]
+        let``TestRecordParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam2.fs"|])>]
+        let``TestRecordParam2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestClassParamMutableField.fs"|])>]
+        let``TestClassParamMutableField`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|])>]
+        let``TestArrayParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|])>]
+        let``TestStructParam`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceMethod.fs"|])>]
+        let``TestInterfaceMethod`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceProperty.fs"|])>]
+        let``TestInterfaceProperty`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod.fs"|])>]
+        let``TestDelegateMethod`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestBaseCall.fs"|])>]
+        let``TestBaseCall`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod2.fs"|])>]
+        let``TestDelegateMethod2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethods1.fs"|])>]
+        let``ByRefExtensionMethods1`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        // [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethodsOverloading.fs"|])>]
+        // let``ByRefExtensionMethodsOverloading`` compilation =
+        //     compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestReadOnlyAddressOfStaticField.fs"|])>]
+        let``TestReadOnlyAddressOfStaticField`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref.fs"|])>]
+        let``TestAssignToReturnByref`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref2.fs"|])>]
+        let``TestAssignToReturnByref2`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"BaseCallByref.fs"|])>]
+        let``BaseCallByref`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820.fs"|])>]
+        let``Bug820`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820b.fs"|])>]
+        let``Bug820b`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleGeneric.fs"|])>]
+        let``TestNameModuleGeneric`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGeneric.fs"|])>]
+        let``TestNameModuleNonGeneric`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGenericSubsume.fs"|])>]
+        let``TestNameModuleNonGenericSubsume`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"GenericTestNameRecursive.fs"|])>]
+        let``GenericTestNameRecursive`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClass.fs"|])>]
+        let``NonGenericTestNameRecursiveInClass`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClassSubsume.fs"|])>]
+        let``NonGenericTestNameRecursiveInClassSubsume`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticGenericTestNameRecursiveInClass.fs"|])>]
+        let``StaticGenericTestNameRecursiveInClass`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticNonGenericTestNameRecursiveInClass.fs"|])>]
+        let``StaticNonGenericTestNameRecursiveInClass`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInRefMutation.fs"|])>]
+        let``TestInRefMutation`` compilation =
+            compilation |> withNoWarn 52 |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MutateInRef3.fs"|])>]
+        let``MutateInRef3`` compilation =
+            compilation |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MatrixOfTests.fs"|])>]
+        let``MatrixOfTests`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+        
+        [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|])>]
+        let``TestStructRecord`` compilation =
+            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|])>]
+    let``NoTailcallToByrefsWithModReq`` compilation =
+        compilation |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
     
     // SOURCE=E_ByrefAsArrayElement.fs SCFLAGS="--test:ErrorRanges"                       # E_ByrefAsArrayElement.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefAsArrayElement.fs"|])>]
@@ -494,28 +754,6 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         |> compileExeAndRun
         |> shouldSucceed
 #endif
-
-    // // SOURCE=E_ByrefFieldEscapingLocalScope01.fs SCFLAGS="--test:ErrorRanges"                 # E_ByrefFieldEscapingLocalScope01.fs
-    // [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefFieldEscapingLocalScope01.fs"|])>]
-    // let``E_ByrefEscapingLocalScope01_fs`` compilation =
-    //     compilation
-    //     |> asExe
-    //     |> compile
-    //     |> shouldFail
-    //     |> withDiagnostics [
-    //         (Error 3234, Line 7, Col 5, Line 7, Col 9, "The Span or IsByRefLike variable 'span' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
-    //     ]
-    //      
-    // // SOURCE=E_ByrefFieldEscapingLocalScope02.fs SCFLAGS="--test:ErrorRanges"                 # E_ByrefFieldEscapingLocalScope02.f
-    // [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefFieldEscapingLocalScope02.fs"|])>]
-    // let``E_ByrefEscapingLocalScope02_fs`` compilation =
-    //     compilation
-    //     |> asExe
-    //     |> compile
-    //     |> shouldFail
-    //     |> withDiagnostics [
-    //         (Error 3234, Line 8, Col 9, Line 8, Col 13, "The Span or IsByRefLike variable 'span' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
-    //     ]
         
     // SOURCE=E_TopLevelByref.fs SCFLAGS="--test:ErrorRanges"                             # E_TopLevelByref.f
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|])>]
