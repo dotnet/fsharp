@@ -36,6 +36,9 @@
     <Compile Include="..\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\Symbols.fs">
+      <Link>Symbols.fs</Link>
+    </Compile>
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
@@ -52,14 +55,14 @@
     <Compile Include="..\service\PerfTests.fs">
       <Link>PerfTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\InteractiveCheckerTests.fs">
+      <Link>InteractiveCheckerTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\ExprTests.fs">
       <Link>ExprTests.fs</Link>
     </Compile>
     <Compile Include="..\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
-    </Compile>
-    <Compile Include="..\service\StructureTests.fs">
-      <Link>StructureTests.fs</Link>
     </Compile>
     <Compile Include="..\service\PatternMatchCompilationTests.fs">
       <Link>PatternMatchCompilationTests.fs</Link>

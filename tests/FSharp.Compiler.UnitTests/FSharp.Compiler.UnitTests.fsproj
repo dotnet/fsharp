@@ -34,7 +34,9 @@
     <Compile Include="..\..\tests\service\Common.fs">
       <Link>CompilerService\Common.fs</Link>
     </Compile>
-    <Compile Include="Symbols.fs" />
+    <Compile Include="..\..\tests\service\Symbols.fs">
+      <Link>CompilerService\Symbols.fs</Link>
+    </Compile>
     <Compile Include="..\..\tests\service\SyntaxTreeTests.fs" />
     <Compile Include="..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
@@ -54,16 +56,16 @@
     <Compile Include="..\..\tests\service\PerfTests.fs">
       <Link>CompilerService\PerfTests.fs</Link>
     </Compile>
-    <Compile Include="InteractiveCheckerTests.fs" />
+    <Compile Include="..\..\tests\service\InteractiveCheckerTests.fs">
+      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
+    </Compile>
     <Compile Include="..\..\tests\service\ExprTests.fs">
       <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
     <Compile Include="..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\StructureTests.fs">
-      <Link>CompilerService\StructureTests.fs</Link>
-    </Compile>
+    <Compile Include="StructureTests.fs" />
     <Compile Include="..\..\tests\service\AssemblyContentProviderTests.fs">
       <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
     </Compile>

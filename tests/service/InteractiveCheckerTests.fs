@@ -1,19 +1,20 @@
 ﻿
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/xunit.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
+#load "FsUnit.fs"
+#load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.InteractiveChecker
 #endif
 
-open Xunit
-open FSharp.Test
+open NUnit.Framework
+open FsUnit
 open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open Assert
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
@@ -69,7 +70,7 @@ let input =
     type Sample () = class end
     """
 
-[<Fact>]
+[<Test>]
 let ``Test ranges - namespace`` () =
     let res = parseAndExtractRanges input 
     printfn "Test ranges - namespace, res = %A" res
@@ -82,7 +83,7 @@ let input2 =
     type Sample () = class end
     """
     
-[<Fact>]
+[<Test>]
 let ``Test ranges - module`` () =
     let res = parseAndExtractRanges input2
     printfn "Test ranges - module, res = %A" res
@@ -95,7 +96,7 @@ let input3 =
     type Sample () = class end
     """
 
-[<Fact>]
+[<Test>]
 let ``Test ranges - global namespace`` () =
     let res = parseAndExtractRanges input3 
     printfn "Test ranges - global namespace, res = %A" res
