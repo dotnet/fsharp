@@ -58,9 +58,6 @@
     <Compile Include="..\service\InteractiveCheckerTests.fs">
       <Link>InteractiveCheckerTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\ExprTests.fs">
-      <Link>ExprTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
     </Compile>
