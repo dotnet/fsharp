@@ -56,9 +56,7 @@
     <Compile Include="..\..\tests\service\PerfTests.fs">
       <Link>CompilerService\PerfTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\InteractiveCheckerTests.fs">
-      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
-    </Compile>
+    <Compile Include="InteractiveCheckerTests.fs" />
     <Compile Include="..\..\tests\service\ExprTests.fs">
       <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
