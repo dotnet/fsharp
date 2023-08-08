@@ -226,14 +226,14 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|])>]
     let``InRefParamOverload_ExplicitAddressOfAtCallSite`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite.fs"|])>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|])>]
-    let``InRefParamOverload_ImplicitAddressOfAInRefParamOverload_ImplicitAddressOfAtCallSite2tCallSite`` compilation =
+    let``InRefParamOverload_ImplicitAddressOfAtCallSite2`` compilation =
         compilation |> verifyCompileAndRun |> shouldSucceed
     
     // TODO: Delete this, move into feature branch, or finish this. See: https://github.com/dotnet/fsharp/pull/7989#discussion_r369841104
@@ -888,7 +888,7 @@ type outref<'T> with
         |> shouldSucceed
         
 #if NET7_0_OR_GREATER
-    // SOURCE=ReturnFieldSetBySpan.fs                                                     # ReturnFieldSetBySpan.fs
+// This constructor added in .NET 7: https://learn.microsoft.com/en-us/dotnet/api/system.span-1.-ctor?view=net-7.0#system-span-1-ctor(-0@)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnFieldSetBySpan.fs"|])>]
     let``ReturnFieldSetBySpan_fs`` compilation =
         compilation
@@ -897,7 +897,6 @@ type outref<'T> with
         |> compileExeAndRun
         |> shouldSucceed
         
-    // SOURCE=ReturnSpan02.fs                                                             # ReturnSpan02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan01.fs"|])>]
     let``ReturnSpan01_fs`` compilation =
         compilation
@@ -906,8 +905,8 @@ type outref<'T> with
         |> compileExeAndRun
         |> shouldSucceed
 #endif
-        
-    // SOURCE=E_TopLevelByref.fs SCFLAGS="--test:ErrorRanges"                             # E_TopLevelByref.f
+
+#if NETSTANDARD2_1_OR_GREATER
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|])>]
     let``E_TopLevelByref_fs`` compilation =
         compilation
@@ -918,7 +917,6 @@ type outref<'T> with
             (Error 431, Line 6, Col 5, Line 6, Col 13, "A byref typed value would be stored here. Top-level let-bound byref values are not permitted.")
         ]
         
-    // SOURCE=E_SpanUsedInInnerLambda01.fs SCFLAGS="--test:ErrorRanges"                   # E_SpanUsedInInnerLambda01.f
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda01.fs"|])>]
     let``E_SpanUsedInInnerLambda01_fs`` compilation =
         compilation
@@ -929,7 +927,6 @@ type outref<'T> with
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
         
-    // SOURCE=E_SpanUsedInInnerLambda02.fs SCFLAGS="--test:ErrorRanges"                   # E_SpanUsedInInnerLambda02.f
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda02.fs"|])>]
     let``E_SpanUsedInInnerLambda02_fs`` compilation =
         compilation
@@ -939,3 +936,4 @@ type outref<'T> with
         |> withDiagnostics [
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
+#endif
