@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed expressions for byrefs, inrefs, and GetPinnableReference</source>
-        <target state="new">extended fixed expressions for byrefs, inrefs, and GetPinnableReference</target>
+        <source>extended fixed bindings for byrefs, inrefs, and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byrefs, inrefs, and GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">

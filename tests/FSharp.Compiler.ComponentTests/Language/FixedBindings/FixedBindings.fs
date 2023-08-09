@@ -219,7 +219,7 @@ let pinIt (thing: byref<int>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -251,7 +251,7 @@ let pinIt (thing: inref<int>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -283,7 +283,7 @@ let pinIt (thing: outref<int>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -319,7 +319,7 @@ type Point() =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 8, Col 13, Line 8, Col 16, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 8, Col 13, Line 8, Col 16, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 8, Col 13, Line 8, Col 16, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -352,7 +352,7 @@ let pinIt () =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
 
 #if NETCOREAPP
@@ -386,7 +386,7 @@ let pinIt (thing: Span<char>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""");
-                        (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
 #endif
     
@@ -460,7 +460,7 @@ let pinIt (thing: RefField<'T>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")])
+                        (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")])
         
     [<Theory>]
     [<InlineData("7.0", false)>]
@@ -495,7 +495,7 @@ let pinIt (thing: RefField<'T>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -535,7 +535,7 @@ let pinIt (thing: RefField<'T>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 13, Col 9, Line 13, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+                        (Error 3350, Line 13, Col 9, Line 13, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
                     ])
         
     [<Theory>]
@@ -645,7 +645,7 @@ let pinIt (thing: RefField<'T>) =
                     |> shouldFail
                     |> withDiagnostics [
                         (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-                        (Error 3350, Line 11, Col 9, Line 11, Col 12, """Feature 'extended fixed expressions for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")]
+                        (Error 3350, Line 11, Col 9, Line 11, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")]
                 )
         
     [<Theory>]
