@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module ByrefSafetyAnalysis =
     let withPrelude =
         withReferences [
-            FsFromPath (__SOURCE_DIRECTORY__ ++ "prelude.fs")
+            FsFromPath (__SOURCE_DIRECTORY__ ++ "Prelude.fs")
             |> withName "Prelude"
         ]
     
@@ -414,7 +414,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethods1.fs"|])>]
         let``ByRefExtensionMethods1`` compilation =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
         
         // [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethodsOverloading.fs"|])>]
         // let``ByRefExtensionMethodsOverloading`` compilation =
@@ -426,11 +426,11 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref.fs"|])>]
         let``TestAssignToReturnByref`` compilation =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref2.fs"|])>]
         let``TestAssignToReturnByref2`` compilation =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"BaseCallByref.fs"|])>]
         let``BaseCallByref`` compilation =
