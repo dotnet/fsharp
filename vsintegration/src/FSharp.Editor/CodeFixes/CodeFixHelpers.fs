@@ -2,7 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Threading
+open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -13,11 +15,43 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+
 open CancellableTasks
+
+module internal UnusedCodeFixHelper =
+    let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
+        let ident = sourceText.ToString textSpan
+
+        // Prefixing operators and backticked identifiers does not make sense.
+        // We have to use the additional check for backticks
+        if PrettyNaming.IsIdentifierName ident then
+            cancellableTask {
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
+
+                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
+
+                return
+                    lexerSymbol
+                    |> Option.bind (fun symbol -> checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> ValueOption.ofOption
+                    |> ValueOption.bind (fun symbolUse ->
+                        match symbolUse.Symbol with
+                        | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> ValueSome symbolUse.Symbol
+                        | _ -> ValueNone)
+            }
+        else
+            CancellableTask.singleton ValueNone
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let private reportCodeFixTelemetry
+    let reportCodeFixTelemetry
         (diagnostics: ImmutableArray<Diagnostic>)
         (doc: Document)
         (staticName: string)
@@ -84,14 +118,14 @@ module internal CodeFixExtensions =
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
                 match! codeFix.GetCodeFixIfAppliesAsync ctx with
-                | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
-                | None -> ()
+                | ValueSome codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
+                | ValueNone -> ()
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
         member ctx.GetSourceTextAsync() =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 return! ctx.Document.GetTextAsync cancellationToken
             }
 
@@ -106,3 +140,62 @@ module internal CodeFixExtensions =
                 let! sourceText = ctx.GetSourceTextAsync()
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
             }
+
+// This cannot be an extension on the code fix context
+// because the underlying GetFixAllProvider method doesn't take the context in.
+#nowarn "3511" // state machine not statically compilable
+
+[<AutoOpen>]
+module IFSharpCodeFixProviderExtensions =
+    type IFSharpCodeFixProvider with
+
+        // this is not used anywhere, it's just needed to create the context
+        static member private Action =
+            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
+        member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
+            cancellableTask {
+                let sw = Stopwatch.StartNew()
+
+                let! token = CancellableTask.getCancellationToken ()
+                let! sourceText = doc.GetTextAsync token
+
+                let! codeFixOpts =
+                    allDiagnostics
+                    // The distiction is to avoid collisions of compiler and analyzer diags.
+                    // See: https://github.com/dotnet/fsharp/issues/15620
+                    // TODO: this crops the diags on a very high level,
+                    // a proper fix is needed.
+                    |> Seq.distinctBy (fun d -> d.Id, d.Location)
+                    |> Seq.map (fun diag ->
+                        let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
+                        provider.GetCodeFixIfAppliesAsync context)
+                    |> CancellableTask.whenAll
+
+                let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
+                let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
+                let updatedDoc = doc.WithText(sourceText.WithChanges changes)
+
+                let name =
+                    codeFixes
+                    |> Seq.tryHead
+                    |> Option.map (fun fix -> fix.Name)
+                    // Now, I cannot see this happening.
+                    // How could a bulk code fix get activated for zero changes?
+                    // But since that's for telemetry purposes,
+                    // let's be on the safe side.
+                    |> Option.defaultValue "UnknownCodeFix"
+
+                CodeFixHelpers.reportCodeFixTelemetry
+                    allDiagnostics
+                    updatedDoc
+                    name
+                    [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
+
+                return updatedDoc
+            }
+
+        member provider.RegisterFsharpFixAll() =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                provider.FixAllAsync fixAllCtx doc allDiagnostics
+                |> CancellableTask.start fixAllCtx.CancellationToken)

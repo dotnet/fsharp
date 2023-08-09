@@ -9,6 +9,8 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open System.Threading
 
 module GoToDefinitionServiceTests =
 
@@ -38,12 +40,13 @@ module GoToDefinitionServiceTests =
                     false,
                     false,
                     langVersion,
+                    None,
                     System.Threading.CancellationToken.None
                 )
 
             let _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (userOpName))
-                |> Async.RunSynchronously
+                |> CancellableTask.runSynchronouslyWithoutCancellation
 
             let declarations =
                 checkFileResults.GetDeclarationLocation(

@@ -23,7 +23,7 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
 
     static member GetBreakpointLocation(document: Document, textSpan: TextSpan) =
         cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let! sourceText = document.GetTextAsync(ct)
 

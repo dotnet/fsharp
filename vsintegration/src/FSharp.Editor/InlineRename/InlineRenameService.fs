@@ -21,6 +21,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open Symbols
+open CancellableTasks
 
 type internal InlineRenameReplacementInfo(newSolution: Solution, replacementTextValid: bool, documentIds: IEnumerable<DocumentId>) =
     inherit FSharpInlineRenameReplacementInfo()
@@ -172,6 +173,8 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameService))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! symbolUse =

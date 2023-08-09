@@ -42,6 +42,11 @@
         <target state="translated">chaîne interpolée (partie)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHILE.BANG">
+        <source>keyword 'while!'</source>
+        <target state="new">keyword 'while!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Voir aussi {0}.</target>

@@ -211,6 +211,8 @@ module internal List =
 
     val isSingleton: xs: 'T list -> bool
 
+    val prependIfSome: x: 'a option -> l: 'a list -> 'a list
+
 module internal ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

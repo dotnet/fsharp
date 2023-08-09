@@ -17,24 +17,47 @@ open FSharp.Editor.Tests.Helpers
 
 type TestCodeFix = { Message: string; FixedCode: string }
 
+type Mode =
+    | Auto
+    | WithOption of CustomProjectOption: string
+    | Manual of Squiggly: string * Number: int
+
+let inline toOption o =
+    match o with
+    | ValueSome v -> Some v
+    | _ -> None
+
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-let getRelevantDiagnostic (document: Document) errorNumber =
+let getDocument code mode =
+    match mode with
+    | Auto -> RoslynTestHelpers.GetFsDocument code
+    | WithOption option -> RoslynTestHelpers.GetFsDocument(code, option)
+    | Manual _ -> RoslynTestHelpers.GetFsDocument code
+
+let getRelevantDiagnostic (document: Document) =
     cancellableTask {
         let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync "test"
 
-        return
-            checkFileResults.Diagnostics
-            |> Seq.where (fun d -> d.ErrorNumber = errorNumber)
-            |> Seq.head
+        return checkFileResults.Diagnostics |> Seq.head
     }
 
-let createTestCodeFixContext (code: string) (document: Document) (diagnostic: FSharpDiagnostic) =
+let createTestCodeFixContext (code: string) document (mode: Mode) =
     cancellableTask {
-        let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+        let! cancellationToken = CancellableTask.getCancellationToken ()
 
         let sourceText = SourceText.From code
+
+        let! diagnostic =
+            match mode with
+            | Auto -> getRelevantDiagnostic document
+            | WithOption _ -> getRelevantDiagnostic document
+            | Manual (squiggly, number) ->
+                let spanStart = code.IndexOf squiggly
+                let span = TextSpan(spanStart, squiggly.Length)
+                let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+                CancellableTask.singleton (FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range))
 
         let location =
             RoslynHelpers.RangeToLocation(diagnostic.Range, sourceText, document.FilePath)
@@ -44,18 +67,18 @@ let createTestCodeFixContext (code: string) (document: Document) (diagnostic: FS
         return CodeFixContext(document, roslynDiagnostic, mockAction, cancellationToken)
     }
 
-let tryFix (code: string) diagnostic (fixProvider: IFSharpCodeFixProvider) =
+let tryFix (code: string) mode (fixProvider: IFSharpCodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
-        let document = RoslynTestHelpers.GetFsDocument code
+        let document = getDocument code mode
 
-        let! diagnostic = getRelevantDiagnostic document diagnostic
-        let! context = createTestCodeFixContext code document diagnostic
+        let! context = createTestCodeFixContext code document mode
 
         let! result = fixProvider.GetCodeFixIfAppliesAsync context
 
         return
             (result
+             |> toOption
              |> Option.map (fun codeFix ->
                  {
                      Message = codeFix.Message

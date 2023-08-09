@@ -4,13 +4,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Threading
 open System.Threading.Tasks
 open System.Collections.Immutable
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedBinding); Shared>]
 type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
@@ -18,54 +18,77 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
     static let title = SR.RemoveUnusedBinding()
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
-        backgroundTask {
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS1182"
 
-            let! sourceText = document.GetTextAsync(ct)
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof (RemoveUnusedBindingCodeFixProvider))
+    override this.RegisterCodeFixesAsync context =
+        if context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
+            context.RegisterFsharpFix this
+        else
+            Task.CompletedTask
 
-            let changes =
-                seq {
-                    for d in diagnostics do
-                        let textSpan = d.Location.SourceSpan
+    override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
-                        let symbolRange =
-                            RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! token = CancellableTask.getCancellationToken ()
 
-                        let spanOfBindingOpt =
-                            parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolRange.Start)
-                            |> Option.bind (fun rangeOfBinding -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding))
+                let! sourceText = context.Document.GetTextAsync token
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveUnusedBindingCodeFixProvider)
 
-                        match spanOfBindingOpt with
-                        | Some spanOfBinding ->
-                            let keywordEndColumn =
-                                let rec loop ch pos =
-                                    if not (Char.IsWhiteSpace(ch)) then
-                                        pos
-                                    else
-                                        loop sourceText.[pos - 1] (pos - 1)
+                let change =
+                    let bindingRangeOpt =
+                        RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+                        |> fun r -> parseResults.TryRangeOfBindingWithHeadPatternWithPos(r.Start)
 
-                                loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
+                    match bindingRangeOpt with
+                    | Some (Expression range) ->
+                        let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
 
-                            // This is safe, since we could never have gotten here unless there was a `let` or `use`
-                            let keywordStartColumn = keywordEndColumn - 2
-                            let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
+                        let keywordEndColumn =
+                            let rec loop ch pos =
+                                if not (Char.IsWhiteSpace(ch)) then
+                                    pos
+                                else
+                                    loop sourceText.[pos - 1] (pos - 1)
 
-                            yield TextChange(fullSpan, "")
-                        | None -> ()
-                }
+                            loop sourceText.[span.Start - 1] (span.Start - 1)
 
-            return changes
-        }
+                        let keywordStartColumn = keywordEndColumn - 2 // removes 'let' or 'use'
+                        let fullSpan = TextSpan(keywordStartColumn, span.End - keywordStartColumn)
 
-    override this.RegisterCodeFixesAsync ctx : Task =
-        backgroundTask {
-            if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
-                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
-                ctx.RegisterFsharpFix(CodeFix.RemoveUnusedBinding, title, changes)
-        }
+                        ValueSome(TextChange(fullSpan, ""))
 
-    override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedBinding this.GetChanges
+                    | Some (SelfId range) ->
+                        let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
+
+                        let rec findAs index (str: SourceText) =
+                            if str[index] <> ' ' then index else findAs (index - 1) str
+
+                        let rec findEqual index (str: SourceText) =
+                            if str[index] <> ' ' then
+                                index
+                            else
+                                findEqual (index + 1) str
+
+                        let asStart = findAs (span.Start - 1) sourceText - 1
+                        let equalStart = findEqual span.End sourceText
+
+                        let fullSpan = TextSpan(asStart, equalStart - asStart)
+
+                        ValueSome(TextChange(fullSpan, ""))
+
+                    | Some Member -> ValueNone
+
+                    | None -> ValueNone
+
+                return
+                    change
+                    |> ValueOption.map (fun change ->
+                        {
+                            Name = CodeFix.RemoveUnusedBinding
+                            Message = title
+                            Changes = [ change ]
+                        })
+            }

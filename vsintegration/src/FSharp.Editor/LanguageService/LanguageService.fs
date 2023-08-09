@@ -146,6 +146,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let captureIdentifiersWhenParsing =
                                 editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
 
+                            // Default is false here
+                            let solutionCrawler = editorOptions.Advanced.SolutionBackgroundAnalysis
+
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(
                                     TelemetryEvents.LanguageServiceStarted,
@@ -163,6 +166,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
                                         nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
+                                        nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
                                 )
@@ -190,7 +194,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
-                                        backgroundTask {
+                                        cancellableTask {
                                             let document = args.NewSolution.GetDocument(args.DocumentId)
 
                                             let! _, _, _, options =
@@ -198,6 +202,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                                             do! checker.NotifyFileChanged(document.FilePath, options)
                                         }
+                                        |> CancellableTask.startAsTask CancellationToken.None
                                         |> ignore)
 
                             checker
@@ -423,28 +428,23 @@ type internal FSharpLanguageService(package: FSharpPackage) =
     override _.Initialize() =
         base.Initialize()
 
-        let globalOptions =
-            package
-                .ComponentModel
-                .DefaultExportProvider
-                .GetExport<FSharpGlobalOptions>()
-                .Value
+        let exportProvider = package.ComponentModel.DefaultExportProvider
+        let globalOptions = exportProvider.GetExport<FSharpGlobalOptions>().Value
 
-        globalOptions.BlockForCompletionItems <- false
-        globalOptions.SetBackgroundAnalysisScope(openFilesOnly = true)
+        let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
 
-        let globalOptions =
-            package
-                .ComponentModel
-                .DefaultExportProvider
-                .GetExport<FSharpGlobalOptions>()
-                .Value
+        let solutionAnalysis =
+            workspace
+                .Services
+                .GetService<EditorOptions>()
+                .Advanced
+                .SolutionBackgroundAnalysis
+
+        globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
         globalOptions.BlockForCompletionItems <- false
 
-        let theme =
-            package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
-
+        let theme = exportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
     override _.ContentTypeName = FSharpConstants.FSharpContentTypeName
