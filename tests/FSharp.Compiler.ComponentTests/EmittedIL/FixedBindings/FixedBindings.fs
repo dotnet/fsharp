@@ -23,14 +23,7 @@ module Legacy =
         Assert.False(runtimeSupportsStringGetPinnableReference)
 #endif
         
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-let pinIt (str: string) =
-    use ptr = fixed str
-    NativePtr.get ptr 0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
@@ -102,14 +95,7 @@ let pinIt (str: string) =
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
     let ``Pin naked array`` langVersion = 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-let pinIt (arr: char[]) =
-    use ptr = fixed arr
-    NativePtr.get ptr 0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArray.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
@@ -156,20 +142,7 @@ let pinIt (arr: char[]) =
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
     let ``Pin address of record field`` langVersion = 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-type Point = { mutable X: int; mutable Y: int }
-
-let pinIt (thing: Point) =
-    use ptr = fixed &thing.X
-    NativePtr.get ptr 0
-    
-let p = { X = 10; Y = 20 }
-let xCopy = pinIt p
-if xCopy <> p.X then failwith "xCopy was not equal to X"
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfRecordField.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -200,24 +173,7 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
     let ``Pin address of explicit field on this`` langVersion = 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-type Point =
-    val mutable X: int
-    val mutable Y: int
-    
-    new(x: int, y: int) = { X = x; Y = y }
-    
-    member this.PinIt() =
-        use ptr = fixed &this.X
-        NativePtr.get ptr 0
-        
-let p = Point(10,20)
-let xCopy = p.PinIt()
-if xCopy <> p.X then failwith "xCopy was not equal to X"
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThis.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -250,18 +206,7 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
     let ``Pin address of array element`` langVersion =
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-let pinIt (arr: char[]) =
-    use ptr = fixed &arr[0]
-    NativePtr.get ptr 0
-    
-let x = [|'a';'b';'c'|]
-let y = pinIt x
-if y <> 'a' then failwithf "y did not equal first element of x"
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -293,18 +238,7 @@ if y <> 'a' then failwithf "y did not equal first element of x"
 module ExtendedFixedBindings =
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of parameter`` langVersion =
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-
-let pinIt (thing: byref<int>) =
-    use ptr = fixed &thing
-    NativePtr.get ptr 0
-    
-let mutable x = 42
-let xCopy = pinIt &x
-if x <> xCopy then failwith "xCopy was not the same as x" 
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfParameter.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -333,23 +267,7 @@ if x <> xCopy then failwith "xCopy was not the same as x"
         
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of local variable`` langVersion = 
-        FSharp """
-module FixedBindings
-open System.Runtime.CompilerServices
-open Microsoft.FSharp.NativeInterop
-
-[<MethodImpl(MethodImplOptions.NoInlining)>]
-let fail () =
-    failwith "thingCopy was not the same as thing"
-
-let pinIt (x: int) =
-    let mutable thing = x + 1
-    use ptr = fixed &thing
-    let thingCopy = NativePtr.get ptr 0
-    if thingCopy <> thing then fail ()
-    
-pinIt 100
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfLocalVariable.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -394,22 +312,7 @@ pinIt 100
 #if NETCOREAPP
     [<Theory; InlineData("preview")>]
     let ``Pin Span via manual GetPinnableReference call`` langVersion =
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System
-
-let pinIt (thing: Span<char>) =
-    use ptr = fixed &thing.GetPinnableReference()
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let span = Span("The quick brown fox jumped over the lazy dog".ToCharArray())
-    let x = pinIt span
-    if x <> 'T' then failwith "x did not equal the first char of the span"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinSpanWithManualGetPinnableReferenceCall.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -439,22 +342,7 @@ let main _ =
         
     [<Theory; InlineData("preview")>]
     let ``Pin Span`` langVersion =
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System
-
-let pinIt (thing: Span<char>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let span = Span("The quick brown fox jumped over the lazy dog".ToCharArray())
-    let x = pinIt span
-    if x <> 'T' then failwith "x did not equal the first char of the span"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinSpan.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -484,22 +372,7 @@ let main _ =
         
     [<Theory; InlineData("preview")>]
     let ``Pin generic ReadOnlySpan`` langVersion =
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System
-
-let pinIt (thing: ReadOnlySpan<'a>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let span = ReadOnlySpan("The quick brown fox jumped over the lazy dog".ToCharArray())
-    let x = pinIt span
-    if x <> 'T' then failwith "x did not equal the first char of the span"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinGenericReadOnlySpan.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -532,35 +405,13 @@ let main _ =
         
     [<Theory; InlineData("preview")>]
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion = 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System.Runtime.CompilerServices
-open System
-
-type RefField<'T>(_value) =
-    let mutable _value = _value
-    member this.Value = _value
-    [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.GetPinnableReference () : byref<'T> = &_value
-
-let pinIt (thing: RefField<int>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let x = RefField(42)
-    let y = pinIt x
-    if y <> x.Value then failwith "y did not equal x value"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static int32  pinIt(class FixedBindings/RefField`1<int32> thing) cil managed
+  .method public static int32  pinIt(class FixedExpressions/RefField`1<int32> thing) cil managed
   {
     
     .maxstack  5
@@ -570,7 +421,7 @@ let main _ =
     IL_0001:  brfalse.s  IL_000e
 
     IL_0003:  ldarg.0
-    IL_0004:  callvirt   instance !0& class FixedBindings/RefField`1<int32>::GetPinnableReference()
+    IL_0004:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
     IL_0009:  stloc.1
     IL_000a:  ldloc.1
     IL_000b:  conv.i
@@ -590,29 +441,7 @@ let main _ =
         
     [<Theory; InlineData("preview")>]
     let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion = 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System.Runtime.CompilerServices
-open System
-
-type ReadonlyRefField<'T>(_value) =
-    let mutable _value = _value
-    member this.Value = _value
-    [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.GetPinnableReference () : inref<'T> = &_value
-
-let pinIt (thing: ReadonlyRefField<int>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let x = ReadonlyRefField(42)
-    let y = pinIt x
-    if y <> x.Value then failwith "y did not equal x value"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningInref.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -649,36 +478,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
-        FSharp """
-module FixedBindings
-open System.Runtime.CompilerServices
-open Microsoft.FSharp.NativeInterop
-open System
-
-[<Struct; IsByRefLike>]
-type ArrayElementRef<'T> =
-    private { Values: 'T[]; Index: int }
-    
-    static member Create(values: 'T[], index) =
-        if index > values.Length then
-            raise (ArgumentOutOfRangeException(nameof(index), ""))
-        { Values = values; Index = index }
-    member this.Value = this.Values[this.Index]
-    [<MethodImpl(MethodImplOptions.NoInlining)>]
-    member this.GetPinnableReference () : byref<'T> = &this.Values[this.Index]
-
-let pinIt (thing: ArrayElementRef<'a>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-
-[<EntryPoint>]
-let main _ =
-    let arr = [|'a';'b';'c'|]
-    let x = ArrayElementRef.Create(arr, 1)
-    let y = pinIt x
-    if y <> x.Value then failwith "y did not equal x value"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinStructTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
@@ -711,45 +511,9 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         let csLib =
-            CSharp """
-public class PinnableReference<T>
-{
-    private T _value;
-
-    public T Value
-    {
-        get => _value;
-        set => _value = value;
-    }
-
-    public PinnableReference(T value)
-    {
-        this._value = value;
-    }
-
-    public ref T GetPinnableReference()
-    {
-        return ref _value;
-    }
-}
-"""         |> withName "CsLib"
+            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpTypeWithGetPinnableReferenceReturningByref.cs") |> withName "CsLib"
         
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System
-
-let pinIt (thing: PinnableReference<int>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let x = PinnableReference(42)
-    let y = pinIt x
-    if y <> x.Value then failwith "y did not equal x value"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
@@ -790,48 +554,11 @@ let main _ =
         // TODO: Could be a good idea to test a version of this type written in F# too once we get ref fields in byref-like structs:
         // https://github.com/fsharp/fslang-suggestions/issues/1143
         let csLib =
-            CSharp """
-namespace CsLib
-{
-    public ref struct RefField<T>
-    {
-        private readonly ref T _value;
-
-        public T Value
-        {
-            get => _value;
-            set => _value = value;
-        }
-
-        public RefField(ref T value)
-        {
-            this._value = ref value;
-        }
-
-        public ref T GetPinnableReference() => ref _value;
-    }
-}
-
-"""         |> withName "CsLib"
+            CSharpFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpByrefStructTypeWithGetPinnableReferenceReturningByref.cs")
+            |> withName "CsLib"
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
-        FSharp """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open CsLib
-
-let pinIt (refField: RefField<int>) =
-    use ptr = fixed refField
-    NativePtr.get ptr 0
-
-[<EntryPoint>]
-let main _ =
-    let mutable x = 42
-    let refToX = new RefField<_>(&x)
-    let y = pinIt refToX
-    if y <> x then failwith "y did not equal x"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpByrefStructTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withReferences [csLib]
         |> withOptions ["--nowarn:9"]
@@ -860,33 +587,10 @@ let main _ =
     IL_001b:  ret
   } """ ]
 #endif
-        
+    
     [<Theory; InlineData("preview")>]
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
-        Fsx """
-module FixedBindings
-open Microsoft.FSharp.NativeInterop
-open System.Runtime.CompilerServices
-
-type RefField<'T> = { mutable _value: 'T }
-
-[<Extension>]
-type RefFieldExtensions =
-    [<Extension; MethodImpl(MethodImplOptions.NoInlining)>]
-    static member GetPinnableReference(refField: RefField<'T>) : byref<'T> = &refField._value 
-
-let pinIt (thing: RefField<'T>) =
-    use ptr = fixed thing
-    NativePtr.get ptr 0
-    
-[<EntryPoint>]
-let main _ =
-    let mutable x = 42
-    let refToX = { _value = x }
-    let y = pinIt refToX
-    if y <> x then failwith "y did not equal x"
-    0
-"""
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithExtensionGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
