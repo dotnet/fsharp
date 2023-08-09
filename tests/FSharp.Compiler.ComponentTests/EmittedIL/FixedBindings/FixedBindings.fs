@@ -24,7 +24,7 @@ module Legacy =
 #endif
         
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 let pinIt (str: string) =
@@ -103,7 +103,7 @@ let pinIt (str: string) =
     [<InlineData("preview")>]
     let ``Pin naked array`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 let pinIt (arr: char[]) =
@@ -157,7 +157,7 @@ let pinIt (arr: char[]) =
     [<InlineData("preview")>]
     let ``Pin address of record field`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 type Point = { mutable X: int; mutable Y: int }
@@ -174,14 +174,14 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
         |> withOptions ["--nowarn:9"]
         |> compileExeAndRun
         |> verifyIL ["""
-  .method public static int32  pinIt(class FixedExpressions/Point thing) cil managed
+  .method public static int32  pinIt(class FixedBindings/Point thing) cil managed
   {
     
     .maxstack  5
     .locals init (native int V_0,
              int32& pinned V_1)
     IL_0000:  ldarg.0
-    IL_0001:  ldflda     int32 FixedExpressions/Point::X@
+    IL_0001:  ldflda     int32 FixedBindings/Point::X@
     IL_0006:  stloc.1
     IL_0007:  ldloc.1
     IL_0008:  conv.i
@@ -201,7 +201,7 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
     [<InlineData("preview")>]
     let ``Pin address of explicit field on this`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 type Point =
@@ -231,7 +231,7 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
       .locals init (native int V_0,
                int32& pinned V_1)
       IL_0000:  ldarg.0
-      IL_0001:  ldflda     int32 FixedExpressions/Point::X
+      IL_0001:  ldflda     int32 FixedBindings/Point::X
       IL_0006:  stloc.1
       IL_0007:  ldloc.1
       IL_0008:  conv.i
@@ -251,7 +251,7 @@ if xCopy <> p.X then failwith "xCopy was not equal to X"
     [<InlineData("preview")>]
     let ``Pin address of array element`` langVersion =
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 let pinIt (arr: char[]) =
@@ -290,11 +290,11 @@ if y <> 'a' then failwithf "y did not equal first element of x"
     IL_001b:  ret
   } """ ]
         
-module ExtendedFixedExpressions =
+module ExtendedFixedBindings =
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of parameter`` langVersion =
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 
 let pinIt (thing: byref<int>) =
@@ -334,7 +334,7 @@ if x <> xCopy then failwith "xCopy was not the same as x"
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of local variable`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
 
@@ -384,7 +384,7 @@ pinIt 100
     IL_001d:  ldloc.0
     IL_001e:  beq.s      IL_0027
 
-    IL_0020:  call       !!0 FixedExpressions::fail<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
+    IL_0020:  call       !!0 FixedBindings::fail<class [FSharp.Core]Microsoft.FSharp.Core.Unit>()
     IL_0025:  pop
     IL_0026:  ret
 
@@ -395,7 +395,7 @@ pinIt 100
     [<Theory; InlineData("preview")>]
     let ``Pin Span via manual GetPinnableReference call`` langVersion =
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System
 
@@ -440,7 +440,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin Span`` langVersion =
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System
 
@@ -485,7 +485,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin generic ReadOnlySpan`` langVersion =
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System
 
@@ -533,7 +533,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System.Runtime.CompilerServices
 open System
@@ -560,7 +560,7 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static int32  pinIt(class FixedExpressions/RefField`1<int32> thing) cil managed
+  .method public static int32  pinIt(class FixedBindings/RefField`1<int32> thing) cil managed
   {
     
     .maxstack  5
@@ -570,7 +570,7 @@ let main _ =
     IL_0001:  brfalse.s  IL_000e
 
     IL_0003:  ldarg.0
-    IL_0004:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
+    IL_0004:  callvirt   instance !0& class FixedBindings/RefField`1<int32>::GetPinnableReference()
     IL_0009:  stloc.1
     IL_000a:  ldloc.1
     IL_000b:  conv.i
@@ -591,7 +591,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion = 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System.Runtime.CompilerServices
 open System
@@ -618,7 +618,7 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static int32  pinIt(class FixedExpressions/ReadonlyRefField`1<int32> thing) cil managed
+  .method public static int32  pinIt(class FixedBindings/ReadonlyRefField`1<int32> thing) cil managed
   {
     
     .maxstack  5
@@ -628,7 +628,7 @@ let main _ =
     IL_0001:  brfalse.s  IL_000e
 
     IL_0003:  ldarg.0
-    IL_0004:  callvirt   instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) class FixedExpressions/ReadonlyRefField`1<int32>::GetPinnableReference()
+    IL_0004:  callvirt   instance !0& modreq([runtime]System.Runtime.InteropServices.InAttribute) class FixedBindings/ReadonlyRefField`1<int32>::GetPinnableReference()
     IL_0009:  stloc.1
     IL_000a:  ldloc.1
     IL_000b:  conv.i
@@ -650,7 +650,7 @@ let main _ =
     let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.NativeInterop
 open System
@@ -684,7 +684,7 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype FixedExpressions/ArrayElementRef`1<!!a> thing) cil managed
+  .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype FixedBindings/ArrayElementRef`1<!!a> thing) cil managed
   {
     .param type a 
       .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -693,7 +693,7 @@ let main _ =
     .locals init (native int V_0,
              !!a& pinned V_1)
     IL_0000:  ldarga.s   thing
-    IL_0002:  call       instance !0& valuetype FixedExpressions/ArrayElementRef`1<!!a>::GetPinnableReference()
+    IL_0002:  call       instance !0& valuetype FixedBindings/ArrayElementRef`1<!!a>::GetPinnableReference()
     IL_0007:  stloc.1
     IL_0008:  ldloc.1
     IL_0009:  conv.i
@@ -735,7 +735,7 @@ public class PinnableReference<T>
 """         |> withName "CsLib"
         
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System
 
@@ -816,7 +816,7 @@ namespace CsLib
             |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
 
         FSharp """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open CsLib
 
@@ -864,7 +864,7 @@ let main _ =
     [<Theory; InlineData("preview")>]
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         Fsx """
-module FixedExpressions
+module FixedBindings
 open Microsoft.FSharp.NativeInterop
 open System.Runtime.CompilerServices
 
@@ -892,7 +892,7 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
-  .method public static !!a  pinIt<T,valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(class FixedExpressions/RefField`1<!!T> thing) cil managed
+  .method public static !!a  pinIt<T,valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(class FixedBindings/RefField`1<!!T> thing) cil managed
   {
     .param type a 
       .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -904,7 +904,7 @@ let main _ =
     IL_0001:  brfalse.s  IL_000e
 
     IL_0003:  ldarg.0
-    IL_0004:  call       !!0& FixedExpressions/RefFieldExtensions::GetPinnableReference<!!1>(class FixedExpressions/RefField`1<!!0>)
+    IL_0004:  call       !!0& FixedBindings/RefFieldExtensions::GetPinnableReference<!!1>(class FixedBindings/RefField`1<!!0>)
     IL_0009:  stloc.1
     IL_000a:  ldloc.1
     IL_000b:  conv.i
