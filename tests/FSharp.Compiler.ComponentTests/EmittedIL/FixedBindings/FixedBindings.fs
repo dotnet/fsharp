@@ -1,4 +1,4 @@
-namespace EmittedIL.FixedExpressionTests
+namespace EmittedIL.FixedBindings
 
 open System.Reflection
 open Xunit

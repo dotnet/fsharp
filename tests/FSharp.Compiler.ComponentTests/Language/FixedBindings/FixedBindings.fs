@@ -1,4 +1,4 @@
-namespace Language.FixedExpressionTests
+namespace Language.FixedBindings
 
 open Xunit
 open FSharp.Test.Compiler
@@ -189,8 +189,8 @@ let pinIt<'a when 'a : unmanaged> (thing: 'a) =
             (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
 
-// FS-1081 - Extend fixed expressions
-module ExtendedFixedExpressions =
+// FS-1081 - Extend fixed bindings
+module ExtendedFixedBindings =
     [<Theory>]
     [<InlineData("7.0", false)>]
     [<InlineData("preview", true)>]
