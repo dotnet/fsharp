@@ -1,20 +1,21 @@
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/xunit.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
+#load "FsUnit.fs"
+#load "Common.fs"
 #else
 module Tests.Service.ServiceUntypedParseTests
 #endif
 
 open System.IO
-open FSharp.Test
+open FsUnit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
-open Xunit
-open Assert
+open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
 
@@ -48,23 +49,22 @@ let private assertCompletionContext (checker: CompletionContext option -> bool) 
             failwithf "Completion context '%A' was not expected" actual
 
 module AttributeCompletion =
-    [<Fact>]
+    [<Test>]
     let ``at [<|, applied to nothing``() =
         """
 [<(* marker *)
 """  
         |> assertCompletionContext (fun x -> x = Some CompletionContext.AttributeApplication)
 
-    [<Theory>]
-    [<InlineData ("[<(* marker *)", true)>]
-    [<InlineData ("[<AnAttr(* marker *)", true)>]
-    [<InlineData ("[<type:(* marker *)", true)>]
-    [<InlineData ("[<type:AnAttr(* marker *)", true)>]
-    [<InlineData ("[< (* marker *)", true)>]
-    [<InlineData ("[<AnAttribute;(* marker *)", true)>]
-    [<InlineData ("[<AnAttribute; (* marker *)", true)>]
-    [<InlineData ("[<AnAttribute>][<(* marker *)", true)>]
-    [<InlineData ("[<AnAttribute>][< (* marker *)", true)>]
+    [<TestCase ("[<(* marker *)", true)>]
+    [<TestCase ("[<AnAttr(* marker *)", true)>]
+    [<TestCase ("[<type:(* marker *)", true)>]
+    [<TestCase ("[<type:AnAttr(* marker *)", true)>]
+    [<TestCase ("[< (* marker *)", true)>]
+    [<TestCase ("[<AnAttribute;(* marker *)", true)>]
+    [<TestCase ("[<AnAttribute; (* marker *)", true)>]
+    [<TestCase ("[<AnAttribute>][<(* marker *)", true)>]
+    [<TestCase ("[<AnAttribute>][< (* marker *)", true)>]
     let ``incomplete``(lineStr: string, expectAttributeApplicationContext: bool) =
         let code = $"""
 {lineStr}
@@ -73,18 +73,17 @@ type T =
 """
         code |> assertCompletionContext (fun x -> x = (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None))
 
-    [<Theory>]
-    [<InlineData ("[<(* marker *)>]", true)>]
-    [<InlineData ("[<AnAttr(* marker *)>]", true)>]
-    [<InlineData ("[<type:(* marker *)>]", true)>]
-    [<InlineData ("[<type:AnAttr(* marker *)>]", true)>]
-    [<InlineData ("[< (* marker *)>]", true)>]
-    [<InlineData ("[<AnAttribute>][<(* marker *)>]", true)>]
-    [<InlineData ("[<AnAttribute>][< (* marker *)>]", true)>]
-    [<InlineData ("[<AnAttribute;(* marker *)>]", true)>]
-    [<InlineData ("[<AnAttribute; (* marker *) >]", true)>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute;(* marker *)>]", true)>]
-    [<InlineData ("[<AnAttribute (* marker *) >]", false)>]
+    [<TestCase ("[<(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttr(* marker *)>]", true)>]
+    [<TestCase ("[<type:(* marker *)>]", true)>]
+    [<TestCase ("[<type:AnAttr(* marker *)>]", true)>]
+    [<TestCase ("[< (* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute>][<(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute>][< (* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute;(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute; (* marker *) >]", true)>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute;(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute (* marker *) >]", false)>]
     let ``complete``(lineStr: string, expectAttributeApplicationContext: bool) =
         let code = $"""
 {lineStr}
@@ -94,11 +93,10 @@ type T =
         code |> assertCompletionContext (fun x -> x = (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None))
 
 module AttributeConstructorCompletion =
-    [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute( (* marker *)")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)")>]
+    [<TestCase ("[<AnAttribute((* marker *)")>]
+    [<TestCase ("[<AnAttribute( (* marker *)")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)")>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)")>]
     let ``incomplete``(lineStr: string) =
         let code = $"""
 {lineStr}
@@ -107,12 +105,11 @@ type T =
 """
         code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
-    [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute( (* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute; AnAttribute( (* marker *)>]")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]")>]
     let ``complete``(lineStr: string) =
         let code = $"""
 {lineStr}
@@ -121,7 +118,7 @@ type T =
 """
         code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
-[<Fact>]
+[<Test>]
 let ``Attribute lists`` () =
     let source = """
 [<A>]
@@ -192,7 +189,7 @@ let rec getParenTypes (synType: SynType): SynType list =
 
       | _ -> () ]
 
-[<Fact>]
+[<Test>]
 let ``SynType.Paren ranges`` () =
     let source = """
 ((): int * (int * int))
@@ -222,7 +219,7 @@ module TypeMemberRanges =
         | _ -> failwith "Could not get member"
 
     
-    [<Fact>]
+    [<Test>]
     let ``Member range 01 - Simple``() =
         let source = """
 type T =
@@ -231,7 +228,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 23) ]
 
     
-    [<Fact>]
+    [<Test>]
     let ``Member range 02 - Static``() =
         let source = """
 type T =
@@ -240,7 +237,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 28) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 03 - Attribute``() =
         let source = """
 type T =
@@ -250,7 +247,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (4, 28) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 04 - Property``() =
         let source = """
 type T =
@@ -259,7 +256,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 19) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 05 - Setter only property``() =
         let source = """
 type T =
@@ -268,7 +265,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 44) ]
 
     
-    [<Fact>]
+    [<Test>]
     let ``Member range 06 - Read-write property``() =
         let source = """
 type T =
@@ -279,7 +276,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 07 - Auto property``() =
         let source = """
 type T =
@@ -288,7 +285,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 08 - Auto property with setter``() =
         let source = """
 type T =
@@ -297,7 +294,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
 
     
-    [<Fact>]
+    [<Test>]
     let ``Member range 09 - Abstract slot``() =
         let source = """
 type T =
@@ -307,7 +304,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 19)
                                                    (4, 4), (4, 28) ]
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 10 - Val field``() =
         let source = """
 type T =
@@ -316,7 +313,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 14) ]
 
 
-    [<Fact>]
+    [<Test>]
     let ``Member range 11 - Ctor``() =
         let source = """
 type T =
@@ -325,7 +322,7 @@ type T =
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
 
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfRefCellDereferenceContainingPos - simple``() =
     let source = """
 let x = false
@@ -340,9 +337,9 @@ let y = !x
         |> fst
         |> shouldEqual (3, 8)
     | None ->
-        failwith "No deref operator found in source."
+        Assert.Fail("No deref operator found in source.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfRefCellDereferenceContainingPos - parens``() =
     let source = """
 let x = false
@@ -357,10 +354,10 @@ let y = !(x)
         |> fst
         |> shouldEqual (3, 8)
     | None ->
-        failwith "No deref operator found in source."
+        Assert.Fail("No deref operator found in source.")
 
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfRefCellDereferenceContainingPos - binary expr``() =
     let source = """
 let x = false
@@ -375,9 +372,9 @@ let y = !(x = false)
         |> fst
         |> shouldEqual (3, 8)
     | None ->
-        failwith "No deref operator found in source."
+        Assert.Fail("No deref operator found in source.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfRecordExpressionContainingPos - contained``() =
     let source = """
 let x = { Name = "Hello" }
@@ -390,9 +387,9 @@ let x = { Name = "Hello" }
         |> tups
         |> shouldEqual ((2, 8), (2, 26))
     | None ->
-        failwith "No range of record found in source."
+        Assert.Fail("No range of record found in source.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfRecordExpressionContainingPos - not contained``() =
     let source = """
 let x = { Name = "Hello" }
@@ -403,7 +400,7 @@ let x = { Name = "Hello" }
 
 module FunctionApplicationArguments =
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - Single arg``() =
         let source = """
 let f x = ()
@@ -417,9 +414,9 @@ f 12
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 2)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - Multi arg``() =
         let source = """
 let f x y z = ()
@@ -433,9 +430,9 @@ f 1 2 3
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 2); (3, 4); (3, 6)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - Multi arg parentheses``() =
         let source = """
 let f x y z = ()
@@ -449,9 +446,9 @@ f (1) (2) (3)
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 2); (3, 6); (3, 10)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - Multi arg nested parentheses``() =
         let source = """
 let f x y z = ()
@@ -465,9 +462,9 @@ f ((1)) (((2))) ((((3))))
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 3); (3, 10); (3, 19)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - unit``() =
         let source = """
 let f () = ()
@@ -475,9 +472,9 @@ f ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPosition (mkPos 3 0)
-        Assert.True(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
+        Assert.IsTrue(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - curried function``() =
         let source = """
 let f x y = x + y
@@ -491,9 +488,9 @@ f 12
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 2)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - tuple value``() =
         let source = """
 let f (t: int * int) = ()
@@ -508,9 +505,9 @@ f t
             |> List.map (tups >> fst)
             |> shouldEqual [(4, 2)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - tuple literal``() =
         let source = """
 let f (t: int * int) = ()
@@ -524,9 +521,9 @@ f (1, 2)
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 3); (3, 6)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - tuple value with definition that has explicit names``() =
         let source = """
 let f ((x, y): int * int) = ()
@@ -541,9 +538,9 @@ f t
             |> List.map (tups >> fst)
             |> shouldEqual [(4, 2)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - tuple literal inside parens``() =
         let source = """
 let f (x, y) = ()
@@ -557,9 +554,9 @@ f ((1, 2))
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 4); (3, 7)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - tuples with elements as arguments``() =
         let source = """
 let f (a, b) = ()
@@ -573,9 +570,9 @@ f (1, 2)
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 3); (3, 6)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - top-level arguments with nested function call``() =
         let source = """
 let f x y = x + y
@@ -589,9 +586,9 @@ f (f 1 2) 3
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 2); (3, 10)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - nested function argument positions``() =
         let source = """
 let f x y = x + y
@@ -605,9 +602,9 @@ f (f 1 2) 3
             |> List.map (tups >> fst)
             |> shouldEqual [(3, 5); (3, 7)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - nested function application in infix expression``() =
         let source = """
 let addStr x y = string x + y
@@ -620,9 +617,9 @@ let addStr x y = string x + y
             |> List.map (tups >> fst)
             |> shouldEqual [(2, 24)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - nested function application outside of infix expression``() =
         let source = """
 let addStr x y = x + string y
@@ -635,9 +632,9 @@ let addStr x y = x + string y
             |> List.map (tups >> fst)
             |> shouldEqual [(2, 28)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``GetAllArgumentsForFunctionApplicationAtPosition - nested function applications both inside and outside of infix expression``() =
         let source = """
 let addStr x y = string x + string y
@@ -650,7 +647,7 @@ let addStr x y = string x + string y
             |> List.map (tups >> fst)
             |> shouldEqual [(2, 24)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
         
         let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPosition (mkPos 2 28)
@@ -660,9 +657,9 @@ let addStr x y = string x + string y
             |> List.map (tups >> fst)
             |> shouldEqual [(2, 35)]
         | None ->
-            failwith "No arguments found in source code"
+            Assert.Fail("No arguments found in source code")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - no``() =
         let source = """
 sqrt x
@@ -671,7 +668,7 @@ sqrt x
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 2), "Pos should not be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - yes, single arg``() =
         let source = """
 sqrt x
@@ -679,7 +676,7 @@ sqrt x
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - yes, multi arg``() =
         let source = """
 let add2 x y = x + y
@@ -688,7 +685,7 @@ add2 x y
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "Pos should be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - inside computation expression - no``() =
         let source = """
 async {
@@ -698,7 +695,7 @@ async {
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - inside CE return - no``() =
         let source = """
 async {
@@ -708,7 +705,7 @@ async {
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - inside CE - yes``() =
         let source = """
 let myAdd x y = x + y
@@ -719,7 +716,7 @@ async {
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 18), "Pos should not be in application")
 
-    [<Fact>]
+    [<Test>]
     let ``IsPosContainedInApplication - inside type application``() =
         let source = """
 let f<'x> x = ()
@@ -728,7 +725,7 @@ f<int>
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "A type application is an application, expected True.")
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
         let source = """
 let add2 x y = x + y
@@ -737,9 +734,9 @@ add2 x y
 """
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 2)
-        Assert.True(res.IsNone, "Not in a function application but got one")
+        Assert.IsTrue(res.IsNone, "Not in a function application but got one")
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - single arg application``() =
         let source = """
 sqrt 12.0
@@ -747,13 +744,13 @@ sqrt 12.0
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 9)
         match res with
-        | None -> failwith "Expected 'sqrt' but got nothing"
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((2, 0), (2, 4))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application``() =
         let source = """
 let f x y z = ()
@@ -762,13 +759,13 @@ f 1 2 3
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
         match res with
-        | None -> failwith "Expected 'f' but got nothing"
+        | None -> Assert.Fail("Expected 'f' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 0), (3, 1))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application but at function itself``() =
         let source = """
 let f x y z = ()
@@ -777,13 +774,13 @@ f 1 2 3
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 1)
         match res with
-        | None -> failwith "Expected 'f' but got nothing"
+        | None -> Assert.Fail("Expected 'f' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 0), (3, 1))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in pipeline``() =
         let source = """
 [1..10] |> List.map id
@@ -791,13 +788,13 @@ f 1 2 3
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 20)
         match res with
-        | None -> failwith "Expected 'List.map' but got nothing"
+        | None -> Assert.Fail("Expected 'List.map' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((2, 11), (2, 19))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline``() =
         let source = """
 [1..10]
@@ -807,13 +804,13 @@ f 1 2 3
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 14)
         match res with
-        | None -> failwith "Expected 'List.filter' but got nothing"
+        | None -> Assert.Fail("Expected 'List.filter' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 3), (3, 14))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline, no qualification``() =
         let source = """
 [1..10]
@@ -822,13 +819,13 @@ f 1 2 3
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
         match res with
-        | None -> failwith "Expected 'id' but got nothing"
+        | None -> Assert.Fail("Expected 'id' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 3), (3, 5))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - incomplete infix app``() =
         let source = """
 let add2 x y = x + y
@@ -838,13 +835,13 @@ add2 1 2
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 18)
         match res with
-        | None -> failwith "Expected '*' but got nothing"
+        | None -> Assert.Fail("Expected '*' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 17), (3, 18))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =
         let source = """
 let myAdd x y = x + y
@@ -855,13 +852,13 @@ async {
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 18)
         match res with
-        | None -> failwith "Expected 'myAdd' but got nothing"
+        | None -> Assert.Fail("Expected 'myAdd' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((4, 11), (4, 16))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - binding``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -875,13 +872,13 @@ let mapped =
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 21)
         match res with
-        | None -> failwith "Expected 'add' but got nothing"
+        | None -> Assert.Fail("Expected 'add' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((6, 18), (6, 21))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - if expression``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -899,13 +896,13 @@ let mapped =
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 7 15)
         match res with
-        | None -> failwith "Expected 'add' but got nothing"
+        | None -> Assert.Fail("Expected 'add' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((7, 12), (7, 15))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expression``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -923,13 +920,13 @@ let mapped =
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 7 15)
         match res with
-        | None -> failwith "Expected 'add' but got nothing"
+        | None -> Assert.Fail("Expected 'add' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((7, 12), (7, 15))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match expr``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -947,13 +944,13 @@ let mapped =
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 9 21)
         match res with
-        | None -> failwith "Expected 'add' but got nothing"
+        | None -> Assert.Fail("Expected 'add' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((9, 18), (9, 21))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside lambda - match case``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -971,13 +968,13 @@ let mapped =
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 11 22)
         match res with
-        | None -> failwith "Expected 'add' but got nothing"
+        | None -> Assert.Fail("Expected 'add' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((11, 19), (11, 22))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call``() =
         let source = """
 type C() = static member Yeet(x, y, z) = ()
@@ -986,13 +983,13 @@ C.Yeet(1, 2, sqrt)
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 17)
         match res with
-        | None -> failwith "Expected 'sqrt' but got nothing"
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 13), (3, 17))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - inside method call - parenthesized lambda``() =
         let source = """
 type C() = static member Yeet(x, y, z) = ()
@@ -1001,13 +998,13 @@ C.Yeet(1, 2, (fun x -> sqrt))
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 27)
         match res with
-        | None -> failwith "Expected 'sqrt' but got nothing"
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 23), (3, 27))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - generic-typed app``() =
         let source = """
 let f<'x> x = ()
@@ -1016,13 +1013,13 @@ f<int>
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 6)
         match res with
-        | None -> failwith "Expected 'f' but got nothing"
+        | None -> Assert.Fail("Expected 'f' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((3, 0), (3, 1))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a list that is used as an argument - Sequential and ArrayOrListComputed``() =
         let source = """
 let test () = div [] [
@@ -1036,13 +1033,13 @@ let test () = div [] [
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 5 15)
         match res with
-        | None -> failwith "Expected 'ofInt' but got nothing"
+        | None -> Assert.Fail("Expected 'ofInt' but got nothing")
         | Some range ->
             range
             |> tups
             |> shouldEqual ((5, 8), (5, 13))
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - yielding in a list that is used as an argument, after semicolon - Sequential and ComputationExpr``() =
         let source = """
 let div props children = ()
@@ -1058,7 +1055,7 @@ let test () = div [] [
         // Once this particular case is implemented, the expected result should be the range of `div`
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - yielding in a list that is used as an argument, after newline and semicolon - Sequential and ComputationExpr``() =
         let source = """
 let div props children = ()
@@ -1075,7 +1072,7 @@ let test () = div [] [
         // Once this particular case is implemented, the expected result should be the range of `div`
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
-    [<Fact>]
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a sequence that is used as an argument - Sequential and ComputationExpr``() =
         let source = """
 seq { 5; int "6" } |> Seq.sum
@@ -1083,7 +1080,7 @@ seq { 5; int "6" } |> Seq.sum
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 14)
         match res with
-        | None -> failwith "Expected 'int' but got nothing"
+        | None -> Assert.Fail("Expected 'int' but got nothing")
         | Some range ->
             range
             |> tups
@@ -1091,7 +1088,7 @@ seq { 5; int "6" } |> Seq.sum
 
 
 module PipelinesAndArgs =
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
         let source = """
 let f x = ()
@@ -1101,7 +1098,7 @@ f 12
         let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 3 0)
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, but infix app``() =
         let source = """
 let square x = x * 
@@ -1110,7 +1107,7 @@ let square x = x *
         let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 18)
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Single pipeline``() =
         let source = """
 [1..10] |> List.map 
@@ -1122,9 +1119,9 @@ let square x = x *
             (ident.idText, numArgs)
             |> shouldEqual ("op_PipeRight", 1)
         | None ->
-            failwith "No pipeline found"
+            Assert.Fail("No pipeline found")
                 
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Double pipeline``() =
         let source = """
 ([1..10], 1) ||> List.fold
@@ -1136,9 +1133,9 @@ let square x = x *
             (ident.idText, numArgs)
             |> shouldEqual ("op_PipeRight2", 2)
         | None ->
-            failwith "No pipeline found"
+            Assert.Fail("No pipeline found")
 
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Triple pipeline``() =
         let source = """
 ([1..10], [1..10], 3) |||> List.fold2
@@ -1150,9 +1147,9 @@ let square x = x *
             (ident.idText, numArgs)
             |> shouldEqual ("op_PipeRight3", 3)
         | None ->
-            failwith "No pipeline found"
+            Assert.Fail("No pipeline found")
 
-    [<Fact>]
+    [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - none when inside lambda``() =
         let source = """
 let add n1 n2 = n1 + n2
@@ -1165,9 +1162,9 @@ let mapped =
     """
         let parseFileResults, _ = getParseAndCheckResults source
         let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 6 22)
-        Assert.True(res.IsNone, "Inside a lambda but counted the pipeline outside of that lambda.")
+        Assert.IsTrue(res.IsNone, "Inside a lambda but counted the pipeline outside of that lambda.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfExprInYieldOrReturn - not contained``() =
     let source = """
 let f x =
@@ -1177,7 +1174,7 @@ let f x =
     let res = parseFileResults.TryRangeOfExprInYieldOrReturn (mkPos 3 4)
     Assert.True(res.IsNone, "Expected not to find a range.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfExprInYieldOrReturn - contained``() =
     let source = """
 let f x =
@@ -1191,9 +1188,9 @@ let f x =
         |> tups
         |> shouldEqual ((3, 11), (3, 12))
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - not correct operator``() =
     let source = """
 let x = y |> y + 1
@@ -1202,7 +1199,7 @@ let x = y |> y + 1
     let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 8)
     Assert.True(res.IsNone, "Expected not to find any ranges.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - error arg pos``() =
     let source = """
 let x = y => y + 1
@@ -1215,9 +1212,9 @@ let x = y => y + 1
         |> List.map tups
         |> shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - error expr pos``() =
     let source = """
 let x = y => y + 1
@@ -1230,9 +1227,9 @@ let x = y => y + 1
         |> List.map tups
         |> shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - parenthesized lambda``() =
     let source = """
 [1..10] |> List.map (x => x + 1)
@@ -1245,9 +1242,9 @@ let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - parenthesized lambda``() =
         |> List.map tups
         |> shouldEqual [((2, 21), (2, 31)); ((2, 21), (2, 22)); ((2, 26), (2, 31))]
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfNameOfNearestOuterBindingContainingPos - simple``() =
     let source = """
 let x = nameof x
@@ -1260,9 +1257,9 @@ let x = nameof x
         |> tups
         |> shouldEqual ((2, 4), (2, 5))
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfNameOfNearestOuterBindingContainingPos - inside match``() =
     let source = """
 let mySum xs acc =
@@ -1279,9 +1276,9 @@ let mySum xs acc =
         |> tups
         |> shouldEqual ((2, 4), (2, 9))
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfNameOfNearestOuterBindingContainingPos - nested binding``() =
     let source = """
 let f x =
@@ -1298,9 +1295,9 @@ let f x =
         |> tups
         |> shouldEqual ((4, 8), (4, 9))
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
-[<Fact>]
+[<Test>]
 let ``TryRangeOfNameOfNearestOuterBindingContainingPos - nested and after other statements``() =
     let source = """
 let f x =
@@ -1319,231 +1316,231 @@ let f x =
         |> tups
         |> shouldEqual ((6, 8), (6, 9))
     | None ->
-        failwith "Expected to get a range back, but got none."
+        Assert.Fail("Expected to get a range back, but got none.")
 
 module TypeAnnotations =
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - function - no annotation``() =
         let source = """
 let f x = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 6), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 6), "Expected no annotation for argument 'x'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - function - single arg annotation``() =
         let source = """
 let f (x: int) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - function - first arg annotated``() =
         let source = """
 let f (x: int) y = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'x'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - function - second arg annotated``() =
         let source = """
 let f x (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 9), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 9), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - function - all args annotated``() =
         let source = """
 let f (x: int) (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 16), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 16), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - lambda function - all args annotated``() =
         let source = """
 let f = fun (x: int) (y: string) -> ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected a annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 22), "Expected a annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected a annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 22), "Expected a annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - constuctor - arg no annotations``() =
         let source = """
 type C(x) = class end
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - constuctor - first arg unannotated``() =
         let source = """
 type C(x, y: string) = class end
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 10), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 10), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - constuctor - second arg unannotated``() =
         let source = """
 type C(x: int, y) = class end
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - constuctor - both args annotated``() =
         let source = """
 type C(x: int, y: int) = class end
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method - args no unannotions``() =
         let source = """
 type C() =
     member _.M(x, y) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected no annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method - first arg annotated``() =
         let source = """
 type C() =
     member _.M(x: int, y) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method - second arg annotated``() =
         let source = """
 type C() =
     member _.M(x, y: int) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method - both args annotated``() =
         let source = """
 type C() =
     member _.M(x: int, y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method currying - args no unannotions``() =
         let source = """
 type C() =
     member _.M x y = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 17), "Expected no annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 17), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method currying - first arg annotated``() =
         let source = """
 type C() =
     member _.M (x: int) y = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 24), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 24), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method currying - second arg annotated``() =
         let source = """
 type C() =
     member _.M x (y: int) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected no annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method currying - both args annotated``() =
         let source = """
 type C() =
     member _.M (x: int) (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 25), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 25), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - method - only return type annotated``() =
         let source = """
 type C() =
     member _.M(x): string = "hello" + x
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - tuple - no annotations``() =
         let source = """
 let (x, y) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for value 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected no annotation for value 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for value 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected no annotation for value 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - tuple - first value annotated``() =
         let source = """
 let (x: int, y) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected no annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - tuple - second value annotated``() =
         let source = """
 let (x, y: string) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for argument 'x'")
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected annotation for argument 'y'")
 
-    [<Fact>]
+    [<Test>]
     let ``IsTypeAnnotationGivenAtPosition - binding - second value annotated``() =
         let source = """
 let x: int = 12
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
 
 
 module LambdaRecognition =
-    [<Fact>]
+    [<Test>]
     let ``IsBindingALambdaAtPosition - recognize a lambda``() =
         let source = """
 let f = fun x y -> x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
-    [<Fact>]
+    [<Test>]
     let ``IsBindingALambdaAtPosition - recognize a nested lambda``() =
         let source = """
 let f =
@@ -1552,9 +1549,9 @@ let f =
             x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
-    [<Fact>]
+    [<Test>]
     let ``IsBindingALambdaAtPosition - recognize a "partial" lambda``() =
         let source = """
 let f x =
@@ -1562,12 +1559,12 @@ let f x =
         x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.True(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
-    [<Fact>]
+    [<Test>]
     let ``IsBindingALambdaAtPosition - not a lambda``() =
         let source = """
 let f x y = x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'")
+        Assert.IsFalse(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'")

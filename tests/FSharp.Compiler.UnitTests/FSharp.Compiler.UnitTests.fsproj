@@ -69,7 +69,9 @@
     <Compile Include="..\..\tests\service\AssemblyContentProviderTests.fs">
       <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
     </Compile>
-    <Compile Include="ServiceUntypedParseTests.fs" />
+    <Compile Include="..\..\tests\service\ServiceUntypedParseTests.fs">
+      <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
+    </Compile>
     <Compile Include="TreeVisitorTests.fs" />
   </ItemGroup>
 

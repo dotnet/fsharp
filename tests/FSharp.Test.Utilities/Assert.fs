@@ -3,6 +3,7 @@ namespace FSharp.Test
 module Assert =
     open FluentAssertions
     open System.Collections
+    open System.Text
     open System.IO
 
     let inline shouldBeEqualWith (expected : ^T) (message: string) (actual: ^U) =
@@ -12,9 +13,6 @@ module Assert =
         actual.Should().BeEquivalentTo(expected, "") |> ignore
 
     let inline shouldBe (expected : ^T) (actual : ^U) =
-        actual.Should().Be(expected, "") |> ignore
-
-    let inline shouldEqual (expected : ^T) (actual : ^T) =
         actual.Should().Be(expected, "") |> ignore
 
     let inline shouldBeEmpty (actual : ^T when ^T :> IEnumerable) =
