@@ -130,6 +130,7 @@ module ByrefSafetyAnalysis =
         compilation
         |> asExe
         |> withReferences [ csharpLib ]
+        |> withNoWarn 52
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -234,7 +235,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|])>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite2`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
     
     // TODO: Delete this, move into feature branch, or finish this. See: https://github.com/dotnet/fsharp/pull/7989#discussion_r369841104
 #if IMPLICIT_ADDRESS_OF
