@@ -863,7 +863,7 @@ val TranslateSynValInfo:
 val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
-val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit
+val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> expectedTy: TType -> actualTy: TType -> unit
 
 val TcRuntimeTypeTest:
     isCast: bool ->
