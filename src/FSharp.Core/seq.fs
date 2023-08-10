@@ -875,6 +875,7 @@ module Seq =
         | :? ('T[]) as a -> a.Length = 0
         | :? ('T list) as a -> a.IsEmpty
         | :? ICollection<'T> as a -> a.Count = 0
+        | :? string as a -> a.Length = 0
         | _ ->
             use ie = source.GetEnumerator()
             not (ie.MoveNext())
@@ -892,6 +893,7 @@ module Seq =
         | :? ('T[]) as a -> a.Length
         | :? ('T list) as a -> a.Length
         | :? ICollection<'T> as a -> a.Count
+        | :? string as a -> a.Length
         | _ ->
             use e = source.GetEnumerator()
             let mutable state = 0
@@ -1021,6 +1023,7 @@ module Seq =
             let arr = Array.zeroCreateUnchecked res.Count
             res.CopyTo(arr, 0)
             arr
+        | :? string as res -> res.ToCharArray()
         | _ ->
             use e = source.GetEnumerator()
 
