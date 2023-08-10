@@ -29,6 +29,7 @@ open FSharp.Compiler.Tokenization
 open System.Composition
 open System.Text.RegularExpressions
 open CancellableTasks
+open Telemetry
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -679,6 +680,8 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
         // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
         try
             // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
+            use _ = TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+
             gtdTask.Wait(cancellationToken)
 
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
@@ -695,6 +698,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                 statusBar.TempMessage(SR.CannotDetermineSymbol())
                 false
         with exc ->
+            TelemetryReporter.ReportFault(TelemetryEvents.GoToDefinition, FaultSeverity.General, exc)
             statusBar.TempMessage(String.Format(SR.NavigateToFailed(), Exception.flattenMessage exc))
 
             // Don't show the dialog box as it's most likely that the user cancelled.

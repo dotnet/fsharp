@@ -96,6 +96,8 @@ module CancellableTasks =
         member inline this.ThrowIfCancellationRequested() =
             this.CancellationToken.ThrowIfCancellationRequested()
 
+        member inline this.IsCancellationRequested = this.CancellationToken.IsCancellationRequested
+
     /// This is used by the compiler as a template for creating state machine structs
     and CancellableTaskStateMachine<'TOverall> =
         ResumableStateMachine<CancellableTaskStateMachineData<'TOverall>>

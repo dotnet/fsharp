@@ -25,10 +25,10 @@ module TelemetryEvents =
     let LanguageServiceStarted = "languageservicestarted"
 
     [<Literal>]
-    let GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
+    let GetSymbolUsesInProjectsStarted = "getsymbolusesinprojectsstarted"
 
     [<Literal>]
-    let GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
+    let GetSymbolUsesInProjectsFinished = "getsymbolusesinprojectsfinished"
 
     [<Literal>]
     let AddSyntacticCalssifications = "addsyntacticclassifications"
@@ -41,6 +41,12 @@ module TelemetryEvents =
 
     [<Literal>]
     let ProvideCompletions = "providecompletions"
+    
+    [<Literal>]
+    let GoToDefinition = "gotodefinition"
+
+    [<Literal>]
+    let GoToDefinitionGetSymbol = "gotodefinition/getsymbol"
 
 // TODO: needs to be something more sophisticated in future
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -89,18 +95,39 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
 
     static member val private SendAdditionalTelemetry =
         lazy
-            (let componentModel =
-                Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+            (
+                let componentModel =
+                    Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
 
-             if componentModel = null then
-                 TelemetryService.DefaultSession.IsUserMicrosoftInternal
-             else
-                 let workspace = componentModel.GetService<VisualStudioWorkspace>()
-                 workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
+                if isNull componentModel then
+                    TelemetryService.DefaultSession.IsUserMicrosoftInternal
+                else
+                    let workspace = componentModel.GetService<VisualStudioWorkspace>()
+
+                    TelemetryService.DefaultSession.IsUserMicrosoftInternal 
+                    || workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
+
+    static member ReportFault(name, ?severity: FaultSeverity, ?e: exn) =
+        if TelemetryReporter.SendAdditionalTelemetry.Value then
+            let faultName = String.Concat(name, "/fault")
+            match severity, e with
+            | Some s, Some e -> TelemetryService.DefaultSession.PostFault(faultName, name, s, e)
+            | None, Some e -> TelemetryService.DefaultSession.PostFault(faultName, name, e)
+            | Some s, None -> TelemetryService.DefaultSession.PostFault(faultName, name, s)
+            | None, None -> TelemetryService.DefaultSession.PostFault(faultName, name)
+            |> ignore
+
+    static member ReportCustomFailure(name, ?props) =
+        if TelemetryReporter.SendAdditionalTelemetry.Value then
+            let props = defaultArg props [||]
+            let name = String.Concat(name, "/failure")
+            let event = TelemetryReporter.createEvent name props
+            TelemetryService.DefaultSession.PostEvent event
 
     static member ReportSingleEvent(name, props) =
-        let event = TelemetryReporter.createEvent name props
-        TelemetryService.DefaultSession.PostEvent event
+        if TelemetryReporter.SendAdditionalTelemetry.Value then
+            let event = TelemetryReporter.createEvent name props
+            TelemetryService.DefaultSession.PostEvent event
 
     // A naïve implementation using stopwatch and returning an IDisposable
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
@@ -108,10 +135,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
 
         let additionalTelemetryEnabled = TelemetryReporter.SendAdditionalTelemetry.Value
 
-        let isUserMicrosoftInternal =
-            TelemetryService.DefaultSession.IsUserMicrosoftInternal
-
-        if additionalTelemetryEnabled || isUserMicrosoftInternal then
+        if additionalTelemetryEnabled then
             let throttlingStrategy =
                 defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
 
