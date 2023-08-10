@@ -10,9 +10,8 @@ open FSharp.Test.Compiler
 
 module Legacy =
     [<Theory>]
-    [<InlineData("7.0", false)>]
-    [<InlineData("preview", true)>]
-    let ``Pin naked string`` (langVersion, featureShouldActivate) =
+    [<InlineData("7.0")>]
+    let ``Pin naked string`` langVersion =
         let runtimeSupportsStringGetPinnableReference =
             typeof<string>.GetMethods()
             |> Seq.exists (fun m -> m.Name = "GetPinnableReference")
@@ -28,41 +27,7 @@ module Legacy =
         |> withLangVersion langVersion
         |> withOptions ["--nowarn:9"]
         |> compile
-        |>  if featureShouldActivate && runtimeSupportsStringGetPinnableReference then
-                (fun comp ->
-                    comp
-                    |> verifyIL ["""
-  .method public static char  pinIt(string str) cil managed
-  {
-    
-    .maxstack  5
-    .locals init (native int V_0,
-             char& pinned V_1)
-    IL_0000:  ldarg.0
-    IL_0001:  brfalse.s  IL_000e
-
-    IL_0003:  ldarg.0
-    IL_0004:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
-    IL_0009:  stloc.1
-    IL_000a:  ldloc.1
-    IL_000b:  conv.i
-    IL_000c:  br.s       IL_000f
-
-    IL_000e:  ldarg.0
-    IL_000f:  stloc.0
-    IL_0010:  ldloc.0
-    IL_0011:  ldc.i4.0
-    IL_0012:  conv.i
-    IL_0013:  sizeof     [runtime]System.Char
-    IL_0019:  mul
-    IL_001a:  add
-    IL_001b:  ldobj      [runtime]System.Char
-    IL_0020:  ret
-  } """ ])
-            else
-                (fun comp ->
-                    comp
-                    |> verifyIL ["""
+        |> verifyIL ["""
    .method public static char  pinIt(string str) cil managed
    {
      
@@ -90,7 +55,7 @@ module Legacy =
      IL_001b:  add
      IL_001c:  ldobj      [runtime]System.Char
      IL_0021:  ret
-   } """ ])
+   } """ ]
 
     [<Theory>]
     [<InlineData("7.0")>]
@@ -237,6 +202,88 @@ module Legacy =
   } """ ]
         
 module ExtendedFixedBindings =
+    [<Theory>]
+    [<InlineData("preview")>]
+    let ``Pin naked string`` langVersion =
+        let runtimeSupportsStringGetPinnableReference =
+            typeof<string>.GetMethods()
+            |> Seq.exists (fun m -> m.Name = "GetPinnableReference")
+        
+// Sanity check precondition: if .Net Framework were to ever get GetPinnableReference, we'll know here
+#if NETCOREAPP3_0_OR_GREATER
+        Assert.True(runtimeSupportsStringGetPinnableReference)
+#else
+        Assert.False(runtimeSupportsStringGetPinnableReference)
+#endif
+        
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
+        |> withLangVersion langVersion
+        |> withOptions ["--nowarn:9"]
+        |> compile
+        |>  if runtimeSupportsStringGetPinnableReference then
+                (fun comp ->
+                    comp
+                    |> verifyIL ["""
+  .method public static char  pinIt(string str) cil managed
+  {
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             char& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance char& modreq([runtime]System.Runtime.InteropServices.InAttribute) [runtime]System.String::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     [runtime]System.Char
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      [runtime]System.Char
+    IL_0020:  ret
+  } """ ])
+            else
+                (fun comp ->
+                    comp
+                    |> verifyIL ["""
+   .method public static char  pinIt(string str) cil managed
+   {
+     
+     .maxstack  5
+     .locals init (native int V_0,
+              string pinned V_1)
+     IL_0000:  ldarg.0
+     IL_0001:  stloc.1
+     IL_0002:  ldarg.0
+     IL_0003:  brfalse.s  IL_000f
+
+     IL_0005:  ldarg.0
+     IL_0006:  conv.i
+     IL_0007:  call       int32 [runtime]System.Runtime.CompilerServices.RuntimeHelpers::get_OffsetToStringData()
+     IL_000c:  add
+     IL_000d:  br.s       IL_0010
+
+     IL_000f:  ldarg.0
+     IL_0010:  stloc.0
+     IL_0011:  ldloc.0
+     IL_0012:  ldc.i4.0
+     IL_0013:  conv.i
+     IL_0014:  sizeof     [runtime]System.Char
+     IL_001a:  mul
+     IL_001b:  add
+     IL_001c:  ldobj      [runtime]System.Char
+     IL_0021:  ret
+   } """ ])
+    
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfParameter.fs")
