@@ -825,7 +825,7 @@ let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: L
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        Some (languageFeatureError langVersion langFeature m)
+        Some(languageFeatureError langVersion langFeature m)
     else
         None
 
