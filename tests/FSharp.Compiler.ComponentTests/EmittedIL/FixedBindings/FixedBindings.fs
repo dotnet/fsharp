@@ -12,20 +12,9 @@ module Legacy =
     [<Theory>]
     [<InlineData("7.0")>]
     let ``Pin naked string`` langVersion =
-        let runtimeSupportsStringGetPinnableReference =
-            typeof<string>.GetMethods()
-            |> Seq.exists (fun m -> m.Name = "GetPinnableReference")
-        
-// Sanity check precondition: if .Net Framework were to ever get GetPinnableReference, we'll know here
-#if NETCOREAPP3_0_OR_GREATER
-        Assert.True(runtimeSupportsStringGetPinnableReference)
-#else
-        Assert.False(runtimeSupportsStringGetPinnableReference)
-#endif
-        
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compile
         |> verifyIL ["""
    .method public static char  pinIt(string str) cil managed
@@ -63,7 +52,7 @@ module Legacy =
     let ``Pin naked array`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArray.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compile
         |> verifyIL ["""
   .method public static char  pinIt(char[] arr) cil managed
@@ -110,7 +99,7 @@ module Legacy =
     let ``Pin address of record field`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfRecordField.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> verifyIL ["""
   .method public static int32  pinIt(class FixedBindings/Point thing) cil managed
@@ -141,7 +130,7 @@ module Legacy =
     let ``Pin address of explicit field on this`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThis.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -174,7 +163,7 @@ module Legacy =
     let ``Pin address of array element`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -218,7 +207,7 @@ module ExtendedFixedBindings =
         
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compile
         |>  if runtimeSupportsStringGetPinnableReference then
                 (fun comp ->
@@ -288,7 +277,7 @@ module ExtendedFixedBindings =
     let ``Pin int byref of parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfParameter.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -317,7 +306,7 @@ module ExtendedFixedBindings =
     let ``Pin int byref of local variable`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfLocalVariable.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -362,7 +351,7 @@ module ExtendedFixedBindings =
     let ``Pin Span via manual GetPinnableReference call`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinSpanWithManualGetPinnableReferenceCall.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -392,7 +381,7 @@ module ExtendedFixedBindings =
     let ``Pin Span`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinSpan.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -422,7 +411,7 @@ module ExtendedFixedBindings =
     let ``Pin generic ReadOnlySpan`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinGenericReadOnlySpan.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -455,7 +444,7 @@ module ExtendedFixedBindings =
     let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -491,7 +480,7 @@ module ExtendedFixedBindings =
     let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion = 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningInref.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -528,7 +517,7 @@ module ExtendedFixedBindings =
         // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinStructTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -564,7 +553,7 @@ module ExtendedFixedBindings =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withReferences [csLib]
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -609,7 +598,7 @@ module ExtendedFixedBindings =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpByrefStructTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withReferences [csLib]
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -640,7 +629,7 @@ module ExtendedFixedBindings =
     let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithExtensionGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
@@ -678,7 +667,7 @@ module ExtendedFixedBindings =
     let ``Pin null value of type with GetPinnableReference`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNullValueOfTypeWithGetPinnableReference.fs")
         |> withLangVersion langVersion
-        |> withOptions ["--nowarn:9"]
+        |> withNoWarn 9
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL ["""
