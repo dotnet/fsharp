@@ -10324,7 +10324,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
         
         match getPinnableReferenceMInfo with
         | Some mInfo ->
-            checkLanguageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
             
             let mInst = FreshenMethInfo mBinding mInfo
             let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
@@ -10376,7 +10376,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                 | _ -> false
             
             if not okByRef then
-                error (languageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding)
+                errorR (languageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding)
 
         let elemTy = destByrefTy g overallExprTy
         UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy

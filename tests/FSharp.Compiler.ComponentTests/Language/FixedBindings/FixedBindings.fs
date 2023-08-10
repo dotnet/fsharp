@@ -138,6 +138,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
     
     [<Theory>]
@@ -151,6 +152,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -164,6 +166,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 5, Col 9, Line 5, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -179,6 +182,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 8, Col 13, Line 8, Col 16, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 8, Col 13, Line 8, Col 16, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 9, Col 9, Line 9, Col 22, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -192,6 +196,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
 
 #if NETCOREAPP
@@ -204,8 +209,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""");
+            (Warning 9, Line 6, Col 9, Line 6, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 6, Col 9, Line 6, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 7, Col 5, Line 7, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
 #endif
     
@@ -232,7 +238,9 @@ module Legacy =
         |> shouldFail
         |> withDiagnostics [
             (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")]
+            (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
         
     [<Theory>]
     [<InlineData("7.0")>]
@@ -245,6 +253,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 9, Col 9, Line 9, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -258,6 +267,7 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3350, Line 13, Col 9, Line 13, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -296,7 +306,9 @@ module Legacy =
         |> shouldFail
         |> withDiagnostics [
             (Warning 9, Line 11, Col 9, Line 11, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
-            (Error 3350, Line 11, Col 9, Line 11, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")]
+            (Error 3350, Line 11, Col 9, Line 11, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 12, Col 5, Line 12, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
         
     [<Theory>]
     [<InlineData("7.0")>]
