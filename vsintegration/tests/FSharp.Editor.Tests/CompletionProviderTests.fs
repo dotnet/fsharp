@@ -1619,7 +1619,7 @@ x[0].
         VerifyCompletionListExactly(fileContents, "x[0].", [ "Foo"; "Goo"; "Equals"; "GetHashCode"; "GetType"; "ToString" ])
 
     [<Fact>]
-    let ``Completion list contains suggested names for union case field pattern with one field, and no valrefs other than literals`` () =
+    let ``Completion list contains suggested names for union case field pattern with one field, and no items that may not appear in a pattern`` () =
         let fileContents =
             """
 let logV = 1
@@ -1629,11 +1629,18 @@ type DU = A of logField: int
 
 let (|Even|Odd|) input = Odd
 
+type Inter = interface end
+
+type Att =
+    inherit System.Attribute ()
+
 match A 1 with
 | A l -> ()
 """
 
-        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false" ])
+        // We don't want to see functions, non-literal values, keywords, attribute types, interface types
+        // We want to see all other kinds of types, union cases, active patterns, modules, namespaces
+        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false"; "Att"; "Inter" ])
         VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
 
     [<Fact>]

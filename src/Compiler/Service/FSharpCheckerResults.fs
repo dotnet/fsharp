@@ -1574,9 +1574,9 @@ type internal TypeCheckInfo
                                 | Item.ILField field -> field.LiteralValue.IsSome
                                 | Item.ActivePatternCase _
                                 | Item.ModuleOrNamespaces _
-                                | Item.NewDef _
-                                | Item.Types _
                                 | Item.UnionCase _ -> true
+                                | Item.Types (_, ty :: _) ->
+                                    not (isInterfaceTy g ty || IsAttribute infoReader item.Item)
                                 | _ -> false)
 
                         filtered, denv, range)
