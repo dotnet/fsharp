@@ -35,6 +35,40 @@ module Legacy =
     [<Theory>]
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
+    let ``Pin naked array with mismatching type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArrayWithMismatchingType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 31, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 1, Line 5, Col 9, Line 5, Col 31, """Type mismatch. Expecting a
+    'nativeptr<int>'    
+but given a
+    'nativeptr<byte>'    
+The type 'int' does not match the type 'byte'""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked string with mismatching type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedStringWithMismatchingType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 31, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 1, Line 5, Col 9, Line 5, Col 31, """Type mismatch. Expecting a
+    'nativeptr<char>'    
+but given a
+    'nativeptr<byte>'    
+The type 'char' does not match the type 'byte'""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
     let ``Pin address of array element`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
         |> withLangVersion langVersion
@@ -336,6 +370,35 @@ module Legacy =
             (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
         ]
     
+    [<Theory>]
+    [<InlineData("7.0")>]
+    let ``Pin type with mismatching GetPinnableReference return type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithMismatchingGetPinnableReferenceReturnType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 9, Col 9, Line 9, Col 31, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3350, Line 9, Col 9, Line 9, Col 31, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Error 1, Line 9, Col 9, Line 9, Col 31, "Type mismatch. Expecting a
+    'nativeptr<int>'    
+but given a
+    'nativeptr<char>'    
+The type 'int' does not match the type 'char'")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    let ``Pin type with mismatching extension GetPinnableReference return type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithMismatchingExtensionGetPinnableReferenceReturnType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3350, Line 13, Col 9, Line 13, Col 12, """Feature 'extended fixed bindings for byrefs, inrefs, and GetPinnableReference' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.""")
+            (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+        ]
 
 // FS-1081 - Extend fixed bindings
 module ExtendedFixedBindings =
@@ -536,4 +599,32 @@ module ExtendedFixedBindings =
         |> withDiagnostics [
             (Warning 9, Line 9, Col 9, Line 9, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 3207, Line 9, Col 9, Line 9, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+    ]
+
+    [<Theory>]
+    [<InlineData("preview")>]
+    let ``Pin type with mismatching GetPinnableReference return type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithMismatchingGetPinnableReferenceReturnType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 9, Col 9, Line 9, Col 31, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 1, Line 9, Col 9, Line 9, Col 31, "Type mismatch. Expecting a
+    'nativeptr<int>'    
+but given a
+    'nativeptr<char>'    
+The type 'int' does not match the type 'char'")
+        ]
+        
+    [<Theory>]
+    [<InlineData("preview")>]
+    let ``Pin type with mismatching extension GetPinnableReference return type`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithMismatchingExtensionGetPinnableReferenceReturnType.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 13, Col 9, Line 13, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Warning 9, Line 14, Col 5, Line 14, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
