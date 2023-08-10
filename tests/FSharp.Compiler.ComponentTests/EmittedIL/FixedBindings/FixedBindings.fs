@@ -1,6 +1,7 @@
 namespace EmittedIL.FixedBindings
 
 open System.Reflection
+open Microsoft.FSharp.NativeInterop
 open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
@@ -625,3 +626,46 @@ module ExtendedFixedBindings =
     IL_001b:  ldobj      !!a
     IL_0020:  ret
   } """ ]
+    
+    [<Theory; InlineData("preview")>]
+    let ``Pin null value of type with GetPinnableReference`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNullValueOfTypeWithGetPinnableReference.fs")
+        |> withLangVersion langVersion
+        |> withOptions ["--nowarn:9"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  pinIt(class FixedExpressions/RefField`1<int32> thing) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (native int V_0,
+             int32& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance !0& class FixedExpressions/RefField`1<int32>::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldc.i8     0x0
+    IL_0019:  conv.i
+    IL_001a:  ldloc.0
+    IL_001b:  bne.un.s   IL_002e
+
+    IL_001d:  ldstr      "Success - null guard worked"
+    IL_0022:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0027:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_002c:  pop
+    IL_002d:  ret
+
+    IL_002e:  ldstr      "Test failed - null guard did not work"
+    IL_0033:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+    IL_0038:  throw
+  } 
+"""]
