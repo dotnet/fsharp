@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byrefs, inrefs, and GetPinnableReference</source>
-        <target state="new">extended fixed bindings for byrefs, inrefs, and GetPinnableReference</target>
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
@@ -7858,7 +7858,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
         <target state="needs-review-translation">Uso inválido da 'fixed'. 'fixed' somente pode ser usada em uma declaração no formato 'use x = fixed expr', em que a expressão é uma matriz, o endereço de um campo, o endereço de um elemento de matriz ou uma cadeia de caracteres</target>
         <note />
       </trans-unit>
