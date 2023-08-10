@@ -24,8 +24,10 @@ type public RecordContext =
 
 [<RequireQualifiedAccess>]
 type public PatternContext =
-    /// Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> )
-    /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
+    /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
+    /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
+    /// <param name="isTheOnlyField">True when completing the first field in the tuple and no other field is bound - `Case (a|)` but not `Case (a|, b)`</param>
+    /// <param name="caseIdRange">Range of the case identifier</param>
     | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
 
     /// Completing union case field pattern (e.g. fun (Some (Value = v| )) -> )

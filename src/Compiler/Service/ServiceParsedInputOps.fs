@@ -52,8 +52,10 @@ type RecordContext =
 
 [<RequireQualifiedAccess>]
 type PatternContext =
-    /// Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> )
-    /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
+    /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
+    /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
+    /// <param name="isTheOnlyField">True when completing the first field in the tuple and no other field is bound - `Case (a|)` but not `Case (a|, b)`</param>
+    /// <param name="caseIdRange">Range of the case identifier</param>
     | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
 
     /// Completing union case field pattern (e.g. fun (Some (Value = v| )) -> )
@@ -1326,8 +1328,8 @@ module ParsedInput =
 
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
             |> Option.orElseWith (fun () ->
-                // Last resort - check for fun (Case (a, | )) ->
-                // That is, pos is after the last comma and before the end of the tuple
+                // Last resort - check for fun (Case (item1 = a; | )) ->
+                // That is, pos is after the last pair and still within parentheses
                 match previousContext, List.tryLast commas with
                 | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)), Some mComma when
                     rangeBeforePos mComma pos && rangeContainsPos m pos
