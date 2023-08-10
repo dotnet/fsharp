@@ -25,11 +25,11 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Tokenization
 open System.Composition
 open System.Text.RegularExpressions
 open CancellableTasks
-open Telemetry
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Microsoft.VisualStudio.Telemetry
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
