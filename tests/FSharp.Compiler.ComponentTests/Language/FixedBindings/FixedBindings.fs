@@ -69,6 +69,58 @@ The type 'char' does not match the type 'byte'""")
     [<Theory>]
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
+    let ``Pin naked Tuple -- illegal`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedTuple.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked ValueTuple -- illegal`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedValueTuple.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 5, Col 9, Line 5, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 5, Col 9, Line 5, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked discriminated union -- illegal`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedDU.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 7, Col 9, Line 7, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 7, Col 9, Line 7, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
+    let ``Pin naked struct discriminated union -- illegal`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedStructDU.fs")
+        |> withLangVersion langVersion
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 9, Line 8, Col 9, Line 8, Col 12, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
+            (Error 3207, Line 8, Col 9, Line 8, Col 12, """Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()""")
+        ]
+        
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
     let ``Pin address of array element`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
         |> withLangVersion langVersion
