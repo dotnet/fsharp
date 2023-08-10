@@ -626,8 +626,8 @@ module ExtendedFixedBindings =
 #endif
     
     [<Theory; InlineData("preview")>]
-    let ``Pin type with extension method GetPinnableReference : unit -> byref<T>`` langVersion =
-        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithExtensionGetPinnableReferenceReturningByref.fs")
+    let ``Pin type with C# style extension method GetPinnableReference : unit -> byref<T>`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithCSharpStyleExtensionGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withNoWarn 9
         |> compileExeAndRun
@@ -660,6 +660,44 @@ module ExtendedFixedBindings =
     IL_0019:  mul
     IL_001a:  add
     IL_001b:  ldobj      !!a
+    IL_0020:  ret
+  } """ ]
+        
+    [<Theory; InlineData("preview")>]
+    let ``Pin type with F# style extension method GetPinnableReference : unit -> byref<T>`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithFSharpStyleExtensionGetPinnableReferenceReturningByref.fs")
+        |> withLangVersion langVersion
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static !!T  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>(class FixedBindings/RefField`1<!!T> thing) cil managed
+  {
+    .param type T 
+      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  5
+    .locals init (native int V_0,
+             !!T& pinned V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000e
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance !0& class FixedBindings/RefField`1<!!T>::GetPinnableReference()
+    IL_0009:  stloc.1
+    IL_000a:  ldloc.1
+    IL_000b:  conv.i
+    IL_000c:  br.s       IL_000f
+
+    IL_000e:  ldarg.0
+    IL_000f:  stloc.0
+    IL_0010:  ldloc.0
+    IL_0011:  ldc.i4.0
+    IL_0012:  conv.i
+    IL_0013:  sizeof     !!T
+    IL_0019:  mul
+    IL_001a:  add
+    IL_001b:  ldobj      !!T
     IL_0020:  ret
   } """ ]
     
