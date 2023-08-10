@@ -1575,8 +1575,7 @@ type internal TypeCheckInfo
                                 | Item.ActivePatternCase _
                                 | Item.ModuleOrNamespaces _
                                 | Item.UnionCase _ -> true
-                                | Item.Types (_, ty :: _) ->
-                                    not (isInterfaceTy g ty || IsAttribute infoReader item.Item)
+                                | Item.Types (_, ty :: _) -> not (isInterfaceTy g ty || IsAttribute infoReader item.Item)
                                 | _ -> false)
 
                         filtered, denv, range)
