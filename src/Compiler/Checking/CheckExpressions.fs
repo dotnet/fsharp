@@ -431,9 +431,9 @@ type cenv = TcFileState
 let CopyAndFixupTypars g m rigid tpsorig =
     FreshenAndFixupTypars g m rigid [] [] tpsorig
 
-let UnifyTypes (cenv: cenv) (env: TcEnv) m actualTy expectedTy =
+let UnifyTypes (cenv: cenv) (env: TcEnv) m expectedTy actualTy =
     let g = cenv.g
-    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType g actualTy) (tryNormalizeMeasureInType g expectedTy)
+    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType g expectedTy) (tryNormalizeMeasureInType g actualTy)
 
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
@@ -5884,10 +5884,10 @@ and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
         if args.Length <> ptys.Length then
             let argTys = NewInferenceTypes g args
             suppressErrorReporting (fun () -> tcArgs argTys)
-            let expectedTy = TType_tuple (tupInfo, argTys)
+            let actualTy = TType_tuple (tupInfo, argTys)
 
             // We let error recovery handle this exception
-            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
+            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, actualTy,
                    (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
