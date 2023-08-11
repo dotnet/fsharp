@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Conformance.InferenceProcedures
+namespace Conformance.InferenceProcedures.ByrefSafetyAnalysis
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module ByrefSafetyAnalysis =
+module Legacy =
     let withPrelude =
         withReferences [
             FsFromPath (__SOURCE_DIRECTORY__ ++ "Prelude.fs")
@@ -902,12 +902,38 @@ type outref<'T> with
     let``ReturnSpan01_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> withOptions ["--warnaserror+"]
         |> compileExeAndRun
         |> shouldSucceed
+
 #endif
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETCOREAPP2_1_OR_GREATER
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan02.fs"|])>]
+    let``ReturnSpan02_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan03.fs"|])>]
+    let``ReturnSpan03_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|])>]
+    let``E_ReturnSpanFromLocal_fs`` compilation =
+        compilation
+        |> withLangVersion70
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compile
+        |> shouldSucceed
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|])>]
     let``E_TopLevelByref_fs`` compilation =
         compilation
@@ -938,3 +964,17 @@ type outref<'T> with
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
 #endif
+
+module RefFieldsFeature =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|])>]
+    let``E_ReturnSpanFromLocal_fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3234, Line 8, Col 5, Line 8, Col 9, "The Span or IsByRefLike variable 'span' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+            (Error 3228, Line 10, Col 4, Line 10, Col 21, "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.")
+        ]

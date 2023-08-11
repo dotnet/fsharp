@@ -891,6 +891,8 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnByref = isByrefTy cenv.g returnTy
     let isReturnSpanLike = isSpanLikeTy cenv.g m returnTy
 
+    let byrefFieldsEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ByrefFields
+    
     // If return is a byref, and being used as a return, then a single argument cannot be a local-byref or a stack referring span-like.
     let isReturnLimitedByRef =
         isReturnByref &&
@@ -901,7 +903,8 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     let isReturnLimitedSpanLike =
         isReturnSpanLike &&
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
-         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs)
+         HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike limitArgs ||
+         (HasLimitFlag LimitFlags.ByRef limitArgs && byrefFieldsEnabled))
 
     if cenv.reportErrors then
         if ctxt.PermitOnlyReturnable && ((isReturnLimitedByRef && IsLimitEscapingScope env ctxt limitArgs) || isReturnLimitedSpanLike) then
@@ -957,7 +960,9 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
     match args with
     | [] -> failwith "CheckCallWithReceiver: Argument list is empty."
     | receiverArg :: args ->
-
+        
+        let byrefFieldsEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ByrefFields
+        
         let receiverContext, ctxts =
             match ctxts with
             | [] -> PermitByRefExpr.No, []
@@ -970,6 +975,8 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
             if HasLimitFlag LimitFlags.ByRefOfStackReferringSpanLike receiverLimit then
                 // Scope is 1 to ensure any by-refs returned can only be prevented for out of scope of the function/method, not visibility.
                 CombineTwoLimits limitArgs { receiverLimit with scope = 1 }
+            elif byrefFieldsEnabled && HasLimitFlag LimitFlags.ByRef receiverLimit then
+                CombineTwoLimits limitArgs receiverLimit
             else
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
