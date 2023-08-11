@@ -187,16 +187,16 @@ exception ErrorFromApplyingDefault of
 exception ErrorFromAddingTypeEquation of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
-    actualTy: TType *
     expectedTy: TType *
+    actualTy: TType *
     error: exn *
     range: range
 
 exception ErrorsFromAddingSubsumptionConstraint of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
-    actualTy: TType *
     expectedTy: TType *
+    actualTy: TType *
     error: exn *
     ctxtInfo: ContextInfo *
     parameterRange: range

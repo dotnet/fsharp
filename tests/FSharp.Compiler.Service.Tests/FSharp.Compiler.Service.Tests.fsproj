@@ -64,9 +64,6 @@
     <Compile Include="..\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="..\service\StructureTests.fs">
-      <Link>StructureTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\ServiceUntypedParseTests.fs">
       <Link>ServiceUntypedParseTests.fs</Link>
     </Compile>
