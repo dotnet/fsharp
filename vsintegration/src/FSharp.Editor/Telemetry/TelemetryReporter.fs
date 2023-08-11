@@ -41,7 +41,7 @@ module TelemetryEvents =
 
     [<Literal>]
     let ProvideCompletions = "providecompletions"
-    
+
     [<Literal>]
     let GoToDefinition = "gotodefinition"
 
@@ -95,21 +95,21 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
 
     static member val private SendAdditionalTelemetry =
         lazy
-            (
-                let componentModel =
-                    Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+            (let componentModel =
+                Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
 
-                if isNull componentModel then
-                    TelemetryService.DefaultSession.IsUserMicrosoftInternal
-                else
-                    let workspace = componentModel.GetService<VisualStudioWorkspace>()
+             if isNull componentModel then
+                 TelemetryService.DefaultSession.IsUserMicrosoftInternal
+             else
+                 let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
-                    TelemetryService.DefaultSession.IsUserMicrosoftInternal 
-                    || workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
+                 TelemetryService.DefaultSession.IsUserMicrosoftInternal
+                 || workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
 
     static member ReportFault(name, ?severity: FaultSeverity, ?e: exn) =
         if TelemetryReporter.SendAdditionalTelemetry.Value then
             let faultName = String.Concat(name, "/fault")
+
             match severity, e with
             | Some s, Some e -> TelemetryService.DefaultSession.PostFault(faultName, name, s, e)
             | None, Some e -> TelemetryService.DefaultSession.PostFault(faultName, name, e)

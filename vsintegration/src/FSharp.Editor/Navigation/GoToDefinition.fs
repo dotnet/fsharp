@@ -680,7 +680,8 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
         // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
         try
             // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
-            use _ = TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+            use _ =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
 
             gtdTask.Wait(cancellationToken)
 
