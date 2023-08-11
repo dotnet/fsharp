@@ -4,7 +4,7 @@ module FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
 
 open System
 open System.Collections.Immutable
-open System.Threading
+open System.Text.RegularExpressions
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeFixes
@@ -20,7 +20,7 @@ type TestCodeFix = { Message: string; FixedCode: string }
 type Mode =
     | Auto
     | WithOption of CustomProjectOption: string
-    | Manual of Squiggly: string * Number: int
+    | Manual of Squiggly: string * Diagnostic: string
 
 let inline toOption o =
     match o with
@@ -29,6 +29,13 @@ let inline toOption o =
 
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
+let parseDiagnostic diagnostic =
+    let regex = Regex "([A-Z]+)(\d+)"
+    let matchGroups = regex.Match(diagnostic).Groups
+    let prefix = matchGroups[1].Value
+    let number = int matchGroups[2].Value
+    number, prefix
 
 let getDocument code mode =
     match mode with
@@ -57,13 +64,14 @@ let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds 
                 getRelevantDiagnostics document
                 |> Array.filter (fun d -> diagnosticIds |> Seq.contains d.ErrorNumberText)
             | WithOption _ -> getRelevantDiagnostics document
-            | Manual (squiggly, number) ->
+            | Manual (squiggly, diagnostic) ->
                 let spanStart = code.IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
                 let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
+                let number, prefix = parseDiagnostic diagnostic
 
                 [|
-                    FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range)
+                    FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range, prefix)
                 |]
 
         let range = diagnostics[0].Range
