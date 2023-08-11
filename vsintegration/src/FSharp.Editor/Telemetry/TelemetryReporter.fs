@@ -106,7 +106,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
     static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
 
-        let additionalTelemetryEnabled = not TelemetryReporter.SendAdditionalTelemetry.Value
+        let additionalTelemetryEnabled = TelemetryReporter.SendAdditionalTelemetry.Value
 
         let isUserMicrosoftInternal =
             TelemetryService.DefaultSession.IsUserMicrosoftInternal
