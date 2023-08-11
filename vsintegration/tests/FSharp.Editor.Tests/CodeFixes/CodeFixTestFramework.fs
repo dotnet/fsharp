@@ -4,7 +4,7 @@ module FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
 
 open System
 open System.Collections.Immutable
-open System.Threading
+open System.Text.RegularExpressions
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeFixes
@@ -20,7 +20,7 @@ type TestCodeFix = { Message: string; FixedCode: string }
 type Mode =
     | Auto
     | WithOption of CustomProjectOption: string
-    | Manual of Squiggly: string * Number: int
+    | Manual of Squiggly: string * Diagnostic: string
 
 let inline toOption o =
     match o with
@@ -30,49 +30,68 @@ let inline toOption o =
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
+let parseDiagnostic diagnostic =
+    let regex = Regex "([A-Z]+)(\d+)"
+    let matchGroups = regex.Match(diagnostic).Groups
+    let prefix = matchGroups[1].Value
+    let number = int matchGroups[2].Value
+    number, prefix
+
 let getDocument code mode =
     match mode with
     | Auto -> RoslynTestHelpers.GetFsDocument code
     | WithOption option -> RoslynTestHelpers.GetFsDocument(code, option)
     | Manual _ -> RoslynTestHelpers.GetFsDocument code
 
-let getRelevantDiagnostic (document: Document) =
+let getRelevantDiagnostics (document: Document) =
     cancellableTask {
         let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync "test"
 
-        return checkFileResults.Diagnostics |> Seq.head
+        return checkFileResults.Diagnostics
     }
+    |> CancellableTask.startWithoutCancellation
+    |> fun task -> task.Result
 
-let createTestCodeFixContext (code: string) document (mode: Mode) =
+let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds =
     cancellableTask {
         let! cancellationToken = CancellableTask.getCancellationToken ()
 
         let sourceText = SourceText.From code
 
-        let! diagnostic =
+        let diagnostics =
             match mode with
-            | Auto -> getRelevantDiagnostic document
-            | WithOption _ -> getRelevantDiagnostic document
-            | Manual (squiggly, number) ->
+            | Auto ->
+                getRelevantDiagnostics document
+                |> Array.filter (fun d -> diagnosticIds |> Seq.contains d.ErrorNumberText)
+            | WithOption _ -> getRelevantDiagnostics document
+            | Manual (squiggly, diagnostic) ->
                 let spanStart = code.IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
                 let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, span, sourceText)
-                CancellableTask.singleton (FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range))
+                let number, prefix = parseDiagnostic diagnostic
 
-        let location =
-            RoslynHelpers.RangeToLocation(diagnostic.Range, sourceText, document.FilePath)
+                [|
+                    FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Warning, "test", number, range, prefix)
+                |]
 
-        let roslynDiagnostic = RoslynHelpers.ConvertError(diagnostic, location)
+        let range = diagnostics[0].Range
+        let location = RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)
+        let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
 
-        return CodeFixContext(document, roslynDiagnostic, mockAction, cancellationToken)
+        let roslynDiagnostics =
+            diagnostics
+            |> Array.map (fun diagnostic -> RoslynHelpers.ConvertError(diagnostic, location))
+            |> ImmutableArray.ToImmutableArray
+
+        return CodeFixContext(document, textSpan, roslynDiagnostics, mockAction, cancellationToken)
     }
 
-let tryFix (code: string) mode (fixProvider: IFSharpCodeFixProvider) =
+let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
         let document = getDocument code mode
 
-        let! context = createTestCodeFixContext code document mode
+        let! context = createTestCodeFixContext code document mode fixProvider.FixableDiagnosticIds
 
         let! result = fixProvider.GetCodeFixIfAppliesAsync context
 
@@ -85,5 +104,5 @@ let tryFix (code: string) mode (fixProvider: IFSharpCodeFixProvider) =
                      FixedCode = (sourceText.WithChanges codeFix.Changes).ToString()
                  }))
     }
-    |> CancellableTask.start CancellationToken.None
+    |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result

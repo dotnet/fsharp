@@ -78,7 +78,7 @@ type C() = class end
 """
             }
 
-    let actual = codeFix |> tryFix code (Manual("this", 1182))
+    let actual = codeFix |> tryFix code (Manual("this", "FS1182"))
 
     Assert.Equal(expected, actual)
 
@@ -92,6 +92,6 @@ type T() =
 
     let expected = None
 
-    let actual = codeFix |> tryFix code (Manual("x", 1182))
+    let actual = codeFix |> tryFix code (Manual("x", "FS1182"))
 
     Assert.Equal(expected, actual)
