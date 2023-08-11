@@ -58,6 +58,13 @@ type Band = { Name open string }
 [<InlineData("""
 type Band = {| Name open string |}
 """)>]
+[<InlineData "let f x = 
+    match x with
+    | _ ->
+        let _ = [
+            x with
+        ]
+">]
 let ``Doesn't fix FS0010 for random unexpected symbols`` code =
     let expected = None
 
