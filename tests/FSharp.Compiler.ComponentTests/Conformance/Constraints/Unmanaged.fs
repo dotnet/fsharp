@@ -379,12 +379,10 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
         .param type T 
-          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance [runtime]void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
       } 
     
-    } """;"""
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
-       extends [runtime]System.Attribute"""]
+    } """]
 
     [<Fact>]
     let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
@@ -397,7 +395,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
               testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
       {
         .param type TUnmanaged 
-          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -467,7 +465,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
       .method public static void  testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
   {
     .param type TUnmanaged 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ret
