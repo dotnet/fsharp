@@ -367,6 +367,7 @@ type RoslynTestHelpers private () =
               ) with
 
                 AutoAddModules = false
+                SkipInitialCheck = true
                 OtherOptions =
                     [
                         "--targetprofile:netcore" // without this lib some symbols are not loaded
