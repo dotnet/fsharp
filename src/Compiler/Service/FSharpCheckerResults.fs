@@ -1598,6 +1598,7 @@ type internal TypeCheckInfo
                                 | Item.Value v -> v.LiteralValue.IsSome
                                 | Item.ILField field -> field.LiteralValue.IsSome
                                 | Item.ActivePatternCase _
+                                | Item.ExnCase _
                                 | Item.ModuleOrNamespaces _
                                 | Item.NewDef _
                                 | Item.Types _
