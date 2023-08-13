@@ -1039,7 +1039,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">Dieser anonyme Datensatz stimmt nicht genau mit der erwarteten Form überein. Fügen Sie die fehlenden Felder ({0}) hinzu, und entfernen Sie die zusätzlichen Felder ({1}).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -5014,7 +5014,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">Statische Wertdefinitionen dürfen nur in Typen mit einem primären Konstruktor verwendet werden. Ziehen Sie in Betracht, Argumente zur Typdefinition hinzuzufügen, z. B. "type X(args) = ...".</target>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8514,7 +8514,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">Der Paket-Manager-Schlüssel "{0}" wurde in "{1}" nicht registriert. Aktuell registriert: {2}</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
