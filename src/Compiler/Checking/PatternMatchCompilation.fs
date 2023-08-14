@@ -971,20 +971,14 @@ let ReportUnusedTargets (clauses: MatchClause list) dtree =
     clauses |> List.iteri (fun i c ->
         let m =
             match c.BoundVals, c.GuardExpr with
-            | [], Some guard -> Some guard.Range
-            | [ bound ], None -> Some bound.Id.idRange
-            | [ _ ], Some guard -> Some guard.Range
+            | [], Some guard -> guard.Range
+            | [ bound ], None -> bound.Id.idRange
+            | [ _ ], Some guard -> guard.Range
             | rest, None ->
                 match rest with
-                | [ head ] -> Some head.Id.idRange
-                | _ :: _ -> Some c.Pattern.Range
-                | _ -> Some c.Pattern.Range
-            | _, Some guard -> Some guard.Range
-            
-        let m =
-            match m with
-            | None -> c.Range
-            | Some m -> m
+                | [ head ] -> head.Id.idRange
+                | _ -> c.Pattern.Range
+            | _, Some guard -> guard.Range
             
         let m  = withStartEnd c.Range.Start m.End m
             
