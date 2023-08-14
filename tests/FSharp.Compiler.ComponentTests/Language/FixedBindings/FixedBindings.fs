@@ -384,8 +384,8 @@ The type 'char' does not match the type 'byte'""")
 
     [<Theory>]
     [<InlineData("7.0")>]
-    let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` langVersion =
-        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithValidGetPinnableReferenceAndSeveralInvalidOverloads.fs")
+    let ``Pin type with valid and invalid GetPinnableReference overloads`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithValidAndInvalidGetPinnableReferenceOverloads.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> compile
