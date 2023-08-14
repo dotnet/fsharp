@@ -361,7 +361,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<FactForNETCOREAPP>]
     let ``Multi constraint IL test together with struct and interface constraints`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct and 'T:>System.IComparable> = struct end"
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -387,7 +387,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<FactForNETCOREAPP>]
     let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = struct(x,1)"
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -418,7 +418,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
 open CsLib
 let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         """     |> withReferences [csLib]
-                |> withLangVersionPreview
+                |> withLangVersion80
 
         app
         |> compile
@@ -449,7 +449,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         """     |> withReferences [csLib]
 
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> asExe
         |> compile
         |> run
@@ -458,7 +458,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     [<FactForNETCOREAPP>]
     let ``FSharp generates modreq for CSharp to consume in preview`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -495,7 +495,7 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
     val Item : 'TInner   
     with static member Hi() = typeof<'TInner>.Name"""
             |> asLibrary
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "fsLib"
 
         let app = 
@@ -541,7 +541,7 @@ module FsharpPreparedData =
     let structDuExample2 = B "42"
     """
             |> asLibrary
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "fsLib"
 
         let app = 

@@ -20,7 +20,7 @@ module PrintfFormatTests
 
 let printLibraryVersion () = printfn Library.Version
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withReferences [csLib]
     |> compile
     |> shouldSucceed
@@ -36,7 +36,7 @@ let Format = "%d"
 if sprintf Format (Format.Length) <> "2" then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed
@@ -51,7 +51,7 @@ let Format = "%s"
 
 let test = sprintf Format 42
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResult {

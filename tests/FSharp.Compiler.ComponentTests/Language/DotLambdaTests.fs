@@ -14,7 +14,7 @@ let ``Underscore Dot ToString`` () =
     Fsx """
 let x = "a" |> _.ToString()
 printfn "%s" x"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -22,7 +22,7 @@ printfn "%s" x"""
 let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
     Fsx """
 let x = "a" |> _.ToString () """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -36,7 +36,7 @@ let ``Underscore Dot Curried Function With Arguments - NonAtomic`` () =
 type MyRecord = {MyRecordField:string}
     with member x.DoStuff a b c = $"%s{x.MyRecordField} %i{a} %i{b} %i{c}"
 let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -49,7 +49,7 @@ let ``Underscore Dot Length on string`` () =
 let x = "a" |> _.Length
 printfn "%i" x
 """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
         
@@ -60,7 +60,7 @@ let a : (string array -> _) = _.Length
 let b = _.ToString()
 let c = _.ToString().Length
 //let c = _.ToString()[0] """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
         
@@ -72,14 +72,14 @@ let getnumberOutOfDU x =
     match x with
     | A -> 42
     | _ -> 43""" 
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> typecheck 
             |> shouldSucceed  
 
 [<Fact>]
 let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
     Fsx "let inline myFunc x = x |> _.WhatANiceProperty"
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")] 
@@ -87,14 +87,14 @@ let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
 [<Fact>]
 let ``DotLambda does allow member based SRTP if labelled explicitely`` () =
     Fsx "let inline myFunc<'a when 'a:(member WhatANiceProperty: int)> (x: 'a) = x |> _.WhatANiceProperty "
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed    
 
 [<Fact>]
 let ``ToString with preview version`` () =
     Fsx "let myFunc = _.ToString()"
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -104,7 +104,7 @@ let ``Regression in neg typecheck hole as left arg`` () =
 let a = ( upcast _ ) : obj
 let b = ( _ :> _ ) : obj
 let c = ( _ :> obj) """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -135,7 +135,7 @@ let a5 : {| Foo : int -> {| X : string |} |} -> string = _.Foo(5).X
 open System
 let a6 = [1] |> List.map _.ToString()
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
         
@@ -145,7 +145,7 @@ let ``Nested anonymous unary function shorthands fails because of ambigous disca
 module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
@@ -158,7 +158,7 @@ let a : string -> string = (fun _ -> 5 |> _.ToString())
 let b : int -> int -> string = function |5 -> (fun _ -> "Five") |_ -> _.ToString()
 let c : string = let _ = "test" in "asd" |> _.ToString()
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")

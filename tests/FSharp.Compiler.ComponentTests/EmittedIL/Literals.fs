@@ -44,7 +44,7 @@ let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
 
 let [<Literal>] bitwise2 = 1y ^^^ (3y + ~~~4y)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -73,7 +73,7 @@ let [<Literal>] secondsInDayPlusThree = 3.1f + (60f * 60f * 24f)
 
 let [<Literal>] chars = 'a' + 'b' - 'a'
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -106,7 +106,7 @@ let [<Literal>] complex2 = false || (flag && flippedFlag)
 
 let [<Literal>] complex3 = true || (flag && not flippedFlag)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -130,7 +130,7 @@ type E =
     
 let [<Literal>] x = enum<E> (1 + 1)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -149,7 +149,7 @@ open System.Runtime.CompilerServices
 let x () =
     3
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -163,7 +163,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = System.Int32.MaxValue + 1
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResult {
@@ -182,7 +182,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = 1m + 1m
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -213,7 +213,7 @@ module LiteralArithmetic
 
 let [<Literal>] x = 1 + System.DateTime.Now.Hour
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [

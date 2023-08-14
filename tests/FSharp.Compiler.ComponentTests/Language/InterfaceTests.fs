@@ -10,7 +10,7 @@ let ``Concrete instance method is not allowed in interfaces in lang preview``() 
 type I =
     member _.X () = 1
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -24,7 +24,7 @@ let ``Concrete instance property is not allowed in interfaces in lang preview``(
 type I =
     member _.Prop = "x"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -42,7 +42,7 @@ type I<'T> =
 if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed
@@ -79,7 +79,7 @@ let o = {{ new I with member _.Blah = 4 }}
 if I.Echo "yup" <> "yup" || (Imp() :> I).Blah <> 3 || o.Blah <> 4 then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed
