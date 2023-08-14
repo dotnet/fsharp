@@ -120,7 +120,7 @@ let ``ToString with F# 7`` () =
     |> withLangVersion70
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Error 3350, Line 1, Col 16, Line 1, Col 18, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 'PREVIEW' or greater." )
+    |> withSingleDiagnostic (Error 3350, Line 1, Col 16, Line 1, Col 18, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 8.0 or greater." )
         
 [<Fact>]
 let ``Simple anonymous unary function shorthands compile`` () =

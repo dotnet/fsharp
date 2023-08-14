@@ -59,7 +59,7 @@ type I<'T> =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
 
 [<Fact>]

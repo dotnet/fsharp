@@ -33,7 +33,7 @@ let t2 x = { x with D.B = "a" }
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
 
 [<Fact>]
