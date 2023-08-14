@@ -11,12 +11,12 @@ type RefField<'T>(_value) =
 
 let pinIt (thing: RefField<int>) =
     use ptr = fixed thing
-    if NativePtr.isNullPtr ptr then
+    NativePtr.isNullPtr ptr
+
+[<EntryPoint>]
+let main _ =
+    if (pinIt Unchecked.defaultof<RefField<int>>) then
         printfn "Success - null guard worked"
     else
         failwith "Test failed - null guard did not work"
-    
-[<EntryPoint>]
-let main _ =
-    pinIt Unchecked.defaultof<RefField<int>>
     0
