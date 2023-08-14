@@ -116,6 +116,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
+                            let enableInMemoryCrossProjectReferences =
+                                editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
