@@ -159,6 +159,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableLiveBuffers, enableLiveBuffers
                                         nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                        nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
                                         nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
