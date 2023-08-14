@@ -38,12 +38,18 @@ type DirectoryAttribute(dir: string) =
         | None -> compUnit
     
     let createCompilationUnit path (filename: string) methodName multipleFiles =
-        // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
         let extraDirectory =
-            if multipleFiles then
-                filename.Substring(0, filename.Length - 3) // remove .fs
-                |> normalizeName
-            else ""
+            [|
+                // add extra directory if lang version is specified to disambiguate between other potential test runs with differing versions
+                match langVersion with
+                | Some lv -> lv
+                | None -> ()
+                // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
+                if multipleFiles then
+                    filename.Substring(0, filename.Length - 3) // remove .fs
+                    |> normalizeName
+            |]
+            |> Path.Combine
         let outputDirectory = outputDirectory methodName extraDirectory
         let outputDirectoryPath =
             match outputDirectory with
@@ -87,7 +93,7 @@ type DirectoryAttribute(dir: string) =
         let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
-
+        
         {   Source            = SourceCodeFileKind.Create(sourceFilePath)
             AdditionalSources = []
             Baseline          =

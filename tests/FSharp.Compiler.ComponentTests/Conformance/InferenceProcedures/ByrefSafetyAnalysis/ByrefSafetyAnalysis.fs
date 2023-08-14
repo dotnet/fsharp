@@ -9,26 +9,27 @@ open FSharp.Test.Compiler
 open Xunit.Sdk
 
 module Legacy =
-    let withPrelude =
+    let withPrelude langVersion =
         withReferences [
             FsFromPath (__SOURCE_DIRECTORY__ ++ "Prelude.fs")
             |> withName "Prelude"
+            |> withLangVersion langVersion
         ]
     
-    let verifyCompile compilation =
+    let verifyCompile langVersion compilation =
         compilation
         |> asExe
         |> withNoWarn 3370
         |> withOptions ["--test:ErrorRanges"]
-        |> withPrelude
+        |> withPrelude langVersion
         |> compile
     
-    let verifyCompileAndRun compilation =
+    let verifyCompileAndRun langVersion compilation =
         compilation
         |> asExe
         |> withNoWarn 3370
         |> withOptions ["--test:ErrorRanges"]
-        |> withPrelude
+        |> withPrelude langVersion
         |> compileAndRun
     
     // SOURCE=Migrated02.fs SCFLAGS="--test:ErrorRanges"                                  # Migrated02.fs
@@ -36,7 +37,7 @@ module Legacy =
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest02.fs"|], LangVersion="7.0")>]
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest02.fs"|], LangVersion="preview")>]
     let``MigratedTest02_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     // SOURCE=E_Migrated02.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated02.fs
     [<Theory>]
@@ -44,7 +45,7 @@ module Legacy =
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest02.fs"|], LangVersion = "preview")>]
     let``E_Migrated02_fs`` compilation _langVersion =
         compilation
-        |> verifyCompile
+        |> verifyCompile _langVersion
         |> shouldFail
         |> withDiagnostics [
             (Warning 193, Line 165, Col 9, Line 165, Col 22, "This expression is a function value, i.e. is missing arguments. Its type is byref<int> -> unit.")
@@ -165,7 +166,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|], LangVersion="preview")>]
     let``TryGetValue_fs`` compilation _langVersion =
-        compilation |> withPrelude |> compileExeAndRun |> shouldSucceed
+        compilation |> withPrelude _langVersion |> compileExeAndRun |> shouldSucceed
     
     [<Theory>]
     
@@ -174,7 +175,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"CompareExchange.fs"|], LangVersion="preview")>]
     let``CompareExchange_fs`` compilation _langVersion =
         compilation
-        |> withPrelude
+        |> withPrelude _langVersion
         |> withOptions ["--nowarn:3370"]
         |> compileExeAndRun
         |> shouldSucceed
@@ -185,7 +186,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam.fs"|], LangVersion="preview")>]
     let``ByRefParam_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -193,7 +194,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_ExplicitOutAttribute_fs`` compilation _langVersion =
-        compilation |> withPrelude |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
+        compilation |> withPrelude _langVersion |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
         
     [<Theory>]
         
@@ -201,7 +202,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitInAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_ExplicitInAttribute_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -209,7 +210,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefReturn.fs"|], LangVersion="preview")>]
     let``ByRefReturn_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -217,7 +218,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_ByRefReturn.fs"|], LangVersion="preview")>]
     let``Slot_ByRefReturn_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -225,7 +226,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefReturn.fs"|], LangVersion="preview")>]
     let``InRefReturn_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -233,7 +234,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_InRefReturn.fs"|], LangVersion="preview")>]
     let``Slot_InRefReturn_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -241,7 +242,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam.fs"|], LangVersion="preview")>]
     let``OutRefParam_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -249,7 +250,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``OutRefParam_ExplicitOutAttribute_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -257,7 +258,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_OutRefParam.fs"|], LangVersion="preview")>]
     let``Slot_OutRefParam_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -265,7 +266,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_OverloadedTest_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_OverloadedTest_ExplicitOutAttribute_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -273,7 +274,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``OutRefParam_Overloaded_ExplicitOutAttribute_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -281,7 +282,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded.fs"|], LangVersion="preview")>]
     let``OutRefParam_Overloaded_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -289,7 +290,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttribute.fs"|], LangVersion="preview")>]
     let``InRefParam_ExplicitInAttribute_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -297,7 +298,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttributeDateTime.fs"|], LangVersion="preview")>]
     let``InRefParam_ExplicitInAttributeDateTime_fs`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -305,7 +306,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam.fs"|], LangVersion="preview")>]
     let``InRefParam`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -313,7 +314,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ExplicitAddressOfAtCallSite`` compilation _langVersion =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -321,7 +322,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite`` compilation _langVersion =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -329,31 +330,31 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite2`` compilation _langVersion =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
     
     // TODO: Delete this, move into feature branch, or finish this. See: https://github.com/dotnet/fsharp/pull/7989#discussion_r369841104
 #if IMPLICIT_ADDRESS_OF
     module FeatureImplicitAddressOf =
         [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime.fs"|])>]
         let``InRefParam_DateTime`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite.fs"|])>]
         let``InRefParam_DateTime_ImplicitAddressOfAtCallSite`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite2.fs"|])>]
         let``InRefParam_DateTime_ImplicitAddressOfAtCallSite2`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
             
         [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite3.fs"|])>]
         let``InRefParam_DateTime_ImplicitAddressOfAtCallSite3`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory; Directory(__SOURCE_DIRECTORY__ + "/ImplicitAddressOf", Includes=[|"InRefParam_DateTime_ImplicitAddressOfAtCallSite4.fs"|])>]
         let``InRefParam_DateTime_ImplicitAddressOfAtCallSite4`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
 #endif
     
     [<Theory>]
@@ -362,7 +363,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs"|], LangVersion="preview")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite1`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
         
@@ -370,14 +371,14 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs"|], LangVersion="preview")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite2`` compilation _langVersion =
-        compilation |> verifyCompileAndRun |> shouldSucceed
+        compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
     
     module ByrefReturn =
         [<Theory>]
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestImmediateReturn.fs"|], LangVersion="7.0")>]
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestImmediateReturn.fs"|], LangVersion="preview")>]
         let``TestImmediateReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory>]
             
@@ -385,7 +386,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestMatchReturn.fs"|], LangVersion="preview")>]
         let``TestMatchReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -393,7 +394,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestConditionalReturn.fs"|], LangVersion="preview")>]
         let``TestConditionalReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -401,7 +402,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryWithReturn.fs"|], LangVersion="preview")>]
         let``TestTryWithReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -409,7 +410,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryFinallyReturn.fs"|], LangVersion="preview")>]
         let``TestTryFinallyReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -417,7 +418,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestOneArgument.fs"|], LangVersion="preview")>]
         let``TestOneArgument`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -425,7 +426,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTwoArguments.fs"|], LangVersion="preview")>]
         let``TestTwoArguments`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -433,7 +434,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam.fs"|], LangVersion="preview")>]
         let``TestRecordParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory>]
             
@@ -441,7 +442,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam2.fs"|], LangVersion="preview")>]
         let``TestRecordParam2`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -449,7 +450,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="preview")>]
         let``TestClassParamMutableField`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -457,7 +458,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestArrayParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -465,7 +466,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestStructParam.fs"|], LangVersion="preview")>]
         let``TestStructParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -473,7 +474,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="preview")>]
         let``TestInterfaceMethod`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -481,7 +482,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="preview")>]
         let``TestInterfaceProperty`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -489,7 +490,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -497,7 +498,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestBaseCall.fs"|], LangVersion="preview")>]
         let``TestBaseCall`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -505,14 +506,14 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod2`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     module ByrefReturnMember =
         [<Theory>]
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestImmediateReturn.fs"|], LangVersion="7.0")>]
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestImmediateReturn.fs"|], LangVersion="preview")>]
         let``TestImmediateReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -520,7 +521,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestMatchReturn.fs"|], LangVersion="preview")>]
         let``TestMatchReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -528,7 +529,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestConditionalReturn.fs"|], LangVersion="preview")>]
         let``TestConditionalReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -536,7 +537,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTryWithReturn.fs"|], LangVersion="preview")>]
         let``TestTryWithReturn`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -544,7 +545,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgument.fs"|], LangVersion="preview")>]
         let``TestOneArgument`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -552,7 +553,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentInRefReturned.fs"|], LangVersion="preview")>]
         let``TestOneArgumentInRefReturned`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -560,7 +561,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentOutRef.fs"|], LangVersion="preview")>]
         let``TestOneArgumentOutRef`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -568,7 +569,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTwoArguments.fs"|], LangVersion="preview")>]
         let``TestTwoArguments`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -576,7 +577,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam.fs"|], LangVersion="preview")>]
         let``TestRecordParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -584,7 +585,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam2.fs"|], LangVersion="preview")>]
         let``TestRecordParam2`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -592,7 +593,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="preview")>]
         let``TestClassParamMutableField`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -600,7 +601,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestArrayParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -608,7 +609,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestStructParam`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -616,7 +617,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="preview")>]
         let``TestInterfaceMethod`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -624,7 +625,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="preview")>]
         let``TestInterfaceProperty`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -632,7 +633,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -640,7 +641,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestBaseCall.fs"|], LangVersion="preview")>]
         let``TestBaseCall`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -648,7 +649,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod2`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -656,11 +657,11 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethods1.fs"|], LangVersion="preview")>]
         let``ByRefExtensionMethods1`` compilation _langVersion =
-            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         // [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethodsOverloading.fs"|])>]
         // let``ByRefExtensionMethodsOverloading`` compilation _langVersion =
-        //     compilation |> verifyCompileAndRun |> shouldSucceed
+        //     compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -668,7 +669,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestReadOnlyAddressOfStaticField.fs"|], LangVersion="preview")>]
         let``TestReadOnlyAddressOfStaticField`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -676,7 +677,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref.fs"|], LangVersion="preview")>]
         let``TestAssignToReturnByref`` compilation _langVersion =
-            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -684,7 +685,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref2.fs"|], LangVersion="preview")>]
         let``TestAssignToReturnByref2`` compilation _langVersion =
-            compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -692,7 +693,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"BaseCallByref.fs"|], LangVersion="preview")>]
         let``BaseCallByref`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -700,7 +701,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820.fs"|], LangVersion="preview")>]
         let``Bug820`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -708,7 +709,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820b.fs"|], LangVersion="preview")>]
         let``Bug820b`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -716,7 +717,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleGeneric.fs"|], LangVersion="preview")>]
         let``TestNameModuleGeneric`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -724,7 +725,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGeneric.fs"|], LangVersion="preview")>]
         let``TestNameModuleNonGeneric`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -732,7 +733,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGenericSubsume.fs"|], LangVersion="preview")>]
         let``TestNameModuleNonGenericSubsume`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -740,7 +741,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"GenericTestNameRecursive.fs"|], LangVersion="preview")>]
         let``GenericTestNameRecursive`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -748,7 +749,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``NonGenericTestNameRecursiveInClass`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -756,7 +757,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClassSubsume.fs"|], LangVersion="preview")>]
         let``NonGenericTestNameRecursiveInClassSubsume`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -764,7 +765,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``StaticGenericTestNameRecursiveInClass`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -772,7 +773,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticNonGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``StaticNonGenericTestNameRecursiveInClass`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -780,7 +781,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInRefMutation.fs"|], LangVersion="preview")>]
         let``TestInRefMutation`` compilation _langVersion =
-            compilation |> withNoWarn 52 |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 52 |> withNoWarn 20 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -788,7 +789,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MutateInRef3.fs"|], LangVersion="preview")>]
         let``MutateInRef3`` compilation _langVersion =
-            compilation |> verifyCompileAndRun |> shouldSucceed
+            compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -796,7 +797,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MatrixOfTests.fs"|], LangVersion="preview")>]
         let``MatrixOfTests`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
         
@@ -804,7 +805,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|], LangVersion="preview")>]
         let``TestStructRecord`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
     
     [<Theory>]
     
@@ -812,7 +813,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
     
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|], LangVersion="preview")>]
     let``NoTailcallToByrefsWithModReq`` compilation _langVersion =
-        compilation |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
+        compilation |> withNoWarn 20 |> verifyCompileAndRun _langVersion |> shouldSucceed
     
     [<Theory>]
     
