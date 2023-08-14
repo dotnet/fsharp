@@ -617,7 +617,7 @@ module ExtendedFixedBindings =
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin type with a valid GetPinnableReference method and several invalid overloads`` langVersion =
-        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithValidGetPinnableReferenceAndSeveralInvalidOverloads.fs")
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithValidAndInvalidGetPinnableReferenceOverloads.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings
         |> compile
