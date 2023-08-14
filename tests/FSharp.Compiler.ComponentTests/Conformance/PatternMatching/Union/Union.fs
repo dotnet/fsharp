@@ -177,3 +177,36 @@ but here has type
             (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 8, Col 7, Line 8, Col 8, "This rule will never be matched")
         ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern09.fs"|])>]
+    let ``Union - E_UnionPattern9_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 39, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern10.fs"|])>]
+    let ``Union - E_UnionPattern10_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 52, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern11.fs"|])>]
+    let ``Union - E_UnionPattern11_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 55, "This rule will never be matched")
+        ]    

@@ -1679,7 +1679,7 @@ let CompilePatternBasic
                     | [ head ] -> Some head.Id.idRange
                     | _ :: _ -> Some c.Pattern.Range
                     | _ -> Some c.Pattern.Range
-                | _ -> None
+                | _, Some guard -> Some guard.Range
                 
             let m =
                 match m with
