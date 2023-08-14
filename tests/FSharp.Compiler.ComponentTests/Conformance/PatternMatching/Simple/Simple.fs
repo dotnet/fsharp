@@ -31,8 +31,8 @@ module Simple =
         |> withDiagnostics [
             (Warning 25, Line 14, Col 15, Line 14, Col 16, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).")
             (Warning 25, Line 21, Col 31, Line 21, Col 39, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).")
-            (Warning 26, Line 31, Col 11, Line 31, Col 18, "This rule will never be matched")
-            (Warning 26, Line 32, Col 11, Line 32, Col 19, "This rule will never be matched")
+            (Warning 26, Line 31, Col 11, Line 31, Col 12, "This rule will never be matched")
+            (Warning 26, Line 32, Col 11, Line 32, Col 13, "This rule will never be matched")
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
@@ -216,7 +216,7 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 13, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 8, "This rule will never be matched")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"simplePatterns12.fs"|])>]

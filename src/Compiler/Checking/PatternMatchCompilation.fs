@@ -1668,7 +1668,6 @@ let CompilePatternBasic
     if warnOnUnused then
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
 
-        // Account for bounds(as) and guards(when) used in clauses
         clauses |> List.iteri (fun i c ->
             let m =
                 match c.BoundVals, c.GuardExpr with
@@ -1677,7 +1676,8 @@ let CompilePatternBasic
                 | [ _ ], Some guard -> Some guard.Range
                 | rest, None ->
                     match rest with
-                    | head :: _ -> Some head.Id.idRange
+                    | [ head ] -> Some head.Id.idRange
+                    | _ :: _ -> Some c.Pattern.Range
                     | _ -> Some c.Pattern.Range
                 | _ -> None
                 
