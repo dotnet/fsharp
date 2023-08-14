@@ -59,6 +59,7 @@
     <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
     <Compile Include="CodeFixes\SimplifyNameTests.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignatureTests.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

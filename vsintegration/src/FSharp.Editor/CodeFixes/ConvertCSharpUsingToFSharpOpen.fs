@@ -9,6 +9,8 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
+open CancellableTasks
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpUsingToFSharpOpen); Shared>]
 type internal ConvertCSharpUsingToFSharpOpenCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
@@ -16,66 +18,67 @@ type internal ConvertCSharpUsingToFSharpOpenCodeFixProvider [<ImportingConstruct
     static let title = SR.ConvertCSharpUsingToFSharpOpen()
     let usingLength = "using".Length
 
-    let isCSharpUsingShapeWithPos (context: CodeFixContext) (sourceText: SourceText) =
+    let isCSharpUsingShapeWithPos (errorSpan: TextSpan) (sourceText: SourceText) =
         // Walk back until whitespace
-        let mutable pos = context.Span.Start - 1
-        let mutable ch = sourceText.[pos]
+        let mutable pos = errorSpan.Start
+        let mutable ch = sourceText[pos]
 
         while pos > 0 && not (Char.IsWhiteSpace(ch)) do
             pos <- pos - 1
-            ch <- sourceText.[pos]
+            ch <- sourceText[pos]
 
         // Walk back whitespace
-        ch <- sourceText.[pos]
+        ch <- sourceText[pos]
 
         while pos > 0 && Char.IsWhiteSpace(ch) do
             pos <- pos - 1
-            ch <- sourceText.[pos]
+            ch <- sourceText[pos]
 
         // Take 'using' slice and don't forget that offset because computer math is annoying
         let start = pos - usingLength + 1
-        let span = TextSpan(start, usingLength)
-        let slice = sourceText.GetSubText(span).ToString()
-        struct (slice = "using", start)
 
-    let registerCodeFix (context: CodeFixContext) (str: string) (span: TextSpan) =
-        let replacement =
-            let str = str.Replace("using", "open").Replace(";", "")
-            TextChange(span, str)
-
-        do context.RegisterFsharpFix(CodeFix.ConvertCSharpUsingToFSharpOpen, title, [| replacement |])
+        if start < 0 then
+            false
+        else
+            let span = TextSpan(start, usingLength)
+            let slice = sourceText.GetSubText(span).ToString()
+            slice = "using"
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0201")
 
-    override _.RegisterCodeFixesAsync context =
-        asyncMaybe {
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            // TODO: handle single-line case?
-            let statementWithSemicolonSpan =
-                TextSpan(context.Span.Start, context.Span.Length + 1)
+    override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
-            do! Option.guard (sourceText.Length >= statementWithSemicolonSpan.End)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let diagnostic = context.Diagnostics[0]
+                let! errorText = context.GetSquigglyTextAsync()
+                let! sourceText = context.GetSourceTextAsync()
 
-            let statementWithSemicolon =
-                sourceText.GetSubText(statementWithSemicolonSpan).ToString()
+                let isValidCase =
+                    match diagnostic.Id with
+                    // using is included in the squiggly
+                    | "FS0201" when errorText.Contains("using ") -> true
+                    // using is not included in the squiqqly
+                    | "FS0039" when isCSharpUsingShapeWithPos context.Span sourceText -> true
+                    | _ -> false
 
-            // Top of the file case -- entire line gets a diagnostic
-            if
-                (statementWithSemicolon.StartsWith("using")
-                 && statementWithSemicolon.EndsWith(";"))
-            then
-                registerCodeFix context statementWithSemicolon statementWithSemicolonSpan
-            else
-                // Only the identifier being opened has a diagnostic, so we try to find the rest of the statement
-                let struct (isCSharpUsingShape, start) =
-                    isCSharpUsingShapeWithPos context sourceText
+                if isValidCase then
+                    let lineNumber = sourceText.Lines.GetLinePositionSpan(context.Span).Start.Line
+                    let line = sourceText.Lines[lineNumber]
 
-                if isCSharpUsingShape then
-                    let len = (context.Span.Start - start) + statementWithSemicolonSpan.Length
-                    let fullSpan = TextSpan(start, len)
-                    let str = sourceText.GetSubText(fullSpan).ToString()
-                    registerCodeFix context str fullSpan
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    let change =
+                        TextChange(line.Span, line.ToString().Replace("using", "open").Replace(";", ""))
+
+                    return
+                        ValueSome
+                            {
+                                Name = CodeFix.ConvertCSharpUsingToFSharpOpen
+                                Message = title
+                                Changes = [ change ]
+                            }
+                else
+                    return ValueNone
+            }
