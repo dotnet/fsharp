@@ -55,6 +55,8 @@
     <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\MakeDeclarationMutableTests.fs" />
+    <Compile Include="CodeFixes\UseMutationWhenValueIsMutableTests.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColonTests.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
     <Compile Include="CodeFixes\SimplifyNameTests.fs" />
