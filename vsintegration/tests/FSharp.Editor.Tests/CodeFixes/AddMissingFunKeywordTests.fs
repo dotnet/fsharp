@@ -34,13 +34,18 @@ let gettingEven numbers =
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Doesn't fix FS0010 for random unexpected symbols`` () =
-    let code =
-        """
+[<Theory>]
+[<InlineData("""
 =
-"""
-
+""")>]
+[<InlineData "let f x = 
+    match x with
+    | _ ->
+        let _ = [
+            x with
+        ]
+">]
+let ``Doesn't fix FS0010 for random unexpected symbols`` code =
     let expected = None
 
     let actual = codeFix |> tryFix code Auto
