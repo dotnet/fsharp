@@ -20,6 +20,7 @@ type TestCodeFix = { Message: string; FixedCode: string }
 type Mode =
     | Auto
     | WithOption of CustomProjectOption: string
+    | WithSignature of FsiCode: string
     | Manual of Squiggly: string * Diagnostic: string
 
 let inline toOption o =
@@ -41,6 +42,7 @@ let getDocument code mode =
     match mode with
     | Auto -> RoslynTestHelpers.GetFsDocument code
     | WithOption option -> RoslynTestHelpers.GetFsDocument(code, option)
+    | WithSignature fsiCode -> RoslynTestHelpers.GetFsiAndFsDocuments fsiCode code |> Seq.last
     | Manual _ -> RoslynTestHelpers.GetFsDocument code
 
 let getRelevantDiagnostics (document: Document) =
@@ -64,6 +66,7 @@ let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds 
                 getRelevantDiagnostics document
                 |> Array.filter (fun d -> diagnosticIds |> Seq.contains d.ErrorNumberText)
             | WithOption _ -> getRelevantDiagnostics document
+            | WithSignature _ -> getRelevantDiagnostics document
             | Manual (squiggly, diagnostic) ->
                 let spanStart = code.IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
