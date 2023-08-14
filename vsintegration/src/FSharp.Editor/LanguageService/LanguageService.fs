@@ -401,6 +401,10 @@ type internal FSharpPackage() as this =
                 SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
                 |> ignore
 
+            do
+                LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
+                |> ignore
+
         }
         |> CancellableTask.startAsTask cancellationToken
 
