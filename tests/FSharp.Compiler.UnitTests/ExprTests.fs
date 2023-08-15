@@ -8,8 +8,8 @@
 module FSharp.Compiler.Service.Tests.ExprTests
 #endif
 
-open NUnit.Framework
-open FsUnit
+open Xunit
+open FSharp.Test
 open System
 open System.IO
 open System.Text
@@ -23,6 +23,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open TestFramework
+open Assert
 
 type FSharpCore =
     | FC45
@@ -724,15 +725,8 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-let ignoreTestIfStackOverflowExpected () =
-#if !NETFRAMEWORK && DEBUG
-    Assert.Ignore("Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")
-#else
-    ()
-#endif
-
 /// This test is run in unison with its optimized counterpart below
-[<Test>]
+[<Fact>]
 let ``Test Unoptimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
@@ -867,7 +861,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 
     ()
 
-[<Test>]
+[<Fact>]
 let ``Test Optimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
@@ -1116,7 +1110,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         |> shouldPairwiseEqual expectedOptFiltered
     end
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Byte`` () =
     let excludedTests = [
         "testByteUnaryNegOperator";
@@ -1226,7 +1220,7 @@ let ``Test Operator Declarations for Byte`` () =
     testOperators "Byte" "byte" excludedTests expectedUnoptimized expectedOptimized
 
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for SByte`` () =
     let excludedTests = [ ]
 
@@ -1335,7 +1329,7 @@ let ``Test Operator Declarations for SByte`` () =
 
     testOperators "SByte" "sbyte" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Int16`` () =
     let excludedTests = [ ]
 
@@ -1444,7 +1438,7 @@ let ``Test Operator Declarations for Int16`` () =
 
     testOperators "Int16" "int16" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for UInt16`` () =
     let excludedTests = [
         "testUInt16UnaryNegOperator";
@@ -1552,7 +1546,7 @@ let ``Test Operator Declarations for UInt16`` () =
 
     testOperators "UInt16" "uint16" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Int`` () =
     let excludedTests = [ ]
 
@@ -1661,7 +1655,7 @@ let ``Test Operator Declarations for Int`` () =
 
     testOperators "Int" "int" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Int32`` () =
     let excludedTests = [ ]
 
@@ -1771,7 +1765,7 @@ let ``Test Operator Declarations for Int32`` () =
 
     testOperators "Int32" "int32" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for UInt32`` () =
     let excludedTests = [
         "testUInt32UnaryNegOperator";
@@ -1879,7 +1873,7 @@ let ``Test Operator Declarations for UInt32`` () =
 
     testOperators "UInt32" "uint32" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Int64`` () =
     let excludedTests = [ ]
 
@@ -1989,7 +1983,7 @@ let ``Test Operator Declarations for Int64`` () =
 
     testOperators "Int64" "int64" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for UInt64`` () =
     let excludedTests = [
         "testUInt64UnaryNegOperator";
@@ -2097,7 +2091,7 @@ let ``Test Operator Declarations for UInt64`` () =
 
     testOperators "UInt64" "uint64" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for IntPtr`` () =
     let excludedTests = [ ]
 
@@ -2206,7 +2200,7 @@ let ``Test Operator Declarations for IntPtr`` () =
 
     testOperators "IntPtr" "nativeint" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for UIntPtr`` () =
     let excludedTests = [
         "testUIntPtrUnaryNegOperator";
@@ -2314,7 +2308,7 @@ let ``Test Operator Declarations for UIntPtr`` () =
 
     testOperators "UIntPtr" "unativeint" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Single`` () =
     let excludedTests = [
         "testSingleBitwiseAndOperator";
@@ -2419,7 +2413,7 @@ let ``Test Operator Declarations for Single`` () =
 
     testOperators "Single" "float32" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Single with unit of measure`` () =
     let excludedTests = [
         "testSingleUnitizedBitwiseAndOperator";
@@ -2524,7 +2518,7 @@ let ``Test Operator Declarations for Single with unit of measure`` () =
 
     testOperators "SingleUnitized" "float32<FSharp.Data.UnitSystems.SI.UnitSymbols.m>" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Double`` () =
     let excludedTests = [
         "testDoubleBitwiseAndOperator";
@@ -2630,7 +2624,7 @@ let ``Test Operator Declarations for Double`` () =
 
     testOperators "Double" "float" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Decimal`` () =
     let excludedTests = [
         // None of these are supported for decimals
@@ -2729,7 +2723,7 @@ let ``Test Operator Declarations for Decimal`` () =
 
     testOperators "Decimal" "decimal" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Decimal unitized`` () =
     let excludedTests = [
         // None of these are supported for unitized decimals
@@ -2810,7 +2804,7 @@ let ``Test Operator Declarations for Decimal unitized`` () =
       ]
     testOperators "DecimalUnitized" "decimal<FSharp.Data.UnitSystems.SI.UnitSymbols.m>" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for Char`` () =
     let excludedTests = [
         "testCharSubtractionOperator";
@@ -2907,7 +2901,7 @@ let ``Test Operator Declarations for Char`` () =
 
     testOperators "Char" "char" excludedTests expectedUnoptimized expectedOptimized
 
-[<Test>]
+[<Fact>]
 let ``Test Operator Declarations for String`` () =
     let excludedTests = [
         "testStringSubtractionOperator";
@@ -3197,10 +3191,12 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
     let createOptions() = createOptionsAux [fileSource1] []
 
-
-[<Test>]
+#if !NETFRAMEWORK && DEBUG
+[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+#else
+[<Fact>]
+#endif
 let ``Test expressions of declarations stress big expressions`` () =
-    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -3214,10 +3210,12 @@ let ``Test expressions of declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
-
-[<Test>]
+#if !NETFRAMEWORK && DEBUG
+[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+#else
+[<Fact>]
+#endif
 let ``Test expressions of optimized declarations stress big expressions`` () =
-    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -3276,7 +3274,7 @@ let f8() = callXY (D()) (C())
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses1`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
@@ -3320,7 +3318,7 @@ let ``Test ProjectForWitnesses1`` () =
       |> shouldPairwiseEqual expected
 
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
@@ -3400,7 +3398,7 @@ type MyNumberWrapper =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses2`` () =
     let cleanup, options = ProjectForWitnesses2.createOptions()
     use _holder = cleanup
@@ -3455,7 +3453,7 @@ let s2 = sign p1
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses3`` () =
     let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
@@ -3486,7 +3484,7 @@ let ``Test ProjectForWitnesses3`` () =
     actual
       |> shouldPairwiseEqual expected
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses3.createOptions()
     use _holder = cleanup
@@ -3549,7 +3547,7 @@ let isNullQuoted (ts : 't[]) =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
-[<Test>]
+[<Fact>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses4.createOptions()
     use _holder = cleanup
@@ -3559,7 +3557,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses4 error: <<<%s>>>" e.Message
 
-    Assert.AreEqual(wholeProjectResults.Diagnostics.Length, 0)
+    Assert.Equal(wholeProjectResults.Diagnostics.Length, 0)
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
