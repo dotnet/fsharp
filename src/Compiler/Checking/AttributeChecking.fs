@@ -266,60 +266,60 @@ let langVersionPrefix = "--langversion:preview"
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes (g:TcGlobals) attribs m = trackErrors {
-    let isExperimentalAttributeDisabled (s:string) =
-        if g.compilingFSharpCore then
-            true
-        else
-            g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
-
-    if isNil attribs then do! CompleteD
+let CheckFSharpAttributes (g:TcGlobals) attribs m =
+    if isNil attribs then CompleteD
     else
-        match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
-            do! WarnD(ObsoleteWarning(s, m))
-        | Some(Attrib(_, _, [ AttribStringArg s; AttribBoolArg(isError) ], _, _, _, _)) -> 
-            if isError then 
-                do! ErrorD (ObsoleteError(s, m))
-            else 
-                do! WarnD (ObsoleteWarning(s, m))
-        | Some _ -> 
-            do! WarnD(ObsoleteWarning("", m))
-        | None -> 
-            do! CompleteD
-        
-        match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
-            let msg = UserCompilerMessage(s, n, m)
-            let isError = 
-                match namedArgs with 
-                | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
-                | _ -> false 
-            // If we are using a compiler that supports nameof then error 3501 is always suppressed.
-            // See attribute on FSharp.Core 'nameof'
-            if n = 3501 then do! CompleteD
-            elif isError && (not g.compilingFSharpCore || n <> 1204) then do! ErrorD msg 
-            else do! WarnD msg
-        | _ -> 
-            do! CompleteD
-
-        match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
-            if isExperimentalAttributeDisabled s then
+        trackErrors {
+            match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
+            | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
+                do! WarnD(ObsoleteWarning(s, m))
+            | Some(Attrib(_, _, [ AttribStringArg s; AttribBoolArg(isError) ], _, _, _, _)) -> 
+                if isError then 
+                    do! ErrorD (ObsoleteError(s, m))
+                else 
+                    do! WarnD (ObsoleteWarning(s, m))
+            | Some _ -> 
+                do! WarnD(ObsoleteWarning("", m))
+            | None -> 
                 do! CompleteD
-            else
-                do! WarnD(Experimental(s, m))
-        | Some _ ->
-            do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
-        | _ ->
-            do! CompleteD
+            
+            match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
+            | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
+                let msg = UserCompilerMessage(s, n, m)
+                let isError = 
+                    match namedArgs with 
+                    | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
+                    | _ -> false 
+                // If we are using a compiler that supports nameof then error 3501 is always suppressed.
+                // See attribute on FSharp.Core 'nameof'
+                if n = 3501 then do! CompleteD
+                elif isError && (not g.compilingFSharpCore || n <> 1204) then do! ErrorD msg 
+                else do! WarnD msg
+            | _ -> 
+                do! CompleteD
 
-        match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
-        | Some _ -> 
-            do! WarnD(PossibleUnverifiableCode(m))
-        | _ ->  
-            do! CompleteD
-}
+            match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
+            | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+                let isExperimentalAttributeDisabled (s:string) =
+                    if g.compilingFSharpCore then
+                        true
+                    else
+                        g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
+                if isExperimentalAttributeDisabled s then
+                    do! CompleteD
+                else
+                    do! WarnD(Experimental(s, m))
+            | Some _ ->
+                do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
+            | _ ->
+                do! CompleteD
+
+            match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
+            | Some _ -> 
+                do! WarnD(PossibleUnverifiableCode(m))
+            | _ ->  
+                do! CompleteD
+        }
 
 #if !NO_TYPEPROVIDERS
 /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
