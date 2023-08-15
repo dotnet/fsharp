@@ -1,9 +1,6 @@
-﻿
-#if INTERACTIVE
+﻿#if INTERACTIVE
 #r "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0/FSharp.Compiler.Service.dll"
-#r "../../artifacts/bin/FSharp.Compiler.UnitTests/Debug/net472/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
 module FSharp.Compiler.Service.Tests.ExprTests
 #endif
