@@ -266,29 +266,28 @@ let langVersionPrefix = "--langversion:preview"
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes (g:TcGlobals) attribs m =
+let CheckFSharpAttributes (g:TcGlobals) attribs m = trackErrors {
     let isExperimentalAttributeDisabled (s:string) =
         if g.compilingFSharpCore then
             true
         else
             g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
 
-    if isNil attribs then CompleteD
+    if isNil attribs then do! CompleteD
     else
-        (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
+        match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
-            WarnD(ObsoleteWarning(s, m))
+            do! WarnD(ObsoleteWarning(s, m))
         | Some(Attrib(_, _, [ AttribStringArg s; AttribBoolArg(isError) ], _, _, _, _)) -> 
             if isError then 
-                ErrorD (ObsoleteError(s, m))
+                do! ErrorD (ObsoleteError(s, m))
             else 
-                WarnD (ObsoleteWarning(s, m))
+                do! WarnD (ObsoleteWarning(s, m))
         | Some _ -> 
-            WarnD(ObsoleteWarning("", m))
+            do! WarnD(ObsoleteWarning("", m))
         | None -> 
-            CompleteD
-        ) ++ (fun () -> 
-
+            do! CompleteD
+        
         match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
             let msg = UserCompilerMessage(s, n, m)
@@ -298,31 +297,29 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 | _ -> false 
             // If we are using a compiler that supports nameof then error 3501 is always suppressed.
             // See attribute on FSharp.Core 'nameof'
-            if n = 3501 then CompleteD
-            elif isError && (not g.compilingFSharpCore || n <> 1204) then ErrorD msg 
-            else WarnD msg
+            if n = 3501 then do! CompleteD
+            elif isError && (not g.compilingFSharpCore || n <> 1204) then do! ErrorD msg 
+            else do! WarnD msg
         | _ -> 
-            CompleteD
-        ) ++ (fun () -> 
+            do! CompleteD
 
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
         | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
             if isExperimentalAttributeDisabled s then
-                CompleteD
+                do! CompleteD
             else
-                WarnD(Experimental(s, m))
+                do! WarnD(Experimental(s, m))
         | Some _ ->
-            WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
+            do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
         | _ ->
-            CompleteD
-        ) ++ (fun () ->
+            do! CompleteD
 
         match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
         | Some _ -> 
-            WarnD(PossibleUnverifiableCode(m))
+            do! WarnD(PossibleUnverifiableCode(m))
         | _ ->  
-            CompleteD
-        )
+            do! CompleteD
+}
 
 #if !NO_TYPEPROVIDERS
 /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
@@ -503,15 +500,17 @@ let PropInfoIsUnseen m pinfo =
 #endif
 
 /// Check the attributes on a union case, returning errors and warnings as data.
-let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
-    CheckEntityAttributes g x.TyconRef m ++ (fun () ->
-    CheckFSharpAttributes g x.Attribs m)
+let CheckUnionCaseAttributes g (x:UnionCaseRef) m = trackErrors {
+    do! CheckEntityAttributes g x.TyconRef m
+    do! CheckFSharpAttributes g x.Attribs m
+}
 
 /// Check the attributes on a record field, returning errors and warnings as data.
-let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
-    CheckEntityAttributes g x.TyconRef m ++ (fun () ->
-    CheckFSharpAttributes g x.PropertyAttribs m) ++ (fun () ->
-    CheckFSharpAttributes g x.RecdField.FieldAttribs m)
+let CheckRecdFieldAttributes g (x:RecdFieldRef) m = trackErrors {
+    do! CheckEntityAttributes g x.TyconRef m 
+    do! CheckFSharpAttributes g x.PropertyAttribs m
+    do! CheckFSharpAttributes g x.RecdField.FieldAttribs m
+}
 
 /// Check the attributes on an F# value, returning errors and warnings as data.
 let CheckValAttributes g (x:ValRef) m =
