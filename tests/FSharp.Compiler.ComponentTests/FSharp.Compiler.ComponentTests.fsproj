@@ -159,6 +159,7 @@
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
+    <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
@@ -201,6 +202,7 @@
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="Language\DotLambdaTests.fs" />
+    <Compile Include="Language\FixedBindings\FixedBindings.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\WhileBangTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />

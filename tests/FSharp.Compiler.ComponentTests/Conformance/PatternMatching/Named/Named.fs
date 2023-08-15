@@ -360,8 +360,8 @@ but here has type
             (Error 72, Line 21, Col 20, Line 21, Col 31, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Warning 49, Line 22, Col 7, Line 22, Col 17, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Error 39, Line 23, Col 7, Line 23, Col 18, "The pattern discriminator 'Punctuation' is not defined.")
-            (Warning 26, Line 23, Col 7, Line 23, Col 26, "This rule will never be matched")
-            (Warning 26, Line 24, Col 7, Line 24, Col 40, "This rule will never be matched")
+            (Warning 26, Line 23, Col 7, Line 23, Col 20, "This rule will never be matched")
+            (Warning 26, Line 24, Col 7, Line 24, Col 8, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)

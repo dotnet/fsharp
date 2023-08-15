@@ -142,6 +142,8 @@ stages:
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
                     /p:GenerateSbom=true
+            env:
+                NativeToolsOnMachine: true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
           - task: PublishTestResults@2
@@ -335,6 +337,8 @@ stages:
             clean: true
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
+            env:
+              NativeToolsOnMachine: true
             displayName: Build
 
           - task: PublishBuildArtifacts@1
@@ -361,6 +365,8 @@ stages:
             clean: true
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
+            env:
+              NativeToolsOnMachine: true
             displayName: Build
 
           - task: PublishBuildArtifacts@1
@@ -418,9 +424,13 @@ stages:
 
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              NativeToolsOnMachine: true
             displayName: Build / Test
             condition: ne(variables['_testKind'], 'testIntegration')
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            env:
+              NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
             condition: eq(variables['_testKind'], 'testIntegration')
@@ -572,6 +582,7 @@ stages:
             clean: true
           - script: .\Build.cmd -c Release -pack
             env:
+              NativeToolsOnMachine: true
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             env:
@@ -702,6 +713,8 @@ stages:
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            env:
+              NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
           - script: $(Build.SourcesDirectory)/tests/AheadOfTime/Trimming/check.cmd
             displayName: Build, trim, publish and check the state of the trimmed app.
