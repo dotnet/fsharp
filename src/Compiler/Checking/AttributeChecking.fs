@@ -414,21 +414,24 @@ let CheckILEventAttributes g (tcref: TyconRef) cattrs m  =
     CheckILAttributes g (isByrefLikeTyconRef g m tcref) cattrs m 
 
 /// Check the attributes associated with a method, returning warnings and errors as data.
-let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
-    match stripTyEqns g minfo.ApparentEnclosingAppType with
-    | TType_app(tcref, _, _) -> CheckEntityAttributes g tcref m 
-    | _ -> CompleteD
-    ++ (fun () ->
+let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
+    trackErrors {
+        match stripTyEqns g minfo.ApparentEnclosingAppType with
+        | TType_app(tcref, _, _) -> do! CheckEntityAttributes g tcref m 
+        | _ -> do! CompleteD
         let search =
             BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
                 (fun fsAttribs -> 
-                    let res = 
-                        CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
-                            if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
-                                ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
-                            else
-                                CompleteD)
+                    let res =
+                        trackErrors {
+                             do! CheckFSharpAttributes g fsAttribs m
+                             if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
+                                do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
+                             else
+                                do! CompleteD
+                        }
+                        
                     Some res) 
 #if !NO_TYPEPROVIDERS
                 (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
@@ -436,9 +439,9 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                 (fun _provAttribs -> None)
 #endif 
         match search with
-        | Some res -> res
-        | None -> CompleteD // no attribute = no errors 
-    )
+        | Some res -> do! res
+        | None -> do! CompleteD // no attribute = no errors 
+}
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
