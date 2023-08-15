@@ -7418,15 +7418,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 | Some item ->
                     CallNameResolutionSink cenv.tcSink (fldId.idRange, env.eNameResEnv, item, emptyTyparInst, ItemOccurence.UseInType, env.eAccessRights)
                 | None -> ()
-
-            try
-                let firstPartRange = mkRange mWholeExpr.FileName mWholeExpr.Start (mkPos mWholeExpr.StartLine (mWholeExpr.StartColumn + 1))
-                // Use the  left { in the expression
-                error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), firstPartRange))
-            with _ ->
-                // Use the  right } in the expression
-                let lastPartRange = mkRange mWholeExpr.FileName (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn - 1)) (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn))
-                error(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), lastPartRange))
+            let firstPartRange = withStartEnd mWholeExpr.Start (mkPos mWholeExpr.StartLine (mWholeExpr.StartColumn + 1)) mWholeExpr
+            // Use the  left { in the expression
+            errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), firstPartRange))
+            // Use the  right } in the expression
+            let lastPartRange = withStartEnd (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn - 1)) (mkPos mWholeExpr.StartLine mWholeExpr.EndColumn) mWholeExpr
+            errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), lastPartRange))
             []
         else
             // If the overall type is a record type build a map of the fields
