@@ -43,7 +43,7 @@ module Tuple =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 11, Col 7, Line 12, Col 16, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 11, Col 7, Line 11, Col 14, "This rule will never be matched")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"W_RedundantPattern02.fs"|])>]
@@ -53,5 +53,5 @@ module Tuple =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 12, Col 28, Line 12, Col 50, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 12, Col 28, Line 12, Col 29, "This rule will never be matched")
         

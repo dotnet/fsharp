@@ -67,6 +67,8 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | WhileBang
+    | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
 
 /// LanguageVersion management
 type LanguageVersion =

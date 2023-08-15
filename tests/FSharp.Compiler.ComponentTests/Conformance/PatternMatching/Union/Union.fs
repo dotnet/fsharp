@@ -70,8 +70,8 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 26, Line 12, Col 7, Line 12, Col 17, "This rule will never be matched")
-            (Warning 26, Line 21, Col 7, Line 21, Col 17, "This rule will never be matched")
+            (Warning 26, Line 12, Col 7, Line 12, Col 12, "This rule will never be matched")
+            (Warning 26, Line 21, Col 7, Line 21, Col 12, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
@@ -82,3 +82,131 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern01.fs"|])>]
+    let ``Union - E_UnionPattern1_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 9, Line 6, Col 10, "Incomplete pattern matches on this expression. For example, the value 'C' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 9, Col 5, Line 9, Col 22, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern02.fs"|])>]
+    let ``Union - E_UnionPattern2_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 9, Line 6, Col 10, "Incomplete pattern matches on this expression. For example, the value 'C' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 9, Col 5, Line 9, Col 27, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern03.fs"|])>]
+    let ``Union - E_UnionPattern3_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 12, Line 9, Col 17, "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'bool'.")
+            (Warning 25, Line 7, Col 11, Line 7, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 9, Col 7, Line 9, Col 8, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern04.fs"|])>]
+    let ``Union - E_UnionPattern4_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 4, Col 7, Line 4, Col 13, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern05.fs"|])>]
+    let ``Union - E_UnionPattern5_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 23, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern06.fs"|])>]
+    let ``Union - E_UnionPattern6_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 8, Col 7, Line 8, Col 15, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern07.fs"|])>]
+    let ``Union - E_UnionPattern7_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 8, Col 7, Line 8, Col 26, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern08.fs"|])>]
+    let ``Union - E_UnionPattern8_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 8, Col 7, Line 8, Col 8, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern09.fs"|])>]
+    let ``Union - E_UnionPattern9_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 39, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern10.fs"|])>]
+    let ``Union - E_UnionPattern10_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 52, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern11.fs"|])>]
+    let ``Union - E_UnionPattern11_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 55, "This rule will never be matched")
+        ]    

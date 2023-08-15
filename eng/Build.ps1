@@ -514,6 +514,14 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
+
+    if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.0.1\perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = unset or false"
+        $nativeTools
+        write-host "Path = $env:PERL5Path"
+    }
+
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
@@ -592,7 +600,15 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+
+        if (-not (Test-Path variable:NativeToolsOnMachine)) {
+            Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+        else
+        {
+            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+
         write-host "Exec-Console finished"
         Pop-Location
     }
