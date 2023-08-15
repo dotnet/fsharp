@@ -418,7 +418,7 @@ module ExtendedFixedBindings =
   .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype [runtime]System.ReadOnlySpan`1<!!a> thing) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
@@ -524,7 +524,7 @@ module ExtendedFixedBindings =
   .method public static !!a  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(valuetype FixedBindings/ArrayElementRef`1<!!a> thing) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
@@ -636,7 +636,7 @@ module ExtendedFixedBindings =
   .method public static !!a  pinIt<T,valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) a>(class FixedBindings/RefField`1<!!T> thing) cil managed
   {
     .param type a 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
@@ -674,7 +674,7 @@ module ExtendedFixedBindings =
   .method public static !!T  pinIt<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>(class FixedBindings/RefField`1<!!T> thing) cil managed
   {
     .param type T 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  5
     .locals init (native int V_0,
