@@ -161,7 +161,7 @@ module ConvertViaOpImplicit3 =
 module ConvertViaOpImplicit4 =
     type C() = 
         static member op_Implicit(x:int) = C()
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
     let x = C.M1(2)
 
 module ConvertViaOpImplicit5 =
