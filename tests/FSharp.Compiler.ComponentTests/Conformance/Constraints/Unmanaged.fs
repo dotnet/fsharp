@@ -361,7 +361,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<FactForNETCOREAPP>]
     let ``Multi constraint IL test together with struct and interface constraints`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct and 'T:>System.IComparable> = struct end"
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -387,7 +387,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
     [<FactForNETCOREAPP>]
     let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = struct(x,1)"
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -458,7 +458,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     [<FactForNETCOREAPP>]
     let ``FSharp generates modreq for CSharp to consume in preview`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -495,7 +495,7 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
     val Item : 'TInner   
     with static member Hi() = typeof<'TInner>.Name"""
             |> asLibrary
-            |> withLangVersion80
+            |> withLangVersionPreview
             |> withName "fsLib"
 
         let app = 
