@@ -541,7 +541,7 @@ module FsharpPreparedData =
     let structDuExample2 = B "42"
     """
             |> asLibrary
-            |> withLangVersion80
+            |> withLangVersionPreview
             |> withName "fsLib"
 
         let app = 
