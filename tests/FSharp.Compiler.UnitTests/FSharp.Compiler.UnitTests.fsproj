@@ -13,6 +13,7 @@
 
   <ItemGroup>
       <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+      <Compile Include="AsyncExtensions.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,9 +63,7 @@
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
     <Compile Include="StructureTests.fs" />
-    <Compile Include="..\..\tests\service\AssemblyContentProviderTests.fs">
-      <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
-    </Compile>
+    <Compile Include="AssemblyContentProviderTests.fs" />
     <Compile Include="..\..\tests\service\ServiceUntypedParseTests.fs">
       <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
