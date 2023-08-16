@@ -503,17 +503,19 @@ let PropInfoIsUnseen m pinfo =
 #endif
 
 /// Check the attributes on a union case, returning errors and warnings as data.
-let CheckUnionCaseAttributes g (x:UnionCaseRef) m = trackErrors {
-    do! CheckEntityAttributes g x.TyconRef m
-    do! CheckFSharpAttributes g x.Attribs m
-}
+let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
+    trackErrors {
+        do! CheckEntityAttributes g x.TyconRef m
+        do! CheckFSharpAttributes g x.Attribs m
+    }
 
 /// Check the attributes on a record field, returning errors and warnings as data.
-let CheckRecdFieldAttributes g (x:RecdFieldRef) m = trackErrors {
-    do! CheckEntityAttributes g x.TyconRef m 
-    do! CheckFSharpAttributes g x.PropertyAttribs m
-    do! CheckFSharpAttributes g x.RecdField.FieldAttribs m
-}
+let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
+    trackErrors {
+        do! CheckEntityAttributes g x.TyconRef m 
+        do! CheckFSharpAttributes g x.PropertyAttribs m
+        do! CheckFSharpAttributes g x.RecdField.FieldAttribs m
+    }
 
 /// Check the attributes on an F# value, returning errors and warnings as data.
 let CheckValAttributes g (x:ValRef) m =
