@@ -452,14 +452,14 @@ module Query =
     let FuncExprToLinqFunc2 (srcTy, targetTy, v, body) =
         FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> LeafExpressionConverter.EvaluateQuotation
 
-    let MakersCallers F = CallGenericStaticMethod F, MakeGenericStaticMethod F
+    let MakersCallers f = CallGenericStaticMethod f, MakeGenericStaticMethod f
 
-    let MakersCallersInstance F = CallGenericInstanceMethod F, MakeGenericInstanceMethod F
+    let MakersCallersInstance f = CallGenericInstanceMethod f, MakeGenericInstanceMethod f
 
-    let MakersCallers2 FQ FE = MakersCallers FQ, MakersCallers FE
+    let MakersCallers2 fQ fE = MakersCallers fQ, MakersCallers fE
 
-    let MakeOrCallContainsOrElementAt FQ FE =
-        let (CQ, MQ), (CE, ME) = MakersCallers2 FQ FE
+    let MakeOrCallContainsOrElementAt fQ fE =
+        let (CQ, MQ), (CE, ME) = MakersCallers2 fQ fE
         let Make (isIQ, srcItemTy: Type, src: Expr, key: Expr) =
             if isIQ then
                 //let key = MakeImplicitExpressionConversion key
@@ -483,8 +483,8 @@ module Query =
         let FE = methodhandleof (fun (x, y) -> Enumerable.ElementAt(x, y))
         MakeOrCallContainsOrElementAt FQ FE
 
-    let MakeOrCallMinByOrMaxBy FQ FE =
-        let (CQ, MQ), (CE, ME) = MakersCallers2 FQ FE
+    let MakeOrCallMinByOrMaxBy fQ fE =
+        let (CQ, MQ), (CE, ME) = MakersCallers2 fQ fE
         let Make (isIQ, src: Expr, v: Var, valSelector: Expr) =
             let srcItemTy = v.Type
             let keyElemTy = valSelector.Type
@@ -527,8 +527,8 @@ module Query =
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Max(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
 
-    let MakeOrCallAnyOrAllOrFirstFind FQ FE =
-        let (CQ, MQ), (CE, ME) = MakersCallers2 FQ FE
+    let MakeOrCallAnyOrAllOrFirstFind fQ fE =
+        let (CQ, MQ), (CE, ME) = MakersCallers2 fQ fE
         let Make (isIQ, src: Expr, v: Var, predicate: Expr) =
             let srcItemTy= v.Type
             let predicate = FuncExprToDelegateExpr (srcItemTy, boolTy, v, predicate)
@@ -563,14 +563,14 @@ module Query =
         let FE = methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.First(x, y))
         MakeOrCallAnyOrAllOrFirstFind FQ FE
 
-    let MakeOrCallAverageByOrSumByGeneric (isNullable, fq_double, fq_single, fq_decimal, fq_int32, fq_int64, fe_double, fe_single, fe_decimal, fe_int32, fe_int64, FE) =
+    let MakeOrCallAverageByOrSumByGeneric (isNullable, fq_double, fq_single, fq_decimal, fq_int32, fq_int64, fe_double, fe_single, fe_decimal, fe_int32, fe_int64, fE) =
         let (cq_double, mq_double), (ce_double, me_double) = MakersCallers2 fq_double fe_double
         let (cq_single, mq_single), (ce_single, me_single) = MakersCallers2 fq_single fe_single
         let (cq_decimal, mq_decimal), (ce_decimal, me_decimal) = MakersCallers2 fq_decimal fe_decimal
         let (cq_int32, mq_int32), (ce_int32, me_int32) = MakersCallers2 fq_int32 fe_int32
         let (cq_int64, mq_int64), (ce_int64, me_int64) = MakersCallers2 fq_int64 fe_int64
         // The F# implementation is an instance method on QueryBuilder
-        let (CE, ME) = MakersCallersInstance FE
+        let (CE, ME) = MakersCallersInstance fE
         let failDueToUnsupportedInputTypeInSumByOrAverageBy() = invalidOp (SR.GetString(SR.failDueToUnsupportedInputTypeInSumByOrAverageBy))
 
         let Make (qb: Expr, isIQ, src: Expr, v: Var, res: Expr) =
@@ -711,8 +711,8 @@ module Query =
         let FE = methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<_, _>, arg2:_->Nullable<double>) -> query.SumByNullable(arg1, arg2))
         MakeOrCallAverageByOrSumByGeneric (true, FQ_double, FQ_single, FQ_decimal, FQ_int32, FQ_int64, FE_double, FE_single, FE_decimal, FE_int32, FE_int64, FE)
 
-    let MakeOrCallSimpleOp FQ FE =
-        let (CQ, MQ), (CE, ME) = MakersCallers2 FQ FE
+    let MakeOrCallSimpleOp fQ fE =
+        let (CQ, MQ), (CE, ME) = MakersCallers2 fQ fE
         let Make (isIQ, srcItemTy, src: Expr) =
             if isIQ then
                 MQ ([srcItemTy], [src])
@@ -816,16 +816,16 @@ module Query =
             else
                 FE ([v.Type], [src; selector])
 
-    let MakeOrderByOrThenBy FQ FE =
+    let MakeOrderByOrThenBy fQ fE =
         fun (isIQ, src: Expr, v: Var, keySelector: Expr) ->
             let srcItemTy = v.Type
             let keyItemTy = keySelector.Type
             let selector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, keyItemTy), [v], keySelector)
             if isIQ then
                 let selector = MakeImplicitExpressionConversion selector
-                FQ ([srcItemTy; keyItemTy], [src; selector])
+                fQ ([srcItemTy; keyItemTy], [src; selector])
             else
-                FE ([srcItemTy; keyItemTy], [src; selector])
+                fE ([srcItemTy; keyItemTy], [src; selector])
 
     let MakeOrderBy =
         let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.OrderBy(x, y)))
@@ -856,9 +856,9 @@ module Query =
 
     let MakeThenByNullableDescending = MakeThenByDescending
 
-    let GenMakeSkipWhileOrTakeWhile FQ FE =
-        let FQ = MakeGenericStaticMethod  FQ
-        let FE = MakeGenericStaticMethod  FE
+    let GenMakeSkipWhileOrTakeWhile fQ fE =
+        let FQ = MakeGenericStaticMethod  fQ
+        let FE = MakeGenericStaticMethod  fE
         fun (isIQ, src: Expr, v: Var, predicate) ->
             let srcItemTy = v.Type
             let selector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, boolTy), [v], predicate)
@@ -868,9 +868,9 @@ module Query =
             else
                 FE ([srcItemTy], [src; selector])
 
-    let MakeSkipOrTake FQ FE =
-        let FQ = MakeGenericStaticMethod  FQ
-        let FE = MakeGenericStaticMethod  FE
+    let MakeSkipOrTake fQ fE =
+        let FQ = MakeGenericStaticMethod  fQ
+        let FE = MakeGenericStaticMethod  fE
         fun (isIQ, srcItemTy, src: Expr, count) ->
             if isIQ then
                 FQ ([srcItemTy], [src; count])
