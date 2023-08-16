@@ -13,7 +13,6 @@
 
   <ItemGroup>
       <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-      <Compile Include="Helpers.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,7 +55,9 @@
       <Link>CompilerService\PerfTests.fs</Link>
     </Compile>
     <Compile Include="InteractiveCheckerTests.fs" />
-    <Compile Include="ExprTests.fs" />
+    <Compile Include="..\..\tests\service\ExprTests.fs">
+      <Link>CompilerService\ExprTests.fs</Link>
+    </Compile>
     <Compile Include="..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>

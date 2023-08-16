@@ -3,6 +3,7 @@ namespace FSharp.Test
 module Assert =
     open FluentAssertions
     open System.Collections
+    open System.Text
     open System.IO
 
     let inline shouldBeEqualWith (expected : ^T) (message: string) (actual: ^U) =
@@ -66,19 +67,3 @@ module Assert =
                 sb.ToString ()
 
             Some msg
-
-    let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
-        // using enumerators, because Seq.iter2 allows different lengths silently
-        let ex = x.GetEnumerator()
-        let ey = y.GetEnumerator()
-        let mutable countx = 0
-        let mutable county = 0
-        while ex.MoveNext() do
-            countx <- countx + 1
-            if ey.MoveNext() then
-                county <- county + 1
-                ey.Current |> shouldBe ex.Current
-                ey.Current |> shouldEqual ex.Current
-
-        while ex.MoveNext() do countx <- countx + 1
-        while ey.MoveNext() do county <- county + 1
