@@ -2,7 +2,7 @@
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
-module Tests.Service.FileSystemTests
+module FSharp.Compiler.UnitTests.FileSystemTests
 #endif
 
 open Xunit
@@ -12,7 +12,6 @@ open System.IO
 open System.Text
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
-open FSharp.Compiler.Service.Tests.Common
 open Assert
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
@@ -84,6 +83,7 @@ let ``FileSystem compilation test``() =
           OriginalLoadReferences = []
           Stamp = None }
 
+    let checker = FSharpChecker.Create()
     let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunImmediate
 
     results.Diagnostics.Length |> shouldEqual 0
