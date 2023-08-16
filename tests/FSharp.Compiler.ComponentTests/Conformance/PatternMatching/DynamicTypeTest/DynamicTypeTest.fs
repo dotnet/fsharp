@@ -34,8 +34,8 @@ module DynamicTypeTest =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 26, Line 31, Col 7, Line 31, Col 22, "This rule will never be matched")
-            (Warning 26, Line 32, Col 7, Line 32, Col 22, "This rule will never be matched")
+            (Warning 26, Line 31, Col 7, Line 31, Col 17, "This rule will never be matched")
+            (Warning 26, Line 32, Col 7, Line 32, Col 16, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
@@ -135,8 +135,8 @@ involves an indeterminate type based on information prior to this program point.
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 26, Line 12, Col 7, Line 12, Col 22, "This rule will never be matched")
-            (Warning 26, Line 18, Col 7, Line 18, Col 22, "This rule will never be matched")
+            (Warning 26, Line 12, Col 7, Line 12, Col 16, "This rule will never be matched")
+            (Warning 26, Line 18, Col 7, Line 18, Col 16, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
@@ -147,4 +147,38 @@ involves an indeterminate type based on information prior to this program point.
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 67, Line 13, Col 7, Line 13, Col 13, "This type test or downcast will always hold")
+        |> withSingleDiagnostic (Warning 67, Line 13, Col 7, Line 13, Col 13, "This type test or downcast will always hold")// This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/DynamicTypeTest)
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DynamicTest01.fs"|])>]
+    let ``DynamicTypeTest - E_DynamicTest01_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 3, Col 3, Line 3, Col 54, "This rule will never be matched")
+        ]
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DynamicTest02.fs"|])>]
+    let ``DynamicTypeTest - E_DynamicTest02_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 4, Col 7, Line 4, Col 11, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DynamicTest03.fs"|])>]
+    let ``DynamicTypeTest - E_DynamicTest03_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 8, Col 7, Line 8, Col 12, "This rule will never be matched")
+        ]
+        

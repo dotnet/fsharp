@@ -817,12 +817,15 @@ type internal SuppressLanguageFeatureCheck =
     | Yes
     | No
 
+let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let currentVersionStr = langVersion.SpecifiedVersionString
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
+    Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m)
+
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        let featureStr = LanguageVersion.GetFeatureString langFeature
-        let currentVersionStr = langVersion.SpecifiedVersionString
-        let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
-        Some(Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m))
+        Some(languageFeatureError langVersion langFeature m)
     else
         None
 
