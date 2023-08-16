@@ -1,22 +1,19 @@
 ﻿#if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
 module Tests.Service.FileSystemTests
 #endif
 
-
-open NUnit.Framework
-open FsUnit
+open Xunit
+open FSharp.Test
 open System
 open System.IO
 open System.Text
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
-
+open Assert
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn' exist
@@ -50,9 +47,10 @@ let UseMyFileSystem() =
     FileSystemAutoOpens.FileSystem <- myFileSystem
     { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
 
-[<Test>]
 #if NETCOREAPP
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Fact(Skip = "SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#else
+[<Fact>]
 #endif
 let ``FileSystem compilation test``() =
   if Environment.OSVersion.Platform = PlatformID.Win32NT then // file references only valid on Windows

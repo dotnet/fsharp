@@ -43,9 +43,6 @@
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests.fs" />
-    <Compile Include="..\service\FileSystemTests.fs">
-      <Link>FileSystemTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\ProjectAnalysisTests.fs">
       <Link>ProjectAnalysisTests.fs</Link>
     </Compile>

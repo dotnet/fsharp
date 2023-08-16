@@ -42,9 +42,7 @@
     <Compile Include="..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
     </Compile>
-    <Compile Include="..\..\tests\service\FileSystemTests.fs">
-      <Link>CompilerService\FileSystemTests.fs</Link>
-    </Compile>
+    <Compile Include="FileSystemTests.fs" />
     <Compile Include="..\..\tests\service\ProjectAnalysisTests.fs">
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
