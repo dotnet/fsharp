@@ -131,7 +131,7 @@ module ConvertToSealedViaOpImplicit =
     [<Sealed>]
     type C() = 
         static member op_Implicit(x:int) = C()
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
     let x = C.M1(2)
 
 module ConvertNoOverloadin =
@@ -161,7 +161,7 @@ module ConvertViaOpImplicit3 =
 module ConvertViaOpImplicit4 =
     type C() = 
         static member op_Implicit(x:int) = C()
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
     let x = C.M1(2)
 
 module ConvertViaOpImplicit5 =
@@ -459,7 +459,7 @@ module TestAcessibilityOfOpImplicit =
     [<Sealed>]
     type C() = 
         static member private op_Implicit(x:int) = C()
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
     let x = C.M1(2)
 
 module TestObsoleteOfOpImplicit =
@@ -467,7 +467,7 @@ module TestObsoleteOfOpImplicit =
     type C() = 
         [<System.Obsolete("nope")>]
         static member op_Implicit(x:int) = C()
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
     let x = C.M1(2)
 
 module TestAmbiguousOpImplicit =
@@ -477,7 +477,7 @@ module TestAmbiguousOpImplicit =
 
     and [<Sealed>] C(x:int) = 
         static member op_Implicit(x:B) = C(1)
-        static member M1(C:C) = 1
+        static member M1(c:C) = 1
         member _.Value = x
     let x = C.M1(B())
 
