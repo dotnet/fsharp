@@ -3239,7 +3239,6 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                 if
                     not newDef
                     && warnOnUpper = WarnOnUpperCase
-                    && id.idText.Length >= 3
                     && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
                 then
                     warning(UpperCaseIdentifierInPattern m)
