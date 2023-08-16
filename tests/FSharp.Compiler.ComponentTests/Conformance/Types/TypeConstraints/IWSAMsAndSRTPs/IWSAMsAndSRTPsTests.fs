@@ -60,7 +60,7 @@ let main _ =
     let ``IWSAM test files`` compilation =
         compilation
         |> setupCompilation
-        |> withLangVersion80
+        |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
 

@@ -595,7 +595,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 58, Line 9, Col 1, Line 9, Col 2, "Possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 9, Col 1, Line 9, Col 2, "Possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this token further or using standard formatting conventions.")
         ]
 
     //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
@@ -607,4 +607,3 @@ module UnionTypes =
         |> withDiagnostics [
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
-
