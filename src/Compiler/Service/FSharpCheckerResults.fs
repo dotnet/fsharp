@@ -1611,7 +1611,8 @@ type internal TypeCheckInfo
                     match patternContext with
                     | PatternContext.PositionalUnionCaseField (index, _, m) -> Choice1Of2 index, m
                     | PatternContext.NamedUnionCaseField (name, m) -> Choice2Of2 name, m
-                    | _ -> Choice1Of2 None, range0
+                    | PatternContext.UnionCaseFieldIdentifier _
+                    | PatternContext.Other -> Choice1Of2 None, range0
 
                 // No special handling other than filtering out items that may not appear in a pattern
                 if equals caseIdRange range0 then

@@ -1278,8 +1278,8 @@ module ParsedInput =
                     let context = Some(PatternContext.NamedUnionCaseField(fieldId.idText, caseId.Range))
                     TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
             |> Option.orElseWith (fun () ->
-                // Last resort - check for fun (Case (item1 = a, | )) ->
-                // That is, pos is after the last semicolon and before the end of the tuple
+                // Last resort - check for fun (Case (item1 = a; | )) ->
+                // That is, pos is after the last pair and still within parentheses
                 if rangeBeforePos mPairs pos then
                     let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
                     Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
@@ -1328,8 +1328,8 @@ module ParsedInput =
 
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
             |> Option.orElseWith (fun () ->
-                // Last resort - check for fun (Case (item1 = a; | )) ->
-                // That is, pos is after the last pair and still within parentheses
+                // Last resort - check for fun (Case (item1 = a, | )) ->
+                // That is, pos is after the last comma and before the end of the tuple
                 match previousContext, List.tryLast commas with
                 | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)), Some mComma when
                     rangeBeforePos mComma pos && rangeContainsPos m pos
