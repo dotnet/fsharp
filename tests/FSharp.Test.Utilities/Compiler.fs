@@ -355,7 +355,7 @@ module rec Compiler =
 
     let FsxFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path) |> FS
-
+    
     let Fs (source: string) : CompilationUnit =
         fsFromString (FsSource source) |> FS
 
@@ -1113,7 +1113,7 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
             | Some p -> func p il
-        | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+        | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
     let verifyIL = doILCheck ILChecker.checkIL
 

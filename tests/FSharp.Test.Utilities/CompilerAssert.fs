@@ -133,6 +133,7 @@ type TestCompilation =
 type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
+    | CSharp11 = 11
     | Preview = 99
 
 [<AbstractClass; Sealed>]
@@ -143,6 +144,7 @@ type CompilationUtil private () =
             match lv with
                 | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
                 | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+                | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
                 | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
                 | _ -> LanguageVersion.Default
 
