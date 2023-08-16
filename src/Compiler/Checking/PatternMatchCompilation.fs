@@ -965,6 +965,24 @@ let rec erasePartialPatterns inpPat =
 
 and erasePartials inps =
     List.map erasePartialPatterns inps
+    
+let ReportUnusedTargets (clauses: MatchClause list) dtree =
+    let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
+    clauses |> List.iteri (fun i c ->
+        let m =
+            match c.BoundVals, c.GuardExpr with
+            | [], Some guard -> guard.Range
+            | [ bound ], None -> bound.Id.idRange
+            | [ _ ], Some guard -> guard.Range
+            | rest, None ->
+                match rest with
+                | [ head ] -> head.Id.idRange
+                | _ -> c.Pattern.Range
+            | _, Some guard -> guard.Range
+            
+        let m  = withStartEnd c.Range.Start m.End m
+            
+        if not (used.Contains i) then warning (RuleNeverMatched m))
 
 let rec isPatternDisjunctive inpPat =
     match inpPat with
@@ -1656,22 +1674,13 @@ let CompilePatternBasic
           @
           mkFrontiers [([], ValMap<_>.Empty)] nClauses)
 
-    let dtree =
-      InvestigateFrontiers
-        []
-        frontiers
-
-    let targets = matchBuilder.CloseTargets()
-
+    let dtree = InvestigateFrontiers [] frontiers
 
     // Report unused targets
     if warnOnUnused then
-        let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
+        ReportUnusedTargets clauses dtree
 
-        clauses |> List.iteri (fun i c ->
-            if not (used.Contains i) then warning (RuleNeverMatched c.Range))
-
-    dtree, targets
+    dtree, matchBuilder.CloseTargets()
 
 // Three pattern constructs can cause significant code expansion in various combinations
 //   - Partial active patterns
