@@ -6517,7 +6517,7 @@ let rec f l =
                     let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
                 """,
             marker = "(*MarkerType*)" ,
-            list = ["TestType"])
+            list = [])
 
     [<Test>]
     member this.``Class.DefInDiffNameSpace.WithAttributes.Negative``() = 
