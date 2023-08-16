@@ -178,13 +178,13 @@ type LanguageVersion(versionText) =
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
                 LanguageFeature.StrictIndentation, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
-                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion80
                 LanguageFeature.WhileBang, languageVersion80
                 LanguageFeature.ExtendedFixedBindings, languageVersion80
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
