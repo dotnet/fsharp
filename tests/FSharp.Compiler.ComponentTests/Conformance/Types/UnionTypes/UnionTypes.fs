@@ -259,7 +259,7 @@ module UnionTypes =
         |> withDiagnostics [
             (Error 3174, Line 10, Col 18, Line 10, Col 20, "The union case 'Case1' does not have a field named 'V3'.")
             (Error 3174, Line 14, Col 9, Line 14, Col 11, "The union case 'Case1' does not have a field named 'V3'.")
-            (Warning 26, Line 15, Col 3, Line 15, Col 10, "This rule will never be matched")
+            (Warning 26, Line 15, Col 3, Line 15, Col 4, "This rule will never be matched")
             (Error 3174, Line 17, Col 12, Line 17, Col 14, "The union case 'Case1' does not have a field named 'V4'.")
             (Error 3174, Line 19, Col 25, Line 19, Col 26, "The union case 'Some' does not have a field named 'a'.")
         ]

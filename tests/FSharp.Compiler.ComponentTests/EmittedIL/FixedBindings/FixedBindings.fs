@@ -512,6 +512,7 @@ module ExtendedFixedBindings =
     IL_0020:  ret
   } """ ]
 
+#if NETCOREAPP
     [<Theory; InlineData("preview")>]
     let ``Pin struct type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         // Effectively tests the same thing as the test with Span<T>, but this works on .NET Framework 
@@ -544,6 +545,7 @@ module ExtendedFixedBindings =
     IL_0016:  ldobj      !!a
     IL_001b:  ret
   } """ ]
+#endif
     
     [<Theory; InlineData("preview")>]
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` langVersion =
@@ -624,7 +626,8 @@ module ExtendedFixedBindings =
     IL_001b:  ret
   } """ ]
 #endif
-    
+
+#if NETCOREAPP
     [<Theory; InlineData("preview")>]
     let ``Pin type with C# style extension method GetPinnableReference : unit -> byref<T>`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithCSharpStyleExtensionGetPinnableReferenceReturningByref.fs")
@@ -700,7 +703,8 @@ module ExtendedFixedBindings =
     IL_001b:  ldobj      !!T
     IL_0020:  ret
   } """ ]
-    
+#endif
+
     [<Theory; InlineData("preview")>]
     let ``Pin null value of type with GetPinnableReference`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNullValueOfTypeWithGetPinnableReference.fs")

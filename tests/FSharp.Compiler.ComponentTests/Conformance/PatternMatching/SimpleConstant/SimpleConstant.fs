@@ -108,11 +108,11 @@ module SimpleConstant =
         |> shouldFail
         |> withDiagnostics [
             (Warning 3190, Line 13, Col 7, Line 13, Col 17, "Lowercase literal 'intLiteral' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns.")
-            (Warning 26, Line 14, Col 7, Line 14, Col 26, "This rule will never be matched")
+            (Warning 26, Line 14, Col 7, Line 14, Col 8, "This rule will never be matched")
             (Warning 3190, Line 20, Col 7, Line 20, Col 17, "Lowercase literal 'strLiteral' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns.")
-            (Warning 26, Line 21, Col 7, Line 21, Col 26, "This rule will never be matched")
+            (Warning 26, Line 21, Col 7, Line 21, Col 8, "This rule will never be matched")
             (Warning 3190, Line 27, Col 7, Line 27, Col 18, "Lowercase literal 'boolLiteral' is being shadowed by a new pattern with the same name. Only uppercase and module-prefixed literals can be used as named patterns.")
-            (Warning 26, Line 28, Col 7, Line 28, Col 27, "This rule will never be matched")
+            (Warning 26, Line 28, Col 7, Line 28, Col 11, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
@@ -125,8 +125,8 @@ module SimpleConstant =
         |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 8, Col 11, Line 8, Col 16, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
-            (Warning 26, Line 14, Col 7, Line 14, Col 57, "This rule will never be matched")
-            (Warning 26, Line 20, Col 7, Line 20, Col 57, "This rule will never be matched")
+            (Warning 26, Line 14, Col 7, Line 14, Col 24, "This rule will never be matched")
+            (Warning 26, Line 20, Col 7, Line 20, Col 24, "This rule will never be matched")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
@@ -146,7 +146,7 @@ module SimpleConstant =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 28, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 8, "This rule will never be matched")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_byte.fs"|])>]
@@ -246,7 +246,7 @@ module SimpleConstant =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 26, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 17, "This rule will never be matched")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"type_uint16.fs"|])>]
@@ -292,4 +292,4 @@ module SimpleConstant =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 26, Line 9, Col 7, Line 9, Col 17, "This rule will never be matched")
+        |> withSingleDiagnostic (Warning 26, Line 9, Col 7, Line 9, Col 8, "This rule will never be matched")
