@@ -218,14 +218,15 @@ let ``Test multi project 1 xmldoc`` () =
     match x3FromProject1A with
     | :? FSharpMemberOrFunctionOrValue as v ->
         match v.XmlDoc with
-        | FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> shouldEqual [|" This is"; " x3"|]
+        | FSharpXmlDoc.FromXmlText t -> 
+            Assert.Equal<string array>(t.UnprocessedLines, [|" This is"; " x3"|])
         | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
     match x3FromProject1A with
     | :? FSharpMemberOrFunctionOrValue as v ->
         match v.XmlDoc with
-        | FSharpXmlDoc.FromXmlText t -> t.GetElaboratedXmlLines() |> shouldEqual [|"<summary>"; " This is"; " x3"; "</summary>" |]
+        | FSharpXmlDoc.FromXmlText t -> Assert.Equal<string array>(t.GetElaboratedXmlLines(), [|"<summary>"; " This is"; " x3"; "</summary>" |])
         | _ -> failwith "wrong kind"
     | _ -> failwith "odd symbol!"
 
@@ -427,6 +428,8 @@ let z = Project1.x
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
+type AuxType = (string * string * ((int * int) * (int * int))) array
+
 [<Fact>]
 let ``Test multi project symbols should pick up changes in dependent projects`` () =
 
@@ -470,18 +473,18 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
         wholeProjectResults1.GetUsesOfSymbol(xSymbol)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject1
-    |> shouldEqual
-        [|("val x", "Project1", ((3, 4), (3, 5))) |]
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject1,
+        [|("val x", "Project1", ((3, 4), (3, 5))) |])
 
     let usesOfXSymbolInProject2 =
         wholeProjectResults2.GetUsesOfSymbol(xSymbol)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject2
-    |> shouldEqual
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject2,
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 8), (6, 18)))|])
 
     //---------------- Change the file by adding a line, then re-check everything --------------------
 
@@ -519,18 +522,18 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
         wholeProjectResults1AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject1AfterChange1
-    |> shouldEqual
-        [|("val x", "Project1", ((4, 4), (4, 5))) |]
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject1AfterChange1,
+        [|("val x", "Project1", ((4, 4), (4, 5))) |])
 
     let usesOfXSymbolInProject2AfterChange1 =
         wholeProjectResults2AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject2AfterChange1
-    |> shouldEqual
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject2AfterChange1,
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 8), (6, 18)))|])
 
     //---------------- Revert the change to the file --------------------
 
@@ -550,7 +553,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     System.Threading.Thread.Sleep(1000)
     count.Value |> shouldEqual 6 // note, causes two files to be type checked, one from each project
-
+    
 
     let wholeProjectResults1AfterChange2 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
@@ -569,19 +572,19 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
         wholeProjectResults1AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject1AfterChange2
-    |> shouldEqual
-        [|("val x", "Project1", ((3, 4), (3, 5))) |]
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject1AfterChange2,
+        [|("val x", "Project1", ((3, 4), (3, 5))) |])
 
 
     let usesOfXSymbolInProject2AfterChange2 =
         wholeProjectResults2AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2)
         |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
 
-    usesOfXSymbolInProject2AfterChange2
-    |> shouldEqual
+    Assert.Equal<AuxType>(
+        usesOfXSymbolInProject2AfterChange2,
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 8), (6, 18)))|])
 
 
 //------------------------------------------------------------------
