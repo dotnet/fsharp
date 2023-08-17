@@ -2783,6 +2783,11 @@ unionCaseReprElement:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        mkSynAnonField ($1, xmlDoc) }
 
+  | ident COLON invalidUseOfAppTypeFunction
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+       mkSynNamedField ($1, $3, xmlDoc, mWhole) }
+
   | invalidUseOfAppTypeFunction
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        mkSynAnonField ($1, xmlDoc) }
