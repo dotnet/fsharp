@@ -6,14 +6,15 @@ module FSharp.Compiler.UnitTests.AssemblyContentProviderTests
 #endif
 
 open System
+open System.IO
 open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
-let private filePath = "C:\\test.fs"
+let private filePath = "Test.fs"
 
 let private projectOptions : FSharpProjectOptions = 
-    { ProjectFileName = "C:\\test.fsproj"
+    { ProjectFileName = Path.Combine(Environment.CurrentDirectory, "Test.fsproj")
       ProjectId = None
       SourceFiles =  [| filePath |]
       ReferencedProjects = [| |]
