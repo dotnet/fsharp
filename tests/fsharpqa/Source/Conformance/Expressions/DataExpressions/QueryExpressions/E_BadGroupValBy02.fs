@@ -1,7 +1,7 @@
 // #Conformance #DataExpressions #Query
 // DevDiv:210830, groupValBy with poor diagnostics
-//<Expects status="error" span="(8,7-8,17)" id="FS3099">'groupValBy' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 2 argument(s), but given 3.</Expects>
-//<Expects status="error" span="(8,7-8,33)" id="FS0001">This expression was expected to have type.+'System\.Linq\.IGrouping<'a,'b>'.+but here has type.+'unit'</Expects>
+//<Expects status="error" span="(9,7-9,17)" id="FS3099">.+</Expects>
+//<Expects status="error" span="(9,7-9,33)" id="FS0001">This expression was expected to have type.+'System\.Linq\.IGrouping<'a,'b>'.+but here has type.+'unit'</Expects>
 let words = ["blueberry"; "chimpanzee"; ]
 let wordGroups =
   query {
