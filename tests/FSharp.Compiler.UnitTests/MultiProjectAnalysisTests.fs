@@ -6,7 +6,7 @@ module FSharp.Compiler.UnitTests.MultiProjectAnalysisTests
 #endif
 
 open Xunit
-open FsUnit
+open FSharp.Test
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
@@ -16,6 +16,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
+open Assert
 
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
