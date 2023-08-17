@@ -46,11 +46,7 @@
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
     <Compile Include="TokenizerTests.fs" />
-<!-- TODO:  Fix this test
-    <Compile Include="..\..\tests\service\MultiProjectAnalysisTests.fs">
-      <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
-    </Compile>
--->
+    <Compile Include="MultiProjectAnalysisTests.fs" />
     <Compile Include="..\..\tests\service\PerfTests.fs">
       <Link>CompilerService\PerfTests.fs</Link>
     </Compile>

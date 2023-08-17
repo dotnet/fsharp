@@ -1,14 +1,11 @@
-﻿
-#if INTERACTIVE
+﻿#if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
-#load "FsUnit.fs"
-#load "Common.fs"
+#r "../../artifacts/bin/fcs/net461/xunit.dll"
 #else
-module Tests.Service.MultiProjectAnalysisTests
+module FSharp.Compiler.UnitTests.MultiProjectAnalysisTests
 #endif
 
-open NUnit.Framework
+open Xunit
 open FsUnit
 open System.IO
 open System.Collections.Generic
@@ -130,7 +127,7 @@ let u = Case1 3
                                     FSharpReferencedProject.FSharpReference(Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Test>]
+[<Fact>]
 let ``Test multi project 1 basic`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunImmediate
@@ -143,7 +140,7 @@ let ``Test multi project 1 basic`` () =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"; "c"; "u"]
 
-[<Test>]
+[<Fact>]
 let ``Test multi project 1 all symbols`` () =
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
@@ -181,7 +178,7 @@ let ``Test multi project 1 all symbols`` () =
 
     usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
 
-[<Test>]
+[<Fact>]
 let ``Test multi project 1 xmldoc`` () =
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
@@ -323,7 +320,7 @@ let p = ("""
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
         FSharpChecker.Create(projectCacheSize=size)
 
-[<Test>]
+[<Fact>]
 let ``Test ManyProjectsStressTest basic`` () =
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
@@ -337,7 +334,7 @@ let ``Test ManyProjectsStressTest basic`` () =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
-[<Test>]
+[<Fact>]
 let ``Test ManyProjectsStressTest cache too small`` () =
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
@@ -351,7 +348,7 @@ let ``Test ManyProjectsStressTest cache too small`` () =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
-[<Test>]
+[<Fact>]
 let ``Test ManyProjectsStressTest all symbols`` () =
 
   let checker = ManyProjectsStressTest.makeCheckerForStressTest true
@@ -431,7 +428,7 @@ let z = Project1.x
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
-[<Test>]
+[<Fact>]
 let ``Test multi project symbols should pick up changes in dependent projects`` () =
 
     //  register to count the file checks
@@ -666,7 +663,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Test>]
+[<Fact>]
 let ``Test multi project2 errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
@@ -681,7 +678,7 @@ let ``Test multi project2 errors`` () =
 
 
 
-[<Test>]
+[<Fact>]
 let ``Test multi project 2 all symbols`` () =
 
     let mpA = checker.ParseAndCheckProject(Project2A.options) |> Async.RunImmediate
@@ -759,7 +756,7 @@ let fizzBuzz = function
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Test>]
+[<Fact>]
 let ``Test multi project 3 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
@@ -768,7 +765,7 @@ let ``Test multi project 3 whole project errors`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<Test>]
+[<Fact>]
 let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
@@ -798,7 +795,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 //------------------------------------------------------------------------------------
 
 
-[<Test>]
+[<Fact>]
 let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
     // The type provider and its dependency are compiled as part of the solution build
 #if DEBUG
