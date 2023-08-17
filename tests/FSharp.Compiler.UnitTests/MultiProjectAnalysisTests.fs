@@ -24,6 +24,7 @@ let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStres
 /// Extract range info
 let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
+type AuxType = (string * string * ((int * int) * (int * int))) array
 
 module internal Project1A =
 
@@ -175,7 +176,9 @@ let ``Test multi project 1 all symbols`` () =
        mp.GetUsesOfSymbol(x1FromProjectMultiProject)
             |> Array.map (fun s -> s.Symbol.DisplayName, MultiProject1.cleanFileName  s.FileName, tups s.Symbol.DeclarationLocation.Value)
 
-    usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
+    Assert.Equal<AuxType>(
+        usesOfx1FromProject1AInMultiProject1,
+        usesOfx1FromMultiProject1InMultiProject1)
 
 [<Fact>]
 let ``Test multi project 1 xmldoc`` () =
@@ -427,8 +430,6 @@ let z = Project1.x
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
-
-type AuxType = (string * string * ((int * int) * (int * int))) array
 
 [<Fact>]
 let ``Test multi project symbols should pick up changes in dependent projects`` () =
@@ -783,8 +784,8 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
     match divisibleByActivePatternCase.XmlDoc with
     | FSharpXmlDoc.FromXmlText t ->
-        t.UnprocessedLines |> shouldEqual [| "A parameterized active pattern of divisibility" |]
-        t.GetElaboratedXmlLines() |> shouldEqual [| "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" |]
+        Assert.Equal<string array>(t.UnprocessedLines, [| "A parameterized active pattern of divisibility" |])
+        Assert.Equal<string array>(t.GetElaboratedXmlLines(), [| "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" |])
     | _ -> failwith "wrong kind"
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
