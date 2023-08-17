@@ -14,7 +14,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Compiler.Service.Tests.Common
 open TestFramework
 open Assert
 
@@ -96,7 +95,6 @@ let x =
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-
 
 // A project referencing two sub-projects
 module internal MultiProject1 =

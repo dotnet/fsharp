@@ -5,6 +5,7 @@ open System.IO
 open System.Threading.Tasks
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Test.Utilities
 
 [<AutoOpen>]
 module CompilerTestHelpers =
@@ -42,3 +43,36 @@ module CompilerTestHelpers =
 
     let fsCoreDefaultReference() =
         PathRelativeToTestAssembly "FSharp.Core.dll"
+
+    let mkStandardProjectReferences () =
+        TargetFrameworkUtil.currentReferences
+
+    let mkProjectCommandLineArgsSilent (dllName, fileNames) =
+      let args =
+        [|  yield "--simpleresolution"
+            yield "--noframework"
+            yield "--debug:full"
+            yield "--define:DEBUG"
+    #if NETCOREAPP
+            yield "--targetprofile:netcore"
+            yield "--langversion:preview"
+    #endif
+            yield "--optimize-"
+            yield "--out:" + dllName
+            yield "--doc:test.xml"
+            yield "--warn:3"
+            yield "--fullpaths"
+            yield "--flaterrors"
+            yield "--target:library"
+            for x in fileNames do
+                yield x
+            let references = mkStandardProjectReferences ()
+            for r in references do
+                yield "-r:" + r
+         |]
+      args
+
+    let mkProjectCommandLineArgs (dllName, fileNames) =
+        let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
+        printfn "dllName = %A, args = %A" dllName args
+        args
