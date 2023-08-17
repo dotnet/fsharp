@@ -1367,6 +1367,11 @@
         <target state="translated">插補字串無效。{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition</source>
+        <target state="new">Unexpected function type in union case field definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">'{0}' 通常做為一般程式碼中的類型限制式，例如 \"'T when ISomeInterface&lt;'T&gt;\" 或 \"let f (x: #ISomeInterface&lt;_&gt;)\"。請參閱 https://aka.ms/fsharp-iwsams 以尋求指引。您可以使用 '#nowarn \"3536\"' 或 '--nowarn:3536' 來停用此警告。</target>

@@ -1367,6 +1367,11 @@
         <target state="translated">Nieprawidłowy ciąg interpolowany. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition</source>
+        <target state="new">Unexpected function type in union case field definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">Element „{0}” jest zwykle używany jako ograniczenie typu w kodzie ogólnym, np. \"" T, gdy ISomeInterface&lt;' T&gt;\" lub \"let f (x: #ISomeInterface&lt;_&gt;)\". Aby uzyskać wskazówki, zobacz https://aka.ms/fsharp-iwsams. To ostrzeżenie można wyłączyć, używając polecenia „nowarn \"3536\"" lub "--nowarn:3536”.</target>
