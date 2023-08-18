@@ -805,7 +805,11 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|], LangVersion="preview")>]
         let``TestStructRecord`` compilation _langVersion =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
+            compilation
+            |> withNoWarn 988
+            |> withNoWarn 3560
+            |> verifyCompileAndRun _langVersion
+            |> shouldSucceed
     
     [<Theory>]
     
