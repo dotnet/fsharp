@@ -182,7 +182,6 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     // TODO NULLNESS
     KnownAmbivalentToNull
 
-// TODO NULLNESS: We will need to take type/class attributes in account as well, and do it hierchically, from type downto method.
 
 /// We try to decode a S.R.CS.NullableContextAttribute(flag: byte) for the IL type 
 /// As per docs:
@@ -199,6 +198,12 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
 /// 2 - Annotated - scope is annotated by default - every reference type has an implicit `NullableAttribute` or `?` on it.
 let ImportNullnessForILType (g: TcGlobals) (getCattrs: unit -> ILAttributes) =
     // TODO NULLNESS: Since both boxed and value types are coming here, we'll need to makes sure we are checking that.
+    // TODO NULLNESS: We will need to take type/class attributes in account as well, and do it hierchically, from type downto method, i.e. the most local attribute should take a priority.
+    // Example is:
+    // class Foo has NullableContextAttribute(1), meaning all its method/props return types are known to be non-null
+    // method A inside Foo has NullableContextAttribute(2), meaning its return type is known to be nullable (e.g. `string?`)
+    // method B inside Foo has NO attribute, meaning its return type is inherited from class Foo (non-nullable).
+    // Parameters use different attribute and will be inferred elsewhere.
     let (AttribInfo(tref,_)) = g.attrib_NullableContextAttribute
     let attributes = getCattrs ()
     let attribute = TryDecodeILAttribute tref attributes
