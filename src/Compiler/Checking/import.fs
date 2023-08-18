@@ -182,11 +182,28 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     // TODO NULLNESS
     KnownAmbivalentToNull
 
+// TODO NULLNESS: We will need to take type/class attributes in account as well, and do it hierchically, from type downto method.
+
+/// We try to decode a S.R.CS.NullableContextAttribute(flag: byte) for the IL type 
+/// As per docs:
+/// NullableContextAttribute can be used to indicate the nullability of type references that have no NullableAttribute annotations.
+/// NullableContextAttribute is valid in metadata on type and method declarations.
+///
+/// The byte value represents the implicit NullableAttribute value for type references within that scope that do not have an explicit NullableAttribute and would not otherwise be represented by an empty byte[].
+/// The nearest NullableContextAttribute in the metadata hierarchy applies.
+/// If there are no NullableContextAttribute attributes in the hierarchy, missing NullableAttribute attributes are treated as NullableAttribute(0).
+///
+/// Value of the attribute is an 8bit integer, for specific context/scop:
+/// 0 - Oblivious/Ambivalent: everything may be a null.
+/// 1 - Not annotated: every reference type is non-nullable by default.
+/// 2 - Annotated - scope is annotated by default - every reference type has an implicit `NullableAttribute` or `?` on it.
 let ImportNullnessForILType (g: TcGlobals) (getCattrs: unit -> ILAttributes) =
+    // TODO NULLNESS: Since both boxed and value types are coming here, we'll need to makes sure we are checking that.
     let (AttribInfo(tref,_)) = g.attrib_NullableContextAttribute
     let attributes = getCattrs ()
     let attribute = TryDecodeILAttribute tref attributes
     match attribute with
+    | Some (_x) -> KnownAmbivalentToNull
     | _x -> KnownAmbivalentToNull
 
 /// Import an IL type as an F# type.
@@ -202,8 +219,8 @@ let rec ImportILType (env: ImportMap) m tinst ty (getCattrs: unit -> ILAttribute
         mkArrayTy env.g n nullness elemTy m
 
     | ILType.Boxed tspec | ILType.Value tspec ->
-        let tcref = ImportILTypeRef env m tspec.TypeRef 
-        let inst = tspec.GenericArgs |> List.map (fun ty -> ImportILType env m tinst ty (fun () -> emptyILCustomAttrs)) 
+        let tcref = ImportILTypeRef env m tspec.TypeRef
+        let inst = tspec.GenericArgs |> List.map (fun ty -> ImportILType env m tinst ty (fun () -> emptyILCustomAttrs))
         let nullness = ImportNullnessForILType env.g getCattrs
         ImportTyconRefApp env tcref inst nullness
 
@@ -211,7 +228,7 @@ let rec ImportILType (env: ImportMap) m tinst ty (getCattrs: unit -> ILAttribute
 
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
 
-    | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty getCattrs)
+    | ILType.Ptr ty -> mkNativePtrTy env.g (ImportILType env m tinst ty getCattrs)
 
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
 
