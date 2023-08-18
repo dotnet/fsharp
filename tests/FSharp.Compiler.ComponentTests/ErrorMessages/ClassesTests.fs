@@ -687,3 +687,32 @@ type X =
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Class with static member with uppercase function parameter`` () = 
+        Fsx """
+    [<Sealed>]
+    type C() = 
+        static member op_Implicit(x:int) = C()
+        static member M1(CCC:C) = 1
+    let x = C.M1(2)
+        """     
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 5, Col 26, Line 5, Col 29, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
+        ]
+        
+    [<Fact>]
+    let ``Class with member with uppercase function parameter`` () = 
+        Fsx """
+    [<Sealed>]
+    type C() = 
+        static member op_Implicit(x:int) = C()
+        member this.M1(CCC:C) = 1
+        """     
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 5, Col 24, Line 5, Col 27, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
+        ]   

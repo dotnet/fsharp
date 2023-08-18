@@ -140,4 +140,21 @@ module BindingExpressions =
         |> withDiagnostics [
             (Warning 64, Line 10, Col 32, Line 10, Col 33, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'b has been constrained to be type ''a'.")
         ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern.fs"|])>]
+    let ``E_UpperBindingPattern_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 6, Col 23, Line 6, Col 26, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
+            (Error 30, Line 2, Col 9, Line 2, Col 32, "Value restriction. The value 'CallGenericStaticMethod' has been inferred to have generic type
+    val CallGenericStaticMethod: ('_a -> '_b)    
+Either make the arguments to 'CallGenericStaticMethod' explicit or, if you do not intend for it to be generic, add a type annotation.")
+            (Error 30, Line 4, Col 9, Line 4, Col 32, "Value restriction. The value 'MakeGenericStaticMethod' has been inferred to have generic type
+    val MakeGenericStaticMethod: ('_a -> '_b)    
+Either make the arguments to 'MakeGenericStaticMethod' explicit or, if you do not intend for it to be generic, add a type annotation.")
+        ]
 

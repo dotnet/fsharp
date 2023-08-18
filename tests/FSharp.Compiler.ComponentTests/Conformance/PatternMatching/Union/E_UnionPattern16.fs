@@ -9,4 +9,4 @@ let output =
     match x with 
     | US -> "US"
     | CA -> "CA"
-    | UUU -> "U"
+    | uuu -> "U"
