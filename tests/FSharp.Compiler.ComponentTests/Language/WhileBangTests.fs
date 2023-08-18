@@ -27,7 +27,7 @@ module WhileBangTests =
         |> Async.RunSynchronously
         |> printfn "%d"
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "12"
@@ -60,7 +60,7 @@ module WhileBangTests =
         |> Async.RunSynchronously
         |> printfn "%d"
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "30"
@@ -94,7 +94,7 @@ module WhileBangTests =
         |> Async.RunSynchronously
         |> printfn "%d"
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "1"
@@ -127,7 +127,7 @@ module WhileBangTests =
         |> printfn "%d"
         """
         |> ignoreWarnings
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "30"

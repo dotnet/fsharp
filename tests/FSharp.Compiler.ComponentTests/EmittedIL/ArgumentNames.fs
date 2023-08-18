@@ -19,7 +19,7 @@ type M (name: string, count: int) =
 let test1 = M
 let test2 = M.Open
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -56,7 +56,7 @@ type M =
 
 let test1 = M.Write
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -91,7 +91,7 @@ type Ext =
 
 let test1 = (3).Print
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -120,7 +120,7 @@ type DU =
 let test1 = X
 let test2 = Case1
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -160,7 +160,7 @@ let add num1 num2 = printfn "%d" (num1 + num2)
 
 let test1 = System.Action<_, _>(add)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
