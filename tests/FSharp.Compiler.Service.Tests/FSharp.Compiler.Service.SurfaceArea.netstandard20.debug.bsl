@@ -3577,6 +3577,8 @@ FSharp.Compiler.EditorServices.PatternContext+NamedUnionCaseField: FSharp.Compil
 FSharp.Compiler.EditorServices.PatternContext+NamedUnionCaseField: FSharp.Compiler.Text.Range get_caseIdRange()
 FSharp.Compiler.EditorServices.PatternContext+NamedUnionCaseField: System.String fieldName
 FSharp.Compiler.EditorServices.PatternContext+NamedUnionCaseField: System.String get_fieldName()
+FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: Boolean get_isTheOnlyField()
+FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: Boolean isTheOnlyField
 FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: FSharp.Compiler.Text.Range caseIdRange
 FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: FSharp.Compiler.Text.Range get_caseIdRange()
 FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] fieldIndex
@@ -3584,22 +3586,31 @@ FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField: Microsof
 FSharp.Compiler.EditorServices.PatternContext+Tags: Int32 NamedUnionCaseField
 FSharp.Compiler.EditorServices.PatternContext+Tags: Int32 Other
 FSharp.Compiler.EditorServices.PatternContext+Tags: Int32 PositionalUnionCaseField
+FSharp.Compiler.EditorServices.PatternContext+Tags: Int32 UnionCaseFieldIdentifier
+FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: FSharp.Compiler.Text.Range caseIdRange
+FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: FSharp.Compiler.Text.Range get_caseIdRange()
+FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_referencedFields()
+FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier: Microsoft.FSharp.Collections.FSharpList`1[System.String] referencedFields
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(FSharp.Compiler.EditorServices.PatternContext)
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.PatternContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PatternContext: Boolean IsNamedUnionCaseField
 FSharp.Compiler.EditorServices.PatternContext: Boolean IsOther
 FSharp.Compiler.EditorServices.PatternContext: Boolean IsPositionalUnionCaseField
+FSharp.Compiler.EditorServices.PatternContext: Boolean IsUnionCaseFieldIdentifier
 FSharp.Compiler.EditorServices.PatternContext: Boolean get_IsNamedUnionCaseField()
 FSharp.Compiler.EditorServices.PatternContext: Boolean get_IsOther()
 FSharp.Compiler.EditorServices.PatternContext: Boolean get_IsPositionalUnionCaseField()
+FSharp.Compiler.EditorServices.PatternContext: Boolean get_IsUnionCaseFieldIdentifier()
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext NewNamedUnionCaseField(System.String, FSharp.Compiler.Text.Range)
-FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext NewPositionalUnionCaseField(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext NewPositionalUnionCaseField(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext NewUnionCaseFieldIdentifier(Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Text.Range)
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext Other
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext get_Other()
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext+NamedUnionCaseField
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext+PositionalUnionCaseField
 FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext+Tags
+FSharp.Compiler.EditorServices.PatternContext: FSharp.Compiler.EditorServices.PatternContext+UnionCaseFieldIdentifier
 FSharp.Compiler.EditorServices.PatternContext: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.PatternContext: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.PatternContext: Int32 Tag
