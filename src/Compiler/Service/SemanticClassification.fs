@@ -186,7 +186,11 @@ module TcResolutionsExtensions =
 
                     sResolutions.CapturedNameResolutions
                     |> Internal.Utilities.ResizeArray.iter (fun cnr ->
-                        if range.IsNone || rangeContainsPos range.Value cnr.Range.Start || rangeContainsPos range.Value cnr.Range.End then
+                        if
+                            range.IsNone
+                            || rangeContainsPos range.Value cnr.Range.Start
+                            || rangeContainsPos range.Value cnr.Range.End
+                        then
                             match cnr.Item, cnr.ItemOccurence, cnr.Range with
                             | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
                                 add m SemanticClassificationType.ComputationExpression
