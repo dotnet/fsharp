@@ -176,31 +176,6 @@ module TcResolutionsExtensions =
                             | _ -> None
                         | _ -> None
 
-                    // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
-                    // We should prefer the latter, otherwise they would not get classified as CEs.
-                    let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
-                        assert (cnrs.Length > 0)
-
-                        if cnrs.Length = 1 then
-                            cnrs
-                        elif cnrs.Length = 2 then
-                            match cnrs[0].Item, cnrs[1].Item with
-                            | Item.Value _, Item.CustomBuilder _ -> [| cnrs[1] |]
-                            | Item.CustomBuilder _, Item.Value _ -> [| cnrs[0] |]
-                            | _ -> cnrs
-                        else
-                            cnrs
-
-                    let resolutions =
-                        match range with
-                        | Some range ->
-                            sResolutions.CapturedNameResolutions.ToArray()
-                            |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-                            |> Array.groupBy (fun cnr -> cnr.Range)
-                            |> Array.map (fun (_, cnrs) -> takeCustomBuilder cnrs)
-                            |> Array.concat
-                        | None -> sResolutions.CapturedNameResolutions.ToArray()
-
                     let duplicates = HashSet<range>(comparer)
 
                     let results = ImmutableArray.CreateBuilder()
@@ -209,190 +184,191 @@ module TcResolutionsExtensions =
                         if duplicates.Add m then
                             results.Add(SemanticClassificationItem((m, typ)))
 
-                    resolutions
-                    |> Array.iter (fun cnr ->
-                        match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
-                            add m SemanticClassificationType.ComputationExpression
+                    sResolutions.CapturedNameResolutions
+                    |> Internal.Utilities.ResizeArray.iter (fun cnr ->
+                        if range.IsNone || rangeContainsPos range.Value cnr.Range.Start || rangeContainsPos range.Value cnr.Range.End then
+                            match cnr.Item, cnr.ItemOccurence, cnr.Range with
+                            | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                                add m SemanticClassificationType.ComputationExpression
 
-                        | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
+                            | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
-                        | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
+                            | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
-                        | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
-                            if isDiscard vref.DisplayName then
-                                add m SemanticClassificationType.Plaintext
-                            elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
-                                add m SemanticClassificationType.Operator
-                            elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
-                                add m SemanticClassificationType.Property
-                            elif vref.IsMember then
-                                add m SemanticClassificationType.Method
-                            elif IsOperatorDisplayName vref.DisplayName then
-                                add m SemanticClassificationType.Operator
-                            else
-                                add m SemanticClassificationType.Function
-
-                        | Item.Value vref, _, m ->
-                            if isValRefDisposable g amap vref then
-                                if vref.IsCompiledAsTopLevel then
-                                    add m SemanticClassificationType.DisposableTopLevelValue
+                            | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
+                                if isDiscard vref.DisplayName then
+                                    add m SemanticClassificationType.Plaintext
+                                elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
+                                    add m SemanticClassificationType.Operator
+                                elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                                    add m SemanticClassificationType.Property
+                                elif vref.IsMember then
+                                    add m SemanticClassificationType.Method
+                                elif IsOperatorDisplayName vref.DisplayName then
+                                    add m SemanticClassificationType.Operator
                                 else
-                                    add m SemanticClassificationType.DisposableLocalValue
-                            elif Option.isSome vref.LiteralValue then
-                                add m SemanticClassificationType.Literal
-                            elif not vref.IsCompiledAsTopLevel && not (isDiscard vref.DisplayName) then
-                                add m SemanticClassificationType.LocalValue
-                            else
-                                add m SemanticClassificationType.Value
+                                    add m SemanticClassificationType.Function
 
-                        | Item.RecdField rfinfo, _, m ->
-                            match rfinfo with
-                            | EnumCaseFieldInfo -> add m SemanticClassificationType.Enumeration
-                            | _ ->
-                                if isRecdFieldMutable g rfinfo then
+                            | Item.Value vref, _, m ->
+                                if isValRefDisposable g amap vref then
+                                    if vref.IsCompiledAsTopLevel then
+                                        add m SemanticClassificationType.DisposableTopLevelValue
+                                    else
+                                        add m SemanticClassificationType.DisposableLocalValue
+                                elif Option.isSome vref.LiteralValue then
+                                    add m SemanticClassificationType.Literal
+                                elif not vref.IsCompiledAsTopLevel && not (isDiscard vref.DisplayName) then
+                                    add m SemanticClassificationType.LocalValue
+                                else
+                                    add m SemanticClassificationType.Value
+
+                            | Item.RecdField rfinfo, _, m ->
+                                match rfinfo with
+                                | EnumCaseFieldInfo -> add m SemanticClassificationType.Enumeration
+                                | _ ->
+                                    if isRecdFieldMutable g rfinfo then
+                                        add m SemanticClassificationType.MutableRecordField
+                                    elif isFunTy g rfinfo.FieldType then
+                                        add m SemanticClassificationType.RecordFieldAsFunction
+                                    else
+                                        add m SemanticClassificationType.RecordField
+
+                            | Item.AnonRecdField (_, tys, idx, m), _, _ ->
+                                let ty = tys[idx]
+
+                                // It's not currently possible for anon record fields to be mutable, but they can be ref cells
+                                if isRefCellTy g ty then
                                     add m SemanticClassificationType.MutableRecordField
-                                elif isFunTy g rfinfo.FieldType then
+                                elif isFunTy g ty then
                                     add m SemanticClassificationType.RecordFieldAsFunction
                                 else
                                     add m SemanticClassificationType.RecordField
 
-                        | Item.AnonRecdField (_, tys, idx, m), _, _ ->
-                            let ty = tys[idx]
+                            | Item.Property(info = pinfo :: _), _, m ->
+                                if not pinfo.IsIndexer then
+                                    add m SemanticClassificationType.Property
 
-                            // It's not currently possible for anon record fields to be mutable, but they can be ref cells
-                            if isRefCellTy g ty then
-                                add m SemanticClassificationType.MutableRecordField
-                            elif isFunTy g ty then
-                                add m SemanticClassificationType.RecordFieldAsFunction
-                            else
-                                add m SemanticClassificationType.RecordField
+                            | Item.CtorGroup (_, minfos), _, m ->
+                                match minfos with
+                                | [] -> add m SemanticClassificationType.ConstructorForReferenceType
+                                | _ ->
+                                    if
+                                        minfos
+                                        |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType)
+                                    then
+                                        add m SemanticClassificationType.DisposableType
+                                    elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
+                                        add m SemanticClassificationType.ConstructorForValueType
+                                    else
+                                        add m SemanticClassificationType.ConstructorForReferenceType
 
-                        | Item.Property(info = pinfo :: _), _, m ->
-                            if not pinfo.IsIndexer then
-                                add m SemanticClassificationType.Property
+                            | Item.DelegateCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
 
-                        | Item.CtorGroup (_, minfos), _, m ->
-                            match minfos with
-                            | [] -> add m SemanticClassificationType.ConstructorForReferenceType
-                            | _ ->
-                                if
-                                    minfos
-                                    |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType)
-                                then
+                            | Item.FakeInterfaceCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
+
+                            | Item.MethodGroup (_, minfos, _), _, m ->
+                                match minfos with
+                                | [] -> add m SemanticClassificationType.Method
+                                | _ ->
+                                    if
+                                        minfos
+                                        |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
+                                    then
+                                        add m SemanticClassificationType.ExtensionMethod
+                                    else
+                                        add m SemanticClassificationType.Method
+
+                            // Special case measures for struct types
+                            | Item.Types (_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
+                                isStructTyconRef g tyconRef
+                                ->
+                                add m SemanticClassificationType.ValueType
+
+                            | Item.Types (_, ty :: _), LegitTypeOccurence, m ->
+                                let ty = stripTyEqns g ty
+
+                                if isDisposableTy g amap ty then
                                     add m SemanticClassificationType.DisposableType
-                                elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
-                                    add m SemanticClassificationType.ConstructorForValueType
                                 else
-                                    add m SemanticClassificationType.ConstructorForReferenceType
+                                    match tryTcrefOfAppTy g ty with
+                                    | ValueSome tcref -> add m (reprToClassificationType g tcref.TypeReprInfo tcref)
+                                    | ValueNone ->
+                                        if isStructTupleTy g ty then
+                                            add m SemanticClassificationType.ValueType
+                                        elif isRefTupleTy g ty then
+                                            add m SemanticClassificationType.ReferenceType
+                                        elif isForallFunctionTy g ty then
+                                            add m SemanticClassificationType.Function
+                                        elif isTyparTy g ty then
+                                            add m SemanticClassificationType.ValueType
+                                        else
+                                            add m SemanticClassificationType.TypeDef
 
-                        | Item.DelegateCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
+                            | Item.TypeVar _, LegitTypeOccurence, m -> add m SemanticClassificationType.TypeArgument
 
-                        | Item.FakeInterfaceCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
+                            | Item.ExnCase _, LegitTypeOccurence, m -> add m SemanticClassificationType.Exception
 
-                        | Item.MethodGroup (_, minfos, _), _, m ->
-                            match minfos with
-                            | [] -> add m SemanticClassificationType.Method
-                            | _ ->
-                                if
-                                    minfos
-                                    |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
-                                then
-                                    add m SemanticClassificationType.ExtensionMethod
+                            | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, m ->
+                                if modref.IsNamespace then
+                                    add m SemanticClassificationType.Namespace
                                 else
-                                    add m SemanticClassificationType.Method
+                                    add m SemanticClassificationType.Module
 
-                        // Special case measures for struct types
-                        | Item.Types (_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
-                            isStructTyconRef g tyconRef
-                            ->
-                            add m SemanticClassificationType.ValueType
+                            | Item.ActivePatternCase _, _, m -> add m SemanticClassificationType.UnionCase
 
-                        | Item.Types (_, ty :: _), LegitTypeOccurence, m ->
-                            let ty = stripTyEqns g ty
+                            | Item.UnionCase _, _, m -> add m SemanticClassificationType.UnionCase
 
-                            if isDisposableTy g amap ty then
-                                add m SemanticClassificationType.DisposableType
-                            else
-                                match tryTcrefOfAppTy g ty with
-                                | ValueSome tcref -> add m (reprToClassificationType g tcref.TypeReprInfo tcref)
-                                | ValueNone ->
-                                    if isStructTupleTy g ty then
-                                        add m SemanticClassificationType.ValueType
-                                    elif isRefTupleTy g ty then
-                                        add m SemanticClassificationType.ReferenceType
-                                    elif isForallFunctionTy g ty then
-                                        add m SemanticClassificationType.Function
-                                    elif isTyparTy g ty then
+                            | Item.Trait _, _, m -> add m SemanticClassificationType.Method
+
+                            | Item.ActivePatternResult _, _, m -> add m SemanticClassificationType.UnionCase
+
+                            | Item.UnionCaseField _, _, m -> add m SemanticClassificationType.UnionCaseField
+
+                            | Item.ILField _, _, m -> add m SemanticClassificationType.Field
+
+                            | Item.Event _, _, m -> add m SemanticClassificationType.Event
+
+                            | Item.OtherName _, _, m -> add m SemanticClassificationType.NamedArgument
+
+                            | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
+
+                            | Item.SetterArg _, _, m -> add m SemanticClassificationType.Property
+
+                            | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, m ->
+                                if tcref.IsEnumTycon || tcref.IsILEnumTycon then
+                                    add m SemanticClassificationType.Enumeration
+                                elif tcref.IsFSharpException then
+                                    add m SemanticClassificationType.Exception
+                                elif tcref.IsFSharpDelegateTycon then
+                                    add m SemanticClassificationType.Delegate
+                                elif tcref.IsFSharpInterfaceTycon then
+                                    add m SemanticClassificationType.Interface
+                                elif tcref.IsFSharpStructOrEnumTycon then
+                                    add m SemanticClassificationType.ValueType
+                                elif tcref.IsModule then
+                                    add m SemanticClassificationType.Module
+                                elif tcref.IsNamespace then
+                                    add m SemanticClassificationType.Namespace
+                                elif tcref.IsUnionTycon || tcref.IsRecordTycon then
+                                    if isStructTyconRef g tcref then
                                         add m SemanticClassificationType.ValueType
                                     else
-                                        add m SemanticClassificationType.TypeDef
+                                        add m SemanticClassificationType.UnionCase
+                                elif tcref.IsILTycon then
+                                    let (TILObjectReprData (_, _, tydef)) = tcref.ILTyconInfo
 
-                        | Item.TypeVar _, LegitTypeOccurence, m -> add m SemanticClassificationType.TypeArgument
+                                    if tydef.IsInterface then
+                                        add m SemanticClassificationType.Interface
+                                    elif tydef.IsDelegate then
+                                        add m SemanticClassificationType.Delegate
+                                    elif tydef.IsEnum then
+                                        add m SemanticClassificationType.Enumeration
+                                    elif tydef.IsStruct then
+                                        add m SemanticClassificationType.ValueType
+                                    else
+                                        add m SemanticClassificationType.ReferenceType
 
-                        | Item.ExnCase _, LegitTypeOccurence, m -> add m SemanticClassificationType.Exception
-
-                        | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, m ->
-                            if modref.IsNamespace then
-                                add m SemanticClassificationType.Namespace
-                            else
-                                add m SemanticClassificationType.Module
-
-                        | Item.ActivePatternCase _, _, m -> add m SemanticClassificationType.UnionCase
-
-                        | Item.UnionCase _, _, m -> add m SemanticClassificationType.UnionCase
-
-                        | Item.Trait _, _, m -> add m SemanticClassificationType.Method
-
-                        | Item.ActivePatternResult _, _, m -> add m SemanticClassificationType.UnionCase
-
-                        | Item.UnionCaseField _, _, m -> add m SemanticClassificationType.UnionCaseField
-
-                        | Item.ILField _, _, m -> add m SemanticClassificationType.Field
-
-                        | Item.Event _, _, m -> add m SemanticClassificationType.Event
-
-                        | Item.OtherName _, _, m -> add m SemanticClassificationType.NamedArgument
-
-                        | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
-
-                        | Item.SetterArg _, _, m -> add m SemanticClassificationType.Property
-
-                        | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, m ->
-                            if tcref.IsEnumTycon || tcref.IsILEnumTycon then
-                                add m SemanticClassificationType.Enumeration
-                            elif tcref.IsFSharpException then
-                                add m SemanticClassificationType.Exception
-                            elif tcref.IsFSharpDelegateTycon then
-                                add m SemanticClassificationType.Delegate
-                            elif tcref.IsFSharpInterfaceTycon then
-                                add m SemanticClassificationType.Interface
-                            elif tcref.IsFSharpStructOrEnumTycon then
-                                add m SemanticClassificationType.ValueType
-                            elif tcref.IsModule then
-                                add m SemanticClassificationType.Module
-                            elif tcref.IsNamespace then
-                                add m SemanticClassificationType.Namespace
-                            elif tcref.IsUnionTycon || tcref.IsRecordTycon then
-                                if isStructTyconRef g tcref then
-                                    add m SemanticClassificationType.ValueType
-                                else
-                                    add m SemanticClassificationType.UnionCase
-                            elif tcref.IsILTycon then
-                                let (TILObjectReprData (_, _, tydef)) = tcref.ILTyconInfo
-
-                                if tydef.IsInterface then
-                                    add m SemanticClassificationType.Interface
-                                elif tydef.IsDelegate then
-                                    add m SemanticClassificationType.Delegate
-                                elif tydef.IsEnum then
-                                    add m SemanticClassificationType.Enumeration
-                                elif tydef.IsStruct then
-                                    add m SemanticClassificationType.ValueType
-                                else
-                                    add m SemanticClassificationType.ReferenceType
-
-                        | _, _, m -> add m SemanticClassificationType.Plaintext)
+                            | _, _, m -> add m SemanticClassificationType.Plaintext)
 
                     let locs =
                         formatSpecifierLocations

@@ -3948,7 +3948,7 @@ type AfterResolution =
 /// Resolve a long identifier occurring in an expression position.
 ///
 /// Called for 'TypeName.Bar' - for VS IntelliSense, we can filter out instance members from method groups
-let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid =
+let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo isComputationExpressionBuilder lid =
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
@@ -3969,7 +3969,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             ids |> List.forall (fun id -> equals id.idRange head.idRange)
 
     let callSink (refinedItem, tpinst) =
-        if not isFakeIdents then
+        if not isFakeIdents && not isComputationExpressionBuilder then
             let occurence =
                 match item with
                 // It's r.h.s. `Case1` in `let (|Case1|Case1|) _ = if true then Case1 else Case2`

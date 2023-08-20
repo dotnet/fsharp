@@ -793,6 +793,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     ad: AccessorDomain ->
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
+    isComputationExpressionBuilder: bool ->
     lid: Ident list ->
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
