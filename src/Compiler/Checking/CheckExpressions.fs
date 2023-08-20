@@ -4519,12 +4519,12 @@ and CheckAnonRecdTypeDuplicateFields (ident: _ -> Ident) elems =
             let id2 = (ident uc2)
             if j > i && id1.idText = id2.idText then 
                errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(id1.idText), id1.idRange))))
-    elems
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
     let idents = args |> List.choose(fun (lid, _) -> Some lid)
-    CheckAnonRecdTypeDuplicateFields id idents |> ignore
+    if idents.Length > 1 then
+        CheckAnonRecdTypeDuplicateFields id idents
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
     let unsortedFieldIds = args |> List.map fst |> List.toArray
