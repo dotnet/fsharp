@@ -612,7 +612,7 @@ type ILMethInfo =
 
     /// Get the compiled return type of the method, where 'void' is None.
     member x.GetCompiledReturnType (amap, m, minst) =
-        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) (fun _ -> x.RawMetadata.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
+        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) (fun _ -> x.RawMetadata.CustomAttrs) (fun () -> emptyILCustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
     member x.GetFSharpReturnType (amap, m, minst) =
@@ -1262,10 +1262,20 @@ type MethInfo =
                 match x with
                 | ILMeth(_, ilminfo, _) ->
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
-                    let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs) (fun _ -> ilminfo.RawMetadata.CustomAttrs) ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
+                    let formalRetTy =
+                        ImportReturnTypeFromMetadata 
+                            amap
+                            m
+                            ilminfo.RawMetadata.Return.Type
+                            (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs)
+                            (fun _ -> ilminfo.RawMetadata.CustomAttrs)
+                            (fun _ -> ftinfo.RawMetadata.CustomAttrs)
+                            ftinfo.ILScopeRef
+                            ftinfo.TypeInstOfRawMetadata
+                            formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs) (fun _ -> ilminfo.RawMetadata.CustomAttrs)
+                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs) (fun _ -> ilminfo.RawMetadata.CustomAttrs) (fun _ -> ftinfo.RawMetadata.CustomAttrs)
                                 yield TSlotParam(p.Name, paramTy, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS

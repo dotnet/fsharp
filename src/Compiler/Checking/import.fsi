@@ -58,7 +58,7 @@ val internal ImportILTypeRef: ImportMap -> range -> ILTypeRef -> TyconRef
 val internal CanImportILTypeRef: ImportMap -> range -> ILTypeRef -> bool
 
 /// Import an IL type as an F# type.
-val internal ImportILType: ImportMap -> range -> TType list -> ILType -> (unit -> ILAttributes) -> TType
+val internal ImportILType: ImportMap -> range -> TType list -> ILType -> (unit -> ILAttributes) -> (unit -> ILAttributes) -> TType
 
 /// Pre-check for ability to import an IL type as an F# type.
 val internal CanImportILType: ImportMap -> range -> ILType -> bool
@@ -101,6 +101,6 @@ val internal ImportILAssemblyTypeForwarders:
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
 val RescopeAndImportILType:
-    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilTy: ILType -> (unit -> ILAttributes) -> TType
+    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilTy: ILType -> (unit -> ILAttributes) -> (unit -> ILAttributes) -> TType
 
 val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilTy: ILType -> bool
