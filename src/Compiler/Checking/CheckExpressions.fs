@@ -4522,7 +4522,7 @@ and CheckAnonRecdTypeDuplicateFields (ident: _ -> Ident) elems =
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
-    let idents = args |> List.choose(fun (lid, _) -> Some lid)
+    let idents = args |> List.map fst
     if idents.Length > 1 then
         CheckAnonRecdTypeDuplicateFields id idents
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
