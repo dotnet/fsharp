@@ -29,7 +29,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None),
+                                None, None),
                              Named (SynIdent (x, None), false, None, (4,8--4,9)),
                              None, Const (Int32 8, (4,12--4,13)), (3,4--4,9),
                              Yes (3,4--4,13),

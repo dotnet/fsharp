@@ -1666,7 +1666,7 @@ let AddExternalCcusToIlxGenEnv cenv g eenv ccus =
 let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
     let unrealizedSlots =
         if tycon.IsFSharpObjectModelTycon then
-            tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots
+            tycon.FSharpTyconRepresentationData.fsobjmodel_vslots
         else
             []
 
@@ -1859,29 +1859,29 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    let gmethods = ResizeArray<ILMethodDef>(0)
-    let gfields = ResizeArray<ILFieldDef>(0)
+    let gmethods = ResizeArray<ILMethodDef>(tdef.Methods.AsList())
+    let gfields = ResizeArray<ILFieldDef>(tdef.Fields.AsList())
 
     let gproperties: Dictionary<PropKey, int * ILPropertyDef> =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
-    let gevents = ResizeArray<ILEventDef>(0)
+    let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
     let gnested = TypeDefsBuilder()
 
-    member b.Close() =
+    member _.Close() =
         tdef.With(
-            methods = mkILMethods (tdef.Methods.AsList() @ ResizeArray.toList gmethods),
-            fields = mkILFields (tdef.Fields.AsList() @ ResizeArray.toList gfields),
+            methods = mkILMethods (ResizeArray.toList gmethods),
+            fields = mkILFields (ResizeArray.toList gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
-            events = mkILEvents (tdef.Events.AsList() @ ResizeArray.toList gevents),
+            events = mkILEvents (ResizeArray.toList gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close())
         )
 
-    member b.AddEventDef edef = gevents.Add edef
+    member _.AddEventDef edef = gevents.Add edef
 
-    member b.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
+    member _.AddFieldDef ilFieldDef = gfields.Add ilFieldDef
 
-    member b.AddMethodDef ilMethodDef =
+    member _.AddMethodDef ilMethodDef =
         let discard =
             match tdefDiscards with
             | Some (mdefDiscard, _) -> mdefDiscard ilMethodDef
@@ -2099,27 +2099,32 @@ type AnonTypeGenerationTable() =
             if isStruct then
                 tycon.SetIsStructRecordOrUnion true
 
-            tycon.entity_tycon_repr <-
-                TFSharpRecdRepr(
-                    Construct.MakeRecdFieldsTable(
-                        (tps, flds)
-                        ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
-                            Construct.NewRecdField
-                                false
-                                None
-                                (mkSynId m propName)
-                                false
-                                (mkTyparTy tp)
-                                true
-                                false
-                                []
-                                []
-                                XmlDoc.Empty
-                                taccessPublic
-                                false)
-                    )
-                )
+            let rfields =
+                (tps, flds)
+                ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
+                    Construct.NewRecdField
+                        false
+                        None
+                        (mkSynId m propName)
+                        false
+                        (mkTyparTy tp)
+                        true
+                        false
+                        []
+                        []
+                        XmlDoc.Empty
+                        taccessPublic
+                        false)
 
+            let data =
+                {
+                    fsobjmodel_cases = Construct.MakeUnionCases []
+                    fsobjmodel_rfields = Construct.MakeRecdFieldsTable rfields
+                    fsobjmodel_kind = TFSharpRecord
+                    fsobjmodel_vslots = []
+                }
+
+            tycon.entity_tycon_repr <- TFSharpTyconRepr data
             let tcref = mkLocalTyconRef tycon
             let ty = generalizedTyconRef g tcref
             let tcaug = tcref.TypeContents
@@ -10501,9 +10506,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         | TAsmRepr _
         | TILObjectRepr _
         | TMeasureableRepr _ -> ()
-        | TFSharpObjectRepr _
-        | TFSharpRecdRepr _
-        | TFSharpUnionRepr _ ->
+        | TFSharpTyconRepr _ ->
             let eenvinner = EnvForTycon tycon eenv
             let thisTy = generalizedTyconRef g tcref
 
@@ -10669,15 +10672,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
             let ilTypeDefKind =
                 match tyconRepr with
-                | TFSharpObjectRepr o ->
+                | TFSharpTyconRepr o ->
                     match o.fsobjmodel_kind with
+                    | TFSharpUnion
+                    | TFSharpRecord ->
+                        if tycon.IsStructOrEnumTycon then
+                            ILTypeDefKind.ValueType
+                        else
+                            ILTypeDefKind.Class
                     | TFSharpClass -> ILTypeDefKind.Class
                     | TFSharpStruct -> ILTypeDefKind.ValueType
                     | TFSharpInterface -> ILTypeDefKind.Interface
                     | TFSharpEnum -> ILTypeDefKind.Enum
                     | TFSharpDelegate _ -> ILTypeDefKind.Delegate
-                | TFSharpRecdRepr _
-                | TFSharpUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
                 | _ -> ILTypeDefKind.Class
 
             let requiresExtraField =
@@ -10779,7 +10786,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                         let extraAttribs =
                             match tyconRepr with
-                            | TFSharpRecdRepr _ when not useGenuineField ->
+                            | TFSharpTyconRepr { fsobjmodel_kind = TFSharpRecord } when not useGenuineField ->
                                 [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             | _ -> [] // don't hide fields in classes in debug display
 
@@ -10983,7 +10990,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     // Build record constructors and the funky methods that go with records and delegate types.
                     // Constructors and delegate methods have the same access as the representation
                     match tyconRepr with
-                    | TFSharpRecdRepr _ when not tycon.IsEnumTycon ->
+                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpRecord } when not tycon.IsEnumTycon ->
                         // No constructor for enum types
                         // Otherwise find all the non-static, non zero-init fields and build a constructor
                         let relevantFields =
@@ -11029,7 +11036,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         if not (tycon.HasMember g "ToString" []) then
                             yield! GenToStringMethod cenv eenv ilThisTy m
 
-                    | TFSharpObjectRepr r when tycon.IsFSharpDelegateTycon ->
+                    | TFSharpTyconRepr r when tycon.IsFSharpDelegateTycon ->
 
                         // Build all the methods that go with a delegate type
                         match r.fsobjmodel_kind with
@@ -11050,7 +11057,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             yield! mkILDelegateMethods reprAccess g.ilg (g.iltyp_AsyncCallback, g.iltyp_IAsyncResult) (parameters, ret)
                         | _ -> ()
 
-                    | TFSharpUnionRepr _ when not (tycon.HasMember g "ToString" []) -> yield! GenToStringMethod cenv eenv ilThisTy m
+                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not (tycon.HasMember g "ToString" []) ->
+                        yield! GenToStringMethod cenv eenv ilThisTy m
                     | _ -> ()
                 ]
 
@@ -11058,6 +11066,23 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
             let ilProperties = mkILProperties (ilPropertyDefsForFields @ abstractPropDefs)
             let ilEvents = mkILEvents abstractEventDefs
             let ilFields = mkILFields ilFieldDefs
+
+            // For now, generic types always use ILTypeInit.BeforeField. This is because
+            // there appear to be some cases where ILTypeInit.OnAny causes problems for
+            // the .NET CLR when used in conjunction with generic classes in cross-DLL
+            // and NGEN scenarios.
+            //
+            // We don't apply this rule to the final file. This is because ALL classes with .cctors in
+            // the final file (which may in turn trigger the .cctor for the .EXE itself, which
+            // in turn calls the main() method) must have deterministic initialization
+            // that is not triggered prior to execution of the main() method.
+            // If this property doesn't hold then the .cctor can end up running
+            // before the main method even starts.
+            let typeDefTrigger =
+                if eenv.isFinalFile || tycon.TyparsNoRange.IsEmpty then
+                    ILTypeInit.OnAny
+                else
+                    ILTypeInit.BeforeField
 
             let tdef, tdefDiscards =
                 let isSerializable =
@@ -11073,16 +11098,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                     tdef, None
 
-                | TFSharpRecdRepr _
-                | TFSharpObjectRepr _ as tyconRepr ->
+                | TFSharpTyconRepr { fsobjmodel_kind = k } when
+                    (match k with
+                     | TFSharpUnion -> false
+                     | _ -> true)
+                    ->
                     let super = superOfTycon g tycon
                     let ilBaseTy = GenType cenv m eenvinner.tyenv super
 
                     // Build a basic type definition
                     let isObjectType =
-                        (match tyconRepr with
-                         | TFSharpObjectRepr _ -> true
-                         | _ -> false)
+                        match k with
+                        | TFSharpRecord -> false
+                        | _ -> true
 
                     let ilAttrs =
                         ilCustomAttrs
@@ -11098,23 +11126,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                         SourceConstructFlags.RecordType
                                 ))
                         ]
-
-                    // For now, generic types always use ILTypeInit.BeforeField. This is because
-                    // there appear to be some cases where ILTypeInit.OnAny causes problems for
-                    // the .NET CLR when used in conjunction with generic classes in cross-DLL
-                    // and NGEN scenarios.
-                    //
-                    // We don't apply this rule to the final file. This is because ALL classes with .cctors in
-                    // the final file (which may in turn trigger the .cctor for the .EXE itself, which
-                    // in turn calls the main() method) must have deterministic initialization
-                    // that is not triggered prior to execution of the main() method.
-                    // If this property doesn't hold then the .cctor can end up running
-                    // before the main method even starts.
-                    let typeDefTrigger =
-                        if eenv.isFinalFile || tycon.TyparsNoRange.IsEmpty then
-                            ILTypeInit.OnAny
-                        else
-                            ILTypeInit.BeforeField
 
                     let isKnownToBeAttribute =
                         ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
@@ -11231,7 +11242,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                     tdef, None
 
-                | TFSharpUnionRepr _ ->
+                | TFSharpTyconRepr { fsobjmodel_kind = k } when
+                    (match k with
+                     | TFSharpUnion -> true
+                     | _ -> false)
+                    ->
                     let alternatives =
                         tycon.UnionCasesArray
                         |> Array.mapi (fun i ucspec ->
@@ -11318,7 +11333,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             .WithSealed(true)
                             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
                             .WithAccess(access)
-                            .WithInitSemantics(ILTypeInit.BeforeField)
+                            // If there are static fields in the union, use the same kind of trigger as
+                            // for class types
+                            .WithInitSemantics(
+                                if ilFields.AsList().IsEmpty then
+                                    ILTypeInit.BeforeField
+                                else
+                                    typeDefTrigger
+                            )
 
                     let tdef2 =
                         EraseUnions.mkClassUnionDef

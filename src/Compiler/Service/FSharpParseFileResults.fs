@@ -170,6 +170,21 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsTypeName(range: range) =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitModuleDecl(_, _, synModuleDecl) =
+                    match synModuleDecl with
+                    | SynModuleDecl.Types (typeDefns, _) ->
+                        typeDefns
+                        |> Seq.exists (fun (SynTypeDefn (typeInfo, _, _, _, _, _)) -> typeInfo.Range = range)
+                        |> Some
+                    | _ -> None
+            }
+
+        let result = SyntaxTraversal.Traverse(range.Start, input, visitor)
+        result |> Option.contains true
+
     member _.TryRangeOfFunctionOrMethodBeingApplied pos =
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
@@ -276,6 +291,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             // Capture the body of a lambda, often nested in a call to a collection function
             | SynExpr.Lambda (body = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
+
+            | SynExpr.DotLambda (expr = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
             | SynExpr.Do (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
@@ -410,6 +427,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+                    | SynBinding(expr = SynExpr.DotLambda _) when skipLambdas -> defaultTraverse binding
 
                     // Skip manually type-annotated bindings
                     | SynBinding(returnInfo = Some (SynBindingReturnInfo _)) -> defaultTraverse binding
@@ -490,6 +508,24 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsPositionWithinTypeDefinition pos =
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitComponentInfo(path, _) =
+                    let typeDefs =
+                        path
+                        |> List.filter (function
+                            | SyntaxNode.SynModule (SynModuleDecl.Types _) -> true
+                            | _ -> false)
+
+                    match typeDefs with
+                    | [] -> None
+                    | _ -> Some true
+            }
+
+        let result = SyntaxTraversal.Traverse(pos, input, visitor)
+        result.IsSome
+
     member _.IsBindingALambdaAtPosition pos =
         let visitor =
             { new SyntaxVisitorBase<_>() with
@@ -500,6 +536,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynBinding.SynBinding (expr = expr; range = range) when Position.posEq range.Start pos ->
                         match expr with
                         | SynExpr.Lambda _ -> Some range
+                        | SynExpr.DotLambda _ -> Some range
                         | _ -> None
                     | _ -> defaultTraverse binding
             }
@@ -634,6 +671,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         match expr with
                         | SynExpr.ArbitraryAfterError _
                         | SynExpr.LongIdent _
+                        | SynExpr.DotLambda _
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
@@ -794,6 +832,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true resultExpr
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
+
+                        | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
 
                         | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind

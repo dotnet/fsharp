@@ -189,7 +189,7 @@ type Bar = {
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 9 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
 
 
 [<Test>]
@@ -385,3 +385,30 @@ c.Abc
 """
 
     testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
+
+[<Test>]
+let ``Auto property should display a single tool tip`` () =
+    let source = """
+namespace Foo
+
+/// Some comment on class
+type Bar() =
+    /// Some comment on class member
+    member val Foo = "bla" with get, set
+"""
+    let fileName, options =
+        mkTestFileAndOptions
+            source
+            Array.empty
+    let _, checkResults = parseAndCheckFile fileName source options
+    let (ToolTipText(items)) = checkResults.GetToolTip(7, 18, "    member val Foo = \"bla\" with get, set", [ "Foo" ], FSharpTokenTag.Identifier)
+    Assert.True (items.Length = 1)
+    match items.[0] with
+    | ToolTipElement.Group [ { MainDescription = description } ] ->
+        let toolTipText =
+            description
+            |> Array.map (fun taggedText -> taggedText.Text)
+            |> String.concat ""
+
+        Assert.AreEqual("property Bar.Foo: string with get, set", toolTipText)
+    | _ -> Assert.Fail $"Expected group, got {items.[0]}"

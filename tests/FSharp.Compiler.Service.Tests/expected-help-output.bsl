@@ -119,6 +119,8 @@
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
+--strict-indentation[+|-]                Override indentation rules implied
+                                         by the language version
 
 
                 - MISCELLANEOUS -
