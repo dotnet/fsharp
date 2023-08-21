@@ -2330,7 +2330,7 @@ let CheckForDuplicateConcreteType env nm m =
     let curr = GetCurrAccumulatedModuleOrNamespaceType env
     if Map.containsKey nm curr.AllEntitiesByCompiledAndLogicalMangledNames then 
         // Use 'error' instead of 'errorR' here to avoid cascading errors - see bug 1177 in FSharp 1.0 
-        error (Duplicate(FSComp.SR.tcTypeExceptionOrModule(), nm, m))
+        errorR (Duplicate(FSComp.SR.tcTypeExceptionOrModule(), nm, m))
 
 let CheckForDuplicateModule env nm m = 
     let curr = GetCurrAccumulatedModuleOrNamespaceType env
