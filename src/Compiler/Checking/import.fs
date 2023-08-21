@@ -217,8 +217,10 @@ let ImportNullnessForILType (g: TcGlobals) (getMethodCustomAttributes: unit -> I
             | attribute -> attribute
 
         match attribute with
-        | Some (_elements, _args) -> KnownWithNull
-        | _x -> KnownWithNull
+        | Some (ILAttribElem.Byte(value) :: _, _) when value = 0uy -> KnownAmbivalentToNull
+        | Some (ILAttribElem.Byte(value) :: _, _) when value = 1uy -> KnownWithoutNull
+        | Some (ILAttribElem.Byte(value) :: _, _) when value = 2uy -> KnownWithNull
+        | _ -> KnownAmbivalentToNull
     else
         KnownAmbivalentToNull
 

@@ -470,6 +470,9 @@ module rec Compiler =
         let options = if String.IsNullOrWhiteSpace options then [] else (options.Split([|';'|])) |> Array.toList
         withOptionsHelper options "withOptionsString is only supported for F#" cUnit
 
+    let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
+
     let withOutputDirectory (path: DirectoryInfo option) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputDirectory = path }

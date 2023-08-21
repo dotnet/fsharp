@@ -3,6 +3,11 @@
 open Xunit
 open FSharp.Test.Compiler
 
+let inline compile c =
+    c
+    |> withCheckNulls
+    |> compile
+
 [<Fact>]
 let ``Nullable C# reference consumption`` () =
     let lib =
@@ -29,13 +34,22 @@ let ``Nullable C# reference consumption`` () =
     FSharp """
     module FSNullable
     open Nullables
-    let nullablestrNoParams = NullableClass.ReturnsNullableStringNoParams()
-    let nonNullableStrNoParams = NullableClass.ReturnsNonNullableStringNoParams()
-    ignore nullablestr
-    ignore nonNullableStr
+    
+    let nullablestrNoParams : string = NullableClass.ReturnsNullableStringNoParams()
+    let nonNullableStrNoParams : string __withnull = NullableClass.ReturnsNonNullableStringNoParams()
+
+    let nullablestrNoParamsCorrectlyAnnotated : string __withnull = NullableClass.ReturnsNullableStringNoParams()
+    let nonNullableStrNoParamsCorrectlyAnnotated : string = NullableClass.ReturnsNonNullableStringNoParams()
+
+    ignore nullablestrNoParams
+    ignore nonNullableStrNoParams
     """
     |> asLibrary
     |> withLangVersionPreview
     |> withReferences [lib]
     |> compile
-    |> shouldSucceed
+    |> shouldFail
+    |> withDiagnostics [
+        Warning 3261, Line 4, Col 39, Line 4, Col 84, "Nullness warning: The types 'string' and 'string __withnull' do not have compatible nullability.";
+        Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have equivalent nullability."
+    ]
