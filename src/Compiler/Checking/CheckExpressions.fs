@@ -4511,19 +4511,21 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
         else
             let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
             TType_tuple(tupInfo, argsR), tpenv
+            
+and CheckAnonRecdTypeDuplicateFields (elems: Ident array) =
+    elems |> Array.iteri (fun i (uc1: Ident) -> 
+        elems |> Array.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
+    let unsortedFieldIds = args |> List.map fst |> List.toArray
+    if unsortedFieldIds.Length > 1 then
+        CheckAnonRecdTypeDuplicateFields unsortedFieldIds
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
-    let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
-
-    // Check for duplicate field IDs
-    unsortedFieldIds
-    |> Array.countBy (fun fieldId -> fieldId.idText)
-    |> Array.iter (fun (idText, count) ->
-        if count > 1 then error (Error (FSComp.SR.tcAnonRecdTypeDuplicateFieldId(idText), m)))
 
     // Sort into canonical order
     let sortedFieldTys, sortedCheckedArgTys = List.zip args argsR |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
