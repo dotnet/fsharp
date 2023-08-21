@@ -36,13 +36,10 @@ let ``Nullable C# reference consumption`` () =
     open Nullables
     
     let nullablestrNoParams : string = NullableClass.ReturnsNullableStringNoParams()
-    let nonNullableStrNoParams : string __withnull = NullableClass.ReturnsNonNullableStringNoParams()
+    let nonNullableStrNoParams : string __withnull = NullableClass.ReturnsNonNullableStringNoParams() // Here we don't expect any warning.
 
     let nullablestrNoParamsCorrectlyAnnotated : string __withnull = NullableClass.ReturnsNullableStringNoParams()
     let nonNullableStrNoParamsCorrectlyAnnotated : string = NullableClass.ReturnsNonNullableStringNoParams()
-
-    ignore nullablestrNoParams
-    ignore nonNullableStrNoParams
     """
     |> asLibrary
     |> withLangVersionPreview
@@ -50,6 +47,6 @@ let ``Nullable C# reference consumption`` () =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        Warning 3261, Line 4, Col 39, Line 4, Col 84, "Nullness warning: The types 'string' and 'string __withnull' do not have compatible nullability.";
+        Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have compatible nullability.";
         Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have equivalent nullability."
     ]
