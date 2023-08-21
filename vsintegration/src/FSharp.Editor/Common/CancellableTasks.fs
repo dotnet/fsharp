@@ -1095,6 +1095,13 @@ module CancellableTasks =
                 return! Task.WhenAll (seq { for task in tasks do yield start ct task })
             }
 
+        let inline waitForAll (tasks: CancellableTask<unit> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let! _ = Task.WhenAll (seq { for task in tasks do yield start ct task })
+                return ()
+            }
+
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()

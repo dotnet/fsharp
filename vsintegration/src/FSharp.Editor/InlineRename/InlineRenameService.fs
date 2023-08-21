@@ -152,13 +152,12 @@ type internal InlineRenameInfo
 
     override _.FindRenameLocationsAsync(_, _, cancellationToken) =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
             let! symbolUsesByDocumentId = symbolUses
 
-            let locationTasks =
-                [|
+            let! results =
+                seq {
                     for (KeyValue (documentId, symbolUses)) in symbolUsesByDocumentId do
-                        let t =
+                        
                             cancellableTask {
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let document = document.Project.Solution.GetDocument(documentId)
@@ -173,12 +172,9 @@ type internal InlineRenameInfo
                                                 yield FSharpInlineRenameLocation(document, textSpan)
                                             | None -> ()
                                     |]
-                            }
-
-                        yield CancellableTask.start cancellationToken t
-                |]
-
-            let! results = Task.WhenAll locationTasks
+                            }       
+                }
+                |> CancellableTask.whenAll
 
             let locations = Array.concat results
 

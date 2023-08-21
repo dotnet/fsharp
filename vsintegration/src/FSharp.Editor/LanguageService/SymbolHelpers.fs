@@ -77,17 +77,12 @@ module internal SymbolHelpers =
                 [| nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj |]
 
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
-                let tasks =
-                    [|
-                        for project in projects do
-                            project.FindFSharpReferencesAsync (symbol, onFound, "getSymbolUsesInProjects") cancellationToken
-                    |]
-
-                let! _ = Task.WhenAll tasks
+                do! projects
+                    |> Seq.map (fun project -> project.FindFSharpReferencesAsync (symbol, onFound, "getSymbolUsesInProjects"))
+                    |> CancellableTask.waitForAll
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
@@ -99,20 +94,14 @@ module internal SymbolHelpers =
         (onFound: Document -> range -> CancellableTask<unit>)
         =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken ()
-
             match symbolUse.GetSymbolScope currentDocument with
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
 
-                let tasks =
-                    [|
-                        for symbolUse in symbolUses do
-                            yield CancellableTask.startAsTask cancellationToken (onFound currentDocument symbolUse.Range)
-                    |]
-
-                do! Task.WhenAll(tasks)
+                do! symbolUses
+                    |> Seq.map (fun symbolUse -> onFound currentDocument symbolUse.Range)
+                    |> CancellableTask.waitForAll
 
             | Some SymbolScope.SignatureAndImplementation ->
                 let otherFile = getOtherFile currentDocument.FilePath
@@ -132,13 +121,9 @@ module internal SymbolHelpers =
                         checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
-                let tasks =
-                    [|
-                        for document, range in symbolUses do
-                            yield CancellableTask.startAsTask cancellationToken (onFound document range)
-                    |]
-
-                do! Task.WhenAll tasks
+                do! symbolUses
+                    |> Seq.map ((<||) onFound)
+                    |> CancellableTask.waitForAll
 
             | scope ->
                 let projectsToCheck =
