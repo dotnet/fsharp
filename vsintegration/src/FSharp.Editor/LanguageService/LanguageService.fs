@@ -116,6 +116,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
+                            let enableInMemoryCrossProjectReferences =
+                                editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
@@ -156,6 +159,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableLiveBuffers, enableLiveBuffers
                                         nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                        nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
                                         nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
@@ -194,7 +198,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
-                                        backgroundTask {
+                                        cancellableTask {
                                             let document = args.NewSolution.GetDocument(args.DocumentId)
 
                                             let! _, _, _, options =
@@ -202,6 +206,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                                             do! checker.NotifyFileChanged(document.FilePath, options)
                                         }
+                                        |> CancellableTask.startAsTask CancellationToken.None
                                         |> ignore)
 
                             checker

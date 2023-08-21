@@ -133,6 +133,8 @@ type SynExprLetOrUseTrivia =
         InKeyword: range option
     }
 
+    static member Zero: SynExprLetOrUseTrivia
+
 /// Represents additional information for SynExpr.LetOrUseBang
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
@@ -513,6 +515,16 @@ type SynMemberSigMemberTrivia =
     }
 
     static member Zero: SynMemberSigMemberTrivia
+
+/// Represents additional information for SynTyparDecl
+[<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        /// The syntax ranges of the `&` tokens
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia
 
 /// Represents additional information for SynConst.Measure
 [<NoEquality; NoComparison>]

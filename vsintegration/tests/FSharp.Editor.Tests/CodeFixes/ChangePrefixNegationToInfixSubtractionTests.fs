@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = ChangePrefixNegationToInfixSubtractionCodeFixProvider()
-let private diagnostic = 0003 // The value is not a function and cannot be applied
 
 [<Theory>]
 [<InlineData " ">]
@@ -33,7 +32,7 @@ let f (numbers: 'a array) =
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -46,6 +45,6 @@ let x = 1 (+) 2
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

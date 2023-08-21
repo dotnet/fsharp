@@ -5,15 +5,12 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.Threading
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
 open System.Runtime.Caching
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -22,9 +19,6 @@ open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
-
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-open CancellableTasks
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
@@ -586,6 +580,7 @@ module internal Tokenizer =
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
+
         let classifiedSpans = new List<ClassifiedSpan>()
 
         while startPosition < colorMap.Length do
@@ -689,7 +684,7 @@ module internal Tokenizer =
         ]
 
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
-    let getClassifiedSpans
+    let classifySpans
         (
             documentKey: DocumentId,
             sourceText: SourceText,
@@ -698,9 +693,9 @@ module internal Tokenizer =
             defines: string list,
             langVersion,
             strictIndentation,
+            result: ResizeArray<ClassifiedSpan>,
             cancellationToken: CancellationToken
-        ) : ResizeArray<ClassifiedSpan> =
-        let result = new ResizeArray<ClassifiedSpan>()
+        ) : unit =
 
         try
             let sourceTokenizer =
@@ -716,19 +711,21 @@ module internal Tokenizer =
                 getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
-                result.AddRange(
-                    lineData.ClassifiedSpans
-                    |> Array.filter (fun token ->
-                        textSpan.Contains(token.TextSpan.Start)
+                for token in lineData.ClassifiedSpans do
+                    if
+                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)
+                        || textSpan.Contains(token.TextSpan.Start)
                         || textSpan.Contains(token.TextSpan.End - 1)
-                        || (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End))
-                )
+                    then
+                        result.Add token
 
         with
-        | :? System.OperationCanceledException -> reraise ()
+        | :? OperationCanceledException -> reraise ()
         | ex -> Assert.Exception(ex)
 
-        result
+        ()
+
+    let inline (||>) struct (arg1, arg2) ([<InlineIfLambda>] func: 'T1 -> 'T2 -> 'T3) = func arg1 arg2
 
     /// Returns symbol at a given position.
     let private getSymbolFromSavedTokens
@@ -781,11 +778,11 @@ module internal Tokenizer =
         let draftTokens =
             let tokensCount = savedTokens.Length
 
-            (([], None), savedTokens)
-            ||> Array.foldi (fun (acc, lastToken: DraftTokenInfo option) index token ->
+            struct (([], ValueNone), savedTokens)
+            ||> Array.foldi (fun (acc, lastToken: DraftTokenInfo voption) index token ->
                 match lastToken with
-                | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
-                | Some ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
+                | ValueSome t when token.LeftColumn <= t.RightColumn -> acc, lastToken
+                | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
                     wholeActivePatterns
                     && (token.Tag = FSharpTokenTag.BAR
                         || token.Tag = FSharpTokenTag.IDENT
@@ -798,37 +795,37 @@ module internal Tokenizer =
                             MatchedLength = lastToken.MatchedLength + token.MatchedLength
                         }
 
-                    acc, Some mergedToken
+                    acc, ValueSome mergedToken
                 | _ ->
                     let isLastToken = index = tokensCount - 1
 
                     match token with
                     | GenericTypeParameterPrefix when not isLastToken ->
-                        acc, Some(DraftTokenInfo.Create LexerSymbolKind.GenericTypeParameter token)
+                        acc, ValueSome(DraftTokenInfo.Create LexerSymbolKind.GenericTypeParameter token)
                     | StaticallyResolvedTypeParameterPrefix when not isLastToken ->
-                        acc, Some(DraftTokenInfo.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
-                    | ActivePattern when wholeActivePatterns -> acc, Some(DraftTokenInfo.Create LexerSymbolKind.ActivePattern token)
+                        acc, ValueSome(DraftTokenInfo.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
+                    | ActivePattern when wholeActivePatterns -> acc, ValueSome(DraftTokenInfo.Create LexerSymbolKind.ActivePattern token)
                     | _ ->
                         let draftToken =
                             match lastToken with
-                            | Some {
-                                       Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind
-                                   } when token.IsIdentifier ->
+                            | ValueSome {
+                                            Kind = LexerSymbolKind.GenericTypeParameter | LexerSymbolKind.StaticallyResolvedTypeParameter as kind
+                                        } when token.IsIdentifier ->
                                 {
                                     Kind = kind
                                     LeftColumn = token.LeftColumn - 1
                                     MatchedLength = token.MatchedLength + 1
                                 }
                             // ^ operator
-                            | Some {
-                                       Kind = LexerSymbolKind.StaticallyResolvedTypeParameter
-                                   } ->
+                            | ValueSome {
+                                            Kind = LexerSymbolKind.StaticallyResolvedTypeParameter
+                                        } ->
                                 {
                                     Kind = LexerSymbolKind.Operator
                                     LeftColumn = token.LeftColumn - 1
                                     MatchedLength = 1
                                 }
-                            | Some ({ Kind = LexerSymbolKind.ActivePattern } as ap) when
+                            | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as ap) when
                                 wholeActivePatterns && token.Tag = FSharpTokenTag.RPAREN
                                 ->
                                 {
@@ -843,7 +840,7 @@ module internal Tokenizer =
                                     MatchedLength = token.MatchedLength
                                 }
 
-                        draftToken :: acc, Some draftToken)
+                        draftToken :: acc, ValueSome draftToken)
             |> fst
 
         // One or two tokens that in touch with the cursor (for "let x|(g) = ()" the tokens will be "x" and "(")
@@ -853,46 +850,53 @@ module internal Tokenizer =
                 | SymbolLookupKind.Precise -> 0
                 | SymbolLookupKind.Greedy -> 1
 
-            draftTokens
-            |> List.filter (fun x ->
-                x.LeftColumn <= linePos.Character
-                && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
+            [
+                for x in draftTokens do
+                    if
+                        x.LeftColumn <= linePos.Character
+                        && (x.RightColumn + rightColumnCorrection) >= linePos.Character
+                    then
+                        yield x
+            ]
 
         // Select IDENT token. If failed, select OPERATOR token.
-        tokensUnderCursor
-        |> List.tryFind (fun token ->
-            match token.Kind with
-            | LexerSymbolKind.Ident
-            | LexerSymbolKind.Keyword
-            | LexerSymbolKind.ActivePattern
-            | LexerSymbolKind.GenericTypeParameter
-            | LexerSymbolKind.StaticallyResolvedTypeParameter -> true
-            | _ -> false)
-        |> Option.orElseWith (fun _ ->
+        let symbol =
             tokensUnderCursor
-            |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.Operator))
-        |> Option.orElseWith (fun _ ->
-            if allowStringToken then
+            |> List.tryFindV (fun token ->
+                match token.Kind with
+                | LexerSymbolKind.Ident
+                | LexerSymbolKind.Keyword
+                | LexerSymbolKind.ActivePattern
+                | LexerSymbolKind.GenericTypeParameter
+                | LexerSymbolKind.StaticallyResolvedTypeParameter -> true
+                | _ -> false)
+            |> ValueOption.orElseWith (fun _ ->
                 tokensUnderCursor
-                |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.String)
-            else
-                None)
-        |> Option.map (fun token ->
-            let partialName = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
-            let identStr = lineStr.Substring(token.LeftColumn, token.MatchedLength)
+                |> List.tryFindV (fun token -> token.Kind = LexerSymbolKind.Operator))
+            |> ValueOption.orElseWith (fun _ ->
+                if allowStringToken then
+                    tokensUnderCursor
+                    |> List.tryFindV (fun token -> token.Kind = LexerSymbolKind.String)
+                else
+                    ValueNone)
+            |> ValueOption.map (fun token ->
+                let partialName = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
+                let identStr = lineStr.Substring(token.LeftColumn, token.MatchedLength)
 
-            {
-                Kind = token.Kind
-                Ident =
-                    Ident(
-                        identStr,
-                        Range.mkRange
-                            fileName
-                            (Position.mkPos (linePos.Line + 1) token.LeftColumn)
-                            (Position.mkPos (linePos.Line + 1) (token.RightColumn + 1))
-                    )
-                FullIsland = partialName.QualifyingIdents @ [ identStr ]
-            })
+                {
+                    Kind = token.Kind
+                    Ident =
+                        Ident(
+                            identStr,
+                            Range.mkRange
+                                fileName
+                                (Position.mkPos (linePos.Line + 1) token.LeftColumn)
+                                (Position.mkPos (linePos.Line + 1) (token.RightColumn + 1))
+                        )
+                    FullIsland = partialName.QualifyingIdents @ [ identStr ]
+                })
+
+        ValueOption.toOption symbol
 
     let private getCachedSourceLineData
         (
@@ -921,7 +925,7 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
+    let inline tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
                 getCachedSourceLineData (
@@ -983,12 +987,15 @@ module internal Tokenizer =
             Assert.Exception(ex)
             None
 
+    [<Literal>]
+    let private doubleBackTickDelimiter = "``"
+
     /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
         let text = sourceText.GetSubText(span).ToString()
         // backticked ident
-        if text.EndsWith "``" then
-            match text.LastIndexOf("``", text.Length - 3, text.Length - 2) with
+        if text.EndsWith doubleBackTickDelimiter then
+            match text.LastIndexOf(doubleBackTickDelimiter, text.Length - 3, text.Length - 2) with
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index, text.Length - index)
@@ -997,8 +1004,6 @@ module internal Tokenizer =
             | -1
             | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
-
-    let private doubleBackTickDelimiter = "``"
 
     let isDoubleBacktickIdent (s: string) =
         let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
@@ -1015,7 +1020,7 @@ module internal Tokenizer =
 
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
 
-        let isIdentifier (ident: string) =
+        let inline isIdentifier (ident: string) =
             if isDoubleBacktickIdent ident then
                 true
             else
@@ -1027,21 +1032,21 @@ module internal Tokenizer =
                     else
                         PrettyNaming.IsIdentifierPartCharacter c)
 
-        let isFixableIdentifier (s: string) =
+        let inline isFixableIdentifier (s: string) =
             not (String.IsNullOrEmpty s)
             && FSharpKeywords.NormalizeIdentifierBackticks s |> isIdentifier
 
         let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
 
-        let isTypeNameIdent (s: string) =
+        let inline isTypeNameIdent (s: string) =
             not (String.IsNullOrEmpty s)
             && s.IndexOfAny forbiddenChars = -1
             && isFixableIdentifier s
 
-        let isUnionCaseIdent (s: string) =
+        let inline isUnionCaseIdent (s: string) =
             isTypeNameIdent s && Char.IsUpper(s.Replace(doubleBackTickDelimiter, "").[0])
 
-        let isTypeParameter (prefix: char) (s: string) =
+        let inline isTypeParameter (prefix: char) (s: string) =
             s.Length >= 2 && s.[0] = prefix && isIdentifier s.[1..]
 
         let isGenericTypeParameter = isTypeParameter '''

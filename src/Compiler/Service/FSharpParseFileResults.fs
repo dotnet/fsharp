@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Diagnostics
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
@@ -544,6 +543,27 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsPositionWithinRecordDefinition pos =
+        let isWithin left right middle =
+            Position.posGt right left && Position.posLt middle right
+
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitRecordDefn(_, _, range) =
+                    if pos |> isWithin range.Start range.End then
+                        Some true
+                    else
+                        None
+
+                override _.VisitTypeAbbrev(_, synType, range) =
+                    match synType with
+                    | SynType.AnonRecd _ when pos |> isWithin range.Start range.End -> Some true
+                    | _ -> None
+            }
+
+        let result = SyntaxTraversal.Traverse(pos, input, visitor)
+        result.IsSome
+
     /// Get declared items and the selected item at the specified location
     member _.GetNavigationItemsImpl() =
         DiagnosticsScope.Protect
@@ -801,7 +821,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             for SynInterfaceImpl (bindings = bs) in is do
                                 yield! walkBinds bs
 
-                        | SynExpr.While (spWhile, e1, e2, _) ->
+                        | SynExpr.While (spWhile, e1, e2, _)
+                        | SynExpr.WhileBang (spWhile, e1, e2, _) ->
                             yield! walkWhileSeqPt spWhile
                             yield! walkExpr false e1
                             yield! walkExpr true e2
@@ -835,7 +856,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                         | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
 
-                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
+                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl)
+                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind
                             yield! walkExpr false inpExpr
 
@@ -917,14 +939,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true eAndBang
 
                             yield! walkExpr true bodyExpr
-
-                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = clauses) ->
-                            yield! walkBindSeqPt spBind
-                            yield! walkExpr false inpExpr
-
-                            for SynMatchClause (whenExpr = whenExpr; resultExpr = resExpr) in clauses do
-                                yield! walkExprOpt true whenExpr
-                                yield! walkExpr true resExpr
                 ]
 
             // Process a class declaration or F# type declaration

@@ -9,6 +9,7 @@ open System.Text.RegularExpressions
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -51,12 +52,17 @@ type RecordContext =
 
 [<RequireQualifiedAccess>]
 type PatternContext =
-    /// Completing union case field in a pattern (e.g. fun (Some v|) -> )
-    /// fieldIndex None signifies that the case identifier is followed by a single field, outside of parentheses
-    | PositionalUnionCaseField of fieldIndex: int option * caseIdRange: range
+    /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
+    /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
+    /// <param name="isTheOnlyField">True when completing the first field in the tuple and no other field is bound - `Case (a|)` but not `Case (a|, b)`</param>
+    /// <param name="caseIdRange">Range of the case identifier</param>
+    | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
 
-    /// Completing union case field in a pattern (e.g. fun (Some (Value = v|) -> )
+    /// Completing union case field pattern (e.g. fun (Some (Value = v| )) -> )
     | NamedUnionCaseField of fieldName: string * caseIdRange: range
+
+    /// Completing union case field identifier in a pattern (e.g. fun (Case (field1 = a; fie| )) -> )
+    | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
     /// Any other position in a pattern that does not need special handling
     | Other
@@ -96,6 +102,9 @@ type CompletionContext =
 
     /// Completing a pattern in a match clause, member/let binding or lambda
     | Pattern of context: PatternContext
+
+    /// Completing a method override (e.g. override this.ToStr|)
+    | MethodOverride of enclosingTypeNameRange: range
 
 type ShortIdent = string
 
@@ -615,10 +624,11 @@ module ParsedInput =
             ifPosInRange ident.idRange (fun _ -> Some EntityKind.Type)
 
         and walkTyparDecl typarDecl =
-            let (SynTyparDecl (Attributes attrs, typar)) = typarDecl
+            let (SynTyparDecl (Attributes attrs, typar, intersectionContraints, _)) = typarDecl
 
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
+            |> Option.orElseWith (fun () -> intersectionContraints |> List.tryPick walkType)
 
         and walkTypeConstraint cx =
             match cx with
@@ -697,6 +707,7 @@ module ParsedInput =
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.StaticConstantExpr (e, _) -> walkExpr e
             | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Intersection (types = types) -> List.tryPick walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.LongIdent _
@@ -713,10 +724,10 @@ module ParsedInput =
 
         and walkExprWithKind parentKind expr =
             match expr with
-            | SynExpr.LongIdent (_, SynLongIdent ([ ident ], _, [ Some _ ]), _, _) ->
+            | SynExpr.LongIdent(longDotId = SynLongIdent (id = [ ident ]; trivia = [ Some _ ])) ->
                 ifPosInRange ident.idRange (fun _ -> Some(EntityKind.FunctionOrValue false))
 
-            | SynExpr.LongIdent (_, SynLongIdent (_, dotRanges, _), _, r) ->
+            | SynExpr.LongIdent (longDotId = SynLongIdent (dotRanges = dotRanges); range = r) ->
                 match dotRanges with
                 | [] when isPosInRange r ->
                     parentKind
@@ -732,22 +743,64 @@ module ParsedInput =
                         None
                 | _ -> None
 
-            | SynExpr.Paren (e, _, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.LongIdentSet (expr = e)
+            | SynExpr.DotGet (expr = e)
+            | SynExpr.DotSet (targetExpr = e)
+            | SynExpr.Set (targetExpr = e)
+            | SynExpr.Lazy (expr = e)
+            | SynExpr.DoBang (expr = e)
+            | SynExpr.Do (expr = e)
+            | SynExpr.Assert (expr = e)
+            | SynExpr.ArrayOrListComputed (expr = e)
+            | SynExpr.ComputationExpr (expr = e)
+            | SynExpr.Lambda (body = e)
+            | SynExpr.DotLambda (expr = e)
+            | SynExpr.InferredUpcast (expr = e)
+            | SynExpr.InferredDowncast (expr = e)
+            | SynExpr.AddressOf (expr = e)
+            | SynExpr.YieldOrReturn (expr = e)
+            | SynExpr.YieldOrReturnFrom (expr = e)
+            | SynExpr.Paren (expr = e)
+            | SynExpr.Quote (quotedExpr = e)
+            | SynExpr.Typed (expr = e) -> walkExprWithKind parentKind e
 
-            | SynExpr.Quote (_, _, e, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.NamedIndexedPropertySet (expr1 = e1; expr2 = e2)
+            | SynExpr.TryFinally (tryExpr = e1; finallyExpr = e2)
+            | SynExpr.App (funcExpr = e1; argExpr = e2)
+            | SynExpr.WhileBang (whileExpr = e1; doExpr = e2)
+            | SynExpr.While (whileExpr = e1; doExpr = e2)
+            | SynExpr.ForEach (enumExpr = e1; bodyExpr = e2)
+            | SynExpr.DotIndexedGet (objectExpr = e1; indexArgs = e2)
+            | SynExpr.DotIndexedSet (objectExpr = e1; indexArgs = e2)
+            | SynExpr.JoinIn (lhsExpr = e1; rhsExpr = e2) ->
+                walkExprWithKind parentKind e1
+                |> Option.orElseWith (fun () -> walkExprWithKind parentKind e2)
 
-            | SynExpr.Typed (e, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.New (expr = e; targetType = t)
+            | SynExpr.TypeTest (expr = e; targetType = t)
+            | SynExpr.Upcast (expr = e; targetType = t)
+            | SynExpr.Downcast (expr = e; targetType = t) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
 
-            | SynExpr.Tuple (_, es, _, _) -> List.tryPick (walkExprWithKind parentKind) es
+            | Sequentials es
+            | SynExpr.Tuple (exprs = es)
+            | SynExpr.ArrayOrList (exprs = es) -> List.tryPick (walkExprWithKind parentKind) es
 
-            | SynExpr.ArrayOrList (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
+            | SynExpr.For (identBody = e1; toBody = e2; doBody = e3)
+            | SynExpr.DotNamedIndexedPropertySet (targetExpr = e1; argExpr = e2; rhsExpr = e3) ->
+                List.tryPick (walkExprWithKind parentKind) [ e1; e2; e3 ]
+
+            | SynExpr.TryWith (tryExpr = e; withCases = clauses)
+            | SynExpr.MatchBang (expr = e; clauses = clauses)
+            | SynExpr.Match (expr = e; clauses = clauses) ->
+                walkExprWithKind parentKind e
+                |> Option.orElseWith (fun () -> List.tryPick walkClause clauses)
+
+            | SynExpr.MatchLambda (matchClauses = clauses) -> List.tryPick walkClause clauses
 
             | SynExpr.Record (_, _, fields, r) ->
                 ifPosInRange r (fun _ ->
                     fields
                     |> List.tryPick (fun (SynExprRecordField (expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)))
-
-            | SynExpr.New (_, t, e, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
 
             | SynExpr.ObjExpr (objType = ty; bindings = bindings; members = ms; extraImpls = ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms
@@ -756,33 +809,7 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> List.tryPick walkBinding bindings)
                 |> Option.orElseWith (fun () -> List.tryPick walkInterfaceImpl ifaces)
 
-            | SynExpr.While (_, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2; e3 ]
-
-            | SynExpr.ForEach (_, _, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.ArrayOrListComputed (_, e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.ComputationExpr (_, e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
-
-            | SynExpr.DotLambda (expr = e) -> walkExprWithKind parentKind e
-
-            | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> List.tryPick walkClause synMatchClauseList
-
-            | SynExpr.Match (expr = e; clauses = synMatchClauseList) ->
-                walkExprWithKind parentKind e
-                |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
-
-            | SynExpr.Do (e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.Assert (e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.App (_, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.TypeApp (e, _, tys, _, _, _, _) ->
+            | SynExpr.TypeApp (expr = e; typeArgs = tys) ->
                 walkExprWithKind (Some EntityKind.Type) e
                 |> Option.orElseWith (fun () -> List.tryPick walkType tys)
 
@@ -790,68 +817,15 @@ module ParsedInput =
                 List.tryPick walkBinding bindings
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
-            | SynExpr.TryWith (tryExpr = e; withCases = clauses) ->
-                walkExprWithKind parentKind e
-                |> Option.orElseWith (fun () -> List.tryPick walkClause clauses)
-
-            | SynExpr.TryFinally (tryExpr = e1; finallyExpr = e2) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.Lazy (e, _) -> walkExprWithKind parentKind e
-
-            | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
-
             | SynExpr.IfThenElse (ifExpr = e1; thenExpr = e2; elseExpr = e3) ->
-                List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
+                walkExprWithKind parentKind e1
+                |> Option.orElseWith (fun () -> walkExprWithKind parentKind e2)
                 |> Option.orElseWith (fun () ->
                     match e3 with
                     | None -> None
                     | Some e -> walkExprWithKind parentKind e)
 
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some(EntityKind.FunctionOrValue false))
-
-            | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.DotGet (e, _, _, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.DotSet (e, _, _, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.Set (e, _, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.DotIndexedGet (e, args, _, _) ->
-                walkExprWithKind parentKind e
-                |> Option.orElseWith (fun () -> walkExprWithKind parentKind args)
-
-            | SynExpr.DotIndexedSet (e, args, _, _, _, _) ->
-                walkExprWithKind parentKind e
-                |> Option.orElseWith (fun () -> walkExprWithKind parentKind args)
-
-            | SynExpr.NamedIndexedPropertySet (_, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2; e3 ]
-
-            | SynExpr.TypeTest (e, t, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
-
-            | SynExpr.Upcast (e, t, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
-
-            | SynExpr.Downcast (e, t, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
-
-            | SynExpr.InferredUpcast (e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.InferredDowncast (e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.AddressOf (_, e, _, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.JoinIn (e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [ e1; e2 ]
-
-            | SynExpr.YieldOrReturn (_, e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExprWithKind parentKind e
-
-            | SynExpr.Match (expr = e; clauses = synMatchClauseList)
-
-            | SynExpr.MatchBang (expr = e; clauses = synMatchClauseList) ->
-                walkExprWithKind parentKind e
-                |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
 
             | SynExpr.LetOrUseBang (rhs = e1; andBangs = es; body = e2) ->
                 [
@@ -861,8 +835,6 @@ module ParsedInput =
                     yield e2
                 ]
                 |> List.tryPick (walkExprWithKind parentKind)
-
-            | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
             | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.tryPick walkType ts
@@ -1293,20 +1265,48 @@ module ParsedInput =
     //
     let rec TryGetCompletionContextInPattern suppressIdentifierCompletions (pat: SynPat) previousContext pos =
         match pat with
-        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats); longDotId = id) ->
+        | SynPat.LongIdent (longDotId = id) when rangeContainsPos id.Range pos -> Some(CompletionContext.Pattern PatternContext.Other)
+        | SynPat.LongIdent (argPats = SynArgPats.NamePatPairs (pats = pats; range = mPairs); longDotId = caseId; range = m) when
+            rangeContainsPos m pos
+            ->
             pats
-            |> List.tryPick (fun (patId, _, pat) ->
-                if rangeContainsPos patId.idRange pos then
-                    Some CompletionContext.Invalid
+            |> List.tryPick (fun (fieldId, _, pat) ->
+                if rangeContainsPos fieldId.idRange pos then
+                    let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
+                    Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
-                    let context = Some(PatternContext.NamedUnionCaseField(patId.idText, id.Range))
+                    let context = Some(PatternContext.NamedUnionCaseField(fieldId.idText, caseId.Range))
                     TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
-        | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id) ->
+            |> Option.orElseWith (fun () ->
+                // Last resort - check for fun (Case (item1 = a; | )) ->
+                // That is, pos is after the last pair and still within parentheses
+                if rangeBeforePos mPairs pos then
+                    let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
+                    Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
+                else
+                    None)
+        | SynPat.LongIdent (argPats = SynArgPats.Pats pats; longDotId = id; range = m) when rangeContainsPos m pos ->
             match pats with
-            | [ SynPat.Named _ as pat ] ->
-                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(None, id.Range))) pos
-            | [ SynPat.Paren (SynPat.Tuple _ | SynPat.Named _ as pat, _) ] ->
-                TryGetCompletionContextInPattern false pat (Some(PatternContext.PositionalUnionCaseField(Some 0, id.Range))) pos
+
+            // fun (Some v| ) ->
+            | [ SynPat.Named _ ] -> Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(None, true, id.Range)))
+
+            // fun (Case (| )) ->
+            | [ SynPat.Paren (SynPat.Const (SynConst.Unit, _), m) ] when rangeContainsPos m pos ->
+                Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some 0, true, id.Range)))
+
+            // fun (Case (a| )) ->
+            // This could either be the first positional field pattern or the user might want to use named pairs
+            | [ SynPat.Paren (SynPat.Named _, _) ] ->
+                Some(CompletionContext.Pattern(PatternContext.PositionalUnionCaseField(Some 0, true, id.Range)))
+
+            // fun (Case (a| , b)) ->
+            | [ SynPat.Paren (SynPat.Tuple (elementPats = pats) as pat, _) ] ->
+                let context =
+                    Some(PatternContext.PositionalUnionCaseField(Some 0, pats.Length = 1, id.Range))
+
+                TryGetCompletionContextInPattern false pat context pos
+
             | _ ->
                 pats
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
@@ -1314,19 +1314,32 @@ module ParsedInput =
         | SynPat.ArrayOrList (elementPats = pats) ->
             pats
             |> List.tryPick (fun pat -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat None pos)
-        | SynPat.Tuple (elementPats = pats) ->
+        | SynPat.Tuple (elementPats = pats; commaRanges = commas; range = m) ->
             pats
             |> List.indexed
             |> List.tryPick (fun (i, pat) ->
                 let context =
                     match previousContext with
-                    | Some (PatternContext.PositionalUnionCaseField (_, caseIdRange)) ->
-                        Some(PatternContext.PositionalUnionCaseField(Some i, caseIdRange))
+                    | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)) ->
+                        Some(PatternContext.PositionalUnionCaseField(Some i, isTheOnlyField, caseIdRange))
                     | _ ->
                         // No preceding LongIdent => this is a tuple deconstruction
                         None
 
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
+            |> Option.orElseWith (fun () ->
+                // Last resort - check for fun (Case (item1 = a, | )) ->
+                // That is, pos is after the last comma and before the end of the tuple
+                match previousContext, List.tryLast commas with
+                | Some (PatternContext.PositionalUnionCaseField (_, isTheOnlyField, caseIdRange)), Some mComma when
+                    rangeBeforePos mComma pos && rangeContainsPos m pos
+                    ->
+                    Some(
+                        CompletionContext.Pattern(
+                            PatternContext.PositionalUnionCaseField(Some(pats.Length - 1), isTheOnlyField, caseIdRange)
+                        )
+                    )
+                | _ -> None)
         | SynPat.Named (range = m) when rangeContainsPos m pos ->
             if suppressIdentifierCompletions then
                 Some CompletionContext.Invalid
@@ -1344,7 +1357,7 @@ module ParsedInput =
             TryGetCompletionContextInPattern suppressIdentifierCompletions pat1 None pos
             |> Option.orElseWith (fun () -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat2 None pos)
         | SynPat.IsInst (_, m) when rangeContainsPos m pos -> Some CompletionContext.Type
-        | SynPat.Wild m when rangeContainsPos m pos -> Some CompletionContext.Invalid
+        | SynPat.Wild m when rangeContainsPos m pos && m.StartColumn <> m.EndColumn -> Some CompletionContext.Invalid
         | SynPat.Typed (pat = pat; targetType = synType) ->
             if rangeContainsPos pat.Range pos then
                 TryGetCompletionContextInPattern suppressIdentifierCompletions pat previousContext pos
@@ -1450,22 +1463,59 @@ module ParsedInput =
 
                     | _ -> None
 
-                member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
+                member _.VisitBinding
+                    (
+                        path,
+                        defaultTraverse,
+                        (SynBinding (headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
+                    ) =
 
-                    match headPat with
-                    | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
-                        if rangeContainsPos lidwd.Range pos then
-                            // let fo|o x = ()
+                    let isOverride leadingKeyword =
+                        match leadingKeyword with
+                        | SynLeadingKeyword.Override _ -> true
+                        | _ -> false
+
+                    let overrideContext path =
+                        match path with
+                        | _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
+                            Some(CompletionContext.MethodOverride enclosingType.idRange)
+                        | _ -> Some CompletionContext.Invalid
+
+                    match returnInfo with
+                    | Some (SynBindingReturnInfo (range = m)) when rangeContainsPos m pos -> Some CompletionContext.Type
+                    | _ ->
+                        match headPat with
+
+                        // override _.|
+                        | SynPat.FromParseError _ when isOverride trivia.LeadingKeyword -> overrideContext path
+
+                        // override this.|
+                        | SynPat.Named(ident = SynIdent (ident = selfId)) when
+                            isOverride trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                            ->
+                            overrideContext path
+
+                        // override this.ToStr|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                            isOverride trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path
+
+                        | SynPat.LongIdent (longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                            if rangeContainsPos lidwd.Range pos then
+                                // let fo|o x = ()
+                                Some CompletionContext.Invalid
+                            else
+                                pats
+                                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                                |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                        | SynPat.Named (range = range)
+                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
+                            // let fo|o = 1
                             Some CompletionContext.Invalid
-                        else
-                            pats
-                            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
-                            |> Option.orElseWith (fun () -> defaultTraverse synBinding)
-                    | SynPat.Named (range = range)
-                    | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                        // let fo|o = 1
-                        Some CompletionContext.Invalid
-                    | _ -> defaultTraverse synBinding
+
+                        | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
                     // No completions in a directive
@@ -1689,9 +1739,10 @@ module ParsedInput =
             addLongIdentWithDots attr.TypeName
             walkExpr attr.ArgExpr
 
-        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar)) =
+        and walkTyparDecl (SynTyparDecl.SynTyparDecl (Attributes attrs, typar, intersectionConstraints, _)) =
             List.iter walkAttribute attrs
             walkTypar typar
+            List.iter walkType intersectionConstraints
 
         and walkTypeConstraint cx =
             match cx with
@@ -1779,6 +1830,7 @@ module ParsedInput =
             | SynType.StaticConstantNamed (ident, value, _) ->
                 walkType ident
                 walkType value
+            | SynType.Intersection (types = types) -> List.iter walkType types
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.Var _
@@ -1796,42 +1848,56 @@ module ParsedInput =
 
         and walkExpr expr =
             match expr with
-            | SynExpr.Paren (e, _, _, _)
-            | SynExpr.Quote (_, _, e, _, _)
-            | SynExpr.Typed (e, _, _)
-            | SynExpr.InferredUpcast (e, _)
-            | SynExpr.InferredDowncast (e, _)
-            | SynExpr.AddressOf (_, e, _, _)
-            | SynExpr.DoBang (e, _)
-            | SynExpr.YieldOrReturn (_, e, _)
-            | SynExpr.ArrayOrListComputed (_, e, _)
-            | SynExpr.ComputationExpr (_, e, _)
-            | SynExpr.Do (e, _)
-            | SynExpr.Assert (e, _)
-            | SynExpr.Lazy (e, _)
-            | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
+            | SynExpr.Paren (expr = e)
+            | SynExpr.Quote (quotedExpr = e)
+            | SynExpr.Typed (expr = e)
+            | SynExpr.InferredUpcast (expr = e)
+            | SynExpr.InferredDowncast (expr = e)
+            | SynExpr.AddressOf (expr = e)
+            | SynExpr.DoBang (expr = e)
+            | SynExpr.YieldOrReturn (expr = e)
+            | SynExpr.ArrayOrListComputed (expr = e)
+            | SynExpr.ComputationExpr (expr = e)
+            | SynExpr.Do (expr = e)
+            | SynExpr.Assert (expr = e)
+            | SynExpr.Lazy (expr = e)
+            | SynExpr.DotLambda (expr = e)
+            | SynExpr.IndexFromEnd (expr = e)
+            | SynExpr.YieldOrReturnFrom (expr = e) -> walkExpr e
+
             | SynExpr.Lambda (args = pats; body = e) ->
                 walkSimplePats pats
                 walkExpr e
-            | SynExpr.DotLambda (expr = e) -> walkExpr e
-            | SynExpr.New (_, t, e, _)
-            | SynExpr.TypeTest (e, t, _)
-            | SynExpr.Upcast (e, t, _)
-            | SynExpr.Downcast (e, t, _) ->
+
+            | SynExpr.New (expr = e; targetType = t)
+            | SynExpr.TypeTest (expr = e; targetType = t)
+            | SynExpr.Upcast (expr = e; targetType = t)
+            | SynExpr.Downcast (expr = e; targetType = t) ->
                 walkExpr e
                 walkType t
-            | SynExpr.Tuple (_, es, _, _)
+
+            | SynExpr.Tuple (exprs = es)
             | Sequentials es
-            | SynExpr.ArrayOrList (_, es, _) -> List.iter walkExpr es
-            | SynExpr.App (_, _, e1, e2, _)
+            | SynExpr.ArrayOrList (exprs = es) -> List.iter walkExpr es
+
+            | SynExpr.JoinIn (lhsExpr = e1; rhsExpr = e2)
+            | SynExpr.DotIndexedGet (objectExpr = e1; indexArgs = e2)
+            | SynExpr.Set (targetExpr = e1; rhsExpr = e2)
+            | SynExpr.App (funcExpr = e1; argExpr = e2)
             | SynExpr.TryFinally (tryExpr = e1; finallyExpr = e2)
-            | SynExpr.While (_, e1, e2, _) -> List.iter walkExpr [ e1; e2 ]
-            | SynExpr.Record (_, _, fields, _) ->
+            | SynExpr.WhileBang (whileExpr = e1; doExpr = e2)
+            | SynExpr.While (whileExpr = e1; doExpr = e2) ->
+                walkExpr e1
+                walkExpr e2
+
+            | SynExpr.Record (recordFields = fields) ->
                 fields
                 |> List.iter (fun (SynExprRecordField (fieldName = (ident, _); expr = e)) ->
                     addLongIdentWithDots ident
                     e |> Option.iter walkExpr)
+
             | SynExpr.Ident ident -> addIdent ident
+
             | SynExpr.ObjExpr (objType = ty; argOptions = argOpt; bindings = bindings; members = ms; extraImpls = ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms
 
@@ -1843,41 +1909,56 @@ module ParsedInput =
                 walkType ty
                 List.iter walkBinding bindings
                 List.iter walkInterfaceImpl ifaces
-            | SynExpr.LongIdent (_, ident, _, _) -> addLongIdentWithDots ident
+
+            | SynExpr.LongIdent (longDotId = ident) -> addLongIdentWithDots ident
+
             | SynExpr.For (ident = ident; identBody = e1; toBody = e2; doBody = e3) ->
                 addIdent ident
-                List.iter walkExpr [ e1; e2; e3 ]
-            | SynExpr.ForEach (_, _, _, _, pat, e1, e2, _) ->
+                walkExpr e1
+                walkExpr e2
+                walkExpr e3
+
+            | SynExpr.ForEach (pat = pat; enumExpr = e1; bodyExpr = e2) ->
                 walkPat pat
-                List.iter walkExpr [ e1; e2 ]
-            | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> List.iter walkClause synMatchClauseList
-            | SynExpr.Match (expr = e; clauses = synMatchClauseList) ->
+                walkExpr e1
+                walkExpr e2
+
+            | SynExpr.MatchLambda (matchClauses = clauses) -> List.iter walkClause clauses
+
+            | SynExpr.MatchBang (expr = e; clauses = clauses)
+            | SynExpr.Match (expr = e; clauses = clauses) ->
                 walkExpr e
-                List.iter walkClause synMatchClauseList
-            | SynExpr.TypeApp (e, _, tys, _, _, _, _) ->
+                List.iter walkClause clauses
+
+            | SynExpr.TypeApp (expr = e; typeArgs = tys) ->
                 List.iter walkType tys
                 walkExpr e
+
             | SynExpr.LetOrUse (bindings = bindings; body = e) ->
                 List.iter walkBinding bindings
                 walkExpr e
+
             | SynExpr.TryWith (tryExpr = e; withCases = clauses) ->
                 List.iter walkClause clauses
                 walkExpr e
+
             | SynExpr.IfThenElse (ifExpr = e1; thenExpr = e2; elseExpr = e3) ->
-                List.iter walkExpr [ e1; e2 ]
+                walkExpr e1
+                walkExpr e2
                 e3 |> Option.iter walkExpr
-            | SynExpr.LongIdentSet (ident, e, _)
-            | SynExpr.DotGet (e, _, ident, _) ->
+
+            | SynExpr.LongIdentSet (longDotId = ident; expr = e)
+            | SynExpr.DotGet (longDotId = ident; expr = e) ->
                 addLongIdentWithDots ident
                 walkExpr e
-            | SynExpr.DotSet (e1, idents, e2, _) ->
+
+            | SynExpr.NamedIndexedPropertySet (longDotId = ident; expr1 = e1; expr2 = e2)
+            | SynExpr.DotSet (targetExpr = e1; longDotId = ident; rhsExpr = e2) ->
+                addLongIdentWithDots ident
                 walkExpr e1
-                addLongIdentWithDots idents
                 walkExpr e2
-            | SynExpr.Set (e1, e2, _) ->
-                walkExpr e1
-                walkExpr e2
-            | SynExpr.IndexRange (expr1, _, expr2, _, _, _) ->
+
+            | SynExpr.IndexRange (expr1 = expr1; expr2 = expr2) ->
                 match expr1 with
                 | Some e -> walkExpr e
                 | None -> ()
@@ -1885,21 +1966,18 @@ module ParsedInput =
                 match expr2 with
                 | Some e -> walkExpr e
                 | None -> ()
-            | SynExpr.IndexFromEnd (e, _) -> walkExpr e
-            | SynExpr.DotIndexedGet (e, args, _, _) ->
-                walkExpr e
-                walkExpr args
-            | SynExpr.DotIndexedSet (e1, args, e2, _, _, _) ->
+
+            | SynExpr.DotIndexedSet (objectExpr = e1; indexArgs = args; valueExpr = e2) ->
                 walkExpr e1
                 walkExpr args
                 walkExpr e2
-            | SynExpr.NamedIndexedPropertySet (ident, e1, e2, _) ->
+
+            | SynExpr.DotNamedIndexedPropertySet (targetExpr = e1; longDotId = ident; argExpr = e2; rhsExpr = e3) ->
                 addLongIdentWithDots ident
-                List.iter walkExpr [ e1; e2 ]
-            | SynExpr.DotNamedIndexedPropertySet (e1, ident, e2, e3, _) ->
-                addLongIdentWithDots ident
-                List.iter walkExpr [ e1; e2; e3 ]
-            | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [ e1; e2 ]
+                walkExpr e1
+                walkExpr e2
+                walkExpr e3
+
             | SynExpr.LetOrUseBang (pat = pat; rhs = e1; andBangs = es; body = e2) ->
                 walkPat pat
                 walkExpr e1
@@ -1909,25 +1987,28 @@ module ParsedInput =
                     walkExpr eAndBang
 
                 walkExpr e2
+
             | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
+
             | SynExpr.Const(constant = SynConst.Measure (synMeasure = m)) -> walkMeasure m
+
             | _ -> ()
 
         and walkMeasure measure =
             match measure with
-            | SynMeasure.Product (m1, m2, _) ->
+            | SynMeasure.Product (measure1 = m1; measure2 = m2) ->
                 walkMeasure m1
                 walkMeasure m2
-            | SynMeasure.Divide (m1, m2, _) ->
+            | SynMeasure.Divide (measure1 = m1; measure2 = m2) ->
                 m1 |> Option.iter walkMeasure
                 walkMeasure m2
             | SynMeasure.Named (longIdent, _) -> addLongIdent longIdent
             | SynMeasure.Seq (ms, _) -> List.iter walkMeasure ms
             | SynMeasure.Paren (m, _)
-            | SynMeasure.Power (m, _, _) -> walkMeasure m
+            | SynMeasure.Power (measure = m) -> walkMeasure m
             | SynMeasure.Var (ty, _) -> walkTypar ty
             | SynMeasure.One _
             | SynMeasure.Anon _ -> ()

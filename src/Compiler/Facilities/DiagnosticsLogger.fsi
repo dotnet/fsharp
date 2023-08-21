@@ -432,6 +432,8 @@ type SuppressLanguageFeatureCheck =
     | Yes
     | No
 
+val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
+
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit

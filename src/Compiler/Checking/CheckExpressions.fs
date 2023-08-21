@@ -431,9 +431,9 @@ type cenv = TcFileState
 let CopyAndFixupTypars g m rigid tpsorig =
     FreshenAndFixupTypars g m rigid [] [] tpsorig
 
-let UnifyTypes (cenv: cenv) (env: TcEnv) m actualTy expectedTy =
+let UnifyTypes (cenv: cenv) (env: TcEnv) m expectedTy actualTy =
     let g = cenv.g
-    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType g actualTy) (tryNormalizeMeasureInType g expectedTy)
+    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType g expectedTy) (tryNormalizeMeasureInType g actualTy)
 
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
@@ -771,13 +771,13 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
             | TyparKind.Measure -> Measure.Const tcref
 
-        | SynMeasure.Power(ms, exponent, _) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
-        | SynMeasure.Product(ms1, ms2, _) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2)
-        | SynMeasure.Divide(ms1, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
+        | SynMeasure.Power(measure = ms; power = exponent) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
+        | SynMeasure.Product(measure1 = ms1; measure2 = ms2) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2)
+        | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
-        | SynMeasure.Divide(ms1, ms2, _) ->
+        | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
@@ -1808,7 +1808,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     if isNil flds then invalidArg "flds" "BuildFieldMap"
 
     let fldCount = flds.Length
-
     let fldResolutions =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
@@ -4307,8 +4306,8 @@ and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
 
 and TcTyparDecl (cenv: cenv) env synTyparDecl =
     let g = cenv.g
-    let (SynTyparDecl(Attributes synAttrs, synTypar)) = synTyparDecl
-    let (SynTypar(id, _, _)) = synTypar
+    let (SynTyparDecl (attributes = Attributes synAttrs; typar = synTypar)) = synTyparDecl
+    let (SynTypar (ident = id)) = synTypar
 
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
@@ -4384,6 +4383,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
 
     | SynType.HashConstraint(synInnerTy, m) ->
         TcTypeHashConstraint cenv env newOk checkConstraints occ tpenv synInnerTy m
+
+    | SynType.Intersection (tp, tys, m, _) ->
+        TcIntersectionConstraint cenv env newOk checkConstraints occ tpenv tp tys m
 
     | SynType.StaticConstant (synConst, m) ->
         TcTypeStaticConstant kindOpt tpenv synConst m
@@ -4509,19 +4511,21 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
         else
             let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
             TType_tuple(tupInfo, argsR), tpenv
+            
+and CheckAnonRecdTypeDuplicateFields (elems: Ident array) =
+    elems |> Array.iteri (fun i (uc1: Ident) -> 
+        elems |> Array.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
+    let unsortedFieldIds = args |> List.map fst |> List.toArray
+    if unsortedFieldIds.Length > 1 then
+        CheckAnonRecdTypeDuplicateFields unsortedFieldIds
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
-    let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
-
-    // Check for duplicate field IDs
-    unsortedFieldIds
-    |> Array.countBy (fun fieldId -> fieldId.idText)
-    |> Array.iter (fun (idText, count) ->
-        if count > 1 then error (Error (FSComp.SR.tcAnonRecdTypeDuplicateFieldId(idText), m)))
 
     // Sort into canonical order
     let sortedFieldTys, sortedCheckedArgTys = List.zip args argsR |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
@@ -4568,6 +4572,29 @@ and TcTypeHashConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTy
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
     let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
+    tp.AsType, tpenv
+
+// (x: 't & #I1 & #I2)
+// (x: #I1 & #I2)
+and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv synTypar synTys m =
+    let tp, tpenv =
+        match synTypar with
+        | Some synTypar -> TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv synTypar
+        | _ -> TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m, tpenv
+
+    let typarTy = mkTyparTy tp
+
+    let tpenv =
+        synTys
+        |> List.fold (fun tpenv ty ->
+            match ty with
+            | SynType.HashConstraint (ty, m) ->
+                let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv ty
+                AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty typarTy
+                tpenv
+            | _ -> tpenv
+        ) tpenv
+
     tp.AsType, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
@@ -4675,7 +4702,7 @@ and TcMeasuresAsTuple (cenv: cenv) newOk checkConstraints occ env (tpenv: Unscop
         | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
-        | _ -> failwith "inpossible"
+        | _ -> failwith "impossible"
     gather args tpenv Measure.One
 
 and TcTypesOrMeasures optKinds (cenv: cenv) newOk checkConstraints occ env tpenv args m =
@@ -5745,10 +5772,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
     | SynExpr.DoBang (_, m)
-    | SynExpr.LetOrUseBang  (range=m) ->
-        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
-
-    | SynExpr.MatchBang (range=m) ->
+    | SynExpr.MatchBang (range = m)
+    | SynExpr.WhileBang (range = m)
+    | SynExpr.LetOrUseBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     // Part of 'T.Ident
@@ -5860,10 +5886,10 @@ and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
         if args.Length <> ptys.Length then
             let argTys = NewInferenceTypes g args
             suppressErrorReporting (fun () -> tcArgs argTys)
-            let expectedTy = TType_tuple (tupInfo, argTys)
+            let actualTy = TType_tuple (tupInfo, argTys)
 
             // We let error recovery handle this exception
-            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
+            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, actualTy,
                    (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
@@ -6557,7 +6583,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
         error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
 
 // Check a record construction expression
-and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoOpt objTy fldsList m =
+and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv withExprInfoOpt objTy fldsList m =
     let g = cenv.g
 
     let tcref, tinst = destAppTy g objTy
@@ -6636,9 +6662,10 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
 
     // Check accessibility: this is also done in BuildFieldMap, but also need to check
     // for fields in { new R with a=1 and b=2 } constructions and { r with a=1 } copy-and-update expressions
-    rfrefs |> List.iter (fun rfref ->
+    for rfref in rfrefs do
         CheckRecdFieldAccessible cenv.amap m env.eAccessRights rfref |> ignore
-        CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult)
+        if isObjExpr then
+            CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult
 
     let args = List.map snd fldsList
 
@@ -6931,7 +6958,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynIdent(id,_), _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
-        TcRecordConstruction cenv objTy env tpenv None objTy fldsList mWholeExpr
+        TcRecordConstruction cenv objTy true env tpenv None objTy fldsList mWholeExpr
     else
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
@@ -7384,21 +7411,38 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
+        // Check if the overall type is an anon record type and if so raise an copy-update syntax error
+        // let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
+        if isAnonRecdTy cenv.g overallTy || isStructAnonRecdTy cenv.g overallTy then
+            for fld, _ in flds do
+                let _, fldId = fld
+                match TryFindAnonRecdFieldOfType g overallTy fldId.idText with
+                | Some item ->
+                    CallNameResolutionSink cenv.tcSink (fldId.idRange, env.eNameResEnv, item, emptyTyparInst, ItemOccurence.UseInType, env.eAccessRights)
+                | None -> ()
+            let firstPartRange = withStartEnd mWholeExpr.Start (mkPos mWholeExpr.StartLine (mWholeExpr.StartColumn + 1)) mWholeExpr
+            // Use the  left { in the expression
+            errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), firstPartRange))
+            // Use the  right } in the expression
+            let lastPartRange = withStartEnd (mkPos mWholeExpr.StartLine (mWholeExpr.EndColumn - 1)) (mkPos mWholeExpr.StartLine mWholeExpr.EndColumn) mWholeExpr
+            errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), lastPartRange))
+            []
+        else
+            // If the overall type is a record type build a map of the fields
+            match flds with
+            | [] -> []
+            | _ ->
+                match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
+                | None -> []
+                | Some(tinst, tcref, _, fldsList) ->
 
-        match flds with
-        | [] -> []
-        | _ ->
-            match BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr with
-            | None -> []
-            | Some(tinst, tcref, _, fldsList) ->
+                let gtyp = mkAppTy tcref tinst
+                UnifyTypes cenv env mWholeExpr overallTy gtyp
 
-            let gtyp = mkAppTy tcref tinst
-            UnifyTypes cenv env mWholeExpr overallTy gtyp
-
-            [ for n, v in fldsList do
-                match v with
-                | Some v -> yield n, v
-                | None -> () ]
+                [ for n, v in fldsList do
+                    match v with
+                    | Some v -> yield n, v
+                    | None -> () ]
 
     let withExprInfoOpt =
         match withExprOptChecked with
@@ -7444,7 +7488,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         SolveTypeAsError env.DisplayEnv cenv.css mWholeExpr overallTy
         mkDefault (mWholeExpr, overallTy), tpenv
     else
-        let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+        let expr, tpenv = TcRecordConstruction cenv overallTy false env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
         let expr =
             match superInitExprOpt  with
@@ -8780,6 +8824,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.MatchBang _
         | SynExpr.LetOrUseBang _
         | SynExpr.DoBang _
+        | SynExpr.WhileBang _
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _
@@ -10264,22 +10309,73 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
     let g = cenv.g
 
+    // Search for GetPinnableReference (like https://learn.microsoft.com/en-us/dotnet/api/system.span-1.getpinnablereference?view=net-7.0)
+    // on the target expression, and, if it exists, call it
+    let tryBuildGetPinnableReferenceCall () =
+        let getPinnableReferenceMInfo =
+            TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env mBinding env.eAccessRights "GetPinnableReference" overallExprTy
+            |> List.tryFind (fun mInfo ->
+                // GetPinnableReference must be a parameterless method with a byref or inref return value
+                match mInfo.GetParamDatas(cenv.amap, mBinding, mInfo.FormalMethodInst), mInfo.GetFSharpReturnType(cenv.amap, mBinding, mInfo.FormalMethodInst) with
+                | [[]], retTy when isByrefTy g retTy && mInfo.IsInstance -> true
+                | _ -> false
+            )
+        
+        match getPinnableReferenceMInfo with
+        | Some mInfo ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExtendedFixedBindings mBinding
+            
+            let mInst = FreshenMethInfo mBinding mInfo
+            let pinnableReference, actualRetTy = BuildPossiblyConditionalMethodCall cenv env NeverMutates mBinding false mInfo NormalValUse mInst [ fixedExpr ] [] None
+            
+            let elemTy = destByrefTy g actualRetTy
+            UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
+            
+            // For value types:
+            // let ptr: nativeptr<elem> =
+            //   let pinned x = &(expr: 'a).GetPinnableReference()
+            //   (nativeint) x
+            
+            // For reference types:
+            // let ptr: nativeptr<elem> =
+            //   if isNull expr then
+            //     (nativeint) expr
+            //   else
+            //     let pinned x = &(expr: 'a).GetPinnableReference()
+            //     (nativeint) x
+            
+            let pinnedBinding =
+                mkCompGenLetIn mBinding "pinnedByref" actualRetTy pinnableReference (fun (v, ve) ->
+                    v.SetIsFixed()
+                    mkConvToNativeInt g ve mBinding)
+            
+            if isStructTy g overallExprTy then
+                Some pinnedBinding
+            else
+                Some (mkNullTest g mBinding fixedExpr pinnedBinding fixedExpr)
+        | None ->
+            None
+
     warning(PossibleUnverifiableCode mBinding)
 
     match overallExprTy with
     | ty when isByrefTy g ty ->
-        let okByRef =
-            match stripDebugPoints (stripExpr fixedExpr) with
-            | Expr.Op (op, tyargs, args, _) ->
+        // Feature ExtendedFixedBindings allows *any* byref to be used with fixed bindings, whereas the old logic only allowed a specific
+        // subset. This preserves the old logic when the feature is turned off.
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtendedFixedBindings) then
+            let okByRef =
+                match stripDebugPoints (stripExpr fixedExpr) with
+                | Expr.Op (op, tyargs, args, _) ->
                     match op, tyargs, args with
                     | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
                     | TOp.ILAsm ([ I_ldflda fspec], _), _, _ -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
                     | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
                     | TOp.RefAddrGet _, _, _ -> true
                     | _ -> false
-            | _ -> false
-        if not okByRef then
-            error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+                | _ -> false
+            
+            if not okByRef then
+                errorR (languageFeatureError g.langVersion LanguageFeature.ExtendedFixedBindings mBinding)
 
         let elemTy = destByrefTy g overallExprTy
         UnifyTypes cenv env mBinding (mkNativePtrTy g elemTy) overallPatTy
@@ -10288,20 +10384,29 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
             mkConvToNativeInt g ve mBinding)
 
     | ty when isStringTy g ty ->
-        let charPtrTy = mkNativePtrTy g g.char_ty
-        UnifyTypes cenv env mBinding charPtrTy overallPatTy
-        //
-        //    let ptr: nativeptr<char> =
-        //        let pinned s = str
-        //        (nativeptr)s + get_OffsettoStringData()
+        let getPinnableRefCall =
+            if g.langVersion.SupportsFeature LanguageFeature.PreferStringGetPinnableReference then
+                tryBuildGetPinnableReferenceCall ()
+            else
+                None
+        
+        match getPinnableRefCall with
+        | Some expr -> expr
+        | None ->
+            let charPtrTy = mkNativePtrTy g g.char_ty
+            UnifyTypes cenv env mBinding charPtrTy overallPatTy
+            //
+            //    let ptr: nativeptr<char> =
+            //        let pinned s = str
+            //        (nativeptr)s + get_OffsettoStringData()
 
-        mkCompGenLetIn mBinding "pinnedString" g.string_ty fixedExpr (fun (v, ve) ->
-            v.SetIsFixed()
-            let addrOffset = BuildOffsetToStringData cenv env mBinding
-            let stringAsNativeInt = mkConvToNativeInt g ve mBinding
-            let plusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ g.nativeint_ty ]), [], [stringAsNativeInt; addrOffset], mBinding)
-            // check for non-null
-            mkNullTest g mBinding ve plusOffset ve)
+            mkCompGenLetIn mBinding "pinnedString" g.string_ty fixedExpr (fun (v, ve) ->
+                v.SetIsFixed()
+                let addrOffset = BuildOffsetToStringData cenv env mBinding
+                let stringAsNativeInt = mkConvToNativeInt g ve mBinding
+                let plusOffset = Expr.Op (TOp.ILAsm ([ AI_add ], [ g.nativeint_ty ]), [], [stringAsNativeInt; addrOffset], mBinding)
+                // check for non-null
+                mkNullTest g mBinding ve plusOffset ve)
 
     | ty when isArray1DTy g ty ->
         let elemTy = destArrayTy g overallExprTy
@@ -10334,7 +10439,10 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
                     zero)
                 zero)
 
-    | _ -> error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+    | _ ->
+        match tryBuildGetPinnableReferenceCall () with
+        | Some expr -> expr
+        | None -> error(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and

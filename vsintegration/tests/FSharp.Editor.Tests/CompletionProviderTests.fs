@@ -1329,6 +1329,25 @@ type A = l
         VerifyCompletionList(fileContents, "= l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list on return type annotation contains modules and types but not keywords or functions`` () =
+        let fileContents =
+            """
+let a: l
+let b (): l
+
+type X =
+    member _.c: l
+    member x.d (): l
+    static member e: l
+"""
+
+        VerifyCompletionList(fileContents, "let a: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "let b (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member _.c: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member x.d (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "static member e: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+
+    [<Fact>]
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
@@ -1577,6 +1596,19 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
         )
 
     [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal, recursive, generic`` () =
+        let fileContents =
+            """
+type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
+
+let fz (a: RecordA<int>) = { a with Zoo.F = 1; Zoo.Zoo.B = 2; F } 
+"""
+
+        VerifyCompletionListExactly(fileContents, "with Zoo.F", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "Zoo.Zoo.B", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "; F", [ "Bar"; "Foo"; "Zoo" ])
+
+    [<Fact>]
     let ``Anonymous record fields have higher priority than methods`` () =
         let fileContents =
             """
@@ -1595,10 +1627,13 @@ let [<Literal>] logLit = 1
 
 type DU = A of logField: int
 
+let (|Even|Odd|) input = Odd
+
 match A 1 with
 | A l -> ()
 """
 
+        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false" ])
         VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
 
     [<Fact>]
@@ -1638,6 +1673,27 @@ let x (du: Du list) =
         VerifyCompletionList(fileContents, "| [ C (first = first); C (first = f", [ "option" ], [ "first" ])
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f", [ "option" ], [ "first" ])
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
+
+    [<Fact>]
+    let ``Completion list contains relevant items for the correct union case field pattern before its identifier has been typed`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * second: Result<int, string>
+
+let x du =
+    match du with
+    | C () -> ()
+    | C  (ff, ) -> ()
+    | C  (first = f;) -> ()
+"""
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du"; "second" ], [ "result" ])
+        VerifyCompletionList(fileContents, "| C  (ff, ", [ "second"; "result" ], [ "first"; "du" ])
+        VerifyCompletionListExactly(fileContents, "| C  (first = f;", [ "second" ])
 
     [<Fact>]
     let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
@@ -1705,3 +1761,163 @@ match U1 (1, A) with
         VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
         VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
         VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
+
+    [<Fact>]
+    let ``Completion list for union case field identifier contains available fields`` () =
+        let fileContents =
+            """
+type PatternContext =
+    | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
+    | NamedUnionCaseField of fieldName: string * caseIdRange: range
+    | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
+    | Other
+
+match PositionalUnionCaseField (None, 0, range0) with
+| PositionalUnionCaseField (fieldIndex = _; a)
+| NamedUnionCaseField (fieldName = a; z)
+| NamedUnionCaseField (x)
+"""
+
+        VerifyCompletionListExactly(fileContents, "PositionalUnionCaseField (fieldIndex = _; a", [ "caseIdRange"; "isTheOnlyField" ])
+        VerifyCompletionListExactly(fileContents, "NamedUnionCaseField (fieldName = a; z", [ "caseIdRange" ])
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(
+            fileContents,
+            "NamedUnionCaseField (x",
+            [ "string"; "fieldName"; "caseIdRange" ],
+            [ "range"; "fieldIndex"; "referencedFields"; "isTheOnlyField" ]
+        )
+
+    [<Fact>]
+    let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
+        let fileContents =
+            """
+module G =
+    let a = 1
+
+    [<Literal>]
+    let b = 1
+
+    let c () = ()
+
+type A =
+    | B of a: int
+    | C of float
+
+    static member Aug () = ()
+
+for G. in [] do
+
+let y x =
+    match x with
+    | [ B G. ] -> ()
+    | A.
+
+for Some ((0, C System.Double. ))
+"""
+
+        VerifyCompletionListExactly(fileContents, "for G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| [ B G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| A.", [ "B"; "C" ])
+        VerifyCompletionList(fileContents, "for Some ((0, C System.Double.", [ "Epsilon"; "MaxValue" ], [ "Abs" ])
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if there is a sealed override higher up in the hierarchy`` () =
+        let fileContents =
+            """
+[<AbstractClass>]
+type A () =
+    inherit System.Dynamic.SetIndexBinder (null)
+
+    override _.a
+
+[<AbstractClass>]
+type B () =
+    inherit System.Dynamic.DynamicMetaObjectBinder ()
+
+    override x.
+"""
+
+        // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
+        VerifyCompletionListExactly(
+            fileContents,
+            "override _.a",
+            [
+                "BindDelegate"
+                "Equals"
+                "FallbackSetIndex"
+                "Finalize"
+                "GetHashCode"
+                "ToString"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.",
+            [
+                "Bind"
+                "BindDelegate"
+                "Equals"
+                "Finalize"
+                "GetHashCode"
+                "get_ReturnType"
+                "ToString"
+            ]
+        )
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if it is already overridden in the same type`` () =
+        let fileContents =
+            """
+type G<'a> () =
+    override _.
+
+    override x.ToString () = ""
+
+[<AbstractClass]
+type A () =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+
+    member NotVirtual () = ()
+
+type B () =
+    inherit A ()
+
+    override A1 () = ()
+    override x.b
+
+type C () =
+    inherit A () =
+
+    override A1 () = ()
+    override x.c
+    override A1 s = ()
+"""
+
+        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals"; "Finalize"; "GetHashCode" ])
+        VerifyCompletionListExactly(fileContents, "override x.b", [ "A1"; "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+        VerifyCompletionListExactly(fileContents, "override x.c", [ "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+
+    [<Fact>]
+    let ``Completion list for override is empty when the caret is on the self identifier`` () =
+        let fileContents =
+            """
+type A () =
+    override a
+
+type B () =
+    override _
+
+type C () =
+    override c.b () = ()
+"""
+
+        VerifyNoCompletionList(fileContents, "override a")
+        VerifyNoCompletionList(fileContents, "override _")
+        VerifyNoCompletionList(fileContents, "override c")

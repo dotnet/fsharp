@@ -246,9 +246,9 @@ exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * range: range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * range: range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
 
 exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 
@@ -1059,41 +1059,78 @@ and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
  }
 
 and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
-    if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
-    (match anonInfo1.Assembly, anonInfo2.Assembly with 
-        | ccu1, ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
-        ) ++ (fun () -> 
-
-    if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
-        let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
-            let first = Set first
-            let second = Set second
-            let secondOnly = Set.toList (second - first)
-            let firstOnly = Set.toList (first - second)
-
-            if second.IsSubsetOf first then
-                Subset firstOnly
-            elif second.IsSupersetOf first then
-                Superset secondOnly
-            elif Set.intersect first second <> Set.empty then
-                Overlap(firstOnly, secondOnly)
+    if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then
+        ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2))
+    else
+        trackErrors {
+            if not (ccuEq anonInfo1.Assembly anonInfo2.Assembly) then
+                do! ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(anonInfo1.Assembly.AssemblyName, anonInfo2.Assembly.AssemblyName), csenv.m,m2))
             else
-                CompletelyDifferent(Seq.toList first)
-        
-        let message =
-            match anonInfo1.SortedNames, anonInfo2.SortedNames with
-            | Subset missingFields ->
-                FSComp.SR.tcAnonRecdFieldNameSubset(string missingFields)
-            | Superset extraFields ->
-                FSComp.SR.tcAnonRecdFieldNameSuperset(string extraFields)
-            | Overlap (missingFields, extraFields) ->
-                FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
-            | CompletelyDifferent missingFields ->
-                FSComp.SR.tcAnonRecdFieldNameDifferent(string missingFields)
-        
-        ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
-    else 
-        ResultD ())
+                do! ResultD()
+                
+            if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
+                let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
+                    let first = Set first
+                    let second = Set second
+                    let secondOnly = Set.toList (second - first)
+                    let firstOnly = Set.toList (first - second)
+
+                    if second.IsSubsetOf first then
+                        Subset firstOnly
+                    elif second.IsSupersetOf first then
+                        Superset secondOnly
+                    elif Set.intersect first second <> Set.empty then
+                        Overlap(firstOnly, secondOnly)
+                    else
+                        let first = Set.toList first
+                        let second = Set.toList second
+                        CompletelyDifferent(first, second)
+                
+                let message =
+                    match anonInfo1.SortedNames, anonInfo2.SortedNames with
+                    | Subset missingFields ->
+                        match missingFields with
+                        | [missingField] ->
+                            FSComp.SR.tcAnonRecdSingleFieldNameSubset(string missingField)
+                        | _ ->
+                            let missingFields = missingFields |> List.map(sprintf "'%s'")
+                            let missingFields = String.concat ", " missingFields
+                            FSComp.SR.tcAnonRecdMultipleFieldsNameSubset(string missingFields)
+                    | Superset extraFields ->
+                        match extraFields with
+                        | [extraField] ->
+                            FSComp.SR.tcAnonRecdSingleFieldNameSuperset(string extraField)
+                        | _ ->
+                            let extraFields = extraFields |> List.map(sprintf "'%s'")
+                            let extraFields = String.concat ", " extraFields
+                            FSComp.SR.tcAnonRecdMultipleFieldsNameSuperset(string extraFields)
+                    | Overlap (missingFields, extraFields) ->
+                        FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
+                    | CompletelyDifferent missingFields ->
+                        let missingFields, usedFields = missingFields
+                        match missingFields, usedFields with
+                        | [ missingField ], [ usedField ] ->
+                            FSComp.SR.tcAnonRecdSingleFieldNameSingleDifferent(missingField, usedField)
+                        | [ missingField ], usedFields ->
+                            let usedFields = usedFields |> List.map(sprintf "'%s'")
+                            let usedFields = String.concat ", " usedFields
+                            FSComp.SR.tcAnonRecdSingleFieldNameMultipleDifferent(missingField, usedFields)
+                        | missingFields, [ usedField ] ->
+                            let missingFields = missingFields |> List.map(sprintf "'%s'")
+                            let missingFields = String.concat ", " missingFields
+                            FSComp.SR.tcAnonRecdMultipleFieldNameSingleDifferent(missingFields, usedField)
+                        
+                        | missingFields, usedFields ->
+                            let missingFields = missingFields |> List.map(sprintf "'%s'")
+                            let missingFields = String.concat ", " missingFields
+                            let usedFields = usedFields |> List.map(sprintf "'%s'")
+                            let usedFields = String.concat ", " usedFields
+                            FSComp.SR.tcAnonRecdMultipleFieldNameMultipleDifferent(missingFields, usedFields)
+                
+                do! ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
+            else 
+                do! ResultD()
+        }
 
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
@@ -1155,10 +1192,10 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
-    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> 
-        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
-
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> trackErrors {
+            do! SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2
+            do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+        } 
     | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
         SolveFunTypeEqn csenv ndeep m2 trace None domainTy1 domainTy2 rangeTy1 rangeTy2
 
@@ -1196,8 +1233,11 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        let rec loop l1 l2 = 
            match l1, l2 with 
            | [], [] -> CompleteD 
-           | h1 :: t1, h2 :: t2 when t1.Length = t2.Length -> 
-               SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
+           | h1 :: t1, h2 :: t2 when t1.Length = t2.Length ->
+               trackErrors {
+                   do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2
+                   do! loop t1 t2
+               }
            | _ ->
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
@@ -1242,9 +1282,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
 
-    | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2)      -> 
-        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
+    | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> trackErrors {
+            do! SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2
+            do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
+        }
 
     | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
         SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2 (* nb. can unify since no variance *)
@@ -2134,6 +2175,10 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
         return! ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
+    
+    | TyparConstraint.IsUnmanaged _, TyparConstraint.IsReferenceType _
+    | TyparConstraint.IsReferenceType _, TyparConstraint.IsUnmanaged _ ->
+        return! ErrorD (Error(FSComp.SR.csUnmanagedConstraintInconsistent(), m))
 
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
@@ -2416,17 +2461,31 @@ and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace 
     }            
 
 and SolveTypeIsUnmanaged (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    let g = csenv.g
-    let m = csenv.m
-    let denv = csenv.DisplayEnv
-    match tryDestTyparTy g ty with
-    | ValueSome destTypar ->
-        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
-    | _ ->
-        if isUnmanagedTy g ty then
-            CompleteD
-        else
-            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let denv = csenv.DisplayEnv
+        match tryDestTyparTy g ty with
+        | ValueSome destTypar ->
+            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
+        | _ ->
+            if isStructAnonRecdTy g ty then
+                return! destStructAnonRecdTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else if isStructTupleTy g ty then
+                return! destStructTupleTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else if isStructUnionTy g ty then
+                let tcref = tryTcrefOfAppTy g ty |> ValueOption.get
+                let tinst = mkInstForAppTy g ty
+                return!
+                    tcref.UnionCasesAsRefList            
+                    |> List.collect (actualTysOfUnionCaseFields tinst)
+                    |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else
+                if isUnmanagedTy g ty then
+                    return! CompleteD
+                else
+                    return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
+    }
 
 
 and SolveTypeChoice (csenv: ConstraintSolverEnv) ndeep m2 trace ty choiceTys =
@@ -2682,12 +2741,12 @@ and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv
 and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 =
     SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln origTy1 ty1 ty2 id
 
-and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln actualTy expectedTy = 
+and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln expectedTy actualTy =
     TryD
-        (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln actualTy expectedTy)
+        (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln expectedTy actualTy)
         (function
         | AbortForFailedMemberConstraintResolution as err -> ErrorD err
-        | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actualTy, expectedTy, res, m)))
+        | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, res, m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv: ConstraintSolverEnv)
@@ -3428,10 +3487,10 @@ let EliminateConstraintsForGeneralizedTypars (denv: DisplayEnv) css m (trace: Op
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
+let AddCxTypeEqualsType contextInfo denv css m expected actual =
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
-        (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected)
+        (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None expected actual)
         ErrorD
     |> RaiseOperationResult
 
@@ -3707,7 +3766,11 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
             let reqdObjTy = if isByrefTy g reqdObjTy then destByrefTy g reqdObjTy else reqdObjTy // This is to support byref extension methods.
-            TryD (fun () -> SolveTypeSubsumesType csenv 0 m NoTrace None reqdObjTy availObjTy ++ (fun () -> ResultD true))
+            TryD (fun () ->
+                    trackErrors {
+                        do! SolveTypeSubsumesType csenv 0 m NoTrace None reqdObjTy availObjTy
+                        return true
+                    })
                  (fun _err -> ResultD false)
             |> CommitOperationResult
         | _ -> true

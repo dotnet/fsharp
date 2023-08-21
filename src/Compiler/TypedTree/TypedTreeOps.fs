@@ -809,6 +809,10 @@ let destAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> v |
 
 let destMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
 
+let destAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) -> anonInfo, tys | _ -> failwith "destAnonRecdTy: not an anonymous record type")
+
+let destStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) when evalAnonInfoIsStruct anonInfo -> tys | _ -> failwith "destAnonRecdTy: not a struct anonymous record type")
+
 let isFunTy g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
 
 let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
@@ -824,6 +828,8 @@ let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | 
 let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
 
 let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon | _ -> false)
+
+let isStructUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon && tcref.Deref.entity_flags.IsStructRecordOrUnionType | _ -> false)
 
 let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsHiddenReprTycon | _ -> false)
 
@@ -1957,26 +1963,27 @@ let isForallFunctionTy g ty =
     let _, tau = tryDestForallTy g ty
     isFunTy g tau
 
-// ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
 // contains no fields whose type is not an unmanaged-type. In other words, an unmanaged-type is one of the
 // following:
 // - sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, or bool.
 // - Any enum-type.
 // - Any pointer-type.
-// - Any non-generic user-defined struct-type that contains fields of unmanaged-types only.
-// [Note: Constructed types and type-parameters are never unmanaged-types. end note]
+// - Any generic user-defined struct-type that can be statically determined to be 'unmanaged' at construction.
 let rec isUnmanagedTy g ty =
+    let isUnmanagedRecordField tinst rf  =
+        isUnmanagedTy g (actualTyOfRecdField tinst rf)
+
     let ty = stripTyEqnsAndMeasureEqns g ty
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
-        let isEq tcref2 = tyconRefEq g tcref tcref2 
+        let isEq tcref2 = tyconRefEq g tcref tcref2
         if isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
-                    isEq g.sbyte_tcr || isEq g.byte_tcr || 
+                    isEq g.sbyte_tcr || isEq g.byte_tcr ||
                     isEq g.int16_tcr || isEq g.uint16_tcr ||
                     isEq g.int32_tcr || isEq g.uint32_tcr ||
                     isEq g.int64_tcr || isEq g.uint64_tcr ||
-                    isEq g.char_tcr ||
+                    isEq g.char_tcr || isEq g.voidptr_tcr ||
                     isEq g.float32_tcr ||
                     isEq g.float_tcr ||
                     isEq g.decimal_tcr ||
@@ -1984,15 +1991,24 @@ let rec isUnmanagedTy g ty =
             true
         else
             let tycon = tcref.Deref
-            if tycon.IsEnumTycon then 
+            if tycon.IsEnumTycon then
                 true
+            elif isStructUnionTy g ty then
+                let tinst = mkInstForAppTy g ty 
+                tcref.UnionCasesAsRefList            
+                |> List.forall (fun c -> c |> actualTysOfUnionCaseFields tinst |> List.forall (isUnmanagedTy g))
             elif tycon.IsStructOrEnumTycon then
-                match tycon.TyparsNoRange with
-                | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
-                | _ -> false // generic structs are never 
+                let tinst = mkInstForAppTy g ty
+                tycon.AllInstanceFieldsAsList 
+                |> List.forall (isUnmanagedRecordField tinst)
             else false
     | ValueNone ->
-        false
+        if isStructTupleTy g ty then
+            (destStructTupleTy g ty) |> List.forall (isUnmanagedTy g)
+        else if isStructAnonRecdTy g ty then
+            (destStructAnonRecdTy g ty) |> List.forall (isUnmanagedTy g)
+        else
+            false
 
 let isInterfaceTycon x = 
     isILInterfaceTycon x || x.IsFSharpInterfaceTycon
@@ -3765,6 +3781,12 @@ let (|IntegerConstExpr|_|) expr =
     | Expr.Const (Const.UInt16 _, _, _)
     | Expr.Const (Const.UInt32 _, _, _)
     | Expr.Const (Const.UInt64 _, _, _) -> Some ()
+    | _ -> None
+
+let (|FloatConstExpr|_|) expr =
+    match expr with
+    | Expr.Const (Const.Single _, _, _)
+    | Expr.Const (Const.Double _, _, _) -> Some ()
     | _ -> None
 
 let (|SpecificBinopExpr|_|) g vrefReqd expr = 
@@ -9582,7 +9604,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    valRefEq g vref g.bitwise_unary_not_vref ||
                    valRefEq g vref g.enum_vref)
              -> checkExpr vrefs arg
-        // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&
+        // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&, |||, ^^^
         | BinopExpr g (vref, arg1, arg2) 
              when (valRefEq g vref g.equals_operator_vref ||
                    valRefEq g vref g.compare_operator_vref ||
@@ -9595,12 +9617,13 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    valRefEq g vref g.unchecked_addition_vref ||
                    valRefEq g vref g.unchecked_multiply_vref ||
                    valRefEq g vref g.unchecked_subtraction_vref ||
-        // Note: division and modulus can raise exceptions, so are not included
+                   // Note: division and modulus can raise exceptions, so are not included
                    valRefEq g vref g.bitwise_shift_left_vref ||
                    valRefEq g vref g.bitwise_shift_right_vref ||
                    valRefEq g vref g.bitwise_xor_vref ||
                    valRefEq g vref g.bitwise_and_vref ||
-                   valRefEq g vref g.bitwise_or_vref) &&
+                   valRefEq g vref g.bitwise_or_vref ||
+                   valRefEq g vref g.exponentiation_vref) &&
                    (not (typeEquiv g (tyOfExpr g arg1) g.string_ty) && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty) )
                 -> checkExpr vrefs arg1 && checkExpr vrefs arg2 
         | Expr.Val (vref, _, _) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
@@ -9786,6 +9809,36 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         match v1 with
         | IntegerConstExpr ->
             EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificBinopExpr g g.bitwise_xor_vref (arg1, arg2) ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithBinOp ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificBinopExpr g g.exponentiation_vref (arg1, arg2) ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+
+        match v1 with
+        | FloatConstExpr ->
+            EvalArithBinOp (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** )) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        | _ ->
+            errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificUnopExpr g g.bitwise_unary_not_vref arg1 ->
+        checkFeature()
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
+        
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithUnOp ((~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), (~~~), ignore, ignore) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x

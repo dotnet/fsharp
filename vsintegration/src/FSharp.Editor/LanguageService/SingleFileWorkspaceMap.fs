@@ -173,11 +173,11 @@ type internal FSharpMiscellaneousFileService
             if project <> null then
                 let documentOpt =
                     project.Documents
-                    |> Seq.tryFind (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                    |> Seq.tryFindV (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
 
                 match documentOpt with
-                | None -> ()
-                | Some (document) ->
+                | ValueNone -> ()
+                | ValueSome (document) ->
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
                     projectContext.Value.Dispose()
 

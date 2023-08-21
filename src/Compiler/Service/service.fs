@@ -506,6 +506,7 @@ type BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
+                    let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -515,15 +516,18 @@ type BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             flatErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
+                let! ct = Async.CancellationToken
+
                 let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing)
+                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing, ct)
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
@@ -775,6 +779,7 @@ type BackgroundCompiler
                         FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
 
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+                    let! ct = NodeCode.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -784,7 +789,8 @@ type BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             builder.TcConfig.flatErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let parseResults =
@@ -1433,8 +1439,10 @@ type FSharpChecker
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
             | Some res -> return res
             | None ->
+                let! ct = Async.CancellationToken
+
                 let res =
-                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors)
+                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors, ct)
 
                 braceMatchCache.Set(AnyCallerThread, (fileName, hash, options), res)
                 return res

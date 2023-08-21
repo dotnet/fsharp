@@ -74,7 +74,9 @@ type internal HashDirectiveCompletionProvider
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
 
-        Tokenizer.getClassifiedSpans (
+        let classifiedSpans = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
             documentId,
             text,
             triggerLine.Span,
@@ -82,8 +84,11 @@ type internal HashDirectiveCompletionProvider
             defines,
             Some langVersion,
             strictIndentation,
+            classifiedSpans,
             CancellationToken.None
         )
+
+        classifiedSpans
 
     let isInStringLiteral (text: SourceText, position: int) : bool =
         getClassifiedSpans (text, position)
