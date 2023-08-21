@@ -1012,9 +1012,7 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (acc : 
     | Expr.DebugPoint (_, innerExpr) ->
         CheckExprLinear cenv env innerExpr ctxt acc
 
-    | _ ->
-        // not a linear expression
-        CheckExpr cenv env expr ctxt
+    | _ -> failwith "unreachable: it was the caller's responsibility to ensure we were in one of the above cases"
 
 /// Check a resumable code expression (the body of a ResumableCode delegate or
 /// the body of the MoveNextMethod for a state machine)
