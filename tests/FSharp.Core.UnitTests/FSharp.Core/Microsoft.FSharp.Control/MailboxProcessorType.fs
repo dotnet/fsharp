@@ -14,6 +14,15 @@ type Message =
     | Fetch of AsyncReplyChannel<int> 
     | Reset
 
+/// Bundles thread information into a type for testing StartImmediate
+type StartImmediateThreadInfo =
+    { Id: int
+      Name: string }
+
+/// MailboxProcessor message type for testing StartImmediate
+type StartImmediateMessage =
+    | GetThreadInfo of AsyncReplyChannel<StartImmediateThreadInfo>
+
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =
@@ -356,3 +365,46 @@ type MailboxProcessorType() =
         System.Threading.Thread.Sleep(5000) // cancellation after 500 pause for 5 seconds 
         if not gotGood || not gotBad then 
             failwith <| sprintf "Exected both good and bad async's to be cancelled afteMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
+
+    [<Fact>]
+    member this.StartImmediateStartsOnCurrentThread() =
+        /// Gets the current thread's ID and name
+        let getThreadInfo () =
+            let currentThread = Thread.CurrentThread
+            
+            { Id = currentThread.ManagedThreadId
+              Name = currentThread.Name }
+
+        // Although the ManagedThreadId should be unique, go ahead and set the calling thread
+        // name to something specific prior to starting the MailboxProcessor
+        Thread.CurrentThread.Name <- "This is the thread that starts the MailboxProcessor"
+
+        // Capture the ID and name of the calling thread
+        let callingThreadInfo = getThreadInfo ()
+
+        // Start a MailboxProcessor with StartImmediate and have it wait for a single message
+        // requesting the information of the thread that it is running on
+        let mailbox = MailboxProcessor<StartImmediateMessage>.StartImmediate(fun inbox -> async{
+            // Get the MailboxProcessor's thread immediately after starting it
+            let threadInfo = getThreadInfo ()
+            
+            // Block until a single message is received
+            let! message = inbox.Receive()
+
+            // Because the let! forces the asynchronous call Receive, the MailboxProcessor
+            // is not guaranteed to be on the same thread that it started on afterwards.
+            // In other words, placing getThreadInfo here or afterward will cause this test
+            // to fail.
+
+            // Reply with the MailboxProcessor's thread information
+            match message with
+            | GetThreadInfo reply -> reply.Reply threadInfo
+        })
+
+        // Get the MailboxProcessor's thread information
+        let mailboxThreadInfo = mailbox.PostAndReply GetThreadInfo
+
+        // Compare the calling thread information to that of the MailboxProcessor.
+        // If StartImmediate worked correctly, the information should be identical since
+        // the threads should be the same.
+        Assert.Equal(callingThreadInfo, mailboxThreadInfo)
