@@ -251,7 +251,8 @@ type Document with
 
             do! symbolUses 
                 |> Seq.map onFound 
-                |> CancellableTask.waitForAll
+                |> CancellableTask.whenAll
+                |> CancellableTask.ignore
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -320,7 +321,7 @@ type Project with
             if this.IsFastFindReferencesEnabled then
                 do! documents 
                     |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName))
-                    |> CancellableTask.waitForAll         
+                    |> CancellableTask.whenAll         
             else
                 for doc in documents do
                     do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)

@@ -42,7 +42,7 @@ type internal InlineRenameLocationSet
         replacementText
         (solution: Solution)
         (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
-        =
+          =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
 

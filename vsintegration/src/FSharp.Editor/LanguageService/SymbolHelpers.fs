@@ -82,7 +82,7 @@ module internal SymbolHelpers =
 
                 do! projects
                     |> Seq.map (fun project -> project.FindFSharpReferencesAsync (symbol, onFound, "getSymbolUsesInProjects"))
-                    |> CancellableTask.waitForAll
+                    |> CancellableTask.whenAll
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
@@ -101,7 +101,7 @@ module internal SymbolHelpers =
 
                 do! symbolUses
                     |> Seq.map (fun symbolUse -> onFound currentDocument symbolUse.Range)
-                    |> CancellableTask.waitForAll
+                    |> CancellableTask.whenAll
 
             | Some SymbolScope.SignatureAndImplementation ->
                 let otherFile = getOtherFile currentDocument.FilePath
@@ -123,7 +123,7 @@ module internal SymbolHelpers =
 
                 do! symbolUses
                     |> Seq.map ((<||) onFound)
-                    |> CancellableTask.waitForAll
+                    |> CancellableTask.whenAll
 
             | scope ->
                 let projectsToCheck =

@@ -467,6 +467,10 @@ module CancellableTasks =
         // Low priority extensions
         type CancellableTaskBuilderBase with
 
+            [<NoEagerConstraintApplication>]            
+            member inline _.Source(awaiter: CancellableTask<unit array>) = 
+                (fun (token) -> (awaiter token :> Task).GetAwaiter())
+
             /// <summary>
             /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
             /// </summary>
@@ -1095,18 +1099,14 @@ module CancellableTasks =
                 return! Task.WhenAll (seq { for task in tasks do yield start ct task })
             }
 
-        let inline waitForAll (tasks: CancellableTask<unit> seq) =
-            cancellableTask {
-                let! ct = getCancellationToken ()
-                let! _ = Task.WhenAll (seq { for task in tasks do yield start ct task })
-                return ()
-            }
-
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
                 return! Task.WhenAll (seq { for task in tasks do yield startTask ct task })
             }
+
+        let inline ignore (ctask: CancellableTask<_>) =
+            ctask |> toUnit
 
     /// <exclude />
     [<AutoOpen>]
