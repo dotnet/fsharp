@@ -44,6 +44,7 @@ module TypeAbbreviations =
         |> withDiagnostics [
             (Error 39, Line 6, Col 32, Line 6, Col 38, "The type 'BigInt' is not defined in 'Microsoft.FSharp.Math'.")
             (Error 37, Line 7, Col 6, Line 7, Col 7, "Duplicate definition of type, exception or module 'T'")
+            (Error 39, Line 7, Col 32, Line 7, Col 38, "The type 'BigNum' is not defined in 'Microsoft.FSharp.Math'.")
         ]
 
     //SOURCE=E_AbbreviatedTypeDoesNotExist01.fsx SCFLAGS="--test:ErrorRanges"                                   # E_AbbreviatedTypeDoesNotExist01.fsx

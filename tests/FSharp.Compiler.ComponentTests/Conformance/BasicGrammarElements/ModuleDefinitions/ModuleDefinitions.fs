@@ -101,6 +101,7 @@ module ModuleDefinitions =
         |> shouldFail
         |> withDiagnostics [
             (Error 37, Line 9, Col 1, Line 9, Col 18, "Duplicate definition of type, exception or module 'module'")
+            (Error 37, Line 9, Col 8, Line 9, Col 18, "Duplicate definition of type or module 'module'")
         ]
 
     // SOURCE="E_ModuleWithSameNameInNamespace02a.fsx E_ModuleWithSameNameInNamespace02b.fsx" SCFLAGS="--test:ErrorRanges" # E_ModuleWithSameNameInNamespace02 
