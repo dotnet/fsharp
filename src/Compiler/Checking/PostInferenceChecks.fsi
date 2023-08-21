@@ -64,4 +64,5 @@ module Limit =
     val NoLimit: Limit
 
     /// Construct a Limit which expresses "this Val must obey the first Limit and the second Limit simultaneously".
+    //// If none of the limits are limited by a by-ref or a stack referring span-like, the scope will be 0.
     val CombineTwoLimits: Limit -> Limit -> Limit
