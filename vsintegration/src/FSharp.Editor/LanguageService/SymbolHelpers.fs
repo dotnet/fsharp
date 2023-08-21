@@ -159,7 +159,7 @@ module internal SymbolHelpers =
         }
 
     let getSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) =
-        async {
+        cancellableTask {
             let symbolUses = ConcurrentBag()
 
             let onFound =
@@ -171,7 +171,7 @@ module internal SymbolHelpers =
         }
 
     let getSymbolUsesInSolution (symbolUse: FSharpSymbolUse, checkFileResults: FSharpCheckFileResults, document: Document) =
-        async {
+        cancellableTask {
             let! symbolUses = getSymbolUses symbolUse document checkFileResults
 
             let symbolUsesWithDocumentId =

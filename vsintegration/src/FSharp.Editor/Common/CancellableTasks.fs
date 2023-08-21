@@ -943,7 +943,7 @@ module CancellableTasks =
         /// for i in primes do
         ///     let computation =
         ///         cancellableTask {
-        ///             let! cancellationToken = CancellableTask.getCurrentCancellationToken()
+        ///             let! cancellationToken = CancellableTask.getCancellationToken()
         ///             do! Task.Delay(i * 1000, cancellationToken)
         ///             printfn $"{i}"
         ///         }
@@ -962,7 +962,6 @@ module CancellableTasks =
         /// <param name="item">The item to be the result of the CancellableTask.</param>
         /// <returns>A CancellableTask with the item as the result.</returns>
         let inline singleton (item: 'item) : CancellableTask<'item> = fun _ -> Task.FromResult(item)
-
 
         /// <summary>Allows chaining of CancellableTasks.</summary>
         /// <param name="binder">The continuation.</param>
