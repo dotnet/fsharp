@@ -381,3 +381,91 @@ module RecordTypes =
         |> withDiagnostics [
             (Warning 864, Line 11, Col 22, Line 11, Col 30, "This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.")
         ]
+
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions``() =
+        FSharp """
+    type RecTy = { B: string }
+
+    let t1 = { B = "a"; B = "b" }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears twice in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions 2``() =
+        FSharp """
+    type RecTy = { B: string }
+
+    let t1 = { B = "a"; B = "b"; B = "c" }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 25, Line 4, Col 26, "The field 'B' appears twice in this record expression or pattern")
+        ]
+    
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions 3``() =
+        FSharp """
+    type RecTy = { A: int; B: int }
+
+    let t1 = { A = 1; B = 4; A = 5; B = 4 }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 23, Line 4, Col 24, "The field 'B' appears twice in this record expression or pattern")
+        ]
+    
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions 4``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+
+    let t1 = { A = 1; C = ""; A = 0; B = 5 }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions 5``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+
+    let t1 = { A = 4; C = ""; A = 8; B = 4; A = 9 }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 31, Line 4, Col 32, "The field 'A' appears twice in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this anonymous record expressions 6``() =
+        FSharp """
+    type RecTy = { ``A``: int; B: int; C: string }
+
+    let t1 = { ``A`` = 5; B = 6; A = 6; B = 6; C = "" }
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 21, "The field 'A' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 27, Line 4, Col 28, "The field 'B' appears twice in this record expression or pattern")
+        ]

@@ -17,7 +17,7 @@ let t2 x = { x with D.B = "a"; D.B = "b" }
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 668, Line 6, Col 21, Line 6, Col 22, "The field 'B' appears twice in this record expression or pattern")
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'B' appears twice in this record expression or pattern")
     ]
 
 [<Fact>]

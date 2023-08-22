@@ -1796,6 +1796,12 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
+let CheckRecdExprDuplicateFields (elems: Ident list) =
+    elems |> List.iteri (fun i (uc1: Ident) -> 
+        elems |> List.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(uc1.idText), uc1.idRange))))
+
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
 //-------------------------------------------------------------------------
@@ -1822,6 +1828,13 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
         )
 
     if fldResolutions.IsEmpty then None else
+        
+    let idents =
+        fldResolutions
+        |> List.map (fun ((_, ident), _, _) -> ident)
+        
+    if idents.Length > 1 then
+        CheckRecdExprDuplicateFields idents
 
     let relevantTypeSets =
         fldResolutions |> List.map (fun (_, frefSet, _) ->
@@ -1863,8 +1876,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
-                    if Map.containsKey fref2.FieldName fs then
-                        errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
                     if showDeprecated then
                         let diagnostic = Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName, fref2.Tycon.DisplayName) |> snd, m)
                         if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
