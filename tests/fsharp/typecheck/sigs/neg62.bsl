@@ -23,7 +23,7 @@ neg62.fs(34,5,34,25): typecheck error FS3133: 'member val' definitions are only 
 
 neg62.fs(49,6,49,26): typecheck error FS0081: Implicit object constructors for structs must take at least one argument
 
-neg62.fs(50,5,50,21): typecheck error FS0901: Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.
+neg62.fs(50,5,50,34): typecheck error FS0901: Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.
 
 neg62.fs(54,31,54,34): typecheck error FS3135: To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
 
