@@ -236,6 +236,8 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* start with lowest */
 
+%nonassoc prec_bar_null
+
 %nonassoc prec_args_error            /* less than RPAREN */
 %nonassoc prec_atomexpr_lparen_error /* less than RPAREN */
 
@@ -246,11 +248,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE
 
 %right WHEN
-
-/* prec_pat_pat_action = "pattern when expr -> expr"
- * Lower than match extensions - i.e. BAR.
- */
-%nonassoc prec_pat_pat_action /* lower than BAR */
 
 /* "a then b" as an object constructor is very low precedence */
 /* Lower than "if a then b" */
@@ -291,6 +288,10 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc prec_toptuptyptail_prefix      /* ditto */
 
 %left BAR
+/* prec_pat_pat_action = "pattern when expr -> expr"
+ * Lower than match extensions - i.e. BAR.
+ */
+%nonassoc prec_pat_pat_action /* lower than BAR */
 %right RARROW
 %nonassoc IDENT LBRACK
 
@@ -373,6 +374,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_TYAPP
 
 %nonassoc prec_interaction_empty
+%right multiple_union_cases
 
 %%
 
@@ -2637,7 +2639,7 @@ barAndgrabXmlDoc:
        grabXmlDoc(parseState, [], 1), mBar }
 
 attrUnionCaseDecls:
-  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls
+  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls %prec multiple_union_cases
      { (fun xmlDocAndBar -> $1 xmlDocAndBar :: $3 $2) }
 
   | attrUnionCaseDecl
@@ -5866,7 +5868,7 @@ appType:
   | appType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | appType BAR NULL
+  | appType BAR NULL %prec prec_bar_null
     { SynType.WithNull($1, false, lhs parseState) }
 
 /*
