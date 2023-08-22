@@ -106,7 +106,7 @@ module CompileHelpers =
             { new DiagnosticsLogger("CompileAPI") with
 
                 member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors)) // Suggest names for errors
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -556,7 +556,8 @@ type BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -856,6 +857,7 @@ type BackgroundCompiler
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
+                let symbolEnv = SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports) |> Some
 
                 let parseDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
@@ -864,7 +866,8 @@ type BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -876,7 +879,8 @@ type BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1029,6 +1033,7 @@ type BackgroundCompiler
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
+                let symbolEnv = SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports) |> Some
 
                 let tcDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
@@ -1037,7 +1042,8 @@ type BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1204,7 +1210,7 @@ type BackgroundCompiler
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
                 |> List.map (fun (exn, isError) ->
-                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors"))
+                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors", None))
 
             return options, (diags @ diagnostics.Diagnostics)
         }

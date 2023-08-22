@@ -8282,11 +8282,6 @@
         <target state="translated">Questo valore non è una funzione e non può essere applicato. Potrebbe essere presente una dichiarazione non terminata.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">I nomi degli argomenti nella firma '{0}' e nell'implementazione '{1}' non corrispondono. Verrà usato il nome dell'argomento del file di firma. Questa situazione potrebbe causare problemi durante il debug o la profilatura.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Si è verificato un errore durante la lettura dei metadati F# dell'assembly '{0}'. È stato utilizzato un costrutto riservato. Potrebbe essere necessario aggiornare il compilatore F# o usare una versione precedente dell'assembly che non usa un costrutto specifico.</target>

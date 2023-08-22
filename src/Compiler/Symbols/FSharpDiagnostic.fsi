@@ -7,8 +7,76 @@
 namespace FSharp.Compiler.Diagnostics
 
 open System
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.DiagnosticsLogger
+
+[<RequireQualifiedAccess>]
+type public DiagnosticContextInfo =
+    /// No context was given.
+    | NoContext
+    /// The type equation comes from an IF expression.
+    | IfExpression
+    /// The type equation comes from an omitted else branch.
+    | OmittedElseBranch
+    /// The type equation comes from a type check of the result of an else branch.
+    | ElseBranchResult
+    /// The type equation comes from the verification of record fields.
+    | RecordFields
+    /// The type equation comes from the verification of a tuple in record fields.
+    | TupleInRecordFields
+    /// The type equation comes from a list or array constructor
+    | CollectionElement
+    /// The type equation comes from a return in a computation expression.
+    | ReturnInComputationExpression
+    /// The type equation comes from a yield in a computation expression.
+    | YieldInComputationExpression
+    /// The type equation comes from a runtime type test.
+    | RuntimeTypeTest
+    /// The type equation comes from an downcast where a upcast could be used.
+    | DowncastUsedInsteadOfUpcast
+    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    | FollowingPatternMatchClause
+    /// The type equation comes from a pattern match guard.
+    | PatternMatchGuard
+    /// The type equation comes from a sequence expression.
+    | SequenceExpression
+
+[<Interface>]
+type public IFSharpDiagnosticExtendedData = interface end
+
+[<Class>]
+type public TypeMismatchDiagnosticExtendedData =
+    interface IFSharpDiagnosticExtendedData
+    member ExpectedType: FSharpType
+    member ActualType: FSharpType
+    member ContextInfo: DiagnosticContextInfo
+    member DisplayContext: FSharpDisplayContext
+
+[<Class>]
+type public ExpressionIsAFunctionExtendedData =
+    interface IFSharpDiagnosticExtendedData
+    member ActualType: FSharpType
+
+[<Class>]
+type public FieldNotContainedDiagnosticExtendedData =
+    interface IFSharpDiagnosticExtendedData
+    member SignatureField: FSharpField
+    member ImplementationField: FSharpField
+
+[<Class>]
+type public ValueNotContainedDiagnosticExtendedData =
+    interface IFSharpDiagnosticExtendedData
+    member SignatureValue: FSharpMemberOrFunctionOrValue
+    member ImplementationValue: FSharpMemberOrFunctionOrValue
+
+[<Class>]
+type ArgumentsInSigAndImplMismatchExtendedData =
+    interface IFSharpDiagnosticExtendedData
+    member SignatureName: string
+    member ImplementationName: string
+    member SignatureRange: range
+    member ImplementationRange: range
 
 /// Represents a diagnostic produced by the F# compiler
 [<Class>]
@@ -56,6 +124,8 @@ type public FSharpDiagnostic =
     /// Gets the full error number text e.g "FS0031"
     member ErrorNumberText: string
 
+    member ExtendedData: IFSharpDiagnosticExtendedData option
+
     /// Creates a diagnostic, e.g. for reporting from an analyzer
     static member Create:
         severity: FSharpDiagnosticSeverity *
@@ -72,7 +142,7 @@ type public FSharpDiagnostic =
         range *
         lastPosInFile: (int * int) *
         suggestNames: bool *
-        flatErrors: bool ->
+        flatErrors: bool * symbolEnv: SymbolEnv option  ->
             FSharpDiagnostic
 
     static member internal CreateFromException:
@@ -80,7 +150,7 @@ type public FSharpDiagnostic =
         severity: FSharpDiagnosticSeverity *
         range *
         suggestNames: bool *
-        flatErrors: bool ->
+        flatErrors: bool * symbolEnv: SymbolEnv option  ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
@@ -128,7 +198,8 @@ module internal DiagnosticHelpers =
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
         suggestNames: bool *
-        flatErrors: bool ->
+        flatErrors: bool *
+        symbolEnv: SymbolEnv option ->
             FSharpDiagnostic list
 
     val CreateDiagnostics:
@@ -137,5 +208,6 @@ module internal DiagnosticHelpers =
         mainInputFileName: string *
         seq<PhasedDiagnostic * FSharpDiagnosticSeverity> *
         suggestNames: bool *
-        flatErrors: bool ->
+        flatErrors: bool *
+        symbolEnv: SymbolEnv option ->
             FSharpDiagnostic[]

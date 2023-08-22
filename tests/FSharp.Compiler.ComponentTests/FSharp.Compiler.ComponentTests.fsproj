@@ -172,6 +172,7 @@
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
+    <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />

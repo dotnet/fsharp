@@ -8282,11 +8282,6 @@
         <target state="translated">Bu değer bir işlev değil ve uygulanamaz. Bir bildirimi sonlandırmayı mı unuttunuz?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">{0}' imzası ve '{1}' uygulaması içindeki bağımsız değişken adları eşleşmiyor. İmza dosyasındaki bağımsız değişken adı kullanılacak. Bu, hata ayıklama veya profil oluşturma sırasında sorunlara neden olabilir.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">'{0}' bütünleştirilmiş kodunun F# meta verileri okunurken bir hata oluştu. Ayrılmış bir yapı kullanıldı. F# derleyicinizi yükseltmeniz veya bütünleştirilmiş kodun belirli bir yapıyı kullanmayan daha eski bir sürümünü kullanmanız gerekebilir.</target>
