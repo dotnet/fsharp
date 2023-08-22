@@ -80,8 +80,9 @@ module internal SymbolHelpers =
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
-                do! projects
-                    |> Seq.map (fun project -> project.FindFSharpReferencesAsync (symbol, onFound, "getSymbolUsesInProjects"))
+                do!
+                    projects
+                    |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
                     |> CancellableTask.whenAll
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
@@ -99,7 +100,8 @@ module internal SymbolHelpers =
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
 
-                do! symbolUses
+                do!
+                    symbolUses
                     |> Seq.map (fun symbolUse -> onFound currentDocument symbolUse.Range)
                     |> CancellableTask.whenAll
 
@@ -121,9 +123,7 @@ module internal SymbolHelpers =
                         checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
-                do! symbolUses
-                    |> Seq.map ((<||) onFound)
-                    |> CancellableTask.whenAll
+                do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll
 
             | scope ->
                 let projectsToCheck =

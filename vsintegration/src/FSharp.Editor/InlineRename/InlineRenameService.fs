@@ -42,7 +42,7 @@ type internal InlineRenameLocationSet
         replacementText
         (solution: Solution)
         (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
-          =
+        =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
 
@@ -157,22 +157,22 @@ type internal InlineRenameInfo
             let! results =
                 seq {
                     for (KeyValue (documentId, symbolUses)) in symbolUsesByDocumentId do
-                        
-                            cancellableTask {
-                                let! cancellationToken = CancellableTask.getCancellationToken ()
-                                let document = document.Project.Solution.GetDocument(documentId)
-                                let! sourceText = document.GetTextAsync(cancellationToken)
 
-                                return
-                                    [|
-                                        for symbolUse in symbolUses do
-                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                            | Some span ->
-                                                let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                                yield FSharpInlineRenameLocation(document, textSpan)
-                                            | None -> ()
-                                    |]
-                            }       
+                        cancellableTask {
+                            let! cancellationToken = CancellableTask.getCancellationToken ()
+                            let document = document.Project.Solution.GetDocument(documentId)
+                            let! sourceText = document.GetTextAsync(cancellationToken)
+
+                            return
+                                [|
+                                    for symbolUse in symbolUses do
+                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
+                                        | Some span ->
+                                            let textSpan = Tokenizer.fixupSpan (sourceText, span)
+                                            yield FSharpInlineRenameLocation(document, textSpan)
+                                        | None -> ()
+                                |]
+                        }
                 }
                 |> CancellableTask.whenAll
 
@@ -223,7 +223,10 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     | None -> return Unchecked.defaultof<_>
                     | Some span ->
                         let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
-                        let result = InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
+
+                        let result =
+                            InlineRenameInfo(document, triggerSpan, sourceText, symbol, symbolUse, checkFileResults, ct)
+
                         return result :> FSharpInlineRenameInfo
         }
         |> CancellableTask.start cancellationToken

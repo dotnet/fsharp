@@ -75,7 +75,7 @@ module FSharpFindUsagesService =
                                     let span = Tokenizer.fixupSpan (sourceText, span)
                                     return Some(FSharpDocumentSpan(doc, span))
                                 | None -> return None
-                            }                            
+                            }
                     }
                     |> CancellableTask.whenAll
 
@@ -144,7 +144,10 @@ module FSharpFindUsagesService =
                         declarationSpans
                         |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.FilePath)
 
-                    do! definitionItems |> Seq.map (fst >> context.OnDefinitionFoundAsync) |> Task.WhenAll
+                    do!
+                        definitionItems
+                        |> Seq.map (fst >> context.OnDefinitionFoundAsync)
+                        |> Task.WhenAll
 
                     if isExternal then
                         do! context.OnDefinitionFoundAsync(externalDefinitionItem)
