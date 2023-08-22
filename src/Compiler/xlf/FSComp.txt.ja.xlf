@@ -1368,8 +1368,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
-        <source>Unexpected function type in union case field definition</source>
-        <target state="new">Unexpected function type in union case field definition</target>
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">

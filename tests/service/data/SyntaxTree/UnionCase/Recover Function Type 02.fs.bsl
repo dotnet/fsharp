@@ -50,4 +50,4 @@ ImplFile
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
 
-(3,19)-(3,29) parse error Unexpected function type in union case field definition
+(3,19)-(3,29) parse error Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -> b into | Case of (a -> b).
