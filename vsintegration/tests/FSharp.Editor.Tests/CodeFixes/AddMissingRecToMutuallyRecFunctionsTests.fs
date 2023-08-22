@@ -44,6 +44,6 @@ and isOdd n =
 """
             }
 
-    let actual = codeFix |> tryFix code (Manual("let", 0576))
+    let actual = codeFix |> tryFix code (Manual("let", "FS0576"))
 
     Assert.Equal(expected, actual)

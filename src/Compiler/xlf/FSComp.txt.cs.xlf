@@ -287,6 +287,11 @@
         <target state="translated">více typů podporuje měrné jednotky</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="new">Extended string interpolation similar to C# raw string literals.</target>
@@ -390,6 +395,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">správa balíčků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -7848,8 +7858,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Neplatné použití fixed. fixed se dá použít jenom v deklaraci ve tvaru use x = fixed expr, kde výraz je pole, adresa pole nebo adresa prvku pole nebo řetězce.</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="needs-review-translation">Neplatné použití fixed. fixed se dá použít jenom v deklaraci ve tvaru use x = fixed expr, kde výraz je pole, adresa pole nebo adresa prvku pole nebo řetězce.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
