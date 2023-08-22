@@ -967,8 +967,8 @@ and erasePartials inps =
     List.map erasePartialPatterns inps
     
 let ReportUnusedTargets (clauses: MatchClause list) dtree =
-    match dtree with
-    | TDSuccess _ -> ()
+    match dtree, clauses with
+    | TDSuccess _, [ _ ] -> ()
     | _ ->
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
         clauses |> List.iteri (fun i c ->
