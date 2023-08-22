@@ -3447,10 +3447,6 @@ type NonLocalEntityRef =
         | ValueNone -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
-        
-    /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
-    member nleref.ModuleOrNamespaceType = 
-        nleref.Deref.ModuleOrNamespaceType
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
