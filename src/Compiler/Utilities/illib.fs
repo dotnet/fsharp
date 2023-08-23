@@ -335,6 +335,13 @@ module Array =
     let endsWith (suffix: _[]) (whole: _[]) =
         isSubArray suffix whole (whole.Length - suffix.Length)
 
+    let prepend item (inp: 'T[]) =
+        Array.append
+        let res = Array.zeroCreate (inp.Length + 1)
+        res[0] <- item
+        Array.blit inp 0 res 1 inp.Length
+        res
+
 module Option =
 
     let mapFold f s opt =
@@ -621,6 +628,17 @@ module ResizeArray =
         // chunk the provided input into arrays that are smaller than the LOH limit
         // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
+
+module Span =
+    let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (span: Span<'T>) =
+        let mutable state = false
+        let mutable i = 0
+
+        while not state && i < span.Length do
+            state <- predicate span[i]
+            i <- i + 1
+
+        state
 
 module ValueOptionInternal =
 
