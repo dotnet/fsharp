@@ -1815,7 +1815,8 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
     let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
     if allFields.Length > 1 then
-        // FIXME: Find out why is necessary to reverse the list here
+        // In the case of nested record fields on the same level in record copy-and-update.
+        // We need to reverse the list to get the correct order of fields.
         let idents = if isPartial then allFields |> List.rev else allFields
         CheckRecdExprDuplicateFields idents
 
