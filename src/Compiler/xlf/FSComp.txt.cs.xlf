@@ -3883,8 +3883,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Pole {0} se v tomto výrazu záznamu nebo vzoru vyskytuje dvakrát.</target>
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="needs-review-translation">Pole {0} se v tomto výrazu záznamu nebo vzoru vyskytuje dvakrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">

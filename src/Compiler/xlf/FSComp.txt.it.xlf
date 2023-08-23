@@ -3883,8 +3883,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Il campo '{0}' è presente due volte nei criteri o nell'espressione del record</target>
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="needs-review-translation">Il campo '{0}' è presente due volte nei criteri o nell'espressione del record</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">
