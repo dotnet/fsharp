@@ -2758,7 +2758,7 @@ unionCaseReprElements:
      { [$1] }
 
 unionCaseReprElement:
-  | ident COLON appType
+  | ident COLON appType %prec IDENT
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
        mkSynNamedField ($1, $3, xmlDoc, mWhole) }

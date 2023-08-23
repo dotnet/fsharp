@@ -235,6 +235,7 @@
     </None>
     <None Include="pars.fsy">
       <Link>SyntaxTree\FsYacc\pars.fsy</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Compile Include="SyntaxTree\UnicodeLexing.fsi" />
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />
