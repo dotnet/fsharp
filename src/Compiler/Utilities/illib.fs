@@ -335,11 +335,10 @@ module Array =
     let endsWith (suffix: _[]) (whole: _[]) =
         isSubArray suffix whole (whole.Length - suffix.Length)
 
-    let prepend item (inp: 'T[]) =
-        Array.append
-        let res = Array.zeroCreate (inp.Length + 1)
+    let prepend item (array: 'T[]) =
+        let res = Array.zeroCreate (array.Length + 1)
         res[0] <- item
-        Array.blit inp 0 res 1 inp.Length
+        Array.blit array 0 res 1 array.Length
         res
 
 module Option =

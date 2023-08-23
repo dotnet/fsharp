@@ -919,7 +919,7 @@ let rec investigationPoints inpPat =
         | None -> singleFalseInvestigationPoint
         | Some subPat -> Array.prepend false (investigationPoints subPat)
     | TPat_as(subPat, _, _) -> investigationPoints subPat
-    | TPat_disjs (subPats, _)
+    | TPat_disjs(subPats, _)
     | TPat_conjs(subPats, _)
     | TPat_tuple(_, subPats, _, _)
     | TPat_exnconstr(_, subPats, _)
