@@ -1439,6 +1439,7 @@ type TcGlobals(
   member val attrib_IUnknownConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
 
   member val attrib_NullableContextAttribute = findSysAttrib "System.Runtime.CompilerServices.NullableContextAttribute"
+  member val attrib_NullableAttribute = findSysAttrib "System.Runtime.CompilerServices.NullableAttribute"
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.

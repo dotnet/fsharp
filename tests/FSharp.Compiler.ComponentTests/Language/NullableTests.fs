@@ -15,6 +15,13 @@ let ``Nullable C# reference consumption`` () =
     #nullable enable
     namespace Nullables {
         public class NullableClass {
+            // Fields with nullable type
+            public static string NullableField;
+
+            // Fields with non-nullable type
+            public static string? NonNullableField;
+
+            // Methods which return nullable string
             public static string? ReturnsNullableStringNoParams() { return null; }
             public static string? ReturnsNullableString1NullableParam(string? _) { return null; }
             public static string? ReturnsNullableString1NonNullableParam(string _) { return null; }
@@ -22,6 +29,7 @@ let ``Nullable C# reference consumption`` () =
             public static string? ReturnsNullableString2NonNullableParams(string _, string __) { return null; }
             public static string? ReturnsNullableString1Nullable1NonNullableParam(string? _, string __) { return null; }
             
+            // Methods which return non-nullable string
             public static string ReturnsNonNullableStringNoParams() { return ""; }
             public static string ReturnsNonNullableString1NullableParam(string? _) { return ""; }
             public static string ReturnsNonNullableString1NonNullableParam(string _) { return ""; }
@@ -40,6 +48,10 @@ let ``Nullable C# reference consumption`` () =
 
     let nullablestrNoParamsCorrectlyAnnotated : string __withnull = NullableClass.ReturnsNullableStringNoParams()
     let nonNullableStrNoParamsCorrectlyAnnotated : string = NullableClass.ReturnsNonNullableStringNoParams()
+
+    let nullableField : string = NullableClass.NullableField
+    let nonNullableField : string __withnull = NullableClass.NonNullableField
+
     """
     |> asLibrary
     |> withLangVersionPreview
@@ -47,6 +59,7 @@ let ``Nullable C# reference consumption`` () =
     |> compile
     |> shouldFail
     |> withDiagnostics [
+        // TODO NULLNESS: makes sure that both of these are expected.
         Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have compatible nullability.";
         Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have equivalent nullability."
     ]

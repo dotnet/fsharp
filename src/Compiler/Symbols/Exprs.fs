@@ -1152,7 +1152,7 @@ module FSharpExprConvert =
 
                 // TODO NULLNESS: Make sure we return correct nullness here.
                 let retTy = 
-                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) (fun _ -> emptyILCustomAttrs) (fun () -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
+                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) KnownAmbivalentToNull scoref tinst1 tinst2 with 
                     | None -> if isCtor then enclosingTy else g.unit_ty
                     | Some ty -> ty
 

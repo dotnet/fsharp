@@ -22,6 +22,8 @@ open FSharp.Compiler.TypeHierarchy
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
+open FSharp.Compiler.TypedTreeBasics
+
 #endif
 
 exception ObsoleteWarning of string * range
@@ -90,7 +92,7 @@ type AttribInfo =
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
-             let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType (fun () -> emptyILCustomAttrs) (fun () -> emptyILCustomAttrs)
+             let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType KnownAmbivalentToNull
              tcrefOfAppTy g ty
 
     member x.ConstructorArguments = 
@@ -104,7 +106,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
               [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy (fun () -> emptyILCustomAttrs) (fun () -> emptyILCustomAttrs)
+                    let ty = RescopeAndImportILType scoref amap m [] argTy KnownAmbivalentToNull
                     let obj = evalILAttribElem arg
                     ty, obj ]
 
@@ -119,7 +121,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
               [ for nm, argTy, isProp, arg in namedArgs ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy (fun () -> emptyILCustomAttrs) (fun () -> emptyILCustomAttrs)
+                    let ty = RescopeAndImportILType scoref amap m [] argTy KnownAmbivalentToNull
                     let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]

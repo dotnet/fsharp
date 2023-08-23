@@ -2,6 +2,8 @@
 
 module FSharp.Compiler.Interactive.Shell
 
+open FSharp.Compiler.TypedTreeBasics
+
 // Prevents warnings of experimental APIs - we are using FSharpLexer
 #nowarn "57"
 
@@ -2358,7 +2360,7 @@ type internal FsiDynamicCompiler
                     let ccuinfos2, ty = import ccuInfos ilGenericArgTy
                     (ccuinfos2 @ ccuinfos, ty :: tinst))
 
-            let ty = Import.ImportILType amap range0 tinst ilTy (fun () -> emptyILCustomAttrs) (fun () -> emptyILCustomAttrs) // TODO: Nullness
+            let ty = Import.ImportILType amap range0 tinst ilTy KnownAmbivalentToNull // TODO: Nullness
 
             let ccuinfos =
                 match tryTcrefOfAppTy tcGlobals ty with

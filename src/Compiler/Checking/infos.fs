@@ -449,6 +449,7 @@ type ILTypeInfo =
         
     static member FromType g ty =
         if isAnyTupleTy g ty then
+            // TODO NULLNESS:
             // When getting .NET metadata for the properties and methods
             // of an F# tuple type, use the compiled nominal type, which is a .NET tuple type
             let metadataTy = convertToTypeWithMetadataIfPossible g ty
@@ -461,6 +462,8 @@ type ILTypeInfo =
             let tcref = tcrefOfAppTy g ty
             let (TILObjectReprData(scoref, enc, tdef)) = tcref.ILTyconInfo
             let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
+            // let nullness = ImportNullnessForField
+            // let ty = addNullnessToTy nullness ty
             ILTypeInfo(g, ty, tref, tdef)
         else
             failwith "ILTypeInfo.FromType - no IL metadata for type"
@@ -611,8 +614,39 @@ type ILMethInfo =
             []
 
     /// Get the compiled return type of the method, where 'void' is None.
-    member x.GetCompiledReturnType (amap, m, minst) =
-        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) (fun _ -> x.RawMetadata.CustomAttrs) (fun () -> emptyILCustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
+    member x.GetCompiledReturnType (amap: ImportMap, m, minst) =
+        /// We try to decode a S.R.CS.NullableContextAttribute(flag: byte) for the IL type 
+        /// As per docs:
+        /// NullableContextAttribute can be used to indicate the nullability of type references that have no NullableAttribute annotations.
+        /// NullableContextAttribute is valid in metadata on type and method declarations.
+        ///
+        /// The byte value represents the implicit NullableAttribute value for type references within that scope that do not have an explicit NullableAttribute and would not otherwise be represented by an empty byte[].
+        /// The nearest NullableContextAttribute in the metadata hierarchy applies.
+        /// If there are no NullableContextAttribute attributes in the hierarchy, missing NullableAttribute attributes are treated as NullableAttribute(0).
+        ///
+        /// Value of the attribute is an 8bit integer, for specific context/scop:
+        /// 0 - Oblivious/Ambivalent: everything may be a null.
+        /// 1 - Not annotated: every reference type is non-nullable by default.
+        /// 2 - Annotated - scope is annotated by default - every reference type has an implicit `NullableAttribute` or `?` on it.
+        ///
+        /// Nullness info is alsy hierarchical, i.e.:
+        // class Foo has NullableContextAttribute(1), meaning all its method/props return types are known to be non-null
+        // method A inside Foo has NullableContextAttribute(2), meaning its return type is known to be nullable (e.g. `string?` in C# or `string | null` in F#)
+        // method B inside Foo has NO attribute, meaning its return type is inherited from class Foo (non-nullable).
+        let nullness = 
+            if amap.g.langFeatureNullness then
+                let (AttribInfo(trefNullableCtxAttr,_)) = amap.g.attrib_NullableContextAttribute
+        
+                match TryDecodeILAttribute trefNullableCtxAttr x.RawMetadata.Return.CustomAttrs with
+                | Some (ILAttribElem.Byte(value) :: _, _) when value = 0uy -> KnownAmbivalentToNull
+                | Some (ILAttribElem.Byte(value) :: _, _) when value = 1uy -> KnownWithoutNull
+                | Some (ILAttribElem.Byte(value) :: _, _) when value = 2uy -> KnownWithNull
+                | _ -> NewNullnessVar() // TODO NULNESS: do we want it to be Ambivalent or Variable if there's no info?
+            else
+                KnownAmbivalentToNull
+        let ty =
+            ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) nullness x.MetadataScope x.DeclaringTypeInst minst
+        ty
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
     member x.GetFSharpReturnType (amap, m, minst) =
@@ -1262,20 +1296,24 @@ type MethInfo =
                 match x with
                 | ILMeth(_, ilminfo, _) ->
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
+
+                    let _getNullnessInfo _ =
+                        [| ftinfo.RawMetadata.CustomAttrs ; ilminfo.RawMetadata.CustomAttrs |]
+
                     let formalRetTy =
                         ImportReturnTypeFromMetadata 
                             amap
                             m
                             ilminfo.RawMetadata.Return.Type
                             (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs)
-                            (fun _ -> ilminfo.RawMetadata.CustomAttrs)
-                            (fun _ -> ftinfo.RawMetadata.CustomAttrs)
+                            KnownAmbivalentToNull
                             ftinfo.ILScopeRef
                             ftinfo.TypeInstOfRawMetadata
                             formalMethTyparTys
+                    // TODO NULLNESS
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs) (fun _ -> ilminfo.RawMetadata.CustomAttrs) (fun _ -> ftinfo.RawMetadata.CustomAttrs)
+                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs) KnownAmbivalentToNull
                                 yield TSlotParam(p.Name, paramTy, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS
@@ -1474,7 +1512,9 @@ type ILFieldInfo =
      /// Get the type of the field as an F# type
     member x.FieldType(amap, m) =
         match x with
-        | ILFieldInfo (tinfo, fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.FieldType
+        | ILFieldInfo (tinfo, fdef) ->
+            let nullness = KnownAmbivalentToNull // TODO NULLNESS, check from type and fdef's cattrs
+            ImportILTypeFromMetadataWithAttributes amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.FieldType (fun _ -> emptyILCustomAttrs) nullness
 #if !NO_TYPEPROVIDERS
         | ProvidedField(amap, fi, m) -> ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType), m))
 #endif
