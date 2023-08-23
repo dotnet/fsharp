@@ -490,7 +490,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|])>]
         let``TestStructRecord`` compilation =
-            compilation |> withNoWarn 988 |> withNowarn 3560 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> withNoWarn 3560 |> verifyCompileAndRun |> shouldSucceed
     
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|])>]
     let``NoTailcallToByrefsWithModReq`` compilation =
