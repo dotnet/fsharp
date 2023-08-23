@@ -11,13 +11,30 @@ type NestdRecTy = { B: string }
 
 type RecTy = { D: NestdRecTy; E: string option }
 
+let t2 x = { x with D.B = "a"; D.B = "b" }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+    ]
+    
+[<Fact>]
+let ``Cannot update the same field appears multiple times in nested copy-and-update``() =
+    FSharp """
+type NestdRecTy = { B: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
 let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
     """
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'B' appears twice in this record expression or pattern")
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'B' appears multiple times in this record expression or pattern")
     ]
 
 [<Fact>]

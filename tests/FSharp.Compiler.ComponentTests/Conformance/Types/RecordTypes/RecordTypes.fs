@@ -393,7 +393,7 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
         ]
         
     [<Fact>]
@@ -407,8 +407,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears twice in this record expression or pattern")
-            (Error 668, Line 4, Col 25, Line 4, Col 26, "The field 'B' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 25, Line 4, Col 26, "The field 'B' appears multiple times in this record expression or pattern")
         ]
     
     [<Fact>]
@@ -422,8 +422,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
-            (Error 668, Line 4, Col 23, Line 4, Col 24, "The field 'B' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 23, Line 4, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
         ]
     
     [<Fact>]
@@ -437,7 +437,7 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
         ]
         
     [<Fact>]
@@ -451,8 +451,8 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears twice in this record expression or pattern")
-            (Error 668, Line 4, Col 31, Line 4, Col 32, "The field 'A' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 31, Line 4, Col 32, "The field 'A' appears multiple times in this record expression or pattern")
         ]
         
     [<Fact>]
@@ -466,6 +466,6 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 668, Line 4, Col 16, Line 4, Col 21, "The field 'A' appears twice in this record expression or pattern")
-            (Error 668, Line 4, Col 27, Line 4, Col 28, "The field 'B' appears twice in this record expression or pattern")
+            (Error 668, Line 4, Col 16, Line 4, Col 21, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 27, Line 4, Col 28, "The field 'B' appears multiple times in this record expression or pattern")
         ]
