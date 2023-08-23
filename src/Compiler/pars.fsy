@@ -2675,7 +2675,7 @@ attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName OF recover
       { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
 
-  | opt_attributes opt_access unionCaseName COLON topType %prec IDENT
+  | opt_attributes opt_access unionCaseName COLON topType %prec multiple_union_cases
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) (rhs2 parseState 1 5) >> Choice2Of2 }
 
