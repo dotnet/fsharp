@@ -1813,9 +1813,13 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
     if isNil flds then invalidArg "flds" "BuildFieldMap"
 
-    let fldCount = flds.Length
+    let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
+    if allFields.Length > 1 then
+        // FIXME: Find out why is necessary to reverse the list here
+        let idents = if isPartial then allFields |> List.rev else allFields
+        CheckRecdExprDuplicateFields idents
+
     let fldResolutions =
-        let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.choose (fun (fld, fldExpr) ->
             try
@@ -1828,13 +1832,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
         )
 
     if fldResolutions.IsEmpty then None else
-        
-    let idents =
-        fldResolutions
-        |> List.map (fun ((_, ident), _, _) -> ident)
-        
-    if idents.Length > 1 then
-        CheckRecdExprDuplicateFields idents
 
     let relevantTypeSets =
         fldResolutions |> List.map (fun (_, frefSet, _) ->
@@ -1851,7 +1848,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(), m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun (_, tc) -> tc.TrueFieldsAsList.Length = fldCount) with
+            match tcrefs |> List.tryFind (fun (_, tc) -> tc.TrueFieldsAsList.Length =  flds.Length) with
             | Some (tinst, tcref) -> tinst, tcref
             | _ ->
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs.

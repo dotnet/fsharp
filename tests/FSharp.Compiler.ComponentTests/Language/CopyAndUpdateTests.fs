@@ -11,7 +11,7 @@ type NestdRecTy = { B: string }
 
 type RecTy = { D: NestdRecTy; E: string option }
 
-let t2 x = { x with D.B = "a"; D.B = "b" }
+let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
     """
     |> withLangVersionPreview
     |> typecheck
