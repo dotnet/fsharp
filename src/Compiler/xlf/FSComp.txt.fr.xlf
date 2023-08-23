@@ -4192,11 +4192,6 @@
         <target state="translated">Modèle non valide</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Les correspondances de plages de caractères ont été supprimées de F#. Utilisez une garde par modèle 'when' à la place.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">Modèle non conforme</target>

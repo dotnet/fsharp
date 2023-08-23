@@ -4192,11 +4192,6 @@
         <target state="translated">這不是有效的模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">字元範圍比對已從 F# 中移除。請考慮改用 'when' 模式成立條件。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">不合法的模式</target>

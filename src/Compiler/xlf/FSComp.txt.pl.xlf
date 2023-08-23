@@ -4192,11 +4192,6 @@
         <target state="translated">To nie jest prawidłowy wzorzec</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Dopasowania zakresu znaków zostały usunięte w języku F#. Zamiast tego rozważ użycie ograniczenia wzorca „when”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">Niedozwolony wzorzec</target>

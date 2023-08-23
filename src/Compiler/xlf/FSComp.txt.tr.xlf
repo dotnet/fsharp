@@ -4192,11 +4192,6 @@
         <target state="translated">Bu geçerli bir desen değil</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Karakter aralığı eşleştirmeler F# dilinde kaldırılmıştır. Onun yerine 'when' desen koruma kullanmayı düşünün.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">Geçersiz desen</target>

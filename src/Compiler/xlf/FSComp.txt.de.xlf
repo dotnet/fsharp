@@ -4192,11 +4192,6 @@
         <target state="translated">Dies ist kein gültiges Muster.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Der Abgleich von Zeichenbereichen wurde in F# entfernt. Verwenden Sie stattdessen einen when-Musterwächter.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">Unzulässiges Muster.</target>
