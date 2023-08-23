@@ -1,1 +1,1 @@
-type DU = MyCase of string | null * int
+type DU = MyCase of (string | null) * int

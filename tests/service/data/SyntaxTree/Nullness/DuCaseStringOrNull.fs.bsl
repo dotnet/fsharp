@@ -18,18 +18,20 @@ ImplFile
                             Fields
                               [SynField
                                  ([], false, None,
-                                  WithNull
-                                    (LongIdent
-                                       (SynLongIdent ([string], [], [None])),
-                                     false, (1,20--1,33)), false,
+                                  Paren
+                                    (WithNull
+                                       (LongIdent
+                                          (SynLongIdent ([string], [], [None])),
+                                        false, (1,21--1,34)), (1,20--1,35)),
+                                  false,
                                   PreXmlDoc ((1,20), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (1,20--1,33), { LeadingKeyword = None })],
+                                  None, (1,20--1,35), { LeadingKeyword = None })],
                             PreXmlDoc ((1,10), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (1,10--1,33), { BarRange = None })],
-                        (1,10--1,33)), (1,10--1,33)), [], None, (1,5--1,33),
+                            None, (1,10--1,35), { BarRange = None })],
+                        (1,10--1,35)), (1,10--1,35)), [], None, (1,5--1,35),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,8--1,9)
-                    WithKeyword = None })], (1,0--1,33))], PreXmlDocEmpty, [],
+                    WithKeyword = None })], (1,0--1,35))], PreXmlDocEmpty, [],
           None, (1,0--2,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -18,24 +18,26 @@ ImplFile
                             Fields
                               [SynField
                                  ([], false, None,
-                                  WithNull
-                                    (LongIdent
-                                       (SynLongIdent ([string], [], [None])),
-                                     false, (1,20--1,33)), false,
+                                  Paren
+                                    (WithNull
+                                       (LongIdent
+                                          (SynLongIdent ([string], [], [None])),
+                                        false, (1,21--1,34)), (1,20--1,35)),
+                                  false,
                                   PreXmlDoc ((1,20), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (1,20--1,33), { LeadingKeyword = None });
+                                  None, (1,20--1,35), { LeadingKeyword = None });
                                SynField
                                  ([], false, None,
                                   LongIdent (SynLongIdent ([int], [], [None])),
                                   false,
-                                  PreXmlDoc ((1,36), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (1,36--1,39), { LeadingKeyword = None })],
+                                  PreXmlDoc ((1,38), FSharp.Compiler.Xml.XmlDocCollector),
+                                  None, (1,38--1,41), { LeadingKeyword = None })],
                             PreXmlDoc ((1,10), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (1,10--1,39), { BarRange = None })],
-                        (1,10--1,39)), (1,10--1,39)), [], None, (1,5--1,39),
+                            None, (1,10--1,41), { BarRange = None })],
+                        (1,10--1,41)), (1,10--1,41)), [], None, (1,5--1,41),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,8--1,9)
-                    WithKeyword = None })], (1,0--1,39))], PreXmlDocEmpty, [],
+                    WithKeyword = None })], (1,0--1,41))], PreXmlDocEmpty, [],
           None, (1,0--2,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
