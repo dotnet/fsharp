@@ -3959,7 +3959,7 @@ module TcDeclarations =
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
                         |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (_, tp)) ->
-                            let (SynTypar(ident = untypedIdent)) = tp
+                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
                             if typar.StaticReq = sr then
                                 typar.SetIdent(untypedIdent)
                         )
