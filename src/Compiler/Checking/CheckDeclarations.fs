@@ -492,22 +492,20 @@ module TcRecdUnionAndEnumDeclarations =
             if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
                 errorR(NotUpperCaseConstructor(id.idRange))
 
-    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
+    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) =
         let seen = Dictionary()
         (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.LogicalName with
             | true, synField ->
                 match sf, synField with
-                | SynField(idOpt = Some id), SynField(idOpt = Some _) ->
-                    error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
                 | SynField(idOpt = Some id), SynField(idOpt = None)
                 | SynField(idOpt = None), SynField(idOpt = Some id) ->
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
-                | _ -> assert false
+                | _ -> ()
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
+    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv hasRQAAttribute (SynUnionCase(Attributes synAttrs, SynIdent(ident= id), args, xmldoc, vis, m, _)) =
         let g = cenv.g
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
@@ -559,11 +557,26 @@ module TcRecdUnionAndEnumDeclarations =
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
+    let CheckUnionDuplicateFields (elems: Ident list) =
+        elems |> List.iteri (fun i (uc1: Ident) -> 
+            elems |> List.iteri (fun j (uc2: Ident) -> 
+                if j > i && uc1.idText = uc2.idText then 
+                   errorR(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(uc1.idText), uc1.idRange))))
+
     let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv unionCases =
         let unionCasesR =
             unionCases
-            |> List.filter (fun (SynUnionCase(_, SynIdent(id, _), _, _, _, _, _)) -> id.idText <> "")
-            |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
+            |> List.choose(fun syn ->
+                match syn with
+                | SynUnionCase(ident= SynIdent(ident = id)) as syn when id.idText <> ""  ->
+                    Some (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute syn)
+                | _ -> None)
+
+        for uc in unionCasesR do
+            let fields = uc.FieldTable.TrueInstanceFieldsAsList |> List.map (fun f -> f.Id)
+            if fields.Length > 1 then
+                CheckUnionDuplicateFields fields
+
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
     let MakeEnumCaseSpec cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
