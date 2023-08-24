@@ -5786,10 +5786,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LetOrUseBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
-    // Part of 'T.Ident
-    | SynExpr.Typar (typar, m) ->
-        TcTyparExprThen cenv overallTy env tpenv typar m []
-
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
         let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
