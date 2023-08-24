@@ -647,3 +647,21 @@ type X =
             (Error 3176, Line 3, Col 12, Line 3, Col 13, "Named field 'a' is used more than once.")
             (Error 3176, Line 3, Col 21, Line 3, Col 22, "Named field 'a' is used more than once.")
         ]
+        
+    [<Fact>]
+    let ``Union field appears multiple times in union declaration 4`` () =
+        Fsx """
+type X =
+    | A of a: int * a: int
+
+let x = A (1, 2)
+
+match x with
+| A(a = 1) -> ()
+| _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3176, Line 3, Col 12, Line 3, Col 13, "Named field 'a' is used more than once.")
+        ]
