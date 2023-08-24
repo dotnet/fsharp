@@ -1227,6 +1227,11 @@
         <target state="translated">다음 필수 속성을 초기화해야 합니다. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
         <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
@@ -3880,11 +3885,6 @@
       <trans-unit id="tcFieldsDoNotDetermineUniqueRecordType">
         <source>The field labels and expected type of this record expression or pattern do not uniquely determine a corresponding record type</source>
         <target state="translated">이 레코드 식 또는 패턴의 필요한 형식 및 필드 레이블이 해당하는 레코드 형식을 고유하게 확인하지 않습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
-        <target state="needs-review-translation">'{0}' 필드가 이 레코드 식 또는 패턴에 두 번 나타납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">

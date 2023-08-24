@@ -1800,7 +1800,7 @@ let CheckRecdExprDuplicateFields (elems: Ident list) =
     elems |> List.iteri (fun i (uc1: Ident) -> 
         elems |> List.iteri (fun j (uc2: Ident) -> 
             if j > i && uc1.idText = uc2.idText then 
-               errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(uc1.idText), uc1.idRange))))
+               errorR (Error(FSComp.SR.tcMultipleFieldsInRecord(uc1.idText), uc1.idRange))))
 
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
