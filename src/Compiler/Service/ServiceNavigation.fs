@@ -168,7 +168,7 @@ module NavigationImpl =
         // Process let-binding
         let processBinding isMember enclosingEntityKind isAbstract synBinding =
             let (SynBinding (valData = valData; headPat = synPat; expr = synExpr)) = synBinding
-            let (SynValData (memberOpt, _, _)) = valData
+            let (SynValData (memberFlags = memberOpt)) = valData
 
             let m =
                 match synExpr with
@@ -811,7 +811,7 @@ module NavigateTo =
 
         let addBinding synBinding itemKind container =
             let (SynBinding (valData = valData; headPat = headPat)) = synBinding
-            let (SynValData (memberFlagsOpt, _, _)) = valData
+            let (SynValData (memberFlags = memberFlagsOpt)) = valData
 
             let kind =
                 match itemKind with

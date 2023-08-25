@@ -60,7 +60,7 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
 let rec TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] ExtraDotAfterIdentifier.No with
         | Item.NewDef _ ->
             // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
             None
@@ -309,11 +309,6 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
     | SynPat.Record (flds, m) ->
         TcRecordPat warnOnUpper cenv env vFlags patEnv ty flds m
 
-    | SynPat.DeprecatedCharRange (c1, c2, m) ->
-        errorR(Deprecated(FSComp.SR.tcUseWhenPatternGuard(), m))
-        UnifyTypes cenv env m ty g.char_ty
-        (fun _ -> TPat_range(c1, c2, m)), patEnv
-
     | SynPat.Null m ->
         TcNullPat cenv env patEnv ty m
 
@@ -441,7 +436,10 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
 
 and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     let fieldPats = fieldPats |> List.map (fun (fieldId, _, fieldPat) -> fieldId, fieldPat)
-    let tinst, tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty fieldPats m
+    match BuildFieldMap cenv env false ty fieldPats m with
+    | None -> (fun _ -> TPat_error m), patEnv
+    | Some(tinst, tcref, fldsmap, _fldsList) ->
+
     let gtyp = mkAppTy tcref tinst
     let inst = List.zip (tcref.Typars m) tinst
 
@@ -505,8 +503,9 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
         | _ -> AllIdsOK
 
     let mLongId = rangeOfLid longId
+    let extraDot = if longDotId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
 
-    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
     | Item.NewDef id ->
         TcPatLongIdentNewDef warnOnUpperForId warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (vis, id, args, m)
 

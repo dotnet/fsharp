@@ -353,7 +353,9 @@ val ResultD: x: 'T -> OperationResult<'T>
 
 val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
-val (++): res: OperationResult<'T> -> f: ('T -> OperationResult<'b>) -> OperationResult<'b>
+/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
+/// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>
+val bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
 val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
@@ -431,6 +433,8 @@ val NormalizeErrorString: text: string -> string
 type SuppressLanguageFeatureCheck =
     | Yes
     | No
+
+val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 

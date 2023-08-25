@@ -40,6 +40,7 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -878,6 +879,46 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
+    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
+        match optimizedImpls with
+        | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
+            ReportTime tcConfig ("TailCall Checks")
+
+            for f in checkedImplFileAfterOptimizations do
+                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
+
+    let refAssemblySignatureHash =
+        match tcConfig.emitMetadataAssembly with
+        | MetadataAssemblyGeneration.None -> None
+        | MetadataAssemblyGeneration.ReferenceOnly
+        | MetadataAssemblyGeneration.ReferenceOut _ ->
+            let hasIvt =
+                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
+                |> Option.isSome
+
+            let observer =
+                if hasIvt then
+                    Fsharp.Compiler.SignatureHash.PublicAndInternal
+                else
+                    Fsharp.Compiler.SignatureHash.PublicOnly
+
+            let optDataHash =
+                optDataResources
+                |> List.map (fun ilResource ->
+                    use s = ilResource.GetBytes().AsStream()
+                    let sha256 = System.Security.Cryptography.SHA256.Create()
+                    sha256.ComputeHash s)
+                |> List.sumBy hash
+
+            try
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
+                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
+                + optDataHash
+                |> Some
+            with e ->
+                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
+                None
+
     // Pass on only the minimum information required for the next phase
     Args(
         ctok,
@@ -898,7 +939,8 @@ let main3
         signingInfo,
         metadataVersion,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fourth phase of compilation.
@@ -924,7 +966,8 @@ let main4
            signingInfo,
            metadataVersion,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
     match tcImportsCapture with
     | None -> ()
@@ -1007,7 +1050,8 @@ let main4
         ilxMainModule,
         signingInfo,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fifth phase of compilation.
@@ -1024,7 +1068,8 @@ let main5
            ilxMainModule,
            signingInfo,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
 
     use _ = UseBuildPhase BuildPhase.Output
@@ -1040,7 +1085,20 @@ let main5
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
+    Args(
+        ctok,
+        tcConfig,
+        tcImports,
+        tcGlobals,
+        diagnosticsLogger,
+        ilxMainModule,
+        outfile,
+        pdbfile,
+        signingInfo,
+        exiter,
+        ilSourceDocs,
+        refAssemblySignatureHash
+    )
 
 /// Sixth phase of compilation.
 ///   -  write the binaries
@@ -1056,7 +1114,8 @@ let main6
            pdbfile,
            signingInfo,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
     ReportTime tcConfig "Write .NET Binary"
 
@@ -1111,6 +1170,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = true
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
+                            referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,
@@ -1141,6 +1201,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
+                            referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,

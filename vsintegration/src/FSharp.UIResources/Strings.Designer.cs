@@ -79,6 +79,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart).
+        /// </summary>
+        public static string Analyze_full_solution_on_background {
+            get {
+                return ResourceManager.GetString("Analyze_full_solution_on_background", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Background analysis.
+        /// </summary>
+        public static string Background_analysis {
+            get {
+                return ResourceManager.GetString("Background_analysis", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Block Structure Guides.
         /// </summary>
         public static string Block_Structure {
@@ -156,6 +174,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enable_Fast_Find_References {
             get {
                 return ResourceManager.GetString("Enable_Fast_Find_References", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to _Enable in-memory cross project references.
+        /// </summary>
+        public static string Enable_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
             }
         }
         
@@ -498,6 +525,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Time_until_stale_completion {
             get {
                 return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
             }
         }
         

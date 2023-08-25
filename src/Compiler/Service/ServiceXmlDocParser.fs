@@ -39,7 +39,6 @@ module XmlDocParsing =
         | SynPat.Wild _
         | SynPat.IsInst _
         | SynPat.QuoteExpr _
-        | SynPat.DeprecatedCharRange _
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 
@@ -47,11 +46,11 @@ module XmlDocParsing =
         let (SynBinding (valData = synValData; headPat = synPat)) = binding
 
         match synValData with
-        | SynValData (_, SynValInfo (curriedArgs, _), _) when not curriedArgs.IsEmpty ->
+        | SynValData(valInfo = SynValInfo (curriedArgInfos = curriedArgs)) when not curriedArgs.IsEmpty ->
             let parameters =
                 [
                     for args in curriedArgs do
-                        for (SynArgInfo (_, _, ident)) in args do
+                        for (SynArgInfo (ident = ident)) in args do
                             match ident with
                             | Some ident -> ident.idText
                             | None -> ()

@@ -21,6 +21,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
+open CancellableTasks
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -189,8 +190,12 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
+            let! ct = Async.CancellationToken |> liftAsync
+
             let! parseResults, checkFileResults =
                 context.Document.GetFSharpParseAndCheckResultsAsync(nameof (ImplementInterfaceCodeFixProvider))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let cancellationToken = context.CancellationToken
@@ -199,6 +204,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
 
             let! _, _, parsingOptions, _ =
                 context.Document.GetFSharpCompilationOptionsAsync(nameof (ImplementInterfaceCodeFixProvider))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
@@ -213,6 +220,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                     context.Document.FilePath,
                     defines,
                     langVersionOpt,
+                    parsingOptions.StrictIndentation,
                     context.CancellationToken
                 )
 
@@ -252,6 +260,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                     false,
                     false,
                     langVersionOpt,
+                    parsingOptions.StrictIndentation,
                     context.CancellationToken
                 )
 

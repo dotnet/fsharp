@@ -701,7 +701,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
         otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
         ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
-        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
         ostrings=Table<_>.Create "ostrings"
         onlerefs=Table<_>.Create "onlerefs"
         opubpaths=Table<_>.Create "opubpaths"
@@ -726,7 +726,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
        ostrings=Table<_>.Create "ostrings (fake)"
        opubpaths=Table<_>.Create "opubpaths (fake)"
        onlerefs=Table<_>.Create "onlerefs (fake)"
@@ -1790,32 +1790,88 @@ let u_istype st =
     | 2 -> Namespace true
     | _ -> ufailwith st "u_istype"
 
-let u_cpath  st = let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st in (CompPath(a, b))
+let u_cpath st =
+    let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st 
+    CompPath(a, b)
 
 let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
+
     match x with
-    | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
-    | TAsmRepr ilTy        -> p_byte 1 st; p_byte 2 st; p_ILType ilTy st; false
-    | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
-    | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
-    | TNoRepr              -> p_byte 0 st; false
+    // Records
+    | TFSharpTyconRepr { fsobjmodel_rfields = fs; fsobjmodel_kind = TFSharpRecord } ->
+        p_byte 1 st
+        p_byte 0 st
+        p_rfield_table fs st
+        false
+
+    // Unions without static fields
+    | TFSharpTyconRepr { fsobjmodel_cases = x; fsobjmodel_kind = TFSharpUnion; fsobjmodel_rfields = fs } when fs.FieldsByIndex.Length = 0 ->
+        p_byte 1 st
+        p_byte 1 st
+        p_array p_unioncase_spec x.CasesTable.CasesByIndex st
+        false
+
+    // Unions with static fields, added to format
+    | TFSharpTyconRepr ({ fsobjmodel_cases = cases; fsobjmodel_kind = TFSharpUnion } as r) ->
+        if st.oglobals.compilingFSharpCore then
+            let fields = r.fsobjmodel_rfields.FieldsByIndex
+            let firstFieldRange = fields[0].DefinitionRange
+            let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
+           
+        p_byte 2 st
+        p_array p_unioncase_spec cases.CasesTable.CasesByIndex st
+        p_tycon_objmodel_data r st
+        false
+
+    | TAsmRepr ilTy ->
+        p_byte 1 st
+        p_byte 2 st
+        p_ILType ilTy st
+        false
+
+    | TFSharpTyconRepr r  ->
+        p_byte 1 st
+        p_byte 3 st
+        p_tycon_objmodel_data r st
+        false
+
+    | TMeasureableRepr ty  ->
+        p_byte 1 st
+        p_byte 4 st
+        p_ty ty st
+        false
+
+    | TNoRepr ->
+        p_byte 0 st
+        false
+
 #if !NO_TYPEPROVIDERS
     | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr
-            p_byte 0 st; false
+            p_byte 0 st
+            false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
-    | TProvidedNamespaceRepr _ -> p_byte 0 st; false
+            p_byte 1 st
+            p_byte 2 st
+            p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st
+            true
+
+    | TProvidedNamespaceRepr _ ->
+        p_byte 0 st
+        false
 #endif
-    | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))
+
+    | TILObjectRepr (TILObjectReprData (_, _, td)) ->
+        error (Failure("Unexpected IL type definition"+td.Name))
 
 and p_tycon_objmodel_data x st =
-  p_tup3 p_tycon_objmodel_kind (p_vrefs "vslots") p_rfield_table
-    (x.fsobjmodel_kind, x.fsobjmodel_vslots, x.fsobjmodel_rfields) st
+  p_tycon_objmodel_kind x.fsobjmodel_kind st
+  p_vrefs "vslots" x.fsobjmodel_vslots st
+  p_rfield_table x.fsobjmodel_rfields st
 
 and p_attribs_ext f x st = p_list_ext f p_attrib x st
 
@@ -1940,6 +1996,14 @@ and p_tycon_objmodel_kind x st =
     | TFSharpStruct      -> p_byte 2 st
     | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TFSharpEnum        -> p_byte 4 st
+    | TFSharpUnion       -> 
+        if st.oglobals.compilingFSharpCore then
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 5 st
+    | TFSharpRecord      -> 
+        if st.oglobals.compilingFSharpCore then
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
+        p_byte 6 st
 
 and p_vrefFlags x st =
     match x with
@@ -1989,12 +2053,23 @@ and u_tycon_repr st =
     | 1 ->
         let tag2 = u_byte st
         match tag2 with
+        // Records historically use a different format to other FSharpTyconRepr
         | 0 ->
             let v = u_rfield_table st
-            (fun _flagBit -> TFSharpRecdRepr v)
+            (fun _flagBit ->
+                TFSharpTyconRepr
+                    {
+                        fsobjmodel_cases = Construct.MakeUnionCases []
+                        fsobjmodel_kind=TFSharpRecord
+                        fsobjmodel_vslots=[]
+                        fsobjmodel_rfields=v
+                    })
+
+        // Unions  without static fields historically use a different format to other FSharpTyconRepr
         | 1 ->
             let v = u_list u_unioncase_spec  st
             (fun _flagBit -> Construct.MakeUnionRepr v)
+
         | 2 ->
             let v = u_ILType st
             // This is the F# 3.0 extension to the format used for F# provider-generated types, which record an ILTypeRef in the format
@@ -2020,18 +2095,32 @@ and u_tycon_repr st =
                         TNoRepr
                 else
                     TAsmRepr v)
+
         | 3 ->
             let v = u_tycon_objmodel_data  st
-            (fun _flagBit -> TFSharpObjectRepr v)
+            (fun _flagBit -> TFSharpTyconRepr v)
+
         | 4 ->
             let v = u_ty st
             (fun _flagBit -> TMeasureableRepr v)
+
         | _ -> ufailwith st "u_tycon_repr"
+
+    // Unions with static fields use a different format to other FSharpTyconRepr
+    | 2 ->
+        let cases = u_array u_unioncase_spec st
+        let data = u_tycon_objmodel_data st
+        fun _flagBit -> TFSharpTyconRepr { data with fsobjmodel_cases = Construct.MakeUnionCases (Array.toList cases) }
     | _ -> ufailwith st "u_tycon_repr"
 
 and u_tycon_objmodel_data st =
     let x1, x2, x3 = u_tup3 u_tycon_objmodel_kind u_vrefs u_rfield_table st
-    {fsobjmodel_kind=x1; fsobjmodel_vslots=x2; fsobjmodel_rfields=x3 }
+    {
+        fsobjmodel_cases = Construct.MakeUnionCases []
+        fsobjmodel_kind=x1
+        fsobjmodel_vslots=x2
+        fsobjmodel_rfields=x3
+    }
 
 and u_attribs_ext extraf st = u_list_ext extraf u_attrib st
 and u_unioncase_spec st =
@@ -2223,6 +2312,8 @@ and u_tycon_objmodel_kind st =
     | 2 -> TFSharpStruct
     | 3 -> u_slotsig st |> TFSharpDelegate
     | 4 -> TFSharpEnum
+    | 5 -> TFSharpUnion
+    | 6 -> TFSharpRecord
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
 and u_vrefFlags st =

@@ -31,7 +31,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((9,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None),
                   Named (SynIdent (meh, None), false, None, (9,4--9,7)), None,
                   Const (Unit, (9,10--9,12)), (9,4--9,7), Yes (9,0--9,12),
                   { LeadingKeyword = Let (9,0--9,3)

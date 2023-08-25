@@ -377,18 +377,19 @@ type PhasedDiagnostic with
         | 1182 -> false // chkUnusedValue - off by default
         | 3180 -> false // abImplicitHeapAllocation - off by default
         | 3186 -> false // pickleMissingDefinition - off by default
-        | 3366 -> false //tcIndexNotationDeprecated - currently off by default
+        | 3366 -> false // tcIndexNotationDeprecated - currently off by default
         | 3517 -> false // optFailedToInlineSuggestedValue - off by default
         | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
         | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
+        | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
             | _ ->
-                (severity = FSharpDiagnosticSeverity.Info)
+                (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational
@@ -1188,6 +1189,7 @@ type Exception with
                 | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
                 | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
                 | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WHILE_BANG -> SR.GetString("Parser.TOKEN.WHILE.BANG")
                 | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
                 | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
                 | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")
@@ -1999,7 +2001,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
             // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
             | DiagnosticStyle.Default ->
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
-                let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
+                let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
                 (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
             // We may also want to change Test to be 1-based
@@ -2007,7 +2009,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace("/", "\\")
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
@@ -2015,7 +2017,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
@@ -2031,7 +2033,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                     let file = file.Replace("/", "\\")
 
                     let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                        withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                     sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                 else

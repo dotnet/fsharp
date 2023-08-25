@@ -377,7 +377,7 @@ match Unchecked.defaultof<System.ValueType> with
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(4,2--4,85): This rule will never be matched"
+        "(4,2--4,53): This rule will never be matched"
     ]
 
 [<Test>]
@@ -1164,8 +1164,8 @@ let ``As 19 - syntactical precedence matrix testing - valid syntactic patterns t
     let _, checkResults = getParseAndCheckResults70 """
 type I() = inherit System.Attribute()
 type M() = inherit I()
-let 'a'..'b' as c = 'd'
-let e as 'f'..'g' = 'h'
+
+
 let [<I>] j as k = 1
 let l as [<M>] n = 2
 let <@ o @> as p = 3
@@ -1178,10 +1178,6 @@ let y as ?z = 8
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(7,9--7,11): Unexpected symbol '[<' in binding"
-        "(4,4--4,12): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
-        "(4,4--4,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
-        "(5,9--5,17): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
-        "(5,4--5,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
         "(8,4--8,11): This is not a valid pattern"
         "(8,4--8,16): Incomplete pattern matches on this expression."
         "(9,9--9,16): This is not a valid pattern"
