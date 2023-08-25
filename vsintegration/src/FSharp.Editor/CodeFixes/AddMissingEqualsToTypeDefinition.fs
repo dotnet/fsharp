@@ -2,45 +2,50 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingEqualsToTypeDefinition); Shared>]
 type internal AddMissingEqualsToTypeDefinitionCodeFixProvider() =
     inherit CodeFixProvider()
 
     static let title = SR.AddMissingEqualsToTypeDefinition()
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3360")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0010"
 
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+    override this.RegisterCodeFixesAsync context =
+        // This is a performance shortcut.
+        // Since FS0010 fires all too often, we're just stopping any processing if it's a different error message.
+        // The code fix logic itself still has this logic and implements it more reliably.
+        if
+            context.Diagnostics
+            |> Seq.exists (fun d -> d.Descriptor.MessageFormat.ToString().Contains "=")
+        then
+            context.RegisterFsharpFix this
+        else
+            Task.CompletedTask
 
-            let mutable pos = context.Span.Start - 1
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! range = context.GetErrorRangeAsync()
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof AddMissingEqualsToTypeDefinitionCodeFixProvider)
 
-            // This won't ever actually happen, but eh why not
-            do! Option.guard (pos > 0)
+                if not <| parseResults.IsPositionWithinTypeDefinition range.Start then
+                    return ValueNone
 
-            let mutable ch = sourceText.[pos]
-
-            while pos > 0 && Char.IsWhiteSpace(ch) do
-                pos <- pos - 1
-                ch <- sourceText.[pos]
-
-            do
-                context.RegisterFsharpFix(
-                    CodeFix.AddMissingEqualsToTypeDefinition,
-                    title,
-                    // 'pos + 1' is here because 'pos' is now the position of the first non-whitespace character.
-                    // Using just 'pos' will creat uncompilable code.
-                    [| TextChange(TextSpan(pos + 1, 0), " =") |]
-                )
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                else
+                    return
+                        ValueSome
+                            {
+                                Name = CodeFix.AddMissingEqualsToTypeDefinition
+                                Message = title
+                                Changes = [ TextChange(TextSpan(context.Span.Start, 0), "= ") ]
+                            }
+            }

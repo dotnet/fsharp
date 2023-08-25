@@ -2,27 +2,33 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open CancellableTasks
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
     let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int) =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! defines, langVersion = document.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName) |> liftAsync
+            let! ct = Async.CancellationToken |> liftAsync
+
+            let! _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync(userOpName)
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
+                |> liftAsync
+
+            let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -41,6 +47,7 @@ module internal SymbolHelpers =
                     false,
                     false,
                     Some langVersion,
+                    strictIndentation,
                     cancellationToken
                 )
 
@@ -80,11 +87,15 @@ module internal SymbolHelpers =
                 // TODO: this needs to be a single event with a duration
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
-                do!
-                    projects
-                    |> Seq.map (fun project ->
-                        Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
-                    |> Task.WhenAll
+                let tasks =
+                    [|
+                        for project in projects do
+                            yield
+                                project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects")
+                                |> CancellableTask.startAsTask ct
+                    |]
+
+                do! Task.WhenAll tasks
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
@@ -161,71 +172,4 @@ module internal SymbolHelpers =
 
             let usesByDocumentId = symbolUsesWithDocumentId |> Seq.groupBy fst
             return usesByDocumentId.ToImmutableDictionary(fst, snd >> Seq.map snd >> Seq.toArray)
-        }
-
-    type OriginalText = string
-
-    // Note, this function is broken and shouldn't be used because the source text ranges to replace are applied sequentially,
-    // breaking the position computations as changes progress, especially if two changes are made on the same line.
-    //
-    // However, it is only currently used by ProposeUpperCaseLabel code fix, where the changes to code will rarely be on the same line.
-    //
-    // A better approach is to use something like createTextChangeCodeFix below, with a delayed function to compute a set of changes to be applied
-    // simultaneously.  But that doesn't work for this case, as we want a set of changes to apply acrosss the whole solution.
-
-    let changeAllSymbolReferences
-        (
-            document: Document,
-            symbolSpan: TextSpan,
-            textChanger: string -> string
-        ) : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
-        asyncMaybe {
-            let userOpName = "changeAllSymbolReferences"
-            do! Option.guard (symbolSpan.Length > 0)
-            let! cancellationToken = liftAsync Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let originalText = sourceText.ToString(symbolSpan)
-            do! Option.guard (originalText.Length > 0)
-
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(symbolSpan.Start, SymbolLookupKind.Greedy, false, false, userOpName)
-            let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
-            let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
-
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-
-            let! symbolUse =
-                checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    symbol.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    symbol.FullIsland
-                )
-
-            let newText = textChanger originalText
-            // defer finding all symbol uses throughout the solution
-            return
-                Func<_, _>(fun (cancellationToken: CancellationToken) ->
-                    async {
-                        let! symbolUsesByDocumentId = getSymbolUsesInSolution (symbolUse, checkFileResults, document)
-
-                        let mutable solution = document.Project.Solution
-
-                        for KeyValue (documentId, symbolUses) in symbolUsesByDocumentId do
-                            let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                            let mutable sourceText = sourceText
-
-                            for symbolUse in symbolUses do
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                | None -> ()
-                                | Some span ->
-                                    let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                    sourceText <- sourceText.Replace(textSpan, newText)
-                                    solution <- solution.WithDocumentText(documentId, sourceText)
-
-                        return solution
-                    }
-                    |> RoslynHelpers.StartAsyncAsTask cancellationToken),
-                originalText
         }

@@ -1,3 +1,7 @@
 <Project>
   <!-- empty to prevent directory crawling -->
+    <PropertyGroup>
+        <NuGetAudit>false</NuGetAudit>
+    </PropertyGroup>
+
 </Project>

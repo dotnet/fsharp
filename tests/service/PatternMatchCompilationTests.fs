@@ -377,7 +377,7 @@ match Unchecked.defaultof<System.ValueType> with
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(4,2--4,85): This rule will never be matched"
+        "(4,2--4,53): This rule will never be matched"
     ]
 
 [<Test>]

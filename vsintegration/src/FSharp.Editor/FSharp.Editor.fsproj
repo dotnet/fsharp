@@ -103,6 +103,7 @@
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctions.fs" />
@@ -125,13 +126,15 @@
     <Compile Include="CodeFixes\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFixes\RemoveSuperflousCaptureForUnionCaseWithNoData.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoData.fs" />
     <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
-    <Compile Include="CodeFixes\RenameUnusedValue.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
     <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFixes\MissingReferenceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
     <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />

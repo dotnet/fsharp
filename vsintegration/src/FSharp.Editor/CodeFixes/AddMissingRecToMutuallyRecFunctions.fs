@@ -22,14 +22,14 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
     interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync document span =
+        member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
 
-                let! defines, langVersion =
-                    document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider))
+                let! defines, langVersion, strictIndentation =
+                    context.Document.GetFsharpParsingOptionsAsync(nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider))
 
-                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! sourceText = context.GetSourceTextAsync()
 
                 let funcStartPos =
                     let rec loop ch pos =
@@ -38,27 +38,29 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                         else
                             loop sourceText.[pos + 1] (pos + 1)
 
-                    loop sourceText.[span.End + 1] (span.End + 1)
+                    loop sourceText.[context.Span.End + 1] (context.Span.End + 1)
 
                 return
                     Tokenizer.getSymbolAtPosition (
-                        document.Id,
+                        context.Document.Id,
                         sourceText,
                         funcStartPos,
-                        document.FilePath,
+                        context.Document.FilePath,
                         defines,
                         SymbolLookupKind.Greedy,
                         false,
                         false,
                         Some langVersion,
+                        strictIndentation,
                         cancellationToken
                     )
-                    |> Option.bind (fun funcLexerSymbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
-                    |> Option.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
-                    |> Option.map (fun funcName ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun funcLexerSymbol -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
+                    |> ValueOption.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
+                    |> ValueOption.map (fun funcName ->
                         {
                             Name = CodeFix.AddMissingRecToMutuallyRecFunctions
                             Message = String.Format(titleFormat, funcName)
-                            Changes = [ TextChange(TextSpan(span.End, 0), " rec") ]
+                            Changes = [ TextChange(TextSpan(context.Span.End, 0), " rec") ]
                         })
             }

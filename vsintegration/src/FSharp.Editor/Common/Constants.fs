@@ -133,6 +133,9 @@ module internal CodeFix =
     let ChangeToUpcast = "ChangeToUpcast"
 
     [<Literal>]
+    let ChangeEqualsInFieldTypeToColon = "ChangeEqualsInFieldTypeToColon"
+
+    [<Literal>]
     let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
 
     [<Literal>]
@@ -166,6 +169,9 @@ module internal CodeFix =
 
     [<Literal>]
     let AddMissingFunKeyword = "AddMissingFunKeyword"
+
+    [<Literal>]
+    let ProposeUppercaseLabel = "ProposeUppercaseLabel"
 
     [<Literal>]
     let AddNewKeyword = "AddNewKeyword"

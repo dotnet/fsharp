@@ -4,77 +4,34 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
-open System.Threading
-open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
 open FSharp.Compiler.Diagnostics
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FixIndexerAccess); Shared>]
-type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
-    inherit CodeFixProvider()
-
-    static let title = CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot
-
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3217")
-
-    override _.RegisterCodeFixesAsync context : Task =
-        async {
-            let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
-
-            context.Diagnostics
-            |> Seq.iter (fun diagnostic ->
-
-                let span, replacement =
-                    try
-                        let mutable span = context.Span
-
-                        let notStartOfBracket (span: TextSpan) =
-                            let t = sourceText.GetSubText(TextSpan(span.Start, span.Length + 1))
-                            t.[t.Length - 1] <> '['
-
-                        // skip all braces and blanks until we find [
-                        while span.End < sourceText.Length && notStartOfBracket span do
-                            span <- TextSpan(span.Start, span.Length + 1)
-
-                        span, sourceText.GetSubText(span).ToString()
-                    with _ ->
-                        context.Span, sourceText.GetSubText(context.Span).ToString()
-
-                do
-                    context.RegisterFsharpFix(
-                        CodeFix.FixIndexerAccess,
-                        title,
-                        [| TextChange(span, replacement.TrimEnd() + ".") |],
-                        ImmutableArray.Create(diagnostic)
-                    ))
-        }
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveIndexerDotBeforeBracket); Shared>]
-type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
+type internal RemoveDotFromIndexerAccessOptInCodeFixProvider() =
     inherit CodeFixProvider()
 
     static let title =
         CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
 
-    member this.GetChanges(_document: Document, diagnostics: ImmutableArray<Diagnostic>, _ct: CancellationToken) =
-        backgroundTask {
-            let changes =
-                diagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan, ""))
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS3366"
 
-            return changes
-        }
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3366")
+    override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
-    override _.RegisterCodeFixesAsync ctx : Task =
-        backgroundTask {
-            let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
-            ctx.RegisterFsharpFix(CodeFix.RemoveIndexerDotBeforeBracket, title, changes)
-        }
-
-    override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveIndexerDotBeforeBracket this.GetChanges
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            CancellableTask.singleton (
+                ValueSome
+                    {
+                        Name = CodeFix.RemoveIndexerDotBeforeBracket
+                        Message = title
+                        Changes = [ TextChange(context.Span, "") ]
+                    }
+            )
