@@ -688,7 +688,7 @@ let rec MapD_loop f acc xs =
     | h :: t -> f h |> bind (fun x -> MapD_loop f (x :: acc) t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
-let inline MapD f xs = MapD_loop f [] xs
+let MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
     member inline x.Bind(res, k) = bind k res
@@ -698,7 +698,7 @@ type TrackErrorsBuilder() =
     member inline x.Combine(expr1, expr2) = bind expr2 expr1
     member inline x.While(gd, k) = WhileD gd k
     member inline x.Zero() = CompleteD
-    member inline x.Delay (fn: unit -> _) = fn
+    member inline x.Delay(fn: unit -> _) = fn
     member inline x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()

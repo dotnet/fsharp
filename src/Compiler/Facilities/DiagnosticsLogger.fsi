@@ -362,7 +362,7 @@ val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult
 
 val WhileD: gd: (unit -> bool) -> body: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-val inline MapD: f: ('T -> OperationResult<'b>) -> xs: 'T list -> OperationResult<'b list>
+val MapD: f: ('T -> OperationResult<'b>) -> xs: 'T list -> OperationResult<'b list>
 
 type TrackErrorsBuilder =
 
