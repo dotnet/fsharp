@@ -188,15 +188,15 @@ module internal ClassificationDefinitions =
         do VSColorTheme.add_ThemeChanged handler
 
         member _.GetColor(ctype) =
-            match customColorData |> List.tryFind (fun item -> item.ClassificationName = ctype) with
-            | Some item ->
+            match customColorData |> List.tryFindV (fun item -> item.ClassificationName = ctype) with
+            | ValueSome item ->
                 let light, dark = item.LightThemeColor, item.DarkThemeColor
 
                 match getCurrentThemeId () with
                 | LightTheme -> Nullable light
                 | DarkTheme -> Nullable dark
                 | UnknownTheme -> Nullable()
-            | None -> Nullable()
+            | ValueNone -> Nullable()
 
         interface ISetThemeColors with
             member _.SetColors() = setColors ()

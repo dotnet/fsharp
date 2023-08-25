@@ -134,7 +134,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,5): This union case does not take arguments"
+        "(7,2--7,5): Pattern discard is not allowed for union case that takes no data."
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'B (_)' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -377,7 +377,7 @@ match Unchecked.defaultof<System.ValueType> with
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(4,2--4,85): This rule will never be matched"
+        "(4,2--4,53): This rule will never be matched"
     ]
 
 [<Test>]

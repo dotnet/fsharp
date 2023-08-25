@@ -338,28 +338,45 @@ type RoslynTestHelpers private () =
 
         solution, checker
 
-    static member GetFsDocument code =
-        // without this lib some symbols are not loaded
+    static member GetFsDocument(code, ?customProjectOption: string) =
+        let customProjectOptions =
+            customProjectOption
+            |> Option.map (fun o -> [| o |])
+            |> Option.defaultValue (Array.empty)
+
         let options =
             { RoslynTestHelpers.DefaultProjectOptions with
-                OtherOptions = [| "--targetprofile:netcore" |]
+                OtherOptions =
+                    [|
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    |]
+                    |> Array.append customProjectOptions
             }
 
         RoslynTestHelpers.CreateSolution(code, options = options)
         |> RoslynTestHelpers.GetSingleDocument
 
     static member GetFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        let projectId = ProjectId.CreateNewId()
-        let projFilePath = "C:\\test.fsproj"
-
-        let fsiDocInfo =
-            RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
-
-        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
-
         let projInfo =
-            RoslynTestHelpers.CreateProjectInfo projectId projFilePath [ fsiDocInfo; fsDocInfo ]
+            { SyntheticProject.Create(
+                  { sourceFile "test" [] with
+                      SignatureFile = Custom fsiCode
+                      Source = fsCode
+                  }
+              ) with
 
-        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+                AutoAddModules = false
+                SkipInitialCheck = true
+                OtherOptions =
+                    [
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    ]
+            }
+
+        let solution, _ = RoslynTestHelpers.CreateSolution projInfo
         let project = solution.Projects |> Seq.exactlyOne
+
         project.Documents
+        |> Seq.sortWith (fun d1 _ -> if d1.IsFSharpSignatureFile then -1 else 1)

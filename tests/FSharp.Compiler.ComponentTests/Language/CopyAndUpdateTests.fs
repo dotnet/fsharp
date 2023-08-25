@@ -13,7 +13,7 @@ type RecTy = { D: NestdRecTy; E: string option }
 
 let t2 x = { x with D.B = "a"; D.B = "b" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -33,7 +33,7 @@ let t2 x = { x with D.B = "a" }
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
 
 [<Fact>]
@@ -49,7 +49,7 @@ type RecTy = { D: NestdRecTy; E: string option }
 
 let t2 x = { x with D.B.A = 1; D.C = "ads" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withNoDebug
     |> withOptimize
     |> compile
@@ -106,7 +106,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -127,7 +127,7 @@ let expected = { ``A.B`` = "barAB"; A = { B = "barB" }; C = 42 }
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -156,7 +156,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -168,18 +168,18 @@ module CopyAndUpdateTests
 [<Struct>]
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+type NestdRecTy = { B: string; C: AnotherNestedRecTy; G: int; H: int }
 
 [<Struct>]
 type RecTy = { D: NestdRecTy; E: string option; F: int }
 
-let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None; F = 42 }
+let t1 = { D = { B = "t1"; C = { A = 1 }; G = 0; H = 0 }; E = None; F = 42 }
 
-let actual1 = { t1 with D.B = "t2" }
-let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None; F = 42 }
+let actual1 = { t1 with D.B = "t2"; D.G = 3; D.H = 1 }
+let expected1 = { D = { B = "t2"; C = { A = 1 }; G = 3; H = 1 }; E = None; F = 42 }
 
-let actual2 = { t1 with D.C.A = 3; E = Some "a" }
-let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a"; F = 42 }
+let actual2 = { t1 with D.C.A = 3; E = Some "a"; D.G = 2; D.H = 3 }
+let expected2 = { D = { B = "t1"; C = { A = 3 }; G = 2; H = 3 }; E = Some "a"; F = 42 }
 
 if actual1 <> expected1 then
     failwith "actual1 does not equal expected1"
@@ -187,7 +187,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -196,13 +196,13 @@ let ``Nested copy-and-update correctly updates fields in anonymous record``() =
     FSharp """
 module CopyAndUpdateTests
 
-let t1 = {| D = {| B = "t1"; C = struct {| A = 1 |} |}; E = Option<string>.None |}
+let t1 = {| D = {| B = "t1"; C = struct {| A = 1 |}; G = 0 |}; E = Option<string>.None |}
 
-let actual1 = {| t1 with D.B = "t2" |}
-let expected1 = {| D = {| B = "t2"; C = struct {| A = 1 |} |}; E = None |}
+let actual1 = {| t1 with D.B = "t2"; D.G = 3 |}
+let expected1 = {| D = {| B = "t2"; C = struct {| A = 1 |}; G = 3 |}; E = None |}
 
-let actual2 = {| t1 with D.C.A = 3; E = Some "a" |}
-let expected2 = {| D = {| B = "t1"; C = struct {| A = 3 |} |}; E = Some "a" |}
+let actual2 = {| t1 with D.C.A = 3; E = Some "a"; D.G = 2 |}
+let expected2 = {| D = {| B = "t1"; C = struct {| A = 3 |}; G = 2 |}; E = Some "a" |}
 
 if actual1 <> expected1 then
     failwith "actual1 does not equal expected1"
@@ -210,7 +210,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -247,7 +247,7 @@ let c3 = { U.G.U = Unchecked.defaultof<_>; I = 3 }
 
 let c4 = { U.U = Unchecked.defaultof<_>; I = 3 }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -268,7 +268,7 @@ let expected = { T = "a"; I = -1; U = {| a = { T = "a"; I = 2; U = {| a = { T = 
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -289,7 +289,7 @@ let actual1 = { t1 with D.B = 1 }
 
 let actual2 = { t1 with D.C.A = 3; E = Some 1.0 }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResults [
@@ -333,7 +333,7 @@ let expected = {| R = { D = 2; E = None }; S = "May I be a string now?"; T = 4 |
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -346,7 +346,7 @@ type RecTy = { D: int; E: {| A: int |} }
 
 let f x = { x with E.A = "May I be a string now?" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResult {
@@ -378,7 +378,7 @@ let t5 (x: {| a: int; b: NestdRecTy |}) = {| x with b.C = "a" |}
 let t6 (x: {| a: int; b: NestdRecTy |}) = {| x with b.G.b = "a" |}
 let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [

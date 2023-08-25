@@ -492,6 +492,20 @@ module Range =
             else
                 m
 
+    let withStartEnd (startPos: Position) (endPos: Position) (r: range) = range (r.FileIndex, startPos, endPos)
+
+    let withStart (startPos: Position) (r: range) = range (r.FileIndex, startPos, r.End)
+
+    let withEnd (endPos: Position) (r: range) = range (r.FileIndex, r.Start, endPos)
+
+    let shiftStart (lineDelta: int) (columnDelta: int) (r: range) =
+        let shiftedStart = mkPos (r.Start.Line + lineDelta) (r.StartColumn + columnDelta)
+        range (r.FileIndex, shiftedStart, r.End)
+
+    let shiftEnd (lineDelta: int) (columnDelta: int) (r: range) =
+        let shiftedEnd = mkPos (r.End.Line + lineDelta) (r.EndColumn + columnDelta)
+        range (r.FileIndex, r.Start, shiftedEnd)
+
     let rangeContainsRange (m1: range) (m2: range) =
         m1.FileIndex = m2.FileIndex && posGeq m2.Start m1.Start && posGeq m1.End m2.End
 

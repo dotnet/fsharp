@@ -21,7 +21,8 @@ ImplFile
                      Range = (2,4--2,15) }],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
+                     None),
                   Paren
                     (LongIdent
                        (SynLongIdent ([A], [], [None]), None, None,

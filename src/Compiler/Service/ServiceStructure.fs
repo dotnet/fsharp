@@ -62,7 +62,7 @@ module Structure =
         | [] -> other
         | ls ->
             ls
-            |> List.map (fun (SynTyparDecl (_, typarg)) -> typarg.Range)
+            |> List.map (fun (SynTyparDecl (typar = typarg)) -> typarg.Range)
             |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
@@ -431,7 +431,8 @@ module Structure =
                         parseExpr elseExpr
                 | None -> ()
 
-            | SynExpr.While (_, _, e, r) ->
+            | SynExpr.While (_, _, e, r)
+            | SynExpr.WhileBang (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
 
@@ -562,19 +563,15 @@ module Structure =
                     binding
 
                 match valData with
-                | SynValData (Some {
-                                       MemberKind = SynMemberKind.Constructor
-                                   },
-                              _,
-                              _) ->
+                | SynValData(memberFlags = Some {
+                                                    MemberKind = SynMemberKind.Constructor
+                                                }) ->
                     let collapse = Range.endToEnd synPat.Range d.Range
                     rcheck Scope.New Collapse.Below d.Range collapse
 
-                | SynValData (Some {
-                                       MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
-                                   },
-                              _,
-                              _) ->
+                | SynValData(memberFlags = Some {
+                                                    MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
+                                                }) ->
                     let range = mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
 
                     let collapse =
