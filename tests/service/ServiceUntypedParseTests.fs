@@ -291,7 +291,7 @@ type T =
 type T =
     member val Property1 = "" with get, set
 """
-        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 29) ]
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 43) ]
 
     
     [<Test>]

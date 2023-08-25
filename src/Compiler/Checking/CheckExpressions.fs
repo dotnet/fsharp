@@ -4511,19 +4511,21 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
         else
             let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
             TType_tuple(tupInfo, argsR), tpenv
+            
+and CheckAnonRecdTypeDuplicateFields (elems: Ident array) =
+    elems |> Array.iteri (fun i (uc1: Ident) -> 
+        elems |> Array.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR(Error(FSComp.SR.tcAnonRecdTypeDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 and TcAnonRecdType (cenv: cenv) newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
+    let unsortedFieldIds = args |> List.map fst |> List.toArray
+    if unsortedFieldIds.Length > 1 then
+        CheckAnonRecdTypeDuplicateFields unsortedFieldIds
     let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
-    let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
-
-    // Check for duplicate field IDs
-    unsortedFieldIds
-    |> Array.countBy (fun fieldId -> fieldId.idText)
-    |> Array.iter (fun (idText, count) ->
-        if count > 1 then error (Error (FSComp.SR.tcAnonRecdTypeDuplicateFieldId(idText), m)))
 
     // Sort into canonical order
     let sortedFieldTys, sortedCheckedArgTys = List.zip args argsR |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
@@ -5774,10 +5776,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.WhileBang (range = m)
     | SynExpr.LetOrUseBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
-
-    // Part of 'T.Ident
-    | SynExpr.Typar (typar, m) ->
-        TcTyparExprThen cenv overallTy env tpenv typar m []
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
@@ -7495,21 +7493,26 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             | None -> expr
         expr, tpenv
 
+and CheckAnonRecdExprDuplicateFields (elems: Ident array) = 
+    elems |> Array.iteri (fun i (uc1: Ident) -> 
+        elems |> Array.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR(Error (FSComp.SR.tcAnonRecdDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 // Check '{| .... |}'
 and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
-
-    // Check for duplicate field IDs
-    unsortedFieldIdsAndSynExprsGiven
-    |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)
-    |> List.iter (fun (label, count) ->
-        if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
-
     match optOrigSynExpr with
     | None ->
         TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
     | Some orig ->
+        // Ideally we should also check for duplicate field IDs in the TcCopyAndUpdateAnonRecdExpr case, but currently the logic is too complex to garante a proper error reporting
+        // So here we error instead errorR to avoid cascading  internal errors
+        unsortedFieldIdsAndSynExprsGiven
+        |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)
+        |> List.iter (fun (label, count) ->
+            if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
+
         TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
 and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
@@ -7518,6 +7521,9 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
     let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, fieldExpr) -> fieldExpr)
     let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (synLongIdent, _, _) -> synLongIdent.LongIdent[0]) |> List.toArray
     let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
+
+    if unsortedFieldIds.Length > 1 then
+        CheckAnonRecdExprDuplicateFields unsortedFieldIds
 
     // Sort into canonical order
     let sortedIndexedArgs =

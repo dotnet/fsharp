@@ -16,8 +16,16 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 
 open CancellableTasks
+
+module internal MutableCodeFixHelper =
+    let getLineNumberAndText (sourceText: SourceText) position =
+        let textLine = sourceText.Lines.GetLineFromPosition position
+        let textLinePos = sourceText.Lines.GetLinePosition position
+        let fcsTextLineNumber = Line.fromZ textLinePos.Line
+        fcsTextLineNumber, textLine.ToString()
 
 module internal UnusedCodeFixHelper =
     let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
