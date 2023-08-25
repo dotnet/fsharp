@@ -343,48 +343,48 @@ val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
-val ErrorD: err: exn -> OperationResult<'T>
+val inline ErrorD: err: exn -> OperationResult<'T>
 
-val WarnD: err: exn -> OperationResult<unit>
+val inline WarnD: err: exn -> OperationResult<unit>
 
 val CompleteD: OperationResult<unit>
 
-val ResultD: x: 'T -> OperationResult<'T>
+val inline ResultD: x: 'T -> OperationResult<'T>
 
 val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue.
 /// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>
-val bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
+val inline bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
 val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
 
 val WhileD: gd: (unit -> bool) -> body: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-val MapD: f: ('T -> OperationResult<'b>) -> xs: 'T list -> OperationResult<'b list>
+val inline MapD: f: ('T -> OperationResult<'b>) -> xs: 'T list -> OperationResult<'b list>
 
 type TrackErrorsBuilder =
 
     new: unit -> TrackErrorsBuilder
 
-    member Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
+    member inline Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
 
-    member Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
+    member inline Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
 
-    member Delay: fn: (unit -> 'b) -> (unit -> 'b)
+    member inline Delay: fn: (unit -> 'b) -> (unit -> 'b)
 
-    member For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
+    member inline For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Return: res: 'g -> OperationResult<'g>
+    member inline Return: res: 'g -> OperationResult<'g>
 
-    member ReturnFrom: res: 'f -> 'f
+    member inline ReturnFrom: res: 'f -> 'f
 
-    member Run: fn: (unit -> 'T) -> 'T
+    member inline Run: fn: (unit -> 'T) -> 'T
 
-    member While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
+    member inline While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Zero: unit -> OperationResult<unit>
+    member inline Zero: unit -> OperationResult<unit>
 
 val trackErrors: TrackErrorsBuilder
 

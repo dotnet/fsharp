@@ -644,13 +644,13 @@ let CommitOperationResult res =
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
-let ErrorD err = ErrorResult([], err)
+let inline ErrorD err = ErrorResult([], err)
 
-let WarnD err = OkResult([ err ], ())
+let inline WarnD err = OkResult([ err ], ())
 
 let CompleteD = OkResult([], ())
 
-let ResultD x = OkResult([], x)
+let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
@@ -658,7 +658,7 @@ let CheckNoErrorsAndGetWarnings res =
     | ErrorResult _ -> None
 
 [<DebuggerHidden; DebuggerStepThrough>]
-let bind f res =
+let inline bind f res =
     match res with
     | OkResult ([], res) -> (* tailcall *) f res
     | OkResult (warns, res) ->
@@ -688,18 +688,18 @@ let rec MapD_loop f acc xs =
     | h :: t -> f h |> bind (fun x -> MapD_loop f (x :: acc) t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
-let MapD f xs = MapD_loop f [] xs
+let inline MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
-    member x.Bind(res, k) = bind k res
-    member x.Return res = ResultD res
-    member x.ReturnFrom res = res
-    member x.For(seq, k) = IterateD k seq
-    member x.Combine(expr1, expr2) = bind expr2 expr1
-    member x.While(gd, k) = WhileD gd k
-    member x.Zero() = CompleteD
-    member x.Delay fn = fun () -> fn ()
-    member x.Run fn = fn ()
+    member inline x.Bind(res, k) = bind k res
+    member inline x.Return res = ResultD res
+    member inline x.ReturnFrom res = res
+    member inline x.For(seq, k) = IterateD k seq
+    member inline x.Combine(expr1, expr2) = bind expr2 expr1
+    member inline x.While(gd, k) = WhileD gd k
+    member inline x.Zero() = CompleteD
+    member inline x.Delay (fn: unit -> _) = fn
+    member inline x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()
 
