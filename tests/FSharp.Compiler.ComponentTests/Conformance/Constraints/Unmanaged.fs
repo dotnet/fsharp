@@ -358,7 +358,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         |> withDiagnostics [
         (Error 43, Line 1, Col 34, Line 1, Col 48, "The constraints 'unmanaged' and 'not struct' are inconsistent")]
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Multi constraint IL test together with struct and interface constraints`` () =
         Fsx "[<Struct;NoEquality;NoComparison>] type Test<'T when 'T: unmanaged and 'T: struct and 'T:>System.IComparable> = struct end"
         |> withLangVersionPreview
@@ -379,14 +379,12 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
         .param type T 
-          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
       } 
     
-    } """;"""
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
-       extends [runtime]System.Attribute"""]
+    } """]
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``IsUnmanagedAttribute Attribute is emitted for function with unmanaged constraint`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = struct(x,1)"
         |> withLangVersionPreview
@@ -397,7 +395,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
               testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
       {
         .param type TUnmanaged 
-          .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -420,7 +418,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
 open CsLib
 let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         """     |> withReferences [csLib]
-                |> withLangVersionPreview
+                |> withLangVersion80
 
         app
         |> compile
@@ -451,13 +449,13 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         """     |> withReferences [csLib]
 
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> asExe
         |> compile
         |> run
         |> verifyOutput "MultiCaseUnion"
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``FSharp generates modreq for CSharp to consume in preview`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
         |> withLangVersionPreview
@@ -467,7 +465,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
       .method public static void  testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
   {
     .param type TUnmanaged 
-      .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ret
