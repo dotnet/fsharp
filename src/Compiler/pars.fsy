@@ -236,7 +236,8 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* start with lowest */
 
-%nonassoc prec_bar_null
+/* for appType BAR NULL to not override DU declaration or pattern matching */
+%left prec_bar_null
 
 %nonassoc prec_args_error            /* less than RPAREN */
 %nonassoc prec_atomexpr_lparen_error /* less than RPAREN */
@@ -349,6 +350,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left AND_BANG
 %left AMP AMP_AMP
 %nonassoc pat_conj
+%nonassoc path_disj
 %nonassoc expr_not
 %left COLON_GREATER COLON_QMARK_GREATER
 %left INFIX_COMPARE_OP DOLLAR LESS GREATER EQUALS INFIX_BAR_OP INFIX_AMP_OP
@@ -374,7 +376,8 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_TYAPP
 
 %nonassoc prec_interaction_empty
-%nonassoc multiple_union_cases
+%nonassoc prec_union_case_declaration
+%nonassoc prec_multiple_union_cases
 
 %%
 
@@ -2627,22 +2630,22 @@ unionTypeRepr:
   | barAndgrabXmlDoc attrUnionCaseDecls
      { $2 $1 }
 
-  | firstUnionCaseDeclOfMany barAndgrabXmlDoc attrUnionCaseDecls
+  | firstUnionCaseDeclOfMany barAndgrabXmlDoc attrUnionCaseDecls %prec prec_multiple_union_cases
      { $1 :: $3 $2 }
 
   | firstUnionCaseDecl
      { [$1] }
 
 barAndgrabXmlDoc:
-  | BAR %prec multiple_union_cases
+  | BAR %prec prec_multiple_union_cases
      { let mBar = rhs parseState 1
        grabXmlDoc(parseState, [], 1), mBar }
 
 attrUnionCaseDecls:
-  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls %prec multiple_union_cases
+  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls %prec prec_multiple_union_cases
      { (fun xmlDocAndBar -> $1 xmlDocAndBar :: $3 $2) }
 
-  | attrUnionCaseDecl
+  | attrUnionCaseDecl %prec IDENT
      { (fun xmlDocAndBar -> [ $1 xmlDocAndBar ]) }
 
 /* The core of a union case definition */
@@ -2675,7 +2678,7 @@ attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName OF recover
       { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
 
-  | opt_attributes opt_access unionCaseName COLON topType %prec multiple_union_cases
+  | opt_attributes opt_access unionCaseName COLON topType
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) (rhs2 parseState 1 5) >> Choice2Of2 }
 
@@ -2693,12 +2696,12 @@ unionCaseName:
   | nameop
       { $1 }
 
-  | LPAREN COLON_COLON rparen
+  | LPAREN COLON_COLON rparen %prec IDENT
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3
         SynIdent(ident(opNameCons, rhs parseState 2), Some(IdentTrivia.OriginalNotationWithParen(lpr, "::", rpr))) }
 
-  | LPAREN LBRACK RBRACK rparen
+  | LPAREN LBRACK RBRACK rparen %prec IDENT
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3
         SynIdent(ident(opNameNil, rhs2 parseState 2 3), Some(IdentTrivia.OriginalNotationWithParen(lpr, "[]", rpr))) }
@@ -2726,6 +2729,13 @@ firstUnionCaseDecl:
         let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
         Choice2Of2(SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
+
+  | unionCaseName COLON topType
+      { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
+        let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        Choice2Of2(SynUnionCase([], $1, SynUnionCaseKind.FullType $3, xmlDoc, None, mDecl, trivia)) }
 
   | ident OF recover
       { let trivia: SynUnionCaseTrivia = { BarRange = None }
@@ -3405,7 +3415,7 @@ headBindingPattern:
   | headBindingPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | headBindingPattern BAR headBindingPattern
+  | headBindingPattern BAR headBindingPattern %prec path_disj
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -3683,7 +3693,7 @@ parenPattern:
   | parenPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | parenPattern BAR parenPattern
+  | parenPattern BAR parenPattern %prec path_disj
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -4548,7 +4558,7 @@ withPatternClauses:
   | patternClauses
       { $1 None }
 
-  | BAR patternClauses
+  | BAR patternClauses %prec path_disj
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
@@ -5644,7 +5654,7 @@ topTupleType:
         let path = SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Star mStar :: (List.map fst $2)
         mkSynTypeTuple path, List.choose snd $2 }
 
-  | topAppType
+  | topAppType %prec IDENT
      { let ty, mdata = $1
        ty, [mdata] }
 
