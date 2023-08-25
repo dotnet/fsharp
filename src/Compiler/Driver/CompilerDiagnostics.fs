@@ -2001,7 +2001,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
             // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
             | DiagnosticStyle.Default ->
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
-                let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
+                let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
                 (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
             // We may also want to change Test to be 1-based
@@ -2009,7 +2009,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace("/", "\\")
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
@@ -2017,7 +2017,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
@@ -2033,7 +2033,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                     let file = file.Replace("/", "\\")
 
                     let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                        withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                     sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                 else

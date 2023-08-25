@@ -220,7 +220,7 @@ module internal ParameterLocationsImpl =
                        _pf,
                        wholem) ->
             let lidm = lidwd.Range
-            let betweenTheBrackets = mkRange wholem.FileName mLess.Start wholem.End
+            let betweenTheBrackets = withStart mLess.Start wholem
 
             if
                 SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos
@@ -290,7 +290,7 @@ module internal ParameterLocationsImpl =
                         match fResult with
                         | Some _ -> fResult
                         | _ ->
-                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
+                            let typeArgsm = withEnd wholem.End mLess
 
                             if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                                 // We found it, dig out ident
@@ -344,7 +344,7 @@ module internal ParameterLocationsImpl =
                         match traverseSynExpr synExpr with
                         | Some _ as r -> r
                         | None ->
-                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
+                            let typeArgsm = withEnd wholem.End mLess
 
                             if
                                 SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos
