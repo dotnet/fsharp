@@ -1372,6 +1372,11 @@
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
         <target state="translated">'{0}' normalde genel kodda tür kısıtlaması olarak kullanılır, ör. \"'T when ISomeInterface&lt;'T&gt;\" veya \"let f (x: #ISomeInterface&lt;_&gt;)\". Rehber için bkz. https://aka.ms/fsharp-iwsams. '#nowarn \"3536\"' veya '--nowarn:3536' kullanarak bu uyarıyı devre dışı bırakabilirsiniz.</target>

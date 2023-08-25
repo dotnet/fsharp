@@ -2783,6 +2783,17 @@ unionCaseReprElement:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        mkSynAnonField ($1, xmlDoc) }
 
+  | ident COLON invalidUseOfAppTypeFunction
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+       reportParseErrorAt ($3 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+       mkSynNamedField ($1, $3, xmlDoc, mWhole) }
+
+  | invalidUseOfAppTypeFunction
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       reportParseErrorAt ($1 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+       mkSynAnonField ($1, xmlDoc) }
+
 unionCaseRepr:
   | braceFieldDeclList
      { errorR(Deprecated(FSComp.SR.parsConsiderUsingSeparateRecordType(), lhs parseState))
@@ -5776,6 +5787,31 @@ topAppType:
 
   | appType
      { $1, SynArgInfo([], false, None) }
+
+/* Grammar rule meant for recovery scenarios */
+/* For example in unionCaseReprElement where function type is not allowed */
+invalidUseOfAppTypeFunction:
+  | appType RARROW invalidUseOfAppTypeFunction
+     { let mArrow = rhs parseState 2
+       let m = unionRanges (rhs2 parseState 1 2) $3.Range
+       SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
+  | appType RARROW recover
+     { let mArrow = rhs parseState 2
+       let ty = SynType.FromParseError(mArrow.EndRange)
+       let m = rhs2 parseState 1 2
+       SynType.Fun($1, ty, m, { ArrowRange = mArrow }) }
+  | appType RARROW RARROW invalidUseOfAppTypeFunction
+     { let mArrow1 = rhs parseState 2
+       let mArrow2 = rhs parseState 3
+       reportParseErrorAt mArrow2 (FSComp.SR.parsExpectingType ())
+       let ty = SynType.FromParseError(mArrow2.StartRange)
+       let m1 = unionRanges $1.Range $4.Range
+       let m2 = unionRanges mArrow2 $4.Range
+       SynType.Fun($1, SynType.Fun(ty, $4, m2, { ArrowRange = mArrow2 }), m1, { ArrowRange = mArrow1 }) }
+  | appType RARROW appType
+     { let mArrow = rhs parseState 2
+       let m = rhs2 parseState 1 3
+       SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
