@@ -1227,6 +1227,11 @@
         <target state="translated">Następujące wymagane właściwości muszą zostać zainicjowane:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
         <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
@@ -3880,11 +3885,6 @@
       <trans-unit id="tcFieldsDoNotDetermineUniqueRecordType">
         <source>The field labels and expected type of this record expression or pattern do not uniquely determine a corresponding record type</source>
         <target state="translated">Etykiety pól i oczekiwany typ tego wyrażenia rekordu lub wzorca nie określają jednoznacznie odpowiedniego typu rekordu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Pole „{0}” występuje dwa razy w tym wyrażeniu rekordu lub wzorcu</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnknownUnion">
