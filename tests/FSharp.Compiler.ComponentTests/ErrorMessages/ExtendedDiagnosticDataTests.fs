@@ -1,4 +1,5 @@
 ﻿module ErrorMessages.ExtendedDiagnosticData
+#nowarn "57"
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
