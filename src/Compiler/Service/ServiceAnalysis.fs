@@ -373,7 +373,7 @@ module SimplifyNames =
                         r.EndColumn - name.Length - (getPlidLength necessaryPlid)
 
                     let unnecessaryRange =
-                        mkRange r.FileName (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol)
+                        withStartEnd (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol) r
 
                     let relativeName = (String.concat "." plid) + "." + name
 

@@ -10065,7 +10065,6 @@ let (|CompiledInt32RangeForEachExpr|_|) g expr =
     match expr with
     | CompiledForEachExpr g (_, RangeInt32Step g (startExpr, step, finishExpr), elemVar, bodyExpr, ranges) ->
         Some (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
-        | _ -> None
     | _ -> None
 
 

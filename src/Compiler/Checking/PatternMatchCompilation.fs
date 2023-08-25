@@ -23,6 +23,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
+open type System.MemoryExtensions
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -48,7 +49,6 @@ type Pattern =
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
-    | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * Pattern option * range
     | TPat_error of range
@@ -66,7 +66,6 @@ type Pattern =
         | TPat_tuple(_, _, _, m) -> m
         | TPat_array(_, _, m) -> m
         | TPat_recd(_, _, _, m) -> m
-        | TPat_range(_, _, m) -> m
         | TPat_null m -> m
         | TPat_isinst(_, _, _, m) -> m
         | TPat_error m -> m
@@ -720,7 +719,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
 let canInvestigate (pat: Pattern) =
     match pat with
     | TPat_null _ | TPat_isinst _ | TPat_exnconstr _ | TPat_unioncase _
-    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_range _ | TPat_error _ -> true
+    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_error _ -> true
     | _ -> false
 
 /// Decide the next pattern to investigate
@@ -905,43 +904,37 @@ let rec layoutPat pat =
 let mkFrontiers investigations clauseNumber =
      investigations |> List.map (fun (actives, valMap) -> Frontier(clauseNumber, actives, valMap))
 
+let singleFalseInvestigationPoint = [| false |]
+
 // Search for pattern decision points that are decided "one at a time" - i.e. where there is no
 // multi-way switching. For example partial active patterns
 let rec investigationPoints inpPat =
-    seq { 
-        match inpPat with
-        | TPat_query ((_, _, _, _, _, apinfo), subPat, _) ->
-            yield not apinfo.IsTotal
-            yield! investigationPoints subPat
-        | TPat_isinst (_, _tgtTy, subPatOpt, _) -> 
-            yield false
-            match subPatOpt with 
-            | None -> ()
-            | Some subPat ->
-                yield! investigationPoints subPat
-        | TPat_as (subPat, _, _) -> 
-            yield! investigationPoints subPat
-        | TPat_disjs (subPats, _)
-        | TPat_conjs(subPats, _)
-        | TPat_tuple (_, subPats, _, _)
-        | TPat_recd (_, _, subPats, _) -> 
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_exnconstr(_, subPats, _) ->
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_array (subPats, _, _)
-        | TPat_unioncase (_, _, subPats, _) ->
-            yield false
-            for subPat in subPats do 
-                yield! investigationPoints subPat
-        | TPat_range _
-        | TPat_null _ 
-        | TPat_const _ ->
-            yield false
-        | TPat_wild _
-        | TPat_error _ -> ()
-    }
+    match inpPat with
+    | TPat_query((_, _, _, _, _, apinfo), subPat, _) ->
+        Array.prepend (not apinfo.IsTotal) (investigationPoints subPat)
+    | TPat_isinst(_, _tgtTy, subPatOpt, _) -> 
+        match subPatOpt with 
+        | None -> singleFalseInvestigationPoint
+        | Some subPat -> Array.prepend false (investigationPoints subPat)
+    | TPat_as(subPat, _, _) -> investigationPoints subPat
+    | TPat_disjs(subPats, _)
+    | TPat_conjs(subPats, _)
+    | TPat_tuple(_, subPats, _, _)
+    | TPat_exnconstr(_, subPats, _)
+    | TPat_recd(_, _, subPats, _) ->
+        subPats
+        |> Seq.collect investigationPoints
+        |> Seq.toArray
+    | TPat_array (subPats, _, _)
+    | TPat_unioncase (_, _, subPats, _) ->
+        subPats
+        |> Seq.collect investigationPoints
+        |> Seq.toArray
+        |> Array.prepend false
+    | TPat_null _ 
+    | TPat_const _ -> singleFalseInvestigationPoint
+    | TPat_wild _
+    | TPat_error _ -> [||]
 
 let rec erasePartialPatterns inpPat =
     match inpPat with
@@ -959,7 +952,6 @@ let rec erasePartialPatterns inpPat =
     | TPat_isinst (x, y, subPatOpt, m) -> TPat_isinst (x, y, Option.map erasePartialPatterns subPatOpt, m)
     | TPat_const _
     | TPat_wild _
-    | TPat_range _
     | TPat_null _
     | TPat_error _ -> inpPat
 
@@ -967,22 +959,26 @@ and erasePartials inps =
     List.map erasePartialPatterns inps
     
 let ReportUnusedTargets (clauses: MatchClause list) dtree =
-    let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
-    clauses |> List.iteri (fun i c ->
-        let m =
-            match c.BoundVals, c.GuardExpr with
-            | [], Some guard -> guard.Range
-            | [ bound ], None -> bound.Id.idRange
-            | [ _ ], Some guard -> guard.Range
-            | rest, None ->
-                match rest with
-                | [ head ] -> head.Id.idRange
-                | _ -> c.Pattern.Range
-            | _, Some guard -> guard.Range
-            
-        let m  = withStartEnd c.Range.Start m.End m
-            
-        if not (used.Contains i) then warning (RuleNeverMatched m))
+    match dtree, clauses with
+    | TDSuccess _, [ _ ] -> ()
+    | _ ->
+        let used = HashSet<_>(accTargetsOfDecisionTree dtree [], HashIdentity.Structural)
+        clauses |> List.iteri (fun i c ->
+            if not (used.Contains i) then
+                let m =
+                    match c.BoundVals, c.GuardExpr with
+                    | [], Some guard -> guard.Range
+                    | [ bound ], None -> bound.Id.idRange
+                    | [ _ ], Some guard -> guard.Range
+                    | rest, None ->
+                        match rest with
+                        | [ head ] -> head.Id.idRange
+                        | _ -> c.Pattern.Range
+                    | _, Some guard -> guard.Range
+                    
+                withStartEnd c.Range.Start m.End m
+                |> RuleNeverMatched
+                |> warning)
 
 let rec isPatternDisjunctive inpPat =
     match inpPat with
@@ -998,7 +994,6 @@ let rec isPatternDisjunctive inpPat =
     | TPat_isinst (_, _, subPatOpt, _) -> Option.exists isPatternDisjunctive subPatOpt
     | TPat_const _ -> false
     | TPat_wild _ -> false
-    | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_error _ -> false
 
@@ -1601,8 +1596,6 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
-            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
-
         else
             [frontier]
 
@@ -1641,12 +1634,6 @@ let CompilePatternBasic
         | TPat_conjs(subPats, _m) ->
             let newActives = List.mapi (mkSubActive (fun path _j -> path) (fun _j -> inpAccess)) subPats
             BindProjectionPatterns newActives activeState
-
-        | TPat_range (c1, c2, m) ->
-            let mutable res = []
-            for i = int c1 to int c2 do
-                res <- BindProjectionPattern (Active(inpPath, inpExpr, TPat_const(Const.Char(char i), m))) activeState @ res
-            res
 
         // Assign an identifier to each TPat_query based on our knowledge of the 'identity' of the active pattern, if any
         | TPat_query ((_, _, _, apatVrefOpt, _, _), _, _) ->
@@ -1736,16 +1723,13 @@ let CompilePatternBasic
 // So disjunction alone isn't considered problematic, but in combination with 'when' patterns
 
 let isProblematicClause (clause: MatchClause) =
-    let ips = 
-        seq { 
-             yield! investigationPoints clause.Pattern
-             if clause.GuardExpr.IsSome then
-                 yield true
-        } |> Seq.toArray
-    let ips = if isPatternDisjunctive clause.Pattern then Array.append ips ips else ips
-    // Look for multiple decision points.
-    // We don't mind about the last logical decision point
-    ips.Length > 0 && Array.exists id ips[0..ips.Length-2] 
+    if clause.GuardExpr.IsSome then
+        isPatternDisjunctive clause.Pattern || Array.exists id (investigationPoints clause.Pattern)
+    else
+        // Look for multiple decision points.
+        // We don't mind about the last logical decision point
+        let ips = investigationPoints clause.Pattern
+        ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
 let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with

@@ -565,7 +565,6 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.OptionalVal _ -> continuation []
         | SynPat.IsInst (t, _) -> continuation (visitSynType t)
         | SynPat.QuoteExpr (expr, _) -> continuation (visitSynExpr expr)
-        | SynPat.DeprecatedCharRange _ -> continuation []
         | SynPat.InstanceMember _ -> continuation []
         | SynPat.FromParseError _ -> continuation []
 
