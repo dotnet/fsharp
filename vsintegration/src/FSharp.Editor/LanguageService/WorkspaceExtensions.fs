@@ -2,13 +2,20 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
+open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
+
 open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.FSharp.Editor
+
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+
+open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 [<AutoOpen>]
@@ -78,11 +85,6 @@ module private CheckerExtensions =
                             return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
                     }
 
-                let bindParsedInput (results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-                    match results with
-                    | Some (parseResults, checkResults) -> Some(parseResults, parseResults.ParseTree, checkResults)
-                    | None -> None
-
                 if allowStaleResults then
                     let! freshResults = tryGetFreshResultsWithTimeout ()
 
@@ -96,10 +98,10 @@ module private CheckerExtensions =
                                 | None -> return! parseAndCheckFile
                             }
 
-                    return bindParsedInput results
+                    return results
                 else
                     let! results = parseAndCheckFile
-                    return bindParsedInput results
+                    return results
             }
 
         /// Parse and check the source text from the Roslyn document.
@@ -218,7 +220,7 @@ type Document with
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             match! checker.ParseAndCheckDocument(this, projectOptions, userOpName, allowStaleResults = false) with
-            | Some (parseResults, _, checkResults) -> return (parseResults, checkResults)
+            | Some results -> return results
             | _ -> return raise (OperationCanceledException("Unable to get FSharp parse and check results."))
         }
 
@@ -226,15 +228,16 @@ type Document with
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            let! result = checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
 
-            match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
-            | Some results -> return results
-            | _ -> return raise (OperationCanceledException("Unable to get FSharp semantic classification."))
+            return
+                result
+                |> Option.defaultWith (fun _ -> raise (OperationCanceledException("Unable to get FSharp semantic classification.")))
         }
 
     /// Find F# references in the given F# document.
-    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
-        async {
+    member inline this.FindFSharpReferencesAsync(symbol, [<InlineIfLambda>] onFound, userOpName) =
+        cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
@@ -246,8 +249,11 @@ type Document with
                     fastCheck = this.Project.IsFastFindReferencesEnabled
                 )
 
-            for symbolUse in symbolUses do
-                do! onFound symbolUse
+            do!
+                symbolUses
+                |> Seq.map onFound
+                |> CancellableTask.whenAll
+                |> CancellableTask.ignore
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -279,8 +285,6 @@ type Project with
     member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName) =
         cancellableTask {
 
-            let! ct = CancellableTask.getCancellationToken ()
-
             let declarationLocation =
                 symbol.SignatureLocation
                 |> Option.map Some
@@ -289,6 +293,7 @@ type Project with
             let declarationDocument =
                 declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
 
+            // Can we skip documents, which are above current, since they can't contain symbols from current one.
             let! canSkipDocuments =
                 match declarationDocument with
                 | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
@@ -297,11 +302,12 @@ type Project with
 
                         let signatureFile =
                             if not (document.FilePath |> isSignatureFile) then
-                                $"{document.FilePath}i"
+                                document.FilePath + "i"
                             else
                                 null
 
                         return
+
                             options.SourceFiles
                             |> Seq.takeWhile ((<>) document.FilePath)
                             |> Seq.filter ((<>) signatureFile)
@@ -316,11 +322,8 @@ type Project with
             if this.IsFastFindReferencesEnabled then
                 do!
                     documents
-                    |> Seq.map (fun doc ->
-                        Task.Run(fun () ->
-                            doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                            |> RoslynHelpers.StartAsyncUnitAsTask ct))
-                    |> Task.WhenAll
+                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName))
+                    |> CancellableTask.whenAll
             else
                 for doc in documents do
                     do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
