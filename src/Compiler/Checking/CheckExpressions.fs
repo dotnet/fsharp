@@ -1796,6 +1796,12 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
+let CheckRecdExprDuplicateFields (elems: Ident list) =
+    elems |> List.iteri (fun i (uc1: Ident) -> 
+        elems |> List.iteri (fun j (uc2: Ident) -> 
+            if j > i && uc1.idText = uc2.idText then 
+               errorR (Error(FSComp.SR.tcMultipleFieldsInRecord(uc1.idText), uc1.idRange))))
+
 //-------------------------------------------------------------------------
 // Helpers to typecheck expressions and patterns
 //-------------------------------------------------------------------------
@@ -1807,9 +1813,14 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
     if isNil flds then invalidArg "flds" "BuildFieldMap"
 
-    let fldCount = flds.Length
+    let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
+    if allFields.Length > 1 then
+        // In the case of nested record fields on the same level in record copy-and-update.
+        // We need to reverse the list to get the correct order of fields.
+        let idents = if isPartial then allFields |> List.rev else allFields
+        CheckRecdExprDuplicateFields idents
+
     let fldResolutions =
-        let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.choose (fun (fld, fldExpr) ->
             try
@@ -1838,7 +1849,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(), m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun (_, tc) -> tc.TrueFieldsAsList.Length = fldCount) with
+            match tcrefs |> List.tryFind (fun (_, tc) -> tc.TrueFieldsAsList.Length =  flds.Length) with
             | Some (tinst, tcref) -> tinst, tcref
             | _ ->
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs.
@@ -1863,8 +1874,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
-                    if Map.containsKey fref2.FieldName fs then
-                        errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
                     if showDeprecated then
                         let diagnostic = Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName, fref2.Tycon.DisplayName) |> snd, m)
                         if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
@@ -8152,7 +8161,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
 
 and TcNameOfExprResult (cenv: cenv) (lastIdent: Ident) m =
     let g = cenv.g
-    let constRange = mkRange m.FileName m.Start (mkPos m.StartLine (m.StartColumn + lastIdent.idText.Length + 2)) // `2` are for quotes
+    let constRange = withEnd (mkPos m.StartLine (m.StartColumn + lastIdent.idText.Length + 2)) m // `2` are for quotes
     Expr.Const(Const.String(lastIdent.idText), constRange, g.string_ty)
 
 //-------------------------------------------------------------------------

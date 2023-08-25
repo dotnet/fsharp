@@ -920,7 +920,7 @@ let mkSynExprDecl (e: SynExpr) = SynModuleDecl.Expr(e, e.Range)
 let addAttribs attrs p = SynPat.Attrib(p, attrs, p.Range)
 
 let unionRangeWithPos (r: range) p =
-    let r2 = mkRange r.FileName p p
+    let r2 = withStartEnd p p r
     unionRanges r r2
 
 /// Report a good error at the end of file, e.g. for non-terminated strings
