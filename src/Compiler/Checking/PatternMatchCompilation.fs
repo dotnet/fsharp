@@ -49,7 +49,6 @@ type Pattern =
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
-    | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * Pattern option * range
     | TPat_error of range
@@ -67,7 +66,6 @@ type Pattern =
         | TPat_tuple(_, _, _, m) -> m
         | TPat_array(_, _, m) -> m
         | TPat_recd(_, _, _, m) -> m
-        | TPat_range(_, _, m) -> m
         | TPat_null m -> m
         | TPat_isinst(_, _, _, m) -> m
         | TPat_error m -> m
@@ -721,7 +719,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
 let canInvestigate (pat: Pattern) =
     match pat with
     | TPat_null _ | TPat_isinst _ | TPat_exnconstr _ | TPat_unioncase _
-    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_range _ | TPat_error _ -> true
+    | TPat_array _ | TPat_const _ | TPat_query _ | TPat_error _ -> true
     | _ -> false
 
 /// Decide the next pattern to investigate
@@ -933,7 +931,6 @@ let rec investigationPoints inpPat =
         |> Seq.collect investigationPoints
         |> Seq.toArray
         |> Array.prepend false
-    | TPat_range _
     | TPat_null _ 
     | TPat_const _ -> singleFalseInvestigationPoint
     | TPat_wild _
@@ -955,7 +952,6 @@ let rec erasePartialPatterns inpPat =
     | TPat_isinst (x, y, subPatOpt, m) -> TPat_isinst (x, y, Option.map erasePartialPatterns subPatOpt, m)
     | TPat_const _
     | TPat_wild _
-    | TPat_range _
     | TPat_null _
     | TPat_error _ -> inpPat
 
@@ -998,7 +994,6 @@ let rec isPatternDisjunctive inpPat =
     | TPat_isinst (_, _, subPatOpt, _) -> Option.exists isPatternDisjunctive subPatOpt
     | TPat_const _ -> false
     | TPat_wild _ -> false
-    | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_error _ -> false
 
@@ -1601,8 +1596,6 @@ let CompilePatternBasic
                 | _ ->
                     [frontier]
 
-            | _ -> failwith "pattern compilation: GenerateNewFrontiersAfterSuccessfulInvestigation"
-
         else
             [frontier]
 
@@ -1641,12 +1634,6 @@ let CompilePatternBasic
         | TPat_conjs(subPats, _m) ->
             let newActives = List.mapi (mkSubActive (fun path _j -> path) (fun _j -> inpAccess)) subPats
             BindProjectionPatterns newActives activeState
-
-        | TPat_range (c1, c2, m) ->
-            let mutable res = []
-            for i = int c1 to int c2 do
-                res <- BindProjectionPattern (Active(inpPath, inpExpr, TPat_const(Const.Char(char i), m))) activeState @ res
-            res
 
         // Assign an identifier to each TPat_query based on our knowledge of the 'identity' of the active pattern, if any
         | TPat_query ((_, _, _, apatVrefOpt, _, _), _, _) ->

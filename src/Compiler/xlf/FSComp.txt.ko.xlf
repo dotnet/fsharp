@@ -4197,11 +4197,6 @@
         <target state="translated">올바른 패턴이 아닙니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">문자 범위 일치는 F#에서 제거되었습니다. 대신 'when' 패턴 가드를 사용하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalPattern">
         <source>Illegal pattern</source>
         <target state="translated">패턴이 잘못되었습니다.</target>

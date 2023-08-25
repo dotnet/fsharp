@@ -582,7 +582,6 @@ tcCouldNotFindIDisposable,"Couldn't find Dispose on IDisposable, or it was overl
 729,tcFieldNotLiteralCannotBeUsedInPattern,"This field is not a literal and cannot be used in a pattern"
 730,tcRequireVarConstRecogOrLiteral,"This is not a variable, constant, active recognizer or literal"
 731,tcInvalidPattern,"This is not a valid pattern"
-tcUseWhenPatternGuard,"Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
 733,tcIllegalPattern,"Illegal pattern"
 734,tcSyntaxErrorUnexpectedQMark,"Syntax error - unexpected '?' symbol"
 735,tcExpressionCountMisMatch,"Expected %d expressions, got %d"

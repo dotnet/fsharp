@@ -1110,9 +1110,6 @@ type SynPat =
     /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of expr: SynExpr * range: range
 
-    /// Deprecated character range: ranges
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
-
     /// Used internally in the type checker
     | InstanceMember of
         thisId: Ident *

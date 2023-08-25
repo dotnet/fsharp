@@ -957,8 +957,6 @@ type SynPat =
 
     | QuoteExpr of expr: SynExpr * range: range
 
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
-
     | InstanceMember of
         thisId: Ident *
         memberId: Ident *
@@ -983,7 +981,6 @@ type SynPat =
         | SynPat.Typed (range = m)
         | SynPat.Attrib (range = m)
         | SynPat.Record (range = m)
-        | SynPat.DeprecatedCharRange (range = m)
         | SynPat.Null (range = m)
         | SynPat.IsInst (range = m)
         | SynPat.QuoteExpr (range = m)
