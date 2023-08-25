@@ -27,7 +27,14 @@ exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase *
 
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
-exception FieldNotContained of DisplayEnv * InfoReader * Tycon * Tycon * RecdField * RecdField * (string * string -> string)
+exception FieldNotContained of
+    DisplayEnv *
+    InfoReader *
+    Tycon *
+    Tycon *
+    RecdField *
+    RecdField *
+    (string * string -> string)
 
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 

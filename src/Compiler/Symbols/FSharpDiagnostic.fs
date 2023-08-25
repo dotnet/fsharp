@@ -29,6 +29,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type DiagnosticContextInfo =
     /// No context was given.
     | NoContext
@@ -76,9 +77,10 @@ type DiagnosticContextInfo =
         | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
         | ContextInfo.SequenceExpression _ -> SequenceExpression
 
-[<Interface>]
+[<Interface; Experimental("This FCS API is experimental and subject to change.")>]
 type IFSharpDiagnosticExtendedData = interface end
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type TypeMismatchDiagnosticExtendedData
     internal (symbolEnv: SymbolEnv, dispEnv: DisplayEnv, expectedType: TType, actualType: TType, context: DiagnosticContextInfo) =
     interface IFSharpDiagnosticExtendedData
@@ -88,24 +90,28 @@ type TypeMismatchDiagnosticExtendedData
     member x.ContextInfo = context
     member x.DisplayContext = FSharpDisplayContext(fun _ -> dispEnv)
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type ExpressionIsAFunctionExtendedData
     internal (symbolEnv: SymbolEnv, actualType: TType) =
     interface IFSharpDiagnosticExtendedData
 
     member x.ActualType = FSharpType(symbolEnv, actualType)
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FieldNotContainedDiagnosticExtendedData
     internal (symbolEnv: SymbolEnv, implTycon: Tycon, sigTycon: Tycon, signatureField: RecdField, implementationField: RecdField) =
     interface IFSharpDiagnosticExtendedData
     member x.SignatureField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef sigTycon, signatureField.Id.idText))
     member x.ImplementationField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef implTycon, implementationField.Id.idText))
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type ValueNotContainedDiagnosticExtendedData
     internal (symbolEnv: SymbolEnv, signatureValue: Val, implValue: Val) =
     interface IFSharpDiagnosticExtendedData
     member x.SignatureValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef signatureValue)
     member x.ImplementationValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef implValue)
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type ArgumentsInSigAndImplMismatchExtendedData
     internal(sigArg: Ident, implArg: Ident) =
     interface IFSharpDiagnosticExtendedData
@@ -143,6 +149,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
     member _.FileName = m.FileName
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member _.ExtendedData = extendedData
 
     member _.WithStart newStart =

@@ -857,7 +857,10 @@ type BackgroundCompiler
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
-                let symbolEnv = SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports) |> Some
+
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
 
                 let parseDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
@@ -1033,7 +1036,10 @@ type BackgroundCompiler
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
-                let symbolEnv = SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports) |> Some
+
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
 
                 let tcDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(

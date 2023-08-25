@@ -7,9 +7,9 @@ module internal FSharp.Compiler.SignatureConformance
 open System.Text
 
 open Internal.Utilities.Collections
-open Internal.Utilities.Library 
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler 
+open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader

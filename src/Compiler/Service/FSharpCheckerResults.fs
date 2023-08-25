@@ -2460,8 +2460,9 @@ module internal ParseAndCheckFile =
             //    the formatting of types in it may change (for example, 'a to obj)
             //
             // So we'll create a diagnostic later, but cache the FormatCore message now
-            diagnostic.Exception.Data["CachedFormatCore"] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
-            diagnosticsCollector.Add(struct(diagnostic, severity))
+            diagnostic.Exception.Data[ "CachedFormatCore" ] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnosticsCollector.Add(struct (diagnostic, severity))
+
             if severity = FSharpDiagnosticSeverity.Error then
                 errorCount <- errorCount + 1
 
@@ -2510,9 +2511,21 @@ module internal ParseAndCheckFile =
         member _.AnyErrors = errorCount > 0
 
         member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
-            [| for struct(diagnostic, severity) in diagnosticsCollector do
-                yield! DiagnosticHelpers.ReportDiagnostic(options, false, mainInputFileName, fileInfo, diagnostic, severity,
-                                                          suggestNamesForErrors, flatErrors, symbolEnv) |]
+            [|
+                for struct (diagnostic, severity) in diagnosticsCollector do
+                    yield!
+                        DiagnosticHelpers.ReportDiagnostic(
+                            options,
+                            false,
+                            mainInputFileName,
+                            fileInfo,
+                            diagnostic,
+                            severity,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            symbolEnv
+                        )
+            |]
 
     let getLightSyntaxStatus fileName options =
         let indentationAwareSyntaxOnByDefault =
@@ -2929,24 +2942,25 @@ module internal ParseAndCheckFile =
 
             let symbolEnv = SymbolEnv(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports)
             let errors = errHandler.CollectedDiagnostics(Some symbolEnv)
+
             let res =
                 TypeCheckInfo(
-                        tcConfig,
-                        tcGlobals,
-                        List.head ccuSigsForFiles,
-                        tcState.Ccu,
-                        tcImports,
-                        tcEnvAtEnd.AccessRights,
-                        projectFileName,
-                        mainInputFileName,
-                        projectOptions,
-                        sink.GetResolutions(),
-                        sink.GetSymbolUses(),
-                        tcEnvAtEnd.NameEnv,
-                        loadClosure,
-                        List.tryHead implFiles,
-                        sink.GetOpenDeclarations()
-                    )
+                    tcConfig,
+                    tcGlobals,
+                    List.head ccuSigsForFiles,
+                    tcState.Ccu,
+                    tcImports,
+                    tcEnvAtEnd.AccessRights,
+                    projectFileName,
+                    mainInputFileName,
+                    projectOptions,
+                    sink.GetResolutions(),
+                    sink.GetSymbolUses(),
+                    tcEnvAtEnd.NameEnv,
+                    loadClosure,
+                    List.tryHead implFiles,
+                    sink.GetOpenDeclarations()
+                )
 
             return errors, res
         }

@@ -11,7 +11,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.DiagnosticsLogger
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Experimental("This FCS API is experimental and subject to change.")>]
 type public DiagnosticContextInfo =
     /// No context was given.
     | NoContext
@@ -42,10 +42,12 @@ type public DiagnosticContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression
 
-[<Interface>]
-type public IFSharpDiagnosticExtendedData = interface end
+[<Interface; Experimental("This FCS API is experimental and subject to change.")>]
+type public IFSharpDiagnosticExtendedData =
+    interface
+    end
 
-[<Class>]
+[<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public TypeMismatchDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
     member ExpectedType: FSharpType
@@ -53,24 +55,24 @@ type public TypeMismatchDiagnosticExtendedData =
     member ContextInfo: DiagnosticContextInfo
     member DisplayContext: FSharpDisplayContext
 
-[<Class>]
+[<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public ExpressionIsAFunctionExtendedData =
     interface IFSharpDiagnosticExtendedData
     member ActualType: FSharpType
 
-[<Class>]
+[<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public FieldNotContainedDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
     member SignatureField: FSharpField
     member ImplementationField: FSharpField
 
-[<Class>]
+[<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public ValueNotContainedDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
     member SignatureValue: FSharpMemberOrFunctionOrValue
     member ImplementationValue: FSharpMemberOrFunctionOrValue
 
-[<Class>]
+[<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type ArgumentsInSigAndImplMismatchExtendedData =
     interface IFSharpDiagnosticExtendedData
     member SignatureName: string
@@ -124,6 +126,7 @@ type public FSharpDiagnostic =
     /// Gets the full error number text e.g "FS0031"
     member ErrorNumberText: string
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member ExtendedData: IFSharpDiagnosticExtendedData option
 
     /// Creates a diagnostic, e.g. for reporting from an analyzer
@@ -142,7 +145,8 @@ type public FSharpDiagnostic =
         range *
         lastPosInFile: (int * int) *
         suggestNames: bool *
-        flatErrors: bool * symbolEnv: SymbolEnv option  ->
+        flatErrors: bool *
+        symbolEnv: SymbolEnv option ->
             FSharpDiagnostic
 
     static member internal CreateFromException:
@@ -150,7 +154,8 @@ type public FSharpDiagnostic =
         severity: FSharpDiagnosticSeverity *
         range *
         suggestNames: bool *
-        flatErrors: bool * symbolEnv: SymbolEnv option  ->
+        flatErrors: bool *
+        symbolEnv: SymbolEnv option ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),

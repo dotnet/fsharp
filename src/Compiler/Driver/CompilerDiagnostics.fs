@@ -79,7 +79,7 @@ type Exception with
 
     member exn.DiagnosticRange =
         match exn with
-        | ArgumentsInSigAndImplMismatch(_, implArg) -> Some implArg.idRange
+        | ArgumentsInSigAndImplMismatch (_, implArg) -> Some implArg.idRange
         | ErrorFromAddingConstraint (_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange exn -> exn.DiagnosticRange
@@ -319,7 +319,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | ArgumentsInSigAndImplMismatch _ ->  3218
+        | ArgumentsInSigAndImplMismatch _ -> 3218
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -1871,7 +1871,7 @@ type Exception with
 
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
-        | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
+        | ArgumentsInSigAndImplMismatch (sigArg, implArg) ->
             os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
 
         // Strip TargetInvocationException wrappers
