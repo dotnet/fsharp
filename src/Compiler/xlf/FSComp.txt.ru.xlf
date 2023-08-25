@@ -7859,7 +7859,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
-        <target state="needs-review-translation">Недопустимое использование выражения "fixed". Выражение "fixed" можно использовать только в объявлении формы "use x = fixed expr", где выражение является массивом, адресом поля, адресом элемента массива или строки.</target>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
