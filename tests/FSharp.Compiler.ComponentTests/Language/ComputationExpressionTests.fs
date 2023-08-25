@@ -136,3 +136,65 @@ let _pythags = seqbuilder {{
         |> FSharp     
         |> typecheck
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Better CE error range 1`` () =
+        Fsx """
+let test = task {
+    let! x = 1
+    return x
+}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 41, Line 3, Col 14, Line 3, Col 15, "No overloads match for method 'Bind'.
+
+Known types of arguments: int * ('a -> TaskCode<'a,'a>)
+
+Available overloads:
+ - member TaskBuilderBase.Bind: computation: Async<'TResult1> * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> // Argument 'computation' doesn't match
+ - member TaskBuilderBase.Bind: task: System.Threading.Tasks.Task<'TResult1> * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> // Argument 'task' doesn't match
+ - member TaskBuilderBase.Bind: task: ^TaskLike * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter) and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion and ^Awaiter: (member get_IsCompleted: unit -> bool) and ^Awaiter: (member GetResult: unit -> 'TResult1) // Argument 'task' doesn't match")
+        ]
+        
+    [<Fact>]
+    let ``Better CE error range 2`` () =
+        Fsx """
+let test = task {
+    let! x = (1, 2)
+    return x
+}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 41, Line 3, Col 15, Line 3, Col 19, "No overloads match for method 'Bind'.
+
+Known types of arguments: (int * int) * ('a -> TaskCode<'a,'a>)
+
+Available overloads:
+ - member TaskBuilderBase.Bind: computation: Async<'TResult1> * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> // Argument 'computation' doesn't match
+ - member TaskBuilderBase.Bind: task: System.Threading.Tasks.Task<'TResult1> * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> // Argument 'task' doesn't match
+ - member TaskBuilderBase.Bind: task: ^TaskLike * continuation: ('TResult1 -> TaskCode<'TOverall,'TResult2>) -> TaskCode<'TOverall,'TResult2> when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter) and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion and ^Awaiter: (member get_IsCompleted: unit -> bool) and ^Awaiter: (member GetResult: unit -> 'TResult1) // Argument 'task' doesn't match")
+        ]
+        
+    [<Fact>]
+    let ``Better CE error range 3`` () =
+        Fsx """
+let test = task {
+    return! 1
+}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 41, Line 3, Col 13, Line 3, Col 14, "No overloads match for method 'ReturnFrom'.
+
+Known type of argument: int
+
+Available overloads:
+ - member TaskBuilderBase.ReturnFrom: computation: Async<'T> -> TaskCode<'T,'T> // Argument 'computation' doesn't match
+ - member TaskBuilderBase.ReturnFrom: task: System.Threading.Tasks.Task<'T> -> TaskCode<'T,'T> // Argument 'task' doesn't match
+ - member TaskBuilderBase.ReturnFrom: task: ^TaskLike -> TaskCode<'T,'T> when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter) and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion and ^Awaiter: (member get_IsCompleted: unit -> bool) and ^Awaiter: (member GetResult: unit -> 'T) // Argument 'task' doesn't match")
+        ]
