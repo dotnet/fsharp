@@ -161,17 +161,13 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         ]
     
     [<Theory>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|], LangVersion="7.0")>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|], LangVersion="preview")>]
     let``TryGetValue_fs`` compilation _langVersion =
         compilation |> withPrelude _langVersion |> compileExeAndRun |> shouldSucceed
     
     [<Theory>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"CompareExchange.fs"|], LangVersion="7.0")>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"CompareExchange.fs"|], LangVersion="preview")>]
     let``CompareExchange_fs`` compilation _langVersion =
         compilation
@@ -181,153 +177,115 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam.fs"|], LangVersion="preview")>]
     let``ByRefParam_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitOutAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_ExplicitOutAttribute_fs`` compilation _langVersion =
         compilation |> withPrelude _langVersion |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitInAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitInAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_ExplicitInAttribute_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefReturn.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefReturn.fs"|], LangVersion="preview")>]
     let``ByRefReturn_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_ByRefReturn.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_ByRefReturn.fs"|], LangVersion="preview")>]
     let``Slot_ByRefReturn_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefReturn.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefReturn.fs"|], LangVersion="preview")>]
     let``InRefReturn_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_InRefReturn.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_InRefReturn.fs"|], LangVersion="preview")>]
     let``Slot_InRefReturn_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam.fs"|], LangVersion="preview")>]
     let``OutRefParam_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_ExplicitOutAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``OutRefParam_ExplicitOutAttribute_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_OutRefParam.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_OutRefParam.fs"|], LangVersion="preview")>]
     let``Slot_OutRefParam_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_OverloadedTest_ExplicitOutAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_OverloadedTest_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``ByRefParam_OverloadedTest_ExplicitOutAttribute_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded_ExplicitOutAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded_ExplicitOutAttribute.fs"|], LangVersion="preview")>]
     let``OutRefParam_Overloaded_ExplicitOutAttribute_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded.fs"|], LangVersion="preview")>]
     let``OutRefParam_Overloaded_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttribute.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttribute.fs"|], LangVersion="preview")>]
     let``InRefParam_ExplicitInAttribute_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttributeDateTime.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttributeDateTime.fs"|], LangVersion="preview")>]
     let``InRefParam_ExplicitInAttributeDateTime_fs`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam.fs"|], LangVersion="preview")>]
     let``InRefParam`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ExplicitAddressOfAtCallSite`` compilation _langVersion =
         compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite`` compilation _langVersion =
         compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|], LangVersion="preview")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite2`` compilation _langVersion =
         compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
@@ -358,17 +316,13 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
 #endif
     
     [<Theory>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs"|], LangVersion="7.0")>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs"|], LangVersion="preview")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite1`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs"|], LangVersion="preview")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite2`` compilation _langVersion =
         compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
@@ -381,129 +335,97 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory>]
-            
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestMatchReturn.fs"|], LangVersion="7.0")>]
-            
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestMatchReturn.fs"|], LangVersion="preview")>]
         let``TestMatchReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestConditionalReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestConditionalReturn.fs"|], LangVersion="preview")>]
         let``TestConditionalReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryWithReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryWithReturn.fs"|], LangVersion="preview")>]
         let``TestTryWithReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryFinallyReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTryFinallyReturn.fs"|], LangVersion="preview")>]
         let``TestTryFinallyReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestOneArgument.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestOneArgument.fs"|], LangVersion="preview")>]
         let``TestOneArgument`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTwoArguments.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestTwoArguments.fs"|], LangVersion="preview")>]
         let``TestTwoArguments`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam.fs"|], LangVersion="preview")>]
         let``TestRecordParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
             
         [<Theory>]
-            
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam2.fs"|], LangVersion="7.0")>]
-            
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestRecordParam2.fs"|], LangVersion="preview")>]
         let``TestRecordParam2`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="preview")>]
         let``TestClassParamMutableField`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestArrayParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestArrayParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestStructParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestStructParam.fs"|], LangVersion="preview")>]
         let``TestStructParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="preview")>]
         let``TestInterfaceMethod`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="preview")>]
         let``TestInterfaceProperty`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestBaseCall.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestBaseCall.fs"|], LangVersion="preview")>]
         let``TestBaseCall`` compilation _langVersion =
             compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod2`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
@@ -516,145 +438,109 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestMatchReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestMatchReturn.fs"|], LangVersion="preview")>]
         let``TestMatchReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestConditionalReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestConditionalReturn.fs"|], LangVersion="preview")>]
         let``TestConditionalReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTryWithReturn.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTryWithReturn.fs"|], LangVersion="preview")>]
         let``TestTryWithReturn`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgument.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgument.fs"|], LangVersion="preview")>]
         let``TestOneArgument`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentInRefReturned.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentInRefReturned.fs"|], LangVersion="preview")>]
         let``TestOneArgumentInRefReturned`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentOutRef.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestOneArgumentOutRef.fs"|], LangVersion="preview")>]
         let``TestOneArgumentOutRef`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTwoArguments.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestTwoArguments.fs"|], LangVersion="preview")>]
         let``TestTwoArguments`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam.fs"|], LangVersion="preview")>]
         let``TestRecordParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam2.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestRecordParam2.fs"|], LangVersion="preview")>]
         let``TestRecordParam2`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestClassParamMutableField.fs"|], LangVersion="preview")>]
         let``TestClassParamMutableField`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestArrayParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestArrayParam.fs"|], LangVersion="preview")>]
         let``TestStructParam`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceMethod.fs"|], LangVersion="preview")>]
         let``TestInterfaceMethod`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInterfaceProperty.fs"|], LangVersion="preview")>]
         let``TestInterfaceProperty`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestBaseCall.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestBaseCall.fs"|], LangVersion="preview")>]
         let``TestBaseCall`` compilation _langVersion =
             compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestDelegateMethod2.fs"|], LangVersion="preview")>]
         let``TestDelegateMethod2`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethods1.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"ByRefExtensionMethods1.fs"|], LangVersion="preview")>]
         let``ByRefExtensionMethods1`` compilation _langVersion =
             compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
@@ -664,145 +550,109 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         //     compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestReadOnlyAddressOfStaticField.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestReadOnlyAddressOfStaticField.fs"|], LangVersion="preview")>]
         let``TestReadOnlyAddressOfStaticField`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref.fs"|], LangVersion="preview")>]
         let``TestAssignToReturnByref`` compilation _langVersion =
             compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref2.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestAssignToReturnByref2.fs"|], LangVersion="preview")>]
         let``TestAssignToReturnByref2`` compilation _langVersion =
             compilation |> withNoWarn 52 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"BaseCallByref.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"BaseCallByref.fs"|], LangVersion="preview")>]
         let``BaseCallByref`` compilation _langVersion =
             compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820.fs"|], LangVersion="preview")>]
         let``Bug820`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820b.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"Bug820b.fs"|], LangVersion="preview")>]
         let``Bug820b`` compilation _langVersion =
             compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleGeneric.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleGeneric.fs"|], LangVersion="preview")>]
         let``TestNameModuleGeneric`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGeneric.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGeneric.fs"|], LangVersion="preview")>]
         let``TestNameModuleNonGeneric`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGenericSubsume.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestNameModuleNonGenericSubsume.fs"|], LangVersion="preview")>]
         let``TestNameModuleNonGenericSubsume`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"GenericTestNameRecursive.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"GenericTestNameRecursive.fs"|], LangVersion="preview")>]
         let``GenericTestNameRecursive`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClass.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``NonGenericTestNameRecursiveInClass`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClassSubsume.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"NonGenericTestNameRecursiveInClassSubsume.fs"|], LangVersion="preview")>]
         let``NonGenericTestNameRecursiveInClassSubsume`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticGenericTestNameRecursiveInClass.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``StaticGenericTestNameRecursiveInClass`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticNonGenericTestNameRecursiveInClass.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"StaticNonGenericTestNameRecursiveInClass.fs"|], LangVersion="preview")>]
         let``StaticNonGenericTestNameRecursiveInClass`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInRefMutation.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestInRefMutation.fs"|], LangVersion="preview")>]
         let``TestInRefMutation`` compilation _langVersion =
             compilation |> withNoWarn 52 |> withNoWarn 20 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MutateInRef3.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MutateInRef3.fs"|], LangVersion="preview")>]
         let``MutateInRef3`` compilation _langVersion =
             compilation |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MatrixOfTests.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"MatrixOfTests.fs"|], LangVersion="preview")>]
         let``MatrixOfTests`` compilation _langVersion =
             compilation |> withNoWarn 988 |> verifyCompileAndRun _langVersion |> shouldSucceed
         
         [<Theory>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|], LangVersion="7.0")>]
-        
         [<Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|], LangVersion="preview")>]
         let``TestStructRecord`` compilation _langVersion =
             compilation
@@ -812,17 +662,13 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             |> shouldSucceed
     
     [<Theory>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|], LangVersion="7.0")>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|], LangVersion="preview")>]
     let``NoTailcallToByrefsWithModReq`` compilation _langVersion =
         compilation |> withNoWarn 20 |> verifyCompileAndRun _langVersion |> shouldSucceed
     
     [<Theory>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CantTakeAddressOfExpressionReturningReferenceType.fs"|], LangVersion="7.0")>]
-    
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CantTakeAddressOfExpressionReturningReferenceType.fs"|], LangVersion="preview")>]
     let``E_CantTakeAddressOfExpressionReturningReferenceType`` compilation _langVersion =
         compilation
@@ -1256,9 +1102,7 @@ type outref<'T> with
         |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan01.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan01.fs"|], LangVersion="preview")>]
     let``ReturnSpan01_fs`` compilation _langVersion =
         compilation
@@ -1281,9 +1125,7 @@ type outref<'T> with
         |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan03.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan03.fs"|], LangVersion="preview")>]
     let``ReturnSpan03_fs`` compilation _langVersion =
         compilation
@@ -1293,9 +1135,7 @@ type outref<'T> with
         |> shouldSucceed
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="preview")>]
     let``E_ReturnSpanFromLocal_fs`` compilation _langVersion =
         compilation
@@ -1306,9 +1146,7 @@ type outref<'T> with
         |> shouldSucceed
 
     [<Theory>]
-
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|], LangVersion="7.0")>]
-
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|], LangVersion="preview")>]
     let``E_TopLevelByref_fs`` compilation _langVersion =
         compilation
@@ -1320,9 +1158,7 @@ type outref<'T> with
         ]
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda01.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda01.fs"|], LangVersion="preview")>]
     let``E_SpanUsedInInnerLambda01_fs`` compilation _langVersion =
         compilation
@@ -1334,9 +1170,7 @@ type outref<'T> with
         ]
         
     [<Theory>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda02.fs"|], LangVersion="7.0")>]
-        
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda02.fs"|], LangVersion="preview")>]
     let``E_SpanUsedInInnerLambda02_fs`` compilation _langVersion =
         compilation
