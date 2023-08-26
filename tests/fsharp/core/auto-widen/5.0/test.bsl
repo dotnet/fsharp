@@ -149,7 +149,7 @@ test.fsx(69,26,69,29): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(93,13,93,20): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(93,18,93,19): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 
@@ -170,7 +170,7 @@ test.fsx(116,20,116,21): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(121,14,121,21): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(121,19,121,20): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 
@@ -188,7 +188,7 @@ test.fsx(122,22,122,23): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(127,14,127,21): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(127,19,127,20): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 

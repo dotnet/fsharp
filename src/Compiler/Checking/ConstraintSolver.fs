@@ -3114,34 +3114,13 @@ and ResolveOverloading
                             | ErrorResult(_warnings, exn) ->
                                 Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
 
-                // WIP Trying to find a better error range for CE NoOverloadsFound
                 let m =
                     callerArgs.Unnamed
                     |> List.concat
-                    |> List.map(
-                        fun x ->
-                            match x.Expr with
-                            | Expr.Const(_value, m, _constType) -> m
-                            | Expr.Val(_valRef, _flags, m) -> m
-                            | Expr.Sequential(_expr1, _expr2, _kind, m) -> m
-                            | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, _bodyExpr, m, _overallType) -> m
-                            | Expr.TyLambda(_unique, _typeParams, _bodyExpr, m, _overallType) -> m
-                            | Expr.App(_funcExpr, _formalType, _typeArgs, _args, m) -> m
-                            | Expr.LetRec(_bindings, _bodyExpr, m, _frees) -> m
-                            | Expr.Let(_binding, _bodyExpr, m, _frees) -> m
-                            | Expr.Obj(_unique, _objTy, _baseVal, _ctorCall, _overrides, _interfaceImpls, m) -> m
-                            | Expr.Match(_debugPoint, _inputm, _decision, _targets, _fullm, _exprType) -> m
-                            | Expr.StaticOptimization(_conditions, _expr, _alternativeExpr, m) -> m
-                            | Expr.Op(_op, _typeArgs, _args, m) -> m
-                            | Expr.Quote(_quotedExpr, _quotationInfo, _isFromQueryExpression, m, _quotedType) -> m
-                            | Expr.WitnessArg(_traitInfo, m) -> m
-                            | Expr.TyChoose(_typeParams, _bodyExpr, m) -> m
-                            | Expr.Link _exprRef -> m
-                            | Expr.DebugPoint(_debugPointAtLeafExpr, _expr) -> m)
+                    |> List.map(fun x -> x.Range)
                     |> List.tryHead
                     |> Option.defaultValue m
-                    
-                    
+        
                 let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
 
                 None, ErrorD err, NoTrace

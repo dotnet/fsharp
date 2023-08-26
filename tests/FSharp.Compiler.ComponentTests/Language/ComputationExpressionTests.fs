@@ -169,7 +169,7 @@ let test = task {
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 41, Line 3, Col 15, Line 3, Col 19, "No overloads match for method 'Bind'.
+            (Error 41, Line 3, Col 14, Line 3, Col 20, "No overloads match for method 'Bind'.
 
 Known types of arguments: (int * int) * ('a -> TaskCode<'a,'a>)
 
@@ -180,7 +180,7 @@ Available overloads:
         ]
         
     [<Fact>]
-    let ``Better CE error range 3`` () =
+    let ``Better error range 3`` () =
         Fsx """
 let test = task {
     return! 1
@@ -189,7 +189,7 @@ let test = task {
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 41, Line 3, Col 13, Line 3, Col 14, "No overloads match for method 'ReturnFrom'.
+            (Error 41, Line 3, Col 5, Line 3, Col 14, "No overloads match for method 'ReturnFrom'.
 
 Known type of argument: int
 
@@ -198,3 +198,40 @@ Available overloads:
  - member TaskBuilderBase.ReturnFrom: task: System.Threading.Tasks.Task<'T> -> TaskCode<'T,'T> // Argument 'task' doesn't match
  - member TaskBuilderBase.ReturnFrom: task: ^TaskLike -> TaskCode<'T,'T> when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter) and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion and ^Awaiter: (member get_IsCompleted: unit -> bool) and ^Awaiter: (member GetResult: unit -> 'T) // Argument 'task' doesn't match")
         ]
+        
+    [<Fact>]
+    let ``Better error range 4`` () =
+        Fsx """
+    type C() =
+        static member M1([<System.ParamArray>] x:int64[]) = Array.sum x
+    let x1 = C.M1(2)
+        """
+        |> withLangVersion50
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 41, Line 4, Col 19, Line 4, Col 20, "No overloads match for method 'M1'.
+
+Known type of argument: int
+
+Available overloads:
+ - static member C.M1: [<System.ParamArray>] x: int64 array -> int64 // Argument 'x' doesn't match
+ - static member C.M1: [<System.ParamArray>] x: int64 array -> int64 // Argument at index 1 doesn't match")
+            ]
+        
+    [<Fact>]
+    let ``Better error range 5`` () =
+        Fsx """
+    type C() =
+        static member M1([<System.ParamArray>] x:int64[]) = Array.sum x
+    let x1 = C.M1(x=2)
+        """
+        |> withLangVersion50
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 4, Col 21, Line 4, Col 22, "This expression was expected to have type
+    'int64 array'    
+but here has type
+    'int'    ")
+            ]
