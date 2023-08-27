@@ -2209,26 +2209,28 @@ and [<Sealed>] TcImports
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
+        
+        let tcConfig = tcConfigP.Get ctok
+
+        let inline resolveAssemblies ctok nm =
+            node {
+                try
+                    return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
+                with e ->
+                    do errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
+                    return None
+            }
+        let runMethod =
+            match tcConfig.parallelReferenceResolution with
+            | ParallelReferenceResolution.On -> NodeCode.Parallel
+            | ParallelReferenceResolution.Off -> NodeCode.Sequential
+
         node {
             CheckDisposed()
 
-            let tcConfig = tcConfigP.Get ctok
-
-            let runMethod =
-                match tcConfig.parallelReferenceResolution with
-                | ParallelReferenceResolution.On -> NodeCode.Parallel
-                | ParallelReferenceResolution.Off -> NodeCode.Sequential
-
             let! results =
                 nms
-                |> List.map (fun nm ->
-                    node {
-                        try
-                            return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
-                        with e ->
-                            errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
-                            return None
-                    })
+                |> List.map (resolveAssemblies ctok)
                 |> runMethod
 
             let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
@@ -2260,7 +2262,7 @@ and [<Sealed>] TcImports
                     ReportWarnings warns
 
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res)
-                    |> NodeCode.RunImmediateWithoutCancellation
+                    |> NodeCode.runSyncronouslyWithoutCancellation
                     |> ignore
 
                     true
@@ -2581,7 +2583,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
-        |> NodeCode.RunImmediateWithoutCancellation
+        |> NodeCode.runSyncronouslyWithoutCancellation
 
     let asms =
         ccuinfos

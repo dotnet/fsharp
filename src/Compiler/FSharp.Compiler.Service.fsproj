@@ -152,7 +152,7 @@
     <Compile Include="Facilities\SimulatedMSBuildReferenceResolver.fs" />
     <Compile Include="Facilities\CompilerLocation.fsi" />
     <Compile Include="Facilities\CompilerLocation.fs" />
-    <Compile Include="Facilities\BuildGraph.fsi" />
+    <!-- TODO: temporary <Compile Include="Facilities\BuildGraph.fsi" /> -->
     <Compile Include="Facilities\BuildGraph.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
