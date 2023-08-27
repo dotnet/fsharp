@@ -482,6 +482,9 @@ module Tests
     let myDiscardedArgFunc(C _) = ()
     
     let myDiscardedArgFunc2(C c) = ()
+    
+    match None with
+    | None x -> ()
     """
     |> withLangVersion70
     |> withOptions ["--nowarn:25"]
@@ -497,6 +500,7 @@ module Tests
         (Error 725, Line 24, Col 7, Line 24, Col 18, "This union case does not take arguments")
         (Error 725, Line 27, Col 7, Line 27, Col 17, "This union case does not take arguments")
         (Error 725, Line 36, Col 29, Line 36, Col 32, "This union case does not take arguments")
+        (Error 725, Line 39, Col 7, Line 39, Col 13, "This union case does not take arguments")
     ]
     
 [<Fact>]
@@ -537,6 +541,9 @@ module Tests
     let myDiscardedArgFunc(C _) = ()
     
     let myDiscardedArgFunc2(C c) = ()
+
+    match None with
+    | None x -> ()
     """
     |> withLangVersionPreview
     |> withOptions ["--nowarn:25"]
@@ -554,4 +561,5 @@ module Tests
         (Warning 3548, Line 30, Col 12, Line 30, Col 13, "Pattern discard is not allowed for union case that takes no data.")
         (Warning 3548, Line 34, Col 30, Line 34, Col 31, "Pattern discard is not allowed for union case that takes no data.")
         (Warning 3548, Line 36, Col 31, Line 36, Col 32, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 39, Col 12, Line 39, Col 13, "Pattern discard is not allowed for union case that takes no data.")
     ]
