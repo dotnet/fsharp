@@ -5577,7 +5577,7 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
                   // for example FSharp 1.0 3661.
                   (match v.ValReprInfo with None -> true | Some tvi -> tvi.HasNoArgs)) then 
                 match ftyvs with 
-                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, false, v, tp, v.Range))
+                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, v, tp, v.Range))
                 | _ -> ()
           mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> check v.ModuleOrNamespaceType) 
       try check implFileTypePriorToSig with RecoverableException e -> errorRecovery e m
