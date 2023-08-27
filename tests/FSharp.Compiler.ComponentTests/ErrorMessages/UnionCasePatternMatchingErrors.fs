@@ -85,7 +85,7 @@ let myVal =
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 9, Col 9, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
  
 [<Fact>]
 let ``Union Pattern discard allowed for union case that takes no data with Lang version 7`` () =
@@ -131,7 +131,7 @@ let myVal =
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 9, Col 9, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
 [<Fact>]
 let ``Pattern discard not allowed for union case that takes no data with Lang preview`` () =
@@ -152,7 +152,7 @@ let myVal =
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 12, Col 9, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
 
 [<Fact>]
 let ``Pattern function discard not allowed for union case that takes no data with Lang preview`` () =
@@ -173,7 +173,7 @@ let myVal =
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 12, Col 9, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
     
 [<Fact>]
 let ``Pattern discard allowed for union case that takes no data with Lang version 7`` () =
@@ -214,7 +214,7 @@ let myVal =
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 12, Col 9, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
 
 [<Fact>]
 let ``Multiple pattern discards not allowed for union case that takes no data with Lang preview`` () =
@@ -240,8 +240,8 @@ let myVal =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3548, Line 16, Col 9, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 17, Col 22, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
     ]
     
 [<Fact>]
@@ -268,8 +268,8 @@ let myVal =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3548, Line 16, Col 9, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 17, Col 22, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
     ]
     
 [<Fact>]
@@ -284,6 +284,30 @@ let myDiscardedArgFunc(A _) = 5+5"""
     |> shouldSucceed
     
 [<Fact>]
+let ``Pattern discard 2 allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang 7`` () =
+     FSharp """
+module Tests
+type MyWrapper = A
+
+let myDiscardedArgFunc(A __) = 5+5"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Error 725, Line 5, Col 24, Line 5, Col 28, "This union case does not take arguments")
+    
+[<Fact>]
+let ``Pattern discard 2 allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang preview`` () =
+     FSharp """
+module Tests
+type MyWrapper = A
+
+let myDiscardedArgFunc(A __) = 5+5"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 3548, Line 5, Col 24, Line 5, Col 28, "Pattern discard is not allowed for union case that takes no data.")
+   
+[<Fact>]
 let ``Pattern discard not allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang preview`` () =
      FSharp """
 module Tests
@@ -293,7 +317,7 @@ let myDiscardedArgFunc(A _) = 5+5"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 5, Col 26, Line 5, Col 27, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 5, Col 24, Line 5, Col 27, "Pattern discard is not allowed for union case that takes no data.")
 
 [<Fact>]
 let ``Pattern named not allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang 7`` () =
@@ -317,7 +341,7 @@ let myFunc(A a) = 5+5"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3548, Line 5, Col 14, Line 5, Col 15, "Pattern discard is not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 5, Col 12, Line 5, Col 15, "Pattern discard is not allowed for union case that takes no data.")
     
 [<Fact>]
 let ``Pattern named not allowed for unions cases with no data and using them as a deconstruct syntax in functions Lang 7`` () =
@@ -366,9 +390,35 @@ let myDiscardedArgFunc(A _) = 5+5"""
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3548, Line 5, Col 14, Line 5, Col 15, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 6, Col 26, Line 6, Col 27, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 5, Col 12, Line 5, Col 15, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 6, Col 24, Line 6, Col 27, "Pattern discard is not allowed for union case that takes no data.")
     ]
+    
+[<Fact>]
+let ``Pattern discard not allowed union case does not take discarded 2 arguments with Lang 7`` () =
+     FSharp """
+module Tests
+    type A = | A
+    let a = A
+    match a with
+    | A __ -> ()"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Error 725, Line 6, Col 7, Line 6, Col 11, "This union case does not take arguments")
+    
+[<Fact>]
+let ``Pattern discard not allowed union case does not take discarded 2 arguments with Lang preview`` () =
+     FSharp """
+module Tests
+    type A = | A
+    let a = A
+    match a with
+    | A __ -> ()"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 3548, Line 6, Col 7, Line 6, Col 11, "Pattern discard is not allowed for union case that takes no data.")
     
 [<Fact>]
 let ``Pattern discard not allowed union case does not take discarded arguments with Lang 7`` () =
@@ -558,8 +608,8 @@ module Tests
         (Error 725, Line 21, Col 7, Line 21, Col 17, "This union case does not take arguments")
         (Error 725, Line 24, Col 7, Line 24, Col 18, "This union case does not take arguments")
         (Error 725, Line 27, Col 7, Line 27, Col 17, "This union case does not take arguments")
-        (Warning 3548, Line 30, Col 12, Line 30, Col 13, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 34, Col 30, Line 34, Col 31, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 36, Col 31, Line 36, Col 32, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 39, Col 12, Line 39, Col 13, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 30, Col 7, Line 30, Col 13, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 34, Col 28, Line 34, Col 31, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 36, Col 29, Line 36, Col 32, "Pattern discard is not allowed for union case that takes no data.")
+        (Warning 3548, Line 39, Col 7, Line 39, Col 13, "Pattern discard is not allowed for union case that takes no data.")
     ]

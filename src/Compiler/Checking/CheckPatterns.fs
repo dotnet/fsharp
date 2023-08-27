@@ -603,7 +603,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | SynArgPats.Pats args ->
             if warnOnUnionWithNoData then
                 match args with
-                | [ SynPat.Wild m ] | [ SynPat.Named(range = m) ] when argNames.IsEmpty  ->
+                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
                     // Here we only care about the cases where the user has written:
                     // | Case _ -> ...
                     // | Case name -> ...
