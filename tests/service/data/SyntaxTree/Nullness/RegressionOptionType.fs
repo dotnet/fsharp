@@ -1,3 +1,3 @@
-    type Option<'T> =
-        | None
-        | Some of Value:'T
+type Option<'T> =
+    | None:       'T option
+    | Some: Value:'T -> 'T option 
