@@ -595,18 +595,23 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length
+    let warnOnUnionWithNoData =
+        g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData)
 
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args ->
-            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+            if warnOnUnionWithNoData then
                 match args with
-                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
+                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                    // Here we only care about the cases where the user has written the wildcard pattern explicitly
+                    // | Case _ -> ...
+                    // let myDiscardedArgFunc(Case _) = ..."""
+                    // This needs to be a waring because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
+                    // The rest of the cases will still be reported as FS0725
                     warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
-                    args, []
-                | _ -> args, []
-            else
-                args, []
+                | _ -> ()
+            args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int
@@ -664,12 +669,8 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []
 
         | args when numArgTys = 0 ->
-            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
-                [], args
-            else
-                errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-                [], args
-
+            errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
+            [], args
         | arg :: rest when numArgTys = 1 ->
             if numArgTys = 1 && not (List.isEmpty rest) then
                 errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
