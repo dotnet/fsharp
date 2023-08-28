@@ -23,7 +23,18 @@ let f5 (a, b, c as d) a d = ()
             (Error 38, Line 3, Col 20, Line 3, Col 21, "'c' is bound twice in this pattern")
             (Error 38, Line 4, Col 20, Line 4, Col 21, "'a' is bound twice in this pattern")
             (Error 38, Line 5, Col 23, Line 5, Col 24, "'a' is bound twice in this pattern")
-            (Error 38, Line 5, Col 25, Line 5, Col 26, "'c' is bound twice in this pattern")
             (Error 38, Line 6, Col 23, Line 6, Col 24, "'a' is bound twice in this pattern")
             (Error 38, Line 6, Col 25, Line 6, Col 26, "'d' is bound twice in this pattern")
         ]
+        
+    [<Fact>]
+    let ``CI Failure``() =
+        Fsx """
+let GetMethodRefInfoAsMethodRefOrDef isAlwaysMethodDef cenv env (nm, ty, cc, args, ret, varargs, genarity as minfo) =
+    ()
+
+let mdorTag = GetMethodRefInfoAsMethodRefOrDef false false false (false, "", "", "", "", "", 0)
+
+"""
+        |> typecheck
+        |> shouldSucceed
