@@ -1,3 +1,3 @@
-type List<'T> =
-    | ([]): 'T list
-    | (::): Head: 'T * Tail: 'T list -> 'T list
+type List<'T> = 
+    | ([])  
+    | ( :: )  of Head: 'T * Tail: 'T list

@@ -1,1 +1,1 @@
-type MyFlatOption = None: MyFlatOption | Some: string -> MyFlatOption
+type MyFlatOption = None | Some of string
