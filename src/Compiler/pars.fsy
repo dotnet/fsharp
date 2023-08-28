@@ -1595,18 +1595,6 @@ tyconDefn:
            let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = None }
            SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range, trivia) }
 
-  | typeNameInfo EQUALS tyconDefnRhsBlock
-     { 
-       let nameRange = rhs parseState 1
-       let (tcDefRepr: SynTypeDefnRepr), mWith, members = $3 nameRange
-       let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
-       let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem: SynMemberDefn) -> mem.Range)
-       let equalsRange = rhs parseState 2
-
-       fun leadingKeyword ->
-           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some equalsRange ; WithKeyword = mWith }
-           SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
-
   | typeNameInfo tyconDefnAugmentation
      { let mWithKwd, classDefns = $2
        let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
@@ -1620,12 +1608,9 @@ tyconDefn:
        let (tcDefRepr, mWith, members) = $8 nameRange
        let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
        let mEquals = rhs parseState 7
-
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc (parseState, $2, 2)
-
        let m = match lid with [] -> rhs parseState 1 | _ -> rangeOfLid lid
-
        let memberCtorPattern =
            spats |> Option.map (fun spats ->
                SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
@@ -1633,24 +1618,31 @@ tyconDefn:
 
        let tcDefRepr =
          match tcDefRepr, memberCtorPattern with
+         | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None _, m), Some ctor ->
+             reportParseErrorAt m (FSComp.SR.parsEmptyTypeDefinition())
+             SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Unspecified, [ctor], unionRanges m mEquals)
+
+         | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None mName, m), _ ->
+             reportParseErrorAt m (FSComp.SR.parsEmptyTypeDefinition())
+             tcDefRepr
+
          | SynTypeDefnRepr.ObjectModel(k, cspec, m), Some ctor ->
              SynTypeDefnRepr.ObjectModel(k, ctor :: cspec, m)
+
          | _, Some ctor ->
              reportParseErrorAt (rhs2 parseState 1 5) (FSComp.SR.parsOnlyClassCanTakeValueArguments ())
              tcDefRepr
+
          | _ ->
              match az with
              | Some(_, Some id) ->
                  reportParseErrorAt (rhs parseState 6) (FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence ())
              | _ -> ()
-
              tcDefRepr
-
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members)
                     ||> unionRangeWithListBy (fun (mem: SynMemberDefn) -> mem.Range)
                     |> unionRangeWithXmlDoc xmlDoc
-
        fun leadingKeyword ->
            let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals; WithKeyword = mWith }
            SynTypeDefn($1, tcDefRepr, members, memberCtorPattern, mWhole, trivia) }
@@ -1667,7 +1659,6 @@ tyconDefn:
            | Some spats, _, _ ->
                let memberCtorPattern = SynMemberDefn.ImplicitCtor(vis, $2, spats, Option.bind snd az, xmlDoc, m, { AsKeyword = Option.map fst az })
                [memberCtorPattern], unionRanges mName memberCtorPattern.Range
-
            | _, _, Some(mAs, asId) ->
                let mAs =
                    asId |> Option.map (fun id ->
@@ -1675,19 +1666,15 @@ tyconDefn:
                        id.idRange
                    )
                    |> Option.defaultValue mAs
-
                [], unionRanges mName mAs
-
            | _, Some vis, _ ->
                [], unionRanges mName vis.Range
-
            | _ ->
                [], mName
 
        fun leadingKeyword ->
            let trivia = { SynTypeDefnTrivia.Zero with LeadingKeyword = leadingKeyword }
-           SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None(mName), mName), members, None, mName, trivia) }
-
+           SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None(mName), mName), members, None, mWhole, trivia) }
 
 /* The right-hand-side of a type definition */
 tyconDefnRhsBlock:
@@ -1715,6 +1702,10 @@ tyconDefnRhsBlock:
        (fun nameRange ->
            let tcDefRepr, members = $2 nameRange (checkForMultipleAugmentations m ($4 @ optClassDefn) [])
            tcDefRepr, mWith, members) }
+
+  | OBLOCKBEGIN oblockend
+     { fun mName ->
+           SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None mName, mName), None, [] }
 
   | tyconDefnRhs opt_classDefn
      { let m = rhs parseState 1
@@ -1776,7 +1767,7 @@ tyconClassDefn:
 
 /* The right-hand-side of a object type definition where the class/interface/struct kind has not been specified */
 classDefnBlockKindUnspecified:
-  | OBLOCKBEGIN classDefnMembers recover
+  | OBLOCKBEGIN classDefnMembersAtLeastOne recover
      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition())
        let mopt =
            match $2 with
@@ -1784,7 +1775,7 @@ classDefnBlockKindUnspecified:
            | _ -> None
        false, $2, mopt }
 
-  | OBLOCKBEGIN classDefnMembers oblockend
+  | OBLOCKBEGIN classDefnMembersAtLeastOne oblockend
      { let mopt =
            match $2 with
            | _ :: _ -> Some((rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d: SynMemberDefn) -> d.Range))
