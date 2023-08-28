@@ -3070,7 +3070,7 @@ let ``Test Project21 all symbols`` () =
             ("unit", "unit", "file1", ((12, 43), (12, 47)), ["type"], ["abbrev"]);
             ("val raise", "raise", "file1", ((13, 18), (13, 23)), [], ["val"]);
             ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("member .ctor", "``.ctor``", "file1", ((13, 25), (13, 55)), [], ["member"]);
+            ("member .ctor", "NotImplementedException", "file1", ((13, 25), (13, 55)), [], ["member"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
 //-----------------------------------------------------------------------------------------
