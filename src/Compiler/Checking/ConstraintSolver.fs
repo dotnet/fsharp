@@ -695,7 +695,7 @@ and SolveTypStaticReq (csenv: ConstraintSolverEnv) trace req ty =
             let vs = ListMeasureVarOccsWithNonZeroExponents ms
             trackErrors {
                 for tpr, _ in vs do 
-                    return! SolveTypStaticReqTypar csenv trace req tpr
+                    do! SolveTypStaticReqTypar csenv trace req tpr
             }
         | _ -> 
             match tryAnyParTy csenv.g ty with
@@ -1065,8 +1065,6 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         trackErrors {
             if not (ccuEq anonInfo1.Assembly anonInfo2.Assembly) then
                 do! ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(anonInfo1.Assembly.AssemblyName, anonInfo2.Assembly.AssemblyName), csenv.m,m2))
-            else
-                do! ResultD()
                 
             if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
                 let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
@@ -2406,87 +2404,79 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                    CompleteD
            
 and SolveTypeIsEnum (csenv: ConstraintSolverEnv) ndeep m2 trace ty underlying =
-    trackErrors {
-        let g = csenv.g
-        let m = csenv.m
-        let denv = csenv.DisplayEnv
-        match tryDestTyparTy g ty with
-        | ValueSome destTypar ->
-            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsEnum(underlying, m))
-        | _ ->
-            if isEnumTy g ty then 
-                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying (underlyingTypeOfEnumTy g ty) 
-                return! CompleteD
-            else 
-                return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotEnumType(NicePrint.minimalStringOfType denv ty), m, m2))
-    }
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match tryDestTyparTy g ty with
+    | ValueSome destTypar ->
+        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsEnum(underlying, m))
+    | _ ->
+        if isEnumTy g ty then 
+            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying (underlyingTypeOfEnumTy g ty) 
+        else 
+            ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotEnumType(NicePrint.minimalStringOfType denv ty), m, m2))
 
 and SolveTypeIsDelegate (csenv: ConstraintSolverEnv) ndeep m2 trace ty aty bty =
-    trackErrors {
-        let g = csenv.g
-        let m = csenv.m
-        let denv = csenv.DisplayEnv
-        match tryDestTyparTy g ty with
-        | ValueSome destTypar ->
-            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsDelegate(aty, bty, m))
-        | _ ->
-            if isDelegateTy g ty then 
-                match TryDestStandardDelegateType csenv.InfoReader m AccessibleFromSomewhere ty with 
-                | Some (tupledArgTy, retTy) ->
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match tryDestTyparTy g ty with
+    | ValueSome destTypar ->
+        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsDelegate(aty, bty, m))
+    | _ ->
+        if isDelegateTy g ty then 
+            match TryDestStandardDelegateType csenv.InfoReader m AccessibleFromSomewhere ty with 
+            | Some (tupledArgTy, retTy) ->
+                trackErrors {
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace aty tupledArgTy 
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bty retTy 
-                | None ->
-                    return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNonStandardDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))
-            else 
-                return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))
-    }
+                }
+            | None ->
+                ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNonStandardDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))
+        else 
+            ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))
     
 and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    trackErrors {
-        let g = csenv.g
-        let m = csenv.m
-        let denv = csenv.DisplayEnv
-        match tryDestTyparTy g ty with
-        | ValueSome destTypar ->
-            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsNonNullableStruct m)
-        | _ ->
-            let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-            if isStructTy g underlyingTy then
-                if isNullableTy g underlyingTy then
-                    return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
-                else
-                    return! CompleteD
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match tryDestTyparTy g ty with
+    | ValueSome destTypar ->
+        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsNonNullableStruct m)
+    | _ ->
+        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
+        if isStructTy g underlyingTy then
+            if isNullableTy g underlyingTy then
+                ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
             else
-                return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
-    }            
+                CompleteD
+        else
+            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
 
 and SolveTypeIsUnmanaged (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    trackErrors {
-        let g = csenv.g
-        let m = csenv.m
-        let denv = csenv.DisplayEnv
-        match tryDestTyparTy g ty with
-        | ValueSome destTypar ->
-            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
-        | _ ->
-            if isStructAnonRecdTy g ty then
-                return! destStructAnonRecdTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
-            else if isStructTupleTy g ty then
-                return! destStructTupleTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
-            else if isStructUnionTy g ty then
-                let tcref = tryTcrefOfAppTy g ty |> ValueOption.get
-                let tinst = mkInstForAppTy g ty
-                return!
-                    tcref.UnionCasesAsRefList            
-                    |> List.collect (actualTysOfUnionCaseFields tinst)
-                    |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+    let g = csenv.g
+    let m = csenv.m
+    let denv = csenv.DisplayEnv
+    match tryDestTyparTy g ty with
+    | ValueSome destTypar ->
+        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
+    | _ ->
+        if isStructAnonRecdTy g ty then
+            destStructAnonRecdTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+        else if isStructTupleTy g ty then
+            destStructTupleTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+        else if isStructUnionTy g ty then
+            let tcref = tryTcrefOfAppTy g ty |> ValueOption.get
+            let tinst = mkInstForAppTy g ty
+            
+            tcref.UnionCasesAsRefList            
+            |> List.collect (actualTysOfUnionCaseFields tinst)
+            |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+        else
+            if isUnmanagedTy g ty then
+                CompleteD
             else
-                if isUnmanagedTy g ty then
-                    return! CompleteD
-                else
-                    return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
-    }
-
+                ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
 
 and SolveTypeChoice (csenv: ConstraintSolverEnv) ndeep m2 trace ty choiceTys =
     trackErrors {
@@ -2617,30 +2607,28 @@ and CanMemberSigsMatchUpToCheck
             else
                 let! usesTDC1 = MapCombineTDC2D unifyTypes minst uminst
                 let! usesTDC2 =
-                    trackErrors {
-                        if not (permitOptArgs || isNil unnamedCalledOptArgs) then 
-                            return! ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) 
-                        else
-                            let calledObjArgTys = calledMeth.CalledObjArgTys(m)
-    
-                            // Check all the argument types. 
+                    if not (permitOptArgs || isNil unnamedCalledOptArgs) then 
+                        ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) 
+                    else
+                        let calledObjArgTys = calledMeth.CalledObjArgTys(m)
 
-                            if calledObjArgTys.Length <> callerObjArgTys.Length then 
-                                if calledObjArgTys.Length <> 0 then
-                                    return! ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
-                                else
-                                    return! ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
+                        // Check all the argument types. 
+
+                        if calledObjArgTys.Length <> callerObjArgTys.Length then 
+                            if calledObjArgTys.Length <> 0 then
+                                ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName), m))
                             else
-                                return! MapCombineTDC2D subsumeTypes calledObjArgTys callerObjArgTys
-                    }
+                                ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName), m))
+                        else
+                            MapCombineTDC2D subsumeTypes calledObjArgTys callerObjArgTys
 
                 let! usesTDC3 =
-                    calledMeth.ArgSets |> MapCombineTDCD (fun argSet -> trackErrors {
+                    calledMeth.ArgSets |> MapCombineTDCD (fun argSet ->
                         if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then 
-                            return! ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(), m))
+                            ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(), m))
                         else
-                            return! MapCombineTDC2D subsumeOrConvertArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs
-                    })
+                            MapCombineTDC2D subsumeOrConvertArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs
+                    )
 
                 let! usesTDC4 =
                     match calledMeth.ParamArrayCalledArgOpt with
