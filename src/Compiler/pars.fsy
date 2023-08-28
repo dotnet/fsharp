@@ -2678,7 +2678,7 @@ attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName OF recover
       { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
 
-  | opt_attributes opt_access unionCaseName COLON topType
+  | opt_attributes opt_access unionCaseName COLON topType %prec prec_toptuptyptail_prefix
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) (rhs2 parseState 1 5) >> Choice2Of2 }
 
@@ -2730,7 +2730,7 @@ firstUnionCaseDecl:
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
         Choice2Of2(SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
 
-  | unionCaseName COLON topType
+  | unionCaseName COLON topType 
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         let trivia: SynUnionCaseTrivia = { BarRange = None }
         let xmlDoc = grabXmlDoc (parseState, [], 1)
