@@ -603,12 +603,10 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | SynArgPats.Pats args ->
             if warnOnUnionWithNoData then
                 match args with
-                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
-                    // Here we only care about the cases where the user has written:
+                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                    // Here we only care about the cases where the user has written the wildcard pattern explicitly
                     // | Case _ -> ...
-                    // | Case name -> ...
                     // let myDiscardedArgFunc(Case _) = ..."""
-                    // let myDiscardedArgFunc(Case name) = ..."""
                     // This needs to be a waring because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
                     // The rest of the cases will still be reported as FS0725
                     warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
@@ -671,11 +669,8 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []
 
         | args when numArgTys = 0 ->
-            match args with
-            | [ SynPat.Named _ ] when warnOnUnionWithNoData -> [], args
-            | _ -> 
-                errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-                [], args
+            errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
+            [], args
         | arg :: rest when numArgTys = 1 ->
             if numArgTys = 1 && not (List.isEmpty rest) then
                 errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
