@@ -38,3 +38,38 @@ let mdorTag = GetMethodRefInfoAsMethodRefOrDef false false false (false, "", "",
 """
         |> typecheck
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``CI Failure 2``() =
+        Fsx """
+open System
+[<AbstractClass>]
+type PrintfEnv<'State, 'Residue, 'Result>(state: 'State) =
+    member _.State = state
+
+    abstract Finish: unit -> 'Result
+
+    abstract Write: string -> unit
+    
+    /// Write the result of a '%t' format.  If this is a string it is written. If it is a 'unit' value
+    /// the side effect has already happened
+    abstract WriteT: 'Residue -> unit
+
+    member env.WriteSkipEmpty(s: string) = 
+        if not (String.IsNullOrEmpty s) then 
+            env.Write s
+
+    member env.RunSteps (args: obj[], argTys: Type[], steps: string []) =
+        let mutable argIndex = 0
+        let mutable tyIndex = 0
+
+        env.Finish()
+
+let StringBuilderPrintfEnv<'Result>(k, buf) = 
+        { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
+            override _.Finish() : 'Result = k ()
+            override _.Write(s: string) = ignore(buf.Append s)
+            override _.WriteT(()) = () }
+"""
+        |> typecheck
+        |> shouldSucceed
