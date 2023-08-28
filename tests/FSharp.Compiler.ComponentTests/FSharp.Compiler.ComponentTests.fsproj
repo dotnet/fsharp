@@ -186,7 +186,8 @@
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
-    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
+    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
+    <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />	
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
