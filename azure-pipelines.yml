@@ -249,7 +249,7 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
-          # Check FSComp.txt error code sorting code formatting
+          # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
             vmImage: $(UbuntuMachineQueueName)
