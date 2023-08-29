@@ -62,3 +62,5 @@ SynRationalConst.Rational(fst $1, rhs parseState 1, rhs parseState 2, fst $3, rh
 ```	
 
 That's it. Adjusting the other constructor calls of `Rational` in `pars.fsy` should be enough to have a working parser again which returns the modified AST.
+After fixing the compiler errors, you can run the parser tests in `SyntaxTreeTests.fs` to verify that everything works as expected.  
+It's likely that you'll need to update the baseline files as decribed in `SyntaxTreeTests.fs`.
