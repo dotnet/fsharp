@@ -28,10 +28,9 @@ let f5 (a, b, c as d) a d = ()
     [<Fact>]
     let ``Test me`` () =
         Fsx """
-let f2 (a, b as c) c = ()
+type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags) =
+    member _.SourceConstructFlags = sourceConstructFlags
+    new(sourceConstructFlags) = CompilationMappingAttribute(sourceConstructFlags)
 """
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 38, Line 2, Col 17, Line 2, Col 18, "'c' is bound twice in this pattern")
-        ]
+        |> shouldSucceed

@@ -6216,19 +6216,27 @@ and RewriteRangeExpr synExpr =
     | _ -> None
 
 /// Check lambdas as a group, to catch duplicate names in patterns
-and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy _takenNames tpenv (e: SynExpr) =
+and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv (e: SynExpr) =
     let g = cenv.g
     match e with
     | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, parsedData, m, _) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let takenNames =
-            match parsedData with
-            | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
-            | None -> []
-            |> List.concat
-            |> Set.ofList
-
-        // Can we detect multiple bound patterns, respecting the existing logic within SimplePats
+            // Is there a way to see that you are part a function ?
+            match overallTy with
+            | MustConvertTo(_, reqdTy) ->
+                match reqdTy with
+                | TType_var(typar,_) ->
+                    match typar.Solution with
+                    | Some(TType_fun _) ->
+                        match parsedData with
+                        | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
+                        | _ -> []
+                        |> List.concat
+                        |> Set.ofList
+                    | _ -> takenNames
+                | _ -> takenNames
+            | _ -> takenNames             
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
             cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
 
