@@ -12,7 +12,7 @@ printfn "Ω\937"
     |> shouldFail
     |> withDiagnostics [
         // Note: Error spans full string -- not just error part
-        (Error 1158, Line 2, Col 9, Line 2, Col 16, "This is not a valid character literal")
+        (Error 1252, Line 2, Col 9, Line 2, Col 16, "'\\937' is not a valid character literal")
     ]
 
 [<Fact>]
@@ -38,3 +38,15 @@ if @"\937" <> "\\937" then failwith "should not be trigraph"
     """
     |> compileExeAndRun
     |> shouldSucceed
+
+[<Fact>]
+let ``Error message for invalid decimal char contains only invalid trigraph``() =
+    Fs """
+printfn "foo\937bar"
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 1252, Line 2, Col 9, Line 2, Col 21, "'\\937' is not a valid character literal")
+    ]
+

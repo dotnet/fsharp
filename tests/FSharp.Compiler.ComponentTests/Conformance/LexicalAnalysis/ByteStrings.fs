@@ -12,7 +12,7 @@ let _ = "\937"B
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1158, Line 3, Col 9, Line 3, Col 16, "This is not a valid character literal")
+        (Error 1252, Line 3, Col 9, Line 3, Col 16, "'\\937' is not a valid character literal")
     ]
 
 [<Fact>]

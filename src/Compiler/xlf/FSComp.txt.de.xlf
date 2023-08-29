@@ -622,6 +622,11 @@
         <target state="translated">IF-FSHARP-/IF-CAML-Regionen werden nicht mehr unterstützt</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidCharLiteralInString">
+        <source>'{0}' is not a valid character literal</source>
+        <target state="new">'{0}' is not a valid character literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="new">This is not a valid identifier</target>
