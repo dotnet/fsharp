@@ -28,9 +28,9 @@ let f5 (a, b, c as d) a d = ()
     [<Fact>]
     let ``Test me`` () =
         Fsx """
-type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags) =
-    member _.SourceConstructFlags = sourceConstructFlags
-    new(sourceConstructFlags) = CompilationMappingAttribute(sourceConstructFlags)
+type CustomOperationAttribute(name:string) =
+    let mutable allowInto = false
+    member _.AllowIntoPattern with get() = allowInto and set v = allowInto <- v
 """
         |> typecheck
         |> shouldSucceed

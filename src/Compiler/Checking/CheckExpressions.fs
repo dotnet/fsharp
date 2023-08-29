@@ -6228,7 +6228,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                 match reqdTy with
                 | TType_var(typar,_) ->
                     match typar.Solution with
-                    | Some(TType_fun _) ->
+                    | Some(TType_fun _) when not isMember ->
                         match parsedData with
                         | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
                         | _ -> []
