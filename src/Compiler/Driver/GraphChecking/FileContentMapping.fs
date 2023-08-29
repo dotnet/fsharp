@@ -143,7 +143,10 @@ let visitSynTypeDefn
     ]
 
 let visitSynTypeDefnSig
-    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes
+                                                  longId = longId
+                                                  typeParams = typeParams
+                                                  constraints = constraints)
                      typeRepr = typeRepr
                      members = members))
     =
@@ -162,7 +165,10 @@ let visitSynTypeDefnSig
             | SynTypeDefnSimpleRepr.General _
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> ()
             | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> yield! visitSynType rhsType
-            | SynTypeDefnSimpleRepr.None _
+            // This is a type augmentation in a signature file
+            | SynTypeDefnSimpleRepr.None _ ->
+                yield! visitLongIdent longId
+                yield! List.collect visitSynMemberSig members
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.Exception _ -> ()
