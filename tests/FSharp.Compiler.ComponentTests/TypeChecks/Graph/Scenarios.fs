@@ -612,4 +612,30 @@ open Foo.Bar.Y // Y.fs
 """
                     (set [| 1 |])
             ]
+        scenario
+            "Identifier in type augmentation can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0 |])
+            ]
     ]

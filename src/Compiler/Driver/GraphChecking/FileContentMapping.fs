@@ -103,7 +103,7 @@ let visitSynUnionCase (SynUnionCase (attributes = attributes; caseType = caseTyp
 let visitSynEnumCase (SynEnumCase (attributes = attributes)) = visitSynAttributes attributes
 
 let visitSynTypeDefn
-    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
                   typeRepr = typeRepr
                   members = members))
     : FileContentEntry list =
@@ -130,6 +130,9 @@ let visitSynTypeDefn
             match kind with
             | SynTypeDefnKind.Delegate (signature, _) ->
                 yield! visitSynType signature
+                yield! List.collect visitSynMemberDefn members
+            | SynTypeDefnKind.Augmentation _ ->
+                yield! visitLongIdent longId
                 yield! List.collect visitSynMemberDefn members
             | _ -> yield! List.collect visitSynMemberDefn members
         | SynTypeDefnRepr.Exception _ ->
