@@ -1202,11 +1202,18 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
  | trigraph
     { let (buf, _fin, m, kind, args) = sargs
       let s = lexeme lexbuf
-      addByteChar buf (trigraph s.[1] s.[2] s.[3])
-      if not skip then
-          STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.interpolationDelimiterLength, m))
+      let result() =
+          if not skip then
+              STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.interpolationDelimiterLength, m))
+          else
+              singleQuoteString sargs skip lexbuf
+      let c = trigraph s.[1] s.[2] s.[3]
+      let x = int c
+      if x < 0 || x > 255 then
+          fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (result())
       else
-          singleQuoteString sargs skip lexbuf }
+          addByteChar buf c
+          result() }
 
  | hexGraphShort
     { let (buf, _fin, m, kind, args) = sargs
