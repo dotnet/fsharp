@@ -347,16 +347,6 @@ let rec SimplePatsOfPat synArgNameGenerator p =
 
         SynSimplePats.SimplePats(ps2, commas, m), laterF
 
-    | SynPat.Paren (SynPat.As (lhsPat = SynPat.Tuple (elementPats = pats; commaRanges = commas); rhsPat = rhsPat), m) ->
-        // As we are using as patterns, we need to remove the last element from the tuple ?
-        let sps = List.map (SimplePatOfPat synArgNameGenerator) pats
-        let sps = sps @ [ SimplePatOfPat synArgNameGenerator rhsPat ]
-
-        let ps2, laterF =
-            List.foldBack (fun (p', rhsf) (ps', rhsf') -> p' :: ps', (composeFunOpt rhsf rhsf')) sps ([], None)
-
-        SynSimplePats.SimplePats(ps2, commas, m), laterF
-
     | SynPat.Paren (SynPat.Const (SynConst.Unit, m), _)
     | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m), None
 

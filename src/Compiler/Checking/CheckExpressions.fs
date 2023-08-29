@@ -3781,7 +3781,24 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 
     | _ ->
         expr.SupplyArgument (arg, m), resultTy
-
+        
+let rec (|TakenNames|_|) (synPat: SynPat) =
+    match synPat with
+    | SynPat.Paren(pat= TakenNames pats) -> Some pats
+    | SynPat.Named(ident= SynIdent(ident= ident)) -> Some [ ident.idText ]
+    | SynPat.As(lhsPat= TakenNames lftPats; rhsPat= TakenNames rhsPats) -> Some (lftPats @ rhsPats)
+    | SynPat.LongIdent(longDotId= SynLongIdent(id= [ident])) -> Some [ ident.idText ]
+    | SynPat.Tuple(elementPats= pats) ->
+        let res =
+            pats
+            |> List.choose(fun p ->
+                match p with
+                | TakenNames pats -> Some pats
+                | _ -> None)
+            |> List.concat
+        Some res
+    | SynPat.FromParseError(pat = TakenNames pats) -> Some pats
+    | _ -> None
 //-------------------------------------------------------------------------
 // Additional data structures used by type checking
 //-------------------------------------------------------------------------
@@ -6199,13 +6216,19 @@ and RewriteRangeExpr synExpr =
     | _ -> None
 
 /// Check lambdas as a group, to catch duplicate names in patterns
-and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
+and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy _takenNames tpenv (e: SynExpr) =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
-
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, parsedData, m, _) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
+        let takenNames =
+            match parsedData with
+            | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
+            | None -> []
+            |> List.concat
+            |> Set.ofList
 
+        // Can we detect multiple bound patterns, respecting the existing logic within SimplePats
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
             cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
 
