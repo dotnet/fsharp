@@ -530,10 +530,12 @@ rule token (args: LexArgs) (skip: bool) = parse
  | '\'' trigraph '\'' 'B'
      { let s = lexeme lexbuf
        let x = int32 (trigraph s.[2] s.[3] s.[4])
-       if x < 0 || x > 255 then
+       if x < 0 || x > 127 then
            fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
        else
            UINT8 (byte(x))  }
+
+ | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
  | '\'' unicodeGraphShort '\''  'B'
      { let x = int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 2))
@@ -544,12 +546,27 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
- | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' hexGraphShort '\'' 'B'
+     { let x = int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 2))
+      if x < 0 || x > 127 then
+           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
+      else
+           UINT8 (byte(x))  }
 
  | '\'' unicodeGraphLong '\''
      { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
        | SingleChar(c) -> CHAR (char c)
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
+
+ | '\'' unicodeGraphLong '\'' 'B'
+     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 2) with
+       | SingleChar(c) -> 
+            let x = int32 c
+            if x < 0 || x > 127 then
+                fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
+            else
+                UINT8 (byte(x))
+       | _ -> fail args lexbuf  (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0)) }
 
  | "(*IF-FSHARP"
      { if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then

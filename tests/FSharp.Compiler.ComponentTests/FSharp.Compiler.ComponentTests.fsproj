@@ -86,6 +86,7 @@
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\CharByteLiterals.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Generics.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
