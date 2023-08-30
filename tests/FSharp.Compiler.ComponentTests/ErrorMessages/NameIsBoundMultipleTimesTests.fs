@@ -18,15 +18,21 @@ let f5 (a, b, c as d) a d = ()
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 38, Line 2, Col 8, Line 2, Col 9, "'a' is bound twice in this pattern")
-            (Error 38, Line 3, Col 17, Line 3, Col 18, "'c' is bound twice in this pattern")
-            (Error 38, Line 4, Col 17, Line 4, Col 18, "'c' is bound twice in this pattern")
-            (Error 38, Line 5, Col 20, Line 5, Col 21, "'d' is bound twice in this pattern")
-            (Error 38, Line 6, Col 20, Line 6, Col 21, "'d' is bound twice in this pattern")
+            (Error 38, Line 2, Col 10, Line 2, Col 11, "'a' is bound twice in this pattern")
+            (Error 38, Line 3, Col 20, Line 3, Col 21, "'c' is bound twice in this pattern")
+            (Error 38, Line 6, Col 25, Line 6, Col 26, "'d' is bound twice in this pattern")
         ]
         
     [<Fact>]
-    let ``Test me`` () =
+    let ``CI Failure`` () =
+        Fsx """
+let (++) e1 e2 = if e1 then e2 else false
+"""
+        |> typecheck
+        |> shouldSucceed
+    
+    [<Fact>]
+    let ``CI Failure 2`` () =
         Fsx """
 type CustomOperationAttribute(name:string) =
     let mutable allowInto = false

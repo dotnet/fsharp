@@ -6228,12 +6228,24 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                 match reqdTy with
                 | TType_var(typar,_) ->
                     match typar.Solution with
-                    | Some(TType_fun _) when not isMember ->
-                        match parsedData with
-                        | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
-                        | _ -> []
-                        |> List.concat
-                        |> Set.ofList
+                    | Some(TType_fun(_domainType, _, _)) when not isMember ->
+                        match overallTy with
+                        | MustConvertTo(_, reqdTy) ->
+                            match reqdTy with
+                            | TType_fun _ ->
+                                match overallTy with
+                                | MustConvertTo(_, reqdTy) ->
+                                    match reqdTy with
+                                    | TType_tuple _ ->
+                                        match parsedData with
+                                        | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
+                                        | _ -> []
+                                        |> List.concat
+                                        |> Set.ofList
+                                    | _ -> takenNames
+                                | _ -> takenNames
+                            | _ -> takenNames
+                        | _ -> takenNames
                     | _ -> takenNames
                 | _ -> takenNames
             | _ -> takenNames             
