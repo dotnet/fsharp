@@ -1135,7 +1135,10 @@ type internal TypeCheckInfo
                         | Item.RecdField info when equals cnr.Range fieldRange ->
                             info.TyconRef.AllFieldAsRefList
                             |> List.choose (fun field ->
-                                if referencedFields |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName) then
+                                if
+                                    referencedFields
+                                    |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName)
+                                then
                                     None
                                 else
                                     FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField |> Some)
