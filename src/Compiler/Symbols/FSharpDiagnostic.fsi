@@ -45,7 +45,9 @@ type public DiagnosticContextInfo =
 
 /// Contextually-relevant data to each particular diagnostic
 [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-type public IFSharpDiagnosticExtendedData = interface end
+type public IFSharpDiagnosticExtendedData =
+    interface
+    end
 
 /// Additional data for type-mismatch-like (usually with ErrorNumber = 1) diagnostics
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
