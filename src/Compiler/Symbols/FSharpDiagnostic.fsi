@@ -11,73 +11,91 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.DiagnosticsLogger
 
+/// Information about the context of a type equation in type-mismatch-like diagnostic
 [<RequireQualifiedAccess; Experimental("This FCS API is experimental and subject to change.")>]
 type public DiagnosticContextInfo =
-    /// No context was given.
+    /// No context was given
     | NoContext
-    /// The type equation comes from an IF expression.
+    /// The type equation comes from an IF expression
     | IfExpression
-    /// The type equation comes from an omitted else branch.
+    /// The type equation comes from an omitted else branch
     | OmittedElseBranch
-    /// The type equation comes from a type check of the result of an else branch.
+    /// The type equation comes from a type check of the result of an else branch
     | ElseBranchResult
-    /// The type equation comes from the verification of record fields.
+    /// The type equation comes from the verification of record fields
     | RecordFields
-    /// The type equation comes from the verification of a tuple in record fields.
+    /// The type equation comes from the verification of a tuple in record fields
     | TupleInRecordFields
     /// The type equation comes from a list or array constructor
     | CollectionElement
-    /// The type equation comes from a return in a computation expression.
+    /// The type equation comes from a return in a computation expression
     | ReturnInComputationExpression
-    /// The type equation comes from a yield in a computation expression.
+    /// The type equation comes from a yield in a computation expression
     | YieldInComputationExpression
-    /// The type equation comes from a runtime type test.
+    /// The type equation comes from a runtime type test
     | RuntimeTypeTest
-    /// The type equation comes from an downcast where a upcast could be used.
+    /// The type equation comes from an downcast where a upcast could be used
     | DowncastUsedInsteadOfUpcast
-    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    /// The type equation comes from a return type of a pattern match clause (not the first clause)
     | FollowingPatternMatchClause
-    /// The type equation comes from a pattern match guard.
+    /// The type equation comes from a pattern match guard
     | PatternMatchGuard
-    /// The type equation comes from a sequence expression.
+    /// The type equation comes from a sequence expression
     | SequenceExpression
 
+/// Contextually-relevant data to each particular diagnostic
 [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-type public IFSharpDiagnosticExtendedData =
-    interface
-    end
+type public IFSharpDiagnosticExtendedData = interface end
 
+/// Additional data for type-mismatch-like (usually with ErrorNumber = 1) diagnostics
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public TypeMismatchDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
+    /// Represents F# type expected in the current context
     member ExpectedType: FSharpType
+    /// Represents F# type type actual in the current context
     member ActualType: FSharpType
+    /// The context in which the type mismatch was found
     member ContextInfo: DiagnosticContextInfo
+    /// Represents the information needed to format types
     member DisplayContext: FSharpDisplayContext
 
+/// Additional data for 'This expression is a function value, i.e. is missing arguments' diagnostic
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public ExpressionIsAFunctionExtendedData =
     interface IFSharpDiagnosticExtendedData
+    /// Represents F# type of the expression
     member ActualType: FSharpType
 
+/// Additional data for diagnostics about a field whose declarations differ in signature and implementation
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public FieldNotContainedDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
+    /// Represents F# field in signature file
     member SignatureField: FSharpField
+    /// Represents F# field in implementation file
     member ImplementationField: FSharpField
 
+/// Additional data for diagnostics about a value whose declarations differ in signature and implementation
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type public ValueNotContainedDiagnosticExtendedData =
     interface IFSharpDiagnosticExtendedData
+    /// Represents F# value in signature file
     member SignatureValue: FSharpMemberOrFunctionOrValue
+    /// Represents F# value in implementation file
     member ImplementationValue: FSharpMemberOrFunctionOrValue
 
+/// Additional data for 'argument names in the signature and implementation do not match' diagnostic
 [<Class; Experimental("This FCS API is experimental and subject to change.")>]
 type ArgumentsInSigAndImplMismatchExtendedData =
     interface IFSharpDiagnosticExtendedData
+    /// Argument name in signature file
     member SignatureName: string
+    /// Argument name in implementation file
     member ImplementationName: string
+    /// Argument identifier range within signature file
     member SignatureRange: range
+    /// Argument identifier range within implementation file
     member ImplementationRange: range
 
 /// Represents a diagnostic produced by the F# compiler
@@ -126,6 +144,7 @@ type public FSharpDiagnostic =
     /// Gets the full error number text e.g "FS0031"
     member ErrorNumberText: string
 
+    /// Gets the contextually-relevant data to each particular diagnostic for things like code fixes
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member ExtendedData: IFSharpDiagnosticExtendedData option
 

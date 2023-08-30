@@ -29,35 +29,21 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
+[<RequireQualifiedAccess; Experimental("This FCS API is experimental and subject to change.")>]
 type DiagnosticContextInfo =
-    /// No context was given.
     | NoContext
-    /// The type equation comes from an IF expression.
     | IfExpression
-    /// The type equation comes from an omitted else branch.
     | OmittedElseBranch
-    /// The type equation comes from a type check of the result of an else branch.
     | ElseBranchResult
-    /// The type equation comes from the verification of record fields.
     | RecordFields
-    /// The type equation comes from the verification of a tuple in record fields.
     | TupleInRecordFields
-    /// The type equation comes from a list or array constructor
     | CollectionElement
-    /// The type equation comes from a return in a computation expression.
     | ReturnInComputationExpression
-    /// The type equation comes from a yield in a computation expression.
     | YieldInComputationExpression
-    /// The type equation comes from a runtime type test.
     | RuntimeTypeTest
-    /// The type equation comes from an downcast where a upcast could be used.
     | DowncastUsedInsteadOfUpcast
-    /// The type equation comes from a return type of a pattern match clause (not the first clause).
     | FollowingPatternMatchClause
-    /// The type equation comes from a pattern match guard.
     | PatternMatchGuard
-    /// The type equation comes from a sequence expression.
     | SequenceExpression
     with
     static member From(contextInfo: ContextInfo) =
@@ -188,7 +174,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
                Some(TypeMismatchDiagnosticExtendedData(symbolEnv, displayEnv, expectedType, actualType, context))
 
             | ErrorFromAddingTypeEquation(_, displayEnv, expectedType, actualType, _, _)->
-               Some(TypeMismatchDiagnosticExtendedData(symbolEnv, displayEnv, expectedType, actualType, NoContext))
+               Some(TypeMismatchDiagnosticExtendedData(symbolEnv, displayEnv, expectedType, actualType, DiagnosticContextInfo.NoContext))
 
             | FunctionValueUnexpected(_, actualType, _) ->
                 Some(ExpressionIsAFunctionExtendedData(symbolEnv, actualType))
