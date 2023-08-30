@@ -25,6 +25,7 @@ type FSharpSymbol with
 
     member this.IsInternalToProject =
         let publicOrInternal = this.Accessibility.IsPublic || this.Accessibility.IsInternal
+
         match this with
         | :? FSharpParameter -> true
         | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not publicOrInternal
