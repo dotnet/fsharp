@@ -408,7 +408,7 @@ type BoundModel private (
 
     member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
     
-    member this.TryPeekTcInfoWithExtras() = 
+    member this.TryPeekTcInfoWithExtras() =
         (this.TcInfo.TryPeekValue(), this.TcInfoExtras.TryPeekValue())
         ||> ValueOption.map2 (fun a b -> a, b)
         |> ValueOption.toOption
