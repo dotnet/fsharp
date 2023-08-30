@@ -415,11 +415,12 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             match info with
             | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
             | FSMeth (_, _, vref, _) -> writeValue vref
-            | ILMeth (_, info, _) ->
-                info.ILMethodRef.ArgTypes |> List.iter writeILType
-                writeILType info.ILMethodRef.ReturnType
-                writeString info.ILName
-                writeType false info.ApparentEnclosingType
+            | ILMeth (_, ilMethInfo, _) when info.IsConstructor -> writeType true ilMethInfo.ApparentEnclosingType
+            | ILMeth (_, ilMethInfo, _) ->
+                ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
+                writeILType ilMethInfo.ILMethodRef.ReturnType
+                writeString ilMethInfo.ILName
+                writeType false ilMethInfo.ApparentEnclosingType
             | _ ->
                 writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef
