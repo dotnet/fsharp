@@ -177,8 +177,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(refSourceText, range) with
-                | None -> return None
-                | Some refTextSpan -> return Some(FSharpGoToDefinitionNavigableItem(refDocument, refTextSpan))
+                | ValueNone -> return None
+                | ValueSome refTextSpan -> return Some(FSharpGoToDefinitionNavigableItem(refDocument, refTextSpan))
             else
                 return None
         }
@@ -585,7 +585,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
                             let span =
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with
-                                | Some span -> span
+                                | ValueSome span -> span
                                 | _ -> TextSpan()
 
                             return span

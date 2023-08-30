@@ -44,7 +44,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             | true, (version, items) when version = currentVersion -> return items
             | _ ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                let items = parseResults.ParseTree |> NavigateTo.GetNavigableItems
+                let items = NavigateTo.GetNavigableItems parseResults.ParseTree
                 cache[document.Id] <- currentVersion, items
                 return items
         }

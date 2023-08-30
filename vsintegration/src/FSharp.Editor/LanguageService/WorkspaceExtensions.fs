@@ -25,9 +25,9 @@ module private CheckerExtensions =
 
         /// Parse the source text from the Roslyn document.
         member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, userOpName: string) =
-            async {
-                let! ct = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            cancellableTask {
+                let! ct = CancellableTask.getCancellationToken ()
+                let! sourceText = document.GetTextAsync(ct)
 
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
             }
@@ -209,7 +209,7 @@ type Document with
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        async {
+        cancellableTask {
             let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
             return! checker.ParseDocument(this, parsingOptions, userOpName)
         }

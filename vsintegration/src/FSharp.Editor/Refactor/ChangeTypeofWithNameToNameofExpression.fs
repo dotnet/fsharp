@@ -15,48 +15,55 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeTypeofWithNameToNameofExpression"); Shared>]
 type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
-        asyncMaybe {
+        cancellableTask {
             let document = context.Document
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+            let! ct = CancellableTask.getCancellationToken ()
+            let! sourceText = context.Document.GetTextAsync(ct)
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeTypeofWithNameToNameofExpressionRefactoring))
-                |> liftAsync
 
             let selectionRange =
                 RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
 
-            let! namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)
+            let namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)
 
-            let! namedTypeSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.NamedIdentRange)
-            let! typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.FullExpressionRange)
-            let namedTypeName = sourceText.GetSubText(namedTypeSpan)
-            let replacementString = $"nameof({namedTypeName})"
+            match namedTypeOfResults with
+            | None -> ()
+            | Some namedTypeOfResults ->
 
-            let title = SR.UseNameof()
+                let namedTypeSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.NamedIdentRange)
+                let typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.FullExpressionRange)
 
-            let getChangedText (sourceText: SourceText) =
-                sourceText.WithChanges(TextChange(typeofAndNameSpan, replacementString))
+                match namedTypeSpan, typeofAndNameSpan with
+                | ValueSome namedTypeSpan, ValueSome typeofAndNameSpan ->
 
-            let codeAction =
-                CodeAction.Create(
-                    title,
-                    (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                            return context.Document.WithText(getChangedText sourceText)
-                        }
-                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title
-                )
+                    let namedTypeName = sourceText.GetSubText(namedTypeSpan)
+                    let replacementString = $"nameof({namedTypeName})"
 
-            context.RegisterRefactoring(codeAction)
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                    let title = SR.UseNameof()
+
+                    let getChangedText (sourceText: SourceText) =
+                        sourceText.WithChanges(TextChange(typeofAndNameSpan, replacementString))
+
+                    let codeAction =
+                        CodeAction.Create(
+                            title,
+                            (fun (cancellationToken: CancellationToken) ->
+                                cancellableTask {
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                                    return context.Document.WithText(getChangedText sourceText)
+                                } |> CancellableTask.start cancellationToken),
+                            title
+                        )
+
+                    context.RegisterRefactoring(codeAction)
+                | _ -> ()
+        } |> CancellableTask.startAsTask context.CancellationToken

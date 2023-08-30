@@ -16,6 +16,8 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.EditorServices
+open CancellableTasks.CancellableTaskBuilder
+open CancellableTasks
 
 type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, workspace: VisualStudioWorkspace) =
 
@@ -58,76 +60,80 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
 
                     match XmlDocComment.IsBlank lineWithLastCharInserted with
                     | Some i when i = indexOfCaret ->
-                        asyncMaybe {
+                        cancellableTask {
                             try
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curEditorLineNum =
                                     wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber
 
-                                let! document = getLastDocument ()
-                                let! cancellationToken = Async.CancellationToken |> liftAsync
-                                let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter)) |> liftAsync
+                                let document = getLastDocument ()
 
-                                let xmlDocables =
-                                    XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)
+                                match document with
+                                | None -> ()
+                                | Some document ->
+                                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                                    let! sourceText = document.GetTextAsync(cancellationToken)
+                                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter))
 
-                                let xmlDocablesBelowThisLine =
-                                    // +1 because looking below current line for e.g. a 'member' or 'let'
-                                    xmlDocables
-                                    |> List.filter (fun (XmlDocable (line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
+                                    let xmlDocables =
+                                        XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)
 
-                                match xmlDocablesBelowThisLine with
-                                | [] -> ()
-                                | XmlDocable (_line, indent, paramNames) :: _xs ->
-                                    // delete the slashes the user typed (they may be indented wrong)
-                                    let editorLineToDelete =
-                                        wpfTextView.TextBuffer.CurrentSnapshot.GetLineFromLineNumber(
-                                            wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber
-                                        )
+                                    let xmlDocablesBelowThisLine =
+                                        // +1 because looking below current line for e.g. a 'member' or 'let'
+                                        xmlDocables
+                                        |> List.filter (fun (XmlDocable (line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
 
-                                    wpfTextView.TextBuffer.Delete(editorLineToDelete.Extent.Span) |> ignore
-                                    // add the new xmldoc comment
-                                    let toInsert = new Text.StringBuilder()
+                                    match xmlDocablesBelowThisLine with
+                                    | [] -> ()
+                                    | XmlDocable (_line, indent, paramNames) :: _xs ->
+                                        // delete the slashes the user typed (they may be indented wrong)
+                                        let editorLineToDelete =
+                                            wpfTextView.TextBuffer.CurrentSnapshot.GetLineFromLineNumber(
+                                                wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber
+                                            )
 
-                                    toInsert
-                                        .Append(' ', indent)
-                                        .AppendLine("/// <summary>")
-                                        .Append(' ', indent)
-                                        .AppendLine("/// ")
-                                        .Append(' ', indent)
-                                        .Append("/// </summary>")
-                                    |> ignore
+                                        wpfTextView.TextBuffer.Delete(editorLineToDelete.Extent.Span) |> ignore
+                                        // add the new xmldoc comment
+                                        let toInsert = new Text.StringBuilder()
 
-                                    paramNames
-                                    |> List.iter (fun p ->
                                         toInsert
-                                            .AppendLine()
                                             .Append(' ', indent)
-                                            .Append(sprintf "/// <param name=\"%s\"></param>" p)
-                                        |> ignore)
+                                            .AppendLine("/// <summary>")
+                                            .Append(' ', indent)
+                                            .AppendLine("/// ")
+                                            .Append(' ', indent)
+                                            .Append("/// </summary>")
+                                        |> ignore
 
-                                    let _newSS =
-                                        wpfTextView.TextBuffer.Insert(
-                                            wpfTextView.Caret.Position.BufferPosition.Position,
-                                            toInsert.ToString()
-                                        )
-                                    // move the caret to between the summary tags
-                                    let lastLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine()
+                                        paramNames
+                                        |> List.iter (fun p ->
+                                            toInsert
+                                                .AppendLine()
+                                                .Append(' ', indent)
+                                                .Append(sprintf "/// <param name=\"%s\"></param>" p)
+                                            |> ignore)
 
-                                    let middleSummaryLine =
-                                        wpfTextView.TextSnapshot.GetLineFromLineNumber(lastLine.LineNumber - 1 - paramNames.Length)
+                                        let _newSS =
+                                            wpfTextView.TextBuffer.Insert(
+                                                wpfTextView.Caret.Position.BufferPosition.Position,
+                                                toInsert.ToString()
+                                            )
+                                        // move the caret to between the summary tags
+                                        let lastLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine()
 
-                                    wpfTextView.Caret.MoveTo(wpfTextView.GetTextViewLineContainingBufferPosition(middleSummaryLine.Start))
-                                    |> ignore
+                                        let middleSummaryLine =
+                                            wpfTextView.TextSnapshot.GetLineFromLineNumber(lastLine.LineNumber - 1 - paramNames.Length)
 
-                                    shouldCommitCharacter <- false
+                                        wpfTextView.Caret.MoveTo(wpfTextView.GetTextViewLineContainingBufferPosition(middleSummaryLine.Start))
+                                        |> ignore
+
+                                        shouldCommitCharacter <- false
                             with ex ->
                                 Assert.Exception ex
                                 ()
                         }
-                        |> Async.Ignore
-                        |> Async.StartImmediate
+                        |> CancellableTask.startAsTaskWithoutCancellation // We don't have a cancellation token here at the moment, maybe there's a better way of handling it in modern VS?
+                        |> ignore
                     | Some _
                     | None -> ()
                 | _ -> ()

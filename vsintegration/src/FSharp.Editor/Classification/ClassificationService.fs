@@ -52,7 +52,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         ClassificationTypeNames.Text
 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
-                | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
+                | ValueSome span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
                 | _ -> ()
 
         let flags =
@@ -79,8 +79,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         =
         for item in items do
             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
-            | None -> ()
-            | Some span ->
+            | ValueNone -> ()
+            | ValueSome span ->
                 let span =
                     match item.Type with
                     | SemanticClassificationType.Printf -> span

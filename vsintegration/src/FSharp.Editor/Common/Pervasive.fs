@@ -57,6 +57,13 @@ type MaybeBuilder() =
     [<DebuggerStepThrough>]
     member inline _.Bind(value, f: 'T -> 'U option) : 'U option = Option.bind f value
 
+    // M<'T> * ('T -> M<'U>) -> M<'U>
+    [<DebuggerStepThrough>]
+    member inline _.Bind(value: 'T voption, f: 'T -> 'U option) : 'U option =
+        match value with
+        | ValueNone -> None
+        | ValueSome value -> f value
+
     // 'T * ('T -> M<'U>) -> M<'U> when 'U :> IDisposable
     [<DebuggerStepThrough>]
     member _.Using(resource: ('T :> System.IDisposable), body: _ -> _ option) : _ option =
@@ -135,6 +142,14 @@ type AsyncMaybeBuilder() =
             match value with
             | None -> return None
             | Some result -> return! f result
+        }
+
+    [<DebuggerStepThrough>]
+    member _.Bind(value: 'T voption, f: 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            match value with
+            | ValueNone -> return None
+            | ValueSome result -> return! f result
         }
 
     [<DebuggerStepThrough>]

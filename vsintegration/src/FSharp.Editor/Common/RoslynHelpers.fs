@@ -46,12 +46,12 @@ module internal RoslynHelpers =
 
         TextSpan(startPosition, endPosition - startPosition)
 
-    let TryFSharpRangeToTextSpan (sourceText: SourceText, range: range) : TextSpan option =
+    let TryFSharpRangeToTextSpan (sourceText: SourceText, range: range) : TextSpan voption =
         try
-            Some(FSharpRangeToTextSpan(sourceText, range))
+            ValueSome(FSharpRangeToTextSpan(sourceText, range))
         with e ->
             //Assert.Exception(e)
-            None
+            ValueNone
 
     let TextSpanToFSharpRange (fileName: string, textSpan: TextSpan, sourceText: SourceText) : range =
         let startLine = sourceText.Lines.GetLineFromPosition textSpan.Start

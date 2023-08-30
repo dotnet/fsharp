@@ -349,6 +349,77 @@ module Array =
 
         loop 0
 
+    let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
+
+        let mutable i = 0
+        let mutable first = Unchecked.defaultof<'U>
+        let mutable found = false
+
+        while i < array.Length && not found do
+            let element = array.[i]
+
+            match chooser element with
+            | ValueNone -> i <- i + 1
+            | ValueSome b ->
+                first <- b
+                found <- true
+
+        if i <> array.Length then
+
+            let chunk1: 'U[] =
+                Array.zeroCreate ((array.Length >>> 2) + 1)
+
+            chunk1.[0] <- first
+            let mutable count = 1
+            i <- i + 1
+
+            while count < chunk1.Length && i < array.Length do
+                let element = array.[i]
+
+                match chooser element with
+                | ValueNone -> ()
+                | ValueSome b ->
+                    chunk1.[count] <- b
+                    count <- count + 1
+
+                i <- i + 1
+
+            if i < array.Length then
+                let chunk2: 'U[] =
+                    Array.zeroCreate (array.Length - i)
+
+                count <- 0
+
+                while i < array.Length do
+                    let element = array.[i]
+
+                    match chooser element with
+                    | ValueNone -> ()
+                    | ValueSome b ->
+                        chunk2.[count] <- b
+                        count <- count + 1
+
+                    i <- i + 1
+
+                let res: 'U[] =
+                    Array.zeroCreate (chunk1.Length + count)
+
+                Array.Copy(chunk1, res, chunk1.Length)
+                Array.Copy(chunk2, 0, res, chunk1.Length, count)
+                res
+            else
+                Array.sub chunk1 0 count
+        else
+            Array.empty
+
+[<RequireQualifiedAccess>]
+module ImmutableArray =
+    let inline tryHeadV (xs: ImmutableArray<'T>) : 'T voption =
+        if xs.Length = 0 then
+            ValueNone
+        else
+            ValueSome xs[0]
+
 [<RequireQualifiedAccess>]
 module List =
     let rec tryFindV predicate list =

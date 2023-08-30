@@ -15,51 +15,59 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeDerefToValue"); Shared>]
 type internal FSharpChangeDerefToValueRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
-        asyncMaybe {
+        cancellableTask {
             let document = context.Document
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+            let! ct = CancellableTask.getCancellationToken ()
+            let! sourceText = context.Document.GetTextAsync(ct)
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeDerefToValueRefactoring))
-                |> liftAsync
 
             let selectionRange =
                 RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
 
-            let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos selectionRange.Start
-            let! exprRange = parseResults.TryRangeOfExpressionBeingDereferencedContainingPos selectionRange.Start
+            let derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos selectionRange.Start
+            let exprRange = parseResults.TryRangeOfExpressionBeingDereferencedContainingPos selectionRange.Start
 
-            let combinedRange = Range.unionRanges derefRange exprRange
-            let! combinedSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, combinedRange)
+            match derefRange, exprRange with
+            | Some derefRange, Some exprRange ->
 
-            let replacementString =
-                // Trim off the `!`
-                sourceText.GetSubText(combinedSpan).ToString().[1..] + ".Value"
+                let combinedRange = Range.unionRanges derefRange exprRange
 
-            let title = SR.UseValueInsteadOfDeref()
+                let combinedSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, combinedRange)
 
-            let getChangedText (sourceText: SourceText) =
-                sourceText.WithChanges(TextChange(combinedSpan, replacementString))
+                match combinedSpan with
+                | ValueNone -> ()
+                | ValueSome combinedSpan ->
+                    let replacementString =
+                        // Trim off the `!`
+                        sourceText.GetSubText(combinedSpan).ToString().[1..] + ".Value"
 
-            let codeAction =
-                CodeAction.Create(
-                    title,
-                    (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                            return context.Document.WithText(getChangedText sourceText)
-                        }
-                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title
-                )
+                    let title = SR.UseValueInsteadOfDeref()
 
-            context.RegisterRefactoring(codeAction)
+                    let getChangedText (sourceText: SourceText) =
+                        sourceText.WithChanges(TextChange(combinedSpan, replacementString))
+
+                    let codeAction =
+                        CodeAction.Create(
+                            title,
+                            (fun (cancellationToken: CancellationToken) ->
+                                cancellableTask {
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                                    return context.Document.WithText(getChangedText sourceText)
+                                }
+                                |> CancellableTask.start cancellationToken),
+                            title
+                        )
+
+                    context.RegisterRefactoring(codeAction)
+            | _ -> ()
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> CancellableTask.startAsTask context.CancellationToken

@@ -128,7 +128,7 @@ module internal BlockStructure =
             let hintSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
 
             match textSpan, hintSpan with
-            | Some textSpan, Some hintSpan ->
+            | ValueSome textSpan, ValueSome hintSpan ->
                 let line = sourceText.Lines.GetLineFromPosition textSpan.Start
 
                 let bannerText =
