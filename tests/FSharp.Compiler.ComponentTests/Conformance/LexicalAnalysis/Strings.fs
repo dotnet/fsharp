@@ -11,8 +11,7 @@ printfn "Ω\937"
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        // Note: Error spans full string -- not just error part
-        (Error 1252, Line 2, Col 9, Line 2, Col 16, "'\\937' is not a valid character literal")
+        (Error 1252, Line 2, Col 11, Line 2, Col 15, "'\\937' is not a valid character literal")
     ]
 
 [<Fact>]
@@ -47,6 +46,17 @@ printfn "foo\937bar"
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1252, Line 2, Col 9, Line 2, Col 21, "'\\937' is not a valid character literal")
+        (Error 1252, Line 2, Col 13, Line 2, Col 17, "'\\937' is not a valid character literal")
     ]
 
+[<Fact>]
+let ``Error messages for different notations only span invalid notation``() =
+    Fs """
+printfn "ok:\061;err:\937;err:\U12345678;ok:\U00005678;fin" 
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 1252, Line 2, Col 22, Line 2, Col 26, "'\\937' is not a valid character literal")
+        (Error 1245, Line 2, Col 31, Line 2, Col 41, "\\U12345678 is not a valid Unicode character escape sequence")
+    ]

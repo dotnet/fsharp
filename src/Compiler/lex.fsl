@@ -1210,7 +1210,8 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
       let c = trigraph s.[1] s.[2] s.[3]
       let x = int c
       if x < 0 || x > 255 then
-          fail args lexbuf (FSComp.SR.lexInvalidCharLiteralInString (s[0..3])) (result())
+          fail args lexbuf (FSComp.SR.lexInvalidCharLiteralInString (s[0..3])) ()
+          result()
       else
           addByteChar buf c
           result() }
@@ -1241,7 +1242,8 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
               singleQuoteString sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
-          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result())
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) ()
+          result()
       | SingleChar(c) ->
           addUnicodeChar buf (int c)
           result()

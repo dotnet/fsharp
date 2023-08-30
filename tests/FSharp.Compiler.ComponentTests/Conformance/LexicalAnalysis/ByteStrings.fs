@@ -12,7 +12,7 @@ let _ = "\937"B
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1252, Line 3, Col 9, Line 3, Col 16, "'\\937' is not a valid character literal")
+        (Error 1252, Line 3, Col 10, Line 3, Col 14, "'\\937' is not a valid character literal")
     ]
 
 [<Fact>]
@@ -64,4 +64,24 @@ let ``values in different notations are invalid above 127``() =
         (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte literal")
         (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte literal")
         (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte literal")
+    ]
+    
+[<Fact>]
+let ``Error messages for different notations only span invalid notation``() =
+    Fs """
+"ok:\061;err:\937;err:\U12345678;err:\U00005678;fin"B
+|> printfn "%A"
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 1252, Line 2, Col 14, Line 2, Col 18, "'\\937' is not a valid character literal")
+        (Error 1245, Line 2, Col 23, Line 2, Col 33, "\\U12345678 is not a valid Unicode character escape sequence")
+
+        // Note: Error for `\U00005678` spans full byte string:
+        //       Is a valid char, but two bytes -> not valid inside byte string
+        //       But check for correct byte happens after string is finished 
+        //           (because `B` suffix -> only know at end if it's a byte string)
+        //       -> Don't have direct access to range of invalid char any more
+        (Error 1140, Line 2, Col 1, Line 2, Col 54, "This byte array literal contains characters that do not encode as a single byte")
     ]
