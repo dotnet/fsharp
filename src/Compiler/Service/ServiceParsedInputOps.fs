@@ -64,6 +64,9 @@ type PatternContext =
     /// Completing union case field identifier in a pattern (e.g. fun (Case (field1 = a; fie| )) -> )
     | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
+    /// Completing a record field identifier in a pattern (e.g. fun { Field1 = a; Fie| } -> )
+    | RecordFieldIdentifier of referencedFields: Ident list
+
     /// Any other position in a pattern that does not need special handling
     | Other
 
@@ -1310,10 +1313,28 @@ module ParsedInput =
             | _ ->
                 pats
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
+        | SynPat.Record (fieldPats = pats) ->
+            pats
+            |> List.tryPick (fun ((_, fieldId), _, pat) ->
+                if rangeContainsPos fieldId.idRange pos then
+                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x)
+                    Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
+                elif rangeContainsPos pat.Range pos then
+                    TryGetCompletionContextInPattern false pat None pos
+                else
+                    None)
+            |> Option.orElseWith (fun () ->
+                // Last resort - check for fun { Field1 = a; F| } ->
+                // That is, pos is after the last field and still within braces
+                if pats |> List.forall (fun (_, m, _) -> rangeBeforePos m pos) then
+                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x)
+                    Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
+                else
+                    None)
         | SynPat.Ands (pats = pats)
         | SynPat.ArrayOrList (elementPats = pats) ->
             pats
-            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern suppressIdentifierCompletions pat None pos)
+            |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
         | SynPat.Tuple (elementPats = pats; commaRanges = commas; range = m) ->
             pats
             |> List.indexed

@@ -36,6 +36,9 @@ type public PatternContext =
     /// Completing union case field identifier in a pattern (e.g. fun (Case (field1 = a; fie| )) -> )
     | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
+    /// Completing a record field identifier in a pattern (e.g. fun { Field1 = a; Fie| } -> )
+    | RecordFieldIdentifier of referencedFields: Ident list
+
     /// Any other position in a pattern that does not need special handling
     | Other
 
