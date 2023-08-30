@@ -1122,20 +1122,20 @@ type internal TypeCheckInfo
             | _ -> None)
         |> Option.orElse declaredItems
 
-    let GetCompletionsForRecordField pos (referencedFields: Ident list) declaredItems =
+    let GetCompletionsForRecordField pos referencedFields declaredItems =
         declaredItems
         |> Option.map (fun (items: CompletionItem list, denv, range) ->
             let fields =
                 // Try to find a name resolution for any of the referenced fields, and through it access all available fields of the record
                 referencedFields
-                |> List.tryPick (fun fieldId ->
+                |> List.tryPick (fun (_, fieldRange) ->
                     sResolutions.CapturedNameResolutions
                     |> ResizeArray.tryPick (fun cnr ->
                         match cnr.Item with
-                        | Item.RecdField info when equals cnr.Range fieldId.idRange ->
+                        | Item.RecdField info when equals cnr.Range fieldRange ->
                             info.TyconRef.AllFieldAsRefList
                             |> List.choose (fun field ->
-                                if referencedFields |> List.exists (fun x -> x.idText = field.DisplayName) then
+                                if referencedFields |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName) then
                                     None
                                 else
                                     FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField |> Some)

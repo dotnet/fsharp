@@ -65,7 +65,7 @@ type PatternContext =
     | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
 
     /// Completing a record field identifier in a pattern (e.g. fun { Field1 = a; Fie| } -> )
-    | RecordFieldIdentifier of referencedFields: Ident list
+    | RecordFieldIdentifier of referencedFields: (string * range) list
 
     /// Any other position in a pattern that does not need special handling
     | Other
@@ -1317,7 +1317,7 @@ module ParsedInput =
             pats
             |> List.tryPick (fun ((_, fieldId), _, pat) ->
                 if rangeContainsPos fieldId.idRange pos then
-                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x)
+                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x.idText, x.idRange)
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 elif rangeContainsPos pat.Range pos then
                     TryGetCompletionContextInPattern false pat None pos
@@ -1327,7 +1327,7 @@ module ParsedInput =
                 // Last resort - check for fun { Field1 = a; F| } ->
                 // That is, pos is after the last field and still within braces
                 if pats |> List.forall (fun (_, m, _) -> rangeBeforePos m pos) then
-                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x)
+                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x.idText, x.idRange)
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 else
                     None)
