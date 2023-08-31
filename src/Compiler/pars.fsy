@@ -89,7 +89,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token MAYBENULL__ NOTNULL__ WITHNULL__
+%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_NULL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -236,9 +236,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* start with lowest */
 
-/* for appType BAR NULL to not override DU declaration or pattern matching */
-%left prec_bar_null
-
 %nonassoc prec_args_error            /* less than RPAREN */
 %nonassoc prec_atomexpr_lparen_error /* less than RPAREN */
 
@@ -288,15 +285,12 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc prec_tuptyptail_prefix      /* ditto */
 %nonassoc prec_toptuptyptail_prefix      /* ditto */
 
-
-%nonassoc prec_above_bar
+%nonassoc BAR_NULL
 %left BAR
-%nonassoc prec_below_bar
 /* prec_pat_pat_action = "pattern when expr -> expr"
  * Lower than match extensions - i.e. BAR.
  */
 %nonassoc prec_pat_pat_action /* lower than BAR */
-%nonassoc prec_multiple_union_cases
 %right RARROW
 %nonassoc IDENT LBRACK
 
@@ -380,8 +374,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_TYAPP
 
 %nonassoc prec_interaction_empty
-%nonassoc prec_union_case_declaration
-
 
 %%
 
@@ -1651,7 +1643,7 @@ tyconDefn:
            let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals; WithKeyword = mWith }
            SynTypeDefn($1, tcDefRepr, members, memberCtorPattern, mWhole, trivia) }
 
-  | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover
+  | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover 
      { let vis, spats, az = $3, $5, $6
        let (SynComponentInfo(longId = lid)) = $1
        // Gets the XML doc comments prior to the implicit constructor
@@ -2389,7 +2381,7 @@ tyconDefnOrSpfnSimpleRepr:
        SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ErrorRecovery, SynType.LongIdent($3), unionRanges (rhs parseState 1) $3.Range) }
 
   /* A union type definition */
-  | opt_attributes opt_access unionTypeRepr %prec prec_multiple_union_cases
+  | opt_attributes opt_access unionTypeRepr
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        let rangesOf3 = $3 |> List.map (function Choice1Of2 ec -> ec.Range | Choice2Of2 uc -> uc.Range)
        let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> List.fold unionRanges
@@ -2406,11 +2398,11 @@ tyconDefnOrSpfnSimpleRepr:
                             $3 |> List.choose (function Choice2Of2 data -> Some(data) | Choice1Of2 _ -> failwith "huh?"),
                             mWhole) }
 							
-  /* A type abbreviation */
-  | opt_attributes opt_access typ %prec IDENT
+  /* A type abbreviation  */
+  | opt_attributes opt_access typ
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(), rhs parseState 2))
-       SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }
+       SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }  
 
   /* A record type definition */
   | opt_attributes opt_access braceFieldDeclList
@@ -2625,10 +2617,10 @@ unionTypeRepr:
   | barAndgrabXmlDoc attrUnionCaseDecls
      { $2 $1 }
 
-  | firstUnionCaseDeclOfMany barAndgrabXmlDoc attrUnionCaseDecls %prec prec_multiple_union_cases
+  | firstUnionCaseDeclOfMany barAndgrabXmlDoc attrUnionCaseDecls
      { $1 :: $3 $2 }
 
-  | firstUnionCaseDecl %prec IDENT
+  | firstUnionCaseDecl
      { [$1] }
 
 barAndgrabXmlDoc:
@@ -2637,10 +2629,10 @@ barAndgrabXmlDoc:
        grabXmlDoc(parseState, [], 1), mBar }
 
 attrUnionCaseDecls:
-  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls %prec prec_multiple_union_cases
+  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls
      { (fun xmlDocAndBar -> $1 xmlDocAndBar :: $3 $2) }
 
-  | attrUnionCaseDecl %prec IDENT
+  | attrUnionCaseDecl
      { (fun xmlDocAndBar -> [ $1 xmlDocAndBar ]) }
 
 /* The core of a union case definition */
@@ -2673,7 +2665,7 @@ attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName OF recover
       { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
 
-  | opt_attributes opt_access unionCaseName COLON topType %prec prec_above_bar
+  | opt_attributes opt_access unionCaseName COLON topType
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) (rhs2 parseState 1 5) >> Choice2Of2 }
 
@@ -2691,12 +2683,12 @@ unionCaseName:
   | nameop
       { $1 }
 
-  | LPAREN COLON_COLON rparen %prec IDENT
+  | LPAREN COLON_COLON rparen
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3
         SynIdent(ident(opNameCons, rhs parseState 2), Some(IdentTrivia.OriginalNotationWithParen(lpr, "::", rpr))) }
 
-  | LPAREN LBRACK RBRACK rparen %prec IDENT
+  | LPAREN LBRACK RBRACK rparen
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3
         SynIdent(ident(opNameNil, rhs2 parseState 2 3), Some(IdentTrivia.OriginalNotationWithParen(lpr, "[]", rpr))) }
@@ -3082,6 +3074,9 @@ cType:
   | cType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
+  | cType BAR_NULL NULL
+    { SynType.WithNull($1, false, lhs parseState) }
+
   | cType AMP
      { let m = lhs parseState
        SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [ Some(IdentTrivia.OriginalNotation "&") ])), None, [$1], [], None, true, m) }
@@ -3405,12 +3400,18 @@ simplePatterns:
         let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator pat
         simplePats }
 
+barCanBeRightBeforeNull:
+  | BAR
+      {  }
+  | BAR_NULL
+      {  }
+
 
 headBindingPattern:
   | headBindingPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | headBindingPattern BAR headBindingPattern %prec path_disj
+  | headBindingPattern barCanBeRightBeforeNull headBindingPattern %prec path_disj
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -3688,7 +3689,7 @@ parenPattern:
   | parenPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | parenPattern BAR parenPattern %prec path_disj
+  | parenPattern barCanBeRightBeforeNull parenPattern %prec path_disj
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -4553,11 +4554,11 @@ withPatternClauses:
   | patternClauses
       { $1 None }
 
-  | BAR patternClauses %prec path_disj
+  | barCanBeRightBeforeNull patternClauses %prec path_disj
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
-  | BAR error
+  | barCanBeRightBeforeNull error
       { // silent recovery
         let mLast = rhs parseState 1
         [], mLast }
@@ -4581,7 +4582,7 @@ patternClauses:
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], mLast }
 
-  | patternAndGuard patternResult BAR patternClauses
+  | patternAndGuard patternResult barCanBeRightBeforeNull patternClauses
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mNextBar = rhs parseState 3 |> Some
@@ -4590,7 +4591,7 @@ patternClauses:
        fun mBar ->
            (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
 
-  | patternAndGuard error BAR patternClauses
+  | patternAndGuard error barCanBeRightBeforeNull patternClauses
      { let pat, guard = $1
        let mNextBar = rhs parseState 3 |> Some
        let clauses, mLast = $4 mNextBar
@@ -4599,7 +4600,7 @@ patternClauses:
        fun _mBar ->
            (SynMatchClause(pat, guard, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero) :: clauses), mLast }
 
-  | patternAndGuard patternResult BAR recover
+  | patternAndGuard patternResult barCanBeRightBeforeNull recover
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = rhs parseState 3
@@ -5650,7 +5651,7 @@ topTupleType:
         let path = SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Star mStar :: (List.map fst $2)
         mkSynTypeTuple path, List.choose snd $2 }
 
-  | topAppType %prec prec_above_bar
+  | topAppType
      { let ty, mdata = $1
        ty, [mdata] }
 
@@ -5672,19 +5673,19 @@ topTupleTypeElements:
         reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
         (SynTupleTypeSegment.Type ty, None) :: (SynTupleTypeSegment.Star mStar, None) :: $2 }
 
-  | topAppType %prec prec_above_bar
+  | topAppType
      { let t, argInfo = $1
        [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
-  | attributes appTypeCanBeNullable COLON appTypeCanBeNullable %prec prec_above_bar
+  | attributes appTypeCanBeNullable COLON appTypeCanBeNullable
       { match $2 with
         | SynType.LongIdent(SynLongIdent([id], _, _)) ->
             let m = unionRanges (rhs parseState 1) $4.Range
             SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
         | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes appTypeCanBeNullable COLON recover %prec prec_above_bar
+  | attributes appTypeCanBeNullable COLON recover
       { match $2 with
         | SynType.LongIdent(SynLongIdent([id], _, _)) ->
             let mColon = rhs parseState 2
@@ -5693,28 +5694,28 @@ topAppType:
             SynType.SignatureParameter($1, false, Some id, ty, m), SynArgInfo($1, false, Some id)
         | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes QMARK ident COLON appTypeCanBeNullable %prec prec_above_bar
+  | attributes QMARK ident COLON appTypeCanBeNullable
       { let m = unionRanges (rhs parseState 1) $5.Range
         SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
 
-  | attributes QMARK ident COLON recover %prec prec_above_bar
+  | attributes QMARK ident COLON recover
       { let mColon = rhs parseState 4
         let m = unionRanges (rhs parseState 1) mColon
         let ty = SynType.FromParseError(mColon.EndRange)
         SynType.SignatureParameter($1, true, Some $3, ty, m), SynArgInfo($1, true, Some $3) }
 
-  | attributes appTypeCanBeNullable %prec prec_above_bar
+  | attributes appTypeCanBeNullable
       { let m = unionRanges (rhs parseState 1) $2.Range
         SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
 
-  | appTypeCanBeNullable COLON appTypeCanBeNullable %prec prec_above_bar
+  | appTypeCanBeNullable COLON appTypeCanBeNullable
       { match $1 with
         | SynType.LongIdent(SynLongIdent([id], _, _)) ->
             let m = unionRanges (rhs parseState 1) $3.Range
             SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
         | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | appTypeCanBeNullable COLON recover %prec prec_above_bar
+  | appTypeCanBeNullable COLON recover
       { match $1 with
         | SynType.LongIdent(SynLongIdent([id], _, _)) ->
             let mColon = rhs parseState 2
@@ -5723,17 +5724,17 @@ topAppType:
             SynType.SignatureParameter([], false, Some id, ty, m), SynArgInfo([], false, Some id)
         | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | QMARK ident COLON appTypeCanBeNullable %prec prec_above_bar
+  | QMARK ident COLON appTypeCanBeNullable
       { let m = unionRanges (rhs parseState 1) $4.Range
         SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
 
-  | QMARK ident COLON recover %prec prec_above_bar
+  | QMARK ident COLON recover
       { let mColon = rhs parseState 3
         let m = unionRanges (rhs parseState 1) mColon
         let ty = SynType.FromParseError(mColon.EndRange)
         SynType.SignatureParameter([], true, Some $2, ty, m), SynArgInfo([], true, Some $2) }
 
-  | appTypeCanBeNullable %prec prec_above_bar
+  | appTypeCanBeNullable
      { $1, SynArgInfo([], false, None) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -5811,7 +5812,7 @@ tupleType:
         let path = [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Slash mSlash; SynTupleTypeSegment.Type ty]
         mkSynTypeTuple path }
 
-  | appTypeCanBeNullable %prec prec_above_bar
+  | appTypeCanBeNullable
       { $1 }
 
 tupleOrQuotTypeElements:
@@ -5868,17 +5869,17 @@ appTypeConPower:
     { $1 }
 
 appTypeCanBeNullable:
-  | appTypeWithoutNull BAR NULL %prec prec_bar_null
+  | appTypeWithoutNull BAR_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | appTypeWithoutNull %prec prec_above_bar
+  | appTypeWithoutNull
     { $1 }
 
 appTypeNullableInParens:
-  | appTypeWithoutNull %prec prec_above_bar
+  | appTypeWithoutNull
     { $1 }
 
-  | LPAREN appTypeCanBeNullable rparen %prec prec_bar_null
+  | LPAREN appTypeCanBeNullable rparen
     { SynType.Paren($2, lhs parseState) }
 
 appTypeWithoutNull:
@@ -6307,7 +6308,7 @@ path:
   | GLOBAL
       { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [Some(IdentTrivia.OriginalNotation "global")]) }
 
-  | ident %prec IDENT
+  | ident
      { SynLongIdent([$1], [], [None]) }
 
   | path DOT ident

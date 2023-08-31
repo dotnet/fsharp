@@ -37,6 +37,11 @@
         <target state="translated">I casi di unione discriminati minuscoli sono consentiti solo quando si usa l'attributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">simbolo '..^'</target>

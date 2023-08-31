@@ -394,6 +394,7 @@ module internal TokenClassifications =
         | MAYBENULL__
         | NOTNULL__
         | WITHNULL__
+        | BAR_NULL
         | TYPE_COMING_SOON
         | TYPE_IS_HERE
         | MODULE_COMING_SOON

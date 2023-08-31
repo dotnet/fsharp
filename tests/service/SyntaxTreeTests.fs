@@ -11,7 +11,7 @@ open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
 
-let allTestCases =
+let allTestCases = 
     Directory.EnumerateFiles(testCasesDir, "*.fs?", SearchOption.AllDirectories)
     |> Seq.map (fun f ->
         let fileInfo = FileInfo(f)

@@ -15,31 +15,25 @@ ImplFile
                   Some
                     (SynBindingReturnInfo
                        (WithNull
-                          (WithNull
-                             (WithNull
-                                (App
-                                   (LongIdent
-                                      (SynLongIdent ([list], [], [None])), None,
-                                    [LongIdent
-                                       (SynLongIdent ([int], [], [None]))], [],
-                                    None, true, (1,8--1,16)), false, (1,8--1,23)),
-                              false, (1,8--1,30)), false, (1,8--1,37)),
-                        (1,8--1,37), [], { ColonRange = Some (1,6--1,7) })),
+                          (App
+                             (LongIdent (SynLongIdent ([list], [], [None])),
+                              None,
+                              [LongIdent (SynLongIdent ([int], [], [None]))], [],
+                              None, true, (1,8--1,16)), false, (1,8--1,23)),
+                        (1,8--1,23), [], { ColonRange = Some (1,6--1,7) })),
                   Typed
-                    (ArrayOrList (false, [], (1,40--1,42)),
+                    (ArbitraryAfterError ("localBinding2", (1,23--1,23)),
                      WithNull
-                       (WithNull
-                          (WithNull
-                             (App
-                                (LongIdent (SynLongIdent ([list], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (1,8--1,16)), false,
-                              (1,8--1,23)), false, (1,8--1,30)), false,
-                        (1,8--1,37)), (1,40--1,42)), (1,4--1,5), Yes (1,0--1,42),
+                       (App
+                          (LongIdent (SynLongIdent ([list], [], [None])), None,
+                           [LongIdent (SynLongIdent ([int], [], [None]))], [],
+                           None, true, (1,8--1,16)), false, (1,8--1,23)),
+                     (1,23--1,23)), (1,4--1,5), Yes (1,0--1,23),
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
-                    EqualsRange = Some (1,38--1,39) })], (1,0--1,42))],
-          PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = None })], (1,0--1,23))], PreXmlDocEmpty, [],
+          None, (1,0--2,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))
+
+(1,24)-(1,25) parse error Unexpected symbol '|' (directly before 'null') in binding. Expected '=' or other token.

@@ -2436,6 +2436,9 @@ type LexFilterImpl (
             pool.Return tokenTup
             hwTokenFetch useBlockRule
 
+        | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
+            returnToken tokenLexbufState BAR_NULL            
+
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->
             pushCtxt tokenTup (CtxtVanilla(tokenStartPos, isLongIdentEquals token))

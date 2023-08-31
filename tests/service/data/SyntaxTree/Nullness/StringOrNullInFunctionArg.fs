@@ -1,1 +1,1 @@
-let myFunc (x: string | null) = 42
+let myFunc (x: (string | null)) = 42
