@@ -1,5 +1,6 @@
 ﻿module ErrorMessages.UnionCasePatternMatchingErrors
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -86,8 +87,7 @@ let myVal =
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-    
-      
+ 
 [<Fact>]
 let ``Union Pattern discard allowed for union case that takes no data with Lang version 7`` () =
      FSharp """
@@ -246,6 +246,30 @@ let myVal =
     ]
     
 [<Fact>]
+let ``Multiple pattern discards not allowed for union case that takes no data with Lang 7`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+type V =
+    | D
+    
+let a : U = A
+let d : V = D
+    
+let myVal = 
+    match a, d with
+    | A _, D -> 15
+    | B (x, _, _), D _ -> 16
+    | C _, _ -> 17"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldSucceed
+    
+[<Fact>]
 let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang preview`` () =
      FSharp """
 module Tests
@@ -274,42 +298,82 @@ let myVal =
     ]
     
 [<Fact>]
-let ``Pattern discard allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang 7`` () =
+let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang 7`` () =
      FSharp """
 module Tests
-type MyWrapper = A
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+type V =
+    | D
+    
+let a : U = A
 
-let myDiscardedArgFunc(A _) = 5+5"""
+let d : V = D
+    
+let myVal = 
+    function
+    | A _, D -> 15
+    | B (x, _, _), D _ -> 16
+    | C _, _ -> 17"""
     |> withLangVersion70
     |> typecheck
     |> shouldSucceed
-
-[<Fact>]
-let ``Pattern named not allowed for single-case unions when using them as a deconstruct syntax in functions  with Lang 7`` () =
-     FSharp """
-module Tests
-type MyWrapper = A
-
-let myFunc(A a) = 5+5"""
+    
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionCaseTakesNoArguments.fs"|])>]
+let ``Pattern named not allowed union case does not take any arguments with Lang 7`` compilation =
+    compilation
+    |> asFs
     |> withLangVersion70
+    |> withOptions ["--nowarn:25"]
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 725, Line 5, Col 12, Line 5, Col 15, "This union case does not take arguments")
+        (Error 725, Line 8, Col 3, Line 8, Col 9, "This union case does not take arguments");
+        (Error 725, Line 11, Col 3, Line 11, Col 14, "This union case does not take arguments")
+        (Error 725, Line 14, Col 3, Line 14, Col 10, "This union case does not take arguments")
+        (Error 725, Line 17, Col 3, Line 17, Col 12, "This union case does not take arguments")
+        (Error 725, Line 20, Col 3, Line 20, Col 17, "This union case does not take arguments")
+        (Error 725, Line 23, Col 3, Line 23, Col 13, "This union case does not take arguments")
+        (Error 725, Line 26, Col 3, Line 26, Col 14, "This union case does not take arguments")
+        (Error 725, Line 29, Col 3, Line 29, Col 13, "This union case does not take arguments")
+        (Error 725, Line 35, Col 3, Line 35, Col 9, "This union case does not take arguments")
+        (Error 725, Line 38, Col 3, Line 38, Col 14, "This union case does not take arguments")
+        (Error 725, Line 42, Col 3, Line 42, Col 11, "This union case does not take arguments")
+        (Error 725, Line 48, Col 3, Line 48, Col 8, "This union case does not take arguments")
+        (Error 725, Line 51, Col 3, Line 51, Col 7, "This union case does not take arguments")
+        (Error 725, Line 55, Col 25, Line 55, Col 28, "This union case does not take arguments")
+        (Error 725, Line 57, Col 25, Line 57, Col 29, "This union case does not take arguments")
+        (Error 725, Line 59, Col 24, Line 59, Col 32, "This union case does not take arguments")
     ]
-
-[<Fact>]
-let ``Pattern discard or named are not allowed for single-case union case that takes no data with Lang preview`` () =
-     FSharp """
-module Tests
-type MyWrapper = A
-
-let myFunc(A a) = 5+5
-let myDiscardedArgFunc(A _) = 5+5"""
+    
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionCaseTakesNoArguments.fs"|])>]
+let ``Pattern named not allowed union case does not take any arguments with Lang preview`` compilation =
+    compilation
+    |> asFs
     |> withLangVersion80
+    |> withOptions ["--nowarn:25"]
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 3548, Line 5, Col 12, Line 5, Col 15, "Pattern discard is not allowed for union case that takes no data.")
-        (Warning 3548, Line 6, Col 24, Line 6, Col 27, "Pattern discard is not allowed for union case that takes no data.")
+        (Error 725, Line 8, Col 3, Line 8, Col 9, "This union case does not take arguments")
+        (Error 725, Line 11, Col 3, Line 11, Col 14, "This union case does not take arguments")
+        (Error 725, Line 14, Col 3, Line 14, Col 10, "This union case does not take arguments")
+        (Error 725, Line 17, Col 3, Line 17, Col 12, "This union case does not take arguments")
+        (Error 725, Line 20, Col 3, Line 20, Col 17, "This union case does not take arguments")
+        (Error 725, Line 23, Col 3, Line 23, Col 13, "This union case does not take arguments")
+        (Error 725, Line 26, Col 3, Line 26, Col 14, "This union case does not take arguments")
+        (Error 725, Line 29, Col 3, Line 29, Col 13, "This union case does not take arguments")
+        (Warning 3548, Line 32, Col 3, Line 32, Col 9, "Pattern discard is not allowed for union case that takes no data.")
+        (Error 725, Line 35, Col 3, Line 35, Col 9, "This union case does not take arguments")
+        (Error 725, Line 38, Col 3, Line 38, Col 14, "This union case does not take arguments")
+        (Error 725, Line 42, Col 3, Line 42, Col 11, "This union case does not take arguments")
+        (Error 725, Line 48, Col 3, Line 48, Col 8, "This union case does not take arguments")
+        (Error 725, Line 51, Col 3, Line 51, Col 7, "This union case does not take arguments")
+        (Warning 3548, Line 53, Col 24, Line 53, Col 27, "Pattern discard is not allowed for union case that takes no data.")
+        (Error 725, Line 55, Col 25, Line 55, Col 28, "This union case does not take arguments")
+        (Error 725, Line 57, Col 25, Line 57, Col 29, "This union case does not take arguments")
+        (Error 725, Line 59, Col 24, Line 59, Col 32, "This union case does not take arguments")
     ]
