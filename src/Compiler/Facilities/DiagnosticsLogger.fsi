@@ -242,9 +242,6 @@ module DiagnosticsLoggerExtensions =
     /// Instruct the exception not to reset itself when thrown again.
     val PreserveStackTrace: exn: 'T -> unit
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    val ReraiseIfWatsonable: exn: exn -> unit
-
     type DiagnosticsLogger with
 
         /// Report a diagnostic as an error and recover

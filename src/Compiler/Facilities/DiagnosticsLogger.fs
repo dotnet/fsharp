@@ -411,20 +411,6 @@ module DiagnosticsLoggerExtensions =
             Debug.Assert(false, "Could not preserve stack trace for watson exception.")
             ()
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    let ReraiseIfWatsonable (exn: exn) =
-        match exn with
-        // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
-        | :? TargetInvocationException -> ()
-        | :? NotSupportedException -> ()
-        | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
-        | :? UnauthorizedAccessException -> ()
-        | Failure _ // This gives reports for compiler INTERNAL ERRORs
-        | :? SystemException ->
-            PreserveStackTrace exn
-            raise exn
-        | _ -> ()
-
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
@@ -473,7 +459,6 @@ module DiagnosticsLoggerExtensions =
             | _ ->
                 try
                     x.ErrorR(AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
-                    ReraiseIfWatsonable exn
                 with
                 | ReportedError _
                 | WrappedError (ReportedError _, _) -> ()
