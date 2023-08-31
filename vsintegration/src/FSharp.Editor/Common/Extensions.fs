@@ -6,6 +6,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 
@@ -285,13 +286,49 @@ module Option =
             None
 
 [<RequireQualifiedAccess>]
+module ValueOption =
+
+    let inline ofOption o =
+        match o with
+        | Some v -> ValueSome v
+        | _ -> ValueNone
+
+    let inline toOption o =
+        match o with
+        | ValueSome v -> Some v
+        | _ -> None
+
+[<RequireQualifiedAccess>]
 module Seq =
 
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
 
+    let inline tryFindV ([<InlineIfLambda>] predicate) (source: seq<'T>) =
+        use e = source.GetEnumerator()
+        let mutable res = ValueNone
+
+        while (ValueOption.isNone res && e.MoveNext()) do
+            let c = e.Current
+
+            if predicate c then
+                res <- ValueSome c
+
+        res
+
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate) (source: seq<_>) =
+        use ie = source.GetEnumerator()
+
+        let rec loop i =
+            if ie.MoveNext() then
+                if predicate ie.Current then ValueSome i else loop (i + 1)
+            else
+                ValueNone
+
+        loop 0
+
 [<RequireQualifiedAccess>]
 module Array =
-    let foldi (folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
+    let inline foldi ([<InlineIfLambda>] folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
         let mutable state = state
         let mutable i = 0
 
@@ -302,6 +339,22 @@ module Array =
         state
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
+
+    let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
+
+        let rec loop i =
+            if i >= array.Length then ValueNone
+            else if predicate array.[i] then ValueSome array[i]
+            else loop (i + 1)
+
+        loop 0
+
+[<RequireQualifiedAccess>]
+module List =
+    let rec tryFindV predicate list =
+        match list with
+        | [] -> ValueNone
+        | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
 
 [<RequireQualifiedAccess>]
 module Exception =

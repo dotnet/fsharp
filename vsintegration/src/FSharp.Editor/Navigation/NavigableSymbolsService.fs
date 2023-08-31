@@ -14,6 +14,8 @@ open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Microsoft.VisualStudio.Telemetry
 
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition) =
@@ -52,6 +54,9 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
                     // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
+                        use _ =
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinitionGetSymbol, [||])
+
                         gtdTask.Wait(cancellationToken)
                         statusBar.Clear()
 
@@ -88,6 +93,8 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
                             // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                             return null
                     with exc ->
+                        TelemetryReporter.ReportFault(TelemetryEvents.GoToDefinitionGetSymbol, FaultSeverity.General, exc)
+
                         statusBar.TempMessage(String.Format(SR.NavigateToFailed(), Exception.flattenMessage exc))
 
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.

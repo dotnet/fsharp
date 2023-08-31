@@ -178,7 +178,7 @@ type Item =
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
-    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+    | AnonRecdField of anonInfo: AnonRecdTypeInfo * tys: TTypes * fieldIndex: int * range: range
 
     // The following are never in the items table but are valid results of binding
     // an identifier in different circumstances.
@@ -193,7 +193,7 @@ type Item =
     | Event of EventInfo
 
     /// Represents the resolution of a name to a property
-    | Property of string * PropInfo list
+    | Property of name: string * info: PropInfo list * sourceIdentifierRange: range option
 
     /// Represents the resolution of a name to a group of methods.
     | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
@@ -267,11 +267,16 @@ type Item =
         | Item.NewDef id -> id.idText 
         | Item.ILField finfo -> finfo.DisplayNameCore
         | Item.Event einfo -> einfo.DisplayNameCore 
-        | Item.Property(_, pinfo :: _) -> pinfo.DisplayNameCore
-        | Item.Property(nm, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
+        | Item.Property(info = pinfo :: _) -> pinfo.DisplayNameCore
+        | Item.Property(name = nm) -> nm |> ConvertValLogicalNameToDisplayNameCore
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
         | Item.MethodGroup(nm, _, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
-        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.CtorGroup(nm, ILMeth(_, ilMethInfo, _) :: _) ->
+            match ilMethInfo.ApparentEnclosingType |> tryNiceEntityRefOfTy with
+            | ValueSome tcref -> tcref.DisplayNameCore
+            | _ -> nm
+            |> DemangleGenericTypeName
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
         | Item.FakeInterfaceCtor ty
         | Item.DelegateCtor ty ->
             match ty with 
@@ -303,7 +308,7 @@ type Item =
         | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).DisplayName
         | Item.AnonRecdField (anonInfo, _tys, fieldIndex, _m) -> anonInfo.DisplayNameByIdx fieldIndex
         | Item.ActivePatternCase apref -> apref.DisplayName
-        | Item.Property(_, pinfo :: _) -> pinfo.DisplayName
+        | Item.Property(info = pinfo :: _) -> pinfo.DisplayName
         | Item.Event einfo -> einfo.DisplayName
         | Item.MethodGroup(_, minfo :: _, _) -> minfo.DisplayName
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
@@ -537,25 +542,52 @@ let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) 
     not minfo.IsExtensionMember &&
     (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
     MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+    
+let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =                
+    try
+        let rs =
+            match metadataOfTycon deref, minfo with
+            | ILTypeMetadata (TILObjectReprData(scope=scoref)), ILMeth(ilMethInfo=ILMethInfo(ilMethodDef=ilMethod)) ->
+                match ilMethod.ParameterTypes with
+                | firstTy :: _ ->
+                    match firstTy with
+                    | ILType.Boxed  tspec | ILType.Value tspec ->
+                        let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
+                        if Import.CanImportILTypeRef amap m tref then
+                            let tcref = tref |> Import.ImportILTypeRef amap m
+                            if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
+                            else Some tcref
+                        else None
+                    | _ -> None
+                | _ -> None
+            | _ ->
+                // The results are indexed by the TyconRef of the first 'this' argument, if any.
+                // So we need to go and crack the type of the 'this' argument.
+                let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
+                match thisTy with
+                | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
+                | _ -> None
+        Some rs
+    with e -> // Import of the ILType may fail, if so report the error and skip on
+        errorRecovery e m
+        None
 
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
+    let pri = NextExtensionMethodPriority()
     
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let ty = generalizedTyconRef g tcrefOfStaticClass
-      
         let csharpStyleExtensionMembers = 
             if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
                 protectAssemblyExploration [] (fun () ->
+                    let ty = generalizedTyconRef g tcrefOfStaticClass
                     GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
                     |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
             else
                 []
 
         if not csharpStyleExtensionMembers.IsEmpty then
-            let pri = NextExtensionMethodPriority()
-
             [ for minfo in csharpStyleExtensionMembers do
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
@@ -568,37 +600,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
                 //
                 // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
                 // methods for tuple occur in C# code)
-                let thisTyconRef =
-                 try
-                    let rs =
-                        match metadataOfTycon tcrefOfStaticClass.Deref, minfo with
-                        | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
-                            match ilMethod.ParameterTypes with
-                            | firstTy :: _ ->
-                                match firstTy with
-                                | ILType.Boxed  tspec | ILType.Value tspec ->
-                                    let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
-                                    if Import.CanImportILTypeRef amap m tref then
-                                        let tcref = tref |> Import.ImportILTypeRef amap m
-                                        if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                        else Some tcref
-                                    else None
-                                | _ -> None
-                            | _ -> None
-                        | _ ->
-                            // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                            // So we need to go and crack the type of the 'this' argument.
-                            let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
-                            match thisTy with
-                            | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
-                            | _ -> None
-
-                    Some rs
-
-                  with e -> // Import of the ILType may fail, if so report the error and skip on
-                    errorRecovery e m
-                    None
-
+                let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
                 match thisTyconRef with
                 | None -> ()
                 | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
@@ -607,7 +609,6 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
             []
     else
         if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass then
-            let pri = NextExtensionMethodPriority()
             let ty = generalizedTyconRef g tcrefOfStaticClass
             let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
             
@@ -623,34 +624,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
                     //
                     // We don't use the index for the IL extension method for tuple of F# function types (e.g. if extension
                     // methods for tuple occur in C# code)
-                    let thisTyconRef =
-                     try
-                        let rs =
-                            match metadataOfTycon tcrefOfStaticClass.Deref, minfo with
-                            | ILTypeMetadata (TILObjectReprData(scoref, _, _)), ILMeth(_, ILMethInfo(_, _, _, ilMethod, _), _) ->
-                                match ilMethod.ParameterTypes with
-                                | firstTy :: _ ->
-                                    match firstTy with
-                                    | ILType.Boxed  tspec | ILType.Value tspec ->
-                                        let tref = (tspec |> rescopeILTypeSpec scoref).TypeRef
-                                        if Import.CanImportILTypeRef amap m tref then
-                                            let tcref = tref |> Import.ImportILTypeRef amap m
-                                            if isCompiledTupleTyconRef g tcref || tyconRefEq g tcref g.fastFunc_tcr then None
-                                            else Some tcref
-                                        else None
-                                    | _ -> None
-                                | _ -> None
-                            | _ ->
-                                // The results are indexed by the TyconRef of the first 'this' argument, if any.
-                                // So we need to go and crack the type of the 'this' argument.
-                                let thisTy = minfo.GetParamTypes(amap, m, generalizeTypars minfo.FormalMethodTypars).Head.Head
-                                match thisTy with
-                                | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
-                                | _ -> None
-                        Some rs
-                      with e -> // Import of the ILType may fail, if so report the error and skip on
-                        errorRecovery e m
-                        None
+                    let thisTyconRef = GetTyconRefForExtensionMembers minfo tcrefOfStaticClass.Deref amap m g
                     match thisTyconRef with
                     | None -> ()
                     | Some (Some tcref) -> yield Choice1Of2(tcref, ilExtMem)
@@ -1183,7 +1157,7 @@ let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
         pinfo.IsStatic && typeEquiv g pinfo.ApparentEnclosingType ty)
     |> List.groupBy (fun pinfo -> pinfo.PropertyName)
     |> List.filter (fun (_, propGroup) -> not propGroup.IsEmpty)
-    |> List.map (fun (propName, propGroup) -> KeyValuePair(propName, Item.Property(propName, propGroup)))
+    |> List.map (fun (propName, propGroup) -> KeyValuePair(propName, Item.Property(propName, propGroup, None)))
 
 let ChooseFSharpFieldInfosForNameEnv g ty (rfinfos: RecdFieldInfo list) =
     rfinfos
@@ -1786,13 +1760,13 @@ let rec (|ILFieldUse|_|) (item: Item) =
 
 let rec (|PropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(_, pinfo :: _) -> Some pinfo
+    | Item.Property(info = pinfo :: _) -> Some pinfo
     | Item.SetterArg(_, PropertyUse pinfo) -> Some pinfo
     | _ -> None
 
 let rec (|FSharpPropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(_, [ValRefOfProp vref]) -> Some vref
+    | Item.Property(info = [ValRefOfProp vref]) -> Some vref
     | Item.SetterArg(_, FSharpPropertyUse propDef) -> Some propDef
     | _ -> None
 
@@ -2231,7 +2205,7 @@ type ResultTyparChecker = ResultTyparChecker of (unit -> bool)
 
 let CheckAllTyparsInferrable amap m item =
     match item with
-    | Item.Property(_, pinfos) ->
+    | Item.Property(info = pinfos) ->
         pinfos |> List.forall (fun pinfo ->
             pinfo.IsExtensionMember ||
             let freeInDeclaringType = freeInType CollectTyparsNoCaching pinfo.ApparentEnclosingType
@@ -2575,10 +2549,10 @@ let DecodeFSharpEvent (pinfos: PropInfo list) ad g (ncenv: NameResolver) m =
             Some(Item.Event(FSEvent(g, pinfo, addValRef, removeValRef)))
         | _ ->
             // FOUND PROPERTY-AS-EVENT BUT DIDN'T FIND CORRESPONDING ADD/REMOVE METHODS
-            Some(Item.Property (nm, pinfos))
+            Some(Item.Property (nm, pinfos, None))
     | pinfo :: _ ->
         let nm = DisplayNameCoreMangled pinfo
-        Some(Item.Property (nm, pinfos))
+        Some(Item.Property (nm, pinfos, None))
     | _ ->
         None
 
@@ -2669,7 +2643,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             let pinfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
 
-            if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo, Item.Property (nm, pinfos), rest)) else
+            if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo, Item.Property (nm, pinfos, None), rest)) else
 
             let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
 
@@ -3716,8 +3690,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        | _ ->
-            lookup()
+        | ValueNone -> lookup()
     | _ ->
         let lid = (mp@[id])
         let tyconSearch ad () =
@@ -3777,7 +3750,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         match tryDestAnonRecdTy g ty with
         | ValueSome (anonInfo, tys) ->
             match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id.idText) with
-            | Some index -> OneSuccess (Choice2Of2 (anonInfo, tys[index]))
+            | Some index -> OneSuccess (Item.AnonRecdField (anonInfo, tys, index, m))
             | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalStringOfType nenv.eDisplayEnv ty, id.idText), m))
         | _ ->
             let otherRecordFields ty =
@@ -3792,7 +3765,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
 
             if isRecdTy g ty then 
                 match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
-                | ValueSome (RecdFieldInfo (_, rfref)) -> OneSuccess (Choice1Of2 rfref)
+                | ValueSome info -> OneSuccess (Item.RecdField info)
                 | _ ->
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels addToBuffer = 
@@ -3808,14 +3781,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                     // Eliminate duplicates arising from multiple 'open' 
                     fields 
                     |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
-                    |> List.map Choice1Of2
+                    |> List.map (fun rfref -> Item.RecdField (FreshenRecdFieldRef ncenv m rfref))
                     |> success
                 | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecordFields ty))
-
-    let anonRecdInfoF field =
-        match field with
-        | Choice1Of2 _ -> None
-        | Choice2Of2 (anonInfo, _) -> Some anonInfo
 
     match lid with
     | [] -> [], []
@@ -3823,7 +3791,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         let res =
             lookupField recdTy id
             |> ForceRaise
-            |> List.map (fun x -> id, anonRecdInfoF x)
+            |> List.map (fun x -> id, x)
 
         [], res
     | id :: _ ->
@@ -3831,10 +3799,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | id :: rest ->
                 lookupField recdTy id
-                |?> List.map (fun x ->
-                    match x with
-                    | Choice1Of2 rfref -> None, id, rfref.RecdField.FormalType, rest
-                    | Choice2Of2 (anonInfo, fldTy) -> Some anonInfo, id, fldTy, rest)
+                |?> List.map (fun x -> id, x, rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -3850,7 +3815,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs
                     |?> List.choose (fun x ->
                         match x with
-                        | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest -> Some (None, fieldId, rfref.RecdField.FormalType, rest)
+                        | _, (Item.RecdField _ as item), rest -> Some (fieldId, item, rest)
                         | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -3861,9 +3826,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    None, fieldId, rfinfo.RecdField.FormalType, restAfterField)
+                    fieldId, Item.RecdField rfinfo, restAfterField)
 
-        let anonRecdInfo, fieldId, fieldTy, rest =
+        let fieldId, item, rest =
             let search =
                 if isAnonRecdTy then
                     fieldSearch ()
@@ -3881,24 +3846,29 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 lid |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
 
         match rest with
-        | [] -> idsBeforeField, [ (fieldId, anonRecdInfo) ]
+        | [] -> idsBeforeField, [ (fieldId, item) ]
         | _ ->  
-            let rec nestedFieldSearch fields ty lid =
+            let rec nestedFieldSearch fields parentTy lid =
                 match lid with
                 | [] -> fields
                 | id :: rest ->
-                    let resolved = lookupField ty id |> ForceRaise
+                    let resolved = lookupField parentTy id |> ForceRaise
                     let fieldTy =
                         match resolved with
-                        | [ Choice1Of2 rfref ] -> rfref.RecdField.FormalType
-                        | [ Choice2Of2 (_, fieldTy) ] -> fieldTy
-                        | _ -> ty
+                        | [ Item.RecdField info ] -> info.FieldType
+                        | [ Item.AnonRecdField (_, tys, index, _) ] -> tys[index]
+                        | _ -> parentTy
 
-                    let resolved = resolved |> List.map (fun x -> id, anonRecdInfoF x)
-
+                    let resolved = resolved |> List.map (fun x -> id, x)
                     nestedFieldSearch (fields @ resolved) fieldTy rest
 
-            idsBeforeField, (fieldId, anonRecdInfo) :: (nestedFieldSearch [] fieldTy rest)
+            let fieldTy =
+                match item with
+                | Item.RecdField info -> info.FieldType
+                | Item.AnonRecdField (_, tys, index, _) -> tys[index]
+                | _ -> g.obj_ty
+
+            idsBeforeField, (fieldId, item) :: (nestedFieldSearch [] fieldTy rest)
 
 /// Resolve F#/IL "." syntax in expressions (2).
 ///
@@ -3963,7 +3933,7 @@ let NeedsWorkAfterResolution namedItem =
     match namedItem with
     | Item.MethodGroup(_, minfos, _)
     | Item.CtorGroup(_, minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
-    | Item.Property(_, pinfos) -> pinfos.Length > 1
+    | Item.Property(info = pinfos) -> pinfos.Length > 1
     | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) })
     | Item.Value vref | Item.CustomBuilder (_, vref) -> not (List.isEmpty vref.Typars)
     | Item.CustomOperation (_, _, Some minfo) -> not (isNil minfo.FormalMethodInst)
@@ -4020,7 +3990,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
             match pinfoOpt with
             | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName, [minfo])
             | None -> Item.MethodGroup(minfo.LogicalName, [minfo], None)
-            | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo])
+            | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo], None)
 
         callSink (refinedItem, tpinst)
 
@@ -4039,7 +4009,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 let (|NonOverridable|_|) namedItem =
     match namedItem with
     |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
-    |   Item.Property(_, pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
+    |   Item.Property(info = pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
     |   _ -> Some ()
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
@@ -4083,7 +4053,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                     match pinfoOpt with
                     | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName, [minfo])
                     | None -> Item.MethodGroup(minfo.LogicalName, [minfo], None)
-                    | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo])
+                    | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo], None)
 
                 callSink (refinedItem, tpinst)
 

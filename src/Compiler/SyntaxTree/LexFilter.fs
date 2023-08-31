@@ -736,7 +736,9 @@ type LexFilterImpl (
     //--------------------------------------------------------------------------
 
     let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
-    let strictIndentation = lexbuf.SupportsFeature LanguageFeature.StrictIndentation
+
+    let strictIndentation =
+        lexbuf.StrictIndentation |> Option.defaultWith (fun _ -> lexbuf.SupportsFeature LanguageFeature.StrictIndentation)
 
     //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
@@ -1120,7 +1122,7 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
-                    | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN
+                    | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
@@ -1270,7 +1272,7 @@ type LexFilterImpl (
             | EOF _ -> false
             | _ ->
                 not (isSameLine()) ||
-                (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE -> true | _ -> false)
+                (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE | WHILE_BANG -> true | _ -> false)
 
         // Look for '=' or '.Id.id.id = ' after an identifier
         let rec isLongIdentEquals token =
@@ -2368,7 +2370,7 @@ type LexFilterImpl (
             pushCtxt tokenTup (CtxtFor tokenStartPos)
             returnToken tokenLexbufState token
 
-        | WHILE, _ ->
+        | (WHILE | WHILE_BANG), _ ->
             if debug then dprintf "WHILE, pushing CtxtWhile(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtWhile tokenStartPos)
             returnToken tokenLexbufState token

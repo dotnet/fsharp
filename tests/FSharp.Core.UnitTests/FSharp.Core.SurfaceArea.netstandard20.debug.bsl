@@ -2042,6 +2042,7 @@ Microsoft.FSharp.Core.StructuralEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String Value
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: System.String get_Value()
 Microsoft.FSharp.Core.StructuredFormatDisplayAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.TailCallAttribute: Void .ctor()
 Microsoft.FSharp.Core.Unit: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.Unit: Int32 GetHashCode()
 Microsoft.FSharp.Core.UnverifiableAttribute: Void .ctor()

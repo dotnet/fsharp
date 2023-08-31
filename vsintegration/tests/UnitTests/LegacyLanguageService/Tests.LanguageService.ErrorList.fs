@@ -40,7 +40,7 @@ type UsingMSBuild() as this =
         let errorList = GetErrors(project)
         [for error in errorList do
             if (error.Severity = Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning) then
-            yield error]
+                yield error]
     
     let CheckErrorList (content : string) f : unit = 
         let (_, project, file) = this.CreateSingleFileProject(content)

@@ -10,7 +10,6 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Control.AsyncBuilderImpl
 open Microsoft.FSharp.Control.AsyncPrimitives
-open Microsoft.FSharp.Collections
 
 module AsyncHelpers =
 
@@ -379,7 +378,10 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
     member _.UnsafeMessageQueueContents = mailbox.UnsafeContents
 #endif
 
-    member x.Start() =
+    /// Mark the agent as started if not started and return the asynchronous computation to be started.
+    /// If the agent has already been started, then throw an exception. Because the agent is internally
+    /// marked as started in this method, be sure to subsequently start the agent after calling this method.
+    member private x.PrepareToStart() =
         if started then
             raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
         else
@@ -388,15 +390,20 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             // Protect the execution and send errors to the event.
             // Note that exception stack traces are lost in this design - in an extended design
             // the event could propagate an ExceptionDispatchInfo instead of an Exception.
-            let p =
-                async {
-                    try
-                        do! body x
-                    with exn ->
-                        errorEvent.Trigger exn
-                }
+            async {
+                try
+                    do! body x
+                with exn ->
+                    errorEvent.Trigger exn
+            }
 
-            Async.Start(computation = p, cancellationToken = cancellationToken)
+    member x.Start() =
+        let p = x.PrepareToStart()
+        Async.Start(computation = p, cancellationToken = cancellationToken)
+
+    member x.StartImmediate() =
+        let p = x.PrepareToStart()
+        Async.StartImmediate(computation = p, cancellationToken = cancellationToken)
 
     member _.Post message =
         mailbox.Post message
@@ -506,4 +513,11 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             new MailboxProcessor<'Msg>(body, ?cancellationToken = cancellationToken)
 
         mailboxProcessor.Start()
+        mailboxProcessor
+
+    static member StartImmediate(body, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.StartImmediate()
         mailboxProcessor

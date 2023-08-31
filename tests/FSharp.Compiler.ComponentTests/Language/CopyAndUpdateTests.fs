@@ -17,7 +17,41 @@ let t2 x = { x with D.B = "a"; D.B = "b" }
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 668, Line 6, Col 21, Line 6, Col 22, "The field 'B' appears twice in this record expression or pattern")
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+    ]
+    
+[<Fact>]
+let ``Cannot update the same field appears multiple times in nested copy-and-update``() =
+    FSharp """
+type NestdRecTy = { B: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'B' appears multiple times in this record expression or pattern")
+    ]
+    
+[<Fact>]
+let ``Cannot update the same field appears multiple times in nested copy-and-update 2``() =
+    FSharp """
+type NestdRecTy = { B: string; C: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a"; D.C = ""; D.B = "c" ; D.C = "d" }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'C' appears multiple times in this record expression or pattern")
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
     ]
 
 [<Fact>]
@@ -168,18 +202,18 @@ module CopyAndUpdateTests
 [<Struct>]
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+type NestdRecTy = { B: string; C: AnotherNestedRecTy; G: int; H: int }
 
 [<Struct>]
 type RecTy = { D: NestdRecTy; E: string option; F: int }
 
-let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None; F = 42 }
+let t1 = { D = { B = "t1"; C = { A = 1 }; G = 0; H = 0 }; E = None; F = 42 }
 
-let actual1 = { t1 with D.B = "t2" }
-let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None; F = 42 }
+let actual1 = { t1 with D.B = "t2"; D.G = 3; D.H = 1 }
+let expected1 = { D = { B = "t2"; C = { A = 1 }; G = 3; H = 1 }; E = None; F = 42 }
 
-let actual2 = { t1 with D.C.A = 3; E = Some "a" }
-let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a"; F = 42 }
+let actual2 = { t1 with D.C.A = 3; E = Some "a"; D.G = 2; D.H = 3 }
+let expected2 = { D = { B = "t1"; C = { A = 3 }; G = 2; H = 3 }; E = Some "a"; F = 42 }
 
 if actual1 <> expected1 then
     failwith "actual1 does not equal expected1"
@@ -196,13 +230,13 @@ let ``Nested copy-and-update correctly updates fields in anonymous record``() =
     FSharp """
 module CopyAndUpdateTests
 
-let t1 = {| D = {| B = "t1"; C = struct {| A = 1 |} |}; E = Option<string>.None |}
+let t1 = {| D = {| B = "t1"; C = struct {| A = 1 |}; G = 0 |}; E = Option<string>.None |}
 
-let actual1 = {| t1 with D.B = "t2" |}
-let expected1 = {| D = {| B = "t2"; C = struct {| A = 1 |} |}; E = None |}
+let actual1 = {| t1 with D.B = "t2"; D.G = 3 |}
+let expected1 = {| D = {| B = "t2"; C = struct {| A = 1 |}; G = 3 |}; E = None |}
 
-let actual2 = {| t1 with D.C.A = 3; E = Some "a" |}
-let expected2 = {| D = {| B = "t1"; C = struct {| A = 3 |} |}; E = Some "a" |}
+let actual2 = {| t1 with D.C.A = 3; E = Some "a"; D.G = 2 |}
+let expected2 = {| D = {| B = "t1"; C = struct {| A = 3 |}; G = 2 |}; E = Some "a" |}
 
 if actual1 <> expected1 then
     failwith "actual1 does not equal expected1"

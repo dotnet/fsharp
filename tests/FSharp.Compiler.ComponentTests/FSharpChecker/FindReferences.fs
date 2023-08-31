@@ -152,6 +152,28 @@ let foo x = x ++ 4""" })
             ])
         }
 
+[<Theory>]
+[<InlineData("First")>]
+[<InlineData("Second")>]
+let ``We find disposable constructors`` searchIn =
+    let source1 = "type MyReader = System.IO.StreamReader"
+    let source2 = """open ModuleFirst
+let reader = MyReader "test.txt"
+"""
+    { SyntheticProject.Create(
+        { sourceFile "First" [] with Source = source1 },
+        { sourceFile "Second" [] with Source = source2 })
+        with SkipInitialCheck = true }
+
+        .Workflow {
+            placeCursor searchIn "MyReader"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 2, 5, 13
+                "FileSecond.fs", 3, 13, 21
+            ])
+        }
+
+
 module Parameters =
 
     [<Fact>]
@@ -477,3 +499,75 @@ match 2 with | Even -> () | Odd -> ()
                 //"FileFirst.fsi", 4, 6, 10 <-- this should also be found
             ])
         }
+
+
+module Interfaces =
+
+    [<Fact>]
+    let ``We find all references to interface methods`` () =
+
+        let source = """
+type IInterface1 =
+    abstract member Method1 : int
+
+type IInterface2 =
+    abstract member Method2 : int
+
+type internal SomeType() =
+
+    interface IInterface1 with
+        member _.Method1 =
+            42
+
+    interface IInterface2 with
+        member this.Method2 =
+            (this :> IInterface1).Method1
+        """
+
+        SyntheticProject.Create( { sourceFile "Program" [] with Source = source } ).Workflow {
+            placeCursor "Program" "Method1"
+            findAllReferences (expectToFind [
+                "FileProgram.fs", 4, 20, 27
+                "FileProgram.fs", 12, 17, 24
+                "FileProgram.fs", 17, 12, 41 // Not sure why we get the whole range here, but it seems to work fine.
+            ])
+        }
+
+    [<Fact>]
+    let ``We find all references to interface methods starting from implementation`` () =
+
+        let source1 = """
+type IInterface1 =
+    abstract member Method1 : int
+
+type IInterface2 =
+    abstract member Method2 : int
+        """
+
+        let source2 = """
+open ModuleFirst
+
+type internal SomeType() =
+
+    interface IInterface1 with
+        member _.Method1 =
+            42
+
+    interface IInterface2 with
+        member this.Method2 =
+            (this :> IInterface1).Method1
+        """
+
+        SyntheticProject.Create(
+            { sourceFile "First" [] with Source = source1 },
+            { sourceFile "Second" [] with Source = source2 }
+        ).Workflow {
+            placeCursor "Second" "Method1"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 4, 20, 27
+                "FileSecond.fs", 8, 17, 24
+                "FileSecond.fs", 13, 12, 41 // Not sure why we get the whole range here, but it seems to work fine.
+            ])
+        }
+
+

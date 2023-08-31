@@ -158,7 +158,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     | SourceIdentifier of constant: string * value: string * range: range
 
@@ -174,15 +174,15 @@ type SynMeasure =
 
     | Named of longId: LongIdent * range: range
 
-    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * mAsterisk: range * measure2: SynMeasure * range: range
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * mSlash: range * measure2: SynMeasure * range: range
 
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
-    | One
+    | One of range: range
 
     | Anon of range: range
 
@@ -193,11 +193,13 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * divRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =
@@ -308,7 +310,8 @@ type SynBindingKind =
     | Do
 
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeConstraint =
@@ -366,13 +369,28 @@ type SynTyparDecls =
 
     member x.Constraints =
         match x with
-        | PostfixList (constraints = constraints) -> constraints
+        | PostfixList (decls = decls; constraints = constraints) ->
+            // Synthesize SynTypeConstraints implied with any intersection constraints in SynTyparDecl
+            // The parser makes sure we're only dealing with hash constraints here
+            let intersectionConstraints =
+                decls
+                |> List.collect (fun (SynTyparDecl (typar = tp; intersectionConstraints = tys)) ->
+                    tys
+                    |> List.map (fun ty ->
+                        let ty =
+                            match ty with
+                            | SynType.HashConstraint (ty, _) -> ty
+                            | _ -> ty
+
+                        SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, ty.Range)))
+
+            List.append intersectionConstraints constraints
         | _ -> []
 
     member x.Range =
         match x with
         | PostfixList (range = range)
-        | PrefixList (range = range) -> range
+        | PrefixList (range = range)
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -442,6 +460,8 @@ type SynType =
 
     | FromParseError of range: range
 
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -461,6 +481,7 @@ type SynType =
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
         | SynType.Or (range = m)
+        | SynType.Intersection (range = m)
         | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
@@ -618,6 +639,8 @@ type SynExpr =
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
     | Set of targetExpr: SynExpr * rhsExpr: SynExpr * range: range
@@ -681,6 +704,8 @@ type SynExpr =
         trivia: SynExprMatchBangTrivia
 
     | DoBang of expr: SynExpr * range: range
+
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
 
     | LibraryOnlyILAssembly of
         ilCode: obj *  // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public
@@ -755,6 +780,7 @@ type SynExpr =
         | SynExpr.DotIndexedGet (range = m)
         | SynExpr.DotIndexedSet (range = m)
         | SynExpr.DotGet (range = m)
+        | SynExpr.DotLambda (range = m)
         | SynExpr.DotSet (range = m)
         | SynExpr.Set (range = m)
         | SynExpr.DotNamedIndexedPropertySet (range = m)
@@ -780,6 +806,7 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range = m)
         | SynExpr.MatchBang (range = m)
         | SynExpr.DoBang (range = m)
+        | SynExpr.WhileBang (range = m)
         | SynExpr.Fixed (range = m)
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
@@ -800,9 +827,8 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) -> e1.RangeOfFirstPortion
         | SynExpr.ForEach (pat = pat; range = r) ->
-            let start = r.Start
             let e = (pat.Range: range).Start
-            mkRange r.FileName start e
+            withEnd e r
         | _ -> e.Range
 
     member this.IsArbExprAndThusAlreadyReportedError =
@@ -932,8 +958,6 @@ type SynPat =
 
     | QuoteExpr of expr: SynExpr * range: range
 
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
-
     | InstanceMember of
         thisId: Ident *
         memberId: Ident *
@@ -958,7 +982,6 @@ type SynPat =
         | SynPat.Typed (range = m)
         | SynPat.Attrib (range = m)
         | SynPat.Record (range = m)
-        | SynPat.DeprecatedCharRange (range = m)
         | SynPat.Null (range = m)
         | SynPat.IsInst (range = m)
         | SynPat.QuoteExpr (range = m)
@@ -1023,9 +1046,13 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        transformedFromProperty: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =

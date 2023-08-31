@@ -404,6 +404,8 @@ type MetadataTable<'T> =
 
     member tbl.GetTableEntry x = tbl.dict[x]
 
+    override x.ToString() = "table " + x.name
+
 //---------------------------------------------------------------------
 // Keys into some of the tables
 //---------------------------------------------------------------------
@@ -449,6 +451,8 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
             retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
+
+    override x.ToString() = nm
 
 /// We use this key type to help find ILFieldDefs for FieldRefs
 type FieldDefKey(tidx: int, nm: string, ty: ILType) =
@@ -2486,6 +2490,7 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
         (if gp.HasReferenceTypeConstraint then 0x0004 else 0x0000) |||
         (if gp.HasNotNullableValueTypeConstraint then 0x0008 else 0x0000) |||
         (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000)
+   
 
     let mdVersionMajor, _ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
     if (mdVersionMajor = 1) then

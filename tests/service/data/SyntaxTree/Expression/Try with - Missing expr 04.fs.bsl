@@ -13,7 +13,7 @@ ImplFile
                         PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
                         SynValData
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                           None), Wild (5,4--5,5), None,
+                           None, None), Wild (5,4--5,5), None,
                         Const (Unit, (5,8--5,10)), (5,4--5,5), Yes (5,0--5,10),
                         { LeadingKeyword = Let (5,0--5,3)
                           InlineKeyword = None
