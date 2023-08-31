@@ -37,7 +37,7 @@
         <target state="translated">Los casos de unión discriminada en minúsculas solo se permiten cuando se usa el atributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_NULL">
+      <trans-unit id="Parser.TOKEN.BAR_RIGHT_BEFORE_NULL">
         <source>symbol '|' (directly before 'null')</source>
         <target state="new">symbol '|' (directly before 'null')</target>
         <note />

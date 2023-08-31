@@ -37,7 +37,7 @@
         <target state="translated">Przypadki unii z dyskryminatorem z małymi literami są dozwolone tylko w przypadku używania atrybutu RequireQualifiedAccess</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_NULL">
+      <trans-unit id="Parser.TOKEN.BAR_RIGHT_BEFORE_NULL">
         <source>symbol '|' (directly before 'null')</source>
         <target state="new">symbol '|' (directly before 'null')</target>
         <note />

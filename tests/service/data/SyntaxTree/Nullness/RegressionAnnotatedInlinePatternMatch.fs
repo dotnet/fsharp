@@ -1,1 +1,2 @@
-match x with | "123" -> "": string | _ -> "456"
+match x with 
+| "123" -> "": string | null -> "456"

@@ -2437,7 +2437,7 @@ type LexFilterImpl (
             hwTokenFetch useBlockRule
 
         | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
-            returnToken tokenLexbufState BAR_NULL            
+            returnToken tokenLexbufState BAR_RIGHT_BEFORE_NULL            
 
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->

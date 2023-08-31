@@ -426,7 +426,7 @@
   <data name="Parser.TOKEN.BAR.RBRACE" xml:space="preserve">
     <value>symbol '|}'</value>
   </data>
-  <data name="Parser.TOKEN.BAR_NULL" xml:space="preserve">
+  <data name="Parser.TOKEN.BAR_RIGHT_BEFORE_NULL" xml:space="preserve">
     <value>symbol '|' (directly before 'null')</value>
   </data>
   <data name="Parser.TOKEN.GREATER.RBRACE" xml:space="preserve">

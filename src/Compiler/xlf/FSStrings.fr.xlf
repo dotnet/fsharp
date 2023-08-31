@@ -37,7 +37,7 @@
         <target state="translated">Les cas d’union discriminée en minuscules sont uniquement autorisés lors de l’utilisation de l’attribut RequireQualifiedAccess.</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_NULL">
+      <trans-unit id="Parser.TOKEN.BAR_RIGHT_BEFORE_NULL">
         <source>symbol '|' (directly before 'null')</source>
         <target state="new">symbol '|' (directly before 'null')</target>
         <note />

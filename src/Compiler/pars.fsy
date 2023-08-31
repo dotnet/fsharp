@@ -86,10 +86,10 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token SEMICOLON_SEMICOLON LARROW EQUALS LBRACK LBRACK_BAR LBRACE_BAR LBRACK_LESS
 %token BAR_RBRACK BAR_RBRACE UNDERSCORE
 %token BAR RBRACK RBRACE_COMING_SOON RBRACE_IS_HERE MINUS DOLLAR
-%token GREATER_RBRACK STRUCT SIG 
+%token GREATER_RBRACK STRUCT SIG
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_NULL
+%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_RIGHT_BEFORE_NULL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -247,11 +247,17 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 %right WHEN
 
+/* prec_pat_pat_action = "pattern when expr -> expr"
+ * Lower than match extensions - i.e. BAR.
+ */
+%nonassoc prec_pat_pat_action /* lower than BAR */
+
 /* "a then b" as an object constructor is very low precedence */
 /* Lower than "if a then b" */
 %left prec_then_before
 %nonassoc prec_then_if
-
+%nonassoc BAR_RIGHT_BEFORE_NULL
+%left BAR
 
 %right SEMICOLON prec_semiexpr_sep OBLOCKSEP
 %right prec_defn_sep
@@ -285,12 +291,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc prec_tuptyptail_prefix      /* ditto */
 %nonassoc prec_toptuptyptail_prefix      /* ditto */
 
-%nonassoc BAR_NULL
-%left BAR
-/* prec_pat_pat_action = "pattern when expr -> expr"
- * Lower than match extensions - i.e. BAR.
- */
-%nonassoc prec_pat_pat_action /* lower than BAR */
 %right RARROW
 %nonassoc IDENT LBRACK
 
@@ -348,7 +348,6 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left AND_BANG
 %left AMP AMP_AMP
 %nonassoc pat_conj
-%nonassoc path_disj
 %nonassoc expr_not
 %left COLON_GREATER COLON_QMARK_GREATER
 %left INFIX_COMPARE_OP DOLLAR LESS GREATER EQUALS INFIX_BAR_OP INFIX_AMP_OP
@@ -1643,7 +1642,7 @@ tyconDefn:
            let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals; WithKeyword = mWith }
            SynTypeDefn($1, tcDefRepr, members, memberCtorPattern, mWhole, trivia) }
 
-  | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover 
+  | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP opt_simplePatterns optAsSpec recover
      { let vis, spats, az = $3, $5, $6
        let (SynComponentInfo(longId = lid)) = $1
        // Gets the XML doc comments prior to the implicit constructor
@@ -2379,6 +2378,12 @@ tyconDefnOrSpfnSimpleRepr:
   | opt_attributes opt_access path LQUOTE STRING recover
      { errorR(Error(FSComp.SR.parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString(), rhs parseState 4))
        SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ErrorRecovery, SynType.LongIdent($3), unionRanges (rhs parseState 1) $3.Range) }
+							
+  /* A type abbreviation  */
+  | opt_attributes opt_access typ
+     { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
+       if Option.isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(), rhs parseState 2))
+       SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }  
 
   /* A union type definition */
   | opt_attributes opt_access unionTypeRepr
@@ -2397,12 +2402,6 @@ tyconDefnOrSpfnSimpleRepr:
            SynTypeDefnSimpleRepr.Union($2,
                             $3 |> List.choose (function Choice2Of2 data -> Some(data) | Choice1Of2 _ -> failwith "huh?"),
                             mWhole) }
-							
-  /* A type abbreviation  */
-  | opt_attributes opt_access typ
-     { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
-       if Option.isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(), rhs parseState 2))
-       SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }  
 
   /* A record type definition */
   | opt_attributes opt_access braceFieldDeclList
@@ -3074,7 +3073,7 @@ cType:
   | cType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | cType BAR_NULL NULL
+  | cType BAR_RIGHT_BEFORE_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
   | cType AMP
@@ -3403,7 +3402,7 @@ simplePatterns:
 barCanBeRightBeforeNull:
   | BAR
       {  }
-  | BAR_NULL
+  | BAR_RIGHT_BEFORE_NULL
       {  }
 
 
@@ -3411,7 +3410,7 @@ headBindingPattern:
   | headBindingPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | headBindingPattern barCanBeRightBeforeNull headBindingPattern %prec path_disj
+  | headBindingPattern barCanBeRightBeforeNull headBindingPattern
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -3689,7 +3688,7 @@ parenPattern:
   | parenPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | parenPattern barCanBeRightBeforeNull parenPattern %prec path_disj
+  | parenPattern barCanBeRightBeforeNull parenPattern
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -4554,7 +4553,7 @@ withPatternClauses:
   | patternClauses
       { $1 None }
 
-  | barCanBeRightBeforeNull patternClauses %prec path_disj
+  | barCanBeRightBeforeNull patternClauses
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
@@ -5869,7 +5868,7 @@ appTypeConPower:
     { $1 }
 
 appTypeCanBeNullable:
-  | appTypeWithoutNull BAR_NULL NULL
+  | appTypeWithoutNull BAR_RIGHT_BEFORE_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
   | appTypeWithoutNull
