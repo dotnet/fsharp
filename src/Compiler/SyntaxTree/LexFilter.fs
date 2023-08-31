@@ -165,7 +165,7 @@ let infixTokenLength token =
     | COLON_GREATER -> 2
     | COLON_COLON -> 2
     | COLON_EQUALS -> 2
-    | BAR_BAR -> 2 
+    | BAR_BAR -> 2
     | AMP_AMP -> 2
     | INFIX_BAR_OP d
     | INFIX_AMP_OP d
@@ -2417,7 +2417,7 @@ type LexFilterImpl (
             pool.Return tokenTup
             hwTokenFetch useBlockRule
 
-        | TRY, _ ->  
+        | TRY, _ ->
             if debug then dprintf "Try, pushing CtxtTry(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtTry tokenStartPos)
             // The ideal spec would be to push a begin/end block pair here, but we can only do that
