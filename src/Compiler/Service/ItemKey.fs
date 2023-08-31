@@ -306,6 +306,21 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
+    let writeValue (vref: ValRef) =
+        if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+            writeString ItemKeyTags.itemProperty
+            writeString vref.PropertyName
+
+            match vref.IsOverrideOrExplicitImpl, vref.MemberInfo with
+            | true, Some { ImplementedSlotSigs = slotSig :: _ } -> slotSig.DeclaringType |> writeType false
+            | _ ->
+
+                match vref.TryDeclaringEntity with
+                | ParentRef.Parent parent -> writeEntityRef parent
+                | _ -> ()
+        else
+            writeValRef vref
+
     let writeActivePatternCase (apInfo: ActivePatternInfo) index =
         writeString ItemKeyTags.itemActivePattern
 
@@ -327,16 +342,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         let preCount = b.Count
 
         match item with
-        | Item.Value vref ->
-            if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
-                writeString ItemKeyTags.itemProperty
-                writeString vref.PropertyName
-
-                match vref.TryDeclaringEntity with
-                | ParentRef.Parent parent -> writeEntityRef parent
-                | _ -> ()
-            else
-                writeValRef vref
+        | Item.Value vref -> writeValue vref
 
         | Item.UnionCase (info, _) ->
             writeString ItemKeyTags.typeUnionCase
@@ -408,12 +414,13 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.CtorGroup (_, [ info ]) ->
             match info with
             | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
-            | FSMeth (_, _, vref, _) -> writeValRef vref
-            | ILMeth (_, info, _) ->
-                info.ILMethodRef.ArgTypes |> List.iter writeILType
-                writeILType info.ILMethodRef.ReturnType
-                writeString info.ILName
-                writeType false info.ApparentEnclosingType
+            | FSMeth (_, _, vref, _) -> writeValue vref
+            | ILMeth (_, ilMethInfo, _) when info.IsConstructor -> writeType true ilMethInfo.ApparentEnclosingType
+            | ILMeth (_, ilMethInfo, _) ->
+                ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
+                writeILType ilMethInfo.ILMethodRef.ReturnType
+                writeString ilMethInfo.ILName
+                writeType false ilMethInfo.ApparentEnclosingType
             | _ ->
                 writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef

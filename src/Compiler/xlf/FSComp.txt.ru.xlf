@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="new">Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Все элементы массива должны поддерживать неявное преобразование в тип первого элемента, который здесь является кортежем длиной {0} типа\n    {1}    \nЭтот элемент является кортежем длиной {2} типа\n    {3}    \n</target>
@@ -282,6 +287,11 @@
         <target state="translated">другие типы поддерживают единицы измерения</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="new">Extended string interpolation similar to C# raw string literals.</target>
@@ -385,6 +395,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">управление пакетами</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -1212,6 +1227,11 @@
         <target state="translated">Необходимо инициализировать следующие обязательные свойства:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
         <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
@@ -1350,6 +1370,11 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Недопустимая интерполированная строка. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -3867,11 +3892,6 @@
         <target state="translated">Метки поля и требуемый тип данного выражения записи или шаблона не определяют уникально соответствующий тип записи</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Поле "{0}" появляется дважды в данном выражении записи или шаблоне</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">Неизвестная ветвь объединения</target>
@@ -4175,11 +4195,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">Недопустимый шаблон.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Совпадения диапазона символов были убраны из F#. Вместо этого рекомендуется использовать шаблон условия "when".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -7843,8 +7858,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Недопустимое использование выражения "fixed". Выражение "fixed" можно использовать только в объявлении формы "use x = fixed expr", где выражение является массивом, адресом поля, адресом элемента массива или строки.</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="needs-review-translation">Недопустимое использование выражения "fixed". Выражение "fixed" можно использовать только в объявлении формы "use x = fixed expr", где выражение является массивом, адресом поля, адресом элемента массива или строки.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">

@@ -231,7 +231,9 @@ type SyntheticProject =
       OtherOptions: string list
       AutoAddModules: bool
       NugetReferences: Reference list
-      FrameworkReferences: Reference list }
+      FrameworkReferences: Reference list
+      /// If set to true this project won't cause an exception if there are errors in the initial check
+      SkipInitialCheck: bool }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -245,7 +247,8 @@ type SyntheticProject =
           OtherOptions = []
           AutoAddModules = true
           NugetReferences = []
-          FrameworkReferences = [] }
+          FrameworkReferences = []
+          SkipInitialCheck = false }
 
     static member Create([<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create() with SourceFiles = sourceFiles |> List.ofArray }
@@ -795,7 +798,7 @@ let SaveAndCheckProject project checker =
 
         let! results = checker.ParseAndCheckProject(snapshot)
 
-        if not (Array.isEmpty results.Diagnostics) then
+        if not (Array.isEmpty results.Diagnostics || project.SkipInitialCheck) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
 
         let! signatures =

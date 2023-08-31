@@ -458,6 +458,8 @@ let parseFormatStringInternal
 
             // residue of hole "...{n}..." in interpolated strings become %P(...)
             | 'P' when isInterpolated ->
+                let (code, message) = FSComp.SR.alwaysUseTypedStringInterpolation()
+                warning(DiagnosticWithText(code, message, m))
                 checkOtherFlags ch
                 let i = requireAndSkipInterpolationHoleFormat (i+1)
                 // Note, the fragCol doesn't advance at all as these are magically inserted.

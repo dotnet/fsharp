@@ -39,7 +39,6 @@ module XmlDocParsing =
         | SynPat.Wild _
         | SynPat.IsInst _
         | SynPat.QuoteExpr _
-        | SynPat.DeprecatedCharRange _
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 

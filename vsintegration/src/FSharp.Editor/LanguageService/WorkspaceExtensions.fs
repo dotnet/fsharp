@@ -16,6 +16,7 @@ open FSharp.Compiler.Symbols
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -316,6 +317,7 @@ type Document with
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            let! result = checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
 
             let! result =
                 if this.Project.UseTransparentCompiler then
@@ -334,7 +336,6 @@ type Document with
     /// Find F# references in the given F# document.
     member inline this.FindFSharpReferencesAsync(symbol, [<InlineIfLambda>] onFound, userOpName) =
         cancellableTask {
-            let! cancellationToken = CancellableTask.getCancellationToken()
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
@@ -353,13 +354,11 @@ type Document with
                         fastCheck = this.Project.IsFastFindReferencesEnabled
                     )
 
-            let tasks =
-                [|
-                    for symbolUse in symbolUses do
-                        yield CancellableTask.startAsTask cancellationToken (onFound symbolUse)
-                |]
-
-            do! Task.WhenAll(tasks)
+            do!
+                symbolUses
+                |> Seq.map onFound
+                |> CancellableTask.whenAll
+                |> CancellableTask.ignore
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -426,19 +425,10 @@ type Project with
                 |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
             if this.IsFastFindReferencesEnabled then
-                let! cancellationToken = CancellableTask.getCancellationToken()
-
-                let tasks =
-                    [|
-                        for doc in documents do
-                            yield
-                                cancellableTask {
-                                    return! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                                }
-                                |> CancellableTask.startAsTask cancellationToken
-                    |]
-
-                do! Task.WhenAll tasks
+                do!
+                    documents
+                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName))
+                    |> CancellableTask.whenAll
             else
                 for doc in documents do
                     do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)

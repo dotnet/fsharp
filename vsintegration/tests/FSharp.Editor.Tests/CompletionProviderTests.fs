@@ -1675,6 +1675,27 @@ let x (du: Du list) =
         VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
 
     [<Fact>]
+    let ``Completion list contains relevant items for the correct union case field pattern before its identifier has been typed`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * second: Result<int, string>
+
+let x du =
+    match du with
+    | C () -> ()
+    | C  (ff, ) -> ()
+    | C  (first = f;) -> ()
+"""
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du"; "second" ], [ "result" ])
+        VerifyCompletionList(fileContents, "| C  (ff, ", [ "second"; "result" ], [ "first"; "du" ])
+        VerifyCompletionListExactly(fileContents, "| C  (first = f;", [ "second" ])
+
+    [<Fact>]
     let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
         let fileContents =
             """
@@ -1740,6 +1761,35 @@ match U1 (1, A) with
         VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
         VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
         VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
+
+    [<Fact>]
+    let ``Completion list for union case field identifier contains available fields`` () =
+        let fileContents =
+            """
+type PatternContext =
+    | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
+    | NamedUnionCaseField of fieldName: string * caseIdRange: range
+    | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
+    | Other
+
+match PositionalUnionCaseField (None, 0, range0) with
+| PositionalUnionCaseField (fieldIndex = _; a)
+| NamedUnionCaseField (fieldName = a; z)
+| NamedUnionCaseField (x)
+"""
+
+        VerifyCompletionListExactly(fileContents, "PositionalUnionCaseField (fieldIndex = _; a", [ "caseIdRange"; "isTheOnlyField" ])
+        VerifyCompletionListExactly(fileContents, "NamedUnionCaseField (fieldName = a; z", [ "caseIdRange" ])
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(
+            fileContents,
+            "NamedUnionCaseField (x",
+            [ "string"; "fieldName"; "caseIdRange" ],
+            [ "range"; "fieldIndex"; "referencedFields"; "isTheOnlyField" ]
+        )
 
     [<Fact>]
     let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
