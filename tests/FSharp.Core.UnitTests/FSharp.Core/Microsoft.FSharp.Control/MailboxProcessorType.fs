@@ -317,8 +317,9 @@ type MailboxProcessorType() =
         let mutable isSkip = false
         let mutable actualSkipMessagesCount = 0
         let mutable actualMessagesCount = 0
-        let sleepDueTime = 1000
+        let sleepDueTime = 100
         let expectedMessagesCount = 2
+        use mre = new ManualResetEventSlim(false)
         let mb =
             MailboxProcessor.Start(fun b ->
                 let rec loop() =
@@ -330,7 +331,10 @@ type MailboxProcessorType() =
                                 return! loop()
                             else
                                 do! Async.Sleep sleepDueTime
-                                if isSkip |> not then actualMessagesCount <- actualMessagesCount + 1
+                                if not isSkip then
+                                    actualMessagesCount <- actualMessagesCount + 1
+                                    if actualMessagesCount = expectedMessagesCount then mre.Set()
+                                    do! Async.Sleep sleepDueTime
                                 return! loop()
                         | _ -> ()
                     }
@@ -338,9 +342,9 @@ type MailboxProcessorType() =
             )
         let post() = Increment 1 |> mb.Post
 
-        [1..4] |> Seq.iter (fun _ -> post())
+        [1..4] |> Seq.iter (fun x -> post())
         do! task {
-            do! Task.Delay (expectedMessagesCount * sleepDueTime + 500)
+            mre.Wait()
             isSkip <- true
             (mb :> IDisposable).Dispose()
             post()
