@@ -582,7 +582,7 @@ let ShrinkContext env oldRange newRange =
 
 /// Allow the inference of structness from the known type, e.g.
 ///    let (x: struct (int * int)) = (3,4)
-let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct (ps: 'T list) =
     let g = cenv.g
     let tupInfo, ptys =
         if isAnyTupleTy g knownTy then
@@ -5587,10 +5587,11 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let unaryArg = mkSynId trivia.UnderscoreRange (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
         let pushedExpr = pushUnaryArg synExpr unaryArg
-        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ],[], svar.Range), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
+        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ],[], svar.Range, []), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv lambda
-    | SynExpr.Lambda _ ->
-        TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
+    | SynExpr.Lambda(args = SynSimplePats.SimplePats (patNames = names)) ->
+        let names = names |> Set.ofList
+        TcIteratedLambdas cenv true env overallTy names tpenv synExpr
 
     | SynExpr.Match (spMatch, synInputExpr, synClauses, _m, _trivia) ->
         TcExprMatch cenv overallTy env tpenv synInputExpr spMatch synClauses
@@ -6216,39 +6217,13 @@ and RewriteRangeExpr synExpr =
     | _ -> None
 
 /// Check lambdas as a group, to catch duplicate names in patterns
-and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv (e: SynExpr) =
+and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, parsedData, m, _) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parseData, m, _) when isMember || isFirst || isSubsequent ->
+
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
-        let takenNames =
-            // Is there a way to see that you are part a function ?
-            match overallTy with
-            | MustConvertTo(_, reqdTy) ->
-                match reqdTy with
-                | TType_var(typar,_) ->
-                    match typar.Solution with
-                    | Some(TType_fun(_domainType, _, _)) when not isMember ->
-                        match overallTy with
-                        | MustConvertTo(_, reqdTy) ->
-                            match reqdTy with
-                            | TType_fun _ ->
-                                match overallTy with
-                                | MustConvertTo(_, reqdTy) ->
-                                    match reqdTy with
-                                    | TType_tuple _ ->
-                                        match parsedData with
-                                        | Some(pats, _) -> pats |> List.map(function | TakenNames names -> names | _ -> [])
-                                        | _ -> []
-                                        |> List.concat
-                                        |> Set.ofList
-                                    | _ -> takenNames
-                                | _ -> takenNames
-                            | _ -> takenNames
-                        | _ -> takenNames
-                    | _ -> takenNames
-                | _ -> takenNames
-            | _ -> takenNames             
+
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
             cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
 

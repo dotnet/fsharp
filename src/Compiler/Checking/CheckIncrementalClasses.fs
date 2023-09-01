@@ -136,7 +136,7 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
 
     // Type check arguments by processing them as 'simple' patterns 
     //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
-    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, [], m))
+    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, [], m, []))
 
     let (TcPatLinearEnv(_, names, _)) = patEnv
         

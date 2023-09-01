@@ -894,7 +894,7 @@ type SynStaticOptimizationConstraint =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range * patNames: string list
 
     member x.Range =
         match x with

@@ -345,15 +345,34 @@ let rec SimplePatsOfPat synArgNameGenerator p =
         let ps2, laterF =
             List.foldBack (fun (p', rhsf) (ps', rhsf') -> p' :: ps', (composeFunOpt rhsf rhsf')) sps ([], None)
 
-        SynSimplePats.SimplePats(ps2, commas, m), laterF
+        SynSimplePats.SimplePats(ps2, commas, m, []), laterF
 
     | SynPat.Paren (SynPat.Const (SynConst.Unit, m), _)
-    | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m), None
+    | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m, []), None
+
+    | SynPat.As (SynPat.Tuple (_, pats, commas, _), rhsPat, m) ->
+        let sps = List.map (SimplePatOfPat synArgNameGenerator) pats
+        let rhsPat, laterF = SimplePatOfPat synArgNameGenerator rhsPat
+
+        let patNames =
+            sps
+            |> List.choose (fun (pat, _) ->
+                match pat with
+                | SynSimplePat.Id (ident = ident) -> Some(ident.idText)
+                | _ -> None)
+
+        SynSimplePats.SimplePats([ rhsPat ], commas, m, patNames), laterF
+
+    | SynPat.Named (range = m) ->
+        let sp, laterF = SimplePatOfPat synArgNameGenerator p
+        SynSimplePats.SimplePats([ sp ], [], m, []), laterF
+
+    | SynPat.Paren (p, _) -> SimplePatsOfPat synArgNameGenerator p
 
     | _ ->
         let m = p.Range
         let sp, laterF = SimplePatOfPat synArgNameGenerator p
-        SynSimplePats.SimplePats([ sp ], [], m), laterF
+        SynSimplePats.SimplePats([ sp ], [], m, []), laterF
 
 let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
     let nowPats, laterF = SimplePatsOfPat synArgNameGenerator pat
@@ -474,7 +493,7 @@ let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
     let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
-    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], [], m), e, None, m, SynExprLambdaTrivia.Zero)
+    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], [], m, []), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range

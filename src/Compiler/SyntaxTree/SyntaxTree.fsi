@@ -1033,7 +1033,7 @@ type SynStaticOptimizationConstraint =
 /// "fun v -> match v with ..."
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range * patNames: string list
 
     member Range: range
 
