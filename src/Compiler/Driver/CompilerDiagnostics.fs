@@ -1674,7 +1674,7 @@ type Exception with
             OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
-        | InternalException(_, s, _)
+        | InternalException (_, s, _)
         | InvalidArgument s
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG

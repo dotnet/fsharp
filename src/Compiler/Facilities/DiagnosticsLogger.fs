@@ -88,12 +88,12 @@ exception InternalError of message: string * range: range with
 exception InternalException of exn: Exception * msg: string * range: range with
     override this.Message =
         match this :> exn with
-        | InternalException(_, msg, _) -> msg
+        | InternalException (_, msg, _) -> msg
         | _ -> "impossible"
 
     override this.ToString() =
         match this :> exn with
-        | InternalException(exn, _, _) -> exn.ToString()
+        | InternalException (exn, _, _) -> exn.ToString()
         | _ -> "impossible"
 
 exception UserCompilerMessage of message: string * number: int * range: range
