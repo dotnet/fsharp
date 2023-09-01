@@ -16,7 +16,7 @@ open FSharp.Compiler.Text
 open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
-type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider)  =
+type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
     static let br = Environment.NewLine
@@ -35,55 +35,49 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
     // The things should be actually fixed in the InsertionContext, it's bugged.
     // But currently CompletionProvider also depends on InsertionContext and it's not tested enough.
     // So fixing InsertionContext or OpenDeclarationHelper might break completion which would be bad.
-    // The hack below is at least heavily tested. 
+    // The hack below is at least heavily tested.
     // And at least it shows what should be fixed down the line.
     let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
         // insertion context counts from 2, make the world sane
         let insertionLineNumber = ctx.Pos.Line - 2
         let margin = String(' ', ctx.Pos.Column)
 
-        let startLineNumber, openDeclaration = 
+        let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
             | ScopeKind.TopModule ->
-                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
-                
+                match sourceText.Lines[ insertionLineNumber ].ToString().Trim() with
+
                 // explicit top level module
-                | line when line.StartsWith "module" && not (line.EndsWith "=") ->
-                    insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-                
+                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+
                 // nested module, shouldn't be here
-                | line when line.StartsWith "module" ->
-                    insertionLineNumber, $"{margin}open {ns}{br}{br}"
-                
+                | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
+
                 // attribute, shouldn't be here
                 | line when line.StartsWith "[<" && line.EndsWith ">]" ->
-                    let moduleDeclLineNumber = 
+                    let moduleDeclLineNumber =
                         sourceText.Lines
                         |> Seq.skip insertionLineNumber
                         |> Seq.findIndex (fun line -> line.ToString().Contains "module")
                         |> (+) insertionLineNumber
 
-                    let moduleDeclLineText = sourceText.Lines[moduleDeclLineNumber].ToString().Trim()
-                    if moduleDeclLineText.EndsWith "=" then 
+                    let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
+
+                    if moduleDeclLineText.EndsWith "=" then
                         insertionLineNumber, $"{margin}open {ns}{br}{br}"
                     else
                         moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
-                
-                // something else, shot in the dark
-                | _ ->
-                    insertionLineNumber, $"{margin}open {ns}{br}{br}"
 
-            | ScopeKind.Namespace -> 
-                insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.NestedModule ->
-                insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.OpenDeclaration -> 
-                insertionLineNumber + 1, $"{margin}open {ns}{br}"
+                // something else, shot in the dark
+                | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
+
+            | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
+            | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+            | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
 
             // So far I don't know how to get here
-            | ScopeKind.HashDirective -> 
-                insertionLineNumber + 1, $"open {ns}{br}{br}"
-        
+            | ScopeKind.HashDirective -> insertionLineNumber + 1, $"open {ns}{br}{br}"
+
         let start = sourceText.Lines[startLineNumber].Start
         TextChange(TextSpan(start, 0), openDeclaration)
 
@@ -140,14 +134,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                 let! sourceText = context.GetSourceTextAsync()
 
-                let! parseResults, checkResults =
-                    document.GetFSharpParseAndCheckResultsAsync(nameof AddOpenCodeFixProvider)
+                let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof AddOpenCodeFixProvider)
 
                 let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
                 let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
 
-                let! defines, langVersion, strictIndentation =
-                    document.GetFsharpParsingOptionsAsync(nameof AddOpenCodeFixProvider)
+                let! defines, langVersion, strictIndentation = document.GetFsharpParsingOptionsAsync(nameof AddOpenCodeFixProvider)
 
                 return
                     Tokenizer.getSymbolAtPosition (
@@ -164,7 +156,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                         context.CancellationToken
                     )
                     |> Option.filter (fun lexerSymbol ->
-                        let symbolOpt = 
+                        let symbolOpt =
                             checkResults.GetSymbolUseAtLocation(
                                 Line.fromZ linePos.Line,
                                 lexerSymbol.Ident.idRange.EndColumn,
@@ -177,7 +169,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                         // this is for operators for FS0043
                         | Some symbol when PrettyNaming.IsLogicalOpName symbol.Symbol.DisplayName -> true
                         | _ -> false)
-                    |> Option.bind (fun _ -> 
+                    |> Option.bind (fun _ ->
                         let unresolvedIdentRange =
                             let startLinePos = sourceText.Lines.GetLinePosition context.Span.Start
                             let startPos = Position.fromZ startLinePos.Line startLinePos.Character
@@ -187,7 +179,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                         let isAttribute =
                             ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parseResults.ParseTree) = Some EntityKind.Attribute
-                        
+
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
                             |> List.collect (fun s ->

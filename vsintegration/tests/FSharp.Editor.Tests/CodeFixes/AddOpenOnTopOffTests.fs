@@ -7,10 +7,13 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix = 
-    AddOpenCodeFixProvider(AssemblyContentProvider())
+let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-let mode = WithSettings { CodeFixesOptions.Default with AlwaysPlaceOpensAtTopLevel = false }
+let mode =
+    WithSettings
+        { CodeFixesOptions.Default with
+            AlwaysPlaceOpensAtTopLevel = false
+        }
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - basic`` () =
@@ -81,7 +84,6 @@ Console.WriteLine 42
 
     Assert.Equal(expected, actual)
 
-
 [<Fact>]
 let ``Fixes FS0039 for missing opens - there is already an open directive`` () =
     let code =
@@ -118,7 +120,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """module Module1
 
 open System
@@ -143,7 +145,7 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """module Module1 =
 
     open System
@@ -170,7 +172,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 module Module1
@@ -200,7 +202,7 @@ module Module1 =
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 open System
 
@@ -214,7 +216,6 @@ module Module1 =
     let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
-
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - module has multiple attributes`` () =
@@ -231,7 +232,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 [<AutoOpen>]
@@ -263,7 +264,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 

@@ -273,11 +273,7 @@ type RoslynTestHelpers private () =
             )
 
     static member SetEditorOptions (solution: Solution) options =
-        solution
-            .Workspace
-            .Services
-            .GetService<EditorOptions>()
-            .With(options)
+        solution.Workspace.Services.GetService<EditorOptions>().With(options)
 
     static member CreateSolution(source, ?options: FSharpProjectOptions, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
@@ -360,8 +356,7 @@ type RoslynTestHelpers private () =
             | Some o -> RoslynTestHelpers.CreateSolution(code, options, o)
             | None -> RoslynTestHelpers.CreateSolution(code, options)
 
-        solution
-        |> RoslynTestHelpers.GetSingleDocument
+        solution |> RoslynTestHelpers.GetSingleDocument
 
     static member GetFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
         let projInfo =

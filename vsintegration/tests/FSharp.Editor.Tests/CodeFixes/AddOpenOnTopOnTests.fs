@@ -7,8 +7,7 @@ open Xunit
 
 open CodeFixTestFramework
 
-let private codeFix =
-    AddOpenCodeFixProvider(AssemblyContentProvider())
+let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - basic`` () =
@@ -115,7 +114,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """module Module1
 
 open System
@@ -140,7 +139,7 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """open System
 
 module Module1 =
@@ -167,7 +166,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 module Module1
@@ -196,7 +195,7 @@ module Module1 =
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 open System
 
@@ -226,7 +225,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 [<AutoOpen>]
@@ -258,7 +257,7 @@ Console.WriteLine 42
         Some
             {
                 Message = "open System"
-                FixedCode = 
+                FixedCode =
                     """
 [<AutoOpen>]
 
