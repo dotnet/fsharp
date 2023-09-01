@@ -85,6 +85,17 @@ exception InternalError of message: string * range: range with
         | InternalError (msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
+exception InternalException of exn: Exception * msg: string * range: range with
+    override this.Message =
+        match this :> exn with
+        | InternalException(_, msg, _) -> msg
+        | _ -> "impossible"
+
+    override this.ToString() =
+        match this :> exn with
+        | InternalException(exn, _, _) -> exn.ToString()
+        | _ -> "impossible"
+
 exception UserCompilerMessage of message: string * number: int * range: range
 
 exception LibraryUseOnly of range: range
@@ -160,12 +171,10 @@ let rec AttachRange m (exn: exn) =
     else
         match exn with
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
+        | :? TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure msg -> InternalError(msg + " (Failure)", m)
-        | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
-        | _ -> exn
+        | _ -> InternalException(exn, exn.Message, m)
 
 type Exiter =
     abstract Exit: int -> 'T
@@ -416,6 +425,7 @@ module DiagnosticsLoggerExtensions =
         member x.EmitDiagnostic(exn, severity) =
             match exn with
             | InternalError (s, _)
+            | InternalException (_, s, _)
             | Failure s as exn -> Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
             | _ -> ()
 

@@ -131,6 +131,7 @@ type Exception with
         | DiagnosticEnabledWithLanguageFeature (_, _, m, _)
         | SyntaxError (_, m)
         | InternalError (_, m)
+        | InternalException (_, _, m)
         | InterfaceNotRevealed (_, _, m)
         | WrappedError (_, m)
         | PatternMatchCompilation.MatchIncomplete (_, _, m)
@@ -1673,6 +1674,7 @@ type Exception with
             OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
+        | InternalException(_, s, _)
         | InvalidArgument s
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG

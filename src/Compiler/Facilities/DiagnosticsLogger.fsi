@@ -56,6 +56,8 @@ val Error: (int * string) * range -> exn
 
 exception InternalError of message: string * range: range
 
+exception InternalException of exn: Exception * msg: string * range: range
+
 exception UserCompilerMessage of message: string * number: int * range: range
 
 exception LibraryUseOnly of range: range
