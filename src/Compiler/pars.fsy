@@ -2623,7 +2623,7 @@ unionTypeRepr:
      { [$1] }
 
 barAndgrabXmlDoc:
-  | BAR %prec prec_multiple_union_cases
+  | BAR
      { let mBar = rhs parseState 1
        grabXmlDoc(parseState, [], 1), mBar }
 
