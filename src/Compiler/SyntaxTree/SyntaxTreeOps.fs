@@ -350,7 +350,7 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     | SynPat.Paren (SynPat.Const (SynConst.Unit, m), _)
     | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m, []), None
 
-    | SynPat.As (SynPat.Tuple (_, pats, commas, _), rhsPat, m) ->
+    | SynPat.Paren(SynPat.As(SynPat.Tuple(_, pats, commas, _), rhsPat, _), m) ->
         let sps = List.map (SimplePatOfPat synArgNameGenerator) pats
         let rhsPat, laterF = SimplePatOfPat synArgNameGenerator rhsPat
 
@@ -366,8 +366,6 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     | SynPat.Named (range = m) ->
         let sp, laterF = SimplePatOfPat synArgNameGenerator p
         SynSimplePats.SimplePats([ sp ], [], m, []), laterF
-
-    | SynPat.Paren (p, _) -> SimplePatsOfPat synArgNameGenerator p
 
     | _ ->
         let m = p.Range

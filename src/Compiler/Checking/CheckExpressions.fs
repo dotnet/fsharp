@@ -3782,24 +3782,7 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 
     | _ ->
         expr.SupplyArgument (arg, m), resultTy
-        
-let rec (|TakenNames|_|) (synPat: SynPat) =
-    match synPat with
-    | SynPat.Paren(pat= TakenNames pats) -> Some pats
-    | SynPat.Named(ident= SynIdent(ident= ident)) -> Some [ ident.idText ]
-    | SynPat.As(lhsPat= TakenNames lftPats; rhsPat= TakenNames rhsPats) -> Some (lftPats @ rhsPats)
-    | SynPat.LongIdent(longDotId= SynLongIdent(id= [ident])) -> Some [ ident.idText ]
-    | SynPat.Tuple(elementPats= pats) ->
-        let res =
-            pats
-            |> List.choose(fun p ->
-                match p with
-                | TakenNames pats -> Some pats
-                | _ -> None)
-            |> List.concat
-        Some res
-    | SynPat.FromParseError(pat = TakenNames pats) -> Some pats
-    | _ -> None
+
 //-------------------------------------------------------------------------
 // Additional data structures used by type checking
 //-------------------------------------------------------------------------
@@ -6221,7 +6204,7 @@ and RewriteRangeExpr synExpr =
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parseData, m, _) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
 
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
 
