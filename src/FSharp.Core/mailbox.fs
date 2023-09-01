@@ -61,7 +61,7 @@ module AsyncHelpers =
 [<Sealed>]
 [<AutoSerializable(false)>]
 type Mailbox<'Msg>(cancellationSupported: bool) =
-    let mutable hasNotDisposed = true
+    let mutable isDisposed = false
     let mutable inboxStore = null
     let arrivals = Queue<'Msg>()
     let syncRoot = arrivals
@@ -175,10 +175,11 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
 
     member x.Post msg =
         lock syncRoot (fun () ->
+            if isDisposed then
+                raise (ObjectDisposedException(nameof Mailbox))
 
-            if hasNotDisposed then
-                // Add the message to the arrivals queue
-                arrivals.Enqueue msg
+            // Add the message to the arrivals queue
+            arrivals.Enqueue msg
 
             // Cooperatively unblock any waiting reader. If there is no waiting
             // reader we just leave the message in the incoming queue
@@ -338,7 +339,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     inboxStore.Clear()
 
                 arrivals.Clear()
-                hasNotDisposed <- false)
+                isDisposed <- true)
 
             if isNotNull pulse then
                 (pulse :> IDisposable).Dispose()
