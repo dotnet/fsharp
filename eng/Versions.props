@@ -104,7 +104,7 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>4.6.0-2.23126.2</RoslynVersion>
+    <RoslynVersion>4.8.0-3.23430.6</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.7.25-preview</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>17.7.35338-preview.1</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.7.58-pre</VisualStudioProjectSystemPackagesVersion>
@@ -141,10 +141,10 @@
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildVersion>17.7.0-preview-23217-02</MicrosoftBuildVersion>
-    <MicrosoftBuildFrameworkVersion>17.7.0-preview-23217-02</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildVersion>17.7.2</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>17.7.2</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>17.7.2</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>17.7.2</MicrosoftBuildUtilitiesCoreVersion>
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
