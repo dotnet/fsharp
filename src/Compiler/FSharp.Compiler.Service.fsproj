@@ -162,7 +162,7 @@
       <Link>AbstractIL\illex.fsl</Link>
     </None>
     <FsYacc Include="AbstractIL\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char -v</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>AbstractIL\ilpars.fsy</Link>
     </FsYacc>
     <None Include="AbstractIL\ilpars.fsy">
@@ -235,7 +235,6 @@
     </None>
     <None Include="pars.fsy">
       <Link>SyntaxTree\FsYacc\pars.fsy</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Compile Include="SyntaxTree\UnicodeLexing.fsi" />
     <Compile Include="SyntaxTree\UnicodeLexing.fs" />

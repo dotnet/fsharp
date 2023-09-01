@@ -12,17 +12,18 @@ ImplFile
                      None,
                      Typed
                        (Const (String ("", Regular, (2,11--2,13)), (2,11--2,13)),
-                        LongIdent (SynLongIdent ([string], [], [None])),
-                        (2,11--2,21)), (2,2--2,21), Yes,
-                     { ArrowRange = Some (2,8--2,10)
-                       BarRange = Some (2,0--2,1) });
-                  SynMatchClause
-                    (Null (3,2--3,6), None,
-                     Const (String ("456", Regular, (3,10--3,15)), (3,10--3,15)),
-                     (3,2--3,15), Yes, { ArrowRange = Some (3,7--3,9)
-                                         BarRange = Some (3,0--3,1) })],
-                 (1,0--3,15), { MatchKeyword = (1,0--1,5)
-                                WithKeyword = (1,8--1,12) }), (1,0--3,15))],
-          PreXmlDocEmpty, [], None, (1,0--3,15), { LeadingKeyword = None })],
+                        Fun
+                          (WithNull
+                             (LongIdent (SynLongIdent ([string], [], [None])),
+                              false, (2,15--2,28)),
+                           StaticConstant
+                             (String ("456", Regular, (2,32--2,37)),
+                              (2,32--2,37)), (2,15--2,37),
+                           { ArrowRange = (2,29--2,31) }), (2,11--2,37)),
+                     (2,2--2,37), Yes, { ArrowRange = Some (2,8--2,10)
+                                         BarRange = Some (2,0--2,1) })],
+                 (1,0--2,37), { MatchKeyword = (1,0--1,5)
+                                WithKeyword = (1,8--1,12) }), (1,0--2,37))],
+          PreXmlDocEmpty, [], None, (1,0--2,37), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))

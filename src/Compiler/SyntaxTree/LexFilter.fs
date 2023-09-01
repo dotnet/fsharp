@@ -1123,8 +1123,9 @@ type LexFilterImpl (
                     //      f<x __maybenull>x
                     //      f<x  __notnull>x
                     //      f<x  __withnull>x
+                    //      f<x | string>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN
-                    | NOTNULL__ | MAYBENULL__ | WITHNULL__
+                    | NOTNULL__ | MAYBENULL__ | WITHNULL__ | BAR_RIGHT_BEFORE_NULL
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
