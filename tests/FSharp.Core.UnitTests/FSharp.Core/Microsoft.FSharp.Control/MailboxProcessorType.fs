@@ -347,12 +347,7 @@ type MailboxProcessorType() =
             mre.Wait()
             isSkip <- true
             (mb :> IDisposable).Dispose()
-            try
-                post()
-                Assert.Fail()
-            with
-                | :? ObjectDisposedException -> ()
-                | ex -> Assert.Fail(ex.Message)
+            Assert.Throws<ObjectDisposedException>(fun _ -> post()) |> ignore
         }
 
         Assert.Equal(expectedMessagesCount, actualMessagesCount)
