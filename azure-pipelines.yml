@@ -249,7 +249,7 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
-          # Check code formatting
+          # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
             vmImage: $(UbuntuMachineQueueName)
@@ -270,6 +270,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
+          - script: dotnet fsi src/Compiler/FSCompCheck.fsx
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check error code sorting in src/Compiler/FSComp.txt
           - script: dotnet fantomas . -r --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
