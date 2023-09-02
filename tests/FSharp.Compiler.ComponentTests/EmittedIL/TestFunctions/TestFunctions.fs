@@ -252,6 +252,7 @@ module TestFunctions =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction24.fs"|])>]
     let ``TestFunction24_fs`` compilation =
         compilation
+        |> withLangVersion70
         |> verifyCompilation
 
     // Verify IL 13043
