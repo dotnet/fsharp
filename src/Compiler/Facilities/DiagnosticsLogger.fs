@@ -174,7 +174,8 @@ let rec AttachRange m (exn: exn) =
         | :? TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
-        | _ -> InternalException(exn, exn.Message, m)
+        | :? SystemException -> InternalException(exn, exn.Message, m)
+        | _ -> exn
 
 type Exiter =
     abstract Exit: int -> 'T
