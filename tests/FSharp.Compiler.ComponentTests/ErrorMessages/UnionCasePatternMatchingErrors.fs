@@ -246,6 +246,24 @@ let myVal =
     ]
     
 [<Fact>]
+let ``Separator between member and type annotation interpreted as operator`` () =
+     FSharp """
+type IFoo<'T> =
+    abstract member Bar<'T>: string -> unit
+        """
+    |> typecheck
+    |> shouldSucceed
+    
+[<Fact>]
+let ``Separator between member and type annotation interpreted as operator 2`` () =
+     FSharp """
+type IFoo<'T> =
+    abstract member Bar<'T> : string -> unit
+        """
+    |> typecheck
+    |> shouldSucceed
+    
+[<Fact>]
 let ``Multiple pattern discards not allowed for union case that takes no data with Lang 7`` () =
      FSharp """
 module Tests
