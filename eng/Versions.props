@@ -104,7 +104,7 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>7.0.0-preview.3.22119.2</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>4.8.0-1.23410.12</RoslynVersion>
+    <RoslynVersion>4.8.0-3.23430.6</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.8.92-preview</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>17.8.35898-preview.2</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.8.82-pre</VisualStudioProjectSystemPackagesVersion>
