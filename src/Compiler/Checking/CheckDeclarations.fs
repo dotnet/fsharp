@@ -4049,8 +4049,10 @@ module TcDeclarations =
                     if tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = SynTypar (ident = untypedIdent))) ->
-                            typar.SetIdent(untypedIdent)
+                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
+                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
+                            if typar.StaticReq = sr then
+                                typar.SetIdent(untypedIdent)
                         )
 
                     res

@@ -854,8 +854,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
 
-                        | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
-
                         | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl)
                         | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind

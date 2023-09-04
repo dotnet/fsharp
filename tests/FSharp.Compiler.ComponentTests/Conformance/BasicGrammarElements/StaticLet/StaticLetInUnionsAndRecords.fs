@@ -27,6 +27,7 @@ let ``Should fail in F# 7 and lower`` (implFileName:string) =
 
 [<Theory>]
 [<InlineData("7.0")>]
+[<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression in Member val  - not allowed without primary constructor``  (langVersion:string) = 
     Fs """module Test
@@ -40,6 +41,7 @@ type Bad3 =
 
 [<Theory>]
 [<InlineData("7.0")>]
+[<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression - Type augmentation with abstract slot not allowed`` (langVersion:string) =
     Fs """module Test
@@ -53,6 +55,7 @@ type System.Random with
 
 [<Theory>]
 [<InlineData("7.0")>]
+[<InlineData("8.0")>]
 [<InlineData("preview")>]
 let ``Regression - record with abstract slot not allowed`` (langVersion:string) =
     Fs """module Test
@@ -65,7 +68,7 @@ type myRecord2 = { field1: int; field2: string }
 
 let verifyCompileAndRun compilation =
     compilation
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
 
@@ -95,7 +98,7 @@ init R 2
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseDuTest.fs"|])>]
 let ``Static let - lowercase DU`` compilation =
     compilation
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed    
 
@@ -127,7 +130,7 @@ let ``Static let in simple union`` compilation =
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainEnum.fs"|])>]
 let ``Support in plain enums - typecheck should fail`` compilation =
     compilation
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck    
     |> shouldFail
     |> withDiagnosticMessage "Enumerations cannot have members"
@@ -234,7 +237,7 @@ let ``Static let extension to builtin type`` compilation =
     compilation
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [Error 3570, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
+    |> withDiagnostics [Error 3573, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
     
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
 let ``Static let - quotations support for records`` compilation =
@@ -274,7 +277,7 @@ Creating cached val for Uri
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericRecordsILtest.fs"|])>]
 let ``Static let record - generics - IL test`` compilation =
     compilation
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compile
     |> verifyIL ["""        .method private specialname rtspecialname static 
             void  .cctor() cil managed
@@ -389,7 +392,7 @@ type X =
     static do Console.WriteLine("from type")
 do Console.WriteLine("module after type")
 """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compile
     |> shouldSucceed
     |> verifyIL ["""
@@ -464,7 +467,7 @@ Console.Write(MyTypes.X.GetX)
 
     FSharp types
     |> withAdditionalSourceFiles [SourceCodeFileKind.Create("program.fs", program)]
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compile
     |> shouldSucceed
     |> verifyIL ["""

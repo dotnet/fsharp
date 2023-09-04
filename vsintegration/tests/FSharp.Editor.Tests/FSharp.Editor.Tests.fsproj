@@ -47,6 +47,7 @@
     <Compile Include="CodeFixes\ConvertToNotEqualsEqualityExpressionTests.fs" />
     <Compile Include="CodeFixes\ConvertToSingleEqualsEqualityExpressionTests.fs" />
     <Compile Include="CodeFixes\AddMissingEqualsToTypeDefinitionTests.fs" />
+    <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateTypeTests.fs" />
     <Compile Include="CodeFixes\ChangeRefCellDerefToNotExpressionTests.fs" />
     <Compile Include="CodeFixes\ChangePrefixNegationToInfixSubtractionTests.fs" />
     <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocationTests.fs" />
@@ -55,9 +56,14 @@
     <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
+    <Compile Include="CodeFixes\MakeDeclarationMutableTests.fs" />
+    <Compile Include="CodeFixes\UseMutationWhenValueIsMutableTests.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColonTests.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
     <Compile Include="CodeFixes\SimplifyNameTests.fs" />
+    <Compile Include="CodeFixes\RenameParamToMatchSignatureTests.fs" />
+    <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
+    <Compile Include="CodeFixes\ReplaceWithSuggestionTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

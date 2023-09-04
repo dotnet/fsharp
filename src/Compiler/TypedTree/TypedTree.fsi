@@ -2317,9 +2317,6 @@ type NonLocalEntityRef =
     /// Get the mangled name of the last item in the path of the nonlocal reference.
     member LastItemMangledName: string
 
-    /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
-    member ModuleOrNamespaceType: ModuleOrNamespaceType
-
     /// Get the path into the CCU referenced by the nonlocal reference.
     member Path: string[]
 

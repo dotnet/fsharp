@@ -644,22 +644,21 @@ let CommitOperationResult res =
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
-let ErrorD err = ErrorResult([], err)
+let inline ErrorD err = ErrorResult([], err)
 
-let WarnD err = OkResult([ err ], ())
+let inline WarnD err = OkResult([ err ], ())
 
 let CompleteD = OkResult([], ())
 
-let ResultD x = OkResult([], x)
+let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
     | OkResult (warns, res2) -> Some(warns, res2)
     | ErrorResult _ -> None
 
-/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
 [<DebuggerHidden; DebuggerStepThrough>]
-let (++) res f =
+let inline bind f res =
     match res with
     | OkResult ([], res) -> (* tailcall *) f res
     | OkResult (warns, res) ->
@@ -673,12 +672,12 @@ let (++) res f =
 let rec IterateD f xs =
     match xs with
     | [] -> CompleteD
-    | h :: t -> f h ++ (fun () -> IterateD f t)
+    | h :: t -> f h |> bind (fun () -> IterateD f t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let rec WhileD gd body =
     if gd () then
-        body () ++ (fun () -> WhileD gd body)
+        body () |> bind (fun () -> WhileD gd body)
     else
         CompleteD
 
@@ -686,21 +685,21 @@ let rec WhileD gd body =
 let rec MapD_loop f acc xs =
     match xs with
     | [] -> ResultD(List.rev acc)
-    | h :: t -> f h ++ (fun x -> MapD_loop f (x :: acc) t)
+    | h :: t -> f h |> bind (fun x -> MapD_loop f (x :: acc) t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
-    member x.Bind(res, k) = res ++ k
-    member x.Return res = ResultD res
-    member x.ReturnFrom res = res
-    member x.For(seq, k) = IterateD k seq
-    member x.Combine(expr1, expr2) = expr1 ++ expr2
-    member x.While(gd, k) = WhileD gd k
-    member x.Zero() = CompleteD
-    member x.Delay fn = fun () -> fn ()
-    member x.Run fn = fn ()
+    member inline x.Bind(res, k) = bind k res
+    member inline x.Return res = ResultD res
+    member inline x.ReturnFrom res = res
+    member inline x.For(seq, k) = IterateD k seq
+    member inline x.Combine(expr1, expr2) = bind expr2 expr1
+    member inline x.While(gd, k) = WhileD gd k
+    member inline x.Zero() = CompleteD
+    member inline x.Delay(fn: unit -> _) = fn
+    member inline x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()
 
@@ -717,7 +716,7 @@ let IterateIdxD f xs =
     let rec loop xs i =
         match xs with
         | [] -> CompleteD
-        | h :: t -> f i h ++ (fun () -> loop t (i + 1))
+        | h :: t -> f i h |> bind (fun () -> loop t (i + 1))
 
     loop xs 0
 
@@ -726,7 +725,7 @@ let IterateIdxD f xs =
 let rec Iterate2D f xs ys =
     match xs, ys with
     | [], [] -> CompleteD
-    | h1 :: t1, h2 :: t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2)
+    | h1 :: t1, h2 :: t2 -> f h1 h2 |> bind (fun () -> Iterate2D f t1 t2)
     | _ -> failwith "Iterate2D"
 
 /// Keep the warnings, propagate the error to the exception continuation.
@@ -742,11 +741,12 @@ let TryD f g =
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let rec RepeatWhileD nDeep body =
-    body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep + 1) body else CompleteD)
+    body nDeep
+    |> bind (fun x -> if x then RepeatWhileD (nDeep + 1) body else CompleteD)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOneD f l =
-    MapD f l ++ (fun res -> ResultD(List.exists id res))
+    MapD f l |> bind (fun res -> ResultD(List.exists id res))
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOne2D f xs ys =
@@ -755,7 +755,7 @@ let inline AtLeastOne2D f xs ys =
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline MapReduceD mapper zero reducer l =
     MapD mapper l
-    ++ (fun res ->
+    |> bind (fun res ->
         ResultD(
             match res with
             | [] -> zero
@@ -817,12 +817,15 @@ type internal SuppressLanguageFeatureCheck =
     | Yes
     | No
 
+let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let currentVersionStr = langVersion.SpecifiedVersionString
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
+    Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m)
+
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        let featureStr = LanguageVersion.GetFeatureString langFeature
-        let currentVersionStr = langVersion.SpecifiedVersionString
-        let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
-        Some(Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m))
+        Some(languageFeatureError langVersion langFeature m)
     else
         None
 

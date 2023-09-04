@@ -287,6 +287,11 @@
         <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
         <target state="new">Extended string interpolation similar to C# raw string literals.</target>
@@ -390,6 +395,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">패키지 관리</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -1217,6 +1227,11 @@
         <target state="translated">다음 필수 속성을 초기화해야 합니다. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
         <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
@@ -1355,6 +1370,11 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">잘못된 보간 문자열. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -3872,11 +3892,6 @@
         <target state="translated">이 레코드 식 또는 패턴의 필요한 형식 및 필드 레이블이 해당하는 레코드 형식을 고유하게 확인하지 않습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">'{0}' 필드가 이 레코드 식 또는 패턴에 두 번 나타납니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">알 수 없는 공용 구조체 케이스입니다.</target>
@@ -4180,11 +4195,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">올바른 패턴이 아닙니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">문자 범위 일치는 F#에서 제거되었습니다. 대신 'when' 패턴 가드를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -7848,8 +7858,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">'fixed'를 잘못 사용했습니다. 'fixed'는 식이 배열, 필드의 주소, 배열 요소 또는 문자열의 주소인 경우 'use x = fixed expr' 형식의 선언에만 사용할 수 있습니다.</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">

@@ -418,7 +418,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
 open CsLib
 let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         """     |> withReferences [csLib]
-                |> withLangVersionPreview
+                |> withLangVersion80
 
         app
         |> compile
@@ -449,7 +449,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         """     |> withReferences [csLib]
 
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> asExe
         |> compile
         |> run
