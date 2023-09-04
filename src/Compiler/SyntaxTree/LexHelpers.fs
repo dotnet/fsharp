@@ -105,7 +105,9 @@ let reusingLexbufForParsing lexbuf f =
 
     try
         f ()
-    with e ->
+    with
+    | :? OperationCanceledException -> reraise ()
+    | e ->
         raise (
             WrappedError(
                 e,

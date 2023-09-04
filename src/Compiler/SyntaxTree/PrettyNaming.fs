@@ -238,6 +238,7 @@ let keywordsWithDescription: (string * string) list =
         "void", FSComp.SR.keywordDescriptionVoid ()
         "when", FSComp.SR.keywordDescriptionWhen ()
         "while", FSComp.SR.keywordDescriptionWhile ()
+        "while!", FSComp.SR.keywordDescriptionWhileBang ()
         "with", FSComp.SR.keywordDescriptionWith ()
         "yield", FSComp.SR.keywordDescriptionYield ()
         "yield!", FSComp.SR.keywordDescriptionYieldBang ()

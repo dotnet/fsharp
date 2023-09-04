@@ -36,13 +36,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                 let! textOfError = context.GetSquigglyTextAsync()
 
                 if textOfError <> "->" then
-                    return None
+                    return ValueNone
                 else
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                     let document = context.Document
 
-                    let! defines, langVersion =
-                        document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof AddMissingFunKeywordCodeFixProvider)
+                    let! defines, langVersion, strictIndentation =
+                        document.GetFsharpParsingOptionsAsync(nameof AddMissingFunKeywordCodeFixProvider)
 
                     let! sourceText = context.GetSourceTextAsync()
                     let adjustedPosition = adjustPosition sourceText context.Span
@@ -58,11 +58,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                             false,
                             false,
                             Some langVersion,
+                            strictIndentation,
                             cancellationToken
                         )
-                        |> Option.bind (fun intendedArgLexerSymbol ->
-                            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range))
-                        |> Option.map (fun intendedArgSpan ->
+                        |> ValueOption.ofOption
+                        |> ValueOption.map (fun intendedArgLexerSymbol ->
+                            RoslynHelpers.FSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range))
+                        |> ValueOption.map (fun intendedArgSpan ->
                             {
                                 Name = CodeFix.AddMissingFunKeyword
                                 Message = title

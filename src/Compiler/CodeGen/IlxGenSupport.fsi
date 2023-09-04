@@ -21,3 +21,4 @@ val GetDynamicDependencyAttribute: g: TcGlobals -> memberTypes: int32 -> ilType:
 val GenReadOnlyModReqIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ilTy: ILType -> ILType
 val GenReadOnlyAttributeIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ILAttribute option
 val GetReadOnlyAttribute: g: TcGlobals -> ILAttribute
+val GetIsUnmanagedAttribute: g: TcGlobals -> ILAttribute

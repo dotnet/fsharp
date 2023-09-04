@@ -42,6 +42,11 @@
         <target state="translated">Si un tipo usa los atributos [&lt;Sealed&gt;] y [&lt;AbstractClass&gt;], significa que es estático. No se permite un constructor con argumentos.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Parámetro duplicado. El parámetro '{0}' se ha usado más una vez en este método.</target>
@@ -102,6 +107,11 @@
         <target state="translated">Si un tipo usa los atributos [&lt;Sealed&gt;] y [&lt;AbstractClass&gt;], significa que es estático. No se permiten miembros de instancia.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">El elemento "AssemblyKeyNameAttribute" está en desuso. Use "AssemblyKeyFileAttribute" en su lugar.</target>
@@ -147,11 +157,6 @@
         <target state="translated">Parámetro de tipo conocido: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="csNullNotNullConstraintInconsistent">
-        <source>The constraints 'null' and 'not null' are inconsistent</source>
-        <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
         <target state="translated">El argumento del índice {0} no coincide.</target>
@@ -162,14 +167,9 @@
         <target state="translated">El argumento "{0}" no coincide.</target>
         <note />
       </trans-unit>
-      <trans-unit id="csTypeHasNullAsExtraValue">
-        <source>The type '{0}' supports 'null' but a non-null type is expected</source>
-        <target state="new">The type '{0}' supports 'null' but a non-null type is expected</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypeHasNullAsTrueValue">
-        <source>The type '{0}' uses 'null' as a representation value but a non-null type is expected</source>
-        <target state="new">The type '{0}' uses 'null' as a representation value but a non-null type is expected</target>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
@@ -192,9 +192,9 @@
         <target state="translated">El atributo de ensamblado "{0}" hace referencia a un ensamblado de diseñador "{1}" que no se puede cargar o no existe. Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fSharpBannerVersion">
-        <source>{0} for F# {1}</source>
-        <target state="new">{0} for F# {1}</target>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
@@ -225,6 +225,16 @@
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Permitir atributo Extension implícito en tipos declarativo, módulos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -362,11 +372,6 @@
         <target state="translated">interoperabilidad opcional que admite valores NULL</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNullnessChecking">
-        <source>nullness checking</source>
-        <target state="new">nullness checking</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
         <target state="translated">declaración de tipo abierto</target>
@@ -427,6 +432,11 @@
         <target state="translated">patrón de subrayado simple</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">Miembros estáticos en interfaces</target>
@@ -452,6 +462,11 @@
         <target state="translated">Compatibilidad con try-with en expresiones secuenciales</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">Emite advertencias cuando una expresión de copiar y actualizar registros cambia todos los campos de un registro.</target>
@@ -465,6 +480,11 @@
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="new">'while!' expression</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -565,6 +585,11 @@
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">Se usa para comprobar si un objeto es del tipo especificado en un patrón o enlace.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -692,11 +717,6 @@
         <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks</source>
-        <target state="new">Enable nullness declarations and checks</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
         <target state="translated">Borrar la caché de resultados del administrador de paquetes</target>
@@ -757,6 +777,11 @@
         <target state="translated">Incluir información de interfaz de F#, el valor predeterminado es file. Esencial para distribuir bibliotecas.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Versiones de lenguaje admitidas:</target>
@@ -792,6 +817,11 @@
         <target state="translated">La característica de "administración de paquetes" requiere la versión de lenguaje 5.0 o superior</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Cadena interpolada no válida. Este relleno de expresión de cadena interpolada está vacío; se esperaba una expresión.</target>
@@ -815,11 +845,6 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="translated">La cadena textual interpolada incompleta comenzaba aquí o antes.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Token inesperado en la definición de tipo. Se esperaba "=" después del tipo "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
@@ -872,6 +897,11 @@
         <target state="translated">Este acceso de miembro es ambiguo. Use paréntesis alrededor de la creación del objeto, por ejemplo, '(nuevo AlgúnTipo(args)).NombreMiembro'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fin de entrada inesperado en la rama "else if" o "elif" de una expresión condicional. Se espera "elif &lt;expr&gt; then &lt;expr&gt;" o "else if &lt;expr&gt; then &lt;expr&gt;".</target>
@@ -890,6 +920,11 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="translated">No se admite el algoritmo '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="new">Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
@@ -972,6 +1007,16 @@
         <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. Error inesperado: "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="new">(Suggested name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Esta expresión tiene el tipo "{0}" y solo se hace compatible con el tipo "{1}" mediante una conversión implícita ambigua. Considere la posibilidad de usar una llamada explícita a 'op_Implicit'. Las conversiones implícitas aplicables son:{2}</target>
@@ -987,24 +1032,54 @@
         <target state="translated">El campo "{0}" aparece varias veces en esta expresión de registro.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">Este es un registro anónimo incorrecto. Debe tener los campos {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">Este registro anónimo no tiene suficientes campos. Agregue los campos que faltan {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Este registro anónimo tiene demasiados campos. Quite los campos adicionales {0}.</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Declaración de tipo de registro anónimo no válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="new">This anonymous record is missing fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="new">This anonymous record is missing field '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -1167,11 +1242,6 @@
         <target state="translated">El valor "{0}" no es una función y no admite la notación de índices.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNullnessCheckingNotEnabled">
-        <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
-        <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">La sintaxis "expr1[expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "expr1.[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
@@ -1237,14 +1307,14 @@
         <target state="translated">No se puede llamar a '{0}': un establecedor para una propiedad de solo inicialización. Use la inicialización del objeto en su lugar. Ver https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Esta expresión convierte implícitamente el tipo '{0}' al tipo '{1}'. Consulte https://aka.ms/fsharp-implicit-convs.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
@@ -4938,8 +5008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Las definiciones de valores estáticos se pueden usar solo en tipos con un constructor principal. Considere agregar argumentos a la definición de tipo, por ejemplo, 'type X(args) = ...'.</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="needs-review-translation">Las definiciones de valores estáticos se pueden usar solo en tipos con un constructor principal. Considere agregar argumentos a la definición de tipo, por ejemplo, 'type X(args) = ...'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8347,11 +8417,6 @@
         <target state="translated">Dos tipos de registro anónimos provienen de diferentes ensamblados "{0}" y "{1}"</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">Este registro anónimo no coincide exactamente con la forma esperada. Agregue los campos que faltan {0} y quite los campos adicionales {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
         <target state="translated">No se puede llamar al método de extensión de byref "{0}". El primer parámetro requiere que el valor sea mutable o un tipo de byref que no sea de solo lectura.</target>
@@ -8443,8 +8508,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrada actualmente: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrada actualmente: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

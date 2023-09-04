@@ -96,6 +96,7 @@ module internal CompletionUtils =
             filePath: string,
             defines: string list,
             langVersion: string option,
+            strictIndentation: bool option,
             sourceText: SourceText,
             triggerPosition: int,
             ct: CancellationToken
@@ -104,7 +105,16 @@ module internal CompletionUtils =
         let triggerLine = textLines.GetLineFromPosition triggerPosition
 
         let classifiedSpans =
-            Tokenizer.getClassifiedSpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, langVersion, ct)
+            Tokenizer.getClassifiedSpans (
+                documentId,
+                sourceText,
+                triggerLine.Span,
+                Some filePath,
+                defines,
+                langVersion,
+                strictIndentation,
+                ct
+            )
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all
@@ -123,6 +133,7 @@ module internal CompletionUtils =
 
     let inline getKindPriority kind =
         match kind with
+        | CompletionItemKind.SuggestedName
         | CompletionItemKind.CustomOperation -> 0
         | CompletionItemKind.Property -> 1
         | CompletionItemKind.Field -> 2
@@ -141,6 +152,7 @@ module internal CompletionUtils =
             filePath,
             defines,
             langVersion,
+            strictIndentation,
             ct: CancellationToken
         ) =
 
@@ -178,7 +190,7 @@ module internal CompletionUtils =
             // the majority of common cases.
 
             let classifiedSpans =
-                Tokenizer.getClassifiedSpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, ct)
+                Tokenizer.getClassifiedSpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, strictIndentation, ct)
 
             let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier

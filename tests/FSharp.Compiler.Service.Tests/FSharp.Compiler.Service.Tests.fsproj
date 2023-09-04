@@ -23,7 +23,7 @@
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"/>
+    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -67,14 +67,8 @@
     <Compile Include="..\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\TokenizerTests.fs">
-      <Link>TokenizerTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\ServiceUntypedParseTests.fs">
       <Link>ServiceUntypedParseTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\TreeVisitorTests.fs">
-      <Link>TreeVisitorTests.fs</Link>
     </Compile>
     <Compile Include="..\service\PatternMatchCompilationTests.fs">
       <Link>PatternMatchCompilationTests.fs</Link>
@@ -94,8 +88,8 @@
     <Compile Include="..\service\XmlDocTests - Units of Measure.fs">
       <Link>XmlDocTests - Units of Measure.fs</Link>
     </Compile>
-    <Compile Include="..\service\PrettyNaming.fs">
-      <Link>PrettyNaming.fs</Link>
+    <Compile Include="..\service\RangeTests.fs">
+      <Link>RangeTests.fs</Link>
     </Compile>
     <Compile Include="TooltipTests.fs" />
     <Compile Include="..\service\Program.fs">

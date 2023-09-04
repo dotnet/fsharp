@@ -26,10 +26,8 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
             cancellableTask {
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let! defines, langVersion =
-                    context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
-                        nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider)
-                    )
+                let! defines, langVersion, strictIndentation =
+                    context.Document.GetFsharpParsingOptionsAsync(nameof (AddMissingRecToMutuallyRecFunctionsCodeFixProvider))
 
                 let! sourceText = context.GetSourceTextAsync()
 
@@ -53,11 +51,13 @@ type internal AddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingCons
                         false,
                         false,
                         Some langVersion,
+                        strictIndentation,
                         cancellationToken
                     )
-                    |> Option.bind (fun funcLexerSymbol -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
-                    |> Option.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
-                    |> Option.map (fun funcName ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun funcLexerSymbol -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range))
+                    |> ValueOption.map (fun funcNameSpan -> sourceText.GetSubText(funcNameSpan).ToString())
+                    |> ValueOption.map (fun funcName ->
                         {
                             Name = CodeFix.AddMissingRecToMutuallyRecFunctions
                             Message = String.Format(titleFormat, funcName)
