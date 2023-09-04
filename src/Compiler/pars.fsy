@@ -3407,10 +3407,10 @@ barCanBeRightBeforeNull:
 
 
 headBindingPattern:
-  | headBindingPattern AS constrPattern
+  | headBindingPattern AS constrPattern %prec AS
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | headBindingPattern barCanBeRightBeforeNull headBindingPattern
+  | headBindingPattern barCanBeRightBeforeNull headBindingPattern %prec   BAR
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
@@ -3685,10 +3685,10 @@ parenPatternBody:
 /* duplicating the entire expression grammar, or making a fairly severe breaking change */
 /* to the language. */
 parenPattern:
-  | parenPattern AS constrPattern
+  | parenPattern AS constrPattern %prec  AS
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | parenPattern barCanBeRightBeforeNull parenPattern
+  | parenPattern barCanBeRightBeforeNull parenPattern %prec  BAR
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
