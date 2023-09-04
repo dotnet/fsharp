@@ -485,10 +485,19 @@ type BoundModel private (
             syntaxTreeOpt
         )
 
-
 /// Global service state
-type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+type FrameworkImportsCacheKey = 
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
 
+    interface ICacheKey<string, FrameworkImportsCacheKey> with
+        member this.GetKey() =
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetLabel() = 
+            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+
+        member this.GetVersion() = this
+        
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 

@@ -44,6 +44,7 @@ type FilePath = string
 type ProjectPath = string
 type FileVersion = int
 
+
 type internal IBackgroundCompiler =
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
@@ -137,7 +138,7 @@ type internal IBackgroundCompiler =
 
     abstract member ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
-            NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
+            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// Parse and typecheck the whole project.
     abstract member ParseAndCheckProject: options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpCheckProjectResults>
@@ -165,8 +166,6 @@ type internal IBackgroundCompiler =
     abstract member FrameworkImportsCache: FrameworkImportsCache
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
-
-    abstract member CacheEvent: IEvent<string * JobEventType * obj>
 
 type ParseCacheLockToken() =
     interface LockToken
@@ -251,8 +250,6 @@ type internal BackgroundCompiler
     let fileParsed = Event<string * FSharpProjectOptions>()
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
-
-    let cacheEvent = Event<string * JobEventType * obj>()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache
     /// Information about the derived script closure.
@@ -1450,9 +1447,8 @@ type internal BackgroundCompiler
 
     static member ActualCheckFileCount = actualCheckFileCount
 
+    
     interface IBackgroundCompiler with
-
-        member _.CacheEvent = cacheEvent.Publish
 
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
 
@@ -1598,12 +1594,12 @@ type internal BackgroundCompiler
                 fileName: string,
                 projectSnapshot: FSharpProjectSnapshot,
                 userOpName: string
-            ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
-            node {
+            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            async {
                 let fileSnapshot = projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
-                let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
+                let! sourceText = fileSnapshot.GetSource() |> Async.AwaitTask
                 let options = projectSnapshot.ToOptions()
-                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
+                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName) |> Async.AwaitNodeCode
             }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =

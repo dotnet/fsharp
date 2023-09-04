@@ -112,23 +112,6 @@ type DelayedILModuleReader =
             }
         | _ -> cancellable.Return(Some this.result)
 
-type FSharpFileKey = string * string
-
-// TODO: use stamp if we have it?
-type FSharpProjectSnapshotKey =
-    {
-        ProjectFileName: string
-        SourceFiles: FSharpFileKey list
-        OtherOptions: string list
-        ReferencedProjects: FSharpProjectSnapshotKey list
-
-        // Do we need these?
-        IsIncompleteTypeCheckEnvironment: bool
-        UseScriptResolutionRules: bool
-    }
-
-    member this.LastFile = this.SourceFiles |> List.last
-
 [<NoComparison; CustomEquality>]
 type FSharpFileSnapshot =
     {
@@ -137,7 +120,7 @@ type FSharpFileSnapshot =
         GetSource: unit -> Task<ISourceText>
     }
 
-    member this.Key = this.FileName, this.Version
+    member this.IsSignatureFile = this.FileName.ToLower().EndsWith(".fsi")
 
     override this.Equals(o) =
         match o with
@@ -146,12 +129,23 @@ type FSharpFileSnapshot =
 
     override this.GetHashCode() = this.Key.GetHashCode()
 
+    member this.Key = this :> ICacheKey<_, _>
+
+    interface ICacheKey<string, string> with
+        member this.GetLabel() = this.FileName |> shortPath
+        member this.GetKey() = this.FileName 
+        member this.GetVersion() = this.Version
+
+type ReferenceOnDisk = { Path: string; LastModified: DateTime }
+
+
 [<NoComparison>]
 type FSharpProjectSnapshot =
     {
         ProjectFileName: string
         ProjectId: string option
         SourceFiles: FSharpFileSnapshot list
+        ReferencesOnDisk: ReferenceOnDisk list
         OtherOptions: string list
         ReferencedProjects: FSharpReferencedProjectSnapshot list
         IsIncompleteTypeCheckEnvironment: bool
@@ -180,6 +174,7 @@ type FSharpProjectSnapshot =
             FSharpProjectSnapshot.UseSameProject(options1, options2)
             && options1.SourceFiles = options2.SourceFiles
             && options1.OtherOptions = options2.OtherOptions
+            && options1.ReferencesOnDisk = options2.ReferencesOnDisk
             && options1.UnresolvedReferences = options2.UnresolvedReferences
             && options1.OriginalLoadReferences = options2.OriginalLoadReferences
             && options1.ReferencedProjects.Length = options2.ReferencedProjects.Length
@@ -214,20 +209,34 @@ type FSharpProjectSnapshot =
                 |> List.choose (fun x -> this.SourceFiles |> List.tryItem x)
         }
 
-    member this.Key =
-        {
-            ProjectFileName = this.ProjectFileName
-            SourceFiles = this.SourceFiles |> List.map (fun x -> x.Key)
-            OtherOptions = this.OtherOptions
-            ReferencedProjects =
-                this.ReferencedProjects
-                |> List.map (function
-                    | FSharpReference (_, x) -> x.Key)
-            IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
-            UseScriptResolutionRules = this.UseScriptResolutionRules
-        }
+    member this.WithoutImplFilesThatHaveSignatures =
+        let files =
+            (([], Set.empty), this.SourceFiles)
+            ||> Seq.fold (fun (res, sigs) file ->
+                if file.IsSignatureFile then
+                    file::res, sigs |> Set.add file.FileName
+                else
+                    let sigFileName = $"{file.FileName}i"
+                    if sigs.Contains sigFileName then res, sigs |> Set.remove sigFileName
+                    else file::res, sigs)
+            |> fst
+            |> List.rev
+        { this with SourceFiles = files }
+
+    member this.WithoutImplFilesThatHaveSignaturesExceptLastOne =
+        let lastFile = this.SourceFiles |> List.last
+        if lastFile.IsSignatureFile then
+            this.WithoutImplFilesThatHaveSignatures
+        else
+            let snapshot = this.WithoutImplFilesThatHaveSignatures
+            { snapshot with SourceFiles = snapshot.SourceFiles @ [lastFile] }
 
     member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
+
+    member this.CommandLineOptions = 
+        seq { for r in this.ReferencesOnDisk do
+                $"-r:{r.Path}"
+              yield! this.OtherOptions } |> Seq.toList
 
     member this.WithoutFileVersions =
         { this with
@@ -235,7 +244,29 @@ type FSharpProjectSnapshot =
         }
 
     override this.ToString() =
-        "FSharpProjectSnapshot(" + this.ProjectFileName + ")"
+        Path.GetFileNameWithoutExtension this.ProjectFileName
+        |> sprintf "FSharpProjectSnapshot(%s)"
+
+    member this.Key = this :> ICacheKey<_, _>
+
+    member this.FileKey(fileName) =
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = fileName |> shortPath
+            member _.GetKey() = fileName, this.Key.GetKey()
+            member _.GetVersion() = this.UpTo(fileName).WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion() }
+
+    interface ICacheKey<string, string> with
+        member this.GetLabel() = this.ToString()
+        member this.GetKey() = this.ProjectFileName
+        member this.GetVersion() = 
+            Md5Hasher.empty
+            |> Md5Hasher.addString this.ProjectFileName
+            |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
+            |> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
+            |> Md5Hasher.addStrings this.OtherOptions
+            |> Md5Hasher.addVersions (this.ReferencedProjects |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key))
+            |> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
+            |> Md5Hasher.addBool this.UseScriptResolutionRules
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal
@@ -272,6 +303,10 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
         | _ -> false
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
+
+    member this.Key = 
+        match this with
+        | FSharpReference (_, snapshot) -> snapshot.Key
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -359,7 +394,7 @@ type FSharpProjectSnapshot with
             ProjectFileName = this.ProjectFileName
             ProjectId = this.ProjectId
             SourceFiles = this.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
-            OtherOptions = this.OtherOptions |> List.toArray
+            OtherOptions = this.CommandLineOptions |> List.toArray
             ReferencedProjects =
                 this.ReferencedProjects
                 |> Seq.map (function
@@ -391,12 +426,20 @@ type FSharpProjectSnapshot with
                     | _ -> None)
                 |> Async.Parallel
 
+            let referencesOnDisk, otherOptions = 
+                options.OtherOptions 
+                |> Array.partition (fun x -> x.StartsWith("-r:"))
+                |> map1Of2 (Array.map (fun x -> 
+                    let path = x.Substring(3)
+                    { Path = path; LastModified = FileSystem.GetLastWriteTimeShim(path) } ))
+
             return
                 {
                     ProjectFileName = options.ProjectFileName
                     ProjectId = options.ProjectId
                     SourceFiles = sourceFiles |> List.ofArray
-                    OtherOptions = options.OtherOptions |> List.ofArray
+                    ReferencesOnDisk = referencesOnDisk |> List.ofArray
+                    OtherOptions = otherOptions |> List.ofArray
                     ReferencedProjects = referencedProjects |> List.ofArray
                     IsIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment
                     UseScriptResolutionRules = options.UseScriptResolutionRules

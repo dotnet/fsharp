@@ -15,6 +15,10 @@ type ProcessedNode<'Item, 'Result> =
     { Info: NodeInfo<'Item>
       Result: 'Result }
 
+type GraphProcessingException =
+    inherit exn
+    new: msg: string * ex: System.Exception -> GraphProcessingException
+
 /// <summary>
 /// A generic method to generate results for a graph of work items in parallel.
 /// Processes leaves first, and after each node has been processed, schedules any now unblocked dependants.

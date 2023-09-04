@@ -4,7 +4,6 @@ module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 open System
 open System.Diagnostics
 open System.Runtime.CompilerServices
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -13,7 +12,6 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -101,7 +99,7 @@ module private CheckerExtensions =
                 options: FSharpProjectOptions,
                 userOpName: string
             ) =
-            async {
+            cancellableTask {
                 let! projectSnapshot = getProjectSnapshot (document, options)
 
                 let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
@@ -317,7 +315,6 @@ type Document with
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
-            let! result = checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
 
             let! result =
                 if this.Project.UseTransparentCompiler then
@@ -431,7 +428,7 @@ type Project with
                     |> CancellableTask.whenAll
             else
                 for doc in documents do
-                    do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
+                    do! doc.FindFSharpReferencesAsync(symbol, (onFound doc), userOpName)
         }
 
     member this.GetFSharpCompilationOptionsAsync() =

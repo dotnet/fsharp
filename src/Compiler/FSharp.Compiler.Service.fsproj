@@ -90,6 +90,7 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\sformat.fsi" />
@@ -154,6 +155,7 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
+    <Compile Include="facilities\TaskAgent.fs" />
     <Compile Include="Facilities\AsyncMemoize.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>

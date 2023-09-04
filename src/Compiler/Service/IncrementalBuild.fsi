@@ -22,6 +22,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
+open Internal.Utilities.Collections
 
 type internal FrameworkImportsCacheKey =
     | FrameworkImportsCacheKey of
@@ -30,6 +31,8 @@ type internal FrameworkImportsCacheKey =
         targetFrameworkDirectories: string list *
         fsharpBinaries: string *
         langVersion: decimal
+    
+    interface ICacheKey<string, FrameworkImportsCacheKey>
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache =

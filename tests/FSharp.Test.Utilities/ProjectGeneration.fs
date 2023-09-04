@@ -41,7 +41,7 @@ let private projectRoot = "test-projects"
 let private defaultFunctionName = "f"
 
 type Reference = {
-    Name: string 
+    Name: string
     Version: string option }
 
 module ReferenceHelpers =
@@ -68,13 +68,13 @@ module ReferenceHelpers =
         }
         |> String.concat "\n"
 
-    let runtimeList = lazy (            
+    let runtimeList = lazy (
         // You can see which versions of the .NET runtime are currently installed with the following command.
         let psi =
             ProcessStartInfo("dotnet", "--list-runtimes", RedirectStandardOutput = true, UseShellExecute = false)
 
         let proc = Process.Start(psi)
-        proc.WaitForExit()
+        proc.WaitForExit(1000) |> ignore
 
         let output =
             seq {
@@ -92,7 +92,8 @@ module ReferenceHelpers =
 
             { Name = matches.Groups.[1].Value
               Version = version
-              Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) }))
+              Path = DirectoryInfo(Path.Combine(matches.Groups[3].Value, version)) }) 
+        |> Seq.toList)
 
     let getFrameworkReference (reference: Reference) =
 
@@ -554,7 +555,7 @@ module ProjectOperations =
             use md5 = System.Security.Cryptography.MD5.Create()
             let inputBytes = Encoding.UTF8.GetBytes(source.ToString())
             let hash = md5.ComputeHash(inputBytes) |> Array.map (fun b -> b.ToString("X2")) |> String.concat ""
-
+            
             return {
                 FileName = filePath
                 Version = hash

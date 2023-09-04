@@ -24,7 +24,7 @@
   <ItemGroup>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
-    </Compile>  
+    </Compile>
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -107,7 +107,7 @@
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
-    <Compile Include="Conformance\Types\StructTypes\StructActivePatterns.fs" />	  
+    <Compile Include="Conformance\Types\StructTypes\StructActivePatterns.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
@@ -170,7 +170,7 @@
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="ErrorMessages\InvalidLiteralTests.fs" />
-    <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />    
+    <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />
     <Compile Include="ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="ErrorMessages\ModuleTests.fs" />
@@ -186,7 +186,7 @@
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
-    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
+    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -255,7 +255,10 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
-    <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <Compile Include="CompilerService\TaskAgent.fs" />
+    <Compile Include="CompilerService\LruCache.fs" />
+    <Compile Include="CompilerService\AsyncLock.fs" />
+	  <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -284,6 +287,7 @@
     <Compile Include="Signatures\MemberTests.fs" />
     <Compile Include="StaticLinking\StaticLinking.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\ProjectSnapshot.fs" />
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
@@ -318,5 +322,5 @@
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
-	
+
 </Project>

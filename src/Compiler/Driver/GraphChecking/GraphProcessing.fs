@@ -1,6 +1,9 @@
 ﻿module internal FSharp.Compiler.GraphChecking.GraphProcessing
 
 open System.Threading
+open FSharp.Compiler.GraphChecking
+open System.Threading.Tasks
+open System
 
 /// Information about the node in a graph, describing its relation with other nodes.
 type NodeInfo<'Item> =
@@ -31,6 +34,9 @@ type ProcessedNode<'Item, 'Result> =
         Info: NodeInfo<'Item>
         Result: 'Result
     }
+
+type GraphProcessingException(msg, ex: System.Exception) =
+    inherit exn(msg, ex)
 
 let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     (graph: Graph<'Item>)
@@ -150,7 +156,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     // If we stopped early due to an exception, reraise it.
     match getExn () with
     | None -> ()
-    | Some (item, ex) -> raise (System.Exception($"Encountered exception when processing item '{item}'", ex))
+    | Some (item, ex) -> raise (GraphProcessingException($"Encountered exception when processing item '{item}'", ex))
 
     // All calculations succeeded - extract the results and sort in input order.
     nodes.Values
@@ -173,6 +179,11 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
         // Cancellation source used to signal either an exception in one of the items or end of processing.
         let! parentCt = Async.CancellationToken
         use localCts = new CancellationTokenSource()
+
+        let completionSignal = TaskCompletionSource()
+
+        use _ = parentCt.Register(fun () -> completionSignal.TrySetCanceled() |> ignore)
+
         use cts = CancellationTokenSource.CreateLinkedTokenSource(parentCt, localCts.Token)
 
         let makeNode (item: 'Item) : GraphNode<'Item, 'Result> =
@@ -219,26 +230,18 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
         let processedCount = IncrementableInt(0)
 
-        /// Create a setter and getter for an exception raised in one of the work items.
-        /// Only the first exception encountered is stored - this can cause non-deterministic errors if more than one item fails.
-        let raiseExn, getExn =
-            let mutable exn: ('Item * System.Exception) option = None
-            let lockObj = obj ()
-            // Only set the exception if it hasn't been set already
-            let setExn newExn =
-                lock lockObj (fun () ->
-                    match exn with
-                    | Some _ -> ()
-                    | None -> exn <- newExn
-
-                    localCts.Cancel())
-
-            let getExn () = exn
-            setExn, getExn
+        let raiseExn (item, ex: exn) =
+            localCts.Cancel()
+            match ex with 
+            | :? OperationCanceledException ->
+                completionSignal.TrySetCanceled()
+            | _ -> 
+                completionSignal.TrySetException(GraphProcessingException($"[*] Encountered exception when processing item '{item}': {ex.Message}", ex))
+            |> ignore
 
         let incrementProcessedNodesCount () =
             if processedCount.Increment() = nodes.Count then
-                localCts.Cancel()
+                completionSignal.TrySetResult() |> ignore
 
         let rec queueNode node =
             Async.Start(
@@ -247,7 +250,7 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
                     match res with
                     | Choice1Of2 () -> ()
-                    | Choice2Of2 ex -> raiseExn (Some(node.Info.Item, ex))
+                    | Choice2Of2 ex -> raiseExn (node.Info.Item, ex)
                 },
                 cts.Token
             )
@@ -277,16 +280,8 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
         leaves |> Array.iter queueNode
 
         // Wait for end of processing, an exception, or an external cancellation request.
-
-        cts.Token.WaitHandle.WaitOne() |> ignore
-        // If we stopped early due to external cancellation, throw.
-        parentCt.ThrowIfCancellationRequested()
-
-        // If we stopped early due to an exception, reraise it.
-        match getExn () with
-        | None -> ()
-        | Some (item, ex) -> raise (System.Exception($"Encountered exception when processing item '{item}'", ex))
-
+        do! completionSignal.Task |> Async.AwaitTask 
+        
         // All calculations succeeded - extract the results and sort in input order.
         return
             nodes.Values

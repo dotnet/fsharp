@@ -27,6 +27,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 
+open Internal.Utilities.Collections
+
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
 type DelayedILModuleReader =
@@ -42,27 +44,20 @@ type DelayedILModuleReader =
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
-type internal FSharpFileKey = string * string
-
-type internal FSharpProjectSnapshotKey =
-    { ProjectFileName: string
-      SourceFiles: FSharpFileKey list
-      OtherOptions: string list
-      ReferencedProjects: FSharpProjectSnapshotKey list
-
-      // Do we need these?
-      IsIncompleteTypeCheckEnvironment: bool
-      UseScriptResolutionRules: bool }
-
-    member LastFile: FSharpFileKey
-
 [<NoComparison; CustomEquality>]
 type FSharpFileSnapshot =
     { FileName: string
       Version: string
       GetSource: unit -> Task<ISourceText> }
 
-    member internal Key: FSharpFileKey
+    member internal Key: ICacheKey<string, string>
+
+    interface ICacheKey<string, string>
+
+
+/// Referenced assembly on disk. Includes last modified time so we know we need to rebuild when it changes.
+type ReferenceOnDisk = { Path: string; LastModified: DateTime }
+
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -73,10 +68,13 @@ type FSharpProjectSnapshot =
         /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
         ProjectId: string option
 
-        /// The files in the project
+        /// The files in the project.
         SourceFiles: FSharpFileSnapshot list
 
-        /// Additional command line argument options for the project. These can include additional files and references.
+        /// Referenced assemblies on disk.
+        ReferencesOnDisk: ReferenceOnDisk list
+
+        /// Additional command line argument options for the project.
         OtherOptions: string list
 
         /// The command line arguments for the other projects referenced by this project, indexed by the
@@ -119,6 +117,8 @@ type FSharpProjectSnapshot =
 
     member SourceFileNames: string list
 
+    member CommandLineOptions: string list
+
     member IndexOf: fileName: string -> FileIndex
 
     /// A snapshot of the same project but only up to the given file index (including).
@@ -130,10 +130,18 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project but only with source files specified by given indexes.
     member OnlyWith: fileIndexes: Set<FileIndex> -> FSharpProjectSnapshot
 
+    member WithoutImplFilesThatHaveSignatures: FSharpProjectSnapshot
+
+    member WithoutImplFilesThatHaveSignaturesExceptLastOne: FSharpProjectSnapshot
+
     /// A snapshot of the same project with file versions removed.
     member WithoutFileVersions: FSharpProjectSnapshot
 
-    member internal Key: FSharpProjectSnapshotKey
+    member internal Key: ICacheKey<string, string>
+
+    member internal FileKey: fileName:string -> ICacheKey<(string * string), string>
+
+    interface ICacheKey<string, string>
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal
@@ -157,6 +165,8 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     /// <param name="options">The Project Options for this F# project</param>
     static member CreateFSharp:
         projectOutputFile: string * options: FSharpProjectSnapshot -> FSharpReferencedProjectSnapshot
+
+    member internal Key: ICacheKey<string, string>
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =
