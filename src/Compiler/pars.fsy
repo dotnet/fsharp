@@ -5672,7 +5672,7 @@ topTupleTypeElements:
         reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
         (SynTupleTypeSegment.Type ty, None) :: (SynTupleTypeSegment.Star mStar, None) :: $2 }
 
-  | topAppType
+  | topAppType %prec prec_toptuptyptail_prefix
      { let t, argInfo = $1
        [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
@@ -5811,7 +5811,7 @@ tupleType:
         let path = [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Slash mSlash; SynTupleTypeSegment.Type ty]
         mkSynTypeTuple path }
 
-  | appTypeCanBeNullable
+  | appTypeCanBeNullable %prec prec_tuptyp_prefix
       { $1 }
 
 tupleOrQuotTypeElements:
