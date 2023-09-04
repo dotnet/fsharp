@@ -133,11 +133,11 @@ type FSharpFileSnapshot =
 
     interface ICacheKey<string, string> with
         member this.GetLabel() = this.FileName |> shortPath
-        member this.GetKey() = this.FileName 
+        member this.GetKey() = this.FileName
         member this.GetVersion() = this.Version
 
-type ReferenceOnDisk = { Path: string; LastModified: DateTime }
-
+type ReferenceOnDisk =
+    { Path: string; LastModified: DateTime }
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -214,29 +214,41 @@ type FSharpProjectSnapshot =
             (([], Set.empty), this.SourceFiles)
             ||> Seq.fold (fun (res, sigs) file ->
                 if file.IsSignatureFile then
-                    file::res, sigs |> Set.add file.FileName
+                    file :: res, sigs |> Set.add file.FileName
                 else
                     let sigFileName = $"{file.FileName}i"
-                    if sigs.Contains sigFileName then res, sigs |> Set.remove sigFileName
-                    else file::res, sigs)
+
+                    if sigs.Contains sigFileName then
+                        res, sigs |> Set.remove sigFileName
+                    else
+                        file :: res, sigs)
             |> fst
             |> List.rev
+
         { this with SourceFiles = files }
 
     member this.WithoutImplFilesThatHaveSignaturesExceptLastOne =
         let lastFile = this.SourceFiles |> List.last
+
         if lastFile.IsSignatureFile then
             this.WithoutImplFilesThatHaveSignatures
         else
             let snapshot = this.WithoutImplFilesThatHaveSignatures
-            { snapshot with SourceFiles = snapshot.SourceFiles @ [lastFile] }
+
+            { snapshot with
+                SourceFiles = snapshot.SourceFiles @ [ lastFile ]
+            }
 
     member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
 
-    member this.CommandLineOptions = 
-        seq { for r in this.ReferencesOnDisk do
+    member this.CommandLineOptions =
+        seq {
+            for r in this.ReferencesOnDisk do
                 $"-r:{r.Path}"
-              yield! this.OtherOptions } |> Seq.toList
+
+            yield! this.OtherOptions
+        }
+        |> Seq.toList
 
     member this.WithoutFileVersions =
         { this with
@@ -253,18 +265,27 @@ type FSharpProjectSnapshot =
         { new ICacheKey<_, _> with
             member _.GetLabel() = fileName |> shortPath
             member _.GetKey() = fileName, this.Key.GetKey()
-            member _.GetVersion() = this.UpTo(fileName).WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion() }
+
+            member _.GetVersion() =
+                this
+                    .UpTo(fileName)
+                    .WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion()
+        }
 
     interface ICacheKey<string, string> with
         member this.GetLabel() = this.ToString()
         member this.GetKey() = this.ProjectFileName
-        member this.GetVersion() = 
+
+        member this.GetVersion() =
             Md5Hasher.empty
             |> Md5Hasher.addString this.ProjectFileName
             |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
             |> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
             |> Md5Hasher.addStrings this.OtherOptions
-            |> Md5Hasher.addVersions (this.ReferencedProjects |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key))
+            |> Md5Hasher.addVersions (
+                this.ReferencedProjects
+                |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
+            )
             |> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
             |> Md5Hasher.addBool this.UseScriptResolutionRules
 
@@ -304,7 +325,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
-    member this.Key = 
+    member this.Key =
         match this with
         | FSharpReference (_, snapshot) -> snapshot.Key
 
@@ -426,12 +447,18 @@ type FSharpProjectSnapshot with
                     | _ -> None)
                 |> Async.Parallel
 
-            let referencesOnDisk, otherOptions = 
-                options.OtherOptions 
+            let referencesOnDisk, otherOptions =
+                options.OtherOptions
                 |> Array.partition (fun x -> x.StartsWith("-r:"))
-                |> map1Of2 (Array.map (fun x -> 
-                    let path = x.Substring(3)
-                    { Path = path; LastModified = FileSystem.GetLastWriteTimeShim(path) } ))
+                |> map1Of2 (
+                    Array.map (fun x ->
+                        let path = x.Substring(3)
+
+                        {
+                            Path = path
+                            LastModified = FileSystem.GetLastWriteTimeShim(path)
+                        })
+                )
 
             return
                 {

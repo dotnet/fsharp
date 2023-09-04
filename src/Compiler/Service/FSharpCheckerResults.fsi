@@ -54,10 +54,9 @@ type FSharpFileSnapshot =
 
     interface ICacheKey<string, string>
 
-
 /// Referenced assembly on disk. Includes last modified time so we know we need to rebuild when it changes.
-type ReferenceOnDisk = { Path: string; LastModified: DateTime }
-
+type ReferenceOnDisk =
+    { Path: string; LastModified: DateTime }
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -139,7 +138,7 @@ type FSharpProjectSnapshot =
 
     member internal Key: ICacheKey<string, string>
 
-    member internal FileKey: fileName:string -> ICacheKey<(string * string), string>
+    member internal FileKey: fileName: string -> ICacheKey<(string * string), string>
 
     interface ICacheKey<string, string>
 

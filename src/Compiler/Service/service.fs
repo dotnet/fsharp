@@ -272,13 +272,12 @@ type FSharpChecker
 
     member _.UsesTransparentCompiler = useTransparentCompiler = Some true
 
-    member _.TransparentCompiler = 
+    member _.TransparentCompiler =
         match useTransparentCompiler with
-        | Some true -> backgroundCompiler :?> TransparentCompiler 
+        | Some true -> backgroundCompiler :?> TransparentCompiler
         | _ -> failwith "Transparent Compiler is not enabled."
 
-    member this.Caches =
-        this.TransparentCompiler.Caches
+    member this.Caches = this.TransparentCompiler.Caches
 
     member _.ReferenceResolver = legacyReferenceResolver
 

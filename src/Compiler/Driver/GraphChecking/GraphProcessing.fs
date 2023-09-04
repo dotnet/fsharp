@@ -232,11 +232,13 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
         let raiseExn (item, ex: exn) =
             localCts.Cancel()
-            match ex with 
-            | :? OperationCanceledException ->
-                completionSignal.TrySetCanceled()
-            | _ -> 
-                completionSignal.TrySetException(GraphProcessingException($"[*] Encountered exception when processing item '{item}': {ex.Message}", ex))
+
+            match ex with
+            | :? OperationCanceledException -> completionSignal.TrySetCanceled()
+            | _ ->
+                completionSignal.TrySetException(
+                    GraphProcessingException($"[*] Encountered exception when processing item '{item}': {ex.Message}", ex)
+                )
             |> ignore
 
         let incrementProcessedNodesCount () =
@@ -280,8 +282,8 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
         leaves |> Array.iter queueNode
 
         // Wait for end of processing, an exception, or an external cancellation request.
-        do! completionSignal.Task |> Async.AwaitTask 
-        
+        do! completionSignal.Task |> Async.AwaitTask
+
         // All calculations succeeded - extract the results and sort in input order.
         return
             nodes.Values

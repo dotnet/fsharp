@@ -42,7 +42,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.TypedTreeOps
 
-
 type internal FSharpFile =
     {
         Range: range
@@ -133,18 +132,26 @@ type internal DependencyGraphType =
 type internal Extensions =
     [<Extension>]
     static member Key(fileSnapshots: FSharpFileSnapshot list, ?extraKeyFlag) =
-        
+
         { new ICacheKey<_, _> with
             member _.GetLabel() =
-                let lastFile = fileSnapshots |> List.tryLast |> Option.map (fun f -> f.FileName |> shortPath) |> Option.defaultValue "[no file]"
+                let lastFile =
+                    fileSnapshots
+                    |> List.tryLast
+                    |> Option.map (fun f -> f.FileName |> shortPath)
+                    |> Option.defaultValue "[no file]"
+
                 $"%d{fileSnapshots.Length} files ending with {lastFile}"
+
             member _.GetKey() =
                 Md5Hasher.empty
                 |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.FileName))
                 |> pair extraKeyFlag
+
             member _.GetVersion() =
                 Md5Hasher.empty
-                |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.Version)) }
+                |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.Version))
+        }
 
 [<AutoOpen>]
 module private TypeCheckingGraphProcessing =
@@ -251,37 +258,35 @@ module private TypeCheckingGraphProcessing =
             return finalFileResults, state
         }
 
-
 type internal CompilerCaches() =
 
-    member val ParseFile = AsyncMemoize(keepStrongly=1000, keepWeakly=2000, name="ParseFile")
+    member val ParseFile = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "ParseFile")
 
-    member val ParseAndCheckFileInProject = AsyncMemoize(name="ParseAndCheckFileInProject")
+    member val ParseAndCheckFileInProject = AsyncMemoize(name = "ParseAndCheckFileInProject")
 
-    member val ParseAndCheckAllFilesInProject = AsyncMemoize(name="ParseAndCheckFullProject")
+    member val ParseAndCheckAllFilesInProject = AsyncMemoize(name = "ParseAndCheckFullProject")
 
-    member val ParseAndCheckProject = AsyncMemoize(name="ParseAndCheckProject")
+    member val ParseAndCheckProject = AsyncMemoize(name = "ParseAndCheckProject")
 
-    member val FrameworkImports = AsyncMemoize(name="FrameworkImports")
+    member val FrameworkImports = AsyncMemoize(name = "FrameworkImports")
 
-    member val BootstrapInfoStatic = AsyncMemoize(name="BootstrapInfoStatic")
+    member val BootstrapInfoStatic = AsyncMemoize(name = "BootstrapInfoStatic")
 
-    member val BootstrapInfo = AsyncMemoize(name="BootstrapInfo")
+    member val BootstrapInfo = AsyncMemoize(name = "BootstrapInfo")
 
-    member val TcFile = AsyncMemoize(name="TcPrior")
+    member val TcFile = AsyncMemoize(name = "TcPrior")
 
-    member val TcIntermediate = AsyncMemoize(keepStrongly=1000, keepWeakly=2000, name="TcIntermediate")
+    member val TcIntermediate = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "TcIntermediate")
 
-    member val DependencyGraph = AsyncMemoize(name="DependencyGraph")
+    member val DependencyGraph = AsyncMemoize(name = "DependencyGraph")
 
-    member val ProjectExtras = AsyncMemoize(name="ProjectExtras")
+    member val ProjectExtras = AsyncMemoize(name = "ProjectExtras")
 
-    member val AssemblyData = AsyncMemoize(name="AssemblyData")
+    member val AssemblyData = AsyncMemoize(name = "AssemblyData")
 
-    member val SemanticClassification = AsyncMemoize(name="SemanticClassification")
+    member val SemanticClassification = AsyncMemoize(name = "SemanticClassification")
 
-    member val ItemKeyStore = AsyncMemoize(name="ItemKeyStore") 
-
+    member val ItemKeyStore = AsyncMemoize(name = "ItemKeyStore")
 
 type internal TransparentCompiler
     (
@@ -357,7 +362,10 @@ type internal TransparentCompiler
             async {
                 use _ = Activity.start "ComputeFrameworkImports" []
                 let tcConfigP = TcConfigProvider.Constant tcConfig
-                return! TcImports.BuildFrameworkTcImports(tcConfigP, frameworkDLLs, nonFrameworkResolutions) |> Async.AwaitNodeCode
+
+                return!
+                    TcImports.BuildFrameworkTcImports(tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+                    |> Async.AwaitNodeCode
             }
         )
 
@@ -393,7 +401,8 @@ type internal TransparentCompiler
                                 nonFrameworkResolutions,
                                 unresolvedReferences,
                                 dependencyProvider
-                            ) |> Async.AwaitNodeCode
+                            )
+                            |> Async.AwaitNodeCode
 #if !NO_TYPEPROVIDERS
                         // TODO: review and handle the event
                         tcImports.GetCcusExcludingBase()
@@ -816,12 +825,15 @@ type internal TransparentCompiler
         )
 
     let ComputeParseFile bootstrapInfo (file: FSharpFile) =
-        
+
         let key =
             { new ICacheKey<_, _> with
-                member _.GetLabel() = shortPath file.Source.FileName 
+                member _.GetLabel() = shortPath file.Source.FileName
                 member _.GetKey() = file.Source.FileName
-                member _.GetVersion() = file.Source.Version, file.IsLastCompiland, file.IsExe }
+
+                member _.GetVersion() =
+                    file.Source.Version, file.IsLastCompiland, file.IsExe
+            }
 
         caches.ParseFile.Get(
             key,
@@ -854,14 +866,15 @@ type internal TransparentCompiler
 
     // In case we don't want to use any parallel processing
     let mkLinearGraph count : Graph<FileIndex> =
-        seq {        
-            0, [| |]
+        seq {
+            0, [||]
+
             yield!
-                [0..count-1]
+                [ 0 .. count - 1 ]
                 |> Seq.rev
                 |> Seq.pairwise
                 |> Seq.map (fun (a, b) -> a, [| b |])
-        } 
+        }
         |> Graph.make
 
     let computeDependencyGraph (tcConfig: TcConfig) parsedInputs (processGraph: Graph<FileIndex> -> Graph<FileIndex>) =
@@ -884,12 +897,10 @@ type internal TransparentCompiler
             // TODO: we will probably want to cache and re-use larger graphs if available
 
             let graph =
-                if tcConfig.compilingFSharpCore then 
+                if tcConfig.compilingFSharpCore then
                     mkLinearGraph sourceFiles.Length
                 else
-                    DependencyResolution.mkGraph filePairs sourceFiles
-                    |> fst
-                    |> processGraph
+                    DependencyResolution.mkGraph filePairs sourceFiles |> fst |> processGraph
 
             let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
@@ -913,14 +924,23 @@ type internal TransparentCompiler
             return nodeGraph, graph
         }
 
-    let removeImplFilesThatHaveSignatures (projectSnapshot: FSharpProjectSnapshot) (graph: Graph<FileIndex>) = 
+    let removeImplFilesThatHaveSignatures (projectSnapshot: FSharpProjectSnapshot) (graph: Graph<FileIndex>) =
 
         let removeIndexes =
             projectSnapshot.SourceFileNames
             |> Seq.mapi pair
-            |> Seq.groupBy (snd >> (fun fileName -> if fileName.EndsWith(".fsi") then fileName.Substring(0, fileName.Length - 1) else fileName))
+            |> Seq.groupBy (
+                snd
+                >> (fun fileName ->
+                    if fileName.EndsWith(".fsi") then
+                        fileName.Substring(0, fileName.Length - 1)
+                    else
+                        fileName)
+            )
             |> Seq.map (snd >> (Seq.toList))
-            |> Seq.choose (function [idx1, _; idx2, _] -> max idx1 idx2 |> Some | _ -> None)
+            |> Seq.choose (function
+                | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
+                | _ -> None)
             |> Set
 
         graph
@@ -928,14 +948,23 @@ type internal TransparentCompiler
         |> Seq.map (fun x -> x.Key, x.Value |> Array.filter (fun node -> not (removeIndexes.Contains node)))
         |> Graph.make
 
-    let removeImplFilesThatHaveSignaturesExceptLastOne (projectSnapshot: FSharpProjectSnapshot) (graph: Graph<FileIndex>) = 
+    let removeImplFilesThatHaveSignaturesExceptLastOne (projectSnapshot: FSharpProjectSnapshot) (graph: Graph<FileIndex>) =
 
         let removeIndexes =
             projectSnapshot.SourceFileNames
             |> Seq.mapi pair
-            |> Seq.groupBy (snd >> (fun fileName -> if fileName.EndsWith(".fsi") then fileName.Substring(0, fileName.Length - 1) else fileName))
+            |> Seq.groupBy (
+                snd
+                >> (fun fileName ->
+                    if fileName.EndsWith(".fsi") then
+                        fileName.Substring(0, fileName.Length - 1)
+                    else
+                        fileName)
+            )
             |> Seq.map (snd >> (Seq.toList))
-            |> Seq.choose (function [idx1, _; idx2, _] -> max idx1 idx2 |> Some | _ -> None)
+            |> Seq.choose (function
+                | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
+                | _ -> None)
             |> Set
             // Don't remove the last file
             |> Set.remove (projectSnapshot.SourceFiles.Length - 1)
@@ -946,10 +975,13 @@ type internal TransparentCompiler
         |> Graph.make
 
     let ComputeDependencyGraphForFile (tcConfig: TcConfig) (priorSnapshot: FSharpProjectSnapshot) parsedInputs =
-        let key = priorSnapshot.SourceFiles.Key(DependencyGraphType.File) 
+        let key = priorSnapshot.SourceFiles.Key(DependencyGraphType.File)
         //let lastFileIndex = (parsedInputs |> Array.length) - 1
         //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (Graph.subGraphFor lastFileIndex))
-        caches.DependencyGraph.Get(key, computeDependencyGraph tcConfig parsedInputs (removeImplFilesThatHaveSignaturesExceptLastOne priorSnapshot))
+        caches.DependencyGraph.Get(
+            key,
+            computeDependencyGraph tcConfig parsedInputs (removeImplFilesThatHaveSignaturesExceptLastOne priorSnapshot)
+        )
 
     let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: FSharpProjectSnapshot) parsedInputs =
         let key = projectSnapshot.SourceFiles.Key(DependencyGraphType.Project)
@@ -976,11 +1008,13 @@ type internal TransparentCompiler
                 let fileName = input.FileName
 
                 use _ =
-                    Activity.start "ComputeTcIntermediate" [| 
-                        Activity.Tags.fileName, fileName |> Path.GetFileName 
-                        "key", key.GetKey() |> sprintf "%A"
-                        "version", key.GetVersion()
-                    |]
+                    Activity.start
+                        "ComputeTcIntermediate"
+                        [|
+                            Activity.Tags.fileName, fileName |> Path.GetFileName
+                            "key", key.GetKey() |> sprintf "%A"
+                            "version", key.GetVersion()
+                        |]
 
                 let tcConfig = bootstrapInfo.TcConfig
                 let tcGlobals = bootstrapInfo.TcGlobals
@@ -1022,7 +1056,7 @@ type internal TransparentCompiler
                          prevTcInfo.tcState,
                          input,
                          true)
-                         |> Cancellable.toAsync
+                    |> Cancellable.toAsync
 
                 //fileChecked.Trigger fileName
 
@@ -1054,7 +1088,10 @@ type internal TransparentCompiler
             match fileNode with
             | NodeToTypeCheck.PhysicalFile index ->
                 let input, parseErrors, _ = parsedInputs[index]
-                let! tcIntermediate = ComputeTcIntermediate projectSnapshot dependencyFiles fileNode (input, parseErrors) bootstrapInfo tcInfo
+
+                let! tcIntermediate =
+                    ComputeTcIntermediate projectSnapshot dependencyFiles fileNode (input, parseErrors) bootstrapInfo tcInfo
+
                 let (Finisher (node = node; finisher = finisher)) = tcIntermediate.finisher
 
                 return
@@ -1065,7 +1102,10 @@ type internal TransparentCompiler
                             if tcInfo.stateContainsNodes |> Set.contains fileNode then
                                 failwith $"Oops!"
 
-                            if tcInfo.stateContainsNodes |> Set.contains (NodeToTypeCheck.ArtificialImplFile (index - 1)) then
+                            if
+                                tcInfo.stateContainsNodes
+                                |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
+                            then
                                 failwith $"Oops???"
 
                             let partialResult, tcState = finisher tcInfo.tcState
@@ -1106,7 +1146,10 @@ type internal TransparentCompiler
                             if tcInfo.stateContainsNodes |> Set.contains fileNode then
                                 failwith $"Oops!"
 
-                            if tcInfo.stateContainsNodes |> Set.contains (NodeToTypeCheck.PhysicalFile (index + 1)) then
+                            if
+                                tcInfo.stateContainsNodes
+                                |> Set.contains (NodeToTypeCheck.PhysicalFile(index + 1))
+                            then
                                 failwith $"Oops!!!"
 
                             let parsedInput, _parseErrors, _ = parsedInputs[index]
@@ -1165,7 +1208,7 @@ type internal TransparentCompiler
 
                 let! graph, dependencyFiles =
                     ComputeDependencyGraphForFile bootstrapInfo.TcConfig priorSnapshot (parsedInputs |> Array.map p13)
-                    //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
+                //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
 
                 let! results, tcInfo =
                     processTypeCheckingGraph
@@ -1624,7 +1667,11 @@ type internal TransparentCompiler
                     |> NodeCode.AwaitAsync
 
                 ignore parseResults
-                let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) |> NodeCode.AwaitAsync
+
+                let! _, result =
+                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                    |> NodeCode.AwaitAsync
+
                 return result
             }
 
@@ -1643,7 +1690,11 @@ type internal TransparentCompiler
                     |> NodeCode.AwaitAsync
 
                 ignore parseResults
-                let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) |> NodeCode.AwaitAsync
+
+                let! _, result =
+                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                    |> NodeCode.AwaitAsync
+
                 return Some result
             }
 
@@ -1670,12 +1721,17 @@ type internal TransparentCompiler
             node {
                 ignore canInvalidateProject
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
-                return! this.FindReferencesInFile(fileName, snapshot, symbol, userOpName) |> NodeCode.AwaitAsync
+
+                return!
+                    this.FindReferencesInFile(fileName, snapshot, symbol, userOpName)
+                    |> NodeCode.AwaitAsync
             }
 
         member this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) =
             node {
-                return! this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) |> NodeCode.AwaitAsync
+                return!
+                    this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName)
+                    |> NodeCode.AwaitAsync
             }
 
         member _.FrameworkImportsCache: FrameworkImportsCache =
@@ -1698,9 +1754,11 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileResults> =
             node {
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
-                
 
-                match! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) |> NodeCode.AwaitAsync with
+                match!
+                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                    |> NodeCode.AwaitAsync
+                with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return parseResult, checkResult
                 | parseResult, FSharpCheckFileAnswer.Aborted -> return parseResult, FSharpCheckFileResults.MakeEmpty(fileName, [||], true)
             }
@@ -1730,8 +1788,10 @@ type internal TransparentCompiler
                     FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
                     |> NodeCode.AwaitAsync
 
-
-                match! this.ParseAndCheckFileInProject(fileName, snapshot, "GetCachedCheckFileResult") |> NodeCode.AwaitAsync with
+                match!
+                    this.ParseAndCheckFileInProject(fileName, snapshot, "GetCachedCheckFileResult")
+                    |> NodeCode.AwaitAsync
+                with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return Some(parseResult, checkResult)
                 | _, FSharpCheckFileAnswer.Aborted -> return None
             }
@@ -1804,7 +1864,9 @@ type internal TransparentCompiler
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
 
-                return! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) |> NodeCode.AwaitAsync
+                return!
+                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                    |> NodeCode.AwaitAsync
             }
 
         member this.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
@@ -1824,9 +1886,7 @@ type internal TransparentCompiler
             }
 
         member this.ParseFile(fileName, projectSnapshot, userOpName) =
-            node {
-                return! this.ParseFile(fileName, projectSnapshot, userOpName) |> NodeCode.AwaitAsync
-            }
+            node { return! this.ParseFile(fileName, projectSnapshot, userOpName) |> NodeCode.AwaitAsync }
 
         member this.ParseFile
             (

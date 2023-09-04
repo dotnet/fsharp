@@ -31,7 +31,7 @@ type internal FrameworkImportsCacheKey =
         targetFrameworkDirectories: string list *
         fsharpBinaries: string *
         langVersion: decimal
-    
+
     interface ICacheKey<string, FrameworkImportsCacheKey>
 
 /// Lookup the global static cache for building the FrameworkTcImports

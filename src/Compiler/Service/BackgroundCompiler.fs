@@ -44,7 +44,6 @@ type FilePath = string
 type ProjectPath = string
 type FileVersion = int
 
-
 type internal IBackgroundCompiler =
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
@@ -1447,7 +1446,6 @@ type internal BackgroundCompiler
 
     static member ActualCheckFileCount = actualCheckFileCount
 
-    
     interface IBackgroundCompiler with
 
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
@@ -1596,10 +1594,15 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
-                let fileSnapshot = projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+                let fileSnapshot =
+                    projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+
                 let! sourceText = fileSnapshot.GetSource() |> Async.AwaitTask
                 let options = projectSnapshot.ToOptions()
-                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName) |> Async.AwaitNodeCode
+
+                return!
+                    self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
+                    |> Async.AwaitNodeCode
             }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
