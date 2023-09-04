@@ -344,13 +344,13 @@ module ValueOption =
         | ValueSome x -> x
 #else
     [<CompiledName("OfObj")>]
-    let ofObj (value: 'T __withnull) : 'T voption when 'T: not struct and 'T : __notnull  = 
+    let inline ofObj (value: 'T __withnull) : 'T voption when 'T: not struct and 'T : __notnull  = 
         match value with
         | null -> ValueNone
         | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
-    let toObj (value : 'T voption) : 'T __withnull when 'T: not struct (* and 'T : __notnull *) = 
+    let inline toObj (value : 'T voption) : 'T __withnull when 'T: not struct (* and 'T : __notnull *) = 
         match value with
         | ValueNone -> null
         | ValueSome x -> x
