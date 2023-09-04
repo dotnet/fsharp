@@ -1135,11 +1135,39 @@ type outref<'T> with
         |> shouldSucceed
         
     [<Theory>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan04.fs"|], LangVersion="7.0")>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan04.fs"|], LangVersion="preview")>]
+    let``ReturnSpan04_fs`` compilation _langVersion =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan05.fs"|], LangVersion="7.0")>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan05.fs"|], LangVersion="preview")>]
+    let``ReturnSpan05_fs`` compilation _langVersion =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan06.fs"|], LangVersion="7.0")>]
+    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan06.fs"|], LangVersion="preview")>]
+    let``ReturnSpan06_fs`` compilation _langVersion =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        
+    [<Theory>]
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="7.0")>]
-    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="preview")>]
     let``E_ReturnSpanFromLocal_fs`` compilation _langVersion =
         compilation
-        |> withLangVersion70
         |> asExe
         |> withOptions ["--warnaserror+"]
         |> compile
@@ -1184,11 +1212,9 @@ type outref<'T> with
 
 module RefFieldsFeature =
     [<Theory>]
-    [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="7.0")>]
     [<Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnSpanFromLocal.fs"|], LangVersion="preview")>]
     let``E_ReturnSpanFromLocal_fs`` compilation _langVersion =
         compilation
-        |> withLangVersionPreview
         |> asExe
         |> withOptions ["--warnaserror+"]
         |> compile
