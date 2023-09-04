@@ -152,6 +152,28 @@ let foo x = x ++ 4""" })
             ])
         }
 
+[<Theory>]
+[<InlineData("First")>]
+[<InlineData("Second")>]
+let ``We find disposable constructors`` searchIn =
+    let source1 = "type MyReader = System.IO.StreamReader"
+    let source2 = """open ModuleFirst
+let reader = MyReader "test.txt"
+"""
+    { SyntheticProject.Create(
+        { sourceFile "First" [] with Source = source1 },
+        { sourceFile "Second" [] with Source = source2 })
+        with SkipInitialCheck = true }
+
+        .Workflow {
+            placeCursor searchIn "MyReader"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 2, 5, 13
+                "FileSecond.fs", 3, 13, 21
+            ])
+        }
+
+
 module Parameters =
 
     [<Fact>]

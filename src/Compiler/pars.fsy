@@ -5690,7 +5690,7 @@ topTupleType:
        let mStar = rhs parseState 2
        let ty2 = SynType.FromParseError(mStar.EndRange)
        let path = [SynTupleTypeSegment.Type ty1; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty2]
-       mkSynTypeTuple path, [argInfo] }
+       mkSynTypeTuple path, [argInfo; SynInfo.emptySynArgInfo] }
 
   | STAR topTupleTypeElements
       { let mStar = rhs parseState 1
@@ -5713,7 +5713,7 @@ topTupleTypeElements:
       { let ty1, argInfo = $1
         let mStar = rhs parseState 2
         let ty2 = SynType.FromParseError(mStar.EndRange)
-        [(SynTupleTypeSegment.Type ty1, Some argInfo); (SynTupleTypeSegment.Star mStar, None); (SynTupleTypeSegment.Type ty2, None)] }
+        [SynTupleTypeSegment.Type ty1, Some argInfo; SynTupleTypeSegment.Star mStar, None; SynTupleTypeSegment.Type ty2, Some SynInfo.emptySynArgInfo] }
 
   | STAR topTupleTypeElements
       { let mStar = rhs parseState 1
