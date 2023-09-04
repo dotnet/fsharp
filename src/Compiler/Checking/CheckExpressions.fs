@@ -4645,7 +4645,7 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
             | _ -> tpenv
         ) tpenv
 
-    tp.AsType, tpenv
+    tp.AsType KnownAmbivalentToNull, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
     match c, kindOpt with
