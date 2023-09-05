@@ -95,3 +95,24 @@ val y: int -> int
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
     | Some "y" -> ()
     | _ -> failwith "Did not visit SynValSig"
+
+[<Fact>]
+let ``Visit nested ValSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitValSig(path, defaultTraverse, SynValSig(ident = SynIdent(ident = valIdent))) =
+                Some valIdent.idText
+        }
+
+    let source = """
+module X
+
+module Y =
+    val z: int -> int
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+
+    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
+    | Some "z" -> ()
+    | _ -> failwith "Did not visit SynValSig"
