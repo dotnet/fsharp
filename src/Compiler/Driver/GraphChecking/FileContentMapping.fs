@@ -103,7 +103,7 @@ let visitSynUnionCase (SynUnionCase (attributes = attributes; caseType = caseTyp
 let visitSynEnumCase (SynEnumCase (attributes = attributes)) = visitSynAttributes attributes
 
 let visitSynTypeDefn
-    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
                   typeRepr = typeRepr
                   members = members))
     : FileContentEntry list =
@@ -131,6 +131,9 @@ let visitSynTypeDefn
             | SynTypeDefnKind.Delegate (signature, _) ->
                 yield! visitSynType signature
                 yield! List.collect visitSynMemberDefn members
+            | SynTypeDefnKind.Augmentation _ ->
+                yield! visitLongIdent longId
+                yield! List.collect visitSynMemberDefn members
             | _ -> yield! List.collect visitSynMemberDefn members
         | SynTypeDefnRepr.Exception _ ->
             // This is only used in the typed tree
@@ -140,7 +143,10 @@ let visitSynTypeDefn
     ]
 
 let visitSynTypeDefnSig
-    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes
+                                                  longId = longId
+                                                  typeParams = typeParams
+                                                  constraints = constraints)
                      typeRepr = typeRepr
                      members = members))
     =
@@ -159,7 +165,10 @@ let visitSynTypeDefnSig
             | SynTypeDefnSimpleRepr.General _
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> ()
             | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> yield! visitSynType rhsType
-            | SynTypeDefnSimpleRepr.None _
+            // This is a type augmentation in a signature file
+            | SynTypeDefnSimpleRepr.None _ ->
+                yield! visitLongIdent longId
+                yield! List.collect visitSynMemberSig members
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.Exception _ -> ()
