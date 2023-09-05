@@ -663,6 +663,8 @@ module SynInfo =
 
     let emptySynValData = SynValData(None, emptySynValInfo, None, None)
 
+    let emptySynArgInfo = SynArgInfo([], false, None)
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
