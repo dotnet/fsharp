@@ -245,6 +245,8 @@ let myVal =
         (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
     ]
     
+    
+// FIXME: Rename and move to a more appropriate test file
 [<Fact>]
 let ``Separator between member and type annotation interpreted as operator`` () =
      FSharp """
@@ -259,6 +261,14 @@ let ``Separator between member and type annotation interpreted as operator 2`` (
      FSharp """
 type IFoo<'T> =
     abstract member Bar<'T> : string -> unit
+        """
+    |> typecheck
+    |> shouldSucceed
+    
+[<Fact>]
+let ``Separator between member and type annotation interpreted as operator 3`` () =
+     Fsx """
+let (>:) a b = a + b
         """
     |> typecheck
     |> shouldSucceed
