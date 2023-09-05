@@ -2404,22 +2404,17 @@ FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_Message()
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: System.String get_Subcategory()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+ReplaceWithSuggestion: System.String get_suggestion()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+ReplaceWithSuggestion: System.String suggestion
-FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 AddIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 RemoveIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags: Int32 ReplaceWithSuggestion
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean IsAddIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean IsRemoveIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean IsReplaceWithSuggestion
-FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean get_IsAddIndexerDot()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean get_IsRemoveIndexerDot()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Boolean get_IsReplaceWithSuggestion()
-FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind AddIndexerDot
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind NewReplaceWithSuggestion(System.String)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind RemoveIndexerDot
-FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind get_AddIndexerDot()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind get_RemoveIndexerDot()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+ReplaceWithSuggestion
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: FSharp.Compiler.Diagnostics.FSharpDiagnosticKind+Tags

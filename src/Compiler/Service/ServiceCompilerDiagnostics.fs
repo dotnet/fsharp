@@ -6,7 +6,6 @@ open FSharp.Compiler.DiagnosticResolutionHints
 
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
-    | AddIndexerDot
     | ReplaceWithSuggestion of suggestion: string
     | RemoveIndexerDot
 
@@ -15,7 +14,6 @@ module CompilerDiagnostics =
 
     let GetErrorMessage diagnosticKind =
         match diagnosticKind with
-        | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot ()
         | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion (s)
         | FSharpDiagnosticKind.RemoveIndexerDot -> FSComp.SR.tcIndexNotationDeprecated () |> snd
 
