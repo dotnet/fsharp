@@ -501,7 +501,7 @@ type internal TransparentCompiler
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
 
-                                    return! self.GetAssemblyData(projectSnapshot, userOpName + ".CheckReferencedProject(" + nm + ")")
+                                    return! self.GetAssemblyData(projectSnapshot, nm, userOpName + ".CheckReferencedProject(" + nm + ")")
                                 }
 
                             member x.TryGetLogicalTimeStamp(cache) =
@@ -1458,15 +1458,27 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeAssemblyData (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeAssemblyData (projectSnapshot: FSharpProjectSnapshot) fileName =
         caches.AssemblyData.Get(
             projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
             async {
-                match! ComputeBootstrapInfo projectSnapshot with
-                | None, _ -> return ProjectAssemblyDataResult.Unavailable true
-                | Some bootstrapInfo, _creationDiags ->
-                    let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
-                    return assemblyDataResult
+                let availableOnDiskModifiedTime = 
+                    if FileSystem.FileExistsShim fileName then
+                        Some <| FileSystem.GetLastWriteTimeShim fileName
+                    else None
+
+                let shouldUseOnDisk =
+                    availableOnDiskModifiedTime
+                    |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
+
+                if shouldUseOnDisk then
+                    return ProjectAssemblyDataResult.Unavailable true 
+                else
+                    match! ComputeBootstrapInfo projectSnapshot with
+                    | None, _ -> return ProjectAssemblyDataResult.Unavailable true
+                    | Some bootstrapInfo, _creationDiags ->
+                        let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
+                        return assemblyDataResult
             }
         )
 
@@ -1642,8 +1654,8 @@ type internal TransparentCompiler
             | Some itemKeyStore -> return itemKeyStore.FindAll symbol.Item
         }
 
-    member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, _userOpName) =
-        ComputeAssemblyData projectSnapshot |> NodeCode.AwaitAsync
+    member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, fileName, _userOpName) =
+        ComputeAssemblyData projectSnapshot fileName |> NodeCode.AwaitAsync
 
     member _.Caches = caches
 
@@ -1737,14 +1749,14 @@ type internal TransparentCompiler
         member _.FrameworkImportsCache: FrameworkImportsCache =
             backgroundCompiler.FrameworkImportsCache
 
-        member this.GetAssemblyData(options: FSharpProjectOptions, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+        member this.GetAssemblyData(options: FSharpProjectOptions, fileName, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
             node {
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
-                return! this.GetAssemblyData(snapshot, userOpName)
+                return! this.GetAssemblyData(snapshot, fileName, userOpName)
             }
 
-        member this.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
-            this.GetAssemblyData(projectSnapshot, userOpName)
+        member this.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, fileName, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+            this.GetAssemblyData(projectSnapshot, fileName, userOpName)
 
         member this.GetBackgroundCheckResultsForFileInProject
             (

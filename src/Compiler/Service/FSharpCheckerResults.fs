@@ -272,6 +272,9 @@ type FSharpProjectSnapshot =
                     .WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion()
         }
 
+    member this.GetLastModifiedTimeOnDisk() =
+        DateTime.Now 
+
     interface ICacheKey<string, string> with
         member this.GetLabel() = this.ToString()
         member this.GetKey() = this.ProjectFileName
