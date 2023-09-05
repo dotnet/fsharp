@@ -22,6 +22,7 @@ type Mode =
     | WithOption of CustomProjectOption: string
     | WithSignature of FsiCode: string
     | Manual of Squiggly: string * Diagnostic: string
+    | WithSettings of CodeFixesOptions
 
 let inline toOption o =
     match o with
@@ -44,6 +45,7 @@ let getDocument code mode =
     | WithOption option -> RoslynTestHelpers.GetFsDocument(code, option)
     | WithSignature fsiCode -> RoslynTestHelpers.GetFsiAndFsDocuments fsiCode code |> Seq.last
     | Manual _ -> RoslynTestHelpers.GetFsDocument code
+    | WithSettings settings -> RoslynTestHelpers.GetFsDocument(code, customEditorOptions = settings)
 
 let getRelevantDiagnostics (document: Document) =
     cancellableTask {
@@ -67,6 +69,7 @@ let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds 
                 |> Array.filter (fun d -> diagnosticIds |> Seq.contains d.ErrorNumberText)
             | WithOption _ -> getRelevantDiagnostics document
             | WithSignature _ -> getRelevantDiagnostics document
+            | WithSettings _ -> getRelevantDiagnostics document
             | Manual (squiggly, diagnostic) ->
                 let spanStart = code.IndexOf squiggly
                 let span = TextSpan(spanStart, squiggly.Length)
