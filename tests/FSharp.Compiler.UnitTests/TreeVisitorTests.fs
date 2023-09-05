@@ -75,3 +75,23 @@ let ``Visit recursive let binding`` () =
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
     | Some [ SynBinding(valData = SynValData(valInfo = SynValInfo(curriedArgInfos = [ [ SynArgInfo(ident = Some id) ] ]))) ] when id.idText = "n" -> ()
     | _ -> failwith "Did not visit recursive let binding"
+
+[<Fact>]
+let ``Visit ValSig`` () =
+    let visitor =
+        { new SyntaxVisitorBase<_>() with
+            member x.VisitValSig(path, defaultTraverse, SynValSig(ident = SynIdent(ident = valIdent))) =
+                Some valIdent.idText
+        }
+
+    let source = """
+module X
+
+val y: int -> int
+"""
+
+    let parseTree = parseSourceCode("C:\\test.fsi", source)
+
+    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
+    | Some "y" -> ()
+    | _ -> failwith "Did not visit SynValSig"

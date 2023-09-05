@@ -25,6 +25,9 @@ type SyntaxNode =
     | SynMemberDefn of SynMemberDefn
     | SynMatchClause of SynMatchClause
     | SynBinding of SynBinding
+    | SynModuleOrNamespaceSig of SynModuleOrNamespaceSig
+    | SynModuleSigDecl of SynModuleSigDecl
+    | SynValSig of SynValSig
 
 type SyntaxVisitorPath = SyntaxNode list
 
@@ -183,6 +186,28 @@ type SyntaxVisitorBase<'T>() =
     default _.VisitAttributeApplication(path, attributes) =
         ignore (path, attributes)
         None
+
+    /// VisitModuleOrNamespaceSig allows overriding behavior when visiting module or namespaces
+    abstract VisitModuleOrNamespaceSig: path: SyntaxVisitorPath * synModuleOrNamespaceSig: SynModuleOrNamespaceSig -> 'T option
+
+    default _.VisitModuleOrNamespaceSig(path, synModuleOrNamespaceSig) =
+        ignore (path, synModuleOrNamespaceSig)
+        None
+
+    /// VisitModuleDecl allows overriding signature module declaration behavior
+    abstract VisitModuleSigDecl:
+        path: SyntaxVisitorPath * defaultTraverse: (SynModuleSigDecl -> 'T option) * synModuleSigDecl: SynModuleSigDecl -> 'T option
+
+    default _.VisitModuleSigDecl(path, defaultTraverse, synModuleSigDecl) =
+        ignore path
+        defaultTraverse synModuleSigDecl
+
+    /// VisitValSig allows overriding SynValSig behavior
+    abstract VisitValSig: path: SyntaxVisitorPath * defaultTraverse: (SynValSig -> 'T option) * valSig: SynValSig -> 'T option
+
+    default _.VisitValSig(path, defaultTraverse, valSig) =
+        ignore path
+        defaultTraverse valSig
 
 /// A range of utility functions to assist with traversing an AST
 module SyntaxTraversal =
@@ -926,6 +951,54 @@ module SyntaxTraversal =
             attributes
             |> List.map (fun attributes -> dive () attributes.Range (fun () -> visitor.VisitAttributeApplication(origPath, attributes)))
 
+        and traverseSynModuleOrNamespaceSig origPath (SynModuleOrNamespaceSig (decls = synModuleSigDecls; range = range) as mors) =
+            match visitor.VisitModuleOrNamespaceSig(origPath, mors) with
+            | Some x -> Some x
+            | None ->
+                let path = SyntaxNode.SynModuleOrNamespaceSig mors :: origPath
+
+                synModuleSigDecls
+                |> List.map (fun x -> dive x x.Range (traverseSynModuleSigDecl path))
+                |> pick range mors
+
+        and traverseSynModuleSigDecl origPath (decl: SynModuleSigDecl) =
+            let pick = pick decl.Range
+
+            let defaultTraverse m =
+                let path = SyntaxNode.SynModuleSigDecl m :: origPath
+
+                match m with
+                | SynModuleSigDecl.ModuleAbbrev (_ident, _longIdent, _range) -> None
+                | SynModuleSigDecl.NestedModule (moduleDecls = synModuleDecls; moduleInfo = SynComponentInfo (attributes = attributes)) ->
+                    synModuleDecls
+                    |> List.map (fun x -> dive x x.Range (traverseSynModuleSigDecl path))
+                    |> List.append (attributeApplicationDives path attributes)
+                    |> pick decl
+                | SynModuleSigDecl.Val (synValSig, range) -> [ dive synValSig range (traverseSynValSig path) ] |> pick decl
+                | SynModuleSigDecl.Types (_synTypeDefnList, _range) -> None
+                | SynModuleSigDecl.Exception (_synExceptionDefn, _range) -> None
+                | SynModuleSigDecl.Open (_target, _range) -> None
+                | SynModuleSigDecl.HashDirective (parsedHashDirective, range) ->
+                    visitor.VisitHashDirective(path, parsedHashDirective, range)
+                | SynModuleSigDecl.NamespaceFragment synModuleOrNamespaceSig -> traverseSynModuleOrNamespaceSig path synModuleOrNamespaceSig
+
+            visitor.VisitModuleSigDecl(origPath, defaultTraverse, decl)
+
+        and traverseSynValSig origPath (valSig: SynValSig) =
+            let defaultTraverse (SynValSig (synType = t; attributes = attributes; synExpr = expr; range = m)) =
+                let path = SyntaxNode.SynValSig valSig :: origPath
+
+                [
+                    yield! attributeApplicationDives path attributes
+                    yield dive t t.Range (traverseSynType path)
+                    match expr with
+                    | Some expr -> yield dive expr expr.Range (traverseSynExpr path)
+                    | None -> ()
+                ]
+                |> pick m valSig
+
+            visitor.VisitValSig(origPath, defaultTraverse, valSig)
+
         match parseTree with
         | ParsedInput.ImplFile file ->
             let l = file.Contents
@@ -941,4 +1014,17 @@ module SyntaxTraversal =
             l
             |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespace []))
             |> pick fileRange l
-        | ParsedInput.SigFile _sigFile -> None
+        | ParsedInput.SigFile sigFile ->
+            let l = sigFile.Contents
+
+            let fileRange =
+#if DEBUG
+                match l with
+                | [] -> range0
+                | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges
+#else
+                range0 // only used for asserting, does not matter in non-debug
+#endif
+            l
+            |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespaceSig []))
+            |> pick fileRange l
