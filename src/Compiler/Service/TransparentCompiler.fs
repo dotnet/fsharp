@@ -916,7 +916,7 @@ type internal TransparentCompiler
                     | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF [{i}] : {fileNames[i]}")
                 |> Graph.serialiseToMermaid
 
-            Trace.TraceInformation("\n" + debugGraph)
+            //Trace.TraceInformation("\n" + debugGraph)
 
             if Activity.Current <> null then
                 Activity.Current.AddTag("graph", debugGraph) |> ignore
@@ -1012,7 +1012,7 @@ type internal TransparentCompiler
                         "ComputeTcIntermediate"
                         [|
                             Activity.Tags.fileName, fileName |> Path.GetFileName
-                            "key", key.GetKey() |> sprintf "%A"
+                            "key", key.GetLabel()
                             "version", key.GetVersion()
                         |]
 
@@ -1471,13 +1471,20 @@ type internal TransparentCompiler
                     availableOnDiskModifiedTime
                     |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
 
+                let name = projectSnapshot.ProjectFileName |> Path.GetFileNameWithoutExtension
+
                 if shouldUseOnDisk then
+                    Trace.TraceInformation($"Using assembly on disk: {name}")
                     return ProjectAssemblyDataResult.Unavailable true 
                 else
                     match! ComputeBootstrapInfo projectSnapshot with
-                    | None, _ -> return ProjectAssemblyDataResult.Unavailable true
+                    | None, _ -> 
+                        Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
+                        return ProjectAssemblyDataResult.Unavailable true
                     | Some bootstrapInfo, _creationDiags ->
                         let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
+                        Trace.TraceInformation($"Using in-memory project reference: {name}")
+                        
                         return assemblyDataResult
             }
         )
