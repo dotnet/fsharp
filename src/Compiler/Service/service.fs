@@ -284,8 +284,8 @@ type FSharpChecker
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
-        use _ =
-            Activity.start "FSharpChecker.MatchBraces" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+        //use _ =
+        //    Activity.start "FSharpChecker.MatchBraces" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
 
         let hash = sourceText.GetHashCode() |> int64
 
