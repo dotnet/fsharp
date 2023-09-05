@@ -59,7 +59,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                         sourceText.Lines
                         |> Seq.skip insertionLineNumber
                         |> Seq.findIndex (fun line -> line.ToString().Contains "module")
-                        |> (+) insertionLineNumber
+                        // add back the skipped lines
+                        |> fun i -> insertionLineNumber + i
 
                     let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
 
