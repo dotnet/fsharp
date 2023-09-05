@@ -1326,7 +1326,13 @@ module ParsedInput =
             |> Option.orElseWith (fun () ->
                 // Last resort - check for fun { Field1 = a; F| } ->
                 // That is, pos is after the last field and still within braces
-                if pats |> List.forall (fun (_, m, _) -> rangeBeforePos m pos) then
+                if
+                    pats
+                    |> List.forall (fun (_, m, _) ->
+                        match m with
+                        | Some m -> rangeBeforePos m pos
+                        | None -> false)
+                then
                     let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x.idText, x.idRange)
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 else
