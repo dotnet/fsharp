@@ -129,11 +129,13 @@ let ``Find references to internal symbols in other projects`` () =
     let library = {
         SyntheticProject.Create("Library",
             { sourceFile "Library" [] with Source = """
-module internal Lib.Library
-let foo x = x + 5
+namespace Lib
 
-[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("App")>]
-do ()""" })
+module internal Library =
+    let foo x = x + 5
+
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FileFirst")>]
+do ()    """ })
             with AutoAddModules = false }
 
     let project =
@@ -147,7 +149,7 @@ let bar x = Library.foo x""" })
         placeCursor "Library" "foo"
         findAllReferences (expectToFind [
             "FileFirst.fs", 4, 12, 23
-            "FileLibrary.fs", 3, 4, 7
+            "FileLibrary.fs", 5, 8, 11
         ])
     }
 
