@@ -85,6 +85,17 @@ exception InternalError of message: string * range: range with
         | InternalError (msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
+exception InternalException of exn: Exception * msg: string * range: range with
+    override this.Message =
+        match this :> exn with
+        | InternalException (_, msg, _) -> msg
+        | _ -> "impossible"
+
+    override this.ToString() =
+        match this :> exn with
+        | InternalException (exn, _, _) -> exn.ToString()
+        | _ -> "impossible"
+
 exception UserCompilerMessage of message: string * number: int * range: range
 
 exception LibraryUseOnly of range: range
@@ -160,11 +171,11 @@ let rec AttachRange m (exn: exn) =
     else
         match exn with
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
+        | :? TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure msg -> InternalError(msg + " (Failure)", m)
-        | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
+        | :? NotSupportedException -> exn
+        | :? SystemException -> InternalException(exn, exn.Message, m)
         | _ -> exn
 
 type Exiter =
@@ -411,25 +422,12 @@ module DiagnosticsLoggerExtensions =
             Debug.Assert(false, "Could not preserve stack trace for watson exception.")
             ()
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    let ReraiseIfWatsonable (exn: exn) =
-        match exn with
-        // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
-        | :? TargetInvocationException -> ()
-        | :? NotSupportedException -> ()
-        | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
-        | :? UnauthorizedAccessException -> ()
-        | Failure _ // This gives reports for compiler INTERNAL ERRORs
-        | :? SystemException ->
-            PreserveStackTrace exn
-            raise exn
-        | _ -> ()
-
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
             match exn with
             | InternalError (s, _)
+            | InternalException (_, s, _)
             | Failure s as exn -> Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
             | _ -> ()
 
@@ -473,7 +471,6 @@ module DiagnosticsLoggerExtensions =
             | _ ->
                 try
                     x.ErrorR(AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
-                    ReraiseIfWatsonable exn
                 with
                 | ReportedError _
                 | WrappedError (ReportedError _, _) -> ()
