@@ -252,6 +252,9 @@ module EditorOptionsExtensions =
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
 
+        member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
+            this.EditorOptions.CodeFixes.SuggestNamesForErrors
+
         member this.IsFSharpBlockStructureEnabled =
             this.EditorOptions.Advanced.IsBlockStructureEnabled
 

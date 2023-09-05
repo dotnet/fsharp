@@ -948,7 +948,7 @@ type SynPat =
 
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     | Null of range: range
 
