@@ -615,7 +615,7 @@ type ILMethInfo =
 
     /// Get the compiled return type of the method, where 'void' is None.
     member x.GetCompiledReturnType (amap: ImportMap, m, minst) =
-        /// We try to decode a S.R.CS.NullableContextAttribute(flag: byte) for the IL type 
+        /// We try to decode a S.R.CS.NullableContextAttribute(flag: byte) for the IL return type 
         /// As per docs:
         /// NullableContextAttribute can be used to indicate the nullability of type references that have no NullableAttribute annotations.
         /// NullableContextAttribute is valid in metadata on type and method declarations.
