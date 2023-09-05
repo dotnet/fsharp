@@ -103,6 +103,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D58BFE8B-7C85-4D3B-B5F3-9A7BB90FF1EE}"
 	ProjectSection(SolutionItems) = preProject
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
+		src\Compiler\FSCompCheck.fsx = src\Compiler\FSCompCheck.fsx
 	EndProjectSection
 EndProject
 Global
