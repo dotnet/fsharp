@@ -136,6 +136,8 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project with file versions removed.
     member WithoutFileVersions: FSharpProjectSnapshot
 
+    member GetLastModifiedTimeOnDisk: unit -> DateTime
+
     member internal Key: ICacheKey<string, string>
 
     member internal FileKey: fileName: string -> ICacheKey<(string * string), string>
