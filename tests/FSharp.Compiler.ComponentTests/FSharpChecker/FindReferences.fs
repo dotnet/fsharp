@@ -125,6 +125,36 @@ let ``Finding references in project`` (fastCheck, captureIdentifiersWhenParsing)
     }
 
 [<Fact>]
+let ``Find references to internal symbols in other projects`` () =
+    let library = {
+        SyntheticProject.Create("Library",
+            { sourceFile "Library" [] with Source = """
+namespace Lib
+
+module internal Library =
+    let foo x = x + 5
+
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FileFirst")>]
+do ()    """ })
+            with AutoAddModules = false }
+
+    let project =
+        { SyntheticProject.Create("App",
+            { sourceFile "First" [] with Source = """
+open Lib
+let bar x = Library.foo x""" })
+                with DependsOn = [library] }
+
+    project.Workflow {
+        placeCursor "Library" "foo"
+        findAllReferences (expectToFind [
+            "FileFirst.fs", 4, 12, 23
+            "FileLibrary.fs", 5, 8, 11
+        ])
+    }
+
+
+[<Fact>]
 let ``We find back-ticked identifiers`` () =
     SyntheticProject.Create(
         { sourceFile "First" [] with ExtraSource = "let ``foo bar`` x = x + 5" },
