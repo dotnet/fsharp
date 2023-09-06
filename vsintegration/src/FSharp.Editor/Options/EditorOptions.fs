@@ -164,6 +164,8 @@ type EditorOptions() =
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
     member private _.SettingsStore = store
 
+    member _.With value = store.Register value
+
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
 module internal OptionsUI =
@@ -251,6 +253,9 @@ module EditorOptionsExtensions =
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
+            this.EditorOptions.CodeFixes.SuggestNamesForErrors
 
         member this.IsFSharpBlockStructureEnabled =
             this.EditorOptions.Advanced.IsBlockStructureEnabled

@@ -58,11 +58,14 @@
     <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
     <Compile Include="CodeFixes\MakeDeclarationMutableTests.fs" />
     <Compile Include="CodeFixes\UseMutationWhenValueIsMutableTests.fs" />
+    <Compile Include="CodeFixes\AddOpenOnTopOnTests.fs" />
+    <Compile Include="CodeFixes\AddOpenOnTopOffTests.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColonTests.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
     <Compile Include="CodeFixes\SimplifyNameTests.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignatureTests.fs" />
     <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
+    <Compile Include="CodeFixes\ReplaceWithSuggestionTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

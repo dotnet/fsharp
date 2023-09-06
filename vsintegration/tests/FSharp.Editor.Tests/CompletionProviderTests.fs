@@ -1763,7 +1763,7 @@ match U1 (1, A) with
         VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
 
     [<Fact>]
-    let ``Completion list for union case field identifier contains available fields`` () =
+    let ``Completion list for union case field identifier in a pattern contains available fields`` () =
         let fileContents =
             """
 type PatternContext =
@@ -1921,3 +1921,41 @@ type C () =
         VerifyNoCompletionList(fileContents, "override a")
         VerifyNoCompletionList(fileContents, "override _")
         VerifyNoCompletionList(fileContents, "override c")
+
+    [<Fact>]
+    let ``Completion list for record field identifier in a pattern contains available fields, modules, namespaces and record types`` () =
+        let fileContents =
+            """
+open System
+
+type DU =
+    | X
+
+type R1 = { A: int; B: int }
+type R2 = { C: int; D: int }
+
+match [] with
+| [ { A = 2; l = 2 } ]
+"""
+
+        VerifyCompletionList(
+            fileContents,
+            "| [ { A = 2; l",
+            [ "B"; "R1"; "R2"; "System"; "LanguagePrimitives" ],
+            [ "A"; "C"; "D"; "DU"; "X"; "log"; "let"; "Lazy" ]
+        )
+
+    [<Fact>]
+    let ``Completion list for record field identifier in a pattern contains fields of all records in scope when the record type is not known yet``
+        ()
+        =
+        let fileContents =
+            """
+type R1 = { A: int; B: int }
+type R2 = { C: int; D: int }
+
+match { A = 1; B = 2 } with
+| { f = () }
+"""
+
+        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
