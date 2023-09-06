@@ -9238,6 +9238,8 @@ FSharp.Compiler.Syntax.SyntaxNode+SynMatchClause: FSharp.Compiler.Syntax.SynMatc
 FSharp.Compiler.Syntax.SyntaxNode+SynMatchClause: FSharp.Compiler.Syntax.SynMatchClause get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn Item
 FSharp.Compiler.Syntax.SyntaxNode+SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn get_Item()
+FSharp.Compiler.Syntax.SyntaxNode+SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig Item
+FSharp.Compiler.Syntax.SyntaxNode+SynMemberSig: FSharp.Compiler.Syntax.SynMemberSig get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+SynModule: FSharp.Compiler.Syntax.SynModuleDecl Item
 FSharp.Compiler.Syntax.SyntaxNode+SynModule: FSharp.Compiler.Syntax.SynModuleDecl get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespace Item
@@ -9252,12 +9254,15 @@ FSharp.Compiler.Syntax.SyntaxNode+SynType: FSharp.Compiler.Syntax.SynType Item
 FSharp.Compiler.Syntax.SyntaxNode+SynType: FSharp.Compiler.Syntax.SynType get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefn: FSharp.Compiler.Syntax.SynTypeDefn Item
 FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefn: FSharp.Compiler.Syntax.SynTypeDefn get_Item()
+FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig Item
+FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+SynValSig: FSharp.Compiler.Syntax.SynValSig Item
 FSharp.Compiler.Syntax.SyntaxNode+SynValSig: FSharp.Compiler.Syntax.SynValSig get_Item()
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynBinding
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynExpr
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynMatchClause
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynMemberDefn
+FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynMemberSig
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynModule
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynModuleOrNamespace
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynModuleOrNamespaceSig
@@ -9265,11 +9270,13 @@ FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynModuleSigDecl
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynPat
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynType
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynTypeDefn
+FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynTypeDefnSig
 FSharp.Compiler.Syntax.SyntaxNode+Tags: Int32 SynValSig
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynBinding
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynExpr
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynMatchClause
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynMemberDefn
+FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynMemberSig
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynModule
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynModuleOrNamespace
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynModuleOrNamespaceSig
@@ -9277,11 +9284,13 @@ FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynModuleSigDecl
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynPat
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynType
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynTypeDefn
+FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynTypeDefnSig
 FSharp.Compiler.Syntax.SyntaxNode: Boolean IsSynValSig
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynBinding()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynExpr()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynMatchClause()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynMemberDefn()
+FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynMemberSig()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynModule()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynModuleOrNamespace()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynModuleOrNamespaceSig()
@@ -9289,11 +9298,13 @@ FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynModuleSigDecl()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynPat()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynType()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynTypeDefn()
+FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynTypeDefnSig()
 FSharp.Compiler.Syntax.SyntaxNode: Boolean get_IsSynValSig()
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynBinding(FSharp.Compiler.Syntax.SynBinding)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynExpr(FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynMatchClause(FSharp.Compiler.Syntax.SynMatchClause)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynMemberDefn(FSharp.Compiler.Syntax.SynMemberDefn)
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynMemberSig(FSharp.Compiler.Syntax.SynMemberSig)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynModule(FSharp.Compiler.Syntax.SynModuleDecl)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynModuleOrNamespace(FSharp.Compiler.Syntax.SynModuleOrNamespace)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynModuleOrNamespaceSig(FSharp.Compiler.Syntax.SynModuleOrNamespaceSig)
@@ -9301,11 +9312,13 @@ FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynModul
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynPat(FSharp.Compiler.Syntax.SynPat)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynType(FSharp.Compiler.Syntax.SynType)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynTypeDefn(FSharp.Compiler.Syntax.SynTypeDefn)
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynTypeDefnSig)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode NewSynValSig(FSharp.Compiler.Syntax.SynValSig)
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynBinding
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynExpr
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynMatchClause
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynMemberDefn
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynMemberSig
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynModule
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynModuleOrNamespace
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynModuleOrNamespaceSig
@@ -9313,6 +9326,7 @@ FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynModuleSi
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynPat
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynType
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefn
+FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynTypeDefnSig
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+SynValSig
 FSharp.Compiler.Syntax.SyntaxNode: FSharp.Compiler.Syntax.SyntaxNode+Tags
 FSharp.Compiler.Syntax.SyntaxNode: Int32 Tag

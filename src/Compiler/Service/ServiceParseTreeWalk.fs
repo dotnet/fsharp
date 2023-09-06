@@ -28,6 +28,8 @@ type SyntaxNode =
     | SynModuleOrNamespaceSig of SynModuleOrNamespaceSig
     | SynModuleSigDecl of SynModuleSigDecl
     | SynValSig of SynValSig
+    | SynTypeDefnSig of SynTypeDefnSig
+    | SynMemberSig of SynMemberSig
 
 type SyntaxVisitorPath = SyntaxNode list
 
@@ -975,7 +977,10 @@ module SyntaxTraversal =
                     |> List.append (attributeApplicationDives path attributes)
                     |> pick decl
                 | SynModuleSigDecl.Val (synValSig, range) -> [ dive synValSig range (traverseSynValSig path) ] |> pick decl
-                | SynModuleSigDecl.Types (_synTypeDefnList, _range) -> None
+                | SynModuleSigDecl.Types (types = types; range = range) ->
+                    types
+                    |> List.map (fun t -> dive t range (traverseSynTypeDefnSig path))
+                    |> pick decl
                 | SynModuleSigDecl.Exception (_synExceptionDefn, _range) -> None
                 | SynModuleSigDecl.Open (_target, _range) -> None
                 | SynModuleSigDecl.HashDirective (parsedHashDirective, range) ->
@@ -998,6 +1003,50 @@ module SyntaxTraversal =
                 |> pick m valSig
 
             visitor.VisitValSig(origPath, defaultTraverse, valSig)
+
+        and traverseSynTypeDefnSig origPath (SynTypeDefnSig (synComponentInfo, typeRepr, members, tRange, _) as tydef) =
+            let path = SyntaxNode.SynTypeDefnSig tydef :: origPath
+
+            match visitor.VisitComponentInfo(origPath, synComponentInfo) with
+            | Some x -> Some x
+            | None ->
+                match synComponentInfo with
+                | SynComponentInfo (attributes = attributes) ->
+                    [
+                        yield! attributeApplicationDives path attributes
+
+                        match typeRepr with
+                        | SynTypeDefnSigRepr.Exception _ ->
+                            // This node is generated in CheckExpressions.fs, not in the AST.
+                            // But note exception declarations are missing from this tree walk.
+                            ()
+                        | SynTypeDefnSigRepr.ObjectModel (memberSigs = memberSigs) ->
+                            yield! memberSigs |> List.map (fun ms -> dive ms ms.Range (traverseSynMemberSig path))
+                        | SynTypeDefnSigRepr.Simple (synTypeDefnSimpleRepr, _range) ->
+                            match synTypeDefnSimpleRepr with
+                            | SynTypeDefnSimpleRepr.Record (_synAccessOption, fields, m) ->
+                                yield dive () typeRepr.Range (fun () -> traverseRecordDefn path fields m)
+                            | SynTypeDefnSimpleRepr.Union (_synAccessOption, cases, m) ->
+                                yield dive () typeRepr.Range (fun () -> traverseUnionDefn path cases m)
+                            | SynTypeDefnSimpleRepr.Enum (cases, m) ->
+                                yield dive () typeRepr.Range (fun () -> traverseEnumDefn path cases m)
+                            | SynTypeDefnSimpleRepr.TypeAbbrev (_, synType, m) ->
+                                yield dive typeRepr typeRepr.Range (fun _ -> visitor.VisitTypeAbbrev(path, synType, m))
+                            | _ -> ()
+                        yield! members |> List.map (fun ms -> dive ms ms.Range (traverseSynMemberSig path))
+                    ]
+                    |> pick tRange tydef
+
+        and traverseSynMemberSig path (m: SynMemberSig) =
+            let path = SyntaxNode.SynMemberSig m :: path
+
+            match m with
+            | SynMemberSig.Member (memberSig = memberSig) -> traverseSynValSig path memberSig
+            | SynMemberSig.Interface (interfaceType = synType) -> traverseSynType path synType
+            | SynMemberSig.Inherit (inheritedType = synType) -> traverseSynType path synType
+            | SynMemberSig.ValField(field = SynField (attributes = attributes)) ->
+                attributeApplicationDives path attributes |> pick m.Range attributes
+            | SynMemberSig.NestedType (nestedType = nestedType) -> traverseSynTypeDefnSig path nestedType
 
         match parseTree with
         | ParsedInput.ImplFile file ->

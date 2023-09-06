@@ -20,6 +20,8 @@ type SyntaxNode =
     | SynModuleOrNamespaceSig of SynModuleOrNamespaceSig
     | SynModuleSigDecl of SynModuleSigDecl
     | SynValSig of SynValSig
+    | SynTypeDefnSig of SynTypeDefnSig
+    | SynMemberSig of SynMemberSig
 
 type SyntaxVisitorPath = SyntaxNode list
 
