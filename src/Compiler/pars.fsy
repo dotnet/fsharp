@@ -3591,8 +3591,10 @@ atomicPattern:
       { SynPat.QuoteExpr($1, lhs parseState) }
 
   | LBRACE recordPatternElementsAux rbrace
-      { let rs, m = $2
-        SynPat.Record(rs, rhs2 parseState 1 3) }
+      { SynPat.Record($2, rhs2 parseState 1 3) }
+
+  | LBRACE error rbrace
+      { SynPat.Record([], rhs2 parseState 1 3) }
 
   | LBRACK listPatternElements RBRACK
       { SynPat.ArrayOrList(false, $2, lhs parseState) }
@@ -3775,19 +3777,29 @@ conjParenPatternElements:
   | parenPattern AMP parenPattern
       { $3 :: $1 :: [] }
 
-recordPatternElementsAux: /* Fix 1190 */
+recordPatternElementsAux:
   | recordPatternElement opt_seps
-      { [$1], lhs parseState }
+      { [$1] }
 
   | recordPatternElement seps recordPatternElementsAux
-      { let r = $1
-        let (rs, dropMark) = $3
-        (r :: rs), lhs parseState }
+      { $1 :: $3 }
 
 recordPatternElement:
   | path EQUALS parenPattern
-    { let mEquals = rhs parseState 2
-      (List.frontAndBack $1.LongIdent, mEquals, $3) }
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let mPat = $3.Range
+      List.frontAndBack $1.LongIdent, Some mEquals, $3 }
+
+  | path EQUALS recover
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let pat = SynPat.Wild(mEquals.EndRange)
+      List.frontAndBack $1.LongIdent, Some mEquals, pat }
+
+  | path recover
+    { let pat = SynPat.Wild($1.Range.EndRange)
+      List.frontAndBack $1.LongIdent, None, pat }
 
 listPatternElements:
   | /* EMPTY */

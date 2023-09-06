@@ -17,6 +17,11 @@ type SyntaxNode =
     | SynMemberDefn of SynMemberDefn
     | SynMatchClause of SynMatchClause
     | SynBinding of SynBinding
+    | SynModuleOrNamespaceSig of SynModuleOrNamespaceSig
+    | SynModuleSigDecl of SynModuleSigDecl
+    | SynValSig of SynValSig
+    | SynTypeDefnSig of SynTypeDefnSig
+    | SynMemberSig of SynMemberSig
 
 type SyntaxVisitorPath = SyntaxNode list
 
@@ -150,6 +155,24 @@ type SyntaxVisitorBase<'T> =
 
     abstract VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
     default VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
+
+    abstract VisitModuleOrNamespaceSig:
+        path: SyntaxVisitorPath * synModuleOrNamespaceSig: SynModuleOrNamespaceSig -> 'T option
+    default VisitModuleOrNamespaceSig:
+        path: SyntaxVisitorPath * synModuleOrNamespaceSig: SynModuleOrNamespaceSig -> 'T option
+
+    abstract VisitModuleSigDecl:
+        path: SyntaxVisitorPath * defaultTraverse: (SynModuleSigDecl -> 'T option) * synModuleSigDecl: SynModuleSigDecl ->
+            'T option
+    default VisitModuleSigDecl:
+        path: SyntaxVisitorPath * defaultTraverse: (SynModuleSigDecl -> 'T option) * synModuleSigDecl: SynModuleSigDecl ->
+            'T option
+
+    abstract VisitValSig:
+        path: SyntaxVisitorPath * defaultTraverse: (SynValSig -> 'T option) * valSig: SynValSig -> 'T option
+
+    default VisitValSig:
+        path: SyntaxVisitorPath * defaultTraverse: (SynValSig -> 'T option) * valSig: SynValSig -> 'T option
 
 module public SyntaxTraversal =
 

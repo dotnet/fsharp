@@ -1104,7 +1104,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     /// The 'null' pattern
     | Null of range: range
