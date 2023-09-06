@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
+// This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the
 // proper compiler service API used instead.
 
 namespace FSharp.Compiler.CodeAnalysis.Hosted
@@ -14,7 +14,7 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open Internal.Utilities.Library 
+open Internal.Utilities.Library
 
 /// Part of LegacyHostedCompilerForTesting
 ///
@@ -24,28 +24,26 @@ type internal InProcDiagnosticsLoggerProvider() =
     let warnings = ResizeArray()
 
     member _.Provider =
-        { new DiagnosticsLoggerProvider() with
+        { new IDiagnosticsLoggerProvider with
 
-            member _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
+            member _.CreateLogger(tcConfigB, exiter) =
 
-                { new DiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
+                { new DiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
 
                     member _.HandleTooManyErrors text =
                         warnings.Add(FormattedDiagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member _.HandleIssue(tcConfigBuilder, err, severity) =
+                    member _.HandleIssue(tcConfig, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let diagnostics =
-                            CollectFormattedDiagnostics
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.diagnosticStyle, severity, err, true)
+                        let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, err, true)
+
                         match severity with
-                        | FSharpDiagnosticSeverity.Error ->
-                           errors.AddRange(diagnostics)
-                        | FSharpDiagnosticSeverity.Warning ->
-                            warnings.AddRange(diagnostics)
-                        | _ -> ()}
-                :> DiagnosticsLogger }
+                        | FSharpDiagnosticSeverity.Error -> errors.AddRange(diagnostics)
+                        | FSharpDiagnosticSeverity.Warning -> warnings.AddRange(diagnostics)
+                        | _ -> ()
+                }
+                :> DiagnosticsLogger
+        }
 
     member _.CapturedErrors = errors.ToArray()
 
@@ -60,72 +58,82 @@ type internal Location =
         EndColumn: int
     }
 
-type internal CompilationIssueType = Warning | Error
+type internal CompilationIssueType =
+    | Warning
+    | Error
 
 /// build issue details
-type internal CompilationIssue = 
-    { 
+type internal CompilationIssue =
+    {
         Location: Location
         Subcategory: string
         Code: string
         File: string
-        Text: string 
+        Text: string
         Type: CompilationIssueType
     }
 
 /// combined warning and error details
-type internal FailureDetails = 
+type internal FailureDetails =
     {
         Warnings: CompilationIssue list
         Errors: CompilationIssue list
     }
 
-type internal CompilationResult = 
+type internal CompilationResult =
     | Success of CompilationIssue list
     | Failure of FailureDetails
 
 [<RequireQualifiedAccess>]
-type internal CompilationOutput = 
-    { Errors: FormattedDiagnostic[]
-      Warnings: FormattedDiagnostic[]  }
+type internal CompilationOutput =
+    {
+        Errors: FormattedDiagnostic[]
+        Warnings: FormattedDiagnostic[]
+    }
 
-type internal InProcCompiler(legacyReferenceResolver) = 
-    member _.Compile(argv) = 
+type internal InProcCompiler(legacyReferenceResolver) =
+    member _.Compile(argv) =
 
         // Explanation: Compilation happens on whichever thread calls this function.
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
+        let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let loggerProvider = InProcDiagnosticsLoggerProvider()
-        let mutable exitCode = 0
-        let exiter = 
-            { new Exiter with
-                 member _.Exit n = exitCode <- n; raise StopProcessing }
-        try 
-            CompileFromCommandLineArguments (
-                ctok, argv, legacyReferenceResolver,
-                false, ReduceMemoryFlag.Yes,
-                CopyFSharpCoreFlag.Yes, exiter,
-                loggerProvider.Provider, None, None
+        let exiter = StopProcessingExiter()
+
+        try
+            CompileFromCommandLineArguments(
+                ctok,
+                argv,
+                legacyReferenceResolver,
+                false,
+                ReduceMemoryFlag.Yes,
+                CopyFSharpCoreFlag.Yes,
+                exiter,
+                loggerProvider.Provider,
+                None,
+                None
             )
-        with 
-            | StopProcessing -> ()
-            | ReportedError _ 
-            | WrappedError(ReportedError _,_)  ->
-                exitCode <- 1
-                ()
+        with
+        | StopProcessing -> ()
+        | ReportedError _
+        | WrappedError (ReportedError _, _) ->
+            exiter.ExitCode <- 1
+            ()
 
         let output: CompilationOutput =
-            { Warnings = loggerProvider.CapturedWarnings
-              Errors = loggerProvider.CapturedErrors }
+            {
+                Warnings = loggerProvider.CapturedWarnings
+                Errors = loggerProvider.CapturedErrors
+            }
 
-        exitCode = 0, output
+        (exiter.ExitCode = 0), output
 
 /// in-proc version of fsc.exe
 type internal FscCompiler(legacyReferenceResolver) =
     let compiler = InProcCompiler(legacyReferenceResolver)
 
-    let emptyLocation = 
-        { 
+    let emptyLocation =
+        {
             StartColumn = 0
             EndColumn = 0
             StartLine = 0
@@ -133,50 +141,66 @@ type internal FscCompiler(legacyReferenceResolver) =
         }
 
     /// Converts short and long issue types to the same CompilationIssue representation
-    let convert issue = 
+    let convert issue =
         match issue with
-        | FormattedDiagnostic.Short(severity, text) -> 
+        | FormattedDiagnostic.Short (severity, text) ->
             {
                 Location = emptyLocation
                 Code = ""
                 Subcategory = ""
                 File = ""
                 Text = text
-                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type =
+                    if (severity = FSharpDiagnosticSeverity.Error) then
+                        CompilationIssueType.Error
+                    else
+                        CompilationIssueType.Warning
             }
-        | FormattedDiagnostic.Long(severity, details) ->
-            let loc, file = 
+        | FormattedDiagnostic.Long (severity, details) ->
+            let loc, file =
                 match details.Location with
-                | Some l when not l.IsEmpty -> 
-                    { 
+                | Some l when not l.IsEmpty ->
+                    {
                         StartColumn = l.Range.StartColumn
                         EndColumn = l.Range.EndColumn
                         StartLine = l.Range.StartLine
                         EndLine = l.Range.EndLine
-                    }, l.File
+                    },
+                    l.File
                 | _ -> emptyLocation, ""
+
             {
                 Location = loc
                 Code = sprintf "FS%04d" details.Canonical.ErrorNumber
                 Subcategory = details.Canonical.Subcategory
                 File = file
                 Text = details.Message
-                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type =
+                    if (severity = FSharpDiagnosticSeverity.Error) then
+                        CompilationIssueType.Error
+                    else
+                        CompilationIssueType.Warning
             }
 
     /// test if --test:ErrorRanges flag is set
     let errorRangesArg =
-        let regex = Regex(@"^(/|--)test:ErrorRanges$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+        let regex =
+            Regex(@"^(/|--)test:ErrorRanges$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+
         fun arg -> regex.IsMatch(arg)
 
     /// test if --vserrors flag is set
     let vsErrorsArg =
-        let regex = Regex(@"^(/|--)vserrors$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+        let regex =
+            Regex(@"^(/|--)vserrors$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+
         fun arg -> regex.IsMatch(arg)
 
     /// test if an arg is a path to fsc.exe
-    let fscExeArg = 
-        let regex = Regex(@"fsc(\.exe)?$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+    let fscExeArg =
+        let regex =
+            Regex(@"fsc(\.exe)?$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+
         fun arg -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
@@ -185,8 +209,9 @@ type internal FscCompiler(legacyReferenceResolver) =
         // compensate for this in case caller didn't know
         let args =
             match args with
-            | [||] | null -> [|"fsc"|]
-            | a when not <| fscExeArg a[0] -> Array.append [|"fsc"|] a
+            | [||]
+            | null -> [| "fsc" |]
+            | a when not <| fscExeArg a[0] -> Array.append [| "fsc" |] a
             | _ -> args
 
         let errorRanges = args |> Seq.exists errorRangesArg
@@ -194,27 +219,45 @@ type internal FscCompiler(legacyReferenceResolver) =
 
         let ok, result = compiler.Compile(args)
         let exitCode = if ok then 0 else 1
-        
+
         let lines =
             Seq.append result.Errors result.Warnings
             |> Seq.map convert
             |> Seq.map (fun issue ->
-                let issueTypeStr = 
+                let issueTypeStr =
                     match issue.Type with
-                    | Error -> if vsErrors then sprintf "%s error" issue.Subcategory else "error"
-                    | Warning -> if vsErrors then sprintf "%s warning" issue.Subcategory else "warning"
+                    | Error ->
+                        if vsErrors then
+                            sprintf "%s error" issue.Subcategory
+                        else
+                            "error"
+                    | Warning ->
+                        if vsErrors then
+                            sprintf "%s warning" issue.Subcategory
+                        else
+                            "warning"
 
                 let locationStr =
                     if vsErrors then
-                        sprintf "(%d,%d,%d,%d)" issue.Location.StartLine issue.Location.StartColumn issue.Location.EndLine issue.Location.EndColumn
+                        sprintf
+                            "(%d,%d,%d,%d)"
+                            issue.Location.StartLine
+                            issue.Location.StartColumn
+                            issue.Location.EndLine
+                            issue.Location.EndColumn
                     elif errorRanges then
-                        sprintf "(%d,%d-%d,%d)" issue.Location.StartLine issue.Location.StartColumn issue.Location.EndLine issue.Location.EndColumn
+                        sprintf
+                            "(%d,%d-%d,%d)"
+                            issue.Location.StartLine
+                            issue.Location.StartColumn
+                            issue.Location.EndLine
+                            issue.Location.EndColumn
                     else
                         sprintf "(%d,%d)" issue.Location.StartLine issue.Location.StartColumn
 
-                sprintf "%s: %s %s: %s" locationStr issueTypeStr issue.Code issue.Text
-                )
+                sprintf "%s: %s %s: %s" locationStr issueTypeStr issue.Code issue.Text)
             |> Array.ofSeq
+
         (exitCode, lines)
 
 module internal CompilerHelpers =
@@ -224,15 +267,18 @@ module internal CompilerHelpers =
     let parseCommandLine (commandLine: string) =
         let folder (inQuote: bool, currArg: string, argLst: string list) ch =
             match (ch, inQuote) with
-            | '"', _ ->
-                (not inQuote, currArg, argLst)
+            | '"', _ -> (not inQuote, currArg, argLst)
             | ' ', false ->
-                if currArg.Length > 0 then (inQuote, "", currArg :: argLst)
-                else (inQuote, "", argLst)
-            | _ ->
-                (inQuote, currArg + (string ch), argLst)
+                if currArg.Length > 0 then
+                    (inQuote, "", currArg :: argLst)
+                else
+                    (inQuote, "", argLst)
+            | _ -> (inQuote, currArg + (string ch), argLst)
 
-        seq { yield! commandLine.ToCharArray(); yield ' ' }
+        seq {
+            yield! commandLine.ToCharArray()
+            yield ' '
+        }
         |> Seq.fold folder (false, "", [])
         |> (fun (_, _, args) -> args)
         |> List.rev
@@ -247,17 +293,26 @@ module internal CompilerHelpers =
         Console.SetOut(sw)
         let ew = new StringWriter()
         Console.SetError(ew)
+
         try
             try
                 Directory.SetCurrentDirectory directory
                 let exitCode, output = FscCompiler(legacyReferenceResolver).Compile(args)
-                let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
-                let consoleError = ew.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
+
+                let consoleOut =
+                    sw.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+
+                let consoleError =
+                    ew.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+
                 exitCode, [| yield! consoleOut; yield! output |], consoleError
             with e ->
-                1, [| "Internal compiler error"; e.ToString().Replace('\n', ' ').Replace('\r', ' ') |], [| |]
+                1,
+                [|
+                    "Internal compiler error"
+                    e.ToString().Replace('\n', ' ').Replace('\r', ' ')
+                |],
+                [||]
         finally
             Console.SetOut(origOut)
             Console.SetError(origError)
-    
-

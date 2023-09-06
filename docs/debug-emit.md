@@ -87,7 +87,7 @@ The intended debug points for constructs are determined by syntax as follows.  P
 
 * The bodies of functions, methods, lambdas and initialization code for top-level-bindings are all processed as control flow
 
-* Each CAPITAL-EXPR below is processed as control-flow (the bodies of loops, conditionals etc.)
+* Each Upper-Cased EXPR below is processed as control-flow (the bodies of loops, conditionals etc.)
 
 * Leaf expressions are the other composite expressions like applications that are not covered by the other constructs.
 
@@ -310,7 +310,7 @@ Breakpoints tend to be less problematic.
 
 ### FeeFee and F00F00 debug points (Hidden and JustMyCodeWithNoSource)
 
-Some fragments of code use constructs generate calls and other IL code that should not have debug points and not participate in "Step Into", for example. These are generated in IlxGen as "FeeFee" debug points. See the [the Portable PDB spec linked here](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
+Some fragments of code use constructs generate calls and other IL code that should not have debug points and not participate in "Step Into", for example. These are generated in IlxGen as "FeeFee" debug points. See the [the Portable PDB spec linked here](https://learn.microsoft.com/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
 
 > TODO: There is also the future prospect of generating `JustMyCodeWithNoSource` (0xF00F00) debug points but these are not yet emitted by F#.  We should check what this is and when the C# compiler emits these.
 

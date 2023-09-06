@@ -6,7 +6,7 @@ The tests are NUNIT test cases. They test a very wide range of compiler, interac
 
 The bulk of the test cases are enumerated in tests.fs, these are the old cambridge test suite.  They build on a test-suite ported from windows batch files.  They run the compiler and fsi as seperate processes, when built for the coreclr it runs the coreclr versions using dotnet.exe 
 
-The framework and utilities can be found in test-framework.fs, single-test.fs, coreclr_utilities.fs.
+The framework and utilities can be found in test-framework.fs, single-test.fs.
 
 test cases look similar to:
 ````

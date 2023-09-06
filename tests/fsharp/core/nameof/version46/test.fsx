@@ -32,7 +32,7 @@
 //<Expects id="FS0039" status="error" span="(262,17)">The value or constructor 'nameof' is not defined.</Expects>
 //<Expects id="FS0039" status="error" span="(266,17)">The value or constructor 'nameof' is not defined.</Expects>
 //<Expects id="FS0267" status="error" span="(271,33)">This is not a valid constant expression or custom attribute value</Expects>
-//<Expects id="FS0267" status="error" span="(271,23)">This is not a valid constant expression or custom attribute value</Expects>
+//<Expects id="FS3350" status="error" span="(271,23)">Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 4.6. Please use language version 'PREVIEW' or greater.</Expects>
 //<Expects id="FS0039" status="error" span="(271,33)">The value or constructor 'nameof' is not defined.</Expects>
 //<Expects id="FS0267" status="error" span="(271,33)">This is not a valid constant expression or custom attribute value</Expects>
 //<Expects id="FS0267" status="error" span="(271,23)">This is not a valid constant expression or custom attribute value</Expects>

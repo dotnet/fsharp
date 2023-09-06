@@ -3,6 +3,7 @@
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <DisableCompilerRedirection>true</DisableCompilerRedirection>
+    <NoWarn>$(NoWarn);NU1504</NoWarn>
 </PropertyGroup>
 
   <ItemGroup>

@@ -75,7 +75,7 @@ type ValRef with
 let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi: Tainted<ProvidedMethodBase>) =
     let returnType =
         if mi.PUntaint((fun mi -> mi.IsConstructor), m) then
-            mi.PApply((fun mi -> mi.DeclaringType), m)
+            mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m)
         else mi.Coerce<ProvidedMethodInfo>(m).PApply((fun mi -> mi.ReturnType), m)
     let ty = ImportProvidedType amap m returnType
     if isVoidTy amap.g ty then None else Some ty
@@ -344,8 +344,8 @@ type ILFieldInit with
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
     static member FromProvidedObj m (v: obj) =
         match v with
-        | null -> ILFieldInit.Null
-        | _ ->
+        | Null -> ILFieldInit.Null
+        | NonNull v ->
             let objTy = v.GetType()
             let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
             match v with
@@ -393,8 +393,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
-    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase)), m) with
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name), m), mi.PUntaint((fun mi -> mi.DeclaringType.Name), m)), m))
+    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type isntantiation should not be needed
     | meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
@@ -404,7 +404,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
     else
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> mi.DeclaringType.Name), m)), m))
+        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))
 
 #endif
 
@@ -437,6 +437,11 @@ type ILTypeInfo =
     member x.Name     = x.ILTypeRef.Name
 
     member x.IsValueType = x.RawMetadata.IsStructOrEnum
+
+    /// Indicates if the type is marked with the [<IsReadOnly>] attribute.
+    member x.IsReadOnly (g: TcGlobals) =
+        x.RawMetadata.CustomAttrs
+        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
 
     member x.Instantiate inst =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
@@ -644,7 +649,7 @@ type MethInfo =
         | DefaultStructCtor(_, ty) -> ty
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
-              ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType), m))
+              ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -861,9 +866,7 @@ type MethInfo =
     member x.IsDispatchSlot =
         match x with
         | ILMeth(_g, ilmeth, _) -> ilmeth.IsVirtual
-        | FSMeth(g, _, vref, _) as x ->
-            isInterfaceTy g x.ApparentEnclosingType  ||
-            vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
+        | FSMeth(_, _, vref, _) -> vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> x.IsVirtual // Note: follow same implementation as ILMeth
@@ -993,15 +996,22 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
-    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute.
+    member x.IsOnReadOnlyType = 
+        let g = x.TcGlobals
+        let typeInfo = ILTypeInfo.FromType g x.ApparentEnclosingType
+        typeInfo.IsReadOnly g
+
+    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute on method or struct level.
     /// Must be an instance method.
     /// Receiver must be a struct type.
     member x.IsReadOnly =
-        // Perf Review: Is there a way we can cache this result?
+        // Perf Review: Is there a way we can cache this result?        
+
         x.IsInstance &&
         x.IsStruct &&
         match x with
-        | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
+        | ILMeth (g, ilMethInfo, _) -> 
+             ilMethInfo.IsReadOnly g || x.IsOnReadOnlyType
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
@@ -1090,6 +1100,21 @@ type MethInfo =
     member x.GetFSharpReturnType(amap, m, minst) =
         x.GetCompiledReturnType(amap, m, minst) |> GetFSharpViewOfReturnType amap.g
 
+    member x.GetParamNames() =
+        match x with
+        | FSMeth (g, _, vref, _) ->
+            ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref |> List.mapSquared (fun (ParamNameAndType (name, _)) -> name |> Option.map (fun x -> x.idText))
+        | ILMeth (ilMethInfo = ilminfo) ->
+            // A single group of tupled arguments
+            [ ilminfo.ParamMetadata |> List.map (fun x -> x.Name) ]
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth (_, mi, _, m) ->
+            // A single group of tupled arguments
+            [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
+                yield p.PUntaint((fun p -> Some p.Name), m) ] ]
+#endif
+        | _ -> []
+
     /// Get the parameter types of a method info
     member x.GetParamTypes(amap, m, minst) =
         match x with
@@ -1127,7 +1152,7 @@ type MethInfo =
         | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
-            if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType), m)) ] // find the type of the 'this' argument
+            if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m)) ] // find the type of the 'this' argument
             else []
 #endif
 
@@ -1286,7 +1311,7 @@ type MethInfo =
                         let paramTy =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
-                            | parameterType -> ImportProvidedType amap m parameterType
+                            | Tainted.NonNull parameterType -> ImportProvidedType amap m parameterType
                         yield ParamNameAndType(paramName, paramTy) ] ]
 
 #endif
@@ -1339,7 +1364,7 @@ type ILFieldInfo =
         match x with
         | ILFieldInfo(tinfo, _) -> tinfo.ToType
 #if !NO_TYPEPROVIDERS
-        | ProvidedField(amap, fi, m) -> (ImportProvidedType amap m (fi.PApply((fun fi -> fi.DeclaringType), m)))
+        | ProvidedField(amap, fi, m) -> (ImportProvidedType amap m (fi.PApply((fun fi -> nonNull<ProvidedType> fi.DeclaringType), m)))
 #endif
 
     member x.ApparentEnclosingAppType = x.ApparentEnclosingType
@@ -1360,7 +1385,7 @@ type ILFieldInfo =
         match x with
         | ILFieldInfo(tinfo, _) -> tinfo.ILTypeRef
 #if !NO_TYPEPROVIDERS
-        | ProvidedField(amap, fi, m) -> (ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.DeclaringType), m))).TypeRef
+        | ProvidedField(amap, fi, m) -> (ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> nonNull<ProvidedType> fi.DeclaringType), m))).TypeRef
 #endif
 
      /// Get the scope used to interpret IL metadata
@@ -1654,7 +1679,7 @@ type PropInfo =
         | FSProp(_, ty, _, _) -> ty
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(amap, pi, m) ->
-            ImportProvidedType amap m (pi.PApply((fun pi -> pi.DeclaringType), m))
+            ImportProvidedType amap m (pi.PApply((fun pi -> nonNull<ProvidedType> pi.DeclaringType), m)) 
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -2102,7 +2127,7 @@ type EventInfo =
         | ILEvent ileinfo -> ileinfo.ApparentEnclosingType
         | FSEvent (_, p, _, _) -> p.ApparentEnclosingType
 #if !NO_TYPEPROVIDERS
-        | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> ei.DeclaringType), m))
+        | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> nonNull<ProvidedType> ei.DeclaringType), m))
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -2263,6 +2288,12 @@ type EventInfo =
         | ProvidedEvent (_, ei, _) -> ProvidedEventInfo.TaintedGetHashCode ei
 #endif
     override x.ToString() = "event " + x.EventName
+    
+    /// Get custom attributes for events (only applicable for IL events)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILEvent(ILEventInfo(_, ilEventDef))-> ilEventDef.CustomAttrs
+        | _ -> ILAttributes.Empty
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures
@@ -2340,3 +2371,19 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: P
 let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod, Some pinfo) else None)
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
+
+let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
+    if not (pinfo.HasGetter && pinfo.HasSetter) then
+        None
+    else
+        match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
+        | Some getValRef, Some setValRef ->
+            if getValRef.Accessibility <> setValRef.Accessibility then
+                Some (getValRef, setValRef)
+            else
+                match getValRef.ValReprInfo with
+                | Some getValReprInfo when
+                    // Getter has an index parameter
+                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
+                | _ -> None 
+        | _ -> None

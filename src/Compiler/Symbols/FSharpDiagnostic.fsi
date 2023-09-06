@@ -71,11 +71,16 @@ type public FSharpDiagnostic =
         severity: FSharpDiagnosticSeverity *
         range *
         lastPosInFile: (int * int) *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool ->
+        diagnostic: PhasedDiagnostic *
+        severity: FSharpDiagnosticSeverity *
+        range *
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
@@ -95,7 +100,7 @@ type internal DiagnosticsScope =
 
     interface IDisposable
 
-    new: unit -> DiagnosticsScope
+    new: bool -> DiagnosticsScope
 
     member Diagnostics: FSharpDiagnostic list
 
@@ -106,7 +111,9 @@ type internal CompilationDiagnosticLogger =
     inherit DiagnosticsLogger
 
     /// Create the diagnostics logger
-    new: debugName: string * options: FSharpDiagnosticOptions -> CompilationDiagnosticLogger
+    new:
+        debugName: string * options: FSharpDiagnosticOptions * ?preprocess: (PhasedDiagnostic -> PhasedDiagnostic) ->
+            CompilationDiagnosticLogger
 
     /// Get the captured diagnostics
     member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
@@ -120,7 +127,8 @@ module internal DiagnosticHelpers =
         fileInfo: (int * int) *
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic list
 
     val CreateDiagnostics:
@@ -128,5 +136,6 @@ module internal DiagnosticHelpers =
         allErrors: bool *
         mainInputFileName: string *
         seq<PhasedDiagnostic * FSharpDiagnosticSeverity> *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic[]

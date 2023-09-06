@@ -14,7 +14,7 @@ stages:
   jobs:
   - job: Insert_VS
     pool:
-      name: NetCore1ESPool-Internal
+      name: NetCore1ESPool-Svc-Internal
       demands: ImageOverride -equals windows.vs2019.amd64
     variables:
     - group: DotNet-VSTS-Infra-Access

@@ -65,6 +65,7 @@ type LexArgs =
         mutable ifdefStack: LexerIfdefStack
         mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
+        mutable interpolationDelimiterLength: int
     }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -93,17 +94,20 @@ let mkLexargs
         applyLineDirectives = applyLineDirectives
         stringNest = []
         pathMap = pathMap
+        interpolationDelimiterLength = 0
     }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use _ = UseBuildPhase BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     LexbufCommentStore.ClearComments lexbuf
 
     try
         f ()
-    with e ->
+    with
+    | :? OperationCanceledException -> reraise ()
+    | e ->
         raise (
             WrappedError(
                 e,
@@ -202,6 +206,10 @@ type LexerStringFinisher =
                     else SynStringKind.Regular
 
                 STRING(stringBufferAsString buf, synStringKind, cont))
+
+type LexerStringArgs = ByteBuffer * LexerStringFinisher * range * LexerStringKind * LexArgs
+type SingleLineCommentArgs = (range * StringBuilder) option * int * range * range * LexArgs
+type BlockCommentArgs = int * range * LexArgs
 
 let addUnicodeString (buf: ByteBuffer) (x: string) =
     buf.EmitBytes(Encoding.Unicode.GetBytes x)
@@ -384,7 +392,7 @@ module Keywords =
             (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
-            FSHARP, "__token_ODECLEND", ODECLEND
+            FSHARP, "__token_ODECLEND", ODECLEND range0
             FSHARP, "__token_OTHEN", OTHEN
             FSHARP, "__token_OELSE", OELSE
             FSHARP, "__token_OEND", OEND
@@ -428,8 +436,6 @@ module Keywords =
             tab.Add(keyword, token)
 
         tab
-
-    let KeywordToken s = keywordTable[s]
 
     let IdentifierToken args (lexbuf: Lexbuf) (s: string) =
         if IsCompilerGeneratedName s then
@@ -480,3 +486,7 @@ module Keywords =
             | "__SOURCE_FILE__" -> KEYWORD_STRING(s, System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
+
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100

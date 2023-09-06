@@ -44,6 +44,13 @@ val StopProcessing<'T> : exn
 /// Represents a diagnostic exeption whose text comes via SR.*
 exception DiagnosticWithText of number: int * message: string * range: range
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of
+    number: int *
+    message: string *
+    range: range *
+    enabledByLangFeature: bool
+
 /// Creates a diagnostic exeption whose text comes via SR.*
 val Error: (int * string) * range -> exn
 
@@ -77,6 +84,9 @@ exception DiagnosticWithSuggestions of
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
 
+/// Creates a DiagnosticEnabledWithLanguageFeature whose text comes via SR.*
+val ErrorEnabledWithLanguageFeature: (int * string) * range * bool -> exn
+
 val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 
 val inline protectAssemblyExplorationF: dflt: (string * string -> 'T) -> f: (unit -> 'T) -> 'T
@@ -85,10 +95,20 @@ val inline protectAssemblyExplorationNoReraise: dflt1: 'T -> dflt2: 'T -> f: (un
 
 val AttachRange: m: range -> exn: exn -> exn
 
+/// Represnts an early exit from parsing, checking etc, for example because 'maxerrors' has been reached.
 type Exiter =
-    abstract member Exit: int -> 'T
+    abstract Exit: int -> 'T
 
+/// An exiter that quits the process if Exit is called.
 val QuitProcessExiter: Exiter
+
+/// An exiter that raises StopProcessingException if Exit is called, saving the exit code in ExitCode.
+type StopProcessingExiter =
+    interface Exiter
+
+    new: unit -> StopProcessingExiter
+
+    member ExitCode: int with get, set
 
 /// Closed enumeration of build phases.
 [<RequireQualifiedAccess>]
@@ -166,6 +186,7 @@ type PhasedDiagnostic =
     ///
     member Subcategory: unit -> string
 
+/// Represents a capability to log diagnostics
 [<AbstractClass>]
 type DiagnosticsLogger =
 
@@ -173,18 +194,27 @@ type DiagnosticsLogger =
 
     member DebugDisplay: unit -> string
 
-    abstract member DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    /// Emit a diagnostic to the logger
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
-    abstract member ErrorCount: int
+    /// Get the number of error diagnostics reported
+    abstract ErrorCount: int
 
+    /// Checks if ErrorCount > 0
+    member CheckForErrors: unit -> bool
+
+/// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
+/// Represents a DiagnosticsLogger that ignores diagnostics and asserts
 val AssertFalseDiagnosticsLogger: DiagnosticsLogger
 
+/// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
+/// eagerly.
 type CapturingDiagnosticsLogger =
     inherit DiagnosticsLogger
 
-    new: nm: string -> CapturingDiagnosticsLogger
+    new: nm: string * ?eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) -> CapturingDiagnosticsLogger
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
@@ -194,6 +224,7 @@ type CapturingDiagnosticsLogger =
 
     override ErrorCount: int
 
+/// Thread statics for the installed diagnostic logger
 [<Class>]
 type DiagnosticsThreadStatics =
 
@@ -216,26 +247,41 @@ module DiagnosticsLoggerExtensions =
 
     type DiagnosticsLogger with
 
+        /// Report a diagnostic as an error and recover
         member ErrorR: exn: exn -> unit
 
+        /// Report a diagnostic as a warning and recover
         member Warning: exn: exn -> unit
 
+        /// Report a diagnostic as an error and raise `ReportedError`
         member Error: exn: exn -> 'T
 
+        /// Simulates a diagnostic. For test purposes only.
         member SimulateError: diagnostic: PhasedDiagnostic -> 'T
 
+        /// Perform error recovery from an exception if possible.
+        /// - StopProcessingExn is not caught.
+        /// - ReportedError is caught and ignored.
+        /// - TargetInvocationException is unwrapped
+        /// - If precisely a System.Exception or ArgumentException then the range is attached as InternalError.
+        /// - Other exceptions are unchanged
+        ///
+        /// All are reported via the installed diagnostics logger
         member ErrorRecovery: exn: exn -> m: range -> unit
 
+        /// Perform error recovery from an exception if possible, including catching StopProcessingExn
         member StopProcessingRecovery: exn: exn -> m: range -> unit
 
+        /// Like ErrorRecover by no range is attached to System.Exception and ArgumentException.
         member ErrorRecoveryNoRange: exn: exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushThreadBuildPhaseUntilUnwind: phase: BuildPhase -> IDisposable
+val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushDiagnosticsLoggerPhaseUntilUnwind:
-    diagnosticsLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+
+val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
@@ -297,17 +343,19 @@ val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
-val ErrorD: err: exn -> OperationResult<'T>
+val inline ErrorD: err: exn -> OperationResult<'T>
 
-val WarnD: err: exn -> OperationResult<unit>
+val inline WarnD: err: exn -> OperationResult<unit>
 
 val CompleteD: OperationResult<unit>
 
-val ResultD: x: 'T -> OperationResult<'T>
+val inline ResultD: x: 'T -> OperationResult<'T>
 
 val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
-val (++): res: OperationResult<'T> -> f: ('T -> OperationResult<'b>) -> OperationResult<'b>
+/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
+/// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>
+val inline bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
 val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
@@ -320,23 +368,23 @@ type TrackErrorsBuilder =
 
     new: unit -> TrackErrorsBuilder
 
-    member Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
+    member inline Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
 
-    member Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
+    member inline Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
 
-    member Delay: fn: (unit -> 'b) -> (unit -> 'b)
+    member inline Delay: fn: (unit -> 'b) -> (unit -> 'b)
 
-    member For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
+    member inline For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Return: res: 'g -> OperationResult<'g>
+    member inline Return: res: 'g -> OperationResult<'g>
 
-    member ReturnFrom: res: 'f -> 'f
+    member inline ReturnFrom: res: 'f -> 'f
 
-    member Run: fn: (unit -> 'T) -> 'T
+    member inline Run: fn: (unit -> 'T) -> 'T
 
-    member While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
+    member inline While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Zero: unit -> OperationResult<unit>
+    member inline Zero: unit -> OperationResult<unit>
 
 val trackErrors: TrackErrorsBuilder
 
@@ -379,6 +427,15 @@ val NewlineifyErrorString: message: string -> string
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text: string -> string
 
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type SuppressLanguageFeatureCheck =
+    | Yes
+    | No
+
+val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
+
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
@@ -386,11 +443,10 @@ val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature:
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
-val languageFeatureNotSupportedInLibraryError:
-    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> 'T
+val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
-    new: maxDepth: int -> StackGuard
+    new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard: f: (unit -> 'T) -> 'T

@@ -48,11 +48,6 @@ module internal FSharpEnvironment =
         let ofString s =
             if String.IsNullOrEmpty(s) then None else Some(s)
 
-    // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0".
-    // See: ndp\clr\src\BCL\System\IO\Path.cs
-    let maxPath = 260
-    let maxDataLength = (System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
-
     let internal tryCurrentDomain () =
         let pathFromCurrentDomain = AppDomain.CurrentDomain.BaseDirectory
 
@@ -60,7 +55,6 @@ module internal FSharpEnvironment =
             Some pathFromCurrentDomain
         else
             None
-
 
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
@@ -110,6 +104,7 @@ module internal FSharpEnvironment =
     let toolingCompatibleVersions =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [|
+                "net481"
                 "net48"
                 "net472"
                 "net471"
@@ -123,6 +118,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net8.0"
                 "net7.0"
                 "net6.0"
                 "net5.0"
@@ -192,7 +188,9 @@ module internal FSharpEnvironment =
 
                 for p in searchToolPaths path compilerToolPaths do
                     let fileName = Path.Combine(p, assemblyName)
-                    if File.Exists fileName then yield fileName
+
+                    if File.Exists fileName then
+                        yield fileName
             }
 
         let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =

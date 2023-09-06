@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -13,8 +12,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -22,24 +22,21 @@ type internal DiagnosticsType =
     | Semantic
 
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
-type internal FSharpDocumentDiagnosticAnalyzer
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let diagnosticEqualityComparer =
-        { new IEqualityComparer<FSharpDiagnostic> with 
+        { new IEqualityComparer<FSharpDiagnostic> with
 
-            member _.Equals (x, y) =
-                x.FileName = y.FileName &&
-                x.StartLine = y.StartLine &&
-                x.EndLine = y.EndLine &&
-                x.StartColumn = y.StartColumn &&
-                x.EndColumn = y.EndColumn &&
-                x.Severity = y.Severity &&
-                x.Message = y.Message &&
-                x.Subcategory = y.Subcategory &&
-                x.ErrorNumber = y.ErrorNumber
+            member _.Equals(x, y) =
+                x.FileName = y.FileName
+                && x.StartLine = y.StartLine
+                && x.EndLine = y.EndLine
+                && x.StartColumn = y.StartColumn
+                && x.EndColumn = y.EndColumn
+                && x.Severity = y.Severity
+                && x.Message = y.Message
+                && x.Subcategory = y.Subcategory
+                && x.ErrorNumber = y.ErrorNumber
 
             member _.GetHashCode x =
                 let mutable hash = 17
@@ -51,81 +48,89 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 hash <- hash * 23 + x.Message.GetHashCode()
                 hash <- hash * 23 + x.Subcategory.GetHashCode()
                 hash <- hash * 23 + x.ErrorNumber.GetHashCode()
-                hash 
+                hash
         }
 
-    static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) = 
-        async {
-            let! ct = Async.CancellationToken
+    static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
+        cancellableTask {
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                    "context.diagnostics.type",
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax -> "syntax"
+                    | DiagnosticsType.Semantic -> "semantic"
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
+
+            let! ct = CancellableTask.getCancellationToken ()
+
+            let! sourceText = document.GetTextAsync(ct)
+            let filePath = document.FilePath
+
+            let errors = HashSet<FSharpDiagnostic>(diagnosticEqualityComparer)
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
-            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-            let filePath = document.FilePath
+            match diagnosticType with
+            | DiagnosticsType.Syntax ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
 
-            let! errors = 
-                async {
-                    match diagnosticType with
-                    | DiagnosticsType.Semantic ->
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
-                        // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                        let allDiagnostics = HashSet(checkResults.Diagnostics, diagnosticEqualityComparer)
-                        allDiagnostics.ExceptWith(parseResults.Diagnostics)
-                        return Seq.toArray allDiagnostics
-                    | DiagnosticsType.Syntax ->
-                        return parseResults.Diagnostics
-                }
-            
-            let results = 
-                HashSet(errors, diagnosticEqualityComparer)
-                |> Seq.choose(fun diagnostic ->
-                    if diagnostic.StartLine = 0 || diagnostic.EndLine = 0 then
-                        // F# diagnostic line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
-                        None
-                    else
-                        // Roslyn line numbers are zero-based
-                        let linePositionSpan = LinePositionSpan(LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn), LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn))
+            | DiagnosticsType.Semantic ->
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+                errors.ExceptWith(parseResults.Diagnostics)
+
+            if errors.Count = 0 then
+                return ImmutableArray.Empty
+            else
+                let iab = ImmutableArray.CreateBuilder(errors.Count)
+
+                for diagnostic in errors do
+                    if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
+                        let linePositionSpan =
+                            LinePositionSpan(
+                                LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn),
+                                LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn)
+                            )
+
                         let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
-                        
+
                         // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
                         let correctedTextSpan =
-                            if textSpan.End <= sourceText.Length then 
-                                textSpan 
-                            else 
-                                let start =
-                                    min textSpan.Start (sourceText.Length - 1)
-                                    |> max 0
+                            if textSpan.End <= sourceText.Length then
+                                textSpan
+                            else
+                                let start = min textSpan.Start (sourceText.Length - 1) |> max 0
 
                                 TextSpan.FromBounds(start, sourceText.Length)
-                        
-                        let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                        Some(RoslynHelpers.ConvertError(diagnostic, location)))
-                |> Seq.toImmutableArray
-            return results
+
+                        let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
+                        iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
+
+                return iab.ToImmutable()
         }
 
     interface IFSharpDocumentDiagnosticAnalyzer with
 
-        member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMetadata then Task.FromResult(ImmutableArray.Empty)
+        member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMetadata then
+                Task.FromResult ImmutableArray.Empty
             else
+                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) }
+                |> CancellableTask.start cancellationToken
 
-            asyncMaybe {
-                return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                    |> liftAsync
-            } 
-            |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
-        member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Task.FromResult(ImmutableArray.Empty)
+        member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
+                Task.FromResult ImmutableArray.Empty
             else
-
-            asyncMaybe {
-                return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                    |> liftAsync
-            }
-            |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) }
+                |> CancellableTask.start cancellationToken

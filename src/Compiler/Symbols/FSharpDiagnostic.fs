@@ -71,15 +71,15 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(diagnostic, severity, fallbackRange: range, suggestNames: bool) =
-        let m = match GetRangeOfDiagnostic diagnostic with Some m -> m | None -> fallbackRange 
-        let msg = buildString (fun buf -> OutputPhasedDiagnostic buf diagnostic false suggestNames)
-        let errorNum = GetDiagnosticNumber diagnostic
+    static member CreateFromException(diagnostic: PhasedDiagnostic, severity, fallbackRange: range, suggestNames: bool, flatErrors: bool) =
+        let m = match diagnostic.Range with Some m -> m | None -> fallbackRange 
+        let msg = diagnostic.FormatCore(flatErrors, suggestNames)
+        let errorNum = diagnostic.Number
         FSharpDiagnostic(m, severity, msg, diagnostic.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(diagnostic, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
-        let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, fallbackRange, suggestNames)
+    static member CreateFromExceptionAndAdjustEof(diagnostic, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool, flatErrors: bool) =
+        let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, fallbackRange, suggestNames, flatErrors)
 
         // Adjust to make sure that diagnostics reported at Eof are shown at the linesCount
         let startLine, startChanged = min (Line.toZ diagnostic.Range.StartLine, false) (linesCount, true)
@@ -102,18 +102,18 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
 /// Use to reset error and warning handlers            
 [<Sealed>]
-type DiagnosticsScope()  = 
+type DiagnosticsScope(flatErrors: bool)  = 
     let mutable diags = [] 
-    let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    let unwindBP = UseBuildPhase BuildPhase.TypeCheck
     let unwindEL =        
-        PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> 
+        UseDiagnosticsLogger 
             { new DiagnosticsLogger("DiagnosticsScope") with 
 
                 member _.DiagnosticSink(diagnostic, severity) = 
-                    let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, false)
+                    let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, false, flatErrors)
                     diags <- diagnostic :: diags
 
-                member _.ErrorCount = diags.Length })
+                member _.ErrorCount = diags.Length }
         
     member _.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
@@ -126,7 +126,7 @@ type DiagnosticsScope()  =
     
     interface IDisposable with
         member _.Dispose() = 
-            unwindEL.Dispose() (* unwind pushes when DiagnosticsScope disposes *)
+            unwindEL.Dispose()
             unwindBP.Dispose()
 
     /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and
@@ -139,7 +139,7 @@ type DiagnosticsScope()  =
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
     static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
-        use diagnosticsScope = new DiagnosticsScope()
+        use diagnosticsScope = new DiagnosticsScope(false)
         let res = 
             try 
                 Some (f())
@@ -158,55 +158,52 @@ type DiagnosticsScope()  =
             | None -> err ""
 
 /// A diagnostics logger that capture diagnostics, filtering them according to warning levels etc.
-type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDiagnosticOptions) = 
+type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDiagnosticOptions, ?preprocess: (PhasedDiagnostic -> PhasedDiagnostic)) =
     inherit DiagnosticsLogger("CompilationDiagnosticLogger("+debugName+")")
             
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
     override _.DiagnosticSink(diagnostic, severity) = 
-        if ReportDiagnosticAsError options (diagnostic, severity) then
+        let diagnostic =
+            match preprocess with
+            | Some f -> f diagnostic
+            | None -> diagnostic
+
+        if diagnostic.ReportAsError (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportDiagnosticAsWarning options (diagnostic, severity) then
+        elif diagnostic.ReportAsWarning (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Warning)
-        elif ReportDiagnosticAsInfo options (diagnostic, severity) then
+        elif diagnostic.ReportAsInfo (options, severity) then
             diagnostics.Add(diagnostic, severity)
-    
+
     override _.ErrorCount = errorCount
 
     member _.GetDiagnostics() = diagnostics.ToArray()
 
 module DiagnosticHelpers =                            
 
-    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic, severity, suggestNames) = 
+    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic: PhasedDiagnostic, severity, suggestNames, flatErrors) = 
         [ let severity = 
-               if ReportDiagnosticAsError options (diagnostic, severity) then
+               if diagnostic.ReportAsError (options, severity) then
                    FSharpDiagnosticSeverity.Error
                else
                    severity
 
           if severity = FSharpDiagnosticSeverity.Error ||
-             ReportDiagnosticAsWarning options (diagnostic, severity) ||
-             ReportDiagnosticAsInfo options (diagnostic, severity) then 
+             diagnostic.ReportAsWarning (options, severity) ||
+             diagnostic.ReportAsInfo (options, severity) then 
 
-            let oneDiagnostic diagnostic =
-                [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
-                  // Not ideal, but it's hard to see what else to do.
-                  let fallbackRange = rangeN mainInputFileName 1
-                  let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, severity, fallbackRange, fileInfo, suggestNames)
-                  let fileName = diagnostic.Range.FileName
-                  if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
-                      yield diagnostic ]
+            // We use the first line of the file as a fallbackRange for reporting unexpected errors.
+            // Not ideal, but it's hard to see what else to do.
+            let fallbackRange = rangeN mainInputFileName 1
+            let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, severity, fallbackRange, fileInfo, suggestNames, flatErrors)
+            let fileName = diagnostic.Range.FileName
+            if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
+                yield diagnostic ]
 
-            let mainDiagnostic, relatedDiagnostics = SplitRelatedDiagnostics diagnostic 
-
-            yield! oneDiagnostic mainDiagnostic
-
-            for e in relatedDiagnostics do 
-                yield! oneDiagnostic e ]
-
-    let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames) = 
+    let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames, flatErrors) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
         [| for diagnostic, severity in diagnostics do 
-              yield! ReportDiagnostic (options, allErrors, mainInputFileName, fileInfo, diagnostic, severity, suggestNames) |]
+              yield! ReportDiagnostic (options, allErrors, mainInputFileName, fileInfo, diagnostic, severity, suggestNames, flatErrors) |]

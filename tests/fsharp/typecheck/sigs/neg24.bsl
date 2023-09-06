@@ -21,7 +21,7 @@ neg24.fs(302,33,302,34): typecheck error FS0001: All elements of a list must be 
 
 neg24.fs(302,36,302,37): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'unit'. This element has type 'int'.
 
-neg24.fs(304,9,305,34): typecheck error FS0193: Type constraint mismatch. The type 
+neg24.fs(305,24,305,25): typecheck error FS0193: Type constraint mismatch. The type 
     'int'    
 is not compatible with type
     'unit'    

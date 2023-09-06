@@ -4,7 +4,7 @@ open FSharp.Compiler.EditorServices
 open NUnit.Framework
 
 let getCompletionInfo lineText (line, column) source =
-    let parseResults, checkResults = getParseAndCheckResults source
+    let parseResults, checkResults = getParseAndCheckResultsPreview source
     let plid = QuickParse.GetPartialLongNameEx(lineText, column)
     checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, plid)
 
@@ -15,8 +15,7 @@ let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
     let itemNames = getCompletionItemNames completionInfo |> set
 
     for name in names do
-        Assert.That(Set.contains name itemNames, name)
-
+        Assert.That(Set.contains name itemNames, $"{name} not found in {itemNames}")
 
 [<Test>]
 let ``Expr - record - field 01 - anon module`` () =
@@ -57,3 +56,19 @@ let record = { Field = 1 }
 {  }
 """
     assertHasItemWithNames ["Field"; "record"] info
+
+[<Test>]
+let ``Underscore dot lambda - completion`` () =
+    let info = getCompletionInfo "    |> _.Len" (4, 11) """
+let myFancyFunc (x:string) = 
+    x 
+    |> _.Len"""
+    assertHasItemWithNames ["Length"] info
+
+[<Test>]
+let ``Underscore dot lambda - method completion`` () =
+    let info = getCompletionInfo "    |> _.ToL" (4, 11) """
+let myFancyFunc (x:string) = 
+    x 
+    |> _.ToL"""
+    assertHasItemWithNames ["ToLower"] info

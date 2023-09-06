@@ -1,11 +1,13 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Build.UnitTests
 
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open FSharp.Build
-open NUnit.Framework
+open Xunit
 open System.Collections.Generic
+open FSharp.Test
 
 type MockEngine() =
     member val Errors = ResizeArray() with get
@@ -48,13 +50,12 @@ type SourceRoot =
 
 /// these tests are ported from https://github.com/dotnet/roslyn/blob/093ea477717001c58be6231cf2a793f4245cbf72/src/Compilers/Core/MSBuildTaskTests/MapSourceRootTests.cs
 /// Same scenarios, slightly different setup/teardown
-[<TestFixture; SetUICulture("en-US"); SetCulture("en-US")>]
 type MapSourceRootsTests() =
 
     let assertNoErrors (t: MapSourceRoots) =
         let engine = t.BuildEngine :?> MockEngine
         let errors = engine.Errors
-        Assert.AreEqual(0, errors.Count, sprintf "Expected no errors, but found the following: %A" errors)
+        errors.Count |> Assert.shouldBeEqualWith 0 (sprintf "Expected no errors, but found the following: %A" errors)
     let newTask () =
         MapSourceRoots(BuildEngine = MockEngine())
     let toTaskItem (SourceRoot(path, props, _)) =
@@ -62,9 +63,9 @@ type MapSourceRootsTests() =
         for (k, v) in props do dict.Add(k, v)
         TaskItem(path, dict) :> ITaskItem
     let checkExpectations position (SourceRoot(path, _, expectedProps), mapping: ITaskItem) =
-        Assert.AreEqual(Utilities.FixFilePath path, mapping.ItemSpec, sprintf "expected paths to be the same while checking position %d" position)
+        mapping.ItemSpec |> Assert.shouldBeEqualWith (Utilities.FixFilePath path) (sprintf "expected paths to be the same while checking position %d" position)
         for (key, value) in expectedProps do
-            Assert.AreEqual(value, mapping.GetMetadata(key), sprintf "expected values for metadata key %s to be the same while checking position %d" key position)
+            mapping.GetMetadata(key) |> Assert.shouldBeEqualWith value (sprintf "expected values for metadata key %s to be the same while checking position %d" key position)
 
     let successfulTest items =
         let task = newTask()
@@ -74,12 +75,12 @@ type MapSourceRootsTests() =
 
         match outputs with
         | None ->
-            Assert.Fail("Expected to get some mappings back from this scenario")
+            failwith "Expected to get some mappings back from this scenario"
         | Some mappings ->
             Array.zip items mappings
             |> Array.iteri checkExpectations
 
-    [<Test>]
+    [<Fact>]
     member _.``basic deterministic scenarios`` () =
         let items =
             [|
@@ -103,8 +104,7 @@ type MapSourceRootsTests() =
 
         successfulTest items
 
-
-    [<Test>]
+    [<Fact>]
     member _.``invalid chars`` () =
         let items =
             [|
@@ -124,7 +124,7 @@ type MapSourceRootsTests() =
             |]
         successfulTest items
 
-    [<Test>]
+    [<Fact>]
     member _.``input paths must end with separator`` () =
         let items =
             [|
@@ -139,21 +139,21 @@ type MapSourceRootsTests() =
         match outputs with
         | None ->
             let errors = (task.BuildEngine :?> MockEngine).Errors
-            Assert.AreEqual(2, errors.Count, "Should have had some errors with path mappings")
+            errors.Count |> Assert.shouldBeEqualWith 2 "Should have had some errors with path mappings"
             let expectedErrors = ["'C:'"; "'C'"]
             let errorMessages = errors |> Seq.map (fun e -> e.Message)
 
-            Assert.IsTrue(errorMessages |> Seq.forall (fun error -> error.Contains("end with a slash or backslash")))
+            Assert.True(errorMessages |> Seq.forall (fun error -> error.Contains("end with a slash or backslash")))
 
             expectedErrors
             |> Seq.iter (fun expectedErrorPath ->
-                Assert.IsTrue(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath),
-                              sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
-            )
+                Assert.True(
+                    errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath),
+                    sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages))
         | Some mappings ->
-            Assert.Fail("Expected to fail on the inputs")
+            failwith "Expected to fail on the inputs"
 
-    [<Test>]
+    [<Fact>]
     member _.``nested roots separators`` () =
         let items =
             [|
@@ -182,7 +182,7 @@ type MapSourceRootsTests() =
 
         successfulTest items
 
-    [<Test>]
+    [<Fact>]
     member _.``sourceroot case sensitivity``() =
         let items = [|
             SourceRoot(@"c:\packages\SourcePackage1\", [], ["MappedPath", @"/_/"])
@@ -192,7 +192,7 @@ type MapSourceRootsTests() =
 
         successfulTest items
 
-    [<Test>]
+    [<Fact>]
     member _.``recursion error`` () =
         let path1 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\1\"
         let path2 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\2\"
@@ -216,24 +216,24 @@ type MapSourceRootsTests() =
         match outputs with
         | None ->
             let errors = (task.BuildEngine :?> MockEngine).Errors
-            Assert.AreEqual(2, errors.Count, "Should have had some errors with path mappings")
+            errors.Count |> Assert.shouldBeEqualWith 2 "Should have had some errors with path mappings"
             let expectedErrors = [path2; path1] |> List.map (sprintf "'%s'")
             let errorMessages = errors |> Seq.map (fun e -> e.Message)
 
-            Assert.IsTrue(errorMessages |> Seq.forall (fun error -> error.Contains("ContainingRoot was not found in SourceRoot items")),
+            Assert.True(errorMessages |> Seq.forall (fun error -> error.Contains("ContainingRoot was not found in SourceRoot items")),
                 sprintf "Expected to have the same type of errors but had %A" errorMessages
             )
 
             expectedErrors
             |> Seq.iter (fun expectedErrorPath ->
-                Assert.IsTrue(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
+                Assert.True(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
             )
         | Some mappings ->
-            Assert.Fail("Expected to fail on the inputs")
+            failwith "Expected to fail on the inputs"
 
-    [<TestCase(true)>]
-    [<TestCase(false)>]
-    [<Test>]
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
     member _.``metadata merge 1`` (deterministic: bool) =
         let path1 = Utilities.FixFilePath @"c:\packages\SourcePackage1\"
         let path2 = Utilities.FixFilePath @"c:\packages\SourcePackage2\"
@@ -302,12 +302,12 @@ type MapSourceRootsTests() =
 
         match outputs with
         | None ->
-            Assert.Fail("Expected to get some mappings back from this scenario")
+            failwith "Expected to get some mappings back from this scenario"
         | Some mappings ->
             let warnings = (task.BuildEngine :?> MockEngine).Warnings |> Seq.map (fun w -> w.Message)
 
-            Assert.AreEqual(6, Seq.length warnings)
-            Assert.IsTrue(warnings |> Seq.forall (fun w -> w.Contains "duplicate items"))
+            Assert.Equal(6, Seq.length warnings)
+            Assert.True(warnings |> Seq.forall (fun w -> w.Contains "duplicate items"))
 
             [
                 "SourceControl", "git", "tfvc"
@@ -318,7 +318,7 @@ type MapSourceRootsTests() =
                 "SourceLinkUrl", "URL1", "URL2"
             ]
             |> List.iter (fun (key, lval, rval) ->
-                Assert.IsTrue(
+                Assert.True(
                     (warnings |> Seq.exists (fun warn -> warn.Contains(sprintf "SourceRoot contains duplicate items '%s' with conflicting metadata '%s': '%s' and '%s'" path1 key lval rval))),
                     sprintf "Expected to find an error message for %s comparing %s and %s, but got %A" key lval rval warnings
                 )
@@ -327,7 +327,7 @@ type MapSourceRootsTests() =
             Array.zip actualExpectations mappings
             |> Array.iteri checkExpectations
 
-    [<Test>]
+    [<Fact>]
     member _.``missing containing root`` () =
         let items = [|
             SourceRoot(@"c:\MyProjects\MYPROJECT\", [], [])
@@ -345,22 +345,22 @@ type MapSourceRootsTests() =
         match outputs with
         | None ->
             let errors = (task.BuildEngine :?> MockEngine).Errors
-            Assert.AreEqual(1, errors.Count, "Should have had some errors with path mappings")
+            errors.Count |> Assert.shouldBeEqualWith 1 "Should have had some errors with path mappings"
             let expectedErrors = [@"c:\MyProjects\MyProject\"] |> List.map (sprintf "'%s'")
             let errorMessages = errors |> Seq.map (fun e -> e.Message)
 
-            Assert.IsTrue(errorMessages |> Seq.forall (fun error -> error.Contains("corresponding item is not a top-level source root")),
+            Assert.True(errorMessages |> Seq.forall (fun error -> error.Contains("corresponding item is not a top-level source root")),
                 sprintf "Expected to have the same type of errors but had %A" errorMessages
             )
 
             expectedErrors
             |> Seq.iter (fun expectedErrorPath ->
-                Assert.IsTrue(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
+                Assert.True(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
             )
         | Some mappings ->
-            Assert.Fail("Expected to fail on the inputs")
+            failwith "Expected to fail on the inputs"
 
-    [<Test>]
+    [<Fact>]
     member _.``no containing root`` () =
         let items = [|
             SourceRoot(@"c:\MyProjects\MyProject\", [], [])
@@ -376,24 +376,24 @@ type MapSourceRootsTests() =
         match outputs with
         | None ->
             let errors = (task.BuildEngine :?> MockEngine).Errors
-            Assert.AreEqual(1, errors.Count, "Should have had some errors with path mappings")
+            errors.Count |> Assert.shouldBeEqualWith 1 "Should have had some errors with path mappings"
             let expectedErrors = [@""] |> List.map (sprintf "'%s'")
             let errorMessages = errors |> Seq.map (fun e -> e.Message)
 
-            Assert.IsTrue(errorMessages |> Seq.forall (fun error -> error.Contains("corresponding item is not a top-level source root")),
+            Assert.True(errorMessages |> Seq.forall (fun error -> error.Contains("corresponding item is not a top-level source root")),
                 sprintf "Expected to have the same type of errors but had %A" errorMessages
             )
 
             expectedErrors
             |> Seq.iter (fun expectedErrorPath ->
-                Assert.IsTrue(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
+                Assert.True(errorMessages |> Seq.exists (fun err -> err.EndsWith expectedErrorPath), sprintf "expected an error to end with '%s', none did.\nMessages were:\n%A" expectedErrorPath errorMessages)
             )
         | Some mappings ->
-            Assert.Fail("Expected to fail on the inputs")
+            failwith "Expected to fail on the inputs"
 
-    [<TestCase(true)>]
-    [<TestCase(false)>]
-    [<Test>]
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
     member _.``no top level source root`` (deterministic: bool) =
         let path1 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\b\"
         let items = [|
@@ -415,14 +415,14 @@ type MapSourceRootsTests() =
 
         match outputs, deterministic with
         | Some _, true ->
-            Assert.Fail "Expected to fail when deterministic"
+            failwith "Expected to fail when deterministic"
         | None, true ->
             let errors = (task.BuildEngine :?> MockEngine).Errors
-            Assert.AreEqual(1, errors.Count, "Should have had some errors with path mappings")
+            errors.Count |> Assert.shouldBeEqualWith 1 "Should have had some errors with path mappings"
             let error = errors.[0].Message
-            Assert.IsTrue(error.Contains "when DeterministicSourcePaths is true")
+            Assert.True(error.Contains "when DeterministicSourcePaths is true")
         | None, false ->
-            Assert.Fail (sprintf "Expected to succeed when not deterministic")
+            failwithf "Expected to succeed when not deterministic"
         | Some mappings, false ->
             Array.zip items mappings
             |> Array.iteri checkExpectations

@@ -41,6 +41,8 @@ val mkSynSimplePatVar: isOpt: bool -> id: Ident -> SynSimplePat
 
 val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
+val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 val (|LongOrSingleIdent|_|):
     inp: SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) option
@@ -155,7 +157,7 @@ val mkSynAssign: l: SynExpr -> r: SynExpr -> SynExpr
 
 val mkSynDot: mDot: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
 
-val mkSynDotMissing: mDot: range -> m: range -> l: SynExpr -> SynExpr
+val mkSynDotMissing: mDot: range -> m: range -> expr: SynExpr -> SynExpr
 
 val mkSynFunMatchLambdas:
     synArgNameGenerator: SynArgNameGenerator ->
@@ -255,6 +257,8 @@ module SynInfo =
 
     val emptySynValData: SynValData
 
+    val emptySynArgInfo: SynArgInfo
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
@@ -269,7 +273,7 @@ val mkSynBindingRhs:
     staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list ->
     rhsExpr: SynExpr ->
     mRhs: range ->
-    retInfo: SynReturnInfo option ->
+    retInfo: (range option * SynReturnInfo) option ->
         SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
@@ -279,7 +283,7 @@ val mkSynBinding:
         isMutable: bool *
         mBind: range *
         spBind: DebugPointAtBinding *
-        retInfo: SynReturnInfo option *
+        retInfo: (range option * SynReturnInfo) option *
         origRhsExpr: SynExpr *
         mRhs: range *
         staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list *
@@ -288,36 +292,21 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val NonVirtualMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val updatePropertyIdentInSynBinding: propertyIdent: Ident -> SynBinding -> SynBinding
 
-val CtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val ClassCtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val CtorMemberFlags: SynMemberFlags
 
-val OverrideMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val ClassCtorMemberFlags: SynMemberFlags
 
-val AbstractMemberFlags: isInstance: bool -> trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val OverrideMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: isInstance: bool -> k: SynMemberKind -> SynMemberFlags
 
-val ImplementStaticMemberFlags: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val StaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
-
-val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia
-
-val StaticMemberSynMemberFlagsTrivia: mStatic: range -> mMember: range -> SynMemberFlagsTrivia
-
-val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
-
-val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
-
-val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
-
-val StaticAbstractSynMemberFlagsTrivia: mStatic: range -> mAbstract: range -> SynMemberFlagsTrivia
-
-val StaticAbstractMemberSynMemberFlagsTrivia:
-    mStatic: range -> mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
+val ImplementStaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val inferredTyparDecls: SynValTyparDecls
 
@@ -348,8 +337,12 @@ val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: Sy
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 
-val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
+val normalizeTuplePat: pats: SynPat list -> commas: range list -> SynPat list * range List
 
 val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
 
 val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list
+
+val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) option
+
+val (|TypesForTypar|): t: SynType -> SynType list

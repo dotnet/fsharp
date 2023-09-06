@@ -4,8 +4,8 @@
 
 
 //<Expects id="FS0951" span="(19,5-20,16)" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
-//<Expects id="FS0886" span="(23,7-23,13)" status="error">This is not a valid value for an enumeration literal</Expects>
-//<Expects id="FS0886" span="(27,7-27,13)" status="error">This is not a valid value for an enumeration literal</Expects>
+//<Expects id="FS0886" span="(23,11-23,13)" status="error">This is not a valid value for an enumeration literal</Expects>
+//<Expects id="FS0886" span="(27,11-27,13)" status="error">This is not a valid value for an enumeration literal</Expects>
 //<Expects id="FS0951" span="(32,5-33,13)" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
 //<Expects id="FS0951" span="(37,5-38,14)" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
 //<Expects id="FS0951" span="(41,5-42,15)" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>

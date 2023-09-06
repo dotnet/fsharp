@@ -113,7 +113,7 @@ type SeqModule2() =
         CheckThrowsArgumentException ( fun() -> Seq.last emptyArr)
       
         // null Array
-        let nullArr: array<'a> = null
+        let nullArr: 'a array = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullArr) 
         
         // ---- Test for IList -----
@@ -185,7 +185,7 @@ type SeqModule2() =
         Assert.True(emptyResult.IsNone)
       
         // null Array
-        let nullArr:array<unit> = null
+        let nullArr: unit array = null
         CheckThrowsArgumentNullException (fun () -> Seq.tryLast nullArr |> ignore) 
 
 

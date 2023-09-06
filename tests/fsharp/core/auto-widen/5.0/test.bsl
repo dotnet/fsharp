@@ -139,22 +139,7 @@ test.fsx(67,20,67,23): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(67,20,67,23): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'int'    
-
 test.fsx(68,22,68,25): typecheck error FS0001: This expression was expected to have type
-    'int64'    
-but here has type
-    'int'    
-
-test.fsx(68,22,68,25): typecheck error FS0001: This expression was expected to have type
-    'int64'    
-but here has type
-    'int'    
-
-test.fsx(69,26,69,29): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'int'    
@@ -190,8 +175,8 @@ test.fsx(121,14,121,21): typecheck error FS0041: No overloads match for method '
 Known type of argument: int
 
 Available overloads:
- - static member C.M1: [<ParamArray>] x: int64[] -> int64 // Argument 'x' doesn't match
- - static member C.M1: [<ParamArray>] x: int64[] -> int64 // Argument at index 1 doesn't match
+ - static member C.M1: [<ParamArray>] x: int64 array -> int64 // Argument 'x' doesn't match
+ - static member C.M1: [<ParamArray>] x: int64 array -> int64 // Argument at index 1 doesn't match
 
 test.fsx(122,19,122,20): typecheck error FS0001: This expression was expected to have type
     'int64'    
@@ -208,8 +193,8 @@ test.fsx(127,14,127,21): typecheck error FS0041: No overloads match for method '
 Known type of argument: int
 
 Available overloads:
- - static member C.M1: [<ParamArray>] x: double[] -> double // Argument 'x' doesn't match
- - static member C.M1: [<ParamArray>] x: double[] -> double // Argument at index 1 doesn't match
+ - static member C.M1: [<ParamArray>] x: double array -> double // Argument 'x' doesn't match
+ - static member C.M1: [<ParamArray>] x: double array -> double // Argument at index 1 doesn't match
 
 test.fsx(128,19,128,20): typecheck error FS0001: This expression was expected to have type
     'double'    
@@ -446,12 +431,12 @@ but here has type
 test.fsx(256,30,256,39): typecheck error FS0001: This expression was expected to have type
     'Array'    
 but here has type
-    'uint16[]'    
+    'uint16 array'    
 
 test.fsx(258,30,258,38): typecheck error FS0001: This expression was expected to have type
     'Array'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(260,36,260,38): typecheck error FS0001: This expression was expected to have type
     'IComparable'    
@@ -573,11 +558,6 @@ test.fsx(291,21,291,30): typecheck error FS0001: This expression was expected to
 but here has type
     'string'    
 
-test.fsx(291,21,291,30): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 test.fsx(292,24,292,26): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
@@ -684,62 +664,62 @@ but here has type
     'int'    
 
 test.fsx(335,28,335,39): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(337,9,338,34): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(340,9,341,33): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(343,9,344,35): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(346,9,347,36): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(349,9,349,36): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(351,9,351,40): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(353,9,354,40): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(356,9,357,41): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(359,9,359,35): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(361,9,362,36): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
 test.fsx(364,9,365,37): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     ''a list'    
 
@@ -799,72 +779,72 @@ but here has type
     'int'    
 
 test.fsx(390,28,390,41): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(391,30,392,57): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(393,30,394,56): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(395,30,396,58): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(397,30,398,59): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(399,30,399,59): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(400,30,400,63): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(401,30,402,63): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(403,30,404,64): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(405,31,405,59): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(406,31,407,60): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(408,31,409,61): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
-    ''a[]'    
+    ''a array'    
 
 test.fsx(429,10,437,16): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     'OtherSeq<'a>'    
 
 test.fsx(448,9,450,49): typecheck error FS0001: This expression was expected to have type
-    'seq<int64>'    
+    'int64 seq'    
 but here has type
     'OtherSeqImpl<'a>'    
 
@@ -874,6 +854,7 @@ but here has type
     'int'    
 
 test.fsx(454,46,454,47): typecheck error FS0001: This expression was expected to have type
+    'int64'    
     'int64'    
 but here has type
     'int'    

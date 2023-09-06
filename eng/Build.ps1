@@ -45,6 +45,7 @@ param (
     [switch]$deployExtensions,
     [switch]$prepareMachine,
     [switch]$useGlobalNuGetCache = $true,
+    [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
@@ -54,15 +55,19 @@ param (
     [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
+    [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
+    [switch]$testAllButIntegration,
     [switch]$testpack,
+    [switch]$testAOT,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
+    [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -92,6 +97,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                      Run all tests"
+    Write-Host "  -testAllButIntegration        Run all but integration tests"
     Write-Host "  -testCambridge                Run Cambridge tests"
     Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
@@ -100,9 +106,11 @@ function Print-Usage() {
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -112,11 +120,12 @@ function Print-Usage() {
     Write-Host "  -msbuildEngine <value>        Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
     Write-Host "  -procdump                     Monitor test runs with procdump"
     Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
-    Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
+    Write-Host "  -dontUseGlobalNuGetCache      Do not use the global NuGet cache"
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
+    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -129,17 +138,33 @@ function Process-Arguments() {
         exit 0
     }
 
+    if ($dontUseGlobalNugetCache -or $ci) {
+        $script:useGlobalNugetCache = $False
+    }
+
     $script:nodeReuse = $False;
 
     if ($testAll) {
         $script:testDesktop = $True
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
+        $script:testIntegration = $True
         $script:testVs = $True
+        $script:testAOT = $True
+    }
+
+    if ($testAllButIntegration) {
+        $script:testDesktop = $True
+        $script:testCoreClr = $True
+        $script:testFSharpQA = $True
+        $script:testIntegration = $False
+        $script:testVs = $True
+        $script:testAOT = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
         $script:testAll = $False
+        $script:testAllButIntegration = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
         $script:testCompilerService = $False
@@ -147,8 +172,11 @@ function Process-Arguments() {
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
         $script:testFSharpQA = $False
+        $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:testAOT = $False
+        $script:verifypackageshipstatus = $True
     }
 
     if ($noRestore) {
@@ -173,6 +201,14 @@ function Process-Arguments() {
 
     if ($compressAllMetadata) {
         $script:compressAllMetadata = $True;
+    }
+
+    if ($verifypackageshipstatus) {
+        $script:verifypackageshipstatus = $True;
+    }
+
+    if ($testAOT) {
+        $script:pack = $True;
     }
 
     foreach ($property in $properties) {
@@ -202,8 +238,9 @@ function Update-Arguments() {
     }
 }
 
-function BuildSolution([string] $solutionName) {
-    Write-Host "${solutionName}:"
+
+function BuildSolution([string] $solutionName, $nopack) {
+        Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
@@ -215,6 +252,12 @@ function BuildSolution([string] $solutionName) {
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
+
+    $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
+
+    $env:BUILDING_USING_DOTNET="false"
+
+    $pack = if ($nopack -eq $False) {""} else {$pack}
 
     MSBuild $toolsetBuildProj `
         $bl `
@@ -237,6 +280,8 @@ function BuildSolution([string] $solutionName) {
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
+
+    $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
 
 function TestAndAddToPath([string] $testPath) {
@@ -275,7 +320,7 @@ function VerifyAssemblyVersionsAndSymbols() {
     }
 }
 
-function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $noTestFilter = $false) {
+function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $noTestFilter = $false, [boolean] $asBackgroundJob = $false) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -296,16 +341,28 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $args += " --filter TestCategory!=PullRequest"
     }
 
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
+    if ($asBackgroundJob) {
+        Write-Host("Starting on the background: $args")
+        Write-Host("------------------------------------")
+        $bgJob = Start-Job -ScriptBlock {
+            & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "nunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+            if ($LASTEXITCODE -ne 0) {
+                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
+            }
+        }
+        return $bgJob
+    } else{
+        Write-Host("$args")
+        Exec-Console $dotnetExe $args
+    }
 }
 
-function TestUsingXUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
-    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $true
+function TestUsingXUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
+    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $true -asBackgroundJob $asBackgroundJob
 }
 
-function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
-    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
+function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
+    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false -asBackgroundJob $asBackgroundJob
 }
 
 function Prepare-TempDir() {
@@ -457,16 +514,11 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
+
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
-        $env:PERL5Path = Join-Path $nativeTools "perl\5.32.1.1\perl\bin\perl.exe"
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.38.0.1\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
         $nativeTools
-        write-host "Path = $env:PERL5Path"
-    }
-    else {
-        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl\bin\perl.exe"
-        write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
-        $nativeTools.values
         write-host "Path = $env:PERL5Path"
     }
 
@@ -482,15 +534,18 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
-            BuildSolution "FSharp.sln"
+            BuildSolution "FSharp.sln" $False
         }
         else {
-            BuildSolution "VisualFSharp.sln"
+            BuildSolution "VisualFSharp.sln" $False
         }
     }
 
     if ($pack) {
-        BuildSolution "Microsoft.FSharp.Compiler.sln"
+        $properties_storage = $properties
+        $properties += "/p:GenerateSbom=false"
+        BuildSolution "Microsoft.FSharp.Compiler.sln" $True
+        $properties = $properties_storage
     }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
@@ -501,24 +556,34 @@ try {
     $desktopTargetFramework = "net472"
     $coreclrTargetFramework = "net7.0"
 
+    if ($testCoreClr) {
+        $bgJob = TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
+
+        # Collect output from  background jobs
+        Wait-job $bgJob | out-null
+        Receive-Job $bgJob -ErrorAction Stop
+    }
+
     if ($testDesktop) {
+        $bgJob = TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
-    }
 
-    if ($testCoreClr) {
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
+        # Collect output from  background jobs
+        Wait-job $bgJob | out-null
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testFSharpQA) {
@@ -535,48 +600,66 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        write-host "Exec-Console $env:PERL5Path"
-        Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+
+        if (-not (Test-Path variable:NativeToolsOnMachine)) {
+            Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+        else
+        {
+            Exec-Console "perl.exe" """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        }
+
         write-host "Exec-Console finished"
         Pop-Location
     }
 
     if ($testFSharpCore) {
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
     }
 
     if ($testCompiler) {
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
     }
 
 
     if ($testCompilerComponentTests) {
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
     }
 
 
     if ($testCompilerService) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
     }
 
     if ($testCambridge) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
+        TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
     }
 
     if ($testScripting) {
-        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
 
     if ($testVs -and -not $noVisualStudio) {
+        TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
+    }
+
+    if ($testIntegration) {
+        TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"
+    }
+
+    if ($testAOT) {
+        Push-Location "$RepoRoot\tests\AheadOfTime\Trimming"
+        ./check.cmd
+        Pop-Location
     }
 
     # verify nupkgs have access to the source code
@@ -603,6 +686,39 @@ try {
     }
     if ($nupkgtestFailed) {
         throw "Error Verifying nupkgs have access to the source code"
+    }
+
+    $verifypackageshipstatusFailed = $false
+    if ($verifypackageshipstatus) {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+
+        Write-Host "================================================================================================================================"
+        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+        Write-Host "================================================================================================================================"
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+        if (-not $verifypackageshipstatusFailed)
+        {
+            Write-Host "================================================================================================================================"
+            Write-Host "The error messages above are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+            Write-Host "================================================================================================================================"
+        }
+        else
+        {
+            throw "Error Verifying shipping status of shipping nupkgs"
+        }
     }
 
     ExitWithExitCode 0

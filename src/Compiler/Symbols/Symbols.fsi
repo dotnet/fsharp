@@ -217,6 +217,9 @@ type FSharpEntity =
     /// Get the fully qualified name of the type or module
     member QualifiedName: string
 
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
+
     /// Get the full name of the type or module
     member FullName: string
 
@@ -346,6 +349,9 @@ type FSharpEntity =
     /// Get the type abbreviated by an F# type abbreviation
     member AbbreviatedType: FSharpType
 
+    /// Instantiates FSharpType
+    member AsType: unit -> FSharpType
+
     /// Get the cases of a union type
     member UnionCases: IList<FSharpUnionCase>
 
@@ -447,6 +453,9 @@ type FSharpUnionCase =
 
     /// Get the range of the name of the case
     member DeclarationLocation: range
+
+    /// Get the declaring entity of the case
+    member DeclaringEntity: FSharpEntity
 
     /// Indicates if the union case has field definitions
     member HasFields: bool
@@ -810,6 +819,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a method member
     member IsMethod: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// Indicates if this is a property and there exists an associated getter method
     member HasGetterMethod: bool
 
@@ -933,8 +945,11 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
 
-    /// Indicates if this is a function
-    member IsFunction: bool
+    /// Indicates if this is a ref cell
+    member IsRefCell: bool
+
+    /// Indicates if this is a value that has been referenced
+    member IsReferencedValue: bool
 
     /// Indicated if this is a value
     member IsValue: bool
@@ -950,6 +965,9 @@ type FSharpMemberOrFunctionOrValue =
 
     /// Format the type using the rules of the given display context
     member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
+
+    /// Get the signature text to include this Symbol into an existing signature file.
+    member GetValSignatureText: displayContext: FSharpDisplayContext * m: range -> string option
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
@@ -1064,6 +1082,9 @@ type FSharpType =
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments: IList<FSharpType>
 
+    /// Indicates if the type is a measure type.
+    member IsMeasureType: bool
+
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType: bool
 
@@ -1107,6 +1128,12 @@ type FSharpType =
     /// Get the base type, if any, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
     member BaseType: FSharpType option
+
+    /// Canonical form of the type with abbreviations, measures, and F# tuples and functions erased.
+    member ErasedType: FSharpType
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

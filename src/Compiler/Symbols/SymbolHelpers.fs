@@ -99,7 +99,10 @@ module internal SymbolHelpers =
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> Some (rangeOfRecdField preferFlag (ucref.FieldByIndex(fieldIndex)))
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
-        | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
+        | Item.Property(info = pinfos; sourceIdentifierRange = mNameOpt)      ->
+            match mNameOpt with
+            | Some m -> Some m
+            | None -> rangeOfPropInfo preferFlag pinfos.Head 
         | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.map (rangeOfEntityRef preferFlag))
         | Item.CustomOperation (_, _, Some minfo)  -> rangeOfMethInfo g preferFlag minfo
         | Item.Trait _ -> None
@@ -109,7 +112,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _, _, _, m) -> Some m
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
-        | Item.ArgName (_, _, _, m) -> Some m
+        | Item.OtherName (range = m) -> Some m
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(vref=vref))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
@@ -162,13 +165,13 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             finfo.DeclaringTyconRef |> computeCcuOfTyconRef
 
-        | Item.Property(_, pinfos)              -> 
+        | Item.Property(info = pinfos)              -> 
             pinfos |> List.tryPick (fun pinfo -> 
                 pinfo.ArbitraryValRef 
                 |> Option.bind ccuOfValRef
                 |> Option.orElseWith (fun () -> pinfo.DeclaringTyconRef |> computeCcuOfTyconRef))
 
-        | Item.ArgName (_, _, meth, _) ->
+        | Item.OtherName (container = meth) ->
             match meth with
             | None -> None
             | Some (ArgumentContainer.Method minfo) -> ccuOfMethInfo g minfo
@@ -228,14 +231,6 @@ module internal SymbolHelpers =
                 | None     -> file
                 | Some dir -> Path.Combine(dir, file)
          else file
-
-    /// Cut long filenames to make them visually appealing 
-    let cutFileName s = if String.length s > 40 then String.sub s 0 10 + "..."+String.sub s (String.length s - 27) 27 else s
-
-    let libFileOfEntityRef x =
-        match x with
-        | ERefLocal _ -> None
-        | ERefNonLocal nlref -> nlref.Ccu.FileName      
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo = 
         match minfo with 
@@ -305,7 +300,7 @@ module internal SymbolHelpers =
         | Item.ModuleOrNamespaces(modref :: _) ->
             mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
 
-        | Item.Property(_, pinfo :: _) ->
+        | Item.Property(info = pinfo :: _) ->
             mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
 
         | Item.Event einfo ->
@@ -317,7 +312,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfo :: _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
 
-        | Item.ArgName(_, _, Some argContainer, _) ->
+        | Item.OtherName(container = Some argContainer) ->
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
@@ -330,7 +325,7 @@ module internal SymbolHelpers =
 
         // These do not have entires in XML doc files
         | Item.CustomOperation _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.ActivePatternResult _
         | Item.AnonRecdField _
         | Item.ImplicitOp _
@@ -338,7 +333,7 @@ module internal SymbolHelpers =
         // These empty lists are not expected to occur
         | Item.CtorGroup (_, [])
         | Item.MethodGroup (_, [], _)
-        | Item.Property (_, [])
+        | Item.Property (info = [])
         | Item.ModuleOrNamespaces []
         | Item.UnqualifiedType []
         | Item.Types(_, []) ->
@@ -401,7 +396,7 @@ module internal SymbolHelpers =
               // These are never expected to have duplicates in declaration lists etc
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
-              | Item.ArgName _
+              | Item.OtherName _
               | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
@@ -457,7 +452,7 @@ module internal SymbolHelpers =
                   g.unionCaseRefEq ur1 ur2
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
-              | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
+              | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
                   (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
@@ -501,13 +496,13 @@ module internal SymbolHelpers =
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
               | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
               | Item.Event evt -> evt.ComputeHashCode()
-              | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
+              | Item.Property(info = pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
 
               // These are not expected to occur, see InEqualityRelation and ItemWhereTypIsPreferred
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
-              | Item.ArgName _
+              | Item.OtherName _
               | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
@@ -517,14 +512,6 @@ module internal SymbolHelpers =
               | Item.DelegateCtor _
               | Item.ModuleOrNamespaces [] -> 0
               ) }
-
-    let ItemWithTypeDisplayPartialEquality g = 
-        let itemComparer = ItemDisplayPartialEquality g
-        
-        { new IPartialEqualityComparer<Item * _> with
-            member x.InEqualityRelation ((item, _)) = itemComparer.InEqualityRelation item
-            member x.Equals((item1, _), (item2, _)) = itemComparer.Equals(item1, item2)
-            member x.GetHashCode ((item, _)) = itemComparer.GetHashCode item }
     
     /// Remove all duplicate items
     let RemoveDuplicateItems g (items: ItemWithInst list) =     
@@ -577,7 +564,7 @@ module internal SymbolHelpers =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> buildString (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> buildString (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
-        | Item.Property(_, pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
+        | Item.Property(info = pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
         | Item.CtorGroup(_, minfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
         | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
@@ -594,7 +581,7 @@ module internal SymbolHelpers =
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
         | Item.TypeVar _
-        | Item.ArgName _ -> item.DisplayName
+        | Item.OtherName _ -> item.DisplayName
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
@@ -604,7 +591,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, []) 
         | Item.MethodGroup(_, [], _) 
         | Item.ModuleOrNamespaces []
-        | Item.Property(_, []) -> ""
+        | Item.Property(info = []) -> ""
 
     /// Output the description of a language item
     let rec GetXmlCommentForItem (infoReader: InfoReader) m item = 
@@ -654,7 +641,7 @@ module internal SymbolHelpers =
             let doc = if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
 
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = pinfos.Head
             let doc = if pinfo.HasDirectXmlComment || pinfo.XmlDoc.NonEmpty then Some pinfo.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
@@ -694,7 +681,7 @@ module internal SymbolHelpers =
             else
                 GetXmlCommentForItemAux None infoReader m item
 
-        | Item.ArgName (_, _, argContainer, _) ->
+        | Item.OtherName (container = argContainer) ->
             let doc =
                 match argContainer with
                 | Some(ArgumentContainer.Method minfo) ->
@@ -895,7 +882,7 @@ module internal SymbolHelpers =
                 | _ -> modref.Deref.CompiledRepresentationForNamedType.FullName |> Some
             | [] ->  None // Pathological case of the above
 
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             match pinfo with 
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
@@ -912,7 +899,7 @@ module internal SymbolHelpers =
 #if !NO_TYPEPROVIDERS
             | ProvidedProp _ -> None
 #endif
-        | Item.Property(_, []) -> None // Pathological case of the above
+        | Item.Property(info = []) -> None // Pathological case of the above
                    
         | Item.Event einfo -> 
             match einfo with 
@@ -950,7 +937,7 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, [], _) 
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
-        | Item.ArgName _ // no keyword on named parameters 
+        | Item.OtherName _ // no keyword on named parameters 
         | Item.Trait _
         | Item.UnionCaseField _
         | Item.TypeVar _ 
@@ -979,7 +966,7 @@ module internal SymbolHelpers =
         | Item.Value v -> if isForallFunctionTy g v.Type then [item] else []
         | Item.UnionCase(ucr, _) -> if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase ecr -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_TYPEPROVIDERS
@@ -994,7 +981,7 @@ module internal SymbolHelpers =
         | Item.CustomBuilder _
         | Item.ActivePatternCase _
         | Item.AnonRecdField _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.ImplicitOp _
         | Item.ModuleOrNamespaces _
         | Item.SetterArg _

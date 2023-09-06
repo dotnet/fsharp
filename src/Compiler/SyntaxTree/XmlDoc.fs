@@ -13,7 +13,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
@@ -268,7 +267,7 @@ type PreXmlDoc =
 
                 doc
 
-    member internal x.Range =
+    member x.Range =
         match x with
         | PreXmlDirect (_, m) -> m
         | PreXmlMerge (part1, part2) ->
@@ -320,13 +319,23 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             keepMax = cacheMaxSize
         )
 
-    let tryGetSummaryNode xmlDocSig =
-        tryGetXmlDocument ()
-        |> Option.bind (fun doc ->
-            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" xmlDocSig) with
-            | null -> None
-            | node when node.HasChildNodes -> Some node
-            | _ -> None)
+    let tryGetSummaryNode (xmlDocSig: string) =
+        if xmlDocSig.Contains "'" && xmlDocSig.Contains "\"" then
+            // No easy way to find this signature with XPath
+            None
+        else
+            tryGetXmlDocument ()
+            |> Option.bind (fun doc ->
+                let name =
+                    if xmlDocSig.Contains "'" then
+                        $"\"{xmlDocSig}\""
+                    else
+                        $"'{xmlDocSig}'"
+
+                match doc.SelectSingleNode $"doc/members/member[@name={name}]" with
+                | null -> None
+                | node when node.HasChildNodes -> Some node
+                | _ -> None)
 
     member _.TryGetXmlDocBySig(xmlDocSig: string) =
         tryGetSummaryNode xmlDocSig

@@ -937,6 +937,83 @@ namespace Microsoft.FSharp.Core
         /// or an enclosing module opened.</summary>
         member Path: string
 
+    /// <summary>Indicates a value or a function that must not be inlined by the F# compiler,
+    /// but may be inlined by the JIT compiler.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoCompilerInliningAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>NoCompilerInliningAttribute</returns>
+        new: unit -> NoCompilerInliningAttribute
+
+    /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
+    /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
+    ///
+    /// <category>Attributes</category>
+    /// 
+    /// <example id="tailcall-attribute-example-1">
+    /// <code lang="fsharp">
+    /// let mul x y = x * y
+    /// [&lt;TailCall&gt;]
+    /// let rec fact n acc =
+    ///     if n = 0
+    ///     then acc
+    ///     else (fact (n - 1) (mul n acc)) + 23 // warning because of the addition after the call to fact
+    /// </code>
+    /// </example>
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute =
+        inherit System.Attribute
+        new : unit -> TailCallAttribute
+
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// Specifies the types of members that are dynamically accessed.
+    ///
+    /// This enumeration has a <see cref="FlagsAttribute"/> attribute that allows a
+    /// bitwise combination of its member values.
+    /// </summary>
+    [<Flags; RequireQualifiedAccessAttribute>]
+    type internal DynamicallyAccessedMemberTypes =
+        | None = 0
+        | PublicParameterlessConstructor = 0x0001
+        | PublicConstructors = 0x0003
+        | NonPublicConstructors = 0x0004
+        | PublicMethods = 0x0008
+        | NonPublicMethods = 0x0010
+        | PublicFields = 0x0020
+        | NonPublicFields = 0x0040
+        | PublicNestedTypes = 0x0080
+        | NonPublicNestedTypes = 0x0100
+        | PublicProperties = 0x0200
+        | NonPublicProperties = 0x0400
+        | PublicEvents = 0x0800
+        | NonPublicEvents = 0x1000
+        | Interfaces = 0x2000
+        | All = 0xffffffff
+
+    [<AttributeUsage(
+        AttributeTargets.Field ||| AttributeTargets.ReturnValue ||| AttributeTargets.GenericParameter |||
+        AttributeTargets.Parameter ||| AttributeTargets.Property ||| AttributeTargets.Method,
+        Inherited = false)>]
+    type internal DynamicallyAccessedMembersAttribute =
+        inherit Attribute
+        new: DynamicallyAccessedMemberTypes -> DynamicallyAccessedMembersAttribute
+        member MemberTypes: DynamicallyAccessedMemberTypes
+
+namespace Microsoft.FSharp.Core
+
+    open System
+
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -2441,7 +2518,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="Item">The input value.</param>
         ///
         /// <returns>An option representing the value.</returns>
-        | ValueSome: 'T -> 'T voption
+        | ValueSome: Item:'T -> 'T voption
 
         /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
         member Value: 'T
@@ -2555,6 +2632,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="offset">The offset from the end.</param>
         ///
         /// <returns>The corresponding index from the start.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member GetReverseIndex: rank: int * offset: int -> int
 
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
@@ -2578,7 +2656,7 @@ namespace Microsoft.FSharp.Collections
     /// the notation <c>[1; 2; 3]</c>. Use the values in the <c>List</c> module to manipulate 
     /// values of this type, or pattern match against the values directly.
     ///
-    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
+    ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
     /// </remarks>
     and 'T list = List<'T>
 
@@ -2590,7 +2668,7 @@ namespace Microsoft.FSharp.Collections
     /// <remarks>
     ///  See the <see cref="T:Microsoft.FSharp.Collections.SeqModule"/> module for further operations related to sequences.
     ///
-    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/sequences">F# Language Guide - Sequences</a>.
+    ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/sequences">F# Language Guide - Sequences</a>.
     ///</remarks>
     type seq<'T> = IEnumerable<'T>
 
@@ -4608,6 +4686,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,,]``<'T> with
@@ -4617,6 +4696,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,]``<'T> with
@@ -4626,6 +4706,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[]``<'T> with
@@ -4635,6 +4716,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type System.String with
@@ -4644,6 +4726,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges

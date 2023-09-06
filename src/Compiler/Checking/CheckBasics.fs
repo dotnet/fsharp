@@ -2,8 +2,10 @@
 
 module internal FSharp.Compiler.CheckBasics
 
+open System.Collections.Concurrent
 open System.Collections.Generic
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -310,6 +312,10 @@ type TcFileState =
 
       isInternalTestSpanStackReferring: bool
 
+      diagnosticOptions: FSharpDiagnosticOptions
+
+      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -328,20 +334,21 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, niceNameGen, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
+         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring, diagnosticOptions,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
           tcArrayOrListSequenceExpression,
           tcComputationExpression) =
 
+        let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
         let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          stackGuard = StackGuard(TcStackGuardDepth)
+          stackGuard = StackGuard(TcStackGuardDepth, "TcFileState")
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript
@@ -357,6 +364,8 @@ type TcFileState =
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFSharpCore
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          diagnosticOptions = diagnosticOptions
+          argInfoCache = ConcurrentDictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry

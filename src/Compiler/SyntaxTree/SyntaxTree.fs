@@ -4,7 +4,6 @@ namespace rec FSharp.Compiler.Syntax
 
 open System
 open System.Diagnostics
-open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -47,10 +46,14 @@ type SynLongIdent =
     member this.IdentsWithTrivia =
         let (SynLongIdent (lid, _, trivia)) = this
 
-        if lid.Length <> trivia.Length then
-            failwith "difference between idents and trivia"
-        else
+        if lid.Length = trivia.Length then
             List.zip lid trivia |> List.map SynIdent
+        elif lid.Length > trivia.Length then
+            let delta = lid.Length - trivia.Length
+            let trivia = [ yield! trivia; yield! List.replicate delta None ]
+            List.zip lid trivia |> List.map SynIdent
+        else
+            failwith "difference between idents and trivia"
 
     member this.ThereIsAnExtraDotAtTheEnd =
         match this with
@@ -155,7 +158,7 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * synMeasure: SynMeasure * trivia: SynMeasureConstantTrivia
 
     | SourceIdentifier of constant: string * value: string * range: range
 
@@ -171,15 +174,15 @@ type SynMeasure =
 
     | Named of longId: LongIdent * range: range
 
-    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Product of measure1: SynMeasure * mAsterisk: range * measure2: SynMeasure * range: range
 
     | Seq of measures: SynMeasure list * range: range
 
-    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
+    | Divide of measure1: SynMeasure option * mSlash: range * measure2: SynMeasure * range: range
 
-    | Power of measure: SynMeasure * power: SynRationalConst * range: range
+    | Power of measure: SynMeasure * caretRange: range * power: SynRationalConst * range: range
 
-    | One
+    | One of range: range
 
     | Anon of range: range
 
@@ -190,11 +193,13 @@ type SynMeasure =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
-    | Integer of value: int32
+    | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * denominator: int32 * range: range
+    | Rational of numerator: int32 * numeratorRange: range * divRange: range * denominator: int32 * denominatorRange: range * range: range
 
-    | Negate of SynRationalConst
+    | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =
@@ -305,7 +310,8 @@ type SynBindingKind =
     | Do
 
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of attributes: SynAttributes * typar: SynTypar * intersectionConstraints: SynType list * trivia: SynTyparDeclTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeConstraint =
@@ -326,7 +332,7 @@ type SynTypeConstraint =
 
     | WhereTyparSubtypeOfType of typar: SynTypar * typeName: SynType * range: range
 
-    | WhereTyparSupportsMember of typars: SynType list * memberSig: SynMemberSig * range: range
+    | WhereTyparSupportsMember of typars: SynType * memberSig: SynMemberSig * range: range
 
     | WhereTyparIsEnum of typar: SynTypar * typeArgs: SynType list * range: range
 
@@ -363,13 +369,28 @@ type SynTyparDecls =
 
     member x.Constraints =
         match x with
-        | PostfixList (constraints = constraints) -> constraints
+        | PostfixList (decls = decls; constraints = constraints) ->
+            // Synthesize SynTypeConstraints implied with any intersection constraints in SynTyparDecl
+            // The parser makes sure we're only dealing with hash constraints here
+            let intersectionConstraints =
+                decls
+                |> List.collect (fun (SynTyparDecl (typar = tp; intersectionConstraints = tys)) ->
+                    tys
+                    |> List.map (fun ty ->
+                        let ty =
+                            match ty with
+                            | SynType.HashConstraint (ty, _) -> ty
+                            | _ -> ty
+
+                        SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, ty.Range)))
+
+            List.append intersectionConstraints constraints
         | _ -> []
 
     member x.Range =
         match x with
         | PostfixList (range = range)
-        | PrefixList (range = range) -> range
+        | PrefixList (range = range)
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -423,8 +444,6 @@ type SynType =
 
     | HashConstraint of innerType: SynType * range: range
 
-    | MeasureDivide of dividend: SynType * divisor: SynType * range: range
-
     | MeasurePower of baseMeasure: SynType * exponent: SynRationalConst * range: range
 
     | StaticConstant of constant: SynConst * range: range
@@ -434,6 +453,14 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
+
+    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
+
+    | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
+
+    | FromParseError of range: range
+
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     member x.Range =
         match x with
@@ -450,9 +477,12 @@ type SynType =
         | SynType.StaticConstantExpr (range = m)
         | SynType.StaticConstantNamed (range = m)
         | SynType.HashConstraint (range = m)
-        | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m) -> m
+        | SynType.Paren (range = m)
+        | SynType.SignatureParameter (range = m)
+        | SynType.Or (range = m)
+        | SynType.Intersection (range = m)
+        | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -475,8 +505,9 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        recordFields: (SynLongIdent * range option * SynExpr) list *
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
 
@@ -608,6 +639,8 @@ type SynExpr =
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
+    | DotLambda of expr: SynExpr * range: range * trivia: SynExprDotLambdaTrivia
+
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
     | Set of targetExpr: SynExpr * rhsExpr: SynExpr * range: range
@@ -640,7 +673,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 
@@ -672,6 +705,8 @@ type SynExpr =
 
     | DoBang of expr: SynExpr * range: range
 
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
+
     | LibraryOnlyILAssembly of
         ilCode: obj *  // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public
         typeArgs: SynType list *
@@ -693,7 +728,7 @@ type SynExpr =
 
     | FromParseError of expr: SynExpr * range: range
 
-    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * range: range
+    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * dotRange: range * range: range
 
     | Fixed of expr: SynExpr * range: range
 
@@ -745,6 +780,7 @@ type SynExpr =
         | SynExpr.DotIndexedGet (range = m)
         | SynExpr.DotIndexedSet (range = m)
         | SynExpr.DotGet (range = m)
+        | SynExpr.DotLambda (range = m)
         | SynExpr.DotSet (range = m)
         | SynExpr.Set (range = m)
         | SynExpr.DotNamedIndexedPropertySet (range = m)
@@ -770,6 +806,7 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range = m)
         | SynExpr.MatchBang (range = m)
         | SynExpr.DoBang (range = m)
+        | SynExpr.WhileBang (range = m)
         | SynExpr.Fixed (range = m)
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
@@ -779,13 +816,7 @@ type SynExpr =
 
     member e.RangeWithoutAnyExtraDot =
         match e with
-        | SynExpr.DotGet (expr, _, lidwd, m) ->
-            if lidwd.ThereIsAnExtraDotAtTheEnd then
-                unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
-            else
-                m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
+        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _, _) -> expr.Range
         | _ -> e.Range
 
     member e.RangeOfFirstPortion =
@@ -796,9 +827,8 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) -> e1.RangeOfFirstPortion
         | SynExpr.ForEach (pat = pat; range = r) ->
-            let start = r.Start
             let e = (pat.Range: range).Start
-            mkRange r.FileName start e
+            withEnd e r
         | _ -> e.Range
 
     member this.IsArbExprAndThusAlreadyReportedError =
@@ -866,25 +896,22 @@ type SynStaticOptimizationConstraint =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * range: range
-
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
 
     member x.Range =
         match x with
-        | SynSimplePats.SimplePats (range = range)
-        | SynSimplePats.Typed (range = range) -> range
+        | SynSimplePats.SimplePats (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -901,6 +928,8 @@ type SynPat =
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
 
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
+
     | Ands of pats: SynPat list * range: range
 
     | As of lhsPat: SynPat * rhsPat: SynPat * range: range
@@ -913,7 +942,7 @@ type SynPat =
         accessibility: SynAccess option *
         range: range
 
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     | Paren of pat: SynPat * range: range
 
@@ -928,8 +957,6 @@ type SynPat =
     | IsInst of pat: SynType * range: range
 
     | QuoteExpr of expr: SynExpr * range: range
-
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
 
     | InstanceMember of
         thisId: Ident *
@@ -946,6 +973,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.ListCons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)
@@ -954,7 +982,6 @@ type SynPat =
         | SynPat.Typed (range = m)
         | SynPat.Attrib (range = m)
         | SynPat.Record (range = m)
-        | SynPat.DeprecatedCharRange (range = m)
         | SynPat.Null (range = m)
         | SynPat.IsInst (range = m)
         | SynPat.QuoteExpr (range = m)
@@ -1019,9 +1046,13 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of
+        memberFlags: SynMemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option *
+        transformedFromProperty: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
@@ -1052,7 +1083,8 @@ type SynBinding =
     member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
 
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes * trivia: SynBindingReturnInfoTrivia
 
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
@@ -1069,8 +1101,6 @@ type SynMemberFlags =
         GetterOrSetterIsCompilerGenerated: bool
 
         MemberKind: SynMemberKind
-
-        Trivia: SynMemberFlagsTrivia
     }
 
     override this.Equals other =
@@ -1110,7 +1140,7 @@ type SynMemberKind =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberSig =
 
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     | Interface of interfaceType: SynType * range: range
 
@@ -1188,8 +1218,7 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: SynIdent *
-        value: SynConst *
-        valueRange: range *
+        valueExpr: SynExpr *
         xmlDoc: PreXmlDoc *
         range: range *
         trivia: SynEnumCaseTrivia
@@ -1260,7 +1289,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
@@ -1327,7 +1357,12 @@ type SynArgInfo =
 type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canInfer: bool
 
 [<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+type SynReturnInfo =
+    | SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+    member this.Range =
+        match this with
+        | SynReturnInfo (range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynExceptionDefnRepr =
@@ -1401,13 +1436,14 @@ type SynMemberDefn =
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynMemberDefnImplicitCtorTrivia
 
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberDefnAbstractSlotTrivia
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
@@ -1427,11 +1463,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     member d.Range =
         match d with
@@ -1641,10 +1675,7 @@ type ParsedSigFileFragment =
         trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
-
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 [<NoEquality; NoComparison>]
 type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list * fragments: ParsedImplFileFragment list
@@ -1673,9 +1704,32 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia *
+        identifiers: Set<string>
+
+    member x.QualifiedName =
+        (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedImplFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedImplFileInput (contents = contents)) = x in contents)
+
+    member x.IsScript = (let (ParsedImplFileInput (isScript = isScript)) = x in isScript)
+
+    member x.IsLastCompiland =
+        (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
+
+    member x.IsExe = (let (ParsedImplFileInput (flags = (_, isExe))) = x in isExe)
+
+    member x.Trivia = (let (ParsedImplFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -1684,8 +1738,24 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia
+        contents: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia *
+        identifiers: Set<string>
+
+    member x.QualifiedName =
+        (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedSigFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedSigFileInput (contents = contents)) = x in contents)
+
+    member x.Trivia = (let (ParsedSigFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1695,12 +1765,27 @@ type ParsedInput =
 
     member inp.FileName =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> fileName
+        | ParsedInput.ImplFile file -> file.FileName
+        | ParsedInput.SigFile file -> file.FileName
+
+    member inp.ScopedPragmas =
+        match inp with
+        | ParsedInput.ImplFile file -> file.ScopedPragmas
+        | ParsedInput.SigFile file -> file.ScopedPragmas
+
+    member inp.QualifiedName =
+        match inp with
+        | ParsedInput.ImplFile file -> file.QualifiedName
+        | ParsedInput.SigFile file -> file.QualifiedName
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(modules = SynModuleOrNamespace (range = m) :: _))
-        | ParsedInput.SigFile (ParsedSigFileInput(modules = SynModuleOrNamespaceSig (range = m) :: _)) -> m
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> rangeN fileName 0
+        | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
+        | _ -> rangeN inp.FileName 0
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member inp.Identifiers =
+        match inp with
+        | ParsedInput.ImplFile (ParsedImplFileInput (identifiers = identifiers))
+        | ParsedInput.SigFile (ParsedSigFileInput (identifiers = identifiers)) -> identifiers

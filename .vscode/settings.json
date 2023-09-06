@@ -17,11 +17,12 @@
     },
     "FSharp.suggestGitignore": false,
     "FSharp.enableMSBuildProjectGraph": true,
+    "FSharp.enableAdaptiveLspServer": true,
     "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
-    "FSharp.enableBackgroundServices": false,
     "FSharp.excludeProjectDirectories": [
         ".git",
+        ".vscode",
         "eng",
         "artifacts",
         "fcs-samples",
@@ -34,8 +35,7 @@
     "csharp.suppressDotnetInstallWarning": true,
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
-    "omnisharp.autoStart": true,
-    "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
+    "omnisharp.autoStart": false,
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "omnisharp.enableRoslynAnalyzers": false,
@@ -52,5 +52,6 @@
             "front_matter_title": ""
         }
     },
-    "editor.inlayHints.enabled": "offUnlessPressed"
+    "editor.inlayHints.enabled": "offUnlessPressed",
+    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln"
 }

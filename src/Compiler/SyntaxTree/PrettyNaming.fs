@@ -10,7 +10,6 @@ open System.Collections.Concurrent
 open System.Globalization
 open System.Text
 
-open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
@@ -224,6 +223,7 @@ let keywordsWithDescription: (string * string) list =
         "rec", FSComp.SR.keywordDescriptionRec ()
         "return", FSComp.SR.keywordDescriptionReturn ()
         "return!", FSComp.SR.keywordDescriptionReturnBang ()
+        "sig", FSComp.SR.keywordDescriptionSig ()
         "static", FSComp.SR.keywordDescriptionStatic ()
         "struct", FSComp.SR.keywordDescriptionStruct ()
         "then", FSComp.SR.keywordDescriptionThen ()
@@ -238,6 +238,7 @@ let keywordsWithDescription: (string * string) list =
         "void", FSComp.SR.keywordDescriptionVoid ()
         "when", FSComp.SR.keywordDescriptionWhen ()
         "while", FSComp.SR.keywordDescriptionWhile ()
+        "while!", FSComp.SR.keywordDescriptionWhileBang ()
         "with", FSComp.SR.keywordDescriptionWith ()
         "yield", FSComp.SR.keywordDescriptionYield ()
         "yield!", FSComp.SR.keywordDescriptionYieldBang ()
@@ -964,16 +965,13 @@ let ActivePatternInfoOfValName nm (m: range) =
         let n = nm.IndexOf '|'
 
         if n > 0 then
-            let m1 =
-                Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + n))
+            let m1 = Range.withEnd (Position.mkPos mp.StartLine (mp.StartColumn + n)) mp
 
-            let m2 =
-                Range.mkRange mp.FileName (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
+            let m2 = Range.withStart (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp
 
             (nm[0 .. n - 1], m1) :: loop nm[n + 1 ..] m2
         else
-            let m1 =
-                Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length))
+            let m1 = Range.withEnd (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length)) mp
 
             [ (nm, m1) ]
 
@@ -982,7 +980,7 @@ let ActivePatternInfoOfValName nm (m: range) =
     if IsActivePatternName nm then
         // Skip the '|' at each end when recovering ranges
         let m0 =
-            Range.mkRange m.FileName (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1))
+            Range.withStartEnd (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1)) m
 
         let names = loop nm[1 .. nm.Length - 2] m0
         let resH, resT = List.frontAndBack names
@@ -1075,13 +1073,6 @@ let mkExceptionFieldName =
 let FsiDynamicModulePrefix = "FSI_"
 
 [<RequireQualifiedAccess>]
-module FSharpLib =
-    let Root = "Microsoft.FSharp"
-    let RootPath = IL.splitNamespace Root
-    let Core = Root + ".Core"
-    let CorePath = IL.splitNamespace Core
-
-[<RequireQualifiedAccess>]
 module CustomOperations =
     [<Literal>]
     let Into = "into"
@@ -1099,6 +1090,7 @@ let GetLongNameFromString x = SplitNamesForILPath x
 
 // Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 // Compressed OptimizationData/SignatureData name for embedded resource

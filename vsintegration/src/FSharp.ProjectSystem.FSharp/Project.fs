@@ -344,7 +344,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             let mutable vsProject : VSLangProj.VSProject = null
             let mutable trackDocumentsHandle = 0u
-            let mutable addFilesNotification : option<(array<string> -> unit)> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
+            let mutable addFilesNotification : (string array -> unit) option = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
             
             let mutable updateSolnEventsHandle = 0u
             let mutable updateSolnEventsHandle2 = 0u

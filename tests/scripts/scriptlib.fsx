@@ -99,7 +99,7 @@ module Scripting =
                 | "" -> exe
                 | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
-        let exec cmdArgs (workDir: FilePath) envs (path: FilePath) arguments =
+        let exec cmdArgs (workDir: FilePath) envs (path: FilePath) (arguments: string) =
 
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
@@ -111,12 +111,7 @@ module Scripting =
             processInfo.UseShellExecute <- false
             processInfo.WorkingDirectory <- workDir
 
-#if !NET46
             ignore envs  // work out what to do about this
-#else
-            envs
-            |> Map.iter (fun k v -> processInfo.EnvironmentVariables.[k] <- v)
-#endif
 
             let p = new Process()
             p.EnableRaisingEvents <- true

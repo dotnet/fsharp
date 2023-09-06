@@ -27,9 +27,9 @@ echo %__scriptpath%BasicProvider\TestBasicProvider.cmd -c %configuration%
 call %__scriptpath%BasicProvider\TestBasicProvider.cmd -c %configuration%
 if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-echo %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
-call %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
-if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
+rem echo %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
+rem call %__scriptpath%ComboProvider\TestComboProvider.cmd -c %configuration%
+rem if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
 :success
 endlocal

@@ -36,7 +36,6 @@ module LeafExpressionConverter =
         {   varEnv : Map<Var, Expression> }
     let asExpr x = (x :> Expression)
 
-    let bindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
@@ -44,9 +43,9 @@ module LeafExpressionConverter =
     let equivHeadTypes (ty1:Type) (ty2:Type) =
         isNamedType(ty1) &&
         if ty1.IsGenericType then
-            ty2.IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(ty2.GetGenericTypeDefinition())
+            ty2.IsGenericType && Type.op_Equality(ty1.GetGenericTypeDefinition(), ty2.GetGenericTypeDefinition())
         else
-            ty1.Equals(ty2)
+            Type.op_Equality(ty1, ty2)
 
     let isFunctionType typ = equivHeadTypes typ (typeof<(int -> int)>)
 
@@ -54,9 +53,6 @@ module LeafExpressionConverter =
         if not (isFunctionType typ) then invalidArg "typ" "cannot convert recursion except for function types"
         let tyargs = typ.GetGenericArguments()
         tyargs.[0], tyargs.[1]
-
-    let GetGenericMethodDefinition (methInfo:MethodInfo) =
-        if methInfo.IsGenericMethod then methInfo.GetGenericMethodDefinition() else methInfo
 
     let StringConcat =
        methodhandleof (fun (x:obj, y:obj) -> String.Concat (x, y))
@@ -72,9 +68,6 @@ module LeafExpressionConverter =
 
     let showAll =
         BindingFlags.Public ||| BindingFlags.NonPublic
-
-    let NullableConstructor =
-        typedefof<Nullable<int>>.GetConstructors().[0]
     
     let getNonNullableType typ = match Nullable.GetUnderlyingType typ with null -> typ | t -> t
 
@@ -458,7 +451,7 @@ module LeafExpressionConverter =
             let converted = ConvExprToLinqInContext env x
 
             // Most of conversion scenarios in C# are covered by Expression.Convert
-            if x.Type.Equals toTy then converted // source and target types match - do nothing
+            if Type.op_Equality(x.Type, toTy) then converted // source and target types match - do nothing
             elif not (x.Type.IsValueType || toTy.IsValueType) && toTy.IsAssignableFrom x.Type then converted // converting reference type to supertype - do nothing
             else Expression.Convert(converted, toTy) |> asExpr // emit Expression.Convert
 
@@ -522,7 +515,10 @@ module LeafExpressionConverter =
                 Expression.New(ctor, argsR, [| for p in props -> (p :> MemberInfo) |]) |> asExpr
 
             // Do the same thing as C# compiler for string addition
-            | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2]) when ty1 = typeof<string> && ty2 = typeof<string> && ty3 = typeof<string> ->
+            | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2])
+                when Type.op_Equality(ty1, typeof<string>) &&
+                     Type.op_Equality(ty2, typeof<string>) &&
+                     Type.op_Equality(ty3, typeof<string>) ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
             // LanguagePrimitives.PhysicalEquality's generic constraint of both sides being the same reference type is already sufficient for Linq Expressions' requirements
@@ -729,7 +725,7 @@ module LeafExpressionConverter =
 
         | Patterns.NewDelegate(delegateTy, vs, b) ->
             let vsP = List.map ConvVarToLinq vs
-            let env = {env with varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
+            let env = { varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
             let bodyP = ConvExprToLinqInContext env b
             Expression.Lambda(delegateTy, bodyP, vsP) |> asExpr
 
@@ -772,7 +768,7 @@ module LeafExpressionConverter =
 
         | Patterns.Let (v, e, b) ->
             let vP = ConvVarToLinq v
-            let envinner = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext envinner b
             let eP = ConvExprToLinqInContext env e
             let ty = Expression.GetFuncType [| v.Type; b.Type |]
@@ -781,7 +777,7 @@ module LeafExpressionConverter =
 
         | Patterns.Lambda(v, body) ->
             let vP = ConvVarToLinq v
-            let env = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let env = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext env body
             let lambdaTy, tyargs =
                 if bodyP.Type = typeof<System.Void> then

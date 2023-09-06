@@ -36,11 +36,14 @@ type public FSharpParseFileResults =
     /// Determines if the given position is inside a function or method application.
     member IsPosContainedInApplication: pos: pos -> bool
 
+    /// Determines if the range points to a type name in the type definition.
+    member IsTypeName: range: range -> bool
+
     /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
@@ -52,6 +55,10 @@ type public FSharpParseFileResults =
     /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
     member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
 
+    /// Gets the range of where a return type hint could be placed for a function binding. This will be right in front of the equals sign.
+    /// Returns None if type annotation is present.
+    member TryRangeOfReturnTypeHint: symbolUseStart: pos * ?skipLambdas: bool -> range option
+
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos: pos -> ParameterLocations option
 
@@ -61,8 +68,14 @@ type public FSharpParseFileResults =
     /// Determines if the expression or pattern at the given position has a type annotation
     member IsTypeAnnotationGivenAtPosition: pos -> bool
 
+    /// Determines if the given position is bound to a type definition
+    member IsPositionWithinTypeDefinition: pos -> bool
+
     /// Determines if the binding at the given position is bound to a lambda expression
     member IsBindingALambdaAtPosition: pos -> bool
+
+    /// Determines if the given position is bound to a record definition
+    member IsPositionWithinRecordDefinition: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName: string

@@ -9,7 +9,7 @@ open Microsoft.FSharp.Core
 /// <summary>Contains operations for working with 2-dimensional arrays.</summary>
 ///
 /// <remarks>
-///  <para>See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>
+///  <para>See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>
 ///
 /// <para>F# and CLI multi-dimensional arrays are typically zero-based.
 /// However, CLI multi-dimensional arrays used in conjunction with external

@@ -113,6 +113,9 @@ exception DiagnosticWithSuggestions of number: int * message: string * range: ra
         | DiagnosticWithSuggestions (_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+
 /// The F# compiler code currently uses 'Error(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.
 ///
@@ -126,21 +129,24 @@ let Error ((n, text), m) = DiagnosticWithText(n, text, m)
 let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
 
-let inline protectAssemblyExploration dflt f =
+let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
+    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
+
+let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange _ -> dflt
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationF dflt f =
+let inline protectAssemblyExplorationF dflt ([<InlineIfLambda>] f) =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange (asmName, path) -> dflt (asmName, path)
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f =
+let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f) =
     try
         f ()
     with
@@ -159,7 +165,7 @@ let rec AttachRange m (exn: exn) =
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
         | Failure msg -> InternalError(msg + " (Failure)", m)
         | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
-        | notARangeDual -> notARangeDual
+        | _ -> exn
 
 type Exiter =
     abstract Exit: int -> 'T
@@ -172,8 +178,17 @@ let QuitProcessExiter =
             with _ ->
                 ()
 
-            FSComp.SR.elSysEnvExitDidntExit () |> failwith
+            failwith (FSComp.SR.elSysEnvExitDidntExit ())
     }
+
+type StopProcessingExiter() =
+
+    member val ExitCode = 0 with get, set
+
+    interface Exiter with
+        member exiter.Exit n =
+            exiter.ExitCode <- n
+            raise StopProcessing
 
 /// Closed enumeration of build phases.
 [<RequireQualifiedAccess>]
@@ -304,6 +319,8 @@ type DiagnosticsLogger(nameForDebugging: string) =
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
+    member x.CheckForErrors() = (x.ErrorCount > 0)
+
     member _.DebugDisplay() =
         sprintf "DiagnosticsLogger(%s)" nameForDebugging
 
@@ -320,12 +337,17 @@ let AssertFalseDiagnosticsLogger =
         member _.ErrorCount = (* assert false; *) 0
     }
 
-type CapturingDiagnosticsLogger(nm) =
+type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     inherit DiagnosticsLogger(nm)
     let mutable errorCount = 0
     let diagnostics = ResizeArray()
 
     override _.DiagnosticSink(diagnostic, severity) =
+        let diagnostic =
+            match eagerFormat with
+            | None -> diagnostic
+            | Some f -> f diagnostic
+
         if severity = FSharpDiagnosticSeverity.Error then
             errorCount <- errorCount + 1
 
@@ -476,7 +498,7 @@ module DiagnosticsLoggerExtensions =
         member x.ErrorRecoveryNoRange(exn: exn) = x.ErrorRecovery exn range0
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
+let UseBuildPhase (phase: BuildPhase) =
     let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
     DiagnosticsThreadStatics.BuildPhase <- phase
 
@@ -486,14 +508,17 @@ let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushDiagnosticsLoggerPhaseUntilUnwind (diagnosticsLoggerTransformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldDiagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLoggerTransformer oldDiagnosticsLogger
+let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldDiagnosticsLogger
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
     }
+
+let UseDiagnosticsLogger newLogger =
+    UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -505,8 +530,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
-    let unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind buildPhase
+    let unwindEL = UseDiagnosticsLogger diagnosticsLogger
+    let unwindBP = UseBuildPhase buildPhase
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
@@ -595,7 +620,7 @@ let conditionallySuppressErrorReporting cond f =
 //------------------------------------------------------------------------
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking
 
-/// The result type of a computational modality to colelct warnings and possibly fail
+/// The result type of a computational modality to collect warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> =
     | OkResult of warnings: exn list * result: 'T
@@ -619,22 +644,21 @@ let CommitOperationResult res =
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
-let ErrorD err = ErrorResult([], err)
+let inline ErrorD err = ErrorResult([], err)
 
-let WarnD err = OkResult([ err ], ())
+let inline WarnD err = OkResult([ err ], ())
 
 let CompleteD = OkResult([], ())
 
-let ResultD x = OkResult([], x)
+let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
     | OkResult (warns, res2) -> Some(warns, res2)
     | ErrorResult _ -> None
 
-/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
 [<DebuggerHidden; DebuggerStepThrough>]
-let (++) res f =
+let inline bind f res =
     match res with
     | OkResult ([], res) -> (* tailcall *) f res
     | OkResult (warns, res) ->
@@ -648,12 +672,12 @@ let (++) res f =
 let rec IterateD f xs =
     match xs with
     | [] -> CompleteD
-    | h :: t -> f h ++ (fun () -> IterateD f t)
+    | h :: t -> f h |> bind (fun () -> IterateD f t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let rec WhileD gd body =
     if gd () then
-        body () ++ (fun () -> WhileD gd body)
+        body () |> bind (fun () -> WhileD gd body)
     else
         CompleteD
 
@@ -661,21 +685,21 @@ let rec WhileD gd body =
 let rec MapD_loop f acc xs =
     match xs with
     | [] -> ResultD(List.rev acc)
-    | h :: t -> f h ++ (fun x -> MapD_loop f (x :: acc) t)
+    | h :: t -> f h |> bind (fun x -> MapD_loop f (x :: acc) t)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
-    member x.Bind(res, k) = res ++ k
-    member x.Return res = ResultD res
-    member x.ReturnFrom res = res
-    member x.For(seq, k) = IterateD k seq
-    member x.Combine(expr1, expr2) = expr1 ++ expr2
-    member x.While(gd, k) = WhileD gd k
-    member x.Zero() = CompleteD
-    member x.Delay fn = fun () -> fn ()
-    member x.Run fn = fn ()
+    member inline x.Bind(res, k) = bind k res
+    member inline x.Return res = ResultD res
+    member inline x.ReturnFrom res = res
+    member inline x.For(seq, k) = IterateD k seq
+    member inline x.Combine(expr1, expr2) = bind expr2 expr1
+    member inline x.While(gd, k) = WhileD gd k
+    member inline x.Zero() = CompleteD
+    member inline x.Delay(fn: unit -> _) = fn
+    member inline x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()
 
@@ -692,7 +716,7 @@ let IterateIdxD f xs =
     let rec loop xs i =
         match xs with
         | [] -> CompleteD
-        | h :: t -> f i h ++ (fun () -> loop t (i + 1))
+        | h :: t -> f i h |> bind (fun () -> loop t (i + 1))
 
     loop xs 0
 
@@ -701,7 +725,7 @@ let IterateIdxD f xs =
 let rec Iterate2D f xs ys =
     match xs, ys with
     | [], [] -> CompleteD
-    | h1 :: t1, h2 :: t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2)
+    | h1 :: t1, h2 :: t2 -> f h1 h2 |> bind (fun () -> Iterate2D f t1 t2)
     | _ -> failwith "Iterate2D"
 
 /// Keep the warnings, propagate the error to the exception continuation.
@@ -717,11 +741,12 @@ let TryD f g =
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let rec RepeatWhileD nDeep body =
-    body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep + 1) body else CompleteD)
+    body nDeep
+    |> bind (fun x -> if x then RepeatWhileD (nDeep + 1) body else CompleteD)
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOneD f l =
-    MapD f l ++ (fun res -> ResultD(List.exists id res))
+    MapD f l |> bind (fun res -> ResultD(List.exists id res))
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOne2D f xs ys =
@@ -730,7 +755,7 @@ let inline AtLeastOne2D f xs ys =
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline MapReduceD mapper zero reducer l =
     MapD mapper l
-    ++ (fun res ->
+    |> bind (fun res ->
         ResultD(
             match res with
             | [] -> zero
@@ -785,12 +810,22 @@ let NormalizeErrorString (text: string MaybeNull) =
 
     buf.ToString()
 
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type internal SuppressLanguageFeatureCheck =
+    | Yes
+    | No
+
+let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let currentVersionStr = langVersion.SpecifiedVersionString
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
+    Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m)
+
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        let featureStr = langVersion.GetFeatureString langFeature
-        let currentVersionStr = langVersion.SpecifiedVersionString
-        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
-        Some(Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m))
+        Some(languageFeatureError langVersion langFeature m)
     else
         None
 
@@ -807,13 +842,13 @@ let internal checkLanguageFeatureAndRecover langVersion langFeature m =
 let internal tryLanguageFeatureErrorOption langVersion langFeature m =
     tryLanguageFeatureErrorAux langVersion langFeature m
 
-let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
-    let featureStr = langVersion.GetFeatureString langFeature
-    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int) =
+type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
 
@@ -828,7 +863,7 @@ type StackGuard(maxDepth: int) =
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     return f ()
                 }

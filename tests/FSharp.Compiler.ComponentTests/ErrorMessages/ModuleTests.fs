@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.ErrorMessages
+namespace ErrorMessages
 
 open Xunit
 open FSharp.Test.Compiler
@@ -56,7 +56,7 @@ module Modules =
                                  "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
-    let ``Right Attribute Module Abbreviation with version 5.0 (compile)``() =
+    let ``Right Attribute Module Abbreviation with version 5_0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
         |> withLangVersion50
         |> compile
@@ -182,7 +182,7 @@ AutoOpen>] L1 = do ()
         ]
 
     [<Fact>]
-    let ``Offside rule works for attributes inside module declarations in F# 5.0``() =
+    let ``Offside rule works for attributes inside module declarations in F# 5_0``() =
         Fsx """
 module [<
 AutoOpen>] L1 = do ()

@@ -126,8 +126,8 @@ let u = Case1 3
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project1A.dllName, Project1A.options);
-                                    FSharpReferencedProject.CreateFSharp(Project1B.dllName, Project1B.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project1A.dllName, Project1A.options);
+                                    FSharpReferencedProject.FSharpReference(Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -311,7 +311,7 @@ let p = ("""
             let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
             { options with
                 OtherOptions = Array.append options.OtherOptions [| for p in  projects -> ("-r:" + p.DllName) |]
-                ReferencedProjects = [| for p in projects -> FSharpReferencedProject.CreateFSharp(p.DllName, p.Options); |] }
+                ReferencedProjects = [| for p in projects -> FSharpReferencedProject.FSharpReference(p.DllName, p.Options); |] }
         { ModuleName = "JointProject"; FileName=fileName; Options = options; DllName=dllName }
 
     let cleanFileName a =
@@ -429,7 +429,7 @@ let z = Project1.x
         let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
 [<Test>]
 let ``Test multi project symbols should pick up changes in dependent projects`` () =
@@ -639,7 +639,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 //Project2A.fileSource1
@@ -663,7 +663,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project2A.dllName, Project2A.options); |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -756,7 +756,7 @@ let fizzBuzz = function
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.CreateFSharp(Project3A.dllName, Project3A.options) |] }
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
@@ -880,7 +880,7 @@ let ``In-memory cross-project references to projects using generative type provi
              // NOTE TestProject may not actually have been compiled
               yield "-r:" + testProjectOutput|]
            ReferencedProjects =
-            [|FSharpReferencedProject.CreateFSharp(testProjectOutput, optionsTestProject )|]
+            [|FSharpReferencedProject.FSharpReference(testProjectOutput, optionsTestProject )|]
            IsIncompleteTypeCheckEnvironment = false
            UseScriptResolutionRules = false
            LoadTime = System.DateTime.Now

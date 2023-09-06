@@ -517,6 +517,9 @@ type MethInfo =
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> (ParamData * Attribs) list list
 
+    /// Get the parameter names of a MethInfo
+    member GetParamNames: unit -> string option list list
+
     /// Get the parameter types of a method info
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
 
@@ -1009,6 +1012,9 @@ type EventInfo =
     /// Get the delegate type associated with the event.
     member GetDelegateType: amap: ImportMap * m: range -> TType
 
+    /// Get custom attributes for events (only applicable for IL events)
+    member GetCustomAttrs: unit -> ILAttributes
+
 /// An exception type used to raise an error using the old error system.
 ///
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
@@ -1083,3 +1089,5 @@ val PropInfosEquivByNameAndSig:
 val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
+
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) option

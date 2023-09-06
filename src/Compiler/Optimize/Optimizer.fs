@@ -36,16 +36,6 @@ open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
 
-#if DEBUG
-let verboseOptimizationInfo = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo")) with _ -> false
-let verboseOptimizations = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizations")) with _ -> false
-#else
-let [<Literal>] verboseOptimizationInfo = false
-let [<Literal>] verboseOptimizations = false
-#endif
-
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 
 
 /// size of a function call 
@@ -300,6 +290,11 @@ let [<Literal>] crossAssemblyOptimizationDefault = true
 
 let [<Literal>] debugPointsForPipeRightDefault = true
 
+[<RequireQualifiedAccess>]
+type OptimizationProcessingMode =
+    | Sequential
+    | Parallel
+
 type OptimizationSettings = 
     { 
       abstractBigTargets : bool
@@ -331,6 +326,8 @@ type OptimizationSettings =
       reportHasEffect : bool 
       
       reportTotalSizes : bool
+      
+      processingMode : OptimizationProcessingMode
     }
 
     static member Defaults = 
@@ -347,6 +344,7 @@ type OptimizationSettings =
           reportFunctionSizes = false
           reportHasEffect = false
           reportTotalSizes = false
+          processingMode = OptimizationProcessingMode.Sequential
         }
 
     /// Determines if JIT optimizations are enabled
@@ -407,7 +405,10 @@ type OptimizationSettings =
 
     /// Determines if we should expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled 
+    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled
+    
+    /// Determines how to process optimization of multiple files and individual optimization phases
+    member x.ProcessingMode() = x.processingMode
 
 type cenv =
     { g: TcGlobals
@@ -614,9 +615,7 @@ let BindTyparsToUnknown (tps: Typar list) env =
     // However here we mutate to provide better names for generalized type parameters 
     // The names chosen are 'a', 'b' etc. These are also the compiled names in the IL code
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp, _) -> tp.Name) ) tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
@@ -744,8 +743,6 @@ let mkUInt32Val (g: TcGlobals) n = ConstValue(Const.UInt32 n, g.uint32_ty)
 
 let mkUInt64Val (g: TcGlobals) n = ConstValue(Const.UInt64 n, g.uint64_ty)
 
-let (|StripInt32Value|_|) = function StripConstValue(Const.Int32 n) -> Some n | _ -> None
-      
 let MakeValueInfoForValue g m vref vinfo = 
 #if DEBUG
     let rec check x = 
@@ -1575,7 +1572,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 
 let IsDiscardableEffectExpr expr = 
     match stripDebugPoints expr with 
-    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | Expr.Op (TOp.LValueOp (LByrefGet, _), [], [], _) -> true 
     | _ -> false
 
 /// Checks is a value binding is non-discardable
@@ -4325,7 +4322,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
-          stackGuard = StackGuard(OptimizerStackGuardDepth) 
+          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth") 
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

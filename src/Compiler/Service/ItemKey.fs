@@ -15,6 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.Syntax.PrettyNaming
 
 #nowarn "9"
 #nowarn "51"
@@ -233,7 +234,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match stripTyparEqns ty with
         | TType_forall (_, ty) -> writeType false ty
 
-        | TType_app (tcref, _, _) -> writeEntityRef tcref
+        | TType_app (tcref, _, _) ->
+            match isStandalone, tcref.TypeAbbrev with
+            | false, Some ty -> writeType false ty
+            | _ -> writeEntityRef tcref
 
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple
@@ -294,9 +298,41 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.parameters
             writeType false vref.Type
 
+            match vref.Deref.ArgReprInfoForDisplay with
+            | Some ({ OtherRange = Some (r) }) -> writeRange r
+            | _ -> ()
+
             match vref.TryDeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
+
+    let writeValue (vref: ValRef) =
+        if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+            writeString ItemKeyTags.itemProperty
+            writeString vref.PropertyName
+
+            match vref.IsOverrideOrExplicitImpl, vref.MemberInfo with
+            | true, Some { ImplementedSlotSigs = slotSig :: _ } -> slotSig.DeclaringType |> writeType false
+            | _ ->
+
+                match vref.TryDeclaringEntity with
+                | ParentRef.Parent parent -> writeEntityRef parent
+                | _ -> ()
+        else
+            writeValRef vref
+
+    let writeActivePatternCase (apInfo: ActivePatternInfo) index =
+        writeString ItemKeyTags.itemActivePattern
+
+        match apInfo.ActiveTagsWithRanges with
+        | (_, m) :: _ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
+        | _ -> ()
+
+        for tag in apInfo.ActiveTags do
+            writeChar '|'
+            writeString tag
+
+        writeInt32 index
 
     member _.Write(m: range, item: Item) =
         writeRange m
@@ -306,29 +342,16 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         let preCount = b.Count
 
         match item with
-        | Item.Value vref ->
-            if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
-                writeString ItemKeyTags.itemProperty
-                writeString vref.PropertyName
-
-                match vref.TryDeclaringEntity with
-                | ParentRef.Parent parent -> writeEntityRef parent
-                | _ -> ()
-            else
-                writeValRef vref
+        | Item.Value vref -> writeValue vref
 
         | Item.UnionCase (info, _) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
             writeString info.LogicalName
 
-        | Item.ActivePatternResult (info, _, _, _) ->
-            writeString ItemKeyTags.itemActivePattern
-            info.ActiveTags |> List.iter writeString
+        | Item.ActivePatternResult (info, _, index, _) -> writeActivePatternCase info index
 
-        | Item.ActivePatternCase elemRef ->
-            writeString ItemKeyTags.itemActivePattern
-            elemRef.ActivePatternInfo.ActiveTags |> List.iter writeString
+        | Item.ActivePatternCase elemRef -> writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
 
         | Item.ExnCase tcref ->
             writeString ItemKeyTags.itemExnCase
@@ -366,7 +389,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString info.EventName
             writeEntityRef info.DeclaringTyconRef
 
-        | Item.Property (nm, infos) ->
+        | Item.Property (nm, infos, _) ->
             writeString ItemKeyTags.itemProperty
             writeString nm
 
@@ -390,12 +413,14 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.MethodGroup (_, [ info ], _)
         | Item.CtorGroup (_, [ info ]) ->
             match info with
-            | FSMeth (_, _, vref, _) -> writeValRef vref
-            | ILMeth (_, info, _) ->
-                info.ILMethodRef.ArgTypes |> List.iter writeILType
-                writeILType info.ILMethodRef.ReturnType
-                writeString info.ILName
-                writeType false info.ApparentEnclosingType
+            | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
+            | FSMeth (_, _, vref, _) -> writeValue vref
+            | ILMeth (_, ilMethInfo, _) when info.IsConstructor -> writeType true ilMethInfo.ApparentEnclosingType
+            | ILMeth (_, ilMethInfo, _) ->
+                ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
+                writeILType ilMethInfo.ILMethodRef.ReturnType
+                writeString ilMethInfo.ILName
+                writeType false ilMethInfo.ApparentEnclosingType
             | _ ->
                 writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef
@@ -415,8 +440,17 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.itemDelegateCtor
             writeType false ty
 
+        // Named argument in a signature
+        | Item.OtherName (ident = Some (ident); argType = ty; argInfo = Some _) ->
+            writeString ItemKeyTags.itemValue
+            writeString ident.idText
+            writeString ItemKeyTags.parameters
+            writeType false ty
+            writeRange ident.idRange
+            writeChar '%'
+
         // We should consider writing ItemKey for each of these
-        | Item.ArgName _ -> ()
+        | Item.OtherName _ -> ()
         | Item.FakeInterfaceCtor _ -> ()
         | Item.CustomOperation _ -> ()
         | Item.CustomBuilder _ -> ()

@@ -1,11 +1,6 @@
 // (c) Microsoft Corporation 2005-2009. 
 
-#if INTERNALIZED_FSLEXYACC_RUNTIME
-namespace Internal.Utilities
-#else
-namespace Microsoft.FSharp.Text
-#endif
-
+namespace FSharp.Text
 
 type ArgType = 
   | ClearArg of bool ref
@@ -35,17 +30,17 @@ exception HelpText of string
 [<Sealed>]
 type ArgParser() = 
     static let getUsage specs u =  
-      let sbuf = new System.Text.StringBuilder 100  
+      let sbuf = System.Text.StringBuilder 100  
       let pstring (s:string) = sbuf.Append s |> ignore 
       let pendline s = pstring s; pstring "\n" 
       pendline u;
       List.iter (fun (arg:ArgInfo) -> 
         match arg.Name, arg.ArgType, arg.HelpText with
-        | (s, (UnitArg _ | SetArg _ | ClearArg _), helpText) -> pstring "\t"; pstring s; pstring ": "; pendline helpText
-        | (s, StringArg _, helpText) -> pstring "\t"; pstring s; pstring " <string>: "; pendline helpText
-        | (s, IntArg _, helpText) -> pstring "\t"; pstring s; pstring " <int>: "; pendline helpText
-        | (s, FloatArg _, helpText) ->  pstring "\t"; pstring s; pstring " <float>: "; pendline helpText
-        | (s, RestArg _, helpText) -> pstring "\t"; pstring s; pstring " ...: "; pendline helpText)
+        | s, (UnitArg _ | SetArg _ | ClearArg _), helpText -> pstring "\t"; pstring s; pstring ": "; pendline helpText
+        | s, StringArg _, helpText -> pstring "\t"; pstring s; pstring " <string>: "; pendline helpText
+        | s, IntArg _, helpText -> pstring "\t"; pstring s; pstring " <int>: "; pendline helpText
+        | s, FloatArg _, helpText ->  pstring "\t"; pstring s; pstring " <float>: "; pendline helpText
+        | s, RestArg _, helpText -> pstring "\t"; pstring s; pstring " ...: "; pendline helpText)
         specs;
       pstring "\t"; pstring "--help"; pstring ": "; pendline "display this list of options";
       pstring "\t"; pstring "-help"; pstring ": "; pendline "display this list of options";
@@ -53,20 +48,20 @@ type ArgParser() =
 
 
     static member ParsePartial(cursor,argv,arguments:seq<ArgInfo>,?otherArgs,?usageText) =
-        let otherArgs = defaultArg otherArgs (fun _ -> ())
+        let other = defaultArg otherArgs (fun _ -> ())
         let usageText = defaultArg usageText ""
         let nargs = Array.length argv 
         incr cursor;
-        let arguments = arguments |> Seq.toList
-        let specs = arguments |> List.map (fun (arg:ArgInfo) -> arg.Name, arg.ArgType)
+        let argSpecs = arguments |> Seq.toList
+        let specs = argSpecs |> List.map (fun (arg:ArgInfo) -> arg.Name, arg.ArgType)
         while !cursor < nargs do
           let arg = argv.[!cursor] 
           let rec findMatchingArg args = 
             match args with
-            | ((s, action) :: _) when s = arg -> 
+            | (s, action) :: _ when s = arg -> 
                let getSecondArg () = 
                    if !cursor + 1 >= nargs then 
-                     raise(Bad("option "+s+" needs an argument.\n"+getUsage arguments usageText));
+                     raise(Bad("option "+s+" needs an argument.\n"+getUsage argSpecs usageText));
                    argv.[!cursor+1] 
                  
                match action with 
@@ -85,40 +80,40 @@ type ArgParser() =
                  cursor := !cursor + 2
                | IntArg f -> 
                  let arg2 = getSecondArg () 
-                 let arg2 = try int32 arg2 with _ -> raise(Bad(getUsage arguments usageText)) in  
+                 let arg2 = try int32 arg2 with _ -> raise(Bad(getUsage argSpecs usageText)) in  
                  f arg2;
                  cursor := !cursor + 2;
                | FloatArg f -> 
                  let arg2 = getSecondArg() 
-                 let arg2 = try float arg2 with _ -> raise(Bad(getUsage arguments usageText)) in 
+                 let arg2 = try float arg2 with _ -> raise(Bad(getUsage argSpecs usageText)) in 
                  f arg2; 
                  cursor := !cursor + 2;
                | RestArg f -> 
                  incr cursor;
                  while !cursor < nargs do
-                     f (argv.[!cursor]);
+                     f argv.[!cursor];
                      incr cursor;
 
-            | (_ :: more)  -> findMatchingArg more 
+            | _ :: more  -> findMatchingArg more 
             | [] -> 
                 if arg = "-help" || arg = "--help" || arg = "/help" || arg = "/help" || arg = "/?" then
-                    raise (HelpText (getUsage arguments usageText))
+                    raise (HelpText (getUsage argSpecs usageText))
                 // Note: for '/abc/def' does not count as an argument
                 // Note: '/abc' does
-                elif arg.Length>0 && (arg.[0] = '-' || (arg.[0] = '/' && not (arg.Length > 1 && arg.[1..].Contains ("/")))) then
-                    raise (Bad ("unrecognized argument: "+ arg + "\n" + getUsage arguments usageText))
+                elif arg.Length>0 && (arg.[0] = '-' || (arg.[0] = '/' && not (arg.Length > 1 && arg.[1..].Contains "/"))) then
+                    raise (Bad ("unrecognized argument: "+ arg + "\n" + getUsage argSpecs usageText))
                 else 
-                   otherArgs arg;
+                   other arg;
                    incr cursor
           findMatchingArg specs 
 
-    static member Usage (arguments,?usage) = 
+    static member Usage (arguments, ?usage) = 
         let usage = defaultArg usage ""
         System.Console.Error.WriteLine (getUsage (Seq.toList arguments) usage)
 
     #if FX_NO_COMMAND_LINE_ARGS
     #else
-    static member Parse (arguments,?otherArgs,?usageText) = 
+    static member Parse (arguments, ?otherArgs,?usageText) = 
         let current = ref 0
         let argv = System.Environment.GetCommandLineArgs() 
         try ArgParser.ParsePartial (current, argv, arguments, ?otherArgs=otherArgs, ?usageText=usageText)
@@ -128,6 +123,6 @@ type ArgParser() =
               System.Console.Error.WriteLine h; 
               System.Console.Error.Flush();  
               System.Environment.Exit(1); 
-          | e -> 
+          | _ -> 
               reraise()
     #endif
