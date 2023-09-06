@@ -1230,6 +1230,7 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
             let mid = (low + high) / 2
 
             startRid <- mid
+            endRid <- mid
 
             // read backwards
             let mutable fin = false
@@ -1250,7 +1251,7 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
 
             // read forward
             let mutable fin = false
-            let mutable curr = mid
+            let mutable curr = mid + 1
 
             while not fin do
                 if curr > numRows then
@@ -1286,6 +1287,8 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
                 endRid <- rid
             else
                 fin <- true
+
+            rid <- rid + 1
 
     startRid, endRid
 
