@@ -1069,6 +1069,7 @@ type ProjectWorkflowBuilder
             let project, file = ctx.Project.FindInAllProjects fileId
             let fileName = project.ProjectDir ++ file.FileName
             let source = renderSourceFile project file
+            let options = project.GetProjectOptions checker
             let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
             return! getSymbolUse fileName source symbolName snapshot checker
         }
