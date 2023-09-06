@@ -612,4 +612,80 @@ open Foo.Bar.Y // Y.fs
 """
                     (set [| 1 |])
             ]
+        scenario
+            "Identifier in type augmentation can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Identifier in type augmentation in signature file can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fsi"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase =
+        class
+            new: unit -> PoolingValueTaskBuilderBase
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fsi"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+
+            member Source: a: int -> int
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0; 2 |])
+            ]
     ]

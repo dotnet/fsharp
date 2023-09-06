@@ -752,7 +752,21 @@ type Foo() =
             and set (a: int) (b: float) = ()
 """
             (5, 14, "    member _.X", "X")
-            
+
+    [<Test>]
+    let ``Signature text for inline property`` () =
+        assertSignature
+            "member inline Item: i: int * j: char -> string with get\nmember inline Item: i: int * j: char -> string with set"
+            """
+module Meh
+
+type Foo =
+    member inline this.Item
+        with get (i:int,j: char) : string = ""
+        and set (i:int,j: char) (x:string) = printfn "%i %c" i j
+"""
+            (5, 27, "    member inline this.Item", "Item")
+
 module AnonymousRecord =
     [<Test>]
     let ``Anonymous record copy-and-update symbols usage`` () =
