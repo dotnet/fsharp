@@ -9,4 +9,3 @@ type Ok(a, b, c, d, e : lazy<int>) = class end
 
 // 6 elements -> weird diagnostics (in non RET builds)
 type Bad(a, b, c, d, e, f : lazy<int>) = class end
-
