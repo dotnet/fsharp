@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Member/Inherit 05.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Member/Inherit 08.fs", false, QualifiedNameOfFile Module, [], [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types
@@ -15,7 +15,7 @@ ImplFile
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
-                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((4,12), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = true
                                       IsDispatchSlot = false
@@ -34,7 +34,7 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,18--6,19) }), (6,4--6,21))],
+                              EqualsRange = Some (6,18--6,19) }), (4,12--6,21))],
                      (4,4--6,21)), [], None, (3,5--6,21),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
@@ -44,4 +44,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,12)-(6,4) parse error Incomplete structured construct at or before this point in type definition
+(4,12)-(4,14) parse error Unexpected keyword 'as' in type definition
