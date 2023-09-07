@@ -285,7 +285,7 @@ type UsingMSBuild()  =
             foo((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["'a"]])
         
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``Single.DiscriminatedUnion.Construction``() =
         let fileContent = """
             type MyDU = 
@@ -305,7 +305,7 @@ type UsingMSBuild()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark4*)",[["int"]])
         
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``Single.Exception.Construction``() =
         let fileContent = """
             exception E1 of int * string
