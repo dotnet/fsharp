@@ -79,14 +79,14 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                 | [ _ ] -> [ origSepRng ]
                 | _ :: t ->
                     origSepRng
-                    :: List.map (fun (s: Ident, e: Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
+                    :: List.map (fun (s: Ident, e: Ident) -> withStartEnd s.idRange.End e.idRange.Start s.idRange) t
 
             let lid = buildLid [] id lidwd |> List.rev
 
             (lid, List.pairwise lid |> calcLidSeparatorRanges origSepRng)
 
         let totalRange (origId: Ident) (id: Ident) =
-            mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
+            withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
         let rangeOfBlockSeperator (id: Ident) =
             let idEnd = id.idRange.End
@@ -95,7 +95,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             let blockSeperatorStartPos = mkPos idEnd.Line blockSeperatorStartCol
             let blockSeporatorEndPos = mkPos idEnd.Line blockSeperatorEndCol
 
-            mkRange id.idRange.FileName blockSeperatorStartPos blockSeporatorEndPos
+            withStartEnd blockSeperatorStartPos blockSeporatorEndPos id.idRange
 
         match withExpr with
         | SynExpr.Ident origId, (sepRange, _) ->

@@ -543,6 +543,27 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let result = SyntaxTraversal.Traverse(pos, input, visitor)
         result.IsSome
 
+    member _.IsPositionWithinRecordDefinition pos =
+        let isWithin left right middle =
+            Position.posGt right left && Position.posLt middle right
+
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitRecordDefn(_, _, range) =
+                    if pos |> isWithin range.Start range.End then
+                        Some true
+                    else
+                        None
+
+                override _.VisitTypeAbbrev(_, synType, range) =
+                    match synType with
+                    | SynType.AnonRecd _ when pos |> isWithin range.Start range.End -> Some true
+                    | _ -> None
+            }
+
+        let result = SyntaxTraversal.Traverse(pos, input, visitor)
+        result.IsSome
+
     /// Get declared items and the selected item at the specified location
     member _.GetNavigationItemsImpl() =
         DiagnosticsScope.Protect
@@ -832,8 +853,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true resultExpr
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
-
-                        | SynExpr.DotLambda (expr = bodyExpr) -> yield! walkExpr true bodyExpr
 
                         | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl)
                         | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->

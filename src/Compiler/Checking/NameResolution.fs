@@ -271,7 +271,12 @@ type Item =
         | Item.Property(name = nm) -> nm |> ConvertValLogicalNameToDisplayNameCore
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
         | Item.MethodGroup(nm, _, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
-        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.CtorGroup(nm, ILMeth(_, ilMethInfo, _) :: _) ->
+            match ilMethInfo.ApparentEnclosingType |> tryNiceEntityRefOfTy with
+            | ValueSome tcref -> tcref.DisplayNameCore
+            | _ -> nm
+            |> DemangleGenericTypeName
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName
         | Item.FakeInterfaceCtor ty
         | Item.DelegateCtor ty ->
             match ty with 

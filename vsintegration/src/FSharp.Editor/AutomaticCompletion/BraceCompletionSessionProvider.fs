@@ -499,17 +499,19 @@ type EditorBraceCompletionSessionFactory() =
         let sourceCode = sourceCodeTask.Result
 
         position = 0
-        || (let colorizationData =
-                Tokenizer.getClassifiedSpans (
-                    document.Id,
-                    sourceCode,
-                    TextSpan(position - 1, 1),
-                    Some(document.FilePath),
-                    [],
-                    None,
-                    None,
-                    cancellationToken
-                )
+        || (let colorizationData = ResizeArray<_>()
+
+            Tokenizer.classifySpans (
+                document.Id,
+                sourceCode,
+                TextSpan(position - 1, 1),
+                Some(document.FilePath),
+                [],
+                None,
+                None,
+                colorizationData,
+                cancellationToken
+            )
 
             colorizationData.Count = 0
             || colorizationData.Exists(fun classifiedSpan ->

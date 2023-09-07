@@ -32,7 +32,7 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let! token = CancellableTask.getCurrentCancellationToken ()
+                let! token = CancellableTask.getCancellationToken ()
 
                 let! sourceText = context.Document.GetTextAsync token
                 let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof RemoveUnusedBindingCodeFixProvider)

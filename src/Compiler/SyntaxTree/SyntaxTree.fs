@@ -195,9 +195,11 @@ type SynRationalConst =
 
     | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
+    | Rational of numerator: int32 * numeratorRange: range * divRange: range * denominator: int32 * denominatorRange: range * range: range
 
     | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 [<RequireQualifiedAccess>]
 type SynAccess =
@@ -834,9 +836,8 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) -> e1.RangeOfFirstPortion
         | SynExpr.ForEach (pat = pat; range = r) ->
-            let start = r.Start
             let e = (pat.Range: range).Start
-            mkRange r.FileName start e
+            withEnd e r
         | _ -> e.Range
 
     member this.IsArbExprAndThusAlreadyReportedError =
@@ -956,7 +957,7 @@ type SynPat =
 
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     | Null of range: range
 
@@ -965,8 +966,6 @@ type SynPat =
     | IsInst of pat: SynType * range: range
 
     | QuoteExpr of expr: SynExpr * range: range
-
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
 
     | InstanceMember of
         thisId: Ident *
@@ -992,7 +991,6 @@ type SynPat =
         | SynPat.Typed (range = m)
         | SynPat.Attrib (range = m)
         | SynPat.Record (range = m)
-        | SynPat.DeprecatedCharRange (range = m)
         | SynPat.Null (range = m)
         | SynPat.IsInst (range = m)
         | SynPat.QuoteExpr (range = m)
