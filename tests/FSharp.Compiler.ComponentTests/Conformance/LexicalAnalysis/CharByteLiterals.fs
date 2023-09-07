@@ -3,6 +3,11 @@ module Conformance.LexicalAnalysis.CharByteLiterals
 open Xunit
 open FSharp.Test.Compiler
 
+/// `This is not a valid ASCII byte literal. Value should be < 128y.` with note that error soon
+let private invalidTrigraphCharWarningMsg = 
+    FSComp.SR.lexInvalidTrigraphAsciiByteLiteral ()
+    |> snd
+
 [<Fact>]
 let ``all byte char notations pass type check`` () =
     Fs """
@@ -49,11 +54,12 @@ let ``byte value > 128uy fails in all char notations``() =
     """
     |> typecheck
     |> withDiagnostics [
-        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid byte literal")
-        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte literal")
-        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte literal")
+        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid ASCII byte literal. Value must be < 128y.")
+
+        (Warning 1157, Line 4, Col 5, Line 4, Col 12, invalidTrigraphCharWarningMsg)
     ]
 
 [<Fact>]
@@ -84,11 +90,11 @@ let ``128uy fails typecheck in char notations``() =
     """
     |> typecheck
     |> withDiagnostics [
+        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid ASCII byte literal. Value must be < 128y.")
 
-        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte literal")
-        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte literal")
+        (Warning 1157, Line 4, Col 5, Line 4, Col 12, invalidTrigraphCharWarningMsg)
     ]
 
 [<Fact>]
@@ -105,9 +111,9 @@ let ``value out of byte range fails in char notations``() =
     """
     |> typecheck
     |> withDiagnostics [
-        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid byte literal")
-        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid byte literal")
+        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid ASCII byte literal. Value must be < 128y.")
 
-        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte literal")
-        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte literal")
+        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid ASCII byte literal. Value must be < 128y.")
     ]

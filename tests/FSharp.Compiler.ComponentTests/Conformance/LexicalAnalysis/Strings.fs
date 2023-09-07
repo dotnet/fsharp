@@ -3,6 +3,11 @@ module Conformance.LexicalAnalysis.Strings
 open Xunit
 open FSharp.Test.Compiler
 
+/// `'%s' is not a valid character literal.` with note about wrapped value and error soon
+let private invalidCharWarningMsg value wrapped = 
+    FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
+    |> snd
+
 [<Fact>]
 let ``Decimal char > 255 is not valid``() =
     Fs """
@@ -10,9 +15,7 @@ printfn "Ω\937"
     """
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [
-        (Error 1252, Line 2, Col 11, Line 2, Col 15, "'\\937' is not a valid character literal")
-    ]
+    |> withSingleDiagnostic (Warning 1252, Line 2, Col 11, Line 2, Col 15, invalidCharWarningMsg "\\937" "\\169")
 
 [<Fact>]
 let ``Decimal char between 128 and 256 is valid``() =
@@ -45,9 +48,7 @@ printfn "foo\937bar"
     """
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [
-        (Error 1252, Line 2, Col 13, Line 2, Col 17, "'\\937' is not a valid character literal")
-    ]
+    |> withSingleDiagnostic (Warning 1252, Line 2, Col 13, Line 2, Col 17, invalidCharWarningMsg "\\937" "\\169")
 
 [<Fact>]
 let ``Error messages for different notations only span invalid notation``() =
@@ -57,6 +58,6 @@ printfn "ok:\061;err:\937;err:\U12345678;ok:\U00005678;fin"
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1252, Line 2, Col 22, Line 2, Col 26, "'\\937' is not a valid character literal")
         (Error 1245, Line 2, Col 31, Line 2, Col 41, "\\U12345678 is not a valid Unicode character escape sequence")
+        (Warning 1252, Line 2, Col 22, Line 2, Col 26,  invalidCharWarningMsg "\\937" "\\169")
     ]

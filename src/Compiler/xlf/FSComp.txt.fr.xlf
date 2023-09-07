@@ -622,14 +622,24 @@
         <target state="translated">Les régions IF-FSHARP/IF-CAML ne sont plus prises en charge.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidAsciiByteLiteral">
+        <source>This is not a valid ASCII byte literal. Value must be &lt; 128y.</source>
+        <target state="new">This is not a valid ASCII byte literal. Value must be &lt; 128y.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidCharLiteralInString">
-        <source>'{0}' is not a valid character literal</source>
-        <target state="new">'{0}' is not a valid character literal</target>
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this Warning will be promoted to Error!</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this Warning will be promoted to Error!</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
+        <source>This is not a valid ASCII byte literal. Value should be &lt; 128y.\nNote: In a future F# version this Warning will be promoted to Error!</source>
+        <target state="new">This is not a valid ASCII byte literal. Value should be &lt; 128y.\nNote: In a future F# version this Warning will be promoted to Error!</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -6320,11 +6330,6 @@
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
         <target state="translated">Il ne s’agit pas d’un littéral numérique valide. Les littéraux numériques valides incluent 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1,0 (float/double), 1,0f (float32/single), 1,0 m (décimal), 1I (bigint).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexInvalidByteLiteral">
-        <source>This is not a valid byte literal</source>
-        <target state="translated">Littéral d'octet non valide</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteral">

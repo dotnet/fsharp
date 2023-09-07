@@ -3,6 +3,11 @@ module Conformance.LexicalAnalysis.ByteStrings
 open Xunit
 open FSharp.Test.Compiler
 
+/// `'%s' is not a valid character literal.` with note about wrapped value and error soon
+let private invalidCharWarningMsg value wrapped = 
+    FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
+    |> snd
+
 [<Fact>]
 let ``Decimal char > 255 is not valid``() =
     Fs """
@@ -11,9 +16,7 @@ let _ = "\937"B
     """
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [
-        (Error 1252, Line 3, Col 10, Line 3, Col 14, "'\\937' is not a valid character literal")
-    ]
+    |> withSingleDiagnostic (Warning 1252, Line 3, Col 10, Line 3, Col 14, invalidCharWarningMsg "\\937" "\\169")
 
 [<Fact>]
 let ``Decimal char between 128 and 256 is not valid``() =
@@ -23,9 +26,7 @@ let _ = "\250"B
     """
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [
-        (Error 1157, Line 3, Col 9, Line 3, Col 16, "This is not a valid byte literal")
-    ]
+    |> withSingleDiagnostic (Error 1157, Line 3, Col 9, Line 3, Col 16, "This is not a valid ASCII byte literal. Value must be < 128y.")
 
 [<Fact>]
 let ``Decimal char < 128 is valid``() =
@@ -45,7 +46,7 @@ if @"\937"B <> "\\937"B then failwith "should not be trigraph"
 
 
 [<Fact>]
-let ``values in different notations are invalid above 127``() =
+let ``Values in different notations are invalid above 127``() =
     Fs """
 [
     "ú"B
@@ -59,11 +60,11 @@ let ``values in different notations are invalid above 127``() =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid byte literal")
-        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte literal")
-        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte literal")
-        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte literal")
+        (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid ASCII byte literal. Value must be < 128y.")
+        (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid ASCII byte literal. Value must be < 128y.")
     ]
     
 [<Fact>]
@@ -75,7 +76,6 @@ let ``Error messages for different notations only span invalid notation``() =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 1252, Line 2, Col 14, Line 2, Col 18, "'\\937' is not a valid character literal")
         (Error 1245, Line 2, Col 23, Line 2, Col 33, "\\U12345678 is not a valid Unicode character escape sequence")
 
         // Note: Error for `\U00005678` spans full byte string:
@@ -84,4 +84,6 @@ let ``Error messages for different notations only span invalid notation``() =
         //           (because `B` suffix -> only know at end if it's a byte string)
         //       -> Don't have direct access to range of invalid char any more
         (Error 1140, Line 2, Col 1, Line 2, Col 54, "This byte array literal contains characters that do not encode as a single byte")
+
+        (Warning 1252, Line 2, Col 14, Line 2, Col 18, invalidCharWarningMsg "\\937" "\\169")
     ]
