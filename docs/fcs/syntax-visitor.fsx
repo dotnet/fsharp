@@ -12,7 +12,7 @@ index: 301
 Compiler Services: Using the SyntaxVisitorBase
 =========================================
 
-Syntax tree traversal is a common problem when interacting with the `FSharp.Compiler.Service`.  
+Syntax tree traversal is a common topic when interacting with the `FSharp.Compiler.Service`.  
 As established in [Tutorial: Expressions](./untypedtree.html#Walking-over-the-AST), the [ParsedInput](../reference/fsharp-compiler-syntax-parsedinput.html) can be traversed by a set of recursive functions.  
 It can be tedious to always construct these functions from scratch.
 
@@ -170,7 +170,7 @@ let thirdVisitor =
         override this.VisitExpr(path, traverseSynExpr, defaultTraverse, synExpr) =
             match synExpr with
             | SynExpr.Const (constant = SynConst.Int32 v) -> Some v
-            // We do want to continue the travel when nodes like `SynExpr.App` are found.
+            // We do want to continue to traverse when nodes like `SynExpr.App` are found.
             | otherExpr -> defaultTraverse otherExpr }
 
 let thirdResult =
@@ -180,6 +180,10 @@ let thirdResult =
 `defaultTraverse` is especially useful when you do not know upfront what syntax tree you will be walking.  
 This is a common case when dealing with IDE tooling. You won't know what actual code the end-user is currently processing.
 
-**Note: the visitor pattern is designed to find a single value inside a tree!**  
-This is not an ideal solution when you are interested in all nodes of certain shape.
+**Note: SyntaxVisitorBase is designed to find a single value inside a tree!**  
+This is not an ideal solution when you are interested in all nodes of certain shape.  
+It will always verify if the given cursor position is still matching the range of the node.    
+As a fallback the first branch will be explored when you are pass `Position.pos0`.  
+By design, it is meant to find a single result.
+
 *)
