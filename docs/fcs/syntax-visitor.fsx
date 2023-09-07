@@ -183,7 +183,7 @@ This is a common case when dealing with IDE tooling. You won't know what actual 
 **Note: SyntaxVisitorBase is designed to find a single value inside a tree!**  
 This is not an ideal solution when you are interested in all nodes of certain shape.  
 It will always verify if the given cursor position is still matching the range of the node.    
-As a fallback the first branch will be explored when you are pass `Position.pos0`.  
+As a fallback the first branch will be explored when you pass `Position.pos0`.  
 By design, it is meant to find a single result.
 
 *)
