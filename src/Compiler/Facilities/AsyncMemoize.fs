@@ -582,6 +582,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member _.Locked = lock.Semaphore.CurrentCount < 1
 
+    member _.Running = cache.GetValues() |> Seq.filter (function Running _ -> true | _ -> false) |> Seq.toArray
+
     member this.DebuggerDisplay =
         let locked = if this.Locked then " [LOCKED]" else ""
 
