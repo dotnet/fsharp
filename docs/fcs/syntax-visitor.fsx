@@ -78,8 +78,8 @@ let result = SyntaxTraversal.Traverse(Position.pos0, mkTree codeSample, visitor)
 Instead of traversing manually from `ParsedInput` to `SynModuleOrNamespace` to `SynModuleDecl.Let` to `SynBinding` to `SynPat`, we leverage the default navigation that happens in `SyntaxTraversal.Traverse`.  
 A `SyntaxVisitorBase` will shortcut all other code paths once a single `VisitXYZ` override has found anything.
 
-Our code sample of course only had one let binding and thus we didn't need specify any further logic whether to differentiate between multiple bindings.
-Let's consider a second example where we know the user's cursors inside an IDE is placed after `c` and we are interested in the body expression of the let binding.
+Our code sample of course only had one let binding and thus we didn't need to specify any further logic whether to differentiate between multiple bindings.
+Let's consider a second example where we know the user's cursor inside an IDE is placed after `c` and we are interested in the body expression of the let binding.
 *)
 
 let secondCodeSample = """
@@ -102,11 +102,11 @@ let secondResult =
     SyntaxTraversal.Traverse(cursorPos, mkTree secondCodeSample, secondVisitor) // Some (Const (Int32 2, (6,8--6,9)))
 
 (**
-Due to our passed cursor position, we did not need to write any code to excluded the expressions of the other let bindings.
+Due to our passed cursor position, we did not need to write any code to exclude the expressions of the other let bindings.
 `SyntaxTraversal.Traverse` will check whether the current position is inside any syntax node before drilling deeper.
 
 Lastly, some `VisitXYZ` overrides can contain a defaultTraverse. This helper allows you to continue the default traversal when you currently hit a node that is not of interest.
-Consider `1 + 2 + 3 + 4`, this will reflected in a nested infix application expression.
+Consider `1 + 2 + 3 + 4`, this will be reflected in a nested infix application expression.
 If the cursor is at the end of the entire expression, we can grab the value of `4` using the following visitor:
 *)
 
