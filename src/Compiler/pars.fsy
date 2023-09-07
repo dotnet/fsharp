@@ -2300,10 +2300,9 @@ inheritsDefn:
        SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl) }
 
   | INHERIT ends_coming_soon_or_recover
-     { let mInherit = rhs parseState 1
-       if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mInherit))
-       let ty = SynType.FromParseError(mInherit.EndRange)
-       SynMemberDefn.Inherit(ty, None, mInherit) }
+     { let mDecl = (rhs parseState 1)
+       if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mDecl))
+       SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
 
 optAsSpec:
   | asSpec

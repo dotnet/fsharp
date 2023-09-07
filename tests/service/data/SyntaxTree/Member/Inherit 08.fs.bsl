@@ -11,7 +11,9 @@ ImplFile
                      false, None, (3,5--3,6)),
                   ObjectModel
                     (Unspecified,
-                     [Inherit (FromParseError (4,11--4,11), None, (4,4--4,11));
+                     [Inherit
+                        (LongIdent (SynLongIdent ([], [], [])), None,
+                         (4,4--4,11));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
