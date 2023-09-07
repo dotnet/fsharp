@@ -920,7 +920,7 @@ let mkSynExprDecl (e: SynExpr) = SynModuleDecl.Expr(e, e.Range)
 let addAttribs attrs p = SynPat.Attrib(p, attrs, p.Range)
 
 let unionRangeWithPos (r: range) p =
-    let r2 = mkRange r.FileName p p
+    let r2 = withStartEnd p p r
     unionRanges r r2
 
 /// Report a good error at the end of file, e.g. for non-terminated strings
@@ -1102,7 +1102,15 @@ let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, 
 
 let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
     let mWith, (getSet, getSetOpt) = accessors
-    let memberRange = unionRanges rangeStart expr.Range |> unionRangeWithXmlDoc xmlDoc
+
+    let memberRange =
+        match getSetOpt with
+        | None -> unionRanges rangeStart expr.Range |> unionRangeWithXmlDoc xmlDoc
+        | Some (getSet: GetSetKeywords) ->
+            unionRanges rangeStart expr.Range
+            |> unionRangeWithXmlDoc xmlDoc
+            |> unionRanges getSet.Range
+
     let flags, leadingKeyword = flags
     let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
     let memberFlags: SynMemberFlags = flags SynMemberKind.Member

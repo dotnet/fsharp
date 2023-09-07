@@ -35,7 +35,7 @@ let Thing : IFoo = Foo() :> IFoo
 """
             }
 
-    let actual = codeFix |> tryFix code (Manual("Foo() :?> IFoo", 3198))
+    let actual = codeFix |> tryFix code (Manual("Foo() :?> IFoo", "FS3198"))
 
     Assert.Equal(expected, actual)
 
@@ -62,7 +62,7 @@ let Thing : IFoo = upcast Foo()
 """
             }
 
-    let actual = codeFix |> tryFix code (Manual("downcast Foo()", 3198))
+    let actual = codeFix |> tryFix code (Manual("downcast Foo()", "FS3198"))
 
     Assert.Equal(expected, actual)
 
@@ -79,6 +79,6 @@ let Thing : IdowncastFoo = Foo() :?> IdowncastFoo
 
     let expected = None
 
-    let actual = codeFix |> tryFix code (Manual("Foo() :?> IdowncastFoo", 3198))
+    let actual = codeFix |> tryFix code (Manual("Foo() :?> IdowncastFoo", "FS3198"))
 
     Assert.Equal(expected, actual)

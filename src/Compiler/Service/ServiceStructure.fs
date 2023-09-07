@@ -572,7 +572,7 @@ module Structure =
                 | SynValData(memberFlags = Some {
                                                     MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
                                                 }) ->
-                    let range = mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
+                    let range = withStart (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range
 
                     let collapse =
                         match synPat with

@@ -116,6 +116,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
+                            let enableInMemoryCrossProjectReferences =
+                                editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
@@ -156,6 +159,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableLiveBuffers, enableLiveBuffers
                                         nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                        nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
                                         nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled

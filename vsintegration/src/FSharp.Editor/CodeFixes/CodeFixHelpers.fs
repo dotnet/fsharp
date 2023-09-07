@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -17,8 +16,16 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 
 open CancellableTasks
+
+module internal MutableCodeFixHelper =
+    let getLineNumberAndText (sourceText: SourceText) position =
+        let textLine = sourceText.Lines.GetLineFromPosition position
+        let textLinePos = sourceText.Lines.GetLinePosition position
+        let fcsTextLineNumber = Line.fromZ textLinePos.Line
+        fcsTextLineNumber, textLine.ToString()
 
 module internal UnusedCodeFixHelper =
     let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
@@ -72,24 +79,6 @@ module internal CodeFixHelpers =
         let props: (string * obj) array = Array.concat [ additionalProps; defaultProps ]
 
         TelemetryReporter.ReportSingleEvent(TelemetryEvents.CodefixActivated, props)
-
-    let createFixAllProvider name getChanges =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
-            backgroundTask {
-                let sw = Stopwatch.StartNew()
-                let! (changes: seq<TextChange>) = getChanges (doc, allDiagnostics, fixAllCtx.CancellationToken)
-                let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
-                let doc = doc.WithText(text.WithChanges(changes))
-
-                do
-                    reportCodeFixTelemetry
-                        allDiagnostics
-                        doc
-                        name
-                        [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
-
-                return doc
-            })
 
     let createTextChangeCodeFix (name: string, title: string, context: CodeFixContext, changes: TextChange seq) =
         CodeAction.Create(

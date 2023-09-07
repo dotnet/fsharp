@@ -126,7 +126,7 @@ module AnonRecd =
 """
         |> compile
         |> shouldFail
-        |> withErrorCode 3522
+        |> withSingleDiagnostic (Error 3522, Line 5, Col 13, Line 5, Col 48, "The field 'y' appears multiple times in this record expression.")
 
     [<Fact>]
     let ``Anonymous Record type annotation with duplicate labels`` () =
@@ -138,7 +138,7 @@ module AnonRecd =
 """
         |> compile
         |> shouldFail
-        |> withErrorCode 3523
+        |> withSingleDiagnostic (Error 3523, Line 5, Col 17, Line 5, Col 18, "The field 'A' appears multiple times in this anonymous record type.")
 
     [<Fact>]
     let ``Anonymous record types with parser errors or no fields do not produce overlapping diagnostics`` () =
@@ -163,7 +163,7 @@ type ErrorResponse =
         ]
         
     [<Fact>]
-    let ``Anonymous Record type annotation with with fields defined in a record`` () =
+    let ``Anonymous Record type annotation with fields defined in a record`` () =
         Fsx """
 type T = { ff : int }
 
@@ -221,3 +221,155 @@ let x = {| abcd = {| ab = 4; cd = 1 |} |}
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record definition`` () =
+        Fsx """
+let x(f: {| A: int; A: int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 13, Line 2, Col 14, "The field 'A' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record definition 2`` () =
+        Fsx """
+let x(f: {| A: int; A: int; A:int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 13, Line 2, Col 14, "The field 'A' appears multiple times in this anonymous record type.")
+            (Error 3523, Line 2, Col 21, Line 2, Col 22, "The field 'A' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record declaration 3`` () =
+        Fsx """
+let f(x:{| A: int; B: int; A:string; B: int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this anonymous record type.")
+            (Error 3523, Line 2, Col 20, Line 2, Col 21, "The field 'B' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record declaration 4`` () =
+        Fsx """
+let f(x:{| A: int; C: string; A: int; B: int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record declaration 5`` () =
+        Fsx """
+let f(x:{| A: int; C: string; A: int; B: int; A: int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this anonymous record type.")
+            (Error 3523, Line 2, Col 31, Line 2, Col 32, "The field 'A' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field with in double backticks appears multiple times in this anonymous record declaration`` () =
+        Fsx """
+let f(x:{| ``A``: int; B: int; A:string; B: int |}) = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 12, Line 2, Col 17, "The field 'A' appears multiple times in this anonymous record type.")
+            (Error 3523, Line 2, Col 24, Line 2, Col 25, "The field 'B' appears multiple times in this anonymous record type.")
+        ]
+
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this anonymous record declaration 6`` () =
+        Fsx """
+let foo: {| A: int; C: string; A: int; B: int; A: int |} = failwith "foo"
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3523, Line 2, Col 13, Line 2, Col 14, "The field 'A' appears multiple times in this anonymous record type.")
+            (Error 3523, Line 2, Col 32, Line 2, Col 33, "The field 'A' appears multiple times in this anonymous record type.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression`` () =
+        Fsx """
+let v = {| A = 1; A = 2 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+        ]
+
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression 2`` () =
+        Fsx """
+let v = {| A = 1; A = 2; A = 3 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'A' appears multiple times in this record expression.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression 3`` () =
+        Fsx """
+let v = {| A = 0; B = 2; A = 5; B = 6 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'B' appears multiple times in this record expression.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression 4`` () =
+        Fsx """
+let v = {| A = 2; C = "W"; A = 8; B = 6 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+        ]
+
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression 5`` () =
+        Fsx """
+let v = {| A = 0; C = ""; A = 1; B = 2; A = 5 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 27, Line 2, Col 28, "The field 'A' appears multiple times in this record expression.")
+        ]
+        
+    [<Fact>]
+    let ``Anonymous Records field appears multiple times in this record expression 6`` () =
+        Fsx """
+let v = {| ``A`` = 0; B = 5; A = ""; B = 0 |}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3522, Line 2, Col 12, Line 2, Col 17, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 23, Line 2, Col 24, "The field 'B' appears multiple times in this record expression.")
+        ]

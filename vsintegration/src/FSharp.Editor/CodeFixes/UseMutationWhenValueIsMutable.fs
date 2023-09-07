@@ -4,14 +4,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Text
+
 open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseMutationWhenValueIsMutable); Shared>]
@@ -19,64 +18,78 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
     inherit CodeFixProvider()
 
     static let title = SR.UseMutationWhenValueIsMutable()
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0020")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let document = context.Document
-            do! Option.guard (not (isSignatureFile document.FilePath))
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0020"
 
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let adjustedPosition =
-                let rec loop ch pos =
-                    if Char.IsWhiteSpace(ch) then
-                        pos
-                    else
-                        loop sourceText.[pos + 1] (pos + 1)
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let document = context.Document
 
-                loop sourceText.[context.Span.Start] context.Span.Start
+                if isSignatureFile document.FilePath then
+                    return ValueNone
+                else
+                    let! sourceText = context.GetSourceTextAsync()
 
-            let textLine = sourceText.Lines.GetLineFromPosition adjustedPosition
-            let textLinePos = sourceText.Lines.GetLinePosition adjustedPosition
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                    let adjustedPosition =
+                        let rec loop ch pos =
+                            if Char.IsWhiteSpace(ch) then
+                                pos
+                            else
+                                loop sourceText[pos + 1] (pos + 1)
 
-            let! lexerSymbol =
-                document.TryFindFSharpLexerSymbolAsync(
-                    adjustedPosition,
-                    SymbolLookupKind.Greedy,
-                    false,
-                    false,
-                    nameof (UseMutationWhenValueIsMutableCodeFixProvider)
-                )
+                        loop sourceText[context.Span.Start] context.Span.Start
 
-            let! _, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (UseMutationWhenValueIsMutableCodeFixProvider))
-                |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
-                |> liftAsync
+                    let! lexerSymbolOpt =
+                        document.TryFindFSharpLexerSymbolAsync(
+                            adjustedPosition,
+                            SymbolLookupKind.Greedy,
+                            false,
+                            false,
+                            nameof UseMutationWhenValueIsMutableCodeFixProvider
+                        )
 
-            let! symbolUse =
-                checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    lexerSymbol.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    lexerSymbol.FullIsland
-                )
+                    match lexerSymbolOpt with
+                    | None -> return ValueNone
+                    | Some lexerSymbol ->
+                        let fcsTextLineNumber, textLine =
+                            MutableCodeFixHelper.getLineNumberAndText sourceText adjustedPosition
 
-            match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod ->
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-                let mutable pos = symbolSpan.End
-                let mutable ch = sourceText.[pos]
+                        let! _, checkFileResults =
+                            document.GetFSharpParseAndCheckResultsAsync(nameof UseMutationWhenValueIsMutableCodeFixProvider)
 
-                // We're looking for the possibly erroneous '='
-                while pos <= context.Span.Length && ch <> '=' do
-                    pos <- pos + 1
-                    ch <- sourceText.[pos]
+                        let symbolUseOpt =
+                            checkFileResults.GetSymbolUseAtLocation(
+                                fcsTextLineNumber,
+                                lexerSymbol.Ident.idRange.EndColumn,
+                                textLine,
+                                lexerSymbol.FullIsland
+                            )
 
-                do context.RegisterFsharpFix(CodeFix.UseMutationWhenValueIsMutable, title, [| TextChange(TextSpan(pos + 1, 1), "<-") |])
-            | _ -> ()
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        let isValidCase (symbol: FSharpSymbol) =
+                            match symbol with
+                            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod -> true
+                            | _ -> false
+
+                        match symbolUseOpt with
+                        | Some symbolUse when isValidCase symbolUse.Symbol ->
+                            let symbolSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.Range)
+                            let mutable pos = symbolSpan.End
+                            let mutable ch = sourceText[pos]
+
+                            // We're looking for the possibly erroneous '='
+                            while pos <= context.Span.Length && ch <> '=' do
+                                pos <- pos + 1
+                                ch <- sourceText[pos]
+
+                            return
+                                ValueSome
+                                    {
+                                        Name = CodeFix.UseMutationWhenValueIsMutable
+                                        Message = title
+                                        Changes = [ TextChange(TextSpan(pos + 1, 1), "<-") ]
+                                    }
+                        | _ -> return ValueNone
+            }

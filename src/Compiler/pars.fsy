@@ -2793,6 +2793,17 @@ unionCaseReprElement:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        mkSynAnonField ($1, xmlDoc) }
 
+  | ident COLON invalidUseOfAppTypeFunction
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+       reportParseErrorAt ($3 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+       mkSynNamedField ($1, $3, xmlDoc, mWhole) }
+
+  | invalidUseOfAppTypeFunction
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       reportParseErrorAt ($1 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+       mkSynAnonField ($1, xmlDoc) }
+
 unionCaseRepr:
   | braceFieldDeclList
      { errorR(Deprecated(FSComp.SR.parsConsiderUsingSeparateRecordType(), lhs parseState))
@@ -3320,13 +3331,13 @@ rationalConstant:
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if fst $3 = 0 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
       if (snd $1) || (snd $3) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Rational(fst $1, rhs parseState 1, fst $3, rhs parseState 3, lhs parseState) }
+      SynRationalConst.Rational(fst $1, rhs parseState 1, rhs parseState 2, fst $3, rhs parseState 3, lhs parseState) }
 
   | MINUS INT32 INFIX_STAR_DIV_MOD_OP INT32
     { if $3 <> "/" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
       if fst $4 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
       if (snd $2) || (snd $4) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, rhs parseState 2, fst $4, rhs parseState 4, lhs parseState), lhs parseState) }
+      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, rhs parseState 2, rhs parseState 3, fst $4, rhs parseState 4, lhs parseState), lhs parseState) }
 
   | INT32
     { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
@@ -3341,7 +3352,7 @@ atomicUnsignedRationalConstant:
             SynRationalConst.Integer(fst $1, lhs parseState) }
 
   | LPAREN rationalConstant rparen
-    { $2 }
+    { SynRationalConst.Paren($2, rhs2 parseState 1 3) }
 
 atomicRationalConstant:
   | atomicUnsignedRationalConstant { $1 }
@@ -3497,16 +3508,14 @@ conjPatternElements:
 
 namePatPairs:
    | namePatPair opt_seps
-     { [$1], lhs parseState }
+     { [$1] }
 
    | namePatPair seps namePatPairs
-     { let rs, _ = $3
-       ($1 :: rs), lhs parseState }
+     { $1 :: $3 }
 
    | namePatPair seps seps namePatPairs
-      { let rs, _ = $4
-        reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        ($1 :: rs), lhs parseState }
+      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
+        ($1 :: $4) }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -3570,9 +3579,8 @@ constrPattern:
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
       { let mParen = rhs2 parseState 1 3
-        let pats, m = $2
         let trivia = { ParenRange = mParen }
-        SynArgPats.NamePatPairs(pats, m, trivia), snd $2 }
+        SynArgPats.NamePatPairs($2, rhs parseState 2, trivia), mParen }
 
   | atomicPatterns
       { let mParsed = rhs parseState 1
@@ -3599,12 +3607,11 @@ atomicPattern:
   | quoteExpr
       { SynPat.QuoteExpr($1, lhs parseState) }
 
-  | CHAR DOT_DOT CHAR
-      { SynPat.DeprecatedCharRange($1, $3, rhs2 parseState 1 3) }
-
   | LBRACE recordPatternElementsAux rbrace
-      { let rs, m = $2
-        SynPat.Record(rs, rhs2 parseState 1 3) }
+      { SynPat.Record($2, rhs2 parseState 1 3) }
+
+  | LBRACE error rbrace
+      { SynPat.Record([], rhs2 parseState 1 3) }
 
   | LBRACK listPatternElements RBRACK
       { SynPat.ArrayOrList(false, $2, lhs parseState) }
@@ -3787,19 +3794,29 @@ conjParenPatternElements:
   | parenPattern AMP parenPattern
       { $3 :: $1 :: [] }
 
-recordPatternElementsAux: /* Fix 1190 */
+recordPatternElementsAux:
   | recordPatternElement opt_seps
-      { [$1], lhs parseState }
+      { [$1] }
 
   | recordPatternElement seps recordPatternElementsAux
-      { let r = $1
-        let (rs, dropMark) = $3
-        (r :: rs), lhs parseState }
+      { $1 :: $3 }
 
 recordPatternElement:
   | path EQUALS parenPattern
-    { let mEquals = rhs parseState 2
-      (List.frontAndBack $1.LongIdent, mEquals, $3) }
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let mPat = $3.Range
+      List.frontAndBack $1.LongIdent, Some mEquals, $3 }
+
+  | path EQUALS recover
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let pat = SynPat.Wild(mEquals.EndRange)
+      List.frontAndBack $1.LongIdent, Some mEquals, pat }
+
+  | path recover
+    { let pat = SynPat.Wild($1.Range.EndRange)
+      List.frontAndBack $1.LongIdent, None, pat }
 
 listPatternElements:
   | /* EMPTY */
@@ -5702,7 +5719,7 @@ topTupleType:
        let mStar = rhs parseState 2
        let ty2 = SynType.FromParseError(mStar.EndRange)
        let path = [SynTupleTypeSegment.Type ty1; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty2]
-       mkSynTypeTuple path, [argInfo] }
+       mkSynTypeTuple path, [argInfo; SynInfo.emptySynArgInfo] }
 
   | STAR topTupleTypeElements
       { let mStar = rhs parseState 1
@@ -5725,7 +5742,7 @@ topTupleTypeElements:
       { let ty1, argInfo = $1
         let mStar = rhs parseState 2
         let ty2 = SynType.FromParseError(mStar.EndRange)
-        [(SynTupleTypeSegment.Type ty1, Some argInfo); (SynTupleTypeSegment.Star mStar, None); (SynTupleTypeSegment.Type ty2, None)] }
+        [SynTupleTypeSegment.Type ty1, Some argInfo; SynTupleTypeSegment.Star mStar, None; SynTupleTypeSegment.Type ty2, Some SynInfo.emptySynArgInfo] }
 
   | STAR topTupleTypeElements
       { let mStar = rhs parseState 1
@@ -5796,6 +5813,31 @@ topAppType:
 
   | appType
      { $1, SynArgInfo([], false, None) }
+
+/* Grammar rule meant for recovery scenarios */
+/* For example in unionCaseReprElement where function type is not allowed */
+invalidUseOfAppTypeFunction:
+  | appType RARROW invalidUseOfAppTypeFunction
+     { let mArrow = rhs parseState 2
+       let m = unionRanges (rhs2 parseState 1 2) $3.Range
+       SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
+  | appType RARROW recover
+     { let mArrow = rhs parseState 2
+       let ty = SynType.FromParseError(mArrow.EndRange)
+       let m = rhs2 parseState 1 2
+       SynType.Fun($1, ty, m, { ArrowRange = mArrow }) }
+  | appType RARROW RARROW invalidUseOfAppTypeFunction
+     { let mArrow1 = rhs parseState 2
+       let mArrow2 = rhs parseState 3
+       reportParseErrorAt mArrow2 (FSComp.SR.parsExpectingType ())
+       let ty = SynType.FromParseError(mArrow2.StartRange)
+       let m1 = unionRanges $1.Range $4.Range
+       let m2 = unionRanges mArrow2 $4.Range
+       SynType.Fun($1, SynType.Fun(ty, $4, m2, { ArrowRange = mArrow2 }), m1, { ArrowRange = mArrow1 }) }
+  | appType RARROW appType
+     { let mArrow = rhs parseState 2
+       let m = rhs2 parseState 1 3
+       SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */

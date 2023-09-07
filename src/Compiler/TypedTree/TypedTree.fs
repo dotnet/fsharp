@@ -3454,10 +3454,6 @@ type NonLocalEntityRef =
         | ValueNone -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
-        
-    /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
-    member nleref.ModuleOrNamespaceType = 
-        nleref.Deref.ModuleOrNamespaceType
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4153,7 +4149,7 @@ type UnionCaseRef =
 type RecdFieldRef = 
     | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
 
     /// Get the name of the field
@@ -4162,7 +4158,7 @@ type RecdFieldRef =
     /// Get the name of the field, with backticks added for non-identifier names
     member x.DisplayName = x.FieldName |> ConvertLogicalNameToDisplayName
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member x.Tycon = x.TyconRef.Deref
 
     /// Dereference the reference 

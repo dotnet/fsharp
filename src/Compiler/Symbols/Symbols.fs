@@ -2362,7 +2362,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     
     member x.GetValSignatureText (displayContext: FSharpDisplayContext, m: range) =
         checkIsResolved()
-        let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true }
+        let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true; suppressInlineKeyword = false }
 
         let stringValOfMethInfo (methInfo: MethInfo) =
             match methInfo with

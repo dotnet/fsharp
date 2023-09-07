@@ -78,6 +78,8 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | WhileBang
+    | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -179,6 +181,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.WhileBang, previewVersion
+                LanguageFeature.ExtendedFixedBindings, previewVersion
+                LanguageFeature.PreferStringGetPinnableReference, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -312,6 +316,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
+        | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
+        | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

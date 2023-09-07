@@ -356,8 +356,6 @@ module TcResolutionsExtensions =
 
                         | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
 
-                        | Item.SetterArg _, _, m -> add m SemanticClassificationType.Property
-
                         | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, m ->
                             if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                                 add m SemanticClassificationType.Enumeration

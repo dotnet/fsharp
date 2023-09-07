@@ -127,23 +127,6 @@ Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\intrins
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeKindInference
 
-Conformance07			Conformance\PatternMatching\And
-Conformance07			Conformance\PatternMatching\Array
-Conformance07			Conformance\PatternMatching\As
-Conformance07			Conformance\PatternMatching\ConsList
-Conformance07			Conformance\PatternMatching\DynamicTypeTest
-Conformance07			Conformance\PatternMatching\Expression
-Conformance07			Conformance\PatternMatching\Named
-Conformance07			Conformance\PatternMatching\Null
-Conformance07			Conformance\PatternMatching\Record
-Conformance07			Conformance\PatternMatching\Simple
-Conformance07			Conformance\PatternMatching\SimpleConstant
-Conformance08			Conformance\PatternMatching\Tuple
-Conformance08			Conformance\PatternMatching\TypeAnnotated
-Conformance08			Conformance\PatternMatching\TypeConstraint
-Conformance08			Conformance\PatternMatching\Union
-Conformance08			Conformance\PatternMatching\Wildcard
-
 Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
 
