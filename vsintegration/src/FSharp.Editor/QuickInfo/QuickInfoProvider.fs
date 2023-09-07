@@ -75,7 +75,7 @@ type internal FSharpAsyncQuickInfoSource
     static member TryGetToolTip(document: Document, position, ?width) =
         cancellableTask {
             let userOpName = "getQuickInfo"
-            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+            let! cancellationToken = CancellableTask.getCancellationToken ()
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
 
             match lexerSymbol with

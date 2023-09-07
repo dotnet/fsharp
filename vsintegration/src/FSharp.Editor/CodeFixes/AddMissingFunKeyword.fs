@@ -38,7 +38,7 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                 if textOfError <> "->" then
                     return ValueNone
                 else
-                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let! cancellationToken = CancellableTask.getCancellationToken ()
                     let document = context.Document
 
                     let! defines, langVersion, strictIndentation =

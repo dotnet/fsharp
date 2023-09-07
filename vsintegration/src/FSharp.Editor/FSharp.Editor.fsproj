@@ -103,6 +103,7 @@
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctions.fs" />

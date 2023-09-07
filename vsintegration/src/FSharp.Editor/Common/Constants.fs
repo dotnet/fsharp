@@ -133,6 +133,9 @@ module internal CodeFix =
     let ChangeToUpcast = "ChangeToUpcast"
 
     [<Literal>]
+    let ChangeEqualsInFieldTypeToColon = "ChangeEqualsInFieldTypeToColon"
+
+    [<Literal>]
     let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
 
     [<Literal>]

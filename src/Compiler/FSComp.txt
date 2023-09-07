@@ -1733,3 +1733,4 @@ featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only fun
 3577,tcOverrideUsesMultipleArgumentsInsteadOfTuple,"This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -> 'c')."
 featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)"
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
+3579,alwaysUseTypedStringInterpolation,"Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended."
