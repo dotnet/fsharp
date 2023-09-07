@@ -16,6 +16,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TypedTreeOps
 
 #nowarn "9"
 #nowarn "51"
@@ -97,7 +98,7 @@ module ItemKeyTags =
     let parameters = "p$p$"
 
 [<Sealed>]
-type ItemKeyStore(mmf: MemoryMappedFile, length) =
+type ItemKeyStore(mmf: MemoryMappedFile, length, debugStore) =
 
     let rangeBuffer = Array.zeroCreate<byte> sizeof<range>
 
@@ -106,6 +107,8 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
     let checkDispose () =
         if isDisposed then
             raise (ObjectDisposedException("ItemKeyStore"))
+
+    member _.DebugStore = debugStore
 
     member _.ReadRange(reader: byref<BlobReader>) =
         reader.ReadBytes(sizeof<range>, rangeBuffer, 0)
@@ -170,6 +173,36 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
     let b = BlobBuilder()
 
+    let mutable debugStore = ResizeArray()
+    let mutable debugCurrentItem = ResizeArray()
+
+    let debugWriteRange(m: range) = 
+        debugCurrentItem.Add("range", $"{m}")
+
+    let debugWriteEntityRef (eref: EntityRef) =
+        debugCurrentItem.Add("EntityRef", $"{eref}")
+
+    let debugWriteILType (ilTy: ILType) =
+        debugCurrentItem.Add("ILType", $"%A{ilTy}")
+
+    let debugWriteType isStandalone (ty: TType) =
+        debugCurrentItem.Add("Type", $"{isStandalone} %A{ty}")
+
+    let debugWriteMeasure isStandalone (ms: Measure) =
+        debugCurrentItem.Add("Measure", $"{isStandalone} %A{ms}")
+
+    let debugWriteTypar (isStandalone: bool) (typar: Typar) =
+        debugCurrentItem.Add("Typar", $"{isStandalone} %A{typar}")
+
+    let debugWriteValRef (vref: ValRef) =
+        debugCurrentItem.Add("ValRef", $"{vref}")
+
+    let debugWriteValue (vref: ValRef) =
+        debugCurrentItem.Add("Value", $"{vref}")
+
+    let debugWriteActivePatternCase (apInfo: ActivePatternInfo) index =
+        debugCurrentItem.Add("ActivePatternCase", $"{apInfo} {index}")
+
     let writeChar (c: char) = b.WriteUInt16(uint16 c)
 
     let writeUInt16 (i: uint16) = b.WriteUInt16 i
@@ -181,16 +214,19 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     let writeString (str: string) = b.WriteUTF16 str
 
     let writeRange (m: range) =
+        debugWriteRange m
         let mutable m = m
         let ptr = &&m |> NativePtr.toNativeInt |> NativePtr.ofNativeInt<byte>
         b.WriteBytes(ptr, sizeof<range>)
 
     let writeEntityRef (eref: EntityRef) =
+        debugWriteEntityRef eref
         writeString ItemKeyTags.entityRef
         writeString eref.CompiledName
         eref.CompilationPath.MangledPath |> List.iter (fun str -> writeString str)
 
     let rec writeILType (ilTy: ILType) =
+        debugWriteILType ilTy
         match ilTy with
         | ILType.TypeVar n ->
             writeString "!"
@@ -231,6 +267,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeILType mref.ReturnType
 
     let rec writeType isStandalone (ty: TType) =
+        debugWriteType isStandalone ty
         match stripTyparEqns ty with
         | TType_forall (_, ty) -> writeType false ty
 
@@ -268,6 +305,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeString nm
 
     and writeMeasure isStandalone (ms: Measure) =
+        debugWriteMeasure isStandalone ms
         match ms with
         | Measure.Var typar ->
             writeString ItemKeyTags.typeMeasureVar
@@ -278,6 +316,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | _ -> ()
 
     and writeTypar (isStandalone: bool) (typar: Typar) =
+        debugWriteTypar isStandalone typar
         match typar.Solution with
         | Some ty -> writeType isStandalone ty
         | _ ->
@@ -285,13 +324,25 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeInt64 typar.Stamp
 
     let writeValRef (vref: ValRef) =
+        debugWriteValRef vref
         match vref.MemberInfo with
         | Some memberInfo ->
             writeString ItemKeyTags.itemValueMember
-            writeEntityRef memberInfo.ApparentEnclosingEntity
+
+            match vref.IsOverrideOrExplicitImpl, vref.MemberInfo with
+            | true, Some { ImplementedSlotSigs = slotSig :: _tail } -> slotSig.DeclaringType |> writeType false
+            | _ ->
+                writeEntityRef memberInfo.ApparentEnclosingEntity
+
             writeString vref.LogicalName
             writeString ItemKeyTags.parameters
-            writeType false vref.Type
+
+            if vref.IsInstanceMember && isFunTy vref.Type then
+                let _domainTy, rangeTy = destFunTy vref.Type
+                writeType false rangeTy
+            else
+                writeType false vref.Type
+
         | _ ->
             writeString ItemKeyTags.itemValue
             writeString vref.LogicalName
@@ -307,6 +358,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | Parent eref -> writeEntityRef eref
 
     let writeValue (vref: ValRef) =
+        debugWriteValue vref
+
         if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
             writeString ItemKeyTags.itemProperty
             writeString vref.PropertyName
@@ -322,6 +375,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeValRef vref
 
     let writeActivePatternCase (apInfo: ActivePatternInfo) index =
+        debugWriteActivePatternCase apInfo index
+
         writeString ItemKeyTags.itemActivePattern
 
         match apInfo.ActiveTagsWithRanges with
@@ -474,6 +529,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         let postCount = b.Count
 
         fixup.WriteInt32(postCount - preCount)
+        debugStore.Add(item, debugCurrentItem)
+        debugCurrentItem <- ResizeArray()
 
     member _.TryBuildAndReset() =
         if b.Count > 0 then
@@ -495,7 +552,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
             b.Clear()
 
-            Some(new ItemKeyStore(mmf, length))
+            let result = Some(new ItemKeyStore(mmf, length, debugStore))
+            debugStore <- ResizeArray()
+            result
         else
             b.Clear()
+            debugStore <- ResizeArray()
             None
