@@ -1127,7 +1127,7 @@ type LexFilterImpl (
                     //      f<x  __withnull>x
                     //      f<x | string>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
-                    | NOTNULL__ | MAYBENULL__ | WITHNULL__ | BAR_RIGHT_BEFORE_NULL
+                    | NOTNULL__ | MAYBENULL__ | WITHNULL__ | BAR_JUST_BEFORE_NULL
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
@@ -2440,7 +2440,7 @@ type LexFilterImpl (
             hwTokenFetch useBlockRule
 
         | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
-            returnToken tokenLexbufState BAR_RIGHT_BEFORE_NULL            
+            returnToken tokenLexbufState BAR_JUST_BEFORE_NULL            
 
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->

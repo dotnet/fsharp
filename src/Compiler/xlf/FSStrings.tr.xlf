@@ -37,7 +37,7 @@
         <target state="translated">Küçük harf ayrımlı birleşim durumlarına yalnızca RequireQualifiedAccess özniteliği kullanılırken izin verilir</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_RIGHT_BEFORE_NULL">
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
         <source>symbol '|' (directly before 'null')</source>
         <target state="new">symbol '|' (directly before 'null')</target>
         <note />

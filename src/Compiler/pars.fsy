@@ -89,7 +89,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token GREATER_RBRACK STRUCT SIG
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_RIGHT_BEFORE_NULL
+%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_JUST_BEFORE_NULL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -256,7 +256,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 /* Lower than "if a then b" */
 %left prec_then_before
 %nonassoc prec_then_if
-%nonassoc BAR_RIGHT_BEFORE_NULL
+%nonassoc BAR_JUST_BEFORE_NULL
 %left BAR
 
 %right SEMICOLON prec_semiexpr_sep OBLOCKSEP
@@ -3098,7 +3098,7 @@ cType:
   | cType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
-  | cType BAR_RIGHT_BEFORE_NULL NULL
+  | cType BAR_JUST_BEFORE_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
   | cType AMP
@@ -3430,7 +3430,7 @@ simplePatterns:
 barCanBeRightBeforeNull:
   | BAR
       {  }
-  | BAR_RIGHT_BEFORE_NULL
+  | BAR_JUST_BEFORE_NULL
       {  }
 
 
@@ -5947,7 +5947,7 @@ appTypeConPower:
     { $1 }
 
 appTypeCanBeNullable:
-  | appTypeWithoutNull BAR_RIGHT_BEFORE_NULL NULL
+  | appTypeWithoutNull BAR_JUST_BEFORE_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
 
   | appTypeWithoutNull
