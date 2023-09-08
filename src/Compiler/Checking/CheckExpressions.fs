@@ -4657,7 +4657,8 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
             | _ -> tpenv
         ) tpenv
 
-    tp.AsType KnownAmbivalentToNull, tpenv
+    let tpTy = tp.AsType KnownAmbivalentToNull // TODO: NULLNESS
+    tpTy, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
     match c, kindOpt with
