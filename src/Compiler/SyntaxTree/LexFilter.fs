@@ -1123,10 +1123,11 @@ type LexFilterImpl (
                     //      f<x # x>x
                     //      f<x ' x>x
                     //      f<x __maybenull>x
-                    //      f<x __notnull>x
-                    //      f<x __withnull>x
+                    //      f<x  __notnull>x
+                    //      f<x  __withnull>x
+                    //      f<x | string>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
-                    | NOTNULL__ | MAYBENULL__ | WITHNULL__
+                    | NOTNULL__ | MAYBENULL__ | WITHNULL__ | BAR_JUST_BEFORE_NULL
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
@@ -2437,6 +2438,9 @@ type LexFilterImpl (
             if debug then dprintf "skipping dummy token as no offside rules apply\n"
             pool.Return tokenTup
             hwTokenFetch useBlockRule
+
+        | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
+            returnToken tokenLexbufState BAR_JUST_BEFORE_NULL            
 
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->

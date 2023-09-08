@@ -4658,7 +4658,6 @@ and TcIntersectionConstraint (cenv: cenv) env newOk checkConstraints occ tpenv s
         ) tpenv
 
     let tpTy = tp.AsType KnownAmbivalentToNull // TODO: NULLNESS
-
     tpTy, tpenv
 
 and TcTypeStaticConstant kindOpt tpenv c m =
