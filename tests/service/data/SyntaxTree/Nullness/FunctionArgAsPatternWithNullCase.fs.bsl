@@ -13,17 +13,17 @@ ImplFile
                     (None,
                      SynValInfo
                        ([[SynArgInfo ([], false, None)]],
-                        SynArgInfo ([], false, None)), None),
+                        SynArgInfo ([], false, None)), None, None),
                   LongIdent
                     (SynLongIdent ([myFunc], [], [None]), None, None,
                      Pats
                        [Paren
                           (Or
-                             (Const
-                                (String ("abc", Regular, (1,12--1,17)),
-                                 (1,12--1,17)),
-                              Or
-                                (Typed
+                             (Or
+                                (Const
+                                   (String ("abc", Regular, (1,12--1,17)),
+                                    (1,12--1,17)),
+                                 Typed
                                    (Const
                                       (String ("", Regular, (1,20--1,22)),
                                        (1,20--1,22)),
@@ -31,11 +31,11 @@ ImplFile
                                       (LongIdent
                                          (SynLongIdent ([string], [], [None])),
                                        false, (1,25--1,38)), (1,20--1,38)),
-                                 Const
-                                   (String ("123", Regular, (1,41--1,46)),
-                                    (1,41--1,46)), (1,20--1,46),
-                                 { BarRange = (1,39--1,40) }), (1,12--1,46),
-                              { BarRange = (1,18--1,19) }), (1,11--1,47))], None,
+                                 (1,12--1,38), { BarRange = (1,18--1,19) }),
+                              Const
+                                (String ("123", Regular, (1,41--1,46)),
+                                 (1,41--1,46)), (1,12--1,46),
+                              { BarRange = (1,39--1,40) }), (1,11--1,47))], None,
                      (1,4--1,47)), None, Const (Int32 15, (1,50--1,52)),
                   (1,4--1,47), NoneAtLet, { LeadingKeyword = Let (1,0--1,3)
                                             InlineKeyword = None

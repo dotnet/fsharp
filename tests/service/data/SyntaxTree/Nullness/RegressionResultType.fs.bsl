@@ -10,9 +10,13 @@ ImplFile
                     ([],
                      Some
                        (PostfixList
-                          ([SynTyparDecl ([], SynTypar (T, None, false));
-                            SynTyparDecl ([], SynTypar (TError, None, false))],
-                           [], (1,17--1,29))), [], [MyResult],
+                          ([SynTyparDecl
+                              ([], SynTypar (T, None, false), [],
+                               { AmpersandRanges = [] });
+                            SynTyparDecl
+                              ([], SynTypar (TError, None, false), [],
+                               { AmpersandRanges = [] })], [], (1,17--1,29))),
+                     [], [MyResult],
                      PreXmlDoc ((1,4), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None, (1,9--1,17)),
                   Simple

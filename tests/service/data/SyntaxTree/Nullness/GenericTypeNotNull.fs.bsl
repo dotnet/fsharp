@@ -10,7 +10,9 @@ ImplFile
                     ([],
                      Some
                        (PostfixList
-                          ([SynTyparDecl ([], SynTypar (T, None, false))],
+                          ([SynTyparDecl
+                              ([], SynTypar (T, None, false), [],
+                               { AmpersandRanges = [] })],
                            [WhereTyparNotSupportsNull
                               (SynTypar (T, None, false), (1,15--1,27))],
                            (1,6--1,28))), [], [C],

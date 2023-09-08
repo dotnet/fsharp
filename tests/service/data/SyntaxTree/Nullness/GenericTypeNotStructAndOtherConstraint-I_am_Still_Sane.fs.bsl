@@ -13,7 +13,9 @@ ImplFile
                     ([],
                      Some
                        (PostfixList
-                          ([SynTyparDecl ([], SynTypar (T, None, false))],
+                          ([SynTyparDecl
+                              ([], SynTypar (T, None, false), [],
+                               { AmpersandRanges = [] })],
                            [WhereTyparIsReferenceType
                               (SynTypar (T, None, false), (1,15--1,29));
                             WhereTyparIsEquatable
