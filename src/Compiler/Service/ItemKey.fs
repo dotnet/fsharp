@@ -98,6 +98,7 @@ module ItemKeyTags =
     [<Literal>]
     let parameters = "p$p$"
 
+/// A debugging tool to show what's being written into the ItemKeyStore in a more human readable way in the debugger.
 type DebugKeyStore() =
 
     let mutable debugCurrentItem = ResizeArray()
@@ -139,6 +140,7 @@ type DebugKeyStore() =
 
     member _.New() = DebugKeyStore()
 
+/// A replacement for DebugKeyStore for when we're not debugging.
 type DebugKeyStoreNoop() =
 
     member inline _.Items = Unchecked.defaultof<_>
