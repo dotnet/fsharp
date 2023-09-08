@@ -1,6 +1,3 @@
-neg69.fsx(87,6,87,12): typecheck error FS0912: This declaration element is not permitted in an augmentation
-
-neg69.fsx(87,6,87,12): typecheck error FS0929: This type requires a definition
 
 neg69.fsx(88,43,88,44): parse error FS1241: Expected type argument or static argument
 
@@ -67,3 +64,7 @@ neg69.fsx(212,1,212,4): parse error FS0058: Possible incorrect indentation: this
 neg69.fsx(221,1,221,4): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (212:1). Try indenting this token further or using standard formatting conventions.
 
 neg69.fsx(242,1,242,3): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (221:1). Try indenting this token further or using standard formatting conventions.
+
+neg69.fsx(87,6,87,12): typecheck error FS0929: This type requires a definition
+
+neg69.fsx(87,6,87,12): typecheck error FS0912: This declaration element is not permitted in an augmentation
