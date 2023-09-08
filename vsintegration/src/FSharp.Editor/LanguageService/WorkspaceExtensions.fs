@@ -258,10 +258,10 @@ type Document with
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
-        async {
+        cancellableTask {
             let! defines, langVersion, strictIndentation = this.GetFsharpParsingOptionsAsync(userOpName)
-            let! ct = Async.CancellationToken
-            let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
+            let! ct = CancellableTask.getCancellationToken ()
+            let! sourceText = this.GetTextAsync(ct)
 
             return
                 Tokenizer.getSymbolAtPosition (

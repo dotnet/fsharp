@@ -299,9 +299,65 @@ module ValueOption =
         | _ -> None
 
 [<RequireQualifiedAccess>]
+module IEnumerator =
+    let chooseV f (e: IEnumerator<'T>) =
+        let mutable started = false
+        let mutable curr = None
+
+        let get () =
+            if not started then
+                raise(InvalidOperationException("Not started"))
+
+            match curr with
+            | None -> 
+                raise(InvalidOperationException("Already finished"))
+            | Some x -> x
+
+
+        { new IEnumerator<'U> with
+            member _.Current = get ()
+          interface System.Collections.IEnumerator with
+              member _.Current = box (get ())
+
+              member _.MoveNext() =
+                  if not started then
+                      started <- true
+
+                  curr <- None
+
+                  while (curr.IsNone && e.MoveNext()) do
+                      curr <- f e.Current
+
+                  Option.isSome curr
+
+              member _.Reset() =
+                  raise(NotSupportedException("Reset is not supported"))
+          interface System.IDisposable with
+              member _.Dispose() =
+                  e.Dispose()
+        }
+[<RequireQualifiedAccess>]
 module Seq =
 
-    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+    let mkSeq f =
+        { new IEnumerable<'U> with
+            member _.GetEnumerator() = f()
+
+          interface System.Collections.IEnumerable with
+            member _.GetEnumerator() = (f() :> System.Collections.IEnumerator) }
+
+    let inline revamp f (ie: seq<_>) =
+        mkSeq (fun () -> f (ie.GetEnumerator()))
+
+    let inline toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+
+    let inline tryHeadV (source: seq<_>) =
+        use e = source.GetEnumerator()
+
+        if (e.MoveNext()) then
+            ValueSome e.Current
+        else
+            ValueNone
 
     let inline tryFindV ([<InlineIfLambda>] predicate) (source: seq<'T>) =
         use e = source.GetEnumerator()
@@ -326,6 +382,18 @@ module Seq =
 
         loop 0
 
+    let inline tryPickV ([<InlineIfLambda>] chooser) (source: seq<'T>) =
+        use e = source.GetEnumerator()
+        let mutable res = ValueNone
+
+        while (ValueOption.isNone res && e.MoveNext()) do
+            res <- chooser e.Current
+
+        res
+
+    let chooseV chooser source =
+        revamp (IEnumerator.chooseV chooser) source
+
 [<RequireQualifiedAccess>]
 module Array =
     let inline foldi ([<InlineIfLambda>] folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
@@ -339,6 +407,12 @@ module Array =
         state
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
+
+    let inline tryHeadV (array: _[]) =
+        if array.Length = 0 then
+            ValueNone
+        else
+            ValueSome array[0]
 
     let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
 
@@ -419,6 +493,10 @@ module ImmutableArray =
             ValueNone
         else
             ValueSome xs[0]
+
+    let inline empty<'T> = ImmutableArray<'T>.Empty
+
+    let inline create<'T> (x: 'T) = ImmutableArray.Create<'T>(x)
 
 [<RequireQualifiedAccess>]
 module List =

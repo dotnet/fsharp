@@ -6,7 +6,6 @@ open System
 open System.Composition
 open System.Threading
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -22,15 +21,17 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
-        asyncMaybe {
+        cancellableTask {
             let document = context.Document
             let position = context.Span.Start
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+            
+            let! ct = CancellableTask.getCancellationToken ()
+
+            let! sourceText = document.GetTextAsync(ct)
+            
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-
-            let! ct = Async.CancellationToken |> liftAsync
 
             let! lexerSymbol =
                 document.TryFindFSharpLexerSymbolAsync(
@@ -41,79 +42,88 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
                     nameof (FSharpAddExplicitTypeToParameterRefactoring)
                 )
 
-            let! parseFileResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
-                |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
+            match lexerSymbol with
+            | None -> return ()
+            | Some lexerSymbol ->
 
-            let! symbolUse =
-                checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    lexerSymbol.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    lexerSymbol.FullIsland
-                )
+                let! parseFileResults, checkFileResults =
+                    document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
 
-            let isValidParameterWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
-                let isLambdaIfFunction =
-                    funcOrValue.IsFunction
-                    && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
-
-                (funcOrValue.IsValue || isLambdaIfFunction)
-                && parseFileResults.IsPositionContainedInACurriedParameter symbolUse.Range.Start
-                && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
-                && not funcOrValue.IsMember
-                && not funcOrValue.IsMemberThisValue
-                && not funcOrValue.IsConstructorThisValue
-                && not (PrettyNaming.IsOperatorDisplayName funcOrValue.DisplayName)
-
-            match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as v when isValidParameterWithoutTypeAnnotation v symbolUse ->
-                let typeString = v.FullType.FormatWithConstraints symbolUse.DisplayContext
-                let title = SR.AddTypeAnnotation()
-
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
-
-                let alreadyWrappedInParens =
-                    let rec leftLoop ch pos =
-                        if not (Char.IsWhiteSpace(ch)) then
-                            ch = '('
-                        else
-                            leftLoop sourceText.[pos - 1] (pos - 1)
-
-                    let rec rightLoop ch pos =
-                        if not (Char.IsWhiteSpace(ch)) then
-                            ch = ')'
-                        else
-                            rightLoop sourceText.[pos + 1] (pos + 1)
-
-                    let hasLeftParen = leftLoop sourceText.[symbolSpan.Start - 1] (symbolSpan.Start - 1)
-                    let hasRightParen = rightLoop sourceText.[symbolSpan.End] symbolSpan.End
-                    hasLeftParen && hasRightParen
-
-                let getChangedText (sourceText: SourceText) =
-                    if alreadyWrappedInParens then
-                        sourceText.WithChanges(TextChange(TextSpan(symbolSpan.End, 0), ": " + typeString))
-                    else
-                        sourceText
-                            .WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
-                            .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + typeString + ")"))
-
-                let codeAction =
-                    CodeAction.Create(
-                        title,
-                        (fun (cancellationToken: CancellationToken) ->
-                            async {
-                                let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                                return context.Document.WithText(getChangedText sourceText)
-                            }
-                            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                        title
+                let symbolUse =
+                    checkFileResults.GetSymbolUseAtLocation(
+                        fcsTextLineNumber,
+                        lexerSymbol.Ident.idRange.EndColumn,
+                        textLine.ToString(),
+                        lexerSymbol.FullIsland
                     )
 
-                context.RegisterRefactoring(codeAction)
-            | _ -> ()
+                let isValidParameterWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+                    let isLambdaIfFunction =
+                        funcOrValue.IsFunction
+                        && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
+
+                    (funcOrValue.IsValue || isLambdaIfFunction)
+                    && parseFileResults.IsPositionContainedInACurriedParameter symbolUse.Range.Start
+                    && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
+                    && not funcOrValue.IsMember
+                    && not funcOrValue.IsMemberThisValue
+                    && not funcOrValue.IsConstructorThisValue
+                    && not (PrettyNaming.IsOperatorDisplayName funcOrValue.DisplayName)
+
+                match symbolUse with
+                | None -> return ()
+                | Some symbolUse ->
+
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue as v when isValidParameterWithoutTypeAnnotation v symbolUse ->
+                        let typeString = v.FullType.FormatWithConstraints symbolUse.DisplayContext
+                        let title = SR.AddTypeAnnotation()
+
+                        let symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
+
+                        match symbolSpan with
+                        | ValueNone -> return ()
+                        | ValueSome symbolSpan ->
+
+                            let alreadyWrappedInParens =
+                                let rec leftLoop ch pos =
+                                    if not (Char.IsWhiteSpace(ch)) then
+                                        ch = '('
+                                    else
+                                        leftLoop sourceText.[pos - 1] (pos - 1)
+
+                                let rec rightLoop ch pos =
+                                    if not (Char.IsWhiteSpace(ch)) then
+                                        ch = ')'
+                                    else
+                                        rightLoop sourceText.[pos + 1] (pos + 1)
+
+                                let hasLeftParen = leftLoop sourceText.[symbolSpan.Start - 1] (symbolSpan.Start - 1)
+                                let hasRightParen = rightLoop sourceText.[symbolSpan.End] symbolSpan.End
+                                hasLeftParen && hasRightParen
+
+                            let getChangedText (sourceText: SourceText) =
+                                if alreadyWrappedInParens then
+                                    sourceText.WithChanges(TextChange(TextSpan(symbolSpan.End, 0), ": " + typeString))
+                                else
+                                    sourceText
+                                        .WithChanges(TextChange(TextSpan(symbolSpan.Start, 0), "("))
+                                        .WithChanges(TextChange(TextSpan(symbolSpan.End + 1, 0), ": " + typeString + ")"))
+
+                            let codeAction =
+                                CodeAction.Create(
+                                    title,
+                                    (fun (cancellationToken: CancellationToken) ->
+                                        cancellableTask {
+                                            let! ct = CancellableTask.getCancellationToken ()
+                                            let! sourceText = context.Document.GetTextAsync(ct)
+                                            return context.Document.WithText(getChangedText sourceText)
+                                        }
+                                        |> CancellableTask.start cancellationToken),
+                                    title
+                                )
+
+                            context.RegisterRefactoring(codeAction)
+                    | _ -> ()
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> CancellableTask.startAsTask context.CancellationToken

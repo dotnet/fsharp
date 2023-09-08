@@ -6,7 +6,7 @@ open System.IO
 open System.Diagnostics
 
 /// Checks if the filePath ends with ".fsi"
-let isSignatureFile (filePath: string) =
+let inline isSignatureFile (filePath: string) =
     String.Equals(Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
 /// Returns the corresponding signature file path for given implementation file path or vice versa
