@@ -349,7 +349,7 @@ module Seq =
     let inline revamp f (ie: seq<_>) =
         mkSeq (fun () -> f (ie.GetEnumerator()))
 
-    let inline toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
 
     let inline tryHeadV (source: seq<_>) =
         use e = source.GetEnumerator()

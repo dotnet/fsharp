@@ -22,48 +22,44 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring [<Importin
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
-        cancellableTask {
+        asyncMaybe {
             let document = context.Document
-            let! ct = CancellableTask.getCancellationToken ()
-            let! sourceText = context.Document.GetTextAsync(ct)
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeTypeofWithNameToNameofExpressionRefactoring))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
+                |> liftAsync
 
             let selectionRange =
                 RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
 
-            let namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)
+            let! namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)
 
-            match namedTypeOfResults with
-            | None -> ()
-            | Some namedTypeOfResults ->
+            let! namedTypeSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.NamedIdentRange)
+            let! typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.FullExpressionRange)
+            let namedTypeName = sourceText.GetSubText(namedTypeSpan)
+            let replacementString = $"nameof({namedTypeName})"
 
-                let namedTypeSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.NamedIdentRange)
-                let typeofAndNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, namedTypeOfResults.FullExpressionRange)
+            let title = SR.UseNameof()
 
-                match namedTypeSpan, typeofAndNameSpan with
-                | ValueSome namedTypeSpan, ValueSome typeofAndNameSpan ->
+            let getChangedText (sourceText: SourceText) =
+                sourceText.WithChanges(TextChange(typeofAndNameSpan, replacementString))
 
-                    let namedTypeName = sourceText.GetSubText(namedTypeSpan)
-                    let replacementString = $"nameof({namedTypeName})"
+            let codeAction =
+                CodeAction.Create(
+                    title,
+                    (fun (cancellationToken: CancellationToken) ->
+                        async {
+                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                            return context.Document.WithText(getChangedText sourceText)
+                        }
+                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                    title
+                )
 
-                    let title = SR.UseNameof()
-
-                    let getChangedText (sourceText: SourceText) =
-                        sourceText.WithChanges(TextChange(typeofAndNameSpan, replacementString))
-
-                    let codeAction =
-                        CodeAction.Create(
-                            title,
-                            (fun (cancellationToken: CancellationToken) ->
-                                cancellableTask {
-                                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                                    return context.Document.WithText(getChangedText sourceText)
-                                } |> CancellableTask.start cancellationToken),
-                            title
-                        )
-
-                    context.RegisterRefactoring(codeAction)
-                | _ -> ()
-        } |> CancellableTask.startAsTask context.CancellationToken
+            context.RegisterRefactoring(codeAction)
+        }
+        |> Async.Ignore
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
