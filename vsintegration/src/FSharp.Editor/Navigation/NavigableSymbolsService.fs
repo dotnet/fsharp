@@ -21,7 +21,7 @@ open Microsoft.VisualStudio.Telemetry
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition) =
     interface INavigableSymbol with
         member _.Navigate(_: INavigableRelationship) =
-            gtd.NavigateToItem(item, CancellationToken.None)
+            gtd.NavigateToItem(item, CancellationToken.None) |> ignore
 
         member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 

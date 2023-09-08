@@ -297,11 +297,11 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let preferSignature = isSignatureFile originDocument.FilePath
 
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
-            
+
             match lexerSymbol with
             | None -> return ValueNone
             | Some lexerSymbol ->
-            
+
                 let idRange = lexerSymbol.Ident.idRange
 
                 let! _, checkFileResults =
@@ -340,8 +340,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 Seq.tryPickV (fun (sym, externalSym) -> if externalSym = targetExternalSym then ValueSome sym else ValueNone) roslynSymbols
 
                             let location =
-                                symbol 
-                                |> ValueOption.map _.Locations
+                                symbol
+                                |> ValueOption.map (fun s -> s.Locations)
                                 |> ValueOption.bind Seq.tryHeadV
 
                             match location with
@@ -407,7 +407,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 match declarations with
                                 | FindDeclResult.DeclFound targetRange ->
                                     let sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
-                                    
+
                                     match sigDocument with
                                     | ValueNone -> return ValueNone
                                     | ValueSome sigDocument ->
@@ -532,7 +532,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         ) =
         cancellableTask {
             let! item = this.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
-            
+
             match item with
             | None ->
                 return false
@@ -678,7 +678,6 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
                     let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
                     this.NavigateToItem(navItem, cancellationToken)
-                    true
                 | _ -> false
             | _ -> false
 
@@ -705,7 +704,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                 (fun _progress cancellationToken ->
                     cancellableTask {
                         let targetDoc = solution.TryGetDocumentFromFSharpRange(range, initialDoc.Project.Id)
-                        
+
                         match targetDoc with
                         | None -> ()
                         | Some targetDoc ->
@@ -716,7 +715,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                             let targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(targetSource, range)
                             match targetTextSpan with
                             | ValueNone -> ()
-                            | ValueSome targetTextSpan -> 
+                            | ValueSome targetTextSpan ->
 
                                 let gtd = GoToDefinition(metadataAsSource)
 
@@ -774,7 +773,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                 match gtdTask.Result.Value with
                 | FSharpGoToDefinitionResult.NavigableItem (navItem), _ ->
-                    gtd.NavigateToItem(navItem, cancellationToken)
+                    gtd.NavigateToItem(navItem, cancellationToken) |> ignore
                     // 'true' means do it, like Sheev Palpatine would want us to.
                     true
                 | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _ ->
@@ -831,9 +830,9 @@ type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, sy
                 let! cancellationToken = CancellableTask.getCancellationToken ()
 
                 let targetDoc = project.Solution.TryGetDocumentFromFSharpRange(symbolRange, project.Id)
-                
+
                 match targetDoc with
-                | None -> 
+                | None ->
                     return false
                 | Some targetDoc ->
                     let! targetSource = targetDoc.GetTextAsync(cancellationToken)
