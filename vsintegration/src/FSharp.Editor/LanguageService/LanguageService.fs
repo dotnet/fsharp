@@ -165,6 +165,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
+                                        "captureIdentifiersWhenParsing", enableFastFindReferences
                                         nameof solutionCrawler, solutionCrawler
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
