@@ -533,7 +533,7 @@ match 2 with | Even -> () | Odd -> ()
 
 module Interfaces =
 
-    let project() = 
+    let project() =
         let source1 = """
 type IInterface1 =
     abstract member Property1 : int
@@ -564,13 +564,12 @@ type internal SomeType() =
     let property1Locations() = [
         "FileFirst.fs", 4, 20, 29
         "FileSecond.fs", 7, 17, 26
-        "FileSecond.fs", 12, 12, 43 // Not sure why we get the whole range here, but it seems to work fine.
+        "FileSecond.fs", 13, 12, 43 // Not sure why we get the whole range here, but it seems to work fine.
     ]
 
     let method1Locations() = [
-        "FileFirst.fs", 4, 20, 29
-        "FileSecond.fs", 7, 17, 26
-        "FileSecond.fs", 12, 12, 43 
+        "FileFirst.fs", 5, 20, 27
+        "FileSecond.fs", 8, 17, 24
     ]
 
     [<Fact>]
