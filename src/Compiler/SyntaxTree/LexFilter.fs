@@ -1122,12 +1122,9 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
-                    //      f<x __maybenull>x
-                    //      f<x  __notnull>x
-                    //      f<x  __withnull>x
-                    //      f<x | string>x
+                    //      f<x | null>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
-                    | NOTNULL__ | MAYBENULL__ | WITHNULL__ | BAR_JUST_BEFORE_NULL
+                    | BAR_JUST_BEFORE_NULL
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

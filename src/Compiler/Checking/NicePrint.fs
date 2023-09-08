@@ -798,7 +798,7 @@ module PrintTypes =
             [wordL (tagKeyword "null") |> longConstraintPrefix]
 
         | TyparConstraint.NotSupportsNull _ ->
-                [(wordL (tagKeyword "__notnull") (* ^^ wordL(tagKeyword "null") *) ) |> longConstraintPrefix]
+                [(wordL (tagKeyword "not null") (* ^^ wordL(tagKeyword "null") *) ) |> longConstraintPrefix]
 
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
@@ -910,7 +910,7 @@ module PrintTypes =
         // Show nullness annotations unless explicitly turned off
         if denv.showNullnessAnnotations <> Some false then
             match nullness.Evaluate() with
-            | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "__withnull")
+            | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "| null")
             | NullnessInfo.WithoutNull -> part2
             | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
         else

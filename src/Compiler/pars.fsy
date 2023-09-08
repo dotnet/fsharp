@@ -89,7 +89,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token GREATER_RBRACK STRUCT SIG
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token MAYBENULL__ NOTNULL__ WITHNULL__ BAR_JUST_BEFORE_NULL
+%token BAR_JUST_BEFORE_NULL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -2587,22 +2587,10 @@ typeConstraint:
 
   | typar COLON NULL
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
-/*
-** TODO: This rule is not triggering, faking it with __notnull for now
 
   | typar COLON IDENT NULL
       { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
-*/
-  | typar COLON NOTNULL__
-      { SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
-
-  | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
-        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
-
-  | typar COLON NOTNULL__
-      { SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 
   | typar COLON LPAREN classMemberSpfn rparen
      { let tp = $1
@@ -3110,13 +3098,6 @@ cType:
   | cType STAR
      { let m = lhs parseState
        SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [ Some(IdentTrivia.OriginalNotation "*") ])), None, [$1], [], None, true, m) }
-
-/*
-  | cType QMARK
-    { SynType.WithNull($1, false, lhs parseState) }
-*/
-  | cType WITHNULL__
-    { SynType.WithNull($1, false, lhs parseState) }
 
   | cType BAR_JUST_BEFORE_NULL NULL
     { SynType.WithNull($1, false, lhs parseState) }
@@ -6012,19 +5993,7 @@ appTypeNullableInParens:
     { SynType.Paren($2, lhs parseState) }
 
 appTypeWithoutNull:
-  | appTypeWithoutNull MAYBENULL__
-    { SynType.WithNull($1, true, lhs parseState) }
-
-  | appTypeWithoutNull WITHNULL__
-    { SynType.WithNull($1, false, lhs parseState) }
-
-/*
-  | appTypeWithoutNull QMARK
-    { SynType.WithNull($1, false, lhs parseState) }
-*/
-
   | appTypeWithoutNull arrayTypeSuffix
-
       { SynType.Array($2, $1, lhs parseState) }
 
   | appTypeWithoutNull HIGH_PRECEDENCE_BRACK_APP arrayTypeSuffix /* only HPA for "name[]" allowed here */

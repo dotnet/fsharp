@@ -2513,7 +2513,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
 //
 //    val checkNonNull1: argName: string -> arg: 'T -> unit when 'T: null
 //
-//    val checkNonNull2: argName: string -> arg: 'T __withnull -> unit
+//    val checkNonNull2: argName: string -> arg: 'T | null -> unit
 //
 // When null checking is fully enabled, we prefer the latter. We can't always prefer it because it is a breaking change.
 //
@@ -2523,7 +2523,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
 //
 // What's the generalized type?
 //    val x: 'a when 'a: null
-//    val x: 'a __withnull when 'a: not null
+//    val x: 'a | null when 'a: not null
 //
 // When null checking is fully enabled, we prefer the latter. We can't always prefer it because it is a breaking change.
 and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty = 

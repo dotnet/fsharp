@@ -996,7 +996,7 @@ let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC
             // For example "int option?" is not allowed, nor "string??".
             //
             // For variable types in FSharp.Core we make an exception because we must allow
-            //    val toObj: value: 'T option -> 'T __withnull when 'T : not struct (* and 'T : __notnull *)
+            //    val toObj: value: 'T option -> 'T | null when 'T : not struct (* and 'T : not null *)
             // wihout implying 'T is not null.  This is because it is legitimate to use this
             // function to "collapse" null and obj-null-coming-from-option using such a function.
 

@@ -1367,7 +1367,7 @@ namespace Microsoft.FSharp.Core
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 #else
-        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> __withnull when 'T : comparison 
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> | null when 'T : comparison 
 #endif
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
@@ -3130,7 +3130,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
         [<CompiledName("DefaultIfNull")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline defaultIfNull : defaultValue:'T -> arg:'T __withnull -> 'T when 'T : __notnull and 'T : not struct 
+        val inline defaultIfNull : defaultValue:'T -> arg:'T | null -> 'T when 'T : not null and 'T : not struct 
 
         /// <summary>Used to specify a default value for an nullable value argument in the implementation of a function</summary>
         /// <param name="defaultValue">The default value of the argument.</param>
@@ -3444,7 +3444,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline (|Null|NonNull|) : value: 'T __withnull -> Choice<unit, 'T>  when 'T : __notnull and 'T : not struct
+        val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
         
         /// <summary>Determines whether the given value is null.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'Null|NonNull'.</remarks>
@@ -3459,7 +3459,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullQuickPattern")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline (|NonNullQuick|) : value: 'T __withnull -> 'T when 'T : __notnull and 'T : not struct
+        val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'NonNullQuick'.</remarks>
@@ -3499,7 +3499,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
         [<CompiledName("NonNull")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline nonNull : value: 'T __withnull -> 'T when 'T : __notnull and 'T : not struct
+        val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'nonNull'.</remarks>
@@ -3514,7 +3514,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline withNull : value:'T -> 'T __withnull when 'T : __notnull and 'T : not struct
+        val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
@@ -3597,7 +3597,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result value.</returns>
         [<CompiledName("NullArgCheck")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline nullArgCheck : argumentName:string -> 'T __withnull -> 'T when 'T : __notnull and 'T : not struct
+        val inline nullArgCheck : argumentName:string -> 'T | null -> 'T when 'T : not null and 'T : not struct
 #endif
 
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>

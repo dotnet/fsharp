@@ -67,19 +67,9 @@
         <target state="translated">интерполированная строка (часть)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.NOTNULL__">
-        <source>keyword '__notnull'</source>
-        <target state="new">keyword '__notnull'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
         <target state="new">keyword 'while!'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WITHNULL__">
-        <source>keyword '__withnull'</source>
-        <target state="new">keyword '__withnull'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
