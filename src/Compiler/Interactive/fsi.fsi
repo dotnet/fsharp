@@ -92,6 +92,10 @@ type public FsiEvaluationSessionHostConfig =
     /// Hook for listening for evaluation bindings
     member OnEvaluation: IEvent<EvaluationEventArgs>
 
+    /// Hook for listening for start of emitting dynamic Assemblies. After Compilation has finished.
+    /// Can be used by an UI hosting the compiler service to indicate that fsi compilation is finished and fsi evaluation is starting.
+    member OnEmit: IEvent<unit>
+
     ///<summary>
     /// <para>Indicate a special console "readline" reader for the evaluation session, if any.</para><para> </para>
     ///
