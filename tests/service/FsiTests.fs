@@ -392,6 +392,8 @@ let ``interactive session events``() =
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         let evals = ResizeArray()
         use evaluator = fsiConfig.OnEvaluation.Subscribe (fun eval -> evals.Add (eval.FsiValue, eval.Name, eval.SymbolUse))
+        let emitCounter = ref 0
+        fsiConfig.OnEmit.Add (fun _ -> emitCounter.Value <- emitCounter.Value + 1) 
 
         use session = FsiEvaluationSession.Create(fsiConfig, defaultArgs, inStream, outStream, errStream, collectible=true)
         session.EvalInteraction  "let x = 42"
@@ -417,6 +419,8 @@ let ``interactive session events``() =
         value.IsNone |> should equal true
         symbol.Symbol.GetType() |> should equal typeof<FSharpEntity>
         symbol.Symbol.DisplayName |> should equal "M"
+        
+        emitCounter.Value |> should equal 3 // because EvalInteraction was called three times
 
 let RunManually() = 
   ``EvalExpression test 1``() 
