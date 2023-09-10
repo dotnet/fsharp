@@ -178,6 +178,25 @@ module MutRecShapes =
 
    let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
+let private CheckForLetNotAllowedInOperatorNames (binds : SynBinding list) =
+    for bnd in binds do
+        let (SynBinding(headPat= headPat; range = _m)) = bnd
+        match headPat with
+        | SynPat.LongIdent(longDotId= headPatIdent; argPats = SynArgPats.Pats(pats)) ->
+              for ident in headPatIdent.LongIdent do
+                  if ident.idText = "op_GreaterColon" then
+                      deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) ident.idRange   
+              for pat in pats do
+                  match pat with
+                  | SynPat.Named(ident= SynIdent(ident= ident)) ->
+                      if ident.idText = "op_GreaterColon" then
+                          deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) ident.idRange    
+                  | _ -> ()
+        | SynPat.Named(ident= SynIdent(ident= ident)) ->
+              if ident.idText = "op_GreaterColon" then
+                  deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) ident.idRange
+        
+        | _ -> ()
 
 /// Indicates a declaration is contained in the given module 
 let ModuleOrNamespaceContainerInfo modref =
@@ -4148,6 +4167,17 @@ module TcDeclarations =
                 match ds with
                 | d :: ds when isImplicitInherit d -> ds  // skip inherit call if it comes next 
                 | _ -> ds
+                
+            let members =
+                ds
+                |> List.takeUntil(isMember)
+                |> snd
+                |> List.choose(fun x ->
+                    match x with
+                    | SynMemberDefn.Member(memberDefn, _) ->  Some memberDefn
+                    | _ -> None)
+                
+            CheckForLetNotAllowedInOperatorNames members
 
             // Skip over 'let' and 'do' bindings
             let _, ds = ds |> List.takeUntil (function SynMemberDefn.LetBindings _ -> false | _ -> true) 
@@ -4174,6 +4204,17 @@ module TcDeclarations =
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
+                    
+            let members =
+                ds
+                |> List.takeUntil(isMember)
+                |> snd
+                |> List.choose(fun x ->
+                    match x with
+                    | SynMemberDefn.Member(memberDefn, _) ->  Some memberDefn
+                    | _ -> None)
+                
+            CheckForLetNotAllowedInOperatorNames members
                     
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
@@ -5005,6 +5046,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           | Parent parentModule -> 
               let containerInfo = ModuleOrNamespaceContainerInfo parentModule
+              CheckForLetNotAllowedInOperatorNames binds
               if letrec then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
