@@ -81,7 +81,7 @@ module InteropBasics =
 type KonsoleWithNulls = 
     static member WriteLine(s: String | null) = Console.WriteLine(s)
     static member WriteLine(fmt: String | null, arg1: String | null) = Console.WriteLine(fmt, arg1)
-    static member WriteLine(fmt: String | null, [<ParamArray>] args: obj | null[] | null) = Console.WriteLine(fmt, args)
+    static member WriteLine(fmt: String | null, [<ParamArray>] args: (obj | null)[] | null) = Console.WriteLine(fmt, args)
     static member WriteLineC(s: C | null) = Console.WriteLine(s.Value)
     static member WriteLineC(fmt: C | null, arg1: C | null) = Console.WriteLine(fmt.Value, arg1.Value)
 
@@ -172,7 +172,7 @@ KonsoleNoNulls.WriteLine("Hello","world","there")
 KonsoleWithNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning 
 KonsoleNoNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning
 System.Console.WriteLine("a", (null: obj[] | null)) 
-System.Console.WriteLine("a", (null: obj | null[] | null))
+System.Console.WriteLine("a", (null: (obj | null)[] | null))
 
 //-------
 // random stuff
