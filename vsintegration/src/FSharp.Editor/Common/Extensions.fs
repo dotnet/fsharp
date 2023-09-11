@@ -529,7 +529,7 @@ module Exception =
         |> String.concat " ---> "
 
 type Async with
-
+    
     static member RunImmediateExceptOnUI(computation: Async<'T>, ?cancellationToken) =
         match SynchronizationContext.Current with
         | null ->
