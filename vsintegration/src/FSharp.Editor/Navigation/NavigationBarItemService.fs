@@ -25,8 +25,7 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
 
                 let! cancellationToken = CancellableTask.getCancellationToken ()
 
-                let! parseResults =
-                    document.GetFSharpParseResultsAsync(nameof (FSharpNavigationBarItemService))
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigationBarItemService))
 
                 let navItems = Navigation.getNavigation parseResults.ParseTree
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -59,4 +58,5 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
                                 )
                                 :> FSharpNavigationBarItem))
                         :> IList<_>
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken

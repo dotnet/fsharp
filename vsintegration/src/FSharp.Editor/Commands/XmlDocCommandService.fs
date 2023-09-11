@@ -69,7 +69,12 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 let! document = getLastDocument ()
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter)) |> CancellableTask.start cancellationToken |> Async.AwaitTask |> liftAsync
+
+                                let! parseResults =
+                                    document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter))
+                                    |> CancellableTask.start cancellationToken
+                                    |> Async.AwaitTask
+                                    |> liftAsync
 
                                 let xmlDocables =
                                     XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)

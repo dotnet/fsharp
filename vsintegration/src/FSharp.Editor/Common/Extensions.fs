@@ -306,13 +306,11 @@ module IEnumerator =
 
         let get () =
             if not started then
-                raise(InvalidOperationException("Not started"))
+                raise (InvalidOperationException("Not started"))
 
             match curr with
-            | None -> 
-                raise(InvalidOperationException("Already finished"))
+            | None -> raise (InvalidOperationException("Already finished"))
             | Some x -> x
-
 
         { new IEnumerator<'U> with
             member _.Current = get ()
@@ -331,20 +329,21 @@ module IEnumerator =
                   Option.isSome curr
 
               member _.Reset() =
-                  raise(NotSupportedException("Reset is not supported"))
+                  raise (NotSupportedException("Reset is not supported"))
           interface System.IDisposable with
-              member _.Dispose() =
-                  e.Dispose()
+              member _.Dispose() = e.Dispose()
         }
+
 [<RequireQualifiedAccess>]
 module Seq =
 
     let mkSeq f =
         { new IEnumerable<'U> with
-            member _.GetEnumerator() = f()
-
+            member _.GetEnumerator() = f ()
           interface System.Collections.IEnumerable with
-            member _.GetEnumerator() = (f() :> System.Collections.IEnumerator) }
+              member _.GetEnumerator() =
+                  (f () :> System.Collections.IEnumerator)
+        }
 
     let inline revamp f (ie: seq<_>) =
         mkSeq (fun () -> f (ie.GetEnumerator()))
@@ -354,10 +353,7 @@ module Seq =
     let inline tryHeadV (source: seq<_>) =
         use e = source.GetEnumerator()
 
-        if (e.MoveNext()) then
-            ValueSome e.Current
-        else
-            ValueNone
+        if (e.MoveNext()) then ValueSome e.Current else ValueNone
 
     let inline tryFindV ([<InlineIfLambda>] predicate) (source: seq<'T>) =
         use e = source.GetEnumerator()
@@ -409,10 +405,7 @@ module Array =
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
 
     let inline tryHeadV (array: _[]) =
-        if array.Length = 0 then
-            ValueNone
-        else
-            ValueSome array[0]
+        if array.Length = 0 then ValueNone else ValueSome array[0]
 
     let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
 
@@ -440,8 +433,7 @@ module Array =
 
         if i <> array.Length then
 
-            let chunk1: 'U[] =
-                Array.zeroCreate ((array.Length >>> 2) + 1)
+            let chunk1: 'U[] = Array.zeroCreate ((array.Length >>> 2) + 1)
 
             chunk1.[0] <- first
             let mutable count = 1
@@ -459,8 +451,7 @@ module Array =
                 i <- i + 1
 
             if i < array.Length then
-                let chunk2: 'U[] =
-                    Array.zeroCreate (array.Length - i)
+                let chunk2: 'U[] = Array.zeroCreate (array.Length - i)
 
                 count <- 0
 
@@ -475,8 +466,7 @@ module Array =
 
                     i <- i + 1
 
-                let res: 'U[] =
-                    Array.zeroCreate (chunk1.Length + count)
+                let res: 'U[] = Array.zeroCreate (chunk1.Length + count)
 
                 Array.Copy(chunk1, res, chunk1.Length)
                 Array.Copy(chunk2, 0, res, chunk1.Length, count)
@@ -489,10 +479,7 @@ module Array =
 [<RequireQualifiedAccess>]
 module ImmutableArray =
     let inline tryHeadV (xs: ImmutableArray<'T>) : 'T voption =
-        if xs.Length = 0 then
-            ValueNone
-        else
-            ValueSome xs[0]
+        if xs.Length = 0 then ValueNone else ValueSome xs[0]
 
     let inline empty<'T> = ImmutableArray<'T>.Empty
 
@@ -529,7 +516,7 @@ module Exception =
         |> String.concat " ---> "
 
 type Async with
-    
+
     static member RunImmediateExceptOnUI(computation: Async<'T>, ?cancellationToken) =
         match SynchronizationContext.Current with
         | null ->

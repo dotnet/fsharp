@@ -20,5 +20,5 @@ type internal FSharpFindDefinitionService [<ImportingConstructor>] (metadataAsSo
             cancellableTask {
                 let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
                 return! navigation.FindDefinitionsAsync(position)
-            } |> CancellableTask.start cancellationToken
-
+            }
+            |> CancellableTask.start cancellationToken

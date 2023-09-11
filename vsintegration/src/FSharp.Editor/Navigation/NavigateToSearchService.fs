@@ -142,7 +142,8 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             else
                 // full name with dots allows for path matching, e.g.
                 // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}" |> ValueOption.ofNullable
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                |> ValueOption.ofNullable
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {
@@ -155,11 +156,13 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             let processed =
                 [|
                     for item in items do
-                        let contains = kinds.Contains (navigateToItemKindToRoslynKind item.Kind)
+                        let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
                         let patternMatch = tryMatch item
+
                         match contains, patternMatch with
                         | true, ValueSome m ->
                             let sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
+
                             match sourceSpan with
                             | ValueNone -> ()
                             | ValueSome sourceSpan ->
@@ -173,7 +176,12 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                                         kind,
                                         patternMatchKindToNavigateToMatchKind m.Kind,
                                         item.Name,
-                                        FSharpNavigableItem(glyph, ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)), document, sourceSpan)
+                                        FSharpNavigableItem(
+                                            glyph,
+                                            ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
+                                            document,
+                                            sourceSpan
+                                        )
                                     )
                         | _ -> ()
                 |]

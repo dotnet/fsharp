@@ -38,7 +38,9 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
                     false,
                     false,
                     nameof (FSharpAddExplicitTypeToParameterRefactoring)
-                ) |> CancellableTask.start ct |> Async.AwaitTask
+                )
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
 
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
