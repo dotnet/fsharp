@@ -4372,7 +4372,7 @@ FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSha
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.Interactive.Shell+EvaluationEventArgs],FSharp.Compiler.Interactive.Shell+EvaluationEventArgs] OnEvaluation
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.Interactive.Shell+EvaluationEventArgs],FSharp.Compiler.Interactive.Shell+EvaluationEventArgs] get_OnEvaluation()
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] OnEmitStart
-FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_OnEmit()
+FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_OnEmitStart()
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.String]] GetOptionalConsoleReadLine(Boolean)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: System.IFormatProvider FormatProvider
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig: System.IFormatProvider get_FormatProvider()
