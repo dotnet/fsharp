@@ -152,8 +152,8 @@ type Document with
                     let! ct = CancellableTask.getCancellationToken ()
 
                     match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
-                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome (parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
@@ -344,8 +344,8 @@ type Project with
                     let projectOptionsManager = service.FSharpProjectOptionsManager
 
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
-                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome (parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 

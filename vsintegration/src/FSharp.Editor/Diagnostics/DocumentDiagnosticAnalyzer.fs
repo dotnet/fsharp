@@ -16,7 +16,7 @@ open FSharp.Compiler.Diagnostics
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
-[<RequireQualifiedAccess>]
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
     | Syntax
     | Semantic
@@ -125,12 +125,12 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             if document.Project.IsFSharpMetadata then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) }
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                 |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) }
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                 |> CancellableTask.start cancellationToken
