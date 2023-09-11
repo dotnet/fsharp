@@ -89,12 +89,13 @@ type public FsiEvaluationSessionHostConfig =
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
     abstract ReportUserCommandLineArgs: string[] -> unit
 
-    /// Hook for listening for evaluation bindings
+    /// Hook for listening for evaluation bindings.
+    /// Will be triggered after an fsi evaluation.
     member OnEvaluation: IEvent<EvaluationEventArgs>
 
-    /// Hook for listening for start of emitting dynamic Assemblies. After Compilation has finished.
+    /// Hook for listening for start of emitting dynamic assemblies, after compilation has finished.
     /// Can be used by an UI hosting the compiler service to indicate that fsi compilation is finished and fsi evaluation is starting.
-    member OnEmit: IEvent<unit>
+    member OnEmitStart: IEvent<unit>
 
     ///<summary>
     /// <para>Indicate a special console "readline" reader for the evaluation session, if any.</para><para> </para>

@@ -393,7 +393,7 @@ let ``interactive session events``() =
         let evals = ResizeArray()
         use evaluator = fsiConfig.OnEvaluation.Subscribe (fun eval -> evals.Add (eval.FsiValue, eval.Name, eval.SymbolUse))
         let emitCounter = ref 0
-        fsiConfig.OnEmit.Add (fun _ -> emitCounter.Value <- emitCounter.Value + 1) 
+        fsiConfig.OnEmitStart.Add (fun () -> emitCounter.Value <- emitCounter.Value + 1) 
 
         use session = FsiEvaluationSession.Create(fsiConfig, defaultArgs, inStream, outStream, errStream, collectible=true)
         session.EvalInteraction  "let x = 42"

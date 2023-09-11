@@ -582,11 +582,12 @@ type FsiEvaluationSessionHostConfig() =
     abstract UseFsiAuxLib: bool
 
     /// Hook for listening for evaluation bindings
+    /// Will be triggered after an fsi evaluation.
     member _.OnEvaluation = evaluationEvent.Publish
 
-    /// Hook for listening for start of emitting dynamic Assemblies. After Compilation has finished.
+    /// Hook for listening for start of emitting dynamic assemblies, after compilation has finished.
     /// Can be used by an UI hosting the compiler service to indicate that fsi compilation is finished and fsi evaluation is starting.
-    member _.OnEmit = emitEvent.Publish
+    member _.OnEmitStart = emitEvent.Publish
 
     member internal x.TriggerEvaluation(value, symbolUse, decl) =
         evaluationEvent.Trigger(EvaluationEventArgs(value, symbolUse, decl))
@@ -1987,7 +1988,7 @@ type internal FsiDynamicCompiler
 #endif
 
         // Raise an event when the compilation has finished. Just before the actual evaluation.
-        // So that any UI hosting the compiler service can indiucate that compilation is finished and  evaluation is starting
+        // So that any UI hosting the compiler service can indicate that compilation is finished and evaluation is starting.
         fsi.TriggerEmit()
 
         ReportTime tcConfig "Reflection.Emit"
