@@ -1124,7 +1124,7 @@ type LexFilterImpl (
                     //      f<x ' x>x
                     //      f<x | null>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
-                    | BAR_JUST_BEFORE_NULL
+                    | BAR_JUST_BEFORE_NULL | BAR
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
