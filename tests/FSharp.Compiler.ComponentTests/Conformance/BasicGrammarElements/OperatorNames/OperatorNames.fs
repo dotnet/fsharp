@@ -75,8 +75,8 @@ module OperatorNames =
         |> compileExeAndRun
         |> shouldSucceed
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorGreaterColon.fs"|])>]
-    let``E_OperatorGreaterColon_fs`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorGreaterColon01.fs"|])>]
+    let``E_OperatorGreaterColon01_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:1172" ; "--nowarn:1173"]
         |> asExe
@@ -91,4 +91,15 @@ module OperatorNames =
             (Error 35, Line 10, Col 29, Line 10, Col 31, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
             (Error 35, Line 13, Col 24, Line 13, Col 26, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
             (Error 35, Line 13, Col 29, Line 13, Col 31, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorGreaterColon02.fs"|])>]
+    let ``E_OperatorGreaterColon02_fs`` compilation =
+        compilation
+        |> withOptions ["--nowarn:1172" ; "--nowarn:1173"]
+        |> asFsx
+        |> runFsi
+        |> shouldFail
+        |> withDiagnostics [
+            
         ]
