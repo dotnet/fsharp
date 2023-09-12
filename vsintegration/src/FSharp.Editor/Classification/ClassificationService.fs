@@ -120,18 +120,22 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         lookup :> IReadOnlyDictionary<_, _>
 
-    static let itemTosemanticClassificationLookup (d: SemanticClassificationItem array) =
+    static let itemToSemanticClassificationLookup (d: SemanticClassificationItem array) =
         let lookup = Dictionary<int, ResizeArray<SemanticClassificationItem>>()
+
         for item in d do
             let items =
                 let startLine = item.Range.StartLine
+
                 match lookup.TryGetValue startLine with
                 | true, items -> items
                 | _ ->
                     let items = ResizeArray()
                     lookup[startLine] <- items
                     items
+
             items.Add item
+
         lookup :> IReadOnlyDictionary<_, _>
 
     static let unopenedDocumentsSemanticClassificationCache =
@@ -284,7 +288,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                         let classificationData = checkResults.GetSemanticClassification(Some targetRange)
 
-                        let classificationDataLookup = itemTosemanticClassificationLookup classificationData
+                        let classificationDataLookup = itemToSemanticClassificationLookup classificationData
                         do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
 
                         addSemanticClassification sourceText textSpan classificationData result

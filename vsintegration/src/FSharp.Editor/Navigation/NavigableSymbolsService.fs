@@ -56,33 +56,35 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
                         match definition with
                         | ValueNone -> return null
                         | ValueSome (result, range) ->
-                            
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
                             match result with
-                                | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
-                                    return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol
+                            | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol
 
-                                | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
-                                    let nav =
-                                        { new INavigableSymbol with
-                                            member _.Navigate(_: INavigableRelationship) =
-                                                // Need to new up a CTS here instead of re-using the other one, since VS
-                                                // will navigate disconnected from the outer routine, leading to an
-                                                // OperationCancelledException if you use the one defined outside.
-                                                // TODO: review if it's a proper way of doing it
-                                                use ct = new CancellationTokenSource()
-                                                do gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, ct.Token) |> ignore
+                            | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
+                                let nav =
+                                    { new INavigableSymbol with
+                                        member _.Navigate(_: INavigableRelationship) =
+                                            // Need to new up a CTS here instead of re-using the other one, since VS
+                                            // will navigate disconnected from the outer routine, leading to an
+                                            // OperationCancelledException if you use the one defined outside.
+                                            // TODO: review if it's a proper way of doing it
+                                            use ct = new CancellationTokenSource()
 
-                                            member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
+                                            do
+                                                gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, ct.Token)
+                                                |> ignore
 
-                                            member _.SymbolSpan = symbolSpan
-                                        }
+                                        member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
-                                    return nav
+                                        member _.SymbolSpan = symbolSpan
+                                    }
+
+                                return nav
 
                     with exc ->
                         TelemetryReporter.ReportFault(TelemetryEvents.GoToDefinitionGetSymbol, FaultSeverity.General, exc)

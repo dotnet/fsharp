@@ -46,41 +46,53 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                     | null -> ()
                     | _ ->
                         let document = solution.GetDocument(documentId)
+
                         if document.Project.Language <> LanguageNames.FSharp then
                             ()
                         else
                             cancellableTask {
                                 try
-                                    if document.Project.Language = LanguageNames.FSharp then
-                                        let openDocIds = workspace.GetOpenDocumentIds()
+                                    let openDocIds = workspace.GetOpenDocumentIds()
 
-                                        let docIdsToReanalyze =
-                                            if document.IsFSharpScript then
-                                                [| for x in openDocIds do
-                                                    if x <> document.Id 
+                                    let docIdsToReanalyze =
+                                        if document.IsFSharpScript then
+                                            [|
+                                                for x in openDocIds do
+                                                    if
+                                                        x <> document.Id
                                                         && (let doc = solution.GetDocument(x)
+
                                                             match doc with
                                                             | null -> false
-                                                            | _ -> doc.IsFSharpScript) then 
-                                                                yield x |]
-                                            else
-                                                let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
+                                                            | _ -> doc.IsFSharpScript)
+                                                    then
+                                                        yield x
+                                            |]
+                                        else
+                                            let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
 
-                                                [| for x in openDocIds do
-                                                    if depProjIds.Contains(x.ProjectId)
+                                            [|
+                                                for x in openDocIds do
+                                                    if
+                                                        depProjIds.Contains(x.ProjectId)
                                                         && x <> document.Id
                                                         && (let doc = solution.GetDocument(x)
+
                                                             match box doc with
                                                             | null -> false
-                                                            | _ -> doc.Project.Language = LanguageNames.FSharp) then
-                                                                yield x |]
+                                                            | _ -> doc.Project.Language = LanguageNames.FSharp)
+                                                    then
+                                                        yield x
+                                            |]
 
-                                        if docIdsToReanalyze.Length > 0 then
-                                            analyzerService.Reanalyze(workspace, documentIds = docIdsToReanalyze)
+                                    if docIdsToReanalyze.Length > 0 then
+                                        analyzerService.Reanalyze(workspace, documentIds = docIdsToReanalyze)
                                 with ex ->
                                     Telemetry.TelemetryReporter.ReportFault("FSharpAnalysisSaveFileCommandHandler.ExecuteCommand", e = ex)
                                     logException ex
-                            } |> CancellableTask.startWithoutCancellation |> ignore // fire and forget
+                            }
+                            |> CancellableTask.startWithoutCancellation
+                            |> ignore // fire and forget
 
             nextCommandHandler.Invoke()
 

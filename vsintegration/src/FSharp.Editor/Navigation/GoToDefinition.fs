@@ -459,19 +459,15 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member _.TryNavigateToTextSpan
-        (
-            document: Document,
-            textSpan: TextSpan,
-            cancellationToken: CancellationToken
-        ) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
 
         let navigationService =
             workspace.Services.GetService<IFSharpDocumentNavigationService>()
 
-        navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken) |> ignore
+        navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
+        |> ignore
 
     member _.NavigateToItem(navigableItem: FSharpNavigableItem, cancellationToken: CancellationToken) =
 
@@ -702,27 +698,34 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
     member _.TryGoToDefinition(position, cancellationToken) =
         try
             let gtd = GoToDefinition(metadataAsSource)
+
             let gtdTask =
                 cancellableTask {
-                    use _ = TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+                    use _ =
+                        TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+
                     let! definition = gtd.FindDefinitionAsync(initialDoc, position)
                     let! cancellationToken = CancellableTask.getCancellationToken ()
-            
+
                     match definition with
                     | ValueSome (FSharpGoToDefinitionResult.NavigableItem (navItem), _) ->
                         gtd.NavigateToItem(navItem, cancellationToken) |> ignore
                         return true
                     | ValueSome (FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _) ->
-                        gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken) |> ignore
+                        gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
+                        |> ignore
+
                         return true
                     | _ -> return false
                 }
+
             ThreadHelper.JoinableTaskFactory.Run(
                 SR.NavigatingTo(),
                 (fun _ ct ->
                     let cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct)
                     CancellableTask.start cts.Token gtdTask),
-                TimeSpan.FromSeconds 1)
+                TimeSpan.FromSeconds 1
+            )
         with :? OperationCanceledException ->
             false
 

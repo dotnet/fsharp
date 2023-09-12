@@ -279,7 +279,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let referencedProjects = ResizeArray()
 
-
                 if project.AreFSharpInMemoryCrossProjectReferencesEnabled then
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
@@ -324,7 +323,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 "--ignorelinedirectives"
                             |]
 
-                        let! ver = project.GetDependentVersionAsync(ct) 
+                        let! ver = project.GetDependentVersionAsync(ct)
 
                         let projectOptions =
                             {
@@ -397,7 +396,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply ValueNone
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsBySingleScriptOrFile document userOpName |> CancellableTask.start ct |> Async.AwaitTask
+                                let! options =
+                                    tryComputeOptionsBySingleScriptOrFile document userOpName
+                                    |> CancellableTask.start ct
+                                    |> Async.AwaitTask
 
                                 if ct.IsCancellationRequested then
                                     reply.Reply ValueNone
