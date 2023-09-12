@@ -125,9 +125,9 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 11, Col 13, Line 11, Col 20, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
-            (Warning 58, Line 12, Col 23, Line 12, Col 26, "Possible incorrect indentation: this token is offside of context started at position (11:23). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 12, Col 23, Line 12, Col 26, "Possible incorrect indentation: this token is offside of context started at position (11:23). Try indenting this token further or using standard formatting conventions.")
             (Error 531, Line 12, Col 13, Line 12, Col 19, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
-            (Warning 58, Line 13, Col 23, Line 13, Col 26, "Possible incorrect indentation: this token is offside of context started at position (12:23). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 13, Col 23, Line 13, Col 26, "Possible incorrect indentation: this token is offside of context started at position (12:23). Try indenting this token further or using standard formatting conventions.")
             (Error 531, Line 13, Col 13, Line 13, Col 21, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
         ]
 

@@ -11,6 +11,7 @@ module RecordTypes =
     let verifyTypeCheckAsFsxAsLibrary compilation =
         compilation
         |> asLibrary
+        |> withOptions ["--nowarn:3560"]
         |> typecheck
         |> shouldSucceed
 
