@@ -696,37 +696,31 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
         }
 
     member _.TryGoToDefinition(position, cancellationToken) =
+        // Once we migrate to Roslyn-exposed MAAS and sourcelink (https://github.com/dotnet/fsharp/issues/13951), this can be a "normal" task
+        // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
+        // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
         try
+            use _ =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+
             let gtd = GoToDefinition(metadataAsSource)
+            let gtdTask = gtd.FindDefinitionAsync(initialDoc, position) cancellationToken
 
-            let gtdTask =
-                cancellableTask {
-                    use _ =
-                        TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
+            gtdTask.Wait()
 
-                    let! definition = gtd.FindDefinitionAsync(initialDoc, position)
-                    let! cancellationToken = CancellableTask.getCancellationToken ()
-
-                    match definition with
-                    | ValueSome (FSharpGoToDefinitionResult.NavigableItem (navItem), _) ->
-                        gtd.NavigateToItem(navItem, cancellationToken) |> ignore
-                        return true
-                    | ValueSome (FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _) ->
-                        gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
-                        |> ignore
-
-                        return true
-                    | _ -> return false
-                }
-
-            ThreadHelper.JoinableTaskFactory.Run(
-                SR.NavigatingTo(),
-                (fun _ ct ->
-                    let cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ct)
-                    CancellableTask.start cts.Token gtdTask),
-                TimeSpan.FromSeconds 1
-            )
-        with :? OperationCanceledException ->
+            if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
+                match gtdTask.Result with
+                | ValueSome (FSharpGoToDefinitionResult.NavigableItem (navItem), _) ->
+                    gtd.NavigateToItem(navItem, cancellationToken) |> ignore
+                    true
+                | ValueSome (FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _) ->
+                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken) |> ignore
+                    true
+                | _ -> false
+            else
+                false
+        with exc ->
+            TelemetryReporter.ReportFault(TelemetryEvents.GoToDefinition, FaultSeverity.General, exc)
             false
 
 [<RequireQualifiedAccess>]
