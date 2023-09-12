@@ -704,7 +704,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
 
             let gtd = GoToDefinition(metadataAsSource)
-            let gtdTask = gtd.FindDefinitionAsync(initialDoc, position) cancellationToken
+            let gtdTask = gtd.FindDefinitionAsync (initialDoc, position) cancellationToken
 
             gtdTask.Wait()
 
@@ -714,7 +714,9 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                     gtd.NavigateToItem(navItem, cancellationToken) |> ignore
                     true
                 | ValueSome (FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _) ->
-                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken) |> ignore
+                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
+                    |> ignore
+
                     true
                 | _ -> false
             else
