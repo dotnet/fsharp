@@ -2,6 +2,7 @@
 #nowarn "57"
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Diagnostics.ExtendedData
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
