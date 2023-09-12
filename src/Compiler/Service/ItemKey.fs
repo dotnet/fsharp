@@ -98,74 +98,79 @@ module ItemKeyTags =
     [<Literal>]
     let parameters = "p$p$"
 
-/// A debugging tool to show what's being written into the ItemKeyStore in a more human readable way in the debugger.
-type DebugKeyStore() =
+[<AutoOpen>]
+module DebugKeyStore =
 
-    let mutable debugCurrentItem = ResizeArray()
+    /// A debugging tool to show what's being written into the ItemKeyStore in a more human readable way in the debugger.
+    type DebugKeyStore() =
 
-    member val Items = ResizeArray()
+        let mutable debugCurrentItem = ResizeArray()
 
-    member _.WriteRange(m: range) = debugCurrentItem.Add("range", $"{m}")
+        member val Items = ResizeArray()
 
-    member _.WriteEntityRef(eref: EntityRef) =
-        debugCurrentItem.Add("EntityRef", $"{eref}")
+        member _.WriteRange(m: range) = debugCurrentItem.Add("range", $"{m}")
 
-    member _.WriteILType(ilTy: ILType) =
-        debugCurrentItem.Add("ILType", $"%A{ilTy}")
+        member _.WriteEntityRef(eref: EntityRef) =
+            debugCurrentItem.Add("EntityRef", $"{eref}")
 
-    member _.WriteType isStandalone (ty: TType) =
-        debugCurrentItem.Add("Type", $"{isStandalone} %A{ty}")
+        member _.WriteILType(ilTy: ILType) =
+            debugCurrentItem.Add("ILType", $"%A{ilTy}")
 
-    member _.WriteMeasure isStandalone (ms: Measure) =
-        debugCurrentItem.Add("Measure", $"{isStandalone} %A{ms}")
+        member _.WriteType isStandalone (ty: TType) =
+            debugCurrentItem.Add("Type", $"{isStandalone} %A{ty}")
 
-    member _.WriteTypar (isStandalone: bool) (typar: Typar) =
-        debugCurrentItem.Add("Typar", $"{isStandalone} %A{typar}")
+        member _.WriteMeasure isStandalone (ms: Measure) =
+            debugCurrentItem.Add("Measure", $"{isStandalone} %A{ms}")
 
-    member _.WriteValRef(vref: ValRef) =
-        debugCurrentItem.Add("ValRef", $"{vref}")
+        member _.WriteTypar (isStandalone: bool) (typar: Typar) =
+            debugCurrentItem.Add("Typar", $"{isStandalone} %A{typar}")
 
-    member _.WriteValue(vref: ValRef) =
-        debugCurrentItem.Add("Value", $"{vref}")
+        member _.WriteValRef(vref: ValRef) =
+            debugCurrentItem.Add("ValRef", $"{vref}")
 
-    member _.WriteActivePatternCase (apInfo: ActivePatternInfo) index =
-        debugCurrentItem.Add("ActivePatternCase", $"{apInfo} {index}")
+        member _.WriteValue(vref: ValRef) =
+            debugCurrentItem.Add("Value", $"{vref}")
 
-    member this.FinishItem(item, length) =
-        debugCurrentItem.Add("length", $"{length}")
-        this.Items.Add(item, debugCurrentItem)
-        let itemCount = this.Items.Count
-        assert (itemCount > 0)
-        debugCurrentItem <- ResizeArray()
+        member _.WriteActivePatternCase (apInfo: ActivePatternInfo) index =
+            debugCurrentItem.Add("ActivePatternCase", $"{apInfo} {index}")
 
-    member _.New() = DebugKeyStore()
+        member this.FinishItem(item, length) =
+            debugCurrentItem.Add("length", $"{length}")
+            this.Items.Add(item, debugCurrentItem)
+            let itemCount = this.Items.Count
+            assert (itemCount > 0)
+            debugCurrentItem <- ResizeArray()
 
-/// A replacement for DebugKeyStore for when we're not debugging.
-type DebugKeyStoreNoop() =
+        member _.New() = DebugKeyStore()
 
-    member inline _.Items = Unchecked.defaultof<_>
+    /// A replacement for DebugKeyStore for when we're not debugging.
+    type _DebugKeyStoreNoop() =
 
-    member inline _.WriteRange(_m: range) = ()
+        member inline _.Items = Unchecked.defaultof<_>
 
-    member inline _.WriteEntityRef(_eref: EntityRef) = ()
+        member inline _.WriteRange(_m: range) = ()
 
-    member inline _.WriteILType(_ilTy: ILType) = ()
+        member inline _.WriteEntityRef(_eref: EntityRef) = ()
 
-    member inline _.WriteType _isStandalone (_ty: TType) = ()
+        member inline _.WriteILType(_ilTy: ILType) = ()
 
-    member inline _.WriteMeasure _isStandalone (_ms: Measure) = ()
+        member inline _.WriteType _isStandalone (_ty: TType) = ()
 
-    member inline _.WriteTypar (_isStandalone: bool) (_typar: Typar) = ()
+        member inline _.WriteMeasure _isStandalone (_ms: Measure) = ()
 
-    member inline _.WriteValRef(_vref: ValRef) = ()
+        member inline _.WriteTypar (_isStandalone: bool) (_typar: Typar) = ()
 
-    member inline _.WriteValue(_vref: ValRef) = ()
+        member inline _.WriteValRef(_vref: ValRef) = ()
 
-    member inline _.WriteActivePatternCase (_apInfo: ActivePatternInfo) _index = ()
+        member inline _.WriteValue(_vref: ValRef) = ()
 
-    member inline _.FinishItem(_item, _length) = ()
+        member inline _.WriteActivePatternCase (_apInfo: ActivePatternInfo) _index = ()
 
-    member inline this.New() = this
+        member inline _.FinishItem(_item, _length) = ()
+
+        member inline this.New() = this
+
+    let DebugKeyStoreNoop = _DebugKeyStoreNoop ()
 
 [<Sealed>]
 type ItemKeyStore(mmf: MemoryMappedFile, length, tcGlobals, debugStore) =
@@ -244,7 +249,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
     let b = BlobBuilder()
 
     // Change this to DebugKeyStore() for debugging (DebugStore will be available on ItemKeyStore)
-    let mutable debug = DebugKeyStoreNoop()
+    let mutable debug = DebugKeyStoreNoop
 
     let writeChar (c: char) = b.WriteUInt16(uint16 c)
 
