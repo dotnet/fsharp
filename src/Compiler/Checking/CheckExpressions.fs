@@ -1849,8 +1849,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
     let g = cenv.g
     let ad = env.eAccessRights
 
-    if isNil flds then invalidArg "flds" "BuildFieldMap"
-
     let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
     if allFields.Length > 1 then
         // In the case of nested record fields on the same level in record copy-and-update.
