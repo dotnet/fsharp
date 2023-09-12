@@ -387,12 +387,11 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString vref.LogicalName
             writeString ItemKeyTags.parameters
 
-            if vref.IsInstanceMember && isFunTy tcGlobals vref.Type then
-                // In case of an instance member, we will skip the type of "this" because it will differ
-                // between the definition and overrides. Also it's not needed to uniquely identify the reference.
-                destFunTy tcGlobals vref.Type |> snd
-            else
-                vref.Type
+            match vref.IsInstanceMember, tryDestFunTy tcGlobals vref.Type with
+            // In case of an instance member, we will skip the type of "this" because it will differ
+            // between the definition and overrides. Also it's not needed to uniquely identify the reference.
+            | true, ValueSome (_thisTy, funTy) -> funTy
+            | _ -> vref.Type
             |> writeType false
 
         | _ ->
