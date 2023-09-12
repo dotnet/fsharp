@@ -29,82 +29,85 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
-[<RequireQualifiedAccess; Experimental("This FCS API is experimental and subject to change.")>]
-type DiagnosticContextInfo =
-    | NoContext
-    | IfExpression
-    | OmittedElseBranch
-    | ElseBranchResult
-    | RecordFields
-    | TupleInRecordFields
-    | CollectionElement
-    | ReturnInComputationExpression
-    | YieldInComputationExpression
-    | RuntimeTypeTest
-    | DowncastUsedInsteadOfUpcast
-    | FollowingPatternMatchClause
-    | PatternMatchGuard
-    | SequenceExpression
-    with
-    static member From(contextInfo: ContextInfo) =
-        match contextInfo with
-        | ContextInfo.NoContext -> NoContext
-        | ContextInfo.IfExpression _ -> IfExpression
-        | ContextInfo.OmittedElseBranch _ -> OmittedElseBranch
-        | ContextInfo.ElseBranchResult _ -> ElseBranchResult
-        | ContextInfo.RecordFields -> RecordFields
-        | ContextInfo.TupleInRecordFields -> TupleInRecordFields
-        | ContextInfo.CollectionElement _ -> CollectionElement
-        | ContextInfo.ReturnInComputationExpression -> ReturnInComputationExpression
-        | ContextInfo.YieldInComputationExpression -> YieldInComputationExpression
-        | ContextInfo.RuntimeTypeTest _ -> RuntimeTypeTest
-        | ContextInfo.DowncastUsedInsteadOfUpcast _ -> DowncastUsedInsteadOfUpcast
-        | ContextInfo.FollowingPatternMatchClause _ -> FollowingPatternMatchClause
-        | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
-        | ContextInfo.SequenceExpression _ -> SequenceExpression
+module ExtendedData =
+    [<RequireQualifiedAccess; Experimental("This FCS API is experimental and subject to change.")>]
+    type DiagnosticContextInfo =
+        | NoContext
+        | IfExpression
+        | OmittedElseBranch
+        | ElseBranchResult
+        | RecordFields
+        | TupleInRecordFields
+        | CollectionElement
+        | ReturnInComputationExpression
+        | YieldInComputationExpression
+        | RuntimeTypeTest
+        | DowncastUsedInsteadOfUpcast
+        | FollowingPatternMatchClause
+        | PatternMatchGuard
+        | SequenceExpression
+        with
+        static member From(contextInfo: ContextInfo) =
+            match contextInfo with
+            | ContextInfo.NoContext -> NoContext
+            | ContextInfo.IfExpression _ -> IfExpression
+            | ContextInfo.OmittedElseBranch _ -> OmittedElseBranch
+            | ContextInfo.ElseBranchResult _ -> ElseBranchResult
+            | ContextInfo.RecordFields -> RecordFields
+            | ContextInfo.TupleInRecordFields -> TupleInRecordFields
+            | ContextInfo.CollectionElement _ -> CollectionElement
+            | ContextInfo.ReturnInComputationExpression -> ReturnInComputationExpression
+            | ContextInfo.YieldInComputationExpression -> YieldInComputationExpression
+            | ContextInfo.RuntimeTypeTest _ -> RuntimeTypeTest
+            | ContextInfo.DowncastUsedInsteadOfUpcast _ -> DowncastUsedInsteadOfUpcast
+            | ContextInfo.FollowingPatternMatchClause _ -> FollowingPatternMatchClause
+            | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
+            | ContextInfo.SequenceExpression _ -> SequenceExpression
 
-[<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-type IFSharpDiagnosticExtendedData = interface end
+    [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
+    type IFSharpDiagnosticExtendedData = interface end
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
-type TypeMismatchDiagnosticExtendedData
-    internal (symbolEnv: SymbolEnv, dispEnv: DisplayEnv, expectedType: TType, actualType: TType, context: DiagnosticContextInfo) =
-    interface IFSharpDiagnosticExtendedData
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type TypeMismatchDiagnosticExtendedData
+        internal (symbolEnv: SymbolEnv, dispEnv: DisplayEnv, expectedType: TType, actualType: TType, context: DiagnosticContextInfo) =
+        interface IFSharpDiagnosticExtendedData
 
-    member x.ExpectedType = FSharpType(symbolEnv, expectedType)
-    member x.ActualType = FSharpType(symbolEnv, actualType)
-    member x.ContextInfo = context
-    member x.DisplayContext = FSharpDisplayContext(fun _ -> dispEnv)
+        member x.ExpectedType = FSharpType(symbolEnv, expectedType)
+        member x.ActualType = FSharpType(symbolEnv, actualType)
+        member x.ContextInfo = context
+        member x.DisplayContext = FSharpDisplayContext(fun _ -> dispEnv)
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
-type ExpressionIsAFunctionExtendedData
-    internal (symbolEnv: SymbolEnv, actualType: TType) =
-    interface IFSharpDiagnosticExtendedData
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type ExpressionIsAFunctionExtendedData
+        internal (symbolEnv: SymbolEnv, actualType: TType) =
+        interface IFSharpDiagnosticExtendedData
 
-    member x.ActualType = FSharpType(symbolEnv, actualType)
+        member x.ActualType = FSharpType(symbolEnv, actualType)
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
-type FieldNotContainedDiagnosticExtendedData
-    internal (symbolEnv: SymbolEnv, implTycon: Tycon, sigTycon: Tycon, signatureField: RecdField, implementationField: RecdField) =
-    interface IFSharpDiagnosticExtendedData
-    member x.SignatureField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef sigTycon, signatureField.Id.idText))
-    member x.ImplementationField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef implTycon, implementationField.Id.idText))
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type FieldNotContainedDiagnosticExtendedData
+        internal (symbolEnv: SymbolEnv, implTycon: Tycon, sigTycon: Tycon, signatureField: RecdField, implementationField: RecdField) =
+        interface IFSharpDiagnosticExtendedData
+        member x.SignatureField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef sigTycon, signatureField.Id.idText))
+        member x.ImplementationField = FSharpField(symbolEnv, RecdFieldRef.RecdFieldRef(mkLocalTyconRef implTycon, implementationField.Id.idText))
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
-type ValueNotContainedDiagnosticExtendedData
-    internal (symbolEnv: SymbolEnv, signatureValue: Val, implValue: Val) =
-    interface IFSharpDiagnosticExtendedData
-    member x.SignatureValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef signatureValue)
-    member x.ImplementationValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef implValue)
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type ValueNotContainedDiagnosticExtendedData
+        internal (symbolEnv: SymbolEnv, signatureValue: Val, implValue: Val) =
+        interface IFSharpDiagnosticExtendedData
+        member x.SignatureValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef signatureValue)
+        member x.ImplementationValue = FSharpMemberOrFunctionOrValue(symbolEnv, mkLocalValRef implValue)
 
-[<Experimental("This FCS API is experimental and subject to change.")>]
-type ArgumentsInSigAndImplMismatchExtendedData
-    internal(sigArg: Ident, implArg: Ident) =
-    interface IFSharpDiagnosticExtendedData
-    member x.SignatureName = sigArg.idText
-    member x.ImplementationName = implArg.idText
-    member x.SignatureRange = sigArg.idRange
-    member x.ImplementationRange = implArg.idRange
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    type ArgumentsInSigAndImplMismatchExtendedData
+        internal(sigArg: Ident, implArg: Ident) =
+        interface IFSharpDiagnosticExtendedData
+        member x.SignatureName = sigArg.idText
+        member x.ImplementationName = implArg.idText
+        member x.SignatureRange = sigArg.idRange
+        member x.ImplementationRange = implArg.idRange
+
+open ExtendedData
 
 type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
     member _.Range = m
