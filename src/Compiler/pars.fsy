@@ -6583,8 +6583,9 @@ pathOp:
   | ident DOT pathOp
      { prependIdentInLongIdentWithTrivia (SynIdent($1, None)) (rhs parseState 2) $3 }
 
-  | ident DOT error
-     { (* silent recovery *) SynLongIdent([$1], [rhs parseState 2], [None]) }
+  | ident DOT ends_coming_soon_or_recover
+     { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIdentifierExpected())
+       SynLongIdent([$1], [rhs parseState 2], [None]) }
 
 
 /* nameop is identOrOp not used as part of a path */
