@@ -134,6 +134,7 @@
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFixes\MissingReferenceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
     <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
