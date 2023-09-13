@@ -1935,7 +1935,14 @@ type R1 = { A: int; B: int }
 type R2 = { C: int; D: int }
 
 match [] with
-| [ { A = 2; l = 2 } ]
+| [ { A = 2; l = 2 } ] -> ()
+
+match { A = 1; B = 2 } with
+| { A = 1;  } -> ()
+| { A = 2; s } -> ()
+| { B = } -> ()
+| { X = ; A = 3 } -> ()
+| {   } -> ()
 """
 
         VerifyCompletionList(
@@ -1944,6 +1951,16 @@ match [] with
             [ "B"; "R1"; "R2"; "System"; "LanguagePrimitives" ],
             [ "A"; "C"; "D"; "DU"; "X"; "log"; "let"; "Lazy" ]
         )
+
+        VerifyCompletionList(fileContents, "| { A = 1; ", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { A = 2; s", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+
+        // Ideally C and D should not be present here, but right now we're not able to filter fields in an empty record pattern stub
+        VerifyCompletionList(fileContents, "| {  ", [ "A"; "B"; "C"; "D"; "R1"; "R2" ], [])
 
     [<Fact>]
     let ``Completion list for record field identifier in a pattern contains fields of all records in scope when the record type is not known yet``
