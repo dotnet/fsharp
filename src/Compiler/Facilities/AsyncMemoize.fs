@@ -258,10 +258,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
         strongList
         |> Seq.append weakList
         |> Seq.choose (function
-            | _, _, _, Strong v -> Some v
-            | _, _, _, Weak w ->
+            | _k, version, label, Strong value -> Some (label, version, value)
+            | _k, version, label, Weak w ->
                 match w.TryGetTarget() with
-                | true, v -> Some v
+                | true, value -> Some (label, version, value)
                 | _ -> None)
 
 type internal ICacheKey<'TKey, 'TVersion> =
@@ -344,7 +344,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let cache =
         LruCache<'TKey, 'TVersion, Job<'TValue>>(
             keepStrongly = defaultArg keepStrongly 100,
-            keepWeakly = defaultArg keepWeakly 100,
+            keepWeakly = defaultArg keepWeakly 200,
             requiredToKeep =
                 (function
                 | Running _ -> true
@@ -453,6 +453,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
+                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label} version: {key.Version}"
 
                             else
                                 // We need to restart the computation
@@ -462,6 +463,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                         try
                                             log (Started, key)
+                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label} version: {key.Version}"
                                             let! result = Async.StartAsTask(computation, cancellationToken = cts.Token)
                                             post (key, (JobCompleted result))
                                         with
@@ -484,6 +486,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
+                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label} version: {key.Version}"
 
                         | CancelRequest, None
                         | CancelRequest, Some (Completed _) -> ()
@@ -582,7 +585,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member _.Locked = lock.Semaphore.CurrentCount < 1
 
-    member _.Running = cache.GetValues() |> Seq.filter (function Running _ -> true | _ -> false) |> Seq.toArray
+    member _.Running = cache.GetValues() |> Seq.filter (function _, _, Running _ -> true | _ -> false) |> Seq.toArray
 
     member this.DebuggerDisplay =
         let locked = if this.Locked then " [LOCKED]" else ""
@@ -590,8 +593,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let valueStats =
             cache.GetValues()
             |> Seq.countBy (function
-                | Running _ -> "Running"
-                | Completed _ -> "Completed")
+                | _, _, Running _ -> "Running"
+                | _, _, Completed _ -> "Completed")
             |> Seq.map ((<||) (sprintf "%s: %d"))
             |> String.concat " "
 
