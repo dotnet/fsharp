@@ -6,26 +6,34 @@
       <Sha>93c23409e630c4f267234540b0e3557b76a53ef4</Sha>
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.8.0-preview-23411-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build" Version="17.8.0-preview-23411-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.8.0-preview-23411-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.8.0-preview-23411-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.8.0-preview-23411-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+    </Dependency>
+    <Dependency Name="System.Collections.Immutable" Version="8.0.0-rc.2.23457.7">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>da3500bb02343b1d0424c74ccdddbc592b5b3f4f</Sha>
+    </Dependency>
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="8.0.0-rc.2.23457.7">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>da3500bb02343b1d0424c74ccdddbc592b5b3f4f</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>

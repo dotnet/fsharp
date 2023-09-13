@@ -94,14 +94,14 @@
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
-    <SystemCollectionsImmutableVersion>8.0.0-rc.1.23410.15</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>8.0.0-rc.2.23457.7</SystemCollectionsImmutableVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>8.0.0-rc.1.23410.15</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>8.0.0-rc.2.23457.7</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>8.0.0-rc.1.23410.15</SystemReflectionMetadataVersion>
+    <SystemReflectionMetadataVersion>8.0.0-rc.2.23457.7</SystemReflectionMetadataVersion>
     <SystemThreadingTasksDataflow>8.0.0-rc.1.23410.15</SystemThreadingTasksDataflow>
-    <SystemRuntimeCompilerServicesUnsafeVersion>7.0.0-preview.3.22119.2</SystemRuntimeCompilerServicesUnsafeVersion>
+    <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
     <RoslynVersion>4.8.0-3.23430.6</RoslynVersion>
