@@ -4142,7 +4142,7 @@ type UnionCaseRef =
 type RecdFieldRef = 
     | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
 
     /// Get the name of the field
@@ -4151,7 +4151,7 @@ type RecdFieldRef =
     /// Get the name of the field, with backticks added for non-identifier names
     member x.DisplayName = x.FieldName |> ConvertLogicalNameToDisplayName
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member x.Tycon = x.TyconRef.Deref
 
     /// Dereference the reference 

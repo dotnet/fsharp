@@ -1058,6 +1058,19 @@ classMemberSpfnGetSetElements:
       else
           SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
 
+  | nameop COMMA recover
+    { (let (SynIdent(id:Ident, _)) = $1
+       if id.idText = "get" then
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
+       else if id.idText = "set" then
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
+       else
+           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
+
+  | OBLOCKBEGIN oblockend ODECLEND
+    { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIdentifierExpected())
+      SynMemberKind.Member, None }
+
 memberSpecFlags:
   | memberFlags { $1 }
   | abstractMemberFlags { $1 }
@@ -3591,8 +3604,10 @@ atomicPattern:
       { SynPat.QuoteExpr($1, lhs parseState) }
 
   | LBRACE recordPatternElementsAux rbrace
-      { let rs, m = $2
-        SynPat.Record(rs, rhs2 parseState 1 3) }
+      { SynPat.Record($2, rhs2 parseState 1 3) }
+
+  | LBRACE error rbrace
+      { SynPat.Record([], rhs2 parseState 1 3) }
 
   | LBRACK listPatternElements RBRACK
       { SynPat.ArrayOrList(false, $2, lhs parseState) }
@@ -3775,19 +3790,29 @@ conjParenPatternElements:
   | parenPattern AMP parenPattern
       { $3 :: $1 :: [] }
 
-recordPatternElementsAux: /* Fix 1190 */
+recordPatternElementsAux:
   | recordPatternElement opt_seps
-      { [$1], lhs parseState }
+      { [$1] }
 
   | recordPatternElement seps recordPatternElementsAux
-      { let r = $1
-        let (rs, dropMark) = $3
-        (r :: rs), lhs parseState }
+      { $1 :: $3 }
 
 recordPatternElement:
   | path EQUALS parenPattern
-    { let mEquals = rhs parseState 2
-      (List.frontAndBack $1.LongIdent, mEquals, $3) }
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let mPat = $3.Range
+      List.frontAndBack $1.LongIdent, Some mEquals, $3 }
+
+  | path EQUALS recover
+    { let mPath = $1.Range
+      let mEquals = rhs parseState 2
+      let pat = SynPat.Wild(mEquals.EndRange)
+      List.frontAndBack $1.LongIdent, Some mEquals, pat }
+
+  | path recover
+    { let pat = SynPat.Wild($1.Range.EndRange)
+      List.frontAndBack $1.LongIdent, None, pat }
 
 listPatternElements:
   | /* EMPTY */
@@ -6558,8 +6583,9 @@ pathOp:
   | ident DOT pathOp
      { prependIdentInLongIdentWithTrivia (SynIdent($1, None)) (rhs parseState 2) $3 }
 
-  | ident DOT error
-     { (* silent recovery *) SynLongIdent([$1], [rhs parseState 2], [None]) }
+  | ident DOT ends_coming_soon_or_recover
+     { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIdentifierExpected())
+       SynLongIdent([$1], [rhs parseState 2], [None]) }
 
 
 /* nameop is identOrOp not used as part of a path */

@@ -278,6 +278,9 @@ let mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy afte
 let mkGetTagFromField ilg cuspec baseTy =
     mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
 
+let mkSetTagToField ilg cuspec baseTy =
+    mkNormalStfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
+
 let adjustFieldName hasHelpers nm =
     match hasHelpers, nm with
     | SpecialFSharpListHelpers, "Head" -> "HeadOrDefault"
@@ -334,29 +337,6 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after =
     [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
-/// The compilation for struct unions relies on generating a set of constructors.
-/// If necessary some fake types are added to the constructor parameters to distinguish the signature.
-let rec extraTysAndInstrsForStructCtor (ilg: ILGlobals) cidx =
-    match cidx with
-    | 0 -> [ ilg.typ_Bool ], [ mkLdcInt32 0 ]
-    | 1 -> [ ilg.typ_Byte ], [ mkLdcInt32 0 ]
-    | 2 -> [ ilg.typ_SByte ], [ mkLdcInt32 0 ]
-    | 3 -> [ ilg.typ_Char ], [ mkLdcInt32 0 ]
-    | 4 -> [ ilg.typ_Int16 ], [ mkLdcInt32 0 ]
-    | 5 -> [ ilg.typ_Int32 ], [ mkLdcInt32 0 ]
-    | 6 -> [ ilg.typ_UInt16 ], [ mkLdcInt32 0 ]
-    | _ ->
-        let tys, instrs = extraTysAndInstrsForStructCtor ilg (cidx - 7)
-        (ilg.typ_UInt32 :: tys, mkLdcInt32 0 :: instrs)
-
-let takesExtraParams (alts: IlxUnionCase[]) =
-    alts.Length > 1
-    && (alts |> Array.exists (fun d -> d.FieldDefs.Length > 0)
-        ||
-        // Check if not all lengths are distinct
-        alts |> Array.countBy (fun d -> d.FieldDefs.Length) |> Array.length
-        <> alts.Length)
-
 let convNewDataInstrInternal ilg cuspec cidx =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
@@ -379,27 +359,15 @@ let convNewDataInstrInternal ilg cuspec cidx =
 
         instrs
         @ [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, (ctorFieldTys @ tagfields))) ]
-    elif cuspecRepr.RepresentAlternativeAsStructValue cuspec then
+    elif
+        cuspecRepr.RepresentAlternativeAsStructValue cuspec
+        && cuspecRepr.DiscriminationTechnique cuspec = IntegerTag
+    then
+        // Structs with fields should be created using maker methods (mkMakerName), only field-less cases are created this way
+        assert (alt.IsNullary)
         let baseTy = baseTyOfUnionSpec cuspec
-
-        let instrs, tagfields =
-            match cuspecRepr.DiscriminationTechnique cuspec with
-            | IntegerTag -> [ mkLdcInt32 cidx ], [ mkTagFieldType ilg cuspec ]
-            | _ -> [], []
-
-        let ctorFieldTys = alt.FieldTypes |> Array.toList
-
-        let extraTys, extraInstrs =
-            if takesExtraParams cuspec.AlternativesArray then
-                extraTysAndInstrsForStructCtor ilg cidx
-            else
-                [], []
-
-        instrs
-        @ extraInstrs
-          @ [
-              mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, (ctorFieldTys @ tagfields @ extraTys)))
-          ]
+        let tagField = [ mkTagFieldType ilg cuspec ]
+        [ mkLdcInt32 cidx; mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, tagField)) ]
     else
         [ mkNormalNewobj (mkILCtorMethSpecForTy (altTy, Array.toList alt.FieldTypes)) ]
 
@@ -414,6 +382,24 @@ let mkNewData ilg (cuspec, cidx) =
     let alt = altOfUnionSpec cuspec cidx
     let altName = alt.Name
     let baseTy = baseTyOfUnionSpec cuspec
+
+    let viaMakerCall () =
+        [
+            mkNormalCall (
+                mkILNonGenericStaticMethSpecInTy (
+                    baseTy,
+                    mkMakerName cuspec altName,
+                    Array.toList alt.FieldTypes,
+                    constFormalFieldTy baseTy
+                )
+            )
+        ]
+
+    let viaGetAltNameProperty () =
+        [
+            mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "get_" + altName, [], constFormalFieldTy baseTy))
+        ]
+
     // If helpers exist, use them
     match cuspec.HasHelpers with
     | AllHelpers
@@ -422,30 +408,13 @@ let mkNewData ilg (cuspec, cidx) =
         if cuspecRepr.RepresentAlternativeAsNull(cuspec, alt) then
             [ AI_ldnull ]
         elif alt.IsNullary then
-            [
-                mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "get_" + altName, [], constFormalFieldTy baseTy))
-            ]
+            viaGetAltNameProperty ()
         else
-            [
-                mkNormalCall (
-                    mkILNonGenericStaticMethSpecInTy (
-                        baseTy,
-                        mkMakerName cuspec altName,
-                        Array.toList alt.FieldTypes,
-                        constFormalFieldTy baseTy
-                    )
-                )
-            ]
+            viaMakerCall ()
 
-    | NoHelpers ->
-        if cuspecRepr.MaintainPossiblyUniqueConstantFieldForAlternative(cuspec, alt) then
-            // This method is only available if not AllHelpers. It fetches the unique object for the alternative
-            // without exposing direct access to the underlying field
-            [
-                mkNormalCall (mkILNonGenericStaticMethSpecInTy (baseTy, "get_" + altName, [], constFormalFieldTy baseTy))
-            ]
-        else
-            convNewDataInstrInternal ilg cuspec cidx
+    | NoHelpers when (not alt.IsNullary) && cuspecRepr.RepresentAlternativeAsStructValue cuspec -> viaMakerCall ()
+    | NoHelpers when cuspecRepr.MaintainPossiblyUniqueConstantFieldForAlternative(cuspec, alt) -> viaGetAltNameProperty ()
+    | NoHelpers -> convNewDataInstrInternal ilg cuspec cidx
 
 let mkIsData ilg (avoidHelpers, cuspec, cidx) =
     let alt = altOfUnionSpec cuspec cidx
@@ -916,13 +885,36 @@ let convAlternativeDef
                     [ nullaryMeth ], [ nullaryProp ]
 
                 else
-                    let ilInstrs =
-                        [
-                            for i in 0 .. fields.Length - 1 do
-                                mkLdarg (uint16 i)
-                            yield! convNewDataInstrInternal g.ilg cuspec num
-                        ]
-                        |> nonBranchingInstrsToCode
+                    let locals, ilInstrs =
+                        if repr.RepresentAlternativeAsStructValue info then
+                            let local = mkILLocal baseTy None
+                            let ldloca = I_ldloca(0us)
+
+                            let ilInstrs =
+                                [
+                                    ldloca
+                                    ILInstr.I_initobj baseTy
+                                    if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
+                                        ldloca
+                                        mkLdcInt32 num
+                                        mkSetTagToField g.ilg cuspec baseTy
+                                    for i in 0 .. fields.Length - 1 do
+                                        ldloca
+                                        mkLdarg (uint16 i)
+                                        mkNormalStfld (mkILFieldSpecInTy (baseTy, fields[i].LowerName, fields[i].Type))
+                                    mkLdloc 0us
+                                ]
+
+                            [ local ], ilInstrs
+                        else
+                            let ilInstrs =
+                                [
+                                    for i in 0 .. fields.Length - 1 do
+                                        mkLdarg (uint16 i)
+                                    yield! convNewDataInstrInternal g.ilg cuspec num
+                                ]
+
+                            [], ilInstrs
 
                     let mdef =
                         mkILNonGenericStaticMethod (
@@ -932,7 +924,7 @@ let convAlternativeDef
                             |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type))
                             |> Array.toList,
                             mkILReturn baseTy,
-                            mkMethodBody (true, [], fields.Length, ilInstrs, attr, imports)
+                            mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
                         )
                         |> addMethodGeneratedAttrs
                         |> addAltAttribs
@@ -1219,9 +1211,20 @@ let mkClassUnionDef
 
     let isStruct = td.IsStruct
 
+    let ctorAccess =
+        if cuspec.HasHelpers = AllHelpers then
+            ILMemberAccess.Assembly
+        else
+            cud.UnionCasesAccessibility
+
     let selfFields, selfMeths, selfProps =
 
         [
+            let minNullaryIdx =
+                cud.UnionCases
+                |> Array.tryFindIndex (fun t -> t.IsNullary)
+                |> Option.defaultValue -1
+
             for cidx, alt in Array.indexed cud.UnionCases do
                 if
                     repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
@@ -1238,31 +1241,25 @@ let mkClassUnionDef
                             | None -> Some g.ilg.typ_Object.TypeSpec
                             | Some ilTy -> Some ilTy.TypeSpec
 
-                    let extraParamsForCtor =
-                        if isStruct && takesExtraParams cud.UnionCases then
-                            let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor g.ilg cidx
-                            List.map mkILParamAnon extraTys
-                        else
-                            []
-
-                    let ctorAccess =
-                        (if cuspec.HasHelpers = AllHelpers then
-                             ILMemberAccess.Assembly
-                         else
-                             cud.UnionCasesAccessibility)
-
                     let ctor =
-                        (mkILSimpleStorageCtor (
-                            baseInit,
-                            baseTy,
-                            extraParamsForCtor,
-                            (fields @ tagFieldsInObject),
-                            ctorAccess,
-                            cud.DebugPoint,
-                            cud.DebugImports
-                        ))
-                            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
-                        |> addMethodGeneratedAttrs
+                        // Structs with fields are created using static makers methods
+                        // Structs without fields can share constructor for the 'tag' value, we just create one
+                        if isStruct && not (cidx = minNullaryIdx) then
+                            []
+                        else
+                            [
+                                (mkILSimpleStorageCtor (
+                                    baseInit,
+                                    baseTy,
+                                    [],
+                                    (fields @ tagFieldsInObject),
+                                    ctorAccess,
+                                    cud.DebugPoint,
+                                    cud.DebugImports
+                                ))
+                                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
+                                |> addMethodGeneratedAttrs
+                            ]
 
                     let props, meths =
                         mkMethodsAndPropertiesForFields
@@ -1274,7 +1271,7 @@ let mkClassUnionDef
                             baseTy
                             alt.FieldDefs
 
-                    yield (fields, ([ ctor ] @ meths), props)
+                    yield (fields, (ctor @ meths), props)
         ]
         |> List.unzip3
         |> (fun (a, b, c) -> List.concat a, List.concat b, List.concat c)
