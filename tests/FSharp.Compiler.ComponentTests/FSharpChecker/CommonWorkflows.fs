@@ -157,6 +157,7 @@ let GetAllUsesOfAllSymbols() =
             let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true).Checker
             do! saveProject project false checker 
             let options = project.GetProjectOptions checker
+            // We should not have to do this:
             //for p, f in project.GetAllFiles() do
             //    let fn = p.ProjectDir ++ f.FileName
             //    do! checker.NotifyFileChanged(fn, options) 
