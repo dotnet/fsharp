@@ -2442,21 +2442,16 @@ module internal ParseAndCheckFile =
         let fileInfo = sourceText.GetLastCharacterPosition()
 
         let collectOne severity diagnostic =
-            for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(
-                    options,
-                    false,
-                    mainInputFileName,
-                    fileInfo,
-                    diagnostic,
-                    severity,
-                    suggestNamesForErrors,
-                    flatErrors
-                ) do
-                diagnosticsCollector.Add diagnostic
+            // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
+            // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
+            //    the formatting of types in it may change (for example, 'a to obj)
+            //
+            // So we'll create a diagnostic later, but cache the FormatCore message now
+            diagnostic.Exception.Data[ "CachedFormatCore" ] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnosticsCollector.Add(struct (diagnostic, severity))
 
-                if severity = FSharpDiagnosticSeverity.Error then
-                    errorCount <- errorCount + 1
+            if severity = FSharpDiagnosticSeverity.Error then
+                errorCount <- errorCount + 1
 
         // This function gets called whenever an error happens during parsing or checking
         let diagnosticSink severity (diagnostic: PhasedDiagnostic) =
@@ -2495,14 +2490,29 @@ module internal ParseAndCheckFile =
         // Public members
         member _.DiagnosticsLogger = diagnosticsLogger
 
-        member _.CollectedDiagnostics = diagnosticsCollector.ToArray()
-
         member _.ErrorCount = errorCount
 
         member _.DiagnosticOptions
             with set opts = options <- opts
 
         member _.AnyErrors = errorCount > 0
+
+        member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
+            [|
+                for struct (diagnostic, severity) in diagnosticsCollector do
+                    yield!
+                        DiagnosticHelpers.ReportDiagnostic(
+                            options,
+                            false,
+                            mainInputFileName,
+                            fileInfo,
+                            diagnostic,
+                            severity,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            symbolEnv
+                        )
+            |]
 
     let getLightSyntaxStatus fileName options =
         let indentationAwareSyntaxOnByDefault =
@@ -2713,7 +2723,7 @@ module internal ParseAndCheckFile =
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
-        errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
+        errHandler.CollectedDiagnostics(None), parseResult, errHandler.AnyErrors
 
     let ApplyLoadClosure
         (
@@ -2915,28 +2925,29 @@ module internal ParseAndCheckFile =
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
 
-            let errors = errHandler.CollectedDiagnostics
+            let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
+
+            let symbolEnv = SymbolEnv(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports)
+            let errors = errHandler.CollectedDiagnostics(Some symbolEnv)
 
             let res =
-                match resOpt with
-                | (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState ->
-                    TypeCheckInfo(
-                        tcConfig,
-                        tcGlobals,
-                        List.head ccuSigsForFiles,
-                        tcState.Ccu,
-                        tcImports,
-                        tcEnvAtEnd.AccessRights,
-                        projectFileName,
-                        mainInputFileName,
-                        projectOptions,
-                        sink.GetResolutions(),
-                        sink.GetSymbolUses(),
-                        tcEnvAtEnd.NameEnv,
-                        loadClosure,
-                        List.tryHead implFiles,
-                        sink.GetOpenDeclarations()
-                    )
+                TypeCheckInfo(
+                    tcConfig,
+                    tcGlobals,
+                    List.head ccuSigsForFiles,
+                    tcState.Ccu,
+                    tcImports,
+                    tcEnvAtEnd.AccessRights,
+                    projectFileName,
+                    mainInputFileName,
+                    projectOptions,
+                    sink.GetResolutions(),
+                    sink.GetSymbolUses(),
+                    tcEnvAtEnd.NameEnv,
+                    loadClosure,
+                    List.tryHead implFiles,
+                    sink.GetOpenDeclarations()
+                )
 
             return errors, res
         }
