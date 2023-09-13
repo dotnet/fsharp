@@ -25,7 +25,7 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
                 let! sourceText = context.GetSourceTextAsync()
-                
+
                 let span, replacement =
                     try
                         let mutable span = context.Span
@@ -42,9 +42,11 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
                     with _ ->
                         context.Span, sourceText.GetSubText(context.Span).ToString()
 
-                return ValueSome {
-                    Name = CodeFix.FixIndexerAccess
-                    Message = title
-                    Changes = [ TextChange(span, replacement.TrimEnd() + ".") ]
-                }
+                return
+                    ValueSome
+                        {
+                            Name = CodeFix.FixIndexerAccess
+                            Message = title
+                            Changes = [ TextChange(span, replacement.TrimEnd() + ".") ]
+                        }
             }
