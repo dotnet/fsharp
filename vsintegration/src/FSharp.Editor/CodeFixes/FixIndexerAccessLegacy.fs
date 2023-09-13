@@ -40,11 +40,11 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
 
                         span, sourceText.GetSubText(span).ToString()
                     with _ ->
-                        context.Span, context.GetSquigglyTextAsync()
+                        context.Span, sourceText.GetSubText(context.Span).ToString()
 
                 return ValueSome {
-                    Name = CodeFix.FixIndexerAccess,
-                    Message = title,
+                    Name = CodeFix.FixIndexerAccess
+                    Message = title
                     Changes = [ TextChange(span, replacement.TrimEnd() + ".") ]
                 }
             }
