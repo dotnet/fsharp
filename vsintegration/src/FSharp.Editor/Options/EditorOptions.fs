@@ -164,6 +164,8 @@ type EditorOptions() =
     [<Export(typeof<SettingsStore.ISettingsStore>)>]
     member private _.SettingsStore = store
 
+    member _.With value = store.Register value
+
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
 module internal OptionsUI =
