@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Immutable
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -28,7 +29,17 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0010"
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
+    override this.RegisterCodeFixesAsync context =
+        // This is a performance shortcut.
+        // Since FS0010 fires all too often, we're just stopping any processing if it's a different error message.
+        // The code fix logic itself still has this logic and implements it more reliably.
+        if
+            context.Diagnostics
+            |> Seq.exists (fun d -> d.Descriptor.MessageFormat.ToString().Contains "->")
+        then
+            context.RegisterFsharpFix this
+        else
+            Task.CompletedTask
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
@@ -36,13 +47,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                 let! textOfError = context.GetSquigglyTextAsync()
 
                 if textOfError <> "->" then
-                    return None
+                    return ValueNone
                 else
-                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let! cancellationToken = CancellableTask.getCancellationToken ()
                     let document = context.Document
 
-                    let! defines, langVersion =
-                        document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof AddMissingFunKeywordCodeFixProvider)
+                    let! defines, langVersion, strictIndentation =
+                        document.GetFsharpParsingOptionsAsync(nameof AddMissingFunKeywordCodeFixProvider)
 
                     let! sourceText = context.GetSourceTextAsync()
                     let adjustedPosition = adjustPosition sourceText context.Span
@@ -58,11 +69,13 @@ type internal AddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
                             false,
                             false,
                             Some langVersion,
+                            strictIndentation,
                             cancellationToken
                         )
-                        |> Option.bind (fun intendedArgLexerSymbol ->
-                            RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range))
-                        |> Option.map (fun intendedArgSpan ->
+                        |> ValueOption.ofOption
+                        |> ValueOption.map (fun intendedArgLexerSymbol ->
+                            RoslynHelpers.FSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range))
+                        |> ValueOption.map (fun intendedArgSpan ->
                             {
                                 Name = CodeFix.AddMissingFunKeyword
                                 Message = title

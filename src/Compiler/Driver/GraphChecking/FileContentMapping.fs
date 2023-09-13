@@ -103,7 +103,7 @@ let visitSynUnionCase (SynUnionCase (attributes = attributes; caseType = caseTyp
 let visitSynEnumCase (SynEnumCase (attributes = attributes)) = visitSynAttributes attributes
 
 let visitSynTypeDefn
-    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefn (typeInfo = SynComponentInfo (attributes = attributes; longId = longId; typeParams = typeParams; constraints = constraints)
                   typeRepr = typeRepr
                   members = members))
     : FileContentEntry list =
@@ -131,6 +131,9 @@ let visitSynTypeDefn
             | SynTypeDefnKind.Delegate (signature, _) ->
                 yield! visitSynType signature
                 yield! List.collect visitSynMemberDefn members
+            | SynTypeDefnKind.Augmentation _ ->
+                yield! visitLongIdent longId
+                yield! List.collect visitSynMemberDefn members
             | _ -> yield! List.collect visitSynMemberDefn members
         | SynTypeDefnRepr.Exception _ ->
             // This is only used in the typed tree
@@ -140,7 +143,10 @@ let visitSynTypeDefn
     ]
 
 let visitSynTypeDefnSig
-    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes; typeParams = typeParams; constraints = constraints)
+    (SynTypeDefnSig (typeInfo = SynComponentInfo (attributes = attributes
+                                                  longId = longId
+                                                  typeParams = typeParams
+                                                  constraints = constraints)
                      typeRepr = typeRepr
                      members = members))
     =
@@ -159,7 +165,10 @@ let visitSynTypeDefnSig
             | SynTypeDefnSimpleRepr.General _
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> ()
             | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> yield! visitSynType rhsType
-            | SynTypeDefnSimpleRepr.None _
+            // This is a type augmentation in a signature file
+            | SynTypeDefnSimpleRepr.None _ ->
+                yield! visitLongIdent longId
+                yield! List.collect visitSynMemberSig members
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.Exception _ -> ()
@@ -184,7 +193,7 @@ let visitSynValSig (SynValSig (attributes = attributes; synType = synType; synEx
     ]
 
 let visitSynField (SynField (attributes = attributes; fieldType = fieldType)) =
-    [ yield! visitSynAttributes attributes; yield! visitSynType fieldType ]
+    visitSynAttributes attributes @ visitSynType fieldType
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     [
@@ -263,6 +272,9 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map visit [ lhsType; rhsType ]
             Continuation.concatenate continuations continuation
         | SynType.FromParseError _ -> continuation []
+        | SynType.Intersection (types = types) ->
+            let continuations = List.map visit types
+            Continuation.concatenate continuations continuation
 
     visit t id
 
@@ -272,34 +284,29 @@ let visitSynValTyparDecls (SynValTyparDecls (typars = typars)) =
 let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
     match td with
     | SynTyparDecls.PostfixList (decls, constraints, _) ->
-        [
-            yield! List.collect visitSynTyparDecl decls
-            yield! List.collect visitSynTypeConstraint constraints
-        ]
+        List.collect visitSynTyparDecl decls
+        @ List.collect visitSynTypeConstraint constraints
     | SynTyparDecls.PrefixList (decls = decls) -> List.collect visitSynTyparDecl decls
     | SynTyparDecls.SinglePrefix (decl = decl) -> visitSynTyparDecl decl
 
-let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
+let visitSynTyparDecl (SynTyparDecl (attributes = attributes; intersectionConstraints = constraints)) =
+    visitSynAttributes attributes @ List.collect visitSynType constraints
 
 let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
-    [
-        match tc with
-        | SynTypeConstraint.WhereSelfConstrained _
-        | SynTypeConstraint.WhereTyparIsValueType _
-        | SynTypeConstraint.WhereTyparIsReferenceType _
-        | SynTypeConstraint.WhereTyparIsUnmanaged _
-        | SynTypeConstraint.WhereTyparSupportsNull _
-        | SynTypeConstraint.WhereTyparNotSupportsNull _
-        | SynTypeConstraint.WhereTyparIsComparable _
-        | SynTypeConstraint.WhereTyparIsEquatable _ -> ()
-        | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> yield! visitSynType typeName
-        | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> yield! visitSynType typeName
-        | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
-            yield! visitSynType typars
-            yield! visitSynMemberSig memberSig
-        | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
-        | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
-    ]
+    match tc with
+    | SynTypeConstraint.WhereSelfConstrained _
+    | SynTypeConstraint.WhereTyparIsValueType _
+    | SynTypeConstraint.WhereTyparIsReferenceType _
+    | SynTypeConstraint.WhereTyparIsUnmanaged _
+    | SynTypeConstraint.WhereTyparSupportsNull _
+    | SynTypeConstraint.WhereTyparNotSupportsNull _
+    | SynTypeConstraint.WhereTyparIsComparable _
+    | SynTypeConstraint.WhereTyparIsEquatable _ -> []
+    | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> visitSynType typeName
+    | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> visitSynType typeName
+    | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) -> visitSynType typars @ visitSynMemberSig memberSig
+    | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
+    | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
@@ -365,6 +372,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.IndexFromEnd (expr, _) -> visit expr continuation
         | SynExpr.ComputationExpr (expr = expr) -> visit expr continuation
         | SynExpr.Lambda (args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
+        | SynExpr.DotLambda (expr = expr) -> visit expr continuation
         | SynExpr.MatchLambda (matchClauses = clauses) -> List.collect visitSynMatchClause clauses |> continuation
         | SynExpr.Match (expr = expr; clauses = clauses) ->
             visit expr (fun exprNodes ->
@@ -464,6 +472,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
         | SynExpr.DoBang (expr, _) -> visit expr continuation
+        | SynExpr.WhileBang (whileExpr = whileExpr; doExpr = doExpr) ->
+            visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly (typeArgs = typeArgs; args = args; retTy = retTy) ->
             let typeNodes = List.collect visitSynType (typeArgs @ retTy)
             let continuations = List.map visit args
@@ -567,7 +577,6 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.OptionalVal _ -> continuation []
         | SynPat.IsInst (t, _) -> continuation (visitSynType t)
         | SynPat.QuoteExpr (expr, _) -> continuation (visitSynExpr expr)
-        | SynPat.DeprecatedCharRange _ -> continuation []
         | SynPat.InstanceMember _ -> continuation []
         | SynPat.FromParseError _ -> continuation []
 
@@ -585,8 +594,8 @@ let visitSynArgPats (argPat: SynArgPats) =
 let visitSynSimplePat (pat: SynSimplePat) =
     match pat with
     | SynSimplePat.Id _ -> []
-    | SynSimplePat.Attrib (pat, attributes, _) -> [ yield! visitSynSimplePat pat; yield! visitSynAttributes attributes ]
-    | SynSimplePat.Typed (pat, t, _) -> [ yield! visitSynSimplePat pat; yield! visitSynType t ]
+    | SynSimplePat.Attrib (pat, attributes, _) -> visitSynSimplePat pat @ visitSynAttributes attributes
+    | SynSimplePat.Typed (pat, t, _) -> visitSynSimplePat pat @ visitSynType t
 
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
@@ -610,7 +619,7 @@ let visitBinding (SynBinding (attributes = attributes; headPat = headPat; return
     ]
 
 let visitSynBindingReturnInfo (SynBindingReturnInfo (typeName = typeName; attributes = attributes)) =
-    [ yield! visitSynAttributes attributes; yield! visitSynType typeName ]
+    visitSynAttributes attributes @ visitSynType typeName
 
 let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     match ms with

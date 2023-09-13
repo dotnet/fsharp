@@ -175,15 +175,6 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     let langServices =
         TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
-    member this.SetEditorEptions(value) =
-        exportProvider
-            .GetExportedValue<SettingsStore.ISettingsStore>()
-            .SaveSettings(value)
-
-    member this.WithEditorOptions(value) =
-        this.SetEditorEptions(value)
-        this
-
     override _.Workspace = workspace
 
     override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
@@ -281,7 +272,10 @@ type RoslynTestHelpers private () =
                 options.OtherOptions |> ImmutableArray.CreateRange
             )
 
-    static member CreateSolution(source, ?options: FSharpProjectOptions) =
+    static member SetEditorOptions (solution: Solution) options =
+        solution.Workspace.Services.GetService<EditorOptions>().With(options)
+
+    static member CreateSolution(source, ?options: FSharpProjectOptions, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
@@ -293,6 +287,9 @@ type RoslynTestHelpers private () =
         options
         |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
         |> RoslynTestHelpers.SetProjectOptions projId solution
+
+        if editorOptions.IsSome then
+            RoslynTestHelpers.SetEditorOptions solution editorOptions.Value
 
         solution
 
@@ -338,28 +335,49 @@ type RoslynTestHelpers private () =
 
         solution, checker
 
-    static member GetFsDocument code =
-        // without this lib some symbols are not loaded
+    static member GetFsDocument(code, ?customProjectOption: string, ?customEditorOptions) =
+        let customProjectOptions =
+            customProjectOption
+            |> Option.map (fun o -> [| o |])
+            |> Option.defaultValue (Array.empty)
+
         let options =
             { RoslynTestHelpers.DefaultProjectOptions with
-                OtherOptions = [| "--targetprofile:netcore" |]
+                OtherOptions =
+                    [|
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    |]
+                    |> Array.append customProjectOptions
             }
 
-        RoslynTestHelpers.CreateSolution(code, options = options)
-        |> RoslynTestHelpers.GetSingleDocument
+        let solution =
+            match customEditorOptions with
+            | Some o -> RoslynTestHelpers.CreateSolution(code, options, o)
+            | None -> RoslynTestHelpers.CreateSolution(code, options)
+
+        solution |> RoslynTestHelpers.GetSingleDocument
 
     static member GetFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        let projectId = ProjectId.CreateNewId()
-        let projFilePath = "C:\\test.fsproj"
-
-        let fsiDocInfo =
-            RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
-
-        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
-
         let projInfo =
-            RoslynTestHelpers.CreateProjectInfo projectId projFilePath [ fsiDocInfo; fsDocInfo ]
+            { SyntheticProject.Create(
+                  { sourceFile "test" [] with
+                      SignatureFile = Custom fsiCode
+                      Source = fsCode
+                  }
+              ) with
 
-        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+                AutoAddModules = false
+                SkipInitialCheck = true
+                OtherOptions =
+                    [
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    ]
+            }
+
+        let solution, _ = RoslynTestHelpers.CreateSolution projInfo
         let project = solution.Projects |> Seq.exactlyOne
+
         project.Documents
+        |> Seq.sortWith (fun d1 _ -> if d1.IsFSharpSignatureFile then -1 else 1)

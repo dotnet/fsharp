@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = AddMissingFunKeywordCodeFixProvider()
-let private diagnostic = 0010 // Unexpected symbol...
 
 [<Fact>]
 let ``Fixes FS0010 for missing fun keyword`` () =
@@ -31,19 +30,24 @@ let gettingEven numbers =
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Doesn't fix FS0010 for random unexpected symbols`` () =
-    let code =
-        """
+[<Theory>]
+[<InlineData("""
 =
-"""
-
+""")>]
+[<InlineData "let f x = 
+    match x with
+    | _ ->
+        let _ = [
+            x with
+        ]
+">]
+let ``Doesn't fix FS0010 for random unexpected symbols`` code =
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

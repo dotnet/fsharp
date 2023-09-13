@@ -52,7 +52,7 @@ type internal ChangeToUpcastCodeFixProvider() =
                             Changes = changes
                         }
 
-                    return Some codeFix
+                    return ValueSome codeFix
                 else
-                    return None
+                    return ValueNone
             }

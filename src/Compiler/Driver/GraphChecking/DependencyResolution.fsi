@@ -12,7 +12,6 @@ val processOpenPath: trie: TrieNode -> path: LongIdentifier -> state: FileConten
 /// <summary>
 /// Construct an approximate* dependency graph for files within a project, based on their ASTs.
 /// </summary>
-/// <param name="compilingFSharpCore">"Are we compiling FSharp.Core?" - used to add extra dependencies for FSharp.Core that are not otherwise detectable.</param>
 /// <param name="filePairs">Maps the index of a signature file with the index of its implementation counterpart and vice versa.</param>
 /// <param name="files">The files inside a project.</param>
 /// <returns>A tuple consisting of a dictionary of FileIndex (alias for int) and a Trie</returns>
@@ -29,5 +28,4 @@ val processOpenPath: trie: TrieNode -> path: LongIdentifier -> state: FileConten
 /// Hence this function cannot, as it stands, be used to help create a "reasonable" file ordering for an unordered set of files.
 /// </para>
 /// </remarks>
-val mkGraph:
-    compilingFSharpCore: bool -> filePairs: FilePairMap -> files: FileInProject array -> Graph<FileIndex> * TrieNode
+val mkGraph: filePairs: FilePairMap -> files: FileInProject array -> Graph<FileIndex> * TrieNode

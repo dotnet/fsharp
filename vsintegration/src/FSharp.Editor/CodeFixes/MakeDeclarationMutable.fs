@@ -3,67 +3,80 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Text
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeDeclarationMutable); Shared>]
-type internal MakeDeclarationMutableFixProvider [<ImportingConstructor>] () =
+type internal MakeDeclarationMutableCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
     static let title = SR.MakeDeclarationMutable()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0027")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0027"
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let document = context.Document
-            do! Option.guard (not (isSignatureFile document.FilePath))
-            let position = context.Span.Start
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let document = context.Document
 
-            let! lexerSymbol =
-                document.TryFindFSharpLexerSymbolAsync(
-                    position,
-                    SymbolLookupKind.Greedy,
-                    false,
-                    false,
-                    nameof (MakeDeclarationMutableFixProvider)
-                )
+                if isSignatureFile document.FilePath then
+                    return ValueNone
+                else
+                    let position = context.Span.Start
 
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
-            let textLine = sourceText.Lines.GetLineFromPosition position
-            let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                    let! lexerSymbolOpt =
+                        document.TryFindFSharpLexerSymbolAsync(
+                            position,
+                            SymbolLookupKind.Greedy,
+                            false,
+                            false,
+                            nameof MakeDeclarationMutableCodeFixProvider
+                        )
 
-            let! parseFileResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (MakeDeclarationMutableFixProvider))
-                |> liftAsync
+                    match lexerSymbolOpt with
+                    | None -> return ValueNone
+                    | Some lexerSymbol ->
+                        let! sourceText = context.GetSourceTextAsync()
 
-            let decl =
-                checkFileResults.GetDeclarationLocation(
-                    fcsTextLineNumber,
-                    lexerSymbol.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    lexerSymbol.FullIsland,
-                    false
-                )
+                        let fcsTextLineNumber, textLine =
+                            MutableCodeFixHelper.getLineNumberAndText sourceText position
 
-            match decl with
-            // Only do this for symbols in the same file. That covers almost all cases anyways.
-            // We really shouldn't encourage making values mutable outside of local scopes anyways.
-            | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
-                let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
+                        let! parseFileResults, checkFileResults =
+                            document.GetFSharpParseAndCheckResultsAsync(nameof MakeDeclarationMutableCodeFixProvider)
 
-                // Bail if it's a parameter, because like, that ain't allowed
-                do! Option.guard (not (parseFileResults.IsPositionContainedInACurriedParameter declRange.Start))
-                do context.RegisterFsharpFix(CodeFix.MakeDeclarationMutable, title, [| TextChange(TextSpan(span.Start, 0), "mutable ") |])
-            | _ -> ()
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        let decl =
+                            checkFileResults.GetDeclarationLocation(
+                                fcsTextLineNumber,
+                                lexerSymbol.Ident.idRange.EndColumn,
+                                textLine,
+                                lexerSymbol.FullIsland,
+                                false
+                            )
+
+                        match decl with
+                        | FindDeclResult.DeclFound declRange when
+                            // Only do this for symbols in the same file. That covers almost all cases anyways.
+                            // We really shouldn't encourage making values mutable outside of local scopes anyways.
+                            declRange.FileName = document.FilePath
+                            // Bail if it's a parameter, because like, that ain't allowed
+                            && not <| parseFileResults.IsPositionContainedInACurriedParameter declRange.Start
+                            ->
+                            let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, declRange)
+
+                            return
+                                ValueSome
+                                    {
+                                        Name = CodeFix.MakeDeclarationMutable
+                                        Message = title
+                                        Changes = [ TextChange(TextSpan(span.Start, 0), "mutable ") ]
+                                    }
+                        | _ -> return ValueNone
+            }

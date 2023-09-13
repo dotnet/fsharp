@@ -37,6 +37,11 @@
         <target state="translated">Případy sjednocení s malými písmeny jsou povolené jenom při použití atributu RequireQualifiedAccess.</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">symbol ..^</target>
@@ -65,6 +70,11 @@
       <trans-unit id="Parser.TOKEN.NOTNULL__">
         <source>keyword '__notnull'</source>
         <target state="new">keyword '__notnull'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHILE.BANG">
+        <source>keyword 'while!'</source>
+        <target state="new">keyword 'while!'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WITHNULL__">

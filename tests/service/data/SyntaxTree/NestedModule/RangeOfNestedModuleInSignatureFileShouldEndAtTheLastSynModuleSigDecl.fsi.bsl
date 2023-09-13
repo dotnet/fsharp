@@ -41,11 +41,19 @@ SigFile
                         ([],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                SynTyparDecl ([], SynTypar (T2, None, false));
-                                SynTyparDecl ([], SynTypar (T3, None, false));
-                                SynTyparDecl ([], SynTypar (T4, None, false))],
-                               [], (13,14--13,31))), [], [Tuple],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T1, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T2, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T3, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T4, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (13,14--13,31))), [], [Tuple],
                          PreXmlDoc ((13,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (13,9--13,14)),
                       ObjectModel
@@ -255,13 +263,25 @@ SigFile
                             Range = (28,4--28,38) }],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                SynTyparDecl ([], SynTypar (T2, None, false));
-                                SynTyparDecl ([], SynTypar (T3, None, false));
-                                SynTyparDecl ([], SynTypar (T4, None, false));
-                                SynTyparDecl ([], SynTypar (T5, None, false));
-                                SynTyparDecl ([], SynTypar (T6, None, false))],
-                               [], (29,15--29,40))), [], [Choice],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T1, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T2, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T3, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T4, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T5, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T6, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (29,15--29,40))), [], [Choice],
                          PreXmlDoc ((27,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (29,9--29,15)),
                       Simple
@@ -374,8 +394,10 @@ SigFile
                         ([],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T, None, false))],
-                               [], (49,16--49,20))), [], [[,]],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (49,16--49,20))), [], [[,]],
                          PreXmlDoc ((49,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (49,9--49,16)),
                       Simple (None (49,9--61,26), (49,9--61,26)),

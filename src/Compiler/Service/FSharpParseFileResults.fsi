@@ -68,8 +68,14 @@ type public FSharpParseFileResults =
     /// Determines if the expression or pattern at the given position has a type annotation
     member IsTypeAnnotationGivenAtPosition: pos -> bool
 
+    /// Determines if the given position is bound to a type definition
+    member IsPositionWithinTypeDefinition: pos -> bool
+
     /// Determines if the binding at the given position is bound to a lambda expression
     member IsBindingALambdaAtPosition: pos -> bool
+
+    /// Determines if the given position is bound to a record definition
+    member IsPositionWithinRecordDefinition: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName: string

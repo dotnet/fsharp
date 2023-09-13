@@ -7,6 +7,8 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open System.Runtime.InteropServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
+open CancellableTasks.CancellableTaskBuilder
+open CancellableTasks
 
 [<Export(typeof<IFSharpBraceMatcher>)>]
 type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
@@ -44,6 +46,8 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             asyncMaybe {
                 let! checker, _, parsingOptions, _ =
                     document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
+                    |> CancellableTask.start cancellationToken
+                    |> Async.AwaitTask
                     |> liftAsync
 
                 let! sourceText = document.GetTextAsync(cancellationToken)

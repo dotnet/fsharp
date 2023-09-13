@@ -16,7 +16,7 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
 
     static let title = SR.ConvertToAnonymousRecord()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS3578")
 
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix(this)
 
@@ -29,8 +29,9 @@ type internal ConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] (
 
                 return
                     parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
-                    |> Option.bind (fun range -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range))
-                    |> Option.map (fun span ->
+                    |> ValueOption.ofOption
+                    |> ValueOption.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    |> ValueOption.map (fun span ->
                         {
                             Name = CodeFix.ConvertToAnonymousRecord
                             Message = title

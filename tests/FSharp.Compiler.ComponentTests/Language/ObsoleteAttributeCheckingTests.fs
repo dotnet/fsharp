@@ -622,7 +622,6 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
-            (Warning 44, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
         ]
     
     [<Fact>]
@@ -1029,4 +1028,235 @@ Class.ObsoleteEvent |> ignore
             (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
             (Error 101, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Warning 44, Line 9, Col 28, Line 9, Col 34, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in a nested record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field1 instead", true)>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+let field1 = { MyType.Empty with Field1 = "" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field1 instead")
+            (Error 101, Line 11, Col 28, Line 11, Col 34, "This construct is deprecated. Use Field1 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record with default value and properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true); DefaultValue>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Error 101, Line 9, Col 28, Line 9, Col 34, "This construct is deprecated. Use Field2 instead")
+        ]
+
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the nested record properties and used in nested copy update`` () =
+        Fsx """
+open System
+type InnerType = { [<Obsolete("Use Field2 instead", true)>] ccont:int }
+type OuterType = { Name : string; [<Obsolete("Use Field2 instead", true)>] Ctx : InnerType}
+let myInner = { ccont = 5 }
+let myOuter = { Name = "Hi"; Ctx = myInner}
+let modified = { myOuter with Ctx = { myOuter.Ctx with ccont = 5 } }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 5, Col 17, Line 5, Col 22, "This construct is deprecated. Use Field2 instead")
+            (Error 101, Line 6, Col 30, Line 6, Col 33, "This construct is deprecated. Use Field2 instead")
+            (Error 101, Line 7, Col 31, Line 7, Col 34, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in an object expression`` () =
+        Fsx """
+open System
+type IFirst =
+  [<Obsolete("Use G instead")>]
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 21, Line 13, Col 26, "This construct is deprecated. Use G instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in an object expression`` () =
+        Fsx """
+open System
+type IFirst =
+  [<Obsolete("Use G instead", true)>]
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in interface that is used in an object expression`` () =
+        Fsx """
+open System
+[<Obsolete("Use G instead")>]
+type IFirst =
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
+            (Warning 44, Line 13, Col 21, Line 13, Col 24, "This construct is deprecated. Use G instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in interface that is used in an object expression`` () =
+        Fsx """
+open System
+[<Obsolete("Use G instead", true)>]
+type IFirst =
+  abstract F : unit -> unit
+  abstract G : unit -> unit
+
+let implementer =
+    { new IFirst with
+        member this.F() = ()
+        member this.G() = () }
+    
+let f (x: IFirst) = x.F()
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
+            (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
+            (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
