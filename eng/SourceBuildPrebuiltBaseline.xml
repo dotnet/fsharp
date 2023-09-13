@@ -15,6 +15,7 @@
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/7.0.9" />
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/7.0.9" />
     <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/7.0.0" />
+    <UsagePattern IdentityGlob="System.Diagnostics.EventLog/7.0.0" />
     <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/7.0.0" />
 
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
