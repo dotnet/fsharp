@@ -1049,7 +1049,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">이 익명 레코드는 필요한 도형과 정확하게 일치하지 않습니다. 누락된 필드 {0}을(를) 추가하고 추가 필드 {1}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -5024,7 +5024,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -7859,7 +7859,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
-        <target state="needs-review-translation">'fixed'를 잘못 사용했습니다. 'fixed'는 식이 배열, 필드의 주소, 배열 요소 또는 문자열의 주소인 경우 'use x = fixed expr' 형식의 선언에만 사용할 수 있습니다.</target>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8524,7 +8524,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">패키지 관리자 키 '{0}'이(가) {1}에 등록되지 않았습니다. 현재 {2}이(가) 등록되었습니다.</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
