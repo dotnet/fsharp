@@ -174,6 +174,7 @@ let ImportNullness (g: TcGlobals) =
     // TODO NULLNESS
     KnownAmbivalentToNull
 
+#if !NO_TYPEPROVIDERS
 let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     ignore (g, tcref, m)
     // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValue g m tcref then
@@ -181,6 +182,7 @@ let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     // else
     // TODO NULLNESS
     KnownAmbivalentToNull
+#endif
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env: ImportMap) m tinst ty nullness =  
