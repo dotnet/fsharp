@@ -440,12 +440,12 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
-    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
-    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />
     <Compile Include="Symbols\Symbols.fs" />
+    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
+    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\Exprs.fsi" />
     <Compile Include="Symbols\Exprs.fs" />
     <Compile Include="Symbols\SymbolPatterns.fsi" />
