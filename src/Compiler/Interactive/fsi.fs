@@ -4703,7 +4703,7 @@ type FsiEvaluationSession
         let errs = diagnosticsLogger.GetDiagnostics()
 
         let errorInfos =
-            DiagnosticHelpers.CreateDiagnostics(errorOptions, true, scriptFile, errs, true, tcConfigB.flatErrors)
+            DiagnosticHelpers.CreateDiagnostics(errorOptions, true, scriptFile, errs, true, tcConfigB.flatErrors, None)
 
         let userRes =
             match res with
