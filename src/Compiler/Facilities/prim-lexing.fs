@@ -28,6 +28,8 @@ type ISourceText =
 
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
 
+    abstract GetSubTextFromRange: range: range -> string
+
 [<Sealed>]
 type StringText(str: string) =
 
@@ -107,6 +109,24 @@ type StringText(str: string) =
 
         member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+        member this.GetSubTextFromRange(range) =
+            let sourceText = this :> ISourceText
+            let startLine = range.StartLine - 1
+            let line = sourceText.GetLineString startLine
+
+            if range.StartLine = range.EndLine then
+                let length = range.EndColumn - range.StartColumn
+                line.Substring(range.StartColumn, length)
+            else
+                let firstLineContent = line.Substring(range.StartColumn)
+                let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
+
+                (sb, [ range.StartLine .. range.EndLine - 2 ])
+                ||> List.fold (fun sb lineNumber -> sb.AppendLine(sourceText.GetLineString lineNumber))
+                |> fun sb ->
+                    let lastLine = sourceText.GetLineString(range.EndLine - 1)
+                    sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
 module SourceText =
 
