@@ -166,13 +166,6 @@ let GetReadOnlyAttribute (g: TcGlobals) =
 let GetIsUnmanagedAttribute (g: TcGlobals) =
     getPotentiallyEmbedableAttribute g g.attrib_IsUnmanagedAttribute
 
-let GenReadOnlyAttributeIfNecessary g ty =
-    if isInByrefTy g ty then
-        let attr = GetReadOnlyAttribute g
-        Some attr
-    else
-        None
-
 let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
     let tref = g.enum_DynamicallyAccessedMemberTypes.TypeRef
 
@@ -246,6 +239,18 @@ let GetNullableAttribute (g: TcGlobals) (ni: TypedTree.NullnessInfo) =
         | TypedTree.NullnessInfo.WithoutNull -> 1uy
 
     mkILCustomAttribute (tref, [ g.ilg.typ_ByteArray ], [ ILAttribElem.Array(g.ilg.typ_Byte, [ ILAttribElem.Byte byteValue ]) ], [])
+
+let GenReadOnlyIfNecessary g ty = 
+    if isInByrefTy g ty then
+        let attr = GetReadOnlyAttribute g
+        Some attr
+    else
+        None
+
+let GenAdditionalAttributesForTy g ty =
+    match GenReadOnlyIfNecessary g ty with
+    | Some a -> Some a
+    | None -> None
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =

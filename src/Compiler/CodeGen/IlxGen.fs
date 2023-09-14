@@ -5663,7 +5663,7 @@ and GenSlotParam m cenv eenv slotParam : ILParameter =
     let ilAttribs = GenAttrs cenv eenv attribs
 
     let ilAttribs =
-        match GenReadOnlyAttributeIfNecessary cenv.g ty with
+        match GenAdditionalAttributesForTy cenv.g ty with
         | Some attr -> ilAttribs @ [ attr ]
         | None -> ilAttribs
 
@@ -5721,7 +5721,7 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
     match returnTy with
     | None -> ilRet
     | Some ty ->
-        match GenReadOnlyAttributeIfNecessary cenv.g ty with
+        match GenAdditionalAttributesForTy cenv.g ty with
         | Some attr -> ilRet.WithCustomAttrs(mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ [ attr ]))
         | None -> ilRet
 
@@ -8768,7 +8768,7 @@ and GenParams
             let ilAttribs = GenAttrs cenv eenv attribs
 
             let ilAttribs =
-                match GenReadOnlyAttributeIfNecessary cenv.g methodArgTy with
+                match GenAdditionalAttributesForTy cenv.g methodArgTy with
                 | Some attr -> ilAttribs @ [ attr ]
                 | None -> ilAttribs
 
@@ -8797,7 +8797,7 @@ and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
     let ilAttribs =
         match returnTy with
         | Some retTy ->
-            match GenReadOnlyAttributeIfNecessary cenv.g retTy with
+            match GenAdditionalAttributesForTy cenv.g retTy with
             | Some attr -> ilAttribs @ [ attr ]
             | None -> ilAttribs
         | _ -> ilAttribs
@@ -9134,7 +9134,7 @@ and GenMethodForBinding
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                 ->
-                match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
+                match GenAdditionalAttributesForTy cenv.g returnTy with
                 | Some ilAttr -> ilAttr
                 | _ -> ()
             | _ -> ()
@@ -10384,7 +10384,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                     ->
-                    match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
+                    match GenAdditionalAttributesForTy cenv.g returnTy with
                     | Some ilAttr -> ilAttr
                     | _ -> ()
                 | _ -> ()
