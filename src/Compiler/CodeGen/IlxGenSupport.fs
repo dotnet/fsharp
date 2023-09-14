@@ -247,10 +247,16 @@ let GenReadOnlyIfNecessary g ty =
     else
         None
 
+let GenNullnessIfNecessary (g: TcGlobals) _ty = 
+    if g.langFeatureNullness && g.checkNullness then
+        Some 42
+    else
+        None
+
 let GenAdditionalAttributesForTy g ty =
-    match GenReadOnlyIfNecessary g ty with
-    | Some a -> Some a
-    | None -> None
+    match GenReadOnlyIfNecessary g ty, GenNullnessIfNecessary g ty with
+    | Some a, _ -> Some a
+    | None, _ -> None
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
