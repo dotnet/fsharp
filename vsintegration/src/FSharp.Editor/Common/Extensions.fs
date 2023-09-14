@@ -515,6 +515,10 @@ module Exception =
         |> flattenInner
         |> String.concat " ---> "
 
+[<RequireQualifiedAccess>]
+module TextSpan =
+    let empty = TextSpan()
+
 type Async with
 
     static member RunImmediateExceptOnUI(computation: Async<'T>, ?cancellationToken) =

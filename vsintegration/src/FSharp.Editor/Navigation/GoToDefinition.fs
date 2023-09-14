@@ -17,7 +17,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices
 
 open FSharp.Compiler.CodeAnalysis
@@ -30,6 +29,7 @@ open System.Text.RegularExpressions
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Telemetry
+open System.Collections.Generic
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
@@ -119,6 +119,59 @@ type internal FSharpGoToDefinitionResult =
     | ExternalAssembly of FSharpSymbolUse * MetadataReference seq
 
 type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
+
+    let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
+        let ty1 = ty1.StripAbbreviations()
+        let ty2 = ty2.StripAbbreviations()
+
+        let generic =
+            ty1.IsGenericParameter && ty2.IsGenericParameter
+            || (ty1.GenericArguments.Count = ty2.GenericArguments.Count
+                && (ty1.GenericArguments, ty2.GenericArguments) ||> Seq.forall2 areTypesEqual)
+
+        if generic then
+            true
+        else
+            let namesEqual = ty1.TypeDefinition.DisplayName = ty2.TypeDefinition.DisplayName
+            let accessPathsEqual = ty1.TypeDefinition.AccessPath = ty2.TypeDefinition.AccessPath
+            namesEqual && accessPathsEqual
+
+    let tryFindExternalSymbolUse (targetSymbolUse: FSharpSymbolUse) (x: FSharpSymbolUse) =
+        match x.Symbol, targetSymbolUse.Symbol with
+        | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
+            symbol1.DisplayName = symbol2.DisplayName
+
+        | (:? FSharpMemberOrFunctionOrValue as symbol1), (:? FSharpMemberOrFunctionOrValue as symbol2) ->
+            symbol1.DisplayName = symbol2.DisplayName
+            && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
+                | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
+                | _ -> false)
+            && symbol1.GenericParameters.Count = symbol2.GenericParameters.Count
+            && symbol1.CurriedParameterGroups.Count = symbol2.CurriedParameterGroups.Count
+            && ((symbol1.CurriedParameterGroups, symbol2.CurriedParameterGroups)
+                ||> Seq.forall2 (fun pg1 pg2 ->
+                    let pg1, pg2 = pg1.ToArray(), pg2.ToArray()
+                    // We filter out/fixup first "unit" parameter in the group, since it just represents the `()` call notation, for example `"string".Clone()` will have one curried group with one parameter which type is unit.
+                    let pg1 = // If parameter has no name and it's unit type, filter it out
+                        if pg1.Length > 0 
+                            && Option.isNone pg1[0].Name
+                            && pg1[0].Type.StripAbbreviations().TypeDefinition.DisplayName = "Unit" then
+                                pg1[1..]
+                        else
+                                pg1
+                    pg1.Length = pg2.Length
+                    && ((pg1, pg2) ||> Seq.forall2 (fun p1 p2 -> areTypesEqual p1.Type p2.Type))))
+            && areTypesEqual symbol1.ReturnParameter.Type symbol2.ReturnParameter.Type
+        | (:? FSharpField as symbol1), (:? FSharpField as symbol2) when x.IsFromDefinition ->
+            symbol1.DisplayName = symbol2.DisplayName
+            && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
+                | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
+                | _ -> false)
+        | (:? FSharpUnionCase as symbol1), (:? FSharpUnionCase as symbol2) ->
+            symbol1.DisplayName = symbol2.DisplayName
+            && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
+        | _ -> false
+
     /// Use an origin document to provide the solution & workspace used to
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) =
@@ -548,77 +601,35 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             match tmpShownDocOpt with
             | ValueSome tmpShownDoc ->
                 let goToAsync =
-                    asyncMaybe {
+                    cancellableTask {
 
-                        let! ct = Async.CancellationToken |> liftAsync
+                        let! cancellationToken = CancellableTask.getCancellationToken ()
 
                         let! _, checkResults =
                             tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
-                            |> CancellableTask.start ct
-                            |> Async.AwaitTask
-                            |> liftAsync
 
-                        let! r =
-                            let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
-                                let ty1 = ty1.StripAbbreviations()
-                                let ty2 = ty2.StripAbbreviations()
-
-                                let generic =
-                                    ty1.IsGenericParameter && ty2.IsGenericParameter
-                                    || (ty1.GenericArguments.Count = ty2.GenericArguments.Count
-                                        && (ty1.GenericArguments, ty2.GenericArguments) ||> Seq.forall2 areTypesEqual)
-
-                                if generic then
-                                    true
-                                else
-                                    let namesEqual = ty1.TypeDefinition.DisplayName = ty2.TypeDefinition.DisplayName
-                                    let accessPathsEqual = ty1.TypeDefinition.AccessPath = ty2.TypeDefinition.AccessPath
-                                    namesEqual && accessPathsEqual
-
+                        let r =
                             // This tries to find the best possible location of the target symbol's location in the metadata source.
                             // We really should rely on symbol equality within FCS instead of doing it here,
                             //     but the generated metadata as source isn't perfect for symbol equality.
-                            checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
-                            |> Seq.tryFindV (fun x ->
-                                match x.Symbol, targetSymbolUse.Symbol with
-                                | (:? FSharpEntity as symbol1), (:? FSharpEntity as symbol2) when x.IsFromDefinition ->
-                                    symbol1.DisplayName = symbol2.DisplayName
-                                | (:? FSharpMemberOrFunctionOrValue as symbol1), (:? FSharpMemberOrFunctionOrValue as symbol2) ->
-                                    symbol1.DisplayName = symbol2.DisplayName
-                                    && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
-                                        | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
-                                        | _ -> false)
-                                    && symbol1.GenericParameters.Count = symbol2.GenericParameters.Count
-                                    && symbol1.CurriedParameterGroups.Count = symbol2.CurriedParameterGroups.Count
-                                    && ((symbol1.CurriedParameterGroups, symbol2.CurriedParameterGroups)
-                                        ||> Seq.forall2 (fun pg1 pg2 ->
-                                            pg1.Count = pg2.Count
-                                            && ((pg1, pg2) ||> Seq.forall2 (fun p1 p2 -> areTypesEqual p1.Type p2.Type))))
-                                    && areTypesEqual symbol1.ReturnParameter.Type symbol2.ReturnParameter.Type
-                                | (:? FSharpField as symbol1), (:? FSharpField as symbol2) when x.IsFromDefinition ->
-                                    symbol1.DisplayName = symbol2.DisplayName
-                                    && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
-                                        | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
-                                        | _ -> false)
-                                | (:? FSharpUnionCase as symbol1), (:? FSharpUnionCase as symbol2) ->
-                                    symbol1.DisplayName = symbol2.DisplayName
-                                    && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
-                                | _ -> false)
+                            let symbols = checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
+                            
+                            symbols 
+                            |> Seq.tryFindV (tryFindExternalSymbolUse targetSymbolUse)
                             |> ValueOption.map (fun x -> x.Range)
                             |> ValueOption.toOption
 
-                        let span =
-                            match RoslynHelpers.TryFSharpRangeToTextSpan(tmpShownDoc.GetTextAsync(cancellationToken).Result, r) with
-                            | ValueSome span -> span
-                            | _ -> TextSpan()
+                        match r with
+                        | None -> return TextSpan.empty
+                        | Some r ->
+                            let! text = tmpShownDoc.GetTextAsync(cancellationToken)
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(text, r) with
+                            | ValueSome span -> return span
+                            | _ -> return TextSpan.empty
 
-                        return span
                     }
 
-                let span =
-                    match Async.RunImmediateExceptOnUI(goToAsync, cancellationToken = cancellationToken) with
-                    | Some span -> span
-                    | _ -> TextSpan()
+                let span = CancellableTask.runSynchronously cancellationToken goToAsync
 
                 let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
                 this.NavigateToItem(navItem, cancellationToken)
