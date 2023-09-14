@@ -1,21 +1,21 @@
 module EnabledPositive
 open System
 module Basics =     
-    let x2 : String __withnull = null // expect no warning in any configuration
-    let x3 : String __withnull = "a"  // expect no warning in any configuration
+    let x2 : String | null = null // expect no warning in any configuration
+    let x3 : String | null = "a"  // expect no warning in any configuration
 
 module NotNullConstraint =
-    let f3 (x: 'T when 'T : __notnull) = 1
+    let f3 (x: 'T when 'T : not null) = 1
     let v1 = f3 1 
     let v2 = f3 "a"
     let v3 = f3 (null: obj) // Expect no warning in any configuration - warnings about 'obj' and nulls are suppressed 
-    let v4 = f3 (null: String __withnull) // Expect to give a warning
+    let v4 = f3 (null: String | null) // Expect to give a warning
     let v5 = f3 (Some 1) // Expect to give a warning
 
     let w1 = 1 |> f3
     let w2 = "a" |> f3
     let w3 = (null: obj) |> f3 // Expect no warning in any configuration - warnings about 'obj' and nulls are suppressed 
-    let w4 = (null: String __withnull) |> f3 // Expect to give a warning
+    let w4 = (null: String | null) |> f3 // Expect to give a warning
     let w5 = (Some 1) |> f3 // Expect to give a warning
 
 module MemberBasics = 
@@ -23,7 +23,7 @@ module MemberBasics =
         member x.P = 1
         member x.M() = 2
 
-    let c : C __withnull = C()
+    let c : C | null = C()
     let v1 = c.P  // Expected to give a warning
     let v2 = c.M()  // Expected to give a warning
     let f1 = c.M  // Expected to give a warning
@@ -32,11 +32,11 @@ module MemberBasics =
 module Basics2 = 
     let f1 () = null
 
-    let f2 () : String __withnull = null
+    let f2 () : String | null = null
 
-    let f3 () : 'T __withnull = null
+    let f3 () : 'T | null = null
 
-    let f4 () : 'T __withnull when 'T : not struct = null
+    let f4 () : 'T | null when 'T : not struct = null
 
     let f5 () : 'T when 'T : not struct and 'T : null = null
 
@@ -48,27 +48,27 @@ type C(s: String) =
 
 
 // This give a warning since 'T is not known to be reference type non-null
-let f<'T when 'T: __notnull > (x: 'T __withnull, y: 'T __withnull) = ()
+let f<'T when 'T: not null > (x: 'T | null, y: 'T | null) = ()
 
 module Extractions0c =
 
     let x = null
-    let f<'T when 'T : __notnull> (x: 'T __withnull, y: 'T __withnull) = ()
+    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
     let s : String = ""
     let result = f (x, s)   // expect no warning in any configuration
 
 module Extractions0e =
 
     let x = null
-    let f<'T when 'T : __notnull> (x: 'T __withnull, y: 'T __withnull) = ()
+    let f<'T when 'T : not null> (x: 'T | null, y: 'T | null) = ()
     let result = f (x, "") // expect no warning in any configuration
 
 module Extractions1 =
 
-    let mutable x : _ __withnull = null
+    let mutable x : _ | null = null
     x <- ""  // expect no warning
 
-//let f<'T when 'T : not struct> (x: 'T __withnull) = 1
+//let f<'T when 'T : not struct> (x: 'T | null) = 1
 module InteropBasics =
     let s0 = String.Concat("a","b")
     let s1 : String = String.Concat("a","c")
@@ -79,17 +79,17 @@ module InteropBasics =
     let test5 : System.AppDomain  = System.AppDomain.CurrentDomain
 
 type KonsoleWithNulls = 
-    static member WriteLine(s: String __withnull) = Console.WriteLine(s)
-    static member WriteLine(fmt: String __withnull, arg1: String __withnull) = Console.WriteLine(fmt, arg1)
-    static member WriteLine(fmt: String __withnull, [<ParamArray>] args: obj __withnull[] __withnull) = Console.WriteLine(fmt, args)
-    static member WriteLineC(s: C __withnull) = Console.WriteLine(s.Value)
-    static member WriteLineC(fmt: C __withnull, arg1: C __withnull) = Console.WriteLine(fmt.Value, arg1.Value)
+    static member WriteLine(s: String | null) = Console.WriteLine(s)
+    static member WriteLine(fmt: String | null, arg1: String | null) = Console.WriteLine(fmt, arg1)
+    static member WriteLine(fmt: String | null, [<ParamArray>] args: (obj | null)[] | null) = Console.WriteLine(fmt, args)
+    static member WriteLineC(s: C | null) = Console.WriteLine(s.Value)
+    static member WriteLineC(fmt: C | null, arg1: C | null) = Console.WriteLine(fmt.Value, arg1.Value)
 
 module KonsoleWithNullsModule = 
-    let WriteLine(s: String __withnull) = Console.WriteLine(s)
-    let WriteLine2(fmt: String __withnull, arg1: String __withnull) = Console.WriteLine(fmt, arg1)
-    let WriteLineC(s: C __withnull) = Console.WriteLine(s.Value)
-    let WriteLineC2(fmt: C __withnull, arg1: C __withnull) = Console.WriteLine(fmt.Value, arg1.Value)
+    let WriteLine(s: String | null) = Console.WriteLine(s)
+    let WriteLine2(fmt: String | null, arg1: String | null) = Console.WriteLine(fmt, arg1)
+    let WriteLineC(s: C | null) = Console.WriteLine(s.Value)
+    let WriteLineC2(fmt: C | null, arg1: C | null) = Console.WriteLine(fmt.Value, arg1.Value)
 
 module KonsoleWithNullsModule2 = 
     let WriteLine x = KonsoleWithNullsModule.WriteLine x
@@ -99,7 +99,7 @@ module KonsoleWithNullsModule2 =
 
 type KonsoleNoNulls = 
     static member WriteLine(s: String) = Console.WriteLine(s)
-    static member WriteLine(fmt: String, arg1: String __withnull) = Console.WriteLine(fmt, arg1)
+    static member WriteLine(fmt: String, arg1: String | null) = Console.WriteLine(fmt, arg1)
     static member WriteLine(fmt: String, [<ParamArray>] args: obj[]) = Console.WriteLine(fmt, args)
     static member WriteLineC(s: C) = Console.WriteLine(s.Value)
     static member WriteLineC(fmt: C, arg1: C) = Console.WriteLine(fmt.Value, arg1.Value)
@@ -120,9 +120,9 @@ System.Console.WriteLine("a")
 System.Console.WriteLine("a", (null: obj[])) // Expected to give a Nullness warning
 
 KonsoleWithNulls.WriteLine("Hello world")
-KonsoleWithNulls.WriteLine(null) // WRONG: gives an incorrect Nullness warning for String __withnull and String __withnull
+KonsoleWithNulls.WriteLine(null) // WRONG: gives an incorrect Nullness warning for String | null and String | null
 KonsoleWithNulls.WriteLine("Hello","world")
-KonsoleWithNulls.WriteLine("Hello","world","there") // // WRONG: gives an incorrect Nullness warning for String __withnull and String __withnull
+KonsoleWithNulls.WriteLine("Hello","world","there") // // WRONG: gives an incorrect Nullness warning for String | null and String | null
 
 KonsoleNoNulls.WriteLine("Hello world")
 try 
@@ -171,8 +171,8 @@ with :? System.ArgumentNullException -> ()
 KonsoleNoNulls.WriteLine("Hello","world","there")
 KonsoleWithNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning 
 KonsoleNoNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning
-System.Console.WriteLine("a", (null: obj[] __withnull)) 
-System.Console.WriteLine("a", (null: obj __withnull[] __withnull))
+System.Console.WriteLine("a", (null: obj[] | null)) 
+System.Console.WriteLine("a", (null: (obj | null)[] | null))
 
 //-------
 // random stuff
@@ -188,11 +188,11 @@ module NullConstraintTests =
 
     let f3 (y : C<String>) = y // Expect a Nullness warning
 
-    let f4 (y : C<String __withnull>) = y // No warning expected 
+    let f4 (y : C<String | null>) = y // No warning expected 
 
-    let f5 (y : C<FSharp.Collections.List<int> __withnull>) = y // No warning expected
+    let f5 (y : C<FSharp.Collections.List<int> | null>) = y // No warning expected
 
-    let f6 (y : C<FSharp.Collections.List<String> __withnull>) = y // No warning expected, lexing/parsing should succeed 
+    let f6 (y : C<FSharp.Collections.List<String> | null>) = y // No warning expected, lexing/parsing should succeed 
 
 module DefaultValueTests =
 
@@ -206,17 +206,17 @@ module DefaultValueTests =
         [<Struct>]
         type C3 =
             [<DefaultValue>]
-            val mutable Whoops : String __withnull // expect no warning
+            val mutable Whoops : String | null // expect no warning
 
         [<Struct>]
         type C4b =
             [<DefaultValue>]
-            val mutable Whoops : FSharp.Collections.List<int> __withnull // expect no warning
+            val mutable Whoops : FSharp.Collections.List<int> | null // expect no warning
 
         [<Struct>]
         type C7 =
             [<DefaultValue>]
-            val mutable Whoops : (int -> int) __withnull // expect no warning
+            val mutable Whoops : (int -> int) | null // expect no warning
 
     module ClassExamples = 
 
@@ -226,12 +226,12 @@ module DefaultValueTests =
 
         type C3 =
             [<DefaultValue>]
-            val mutable Whoops : String __withnull // expect no warning
+            val mutable Whoops : String | null // expect no warning
 
         type C4b =
             [<DefaultValue>]
-            val mutable Whoops : int FSharp.Collections.List __withnull // expect no warning
+            val mutable Whoops : int FSharp.Collections.List | null // expect no warning
 
         type C7 =
             [<DefaultValue>]
-            val mutable Whoops : (int -> int) __withnull // expect no warning
+            val mutable Whoops : (int -> int) | null // expect no warning

@@ -456,12 +456,6 @@
   <data name="Parser.TOKEN.FIXED" xml:space="preserve">
     <value>keyword 'fixed'</value>
   </data>
-  <data name="Parser.TOKEN.WITHNULL__" xml:space="preserve">
-    <value>keyword '__withnull'</value>
-  </data>
-  <data name="Parser.TOKEN.NOTNULL__" xml:space="preserve">
-    <value>keyword '__notnull'</value>
-  </data>
   <data name="Parser.TOKEN.INTERP.STRING.BEGIN.END" xml:space="preserve">
     <value>interpolated string</value>
   </data>

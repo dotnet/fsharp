@@ -871,7 +871,7 @@ module AsyncPrimitives =
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
 #else
-    let CreateSwitchToAsync (syncCtxt: SynchronizationContext __withnull) =
+    let CreateSwitchToAsync (syncCtxt: SynchronizationContext | null) =
 #endif
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
 

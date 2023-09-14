@@ -1287,8 +1287,6 @@ type Exception with
                 | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
                 | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.PART")
                 | Parser.TOKEN_INTERP_STRING_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.END")
-                | Parser.TOKEN_WITHNULL__ -> SR.GetString("Parser.TOKEN.WITHNULL__")
-                | Parser.TOKEN_NOTNULL__ -> SR.GetString("Parser.TOKEN.NOTNULL__")
                 | Parser.TOKEN_BAR_JUST_BEFORE_NULL -> SR.GetString("Parser.TOKEN.BAR_JUST_BEFORE_NULL")
                 | unknown ->
                     let result = sprintf "unknown token tag %+A" unknown

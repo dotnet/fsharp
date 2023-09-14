@@ -63,6 +63,3 @@ ImplFile
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
-
-(1,23)-(1,48) parse warning Remove spaces between the type name and type parameter, e.g. "C<'T>", not "C <'T>". Type parameters must be placed directly adjacent to the type name.
-(1,18)-(1,56) parse warning Remove spaces between the type name and type parameter, e.g. "C<'T>", not "C <'T>". Type parameters must be placed directly adjacent to the type name.

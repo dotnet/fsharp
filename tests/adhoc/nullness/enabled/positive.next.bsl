@@ -1,12 +1,24 @@
 
-tests\adhoc\nullness\enabled\positive.fs(8,24): warning FS3271: The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.
+tests\adhoc\nullness\enabled\positive.fs(4,21): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
 
-tests\adhoc\nullness\enabled\positive.fs(51,15): warning FS3271: The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.
+tests\adhoc\nullness\enabled\positive.fs(5,21): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
 
-tests\adhoc\nullness\enabled\positive.fs(56,19): warning FS3271: The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.
+tests\adhoc\nullness\enabled\positive.fs(12,31): error FS0010: Unexpected symbol '|' in expression
 
-tests\adhoc\nullness\enabled\positive.fs(63,19): warning FS3271: The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.
+tests\adhoc\nullness\enabled\positive.fs(18,28): error FS0010: Unexpected symbol '|' in expression
 
-tests\adhoc\nullness\enabled\positive.fs(193,17): error FS0001: The type 'List<int>' does not have 'null' as a proper value
+tests\adhoc\nullness\enabled\positive.fs(26,15): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
 
-tests\adhoc\nullness\enabled\positive.fs(195,17): error FS0001: The type 'List<String>' does not have 'null' as a proper value
+tests\adhoc\nullness\enabled\positive.fs(35,24): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
+
+tests\adhoc\nullness\enabled\positive.fs(37,20): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
+
+tests\adhoc\nullness\enabled\positive.fs(39,20): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
+
+tests\adhoc\nullness\enabled\positive.fs(68,23): error FS0010: Unexpected symbol '|' in binding. Expected '=' or other token.
+
+tests\adhoc\nullness\enabled\positive.fs(84,75): error FS0010: Unexpected symbol '|' in pattern. Expected ',' or other token.
+
+tests\adhoc\nullness\enabled\positive.fs(174,44): error FS0010: Unexpected symbol '|' in expression
+
+tests\adhoc\nullness\enabled\positive.fs(174,51): error FS0010: Unexpected symbol ')' in definition. Expected incomplete structured construct at or before this point or other token.
