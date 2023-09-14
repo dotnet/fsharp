@@ -131,7 +131,7 @@ type internal DependencyGraphType =
 [<Extension>]
 type internal Extensions =
     [<Extension>]
-    static member Key(fileSnapshots: FSharpFileSnapshot list, ?extraKeyFlag) =
+    static member Key(fileSnapshots: FSharpFileSnapshotWithSource list, ?extraKeyFlag) =
 
         { new ICacheKey<_, _> with
             member _.GetLabel() =
@@ -150,7 +150,7 @@ type internal Extensions =
 
             member _.GetVersion() =
                 Md5Hasher.empty
-                |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.Version))
+                |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.SourceHash))
         }
 
 [<AutoOpen>]
@@ -260,6 +260,8 @@ module private TypeCheckingGraphProcessing =
 
 type internal CompilerCaches() =
 
+    member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
+
     member val ParseFile = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "ParseFile")
 
     member val ParseAndCheckFileInProject = AsyncMemoize(name = "ParseAndCheckFileInProject")
@@ -274,7 +276,7 @@ type internal CompilerCaches() =
 
     member val BootstrapInfo = AsyncMemoize(name = "BootstrapInfo")
 
-    member val TcFile = AsyncMemoize(name = "TcPrior")
+    member val TcLastFile = AsyncMemoize(name = "TcPrior")
 
     member val TcIntermediate = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "TcIntermediate")
 
@@ -753,6 +755,8 @@ type internal TransparentCompiler
                         fileSnapshots.TryFind fileName
                         |> Option.defaultWith (fun () ->
                             // TODO: does this commonly happen?
+                            failwith "Let's find out..."
+
                             {
                                 FileName = fileName
                                 Version = (FileSystem.GetLastWriteTimeShim fileName).Ticks.ToString()
@@ -824,15 +828,49 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeParseFile bootstrapInfo (file: FSharpFile) =
+    // TODO: Not sure if we should cache this. For VS probably not. Maybe it can be configurable by FCS user.
+    let LoadSource (file: FSharpFile) =
+        caches.Source.Get(
+            file.Source.Key,
+            async {
+                let! source = file.Source.GetSource() |> Async.AwaitTask
+
+                return
+                    {
+                        FileName = file.Source.FileName
+                        Source = source
+                        SourceHash = Md5Hasher.empty |> Md5Hasher.addString <| source.ToString()
+                        IsLastCompiland = file.IsLastCompiland
+                        IsExe = file.IsExe
+                    }
+            }
+        )
+
+    let LoadSources (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+        async {
+            
+            // TODO: deuglify/optimize
+            let! sources = 
+                projectSnapshot.SourceFiles 
+                |> Seq.map (fun f -> f.FileName |> bootstrapInfo.GetFile |> LoadSource) 
+                |> Async.Parallel
+
+            return
+                {
+                    ProjectSnapshot = projectSnapshot
+                    SourceFiles = sources |> Array.toList
+                }
+        }
+
+    let ComputeParseFile bootstrapInfo (file: FSharpFileSnapshotWithSource) =
 
         let key =
             { new ICacheKey<_, _> with
-                member _.GetLabel() = shortPath file.Source.FileName
-                member _.GetKey() = file.Source.FileName
+                member _.GetLabel() = file.FileName |> shortPath
+                member _.GetKey() = file.FileName
 
                 member _.GetVersion() =
-                    file.Source.Version, file.IsLastCompiland, file.IsExe
+                    file.SourceHash, file.IsLastCompiland, file.IsExe
             }
 
         caches.ParseFile.Get(
@@ -842,8 +880,8 @@ type internal TransparentCompiler
                     Activity.start
                         "ComputeParseFile"
                         [|
-                            Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName
-                            Activity.Tags.version, file.Source.Version
+                            Activity.Tags.fileName, file.FileName |> shortPath
+                            Activity.Tags.version, file.SourceHash
                         |]
 
                 let tcConfig = bootstrapInfo.TcConfig
@@ -854,8 +892,8 @@ type internal TransparentCompiler
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
 
                 let flags = file.IsLastCompiland, file.IsExe
-                let fileName = file.Source.FileName
-                let! sourceText = file.Source.GetSource() |> Async.AwaitTask
+                let fileName = file.FileName
+                let sourceText = file.Source
 
                 let input =
                     ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
@@ -974,22 +1012,22 @@ type internal TransparentCompiler
         |> Seq.map (fun x -> x.Key, x.Value |> Array.filter (fun node -> not (removeIndexes.Contains node)))
         |> Graph.make
 
-    let ComputeDependencyGraphForFile (tcConfig: TcConfig) (priorSnapshot: FSharpProjectSnapshot) parsedInputs =
+    let ComputeDependencyGraphForFile (tcConfig: TcConfig) (priorSnapshot: FSharpProjectSnapshotWithSources) parsedInputs =
         let key = priorSnapshot.SourceFiles.Key(DependencyGraphType.File)
         //let lastFileIndex = (parsedInputs |> Array.length) - 1
         //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (Graph.subGraphFor lastFileIndex))
         caches.DependencyGraph.Get(
             key,
-            computeDependencyGraph tcConfig parsedInputs (removeImplFilesThatHaveSignaturesExceptLastOne priorSnapshot)
+            computeDependencyGraph tcConfig parsedInputs (removeImplFilesThatHaveSignaturesExceptLastOne priorSnapshot.ProjectSnapshot)
         )
 
-    let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: FSharpProjectSnapshot) parsedInputs =
+    let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: FSharpProjectSnapshotWithSources) parsedInputs =
         let key = projectSnapshot.SourceFiles.Key(DependencyGraphType.Project)
         //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (removeImplFilesThatHaveSignatures projectSnapshot))
         caches.DependencyGraph.Get(key, computeDependencyGraph tcConfig parsedInputs id)
 
     let ComputeTcIntermediate
-        (projectSnapshot: FSharpProjectSnapshot)
+        (projectSnapshot: FSharpProjectSnapshotWithSources)
         (dependencyGraph: Graph<FileIndex>)
         (node: NodeToTypeCheck)
         (parsedInput: ParsedInput, parseErrors)
@@ -1013,7 +1051,7 @@ type internal TransparentCompiler
                         [|
                             Activity.Tags.fileName, fileName |> Path.GetFileName
                             "key", key.GetLabel()
-                            "version", key.GetVersion().ToString()
+                            "version", "-" // key.GetVersion()
                         |]
 
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1187,27 +1225,22 @@ type internal TransparentCompiler
         }
 
     // Type check file and all its dependencies
-    let ComputeTcFile (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
-
-        let priorSnapshot = projectSnapshot.UpTo file.Source.FileName
-
-        caches.TcFile.Get(
-            priorSnapshot.FileKey file.Source.FileName,
+    let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
+        caches.TcLastFile.Get(
+            projectSnapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne.Key,
             async {
+                let file = projectSnapshot.SourceFiles |> List.last
+
                 use _ =
-                    Activity.start "ComputeTcFile" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName |]
+                    Activity.start "ComputeTcFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
 
-                // parse required files
-                let files =
-                    seq {
-                        yield! bootstrapInfo.SourceFiles |> Seq.takeWhile ((<>) file)
-                        file
-                    }
-
-                let! parsedInputs = files |> Seq.map (ComputeParseFile bootstrapInfo) |> Async.Parallel
+                let! parsedInputs =
+                    projectSnapshot.SourceFiles
+                    |> Seq.map (ComputeParseFile bootstrapInfo)
+                    |> Async.Parallel
 
                 let! graph, dependencyFiles =
-                    ComputeDependencyGraphForFile bootstrapInfo.TcConfig priorSnapshot (parsedInputs |> Array.map p13)
+                    ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p13)
                 //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
 
                 let! results, tcInfo =
@@ -1222,17 +1255,15 @@ type internal TransparentCompiler
             }
         )
 
-    let getParseResult (bootstrapInfo: BootstrapInfo) creationDiags fileName =
+    let getParseResult (bootstrapInfo: BootstrapInfo) creationDiags file =
         async {
-            let file = bootstrapInfo.GetFile fileName
-
             let! parseTree, parseDiagnostics, sourceText = ComputeParseFile bootstrapInfo file
 
             let parseDiagnostics =
                 DiagnosticHelpers.CreateDiagnostics(
                     bootstrapInfo.TcConfig.diagnosticsOptions,
                     false,
-                    fileName,
+                    file.FileName,
                     parseDiagnostics,
                     suggestNamesForErrors,
                     bootstrapInfo.TcConfig.flatErrors
@@ -1268,11 +1299,13 @@ type internal TransparentCompiler
 
                 | Some bootstrapInfo, creationDiags ->
 
-                    let file = bootstrapInfo.GetFile fileName
+                    let priorSnapshot = projectSnapshot.UpTo fileName
+                    let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
+                    let file = snapshotWithSources.SourceFiles |> List.last
 
-                    let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags fileName
+                    let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags file
 
-                    let! result, priorTcInfo = ComputeTcFile file bootstrapInfo projectSnapshot
+                    let! result, priorTcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
                     let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile) = result
 
@@ -1340,17 +1373,19 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
         caches.ParseAndCheckAllFilesInProject.Get(
             projectSnapshot.Key,
             async {
                 use _ =
                     Activity.start
                         "ComputeParseAndCheckAllFilesInProject"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectSnapshot.ProjectFileName |> Path.GetFileName
+                        |]
 
                 let! parsedInputs =
-                    bootstrapInfo.SourceFiles
+                    projectSnapshot.SourceFiles
                     |> Seq.map (ComputeParseFile bootstrapInfo)
                     |> Async.Parallel
 
@@ -1369,7 +1404,9 @@ type internal TransparentCompiler
         caches.ProjectExtras.Get(
             projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
             async {
-                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! snapshotWithSources = projectSnapshot |> LoadSources bootstrapInfo
+
+                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo snapshotWithSources
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1462,10 +1499,11 @@ type internal TransparentCompiler
         caches.AssemblyData.Get(
             projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
             async {
-                let availableOnDiskModifiedTime = 
+                let availableOnDiskModifiedTime =
                     if FileSystem.FileExistsShim fileName then
                         Some <| FileSystem.GetLastWriteTimeShim fileName
-                    else None
+                    else
+                        None
 
                 let shouldUseOnDisk =
                     availableOnDiskModifiedTime
@@ -1475,16 +1513,16 @@ type internal TransparentCompiler
 
                 if shouldUseOnDisk then
                     Trace.TraceInformation($"Using assembly on disk: {name}")
-                    return ProjectAssemblyDataResult.Unavailable true 
+                    return ProjectAssemblyDataResult.Unavailable true
                 else
                     match! ComputeBootstrapInfo projectSnapshot with
-                    | None, _ -> 
+                    | None, _ ->
                         Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
                         return ProjectAssemblyDataResult.Unavailable true
                     | Some bootstrapInfo, _creationDiags ->
                         let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
                         Trace.TraceInformation($"Using in-memory project reference: {name}")
-                        
+
                         return assemblyDataResult
             }
         )
@@ -1556,15 +1594,15 @@ type internal TransparentCompiler
             }
         )
 
-    let tryGetSink fileName (projectSnapshot: FSharpProjectSnapshot) =
+    let tryGetSink (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         async {
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
-                let file = bootstrapInfo.GetFile fileName
+                let! snapshotWithSources = projectSnapshot.UpTo fileName |> LoadSources bootstrapInfo
 
-                let! _, tcInfo = ComputeTcFile file bootstrapInfo projectSnapshot
+                let! _, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
                 return tcInfo.sink |> List.tryHead |> Option.map (fun sink -> sink, bootstrapInfo)
         }
@@ -1644,7 +1682,8 @@ type internal TransparentCompiler
             match! ComputeBootstrapInfo projectSnapshot with
             | None, creationDiags -> return emptyParseResult fileName creationDiags
             | Some bootstrapInfo, creationDiags ->
-                let! parseResult, _ = getParseResult bootstrapInfo creationDiags fileName
+                let! file = bootstrapInfo.GetFile fileName |> LoadSource
+                let! parseResult, _ = getParseResult bootstrapInfo creationDiags file
                 return parseResult
         }
 
@@ -1762,7 +1801,12 @@ type internal TransparentCompiler
                 return! this.GetAssemblyData(snapshot, fileName, userOpName)
             }
 
-        member this.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, fileName, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+        member this.GetAssemblyData
+            (
+                projectSnapshot: FSharpProjectSnapshot,
+                fileName,
+                userOpName: string
+            ) : NodeCode<ProjectAssemblyDataResult> =
             this.GetAssemblyData(projectSnapshot, fileName, userOpName)
 
         member this.GetBackgroundCheckResultsForFileInProject

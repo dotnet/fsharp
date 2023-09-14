@@ -136,6 +136,17 @@ type FSharpFileSnapshot =
         member this.GetKey() = this.FileName
         member this.GetVersion() = this.Version
 
+type FSharpFileSnapshotWithSource =
+    {
+        FileName: string
+        SourceHash: string
+        Source: ISourceText
+        IsLastCompiland: bool
+        IsExe: bool
+    }
+
+    member this.IsSignatureFile = this.FileName.ToLower().EndsWith(".fsi")
+
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
@@ -273,62 +284,130 @@ type FSharpProjectSnapshot =
         }
 
     member this.GetLastModifiedTimeOnDisk() =
-        DateTime.Now 
+        // TODO:
+        DateTime.Now
 
-    member this.GetMd5Version() =
-        Md5Hasher.empty
-        //|> Md5Hasher.addString this.ProjectFileName
-        //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
-        //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
-        //|> Md5Hasher.addStrings this.OtherOptions
-        //|> Md5Hasher.addVersions (
-        //    this.ReferencedProjects
-        //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
-        //)
-        //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
-        //|> Md5Hasher.addBool this.UseScriptResolutionRules
+    member this.GetMd5Version() = Md5Hasher.empty
+    //|> Md5Hasher.addString this.ProjectFileName
+    //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
+    //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
+    //|> Md5Hasher.addStrings this.OtherOptions
+    //|> Md5Hasher.addVersions (
+    //    this.ReferencedProjects
+    //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
+    //)
+    //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
+    //|> Md5Hasher.addBool this.UseScriptResolutionRules
 
-    member this.GetDebugVersion(): FSharpProjectSnapshotDebugVersion = {
-        ProjectFileName = this.ProjectFileName       
-        SourceFiles = [for f in this.SourceFiles -> f.FileName, f.Version]
-        ReferencesOnDisk = this.ReferencesOnDisk
-        OtherOptions = this.OtherOptions
-        ReferencedProjects = [for FSharpReference (_, p) in this.ReferencedProjects -> p.WithoutImplFilesThatHaveSignatures.GetDebugVersion()]
-        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
-        UseScriptResolutionRules = this.UseScriptResolutionRules
-    }
+    member this.GetDebugVersion() : FSharpProjectSnapshotDebugVersion =
+        {
+            ProjectFileName = this.ProjectFileName
+            SourceFiles = [ for f in this.SourceFiles -> f.FileName, f.Version ]
+            ReferencesOnDisk = this.ReferencesOnDisk
+            OtherOptions = this.OtherOptions
+            ReferencedProjects =
+                [
+                    for FSharpReference (_, p) in this.ReferencedProjects -> p.WithoutImplFilesThatHaveSignatures.GetDebugVersion()
+                ]
+            IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+            UseScriptResolutionRules = this.UseScriptResolutionRules
+        }
 
     interface ICacheKey<string, FSharpProjectSnapshotDebugVersion> with
         member this.GetLabel() = this.ToString()
         member this.GetKey() = this.ProjectFileName
         member this.GetVersion() = this.GetDebugVersion()
 
-and FSharpProjectSnapshotDebugVersion = {
-    // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
-    ProjectFileName: string
+and FSharpProjectSnapshotWithSources =
+    {
+        ProjectSnapshot: FSharpProjectSnapshot
+        SourceFiles: FSharpFileSnapshotWithSource list
+    }
 
-    /// The files in the project.
-    SourceFiles: (string * string) list
+    member this.IndexOf fileName =
+        this.SourceFiles
+        |> List.tryFindIndex (fun x -> x.FileName = fileName)
+        |> Option.defaultWith (fun () ->
+            failwith (sprintf "Unable to find file %s in project %s" fileName this.ProjectSnapshot.ProjectFileName))
 
-    /// Referenced assemblies on disk.
-    ReferencesOnDisk: ReferenceOnDisk list
+    member this.UpTo fileIndex =
+        { this with
+            SourceFiles = this.SourceFiles[..fileIndex]
+        }
 
-    /// Additional command line argument options for the project.
-    OtherOptions: string list
+    member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
 
-    /// The command line arguments for the other projects referenced by this project, indexed by the
-    /// exact text used in the "-r:" reference in FSharpProjectOptions.
-    ReferencedProjects: FSharpProjectSnapshotDebugVersion list
+    member this.WithoutImplFilesThatHaveSignatures =
+        let files =
+            (([], Set.empty), this.SourceFiles)
+            ||> Seq.fold (fun (res, sigs) file ->
+                if file.IsSignatureFile then
+                    file :: res, sigs |> Set.add file.FileName
+                else
+                    let sigFileName = $"{file.FileName}i"
 
-    /// When true, the typechecking environment is known a priori to be incomplete, for
-    /// example when a .fs file is opened outside of a project. In this case, the number of error
-    /// messages reported is reduced.
-    IsIncompleteTypeCheckEnvironment: bool
+                    if sigs.Contains sigFileName then
+                        res, sigs |> Set.remove sigFileName
+                    else
+                        file :: res, sigs)
+            |> fst
+            |> List.rev
 
-    /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
-    UseScriptResolutionRules: bool
+        { this with SourceFiles = files }
 
-}
+    member this.WithoutImplFilesThatHaveSignaturesExceptLastOne =
+        let lastFile = this.SourceFiles |> List.last
+
+        if lastFile.IsSignatureFile then
+            this.WithoutImplFilesThatHaveSignatures
+        else
+            let snapshot = this.WithoutImplFilesThatHaveSignatures
+
+            { snapshot with
+                SourceFiles = snapshot.SourceFiles @ [ lastFile ]
+            }
+
+    member internal this.Key = this :> ICacheKey<_, _>
+
+    member this.FileKey(fileName) =
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = fileName |> shortPath
+            member _.GetKey() = fileName, this.Key.GetKey()
+
+            member _.GetVersion() =
+                this
+                    .UpTo(fileName)
+                    .WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion()
+        }
+
+    interface ICacheKey<string, FSharpProjectSnapshotWithSourcesVersion> with
+        member this.GetLabel() = this.ProjectSnapshot.Key.ToString()
+        member this.GetKey() = this.ProjectSnapshot.Key.GetKey()
+
+        member this.GetVersion() =
+            {
+                ProjectSnapshotVersion = this.ProjectSnapshot.WithoutFileVersions.Key.GetVersion()
+                SourceVersions = this.SourceFiles |> List.map (fun x -> x.SourceHash)
+            }
+
+and FSharpProjectSnapshotWithSourcesDebugVersion =
+    {
+        ProjectSnapshotVersion: FSharpProjectSnapshotDebugVersion
+        SourceVersions: string list
+    }
+
+and FSharpProjectSnapshotWithSourcesVersion = FSharpProjectSnapshotWithSourcesDebugVersion
+
+and FSharpProjectSnapshotDebugVersion =
+    {
+        ProjectFileName: string
+        SourceFiles: (string * string) list
+        ReferencesOnDisk: ReferenceOnDisk list
+        OtherOptions: string list
+        ReferencedProjects: FSharpProjectSnapshotDebugVersion list
+        IsIncompleteTypeCheckEnvironment: bool
+        UseScriptResolutionRules: bool
+    }
 
 and FSharpProjectSnapshotVersion = FSharpProjectSnapshotDebugVersion
 
