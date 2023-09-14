@@ -22,3 +22,4 @@ val GenReadOnlyModReqIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ilTy: I
 val GenReadOnlyAttributeIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ILAttribute option
 val GetReadOnlyAttribute: g: TcGlobals -> ILAttribute
 val GetIsUnmanagedAttribute: g: TcGlobals -> ILAttribute
+val GetNullableAttribute: g: TcGlobals -> ni: TypedTree.NullnessInfo -> ILAttribute

@@ -229,6 +229,24 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
         []
     )
 
+let GetNullableAttribute (g: TcGlobals) (ni: TypedTree.NullnessInfo) =
+    let tref = g.attrib_NullableAttribute.TypeRef
+
+    g.TryEmbedILType(
+        tref,
+        (fun () ->
+            let properties = Some [ "NullableFlags", g.ilg.typ_ByteArray ]
+            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
+    )
+
+    let byteValue =
+        match ni with
+        | TypedTree.NullnessInfo.WithNull -> 2uy
+        | TypedTree.NullnessInfo.AmbivalentToNull -> 0uy
+        | TypedTree.NullnessInfo.WithoutNull -> 1uy
+
+    mkILCustomAttribute (tref, [ g.ilg.typ_ByteArray ], [ ILAttribElem.Array(g.ilg.typ_Byte, [ ILAttribElem.Byte byteValue ]) ], [])
+
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
     let add = isInByrefTy g ty && g.attrib_InAttribute.TyconRef.CanDeref
