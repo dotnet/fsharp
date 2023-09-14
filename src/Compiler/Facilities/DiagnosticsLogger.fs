@@ -85,6 +85,17 @@ exception InternalError of message: string * range: range with
         | InternalError (msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
+exception InternalException of exn: Exception * msg: string * range: range with
+    override this.Message =
+        match this :> exn with
+        | InternalException (_, msg, _) -> msg
+        | _ -> "impossible"
+
+    override this.ToString() =
+        match this :> exn with
+        | InternalException (exn, _, _) -> exn.ToString()
+        | _ -> "impossible"
+
 exception UserCompilerMessage of message: string * number: int * range: range
 
 exception LibraryUseOnly of range: range
@@ -160,11 +171,11 @@ let rec AttachRange m (exn: exn) =
     else
         match exn with
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
+        | :? TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure msg -> InternalError(msg + " (Failure)", m)
-        | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
+        | :? NotSupportedException -> exn
+        | :? SystemException -> InternalException(exn, exn.Message, m)
         | _ -> exn
 
 type Exiter =
@@ -411,25 +422,12 @@ module DiagnosticsLoggerExtensions =
             Debug.Assert(false, "Could not preserve stack trace for watson exception.")
             ()
 
-    /// Reraise an exception if it is one we want to report to Watson.
-    let ReraiseIfWatsonable (exn: exn) =
-        match exn with
-        // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
-        | :? TargetInvocationException -> ()
-        | :? NotSupportedException -> ()
-        | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
-        | :? UnauthorizedAccessException -> ()
-        | Failure _ // This gives reports for compiler INTERNAL ERRORs
-        | :? SystemException ->
-            PreserveStackTrace exn
-            raise exn
-        | _ -> ()
-
     type DiagnosticsLogger with
 
         member x.EmitDiagnostic(exn, severity) =
             match exn with
             | InternalError (s, _)
+            | InternalException (_, s, _)
             | Failure s as exn -> Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
             | _ -> ()
 
@@ -473,7 +471,6 @@ module DiagnosticsLoggerExtensions =
             | _ ->
                 try
                     x.ErrorR(AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
-                    ReraiseIfWatsonable exn
                 with
                 | ReportedError _
                 | WrappedError (ReportedError _, _) -> ()
@@ -644,13 +641,13 @@ let CommitOperationResult res =
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
-let ErrorD err = ErrorResult([], err)
+let inline ErrorD err = ErrorResult([], err)
 
-let WarnD err = OkResult([ err ], ())
+let inline WarnD err = OkResult([ err ], ())
 
 let CompleteD = OkResult([], ())
 
-let ResultD x = OkResult([], x)
+let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
@@ -658,7 +655,7 @@ let CheckNoErrorsAndGetWarnings res =
     | ErrorResult _ -> None
 
 [<DebuggerHidden; DebuggerStepThrough>]
-let bind f res =
+let inline bind f res =
     match res with
     | OkResult ([], res) -> (* tailcall *) f res
     | OkResult (warns, res) ->
@@ -691,15 +688,15 @@ let rec MapD_loop f acc xs =
 let MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
-    member x.Bind(res, k) = bind k res
-    member x.Return res = ResultD res
-    member x.ReturnFrom res = res
-    member x.For(seq, k) = IterateD k seq
-    member x.Combine(expr1, expr2) = bind expr2 expr1
-    member x.While(gd, k) = WhileD gd k
-    member x.Zero() = CompleteD
-    member x.Delay fn = fun () -> fn ()
-    member x.Run fn = fn ()
+    member inline x.Bind(res, k) = bind k res
+    member inline x.Return res = ResultD res
+    member inline x.ReturnFrom res = res
+    member inline x.For(seq, k) = IterateD k seq
+    member inline x.Combine(expr1, expr2) = bind expr2 expr1
+    member inline x.While(gd, k) = WhileD gd k
+    member inline x.Zero() = CompleteD
+    member inline x.Delay(fn: unit -> _) = fn
+    member inline x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()
 

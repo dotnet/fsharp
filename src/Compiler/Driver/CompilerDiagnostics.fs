@@ -79,6 +79,7 @@ type Exception with
 
     member exn.DiagnosticRange =
         match exn with
+        | ArgumentsInSigAndImplMismatch (_, implArg) -> Some implArg.idRange
         | ErrorFromAddingConstraint (_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange exn -> exn.DiagnosticRange
@@ -131,6 +132,7 @@ type Exception with
         | DiagnosticEnabledWithLanguageFeature (_, _, m, _)
         | SyntaxError (_, m)
         | InternalError (_, m)
+        | InternalException (_, _, m)
         | InterfaceNotRevealed (_, _, m)
         | WrappedError (_, m)
         | PatternMatchCompilation.MatchIncomplete (_, _, m)
@@ -156,7 +158,7 @@ type Exception with
         | IndeterminateType m
         | TyconBadArgs (_, _, _, m) -> Some m
 
-        | FieldNotContained (_, _, _, arf, _, _) -> Some arf.Range
+        | FieldNotContained (_, _, _, _, arf, _, _) -> Some arf.Range
         | ValueNotContained (_, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained (_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained (_, _, aexnc, _, _) -> Some aexnc.Range
@@ -318,6 +320,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
+        | ArgumentsInSigAndImplMismatch _ -> 3218
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -599,6 +602,7 @@ module OldStyleMessages =
     let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
     let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
     let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+    let ArgumentsInSigAndImplMismatchE () = Message("ArgumentsInSigAndImplMismatch", "%s%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1570,7 +1574,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+        | FieldNotContained (denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(
@@ -1673,6 +1677,7 @@ type Exception with
             OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
+        | InternalException (_, s, _)
         | InvalidArgument s
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG
@@ -1867,6 +1872,9 @@ type Exception with
         | MSBuildReferenceResolutionWarning (code, message, _)
 
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
+
+        | ArgumentsInSigAndImplMismatch (sigArg, implArg) ->
+            os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)

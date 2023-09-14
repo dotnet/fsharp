@@ -3001,10 +3001,10 @@ type RecdFieldRef =
     /// Try to dereference the reference
     member TryRecdField: RecdField voption
 
-    /// Get the Entity for the type containing this union case
+    /// Get the Entity for the type containing this record field
     member Tycon: Entity
 
-    /// Get a reference to the type containing this union case
+    /// Get a reference to the type containing this record field
     member TyconRef: TyconRef
 
 /// Represents a type in the typed abstract syntax
