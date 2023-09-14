@@ -1013,7 +1013,7 @@ type internal TransparentCompiler
                         [|
                             Activity.Tags.fileName, fileName |> Path.GetFileName
                             "key", key.GetLabel()
-                            "version", key.GetVersion()
+                            "version", key.GetVersion().ToString()
                         |]
 
                 let tcConfig = bootstrapInfo.TcConfig

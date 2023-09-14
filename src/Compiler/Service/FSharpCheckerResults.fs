@@ -275,22 +275,62 @@ type FSharpProjectSnapshot =
     member this.GetLastModifiedTimeOnDisk() =
         DateTime.Now 
 
-    interface ICacheKey<string, string> with
+    member this.GetMd5Version() =
+        Md5Hasher.empty
+        //|> Md5Hasher.addString this.ProjectFileName
+        //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
+        //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
+        //|> Md5Hasher.addStrings this.OtherOptions
+        //|> Md5Hasher.addVersions (
+        //    this.ReferencedProjects
+        //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
+        //)
+        //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
+        //|> Md5Hasher.addBool this.UseScriptResolutionRules
+
+    member this.GetDebugVersion(): FSharpProjectSnapshotDebugVersion = {
+        ProjectFileName = this.ProjectFileName       
+        SourceFiles = [for f in this.SourceFiles -> f.FileName, f.Version]
+        ReferencesOnDisk = this.ReferencesOnDisk
+        OtherOptions = this.OtherOptions
+        ReferencedProjects = [for FSharpReference (_, p) in this.ReferencedProjects -> p.WithoutImplFilesThatHaveSignatures.GetDebugVersion()]
+        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+        UseScriptResolutionRules = this.UseScriptResolutionRules
+    }
+
+    interface ICacheKey<string, FSharpProjectSnapshotDebugVersion> with
         member this.GetLabel() = this.ToString()
         member this.GetKey() = this.ProjectFileName
+        member this.GetVersion() = this.GetDebugVersion()
 
-        member this.GetVersion() =
-            Md5Hasher.empty
-            |> Md5Hasher.addString this.ProjectFileName
-            |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
-            |> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
-            |> Md5Hasher.addStrings this.OtherOptions
-            |> Md5Hasher.addVersions (
-                this.ReferencedProjects
-                |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
-            )
-            |> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
-            |> Md5Hasher.addBool this.UseScriptResolutionRules
+and FSharpProjectSnapshotDebugVersion = {
+    // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
+    ProjectFileName: string
+
+    /// The files in the project.
+    SourceFiles: (string * string) list
+
+    /// Referenced assemblies on disk.
+    ReferencesOnDisk: ReferenceOnDisk list
+
+    /// Additional command line argument options for the project.
+    OtherOptions: string list
+
+    /// The command line arguments for the other projects referenced by this project, indexed by the
+    /// exact text used in the "-r:" reference in FSharpProjectOptions.
+    ReferencedProjects: FSharpProjectSnapshotDebugVersion list
+
+    /// When true, the typechecking environment is known a priori to be incomplete, for
+    /// example when a .fs file is opened outside of a project. In this case, the number of error
+    /// messages reported is reduced.
+    IsIncompleteTypeCheckEnvironment: bool
+
+    /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
+    UseScriptResolutionRules: bool
+
+}
+
+and FSharpProjectSnapshotVersion = FSharpProjectSnapshotDebugVersion
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal
