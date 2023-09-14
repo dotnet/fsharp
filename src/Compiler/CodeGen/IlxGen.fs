@@ -5565,6 +5565,19 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | TyparConstraint.IsNonNullableStruct _ -> true
             | _ -> false)
 
+    let notNullReferenceTypeConstraint =
+        if g.langFeatureNullness && g.checkNullness then
+            tp.Constraints
+            |> List.exists (function
+                | TyparConstraint.NotSupportsNull _ -> true
+                | _ -> false)
+            |> (function
+            | true -> NullnessInfo.WithoutNull
+            | false -> NullnessInfo.WithNull)
+            |> Some
+        else
+            None
+
     let defaultConstructorConstraint =
         tp.Constraints
         |> List.exists (function
@@ -5606,12 +5619,14 @@ and GenGenericParam cenv eenv (tp: Typar) =
             nm
 
     let attributeList =
-        let defined = GenAttrs cenv eenv tp.Attribs
-
-        if emitUnmanagedInIlOutput then
-            (GetIsUnmanagedAttribute g) :: defined
-        else
-            defined
+        [
+            yield! GenAttrs cenv eenv tp.Attribs
+            if emitUnmanagedInIlOutput then
+                yield (GetIsUnmanagedAttribute g)
+            match notNullReferenceTypeConstraint with
+            | Some nullness -> yield GetNullableAttribute g nullness
+            | None -> ()
+        ]
 
     let tpAttrs = mkILCustomAttrs (attributeList)
 
