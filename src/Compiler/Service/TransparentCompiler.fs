@@ -848,11 +848,10 @@ type internal TransparentCompiler
 
     let LoadSources (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         async {
-            
             // TODO: deuglify/optimize
-            let! sources = 
-                projectSnapshot.SourceFiles 
-                |> Seq.map (fun f -> f.FileName |> bootstrapInfo.GetFile |> LoadSource) 
+            let! sources =
+                projectSnapshot.SourceFiles
+                |> Seq.map (fun f -> f.FileName |> bootstrapInfo.GetFile |> LoadSource)
                 |> Async.Parallel
 
             return
@@ -1038,6 +1037,7 @@ type internal TransparentCompiler
         ignore dependencyGraph
 
         let key = projectSnapshot.FileKey parsedInput.FileName
+        let _label, _k, _version = key.GetLabel(), key.GetKey(), key.GetVersion()
 
         caches.TcIntermediate.Get(
             key,
@@ -1232,7 +1232,7 @@ type internal TransparentCompiler
                 let file = projectSnapshot.SourceFiles |> List.last
 
                 use _ =
-                    Activity.start "ComputeTcFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
+                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
 
                 let! parsedInputs =
                     projectSnapshot.SourceFiles

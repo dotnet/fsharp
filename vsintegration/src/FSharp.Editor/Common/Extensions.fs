@@ -111,6 +111,8 @@ module private SourceText =
                     |> Hash.combine encodingHash
                     |> Hash.combine contentsHash
                     |> Hash.combine sourceText.Length
+
+                override _.ToString() = sourceText.ToString()
               interface ISourceText with
 
                   member _.Item

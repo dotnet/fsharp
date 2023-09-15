@@ -85,10 +85,12 @@ type internal IBackgroundCompiler =
             NodeCode<seq<FSharp.Compiler.Text.range>>
 
     abstract member GetAssemblyData:
-        options: FSharpProjectOptions * outputFileName: string * userOpName: string -> NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+        options: FSharpProjectOptions * outputFileName: string * userOpName: string ->
+            NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
 
     abstract member GetAssemblyData:
-        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string -> NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string ->
+            NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract member GetBackgroundCheckResultsForFileInProject:
@@ -1493,10 +1495,20 @@ type internal BackgroundCompiler
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
 
-        member _.GetAssemblyData(options: FSharpProjectOptions, _fileName: string, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+        member _.GetAssemblyData
+            (
+                options: FSharpProjectOptions,
+                _fileName: string,
+                userOpName: string
+            ) : NodeCode<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)
 
-        member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, _fileName: string, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+        member _.GetAssemblyData
+            (
+                projectSnapshot: FSharpProjectSnapshot,
+                _fileName: string,
+                userOpName: string
+            ) : NodeCode<ProjectAssemblyDataResult> =
             self.GetAssemblyData(projectSnapshot.ToOptions(), userOpName)
 
         member _.GetBackgroundCheckResultsForFileInProject

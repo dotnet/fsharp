@@ -93,7 +93,8 @@ module Logging =
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)
-    let private log logType msg = 
+
+    let private log logType msg =
         logger.Value.Log(logType, msg)
         System.Diagnostics.Trace.TraceInformation(msg)
 

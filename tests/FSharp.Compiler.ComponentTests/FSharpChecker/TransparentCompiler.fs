@@ -226,13 +226,36 @@ let ``File is not checked twice`` () =
     let intermediateTypeChecks =
         cacheEvents
         |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> f |> Path.GetFileName)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map id |> Seq.toList)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
         |> Map
 
-    ignore intermediateTypeChecks
+    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
+    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
-    //Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
-    //Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+[<Fact>]
+let ``If a file is checked as a dependency it's not re-checked later`` () =
+    let cacheEvents = ResizeArray()
+
+    testWorkflow() {
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50 // wait for events from initial project check
+                checker.Caches.TcIntermediate.OnEvent cacheEvents.Add
+            })
+        updateFile "First" updatePublicSurface
+        checkFile "Last" expectOk
+        checkFile "Third" expectOk
+    } |> ignore
+
+    let intermediateTypeChecks =
+        cacheEvents
+        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> f |> Path.GetFileName)
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEvent list>([Weakened; Started; Finished], intermediateTypeChecks["FileThird.fs"])
+
+
 
 [<Fact>]
 let ``We don't check files that are not depended on`` () =

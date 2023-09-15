@@ -241,13 +241,17 @@ type FSharpProjectSnapshot =
     member this.WithoutImplFilesThatHaveSignaturesExceptLastOne =
         let lastFile = this.SourceFiles |> List.last
 
-        if lastFile.IsSignatureFile then
+        let snapshotWithoutImplFilesThatHaveSignatures =
+            this.WithoutImplFilesThatHaveSignatures
+
+        if
+            lastFile.IsSignatureFile
+            || snapshotWithoutImplFilesThatHaveSignatures.SourceFiles |> List.last = lastFile
+        then
             this.WithoutImplFilesThatHaveSignatures
         else
-            let snapshot = this.WithoutImplFilesThatHaveSignatures
-
-            { snapshot with
-                SourceFiles = snapshot.SourceFiles @ [ lastFile ]
+            { snapshotWithoutImplFilesThatHaveSignatures with
+                SourceFiles = snapshotWithoutImplFilesThatHaveSignatures.SourceFiles @ [ lastFile ]
             }
 
     member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
@@ -330,8 +334,9 @@ and FSharpProjectSnapshotWithSources =
         |> Option.defaultWith (fun () ->
             failwith (sprintf "Unable to find file %s in project %s" fileName this.ProjectSnapshot.ProjectFileName))
 
-    member this.UpTo fileIndex =
-        { this with
+    member this.UpTo(fileIndex: FileIndex) =
+        {
+            ProjectSnapshot = this.ProjectSnapshot.UpTo fileIndex
             SourceFiles = this.SourceFiles[..fileIndex]
         }
 
@@ -358,13 +363,17 @@ and FSharpProjectSnapshotWithSources =
     member this.WithoutImplFilesThatHaveSignaturesExceptLastOne =
         let lastFile = this.SourceFiles |> List.last
 
-        if lastFile.IsSignatureFile then
+        let snapshotWithoutImplFilesThatHaveSignatures =
+            this.WithoutImplFilesThatHaveSignatures
+
+        if
+            lastFile.IsSignatureFile
+            || snapshotWithoutImplFilesThatHaveSignatures.SourceFiles |> List.last = lastFile
+        then
             this.WithoutImplFilesThatHaveSignatures
         else
-            let snapshot = this.WithoutImplFilesThatHaveSignatures
-
-            { snapshot with
-                SourceFiles = snapshot.SourceFiles @ [ lastFile ]
+            { snapshotWithoutImplFilesThatHaveSignatures with
+                SourceFiles = snapshotWithoutImplFilesThatHaveSignatures.SourceFiles @ [ lastFile ]
             }
 
     member internal this.Key = this :> ICacheKey<_, _>

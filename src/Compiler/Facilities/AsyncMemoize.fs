@@ -258,10 +258,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
         strongList
         |> Seq.append weakList
         |> Seq.choose (function
-            | _k, version, label, Strong value -> Some (label, version, value)
+            | _k, version, label, Strong value -> Some(label, version, value)
             | _k, version, label, Weak w ->
                 match w.TryGetTarget() with
-                | true, value -> Some (label, version, value)
+                | true, value -> Some(label, version, value)
                 | _ -> None)
 
 type internal ICacheKey<'TKey, 'TVersion> =
@@ -585,7 +585,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member _.Locked = lock.Semaphore.CurrentCount < 1
 
-    member _.Running = cache.GetValues() |> Seq.filter (function _, _, Running _ -> true | _ -> false) |> Seq.toArray
+    member _.Running =
+        cache.GetValues()
+        |> Seq.filter (function
+            | _, _, Running _ -> true
+            | _ -> false)
+        |> Seq.toArray
 
     member this.DebuggerDisplay =
         let locked = if this.Locked then " [LOCKED]" else ""
