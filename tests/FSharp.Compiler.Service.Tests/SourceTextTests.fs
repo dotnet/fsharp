@@ -23,3 +23,11 @@ let a b c =
     let v = sourceText.GetSubTextFromRange m
     let sanitized = v.Replace("\r", "")
     Assert.AreEqual("a b c =\n    // comment\n    2", sanitized)
+
+[<Test>]
+let ``Inconsistent return carriage return correct text`` () =
+    let sourceText =  SourceText.ofString "let a =\r\n    // foo\n    43"
+    let m = Range.mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6)
+    let v = sourceText.GetSubTextFromRange m
+    let sanitized = v.Replace("\r", "")
+    Assert.AreEqual("a =\n    // foo\n    43", sanitized)
