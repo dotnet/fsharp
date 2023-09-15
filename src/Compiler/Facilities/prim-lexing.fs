@@ -127,11 +127,11 @@ type StringText(str: string) =
 
                 let sb = System.Text.StringBuilder(capacity).AppendLine(firstLineContent)
 
-                (sb, [ range.StartLine .. range.EndLine - 2 ])
-                ||> List.fold (fun sb lineNumber -> sb.AppendLine(sourceText.GetLineString lineNumber))
-                |> fun sb ->
-                    let lastLine = sourceText.GetLineString(range.EndLine - 1)
-                    sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
+                for lineNumber in [ range.StartLine .. range.EndLine - 2 ] do
+                    sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
+
+                let lastLine = sourceText.GetLineString(range.EndLine - 1)
+                sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
 module SourceText =
 
