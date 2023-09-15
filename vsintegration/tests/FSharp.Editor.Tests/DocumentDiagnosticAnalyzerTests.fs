@@ -126,7 +126,12 @@ type DocumentDiagnosticAnalyzerTests() =
         // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
         this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents, expectedMessage, DiagnosticSeverity.Error)
 
-    member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
+    member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
+        (
+            fileContents: string,
+            expectedMarker: string,
+            ?expectedMessage: string
+        ) =
         let errors =
             getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
