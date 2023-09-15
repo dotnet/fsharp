@@ -58,10 +58,6 @@ IL_0001:  ret
 .method public static valuetype [runtime]System.Nullable`1<int32> 
     nullableIntFunc(valuetype [runtime]System.Nullable`1<int32> x) cil managed
 {
-.param [0]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 01 00 00 00 00 00 00 ) 
-.param [1]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 01 00 00 00 00 00 00 ) 
     
 .maxstack  8
 IL_0000:  ldarg.0

@@ -272,12 +272,12 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
         // Non-generic value type: skipped
             []
         else
-            [ if isValueType then
-                // Generic value type: 0, followed by the representation of the type arguments in order including containing types
-                yield NullnessInfo.AmbivalentToNull
-              else if tyconRefEq g g.system_Nullable_tcref tcref then
+            [ if tyconRefEq g g.system_Nullable_tcref tcref then
                 // Nullable value type: the representation of the type argument only
                 ()
+              else if isValueType then
+                // Generic value type: 0, followed by the representation of the type arguments in order including containing types
+                yield NullnessInfo.AmbivalentToNull               
               else 
                // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types
                 yield nullness.Evaluate()
