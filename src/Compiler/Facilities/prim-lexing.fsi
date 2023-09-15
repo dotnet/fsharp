@@ -36,6 +36,7 @@ type ISourceText =
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
 
     /// Gets a section of the input based on a given range.
+    /// <exception cref="System.ArgumentException">Throws an exception when the input range is outside the file boundaries.</exception>
     abstract GetSubTextFromRange: range: range -> string
 
 /// Functions related to ISourceText objects
