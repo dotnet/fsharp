@@ -5624,7 +5624,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
             match notNullReferenceTypeConstraint with
-            | Some nullness -> yield GetNullableAttribute g nullness
+            | Some nullness -> yield GetNullableAttribute g [nullness]
             | None -> ()
         ]
 
@@ -5661,11 +5661,7 @@ and GenSlotParam m cenv eenv slotParam : ILParameter =
         GenParamAttribs cenv ty attribs
 
     let ilAttribs = GenAttrs cenv eenv attribs
-
-    let ilAttribs =
-        match GenAdditionalAttributesForTy cenv.g ty with
-        | Some attr -> ilAttribs @ [ attr ]
-        | None -> ilAttribs
+    let ilAttribs = ilAttribs @ GenAdditionalAttributesForTy cenv.g ty
 
     {
         Name = nm
@@ -5722,8 +5718,9 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
     | None -> ilRet
     | Some ty ->
         match GenAdditionalAttributesForTy cenv.g ty with
-        | Some attr -> ilRet.WithCustomAttrs(mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ [ attr ]))
-        | None -> ilRet
+        | [] -> ilRet
+        | attrs -> ilRet.WithCustomAttrs(mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ attrs))
+        
 
 and instSlotParam inst (TSlotParam (nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
@@ -8766,11 +8763,7 @@ and GenParams
                 | None -> None, takenNames
 
             let ilAttribs = GenAttrs cenv eenv attribs
-
-            let ilAttribs =
-                match GenAdditionalAttributesForTy cenv.g methodArgTy with
-                | Some attr -> ilAttribs @ [ attr ]
-                | None -> ilAttribs
+            let ilAttribs = ilAttribs @ GenAdditionalAttributesForTy cenv.g methodArgTy
 
             let param: ILParameter =
                 {
@@ -8796,10 +8789,7 @@ and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
 
     let ilAttribs =
         match returnTy with
-        | Some retTy ->
-            match GenAdditionalAttributesForTy cenv.g retTy with
-            | Some attr -> ilAttribs @ [ attr ]
-            | None -> ilAttribs
+        | Some retTy -> ilAttribs @ GenAdditionalAttributesForTy cenv.g retTy
         | _ -> ilAttribs
 
     let ilAttrs = mkILCustomAttrs ilAttribs
@@ -9134,9 +9124,7 @@ and GenMethodForBinding
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                 ->
-                match GenAdditionalAttributesForTy cenv.g returnTy with
-                | Some ilAttr -> ilAttr
-                | _ -> ()
+                yield! GenAdditionalAttributesForTy cenv.g returnTy
             | _ -> ()
         ]
 
@@ -10384,9 +10372,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                     ->
-                    match GenAdditionalAttributesForTy cenv.g returnTy with
-                    | Some ilAttr -> ilAttr
-                    | _ -> ()
+                    yield! GenAdditionalAttributesForTy cenv.g returnTy
                 | _ -> ()
             ]
 
