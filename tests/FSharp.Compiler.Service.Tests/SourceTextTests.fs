@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.SourceTextTests
 
+open System
 open FSharp.Compiler.Text
 open NUnit.Framework
 
@@ -27,7 +28,20 @@ let a b c =
 [<Test>]
 let ``Inconsistent return carriage return correct text`` () =
     let sourceText =  SourceText.ofString "let a =\r\n    // foo\n    43"
-    let m = Range.mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6)
+    let m = Range.mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6) 
     let v = sourceText.GetSubTextFromRange m
     let sanitized = v.Replace("\r", "")
     Assert.AreEqual("a =\n    // foo\n    43", sanitized)
+
+[<Test>]
+let ``Zero range should return empty string`` () =
+    let sourceText = SourceText.ofString "a"
+    let v = sourceText.GetSubTextFromRange Range.Zero
+    Assert.AreEqual(String.Empty, v)
+    
+[<Test>]
+let ``Invalid range should throw argument exception`` () =
+    let sourceText = SourceText.ofString "a"
+    let mInvalid = Range.mkRange "Sample.fs" (Position.mkPos 3 6) (Position.mkPos 1 4)
+    Assert.Throws<ArgumentException>(fun () -> sourceText.GetSubTextFromRange mInvalid |> ignore)
+    |> ignore

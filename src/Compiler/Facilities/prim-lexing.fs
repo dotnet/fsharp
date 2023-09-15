@@ -6,7 +6,6 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
-open FSharp.Compiler
 
 type ISourceText =
 
@@ -111,27 +110,44 @@ type StringText(str: string) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
         member this.GetSubTextFromRange(range) =
-            let sourceText = this :> ISourceText
-            let startLine = range.StartLine - 1
-            let line = sourceText.GetLineString startLine
+            let totalAmountOfLines = getLines.Value.Length
 
-            if range.StartLine = range.EndLine then
-                let length = range.EndColumn - range.StartColumn
-                line.Substring(range.StartColumn, length)
+            if
+                range.StartLine = 0
+                && range.StartColumn = 0
+                && range.EndLine = 0
+                && range.EndColumn = 0
+            then
+                String.Empty
+            elif
+                range.StartLine < 1
+                || (range.StartLine - 1) > totalAmountOfLines
+                || range.EndLine < 1
+                || (range.EndLine - 1) > totalAmountOfLines
+            then
+                invalidArg (nameof range) "The range is outside the file boundaries"
             else
-                let firstLineContent = line.Substring(range.StartColumn)
+                let sourceText = this :> ISourceText
+                let startLine = range.StartLine - 1
+                let line = sourceText.GetLineString startLine
 
-                let capacity =
-                    [ (range.StartLine - 1) .. (range.EndLine - 1) ]
-                    |> List.sumBy (fun lineIdx -> (sourceText.GetLineString lineIdx).Length)
+                if range.StartLine = range.EndLine then
+                    let length = range.EndColumn - range.StartColumn
+                    line.Substring(range.StartColumn, length)
+                else
+                    let firstLineContent = line.Substring(range.StartColumn)
 
-                let sb = System.Text.StringBuilder(capacity).AppendLine(firstLineContent)
+                    let capacity =
+                        [ (range.StartLine - 1) .. (range.EndLine - 1) ]
+                        |> List.sumBy (fun lineIdx -> (sourceText.GetLineString lineIdx).Length)
 
-                for lineNumber in [ range.StartLine .. range.EndLine - 2 ] do
-                    sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
+                    let sb = System.Text.StringBuilder(capacity).AppendLine(firstLineContent)
 
-                let lastLine = sourceText.GetLineString(range.EndLine - 1)
-                sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
+                    for lineNumber in [ range.StartLine .. range.EndLine - 2 ] do
+                        sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
+
+                    let lastLine = sourceText.GetLineString(range.EndLine - 1)
+                    sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
 module SourceText =
 
