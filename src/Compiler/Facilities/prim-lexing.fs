@@ -120,7 +120,12 @@ type StringText(str: string) =
                 line.Substring(range.StartColumn, length)
             else
                 let firstLineContent = line.Substring(range.StartColumn)
-                let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
+
+                let capacity =
+                    [ (range.StartLine - 1) .. (range.EndLine - 1) ]
+                    |> List.sumBy (fun lineIdx -> (sourceText.GetLineString lineIdx).Length)
+
+                let sb = System.Text.StringBuilder(capacity).AppendLine(firstLineContent)
 
                 (sb, [ range.StartLine .. range.EndLine - 2 ])
                 ||> List.fold (fun sb lineNumber -> sb.AppendLine(sourceText.GetLineString lineNumber))
