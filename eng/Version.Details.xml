@@ -39,25 +39,25 @@
       <Sha>194f32828726c3f1f63f79f3dc09b9e99c157b11</Sha>
       <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.23464.6">
+    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.23465.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>5b0a8abbba75c63e20e42f778650dd1448aef62c</Sha>
+      <Sha>f67c4e806a744f7274aed9493e4c8d39a3c73445</Sha>
     </Dependency>
-    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.23464.6">
+    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.23465.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>5b0a8abbba75c63e20e42f778650dd1448aef62c</Sha>
+      <Sha>f67c4e806a744f7274aed9493e4c8d39a3c73445</Sha>
     </Dependency>
-    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23464.6">
+    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23465.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>5b0a8abbba75c63e20e42f778650dd1448aef62c</Sha>
+      <Sha>f67c4e806a744f7274aed9493e4c8d39a3c73445</Sha>
     </Dependency>
-    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23464.6">
+    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23465.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>5b0a8abbba75c63e20e42f778650dd1448aef62c</Sha>
+      <Sha>f67c4e806a744f7274aed9493e4c8d39a3c73445</Sha>
     </Dependency>
-    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23464.6">
+    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23465.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
-      <Sha>5b0a8abbba75c63e20e42f778650dd1448aef62c</Sha>
+      <Sha>f67c4e806a744f7274aed9493e4c8d39a3c73445</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>
