@@ -122,14 +122,14 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> cancellableTask { return! rangeToDocumentSpans (document.Project.Solution, range) }
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
                         declarationSpans
                         |> Array.distinctBy (fun x -> x.Document.FilePath, x.Document.Project.FilePath)
 
-                    let isExternal = declarationSpans |> Array.isEmpty
+                    let isExternal = Array.isEmpty declarationSpans
 
                     let displayParts =
                         ImmutableArray.Create(Microsoft.CodeAnalysis.TaggedText(TextTags.Text, symbol.Ident.idText))

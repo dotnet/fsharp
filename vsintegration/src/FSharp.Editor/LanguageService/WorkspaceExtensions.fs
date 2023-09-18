@@ -2,10 +2,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
-open System.Diagnostics
 open System.Runtime.CompilerServices
-open System.Threading
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
@@ -15,8 +12,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-open CancellableTasks
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -160,13 +155,6 @@ type Document with
                         return
                             ProjectCache.Projects.GetValue(this.Project, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
                 }
-
-    /// Get the compilation defines from F# project that is associated with the given F# document.
-    member this.GetFSharpCompilationDefinesAsync(userOpName) =
-        async {
-            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-        }
 
     /// Get the compilation defines and language version from F# project that is associated with the given F# document.
     member this.GetFsharpParsingOptionsAsync(userOpName) =

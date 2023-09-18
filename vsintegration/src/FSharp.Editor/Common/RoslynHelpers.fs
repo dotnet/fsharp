@@ -62,13 +62,6 @@ module internal RoslynHelpers =
             (Position.fromZ startLine.LineNumber (textSpan.Start - startLine.Start))
             (Position.fromZ endLine.LineNumber (textSpan.End - endLine.Start))
 
-    let GetCompletedTaskResult (task: Task<'TResult>) =
-        if task.Status = TaskStatus.RanToCompletion then
-            task.Result
-        else
-            Assert.Exception(task.Exception.GetBaseException())
-            raise (task.Exception.GetBaseException())
-
     /// maps from `TextTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
     let roslynTag =
         function
