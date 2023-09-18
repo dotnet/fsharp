@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 
 open CancellableTasks
 
@@ -38,9 +37,7 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
                 let! unresolvedIdentifierText = context.GetSquigglyTextAsync()
                 let pos = context.Span.End
                 let caretLinePos = sourceText.Lines.GetLinePosition(pos)
-                let caretLine = sourceText.Lines.GetLineFromPosition(pos)
-                let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-                let lineText = caretLine.ToString()
+                let! fcsCaretLineNumber, lineText = context.GetLineNumberAndText pos
 
                 let partialName =
                     QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
