@@ -123,6 +123,44 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         ILTypeInit.BeforeField
     )
 
+let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name: string, bytePropertyName: string) =
+    let ilTypeRef = mkILTyRef (ILScopeRef.Local, name)
+    let ilTy = mkILFormalNamedTy ILBoxity.AsObject ilTypeRef []
+
+    let fieldName = bytePropertyName
+    let fieldType = g.ilg.typ_ByteArray
+    let fieldDef =  g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, fieldType, None, ILMemberAccess.Public))           
+      
+
+    // Constructor taking an array
+    let ilArrayCtorDef =
+        g.AddMethodGeneratedAttributes(
+            mkILSimpleStorageCtorWithParamNames (
+                Some g.ilg.typ_Attribute.TypeSpec,
+                ilTy,
+                [],
+                [(fieldName,fieldName,fieldType)],
+                ILMemberAccess.Public,
+                None,
+                None
+            )
+        )
+
+    mkILGenericClass (
+        name,
+        ILTypeDefAccess.Private,
+        ILGenericParameterDefs.Empty,
+        g.ilg.typ_Attribute,
+        ILTypes.Empty,
+        mkILMethods ([ilArrayCtorDef]),
+        mkILFields [fieldDef],
+        emptyILTypeDefs,
+        emptyILProperties,
+        emptyILEvents,
+        emptyILCustomAttrs,
+        ILTypeInit.BeforeField
+    )
+
 let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * int32) array) =
     let ilType = ILType.Value(mkILNonGenericTySpec (tref))
 
@@ -228,9 +266,7 @@ let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo l
 
     g.TryEmbedILType(
         tref,
-        (fun () ->
-            let properties = Some [ "NullableFlags", g.ilg.typ_ByteArray ]
-            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
+        (fun () ->mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g, tref.Name, "NullableFlags"))
     )
 
     let byteValue ni =
@@ -308,6 +344,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
         ]
 
     | TType_anon (anonInfo, tys) ->
+        // It is unlikely for an anon type to be used from C# due to the mangled name, but can still carry the nullability info about it's generic type arguments == the types of the fields
         [
             if evalAnonInfoIsStruct anonInfo then
                 yield NullnessInfo.AmbivalentToNull
