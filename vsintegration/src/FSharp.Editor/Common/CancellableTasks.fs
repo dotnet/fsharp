@@ -1096,13 +1096,15 @@ module CancellableTasks =
         let inline whenAll (tasks: CancellableTask<'a> seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield start ct task })
+                let tasks = seq { for task in tasks do yield start ct task }
+                return! Task.WhenAll (tasks)
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield startTask ct task })
+                let tasks = seq { for task in tasks do yield startTask ct task }
+                return! Task.WhenAll (tasks)
             }
 
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask

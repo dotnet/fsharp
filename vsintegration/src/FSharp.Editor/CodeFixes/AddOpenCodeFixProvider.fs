@@ -121,8 +121,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
             let entities =
                 assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                |> List.collect (fun s ->
-                    [
+                |> Array.collect (fun s ->
+                    [|
                         yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                         if isAttribute then
                             let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
@@ -137,7 +137,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     s.Namespace,
                                     s.CleanedIdents
                                     |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9))
-                    ])
+                    |])
 
             let longIdent =
                 ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End

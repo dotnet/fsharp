@@ -34,7 +34,7 @@ module CompletionProviderTests =
 
         let results =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
                 |> CancellableTask.start CancellationToken.None
 
             task.Result |> Seq.map (fun result -> result.DisplayText)
@@ -82,7 +82,7 @@ module CompletionProviderTests =
 
         let actual =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
                 |> CancellableTask.start CancellationToken.None
 
             task.Result

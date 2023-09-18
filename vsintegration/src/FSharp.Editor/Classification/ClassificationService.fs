@@ -247,6 +247,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
 
                         let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService))
+
                         let classificationDataLookup = toSemanticClassificationLookup classificationData
                         do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
@@ -288,10 +289,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                         let classificationData = checkResults.GetSemanticClassification(Some targetRange)
 
-                        let classificationDataLookup = itemToSemanticClassificationLookup classificationData
-                        do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                        if classificationData.Length > 0 then
+                            let classificationDataLookup = itemToSemanticClassificationLookup classificationData
+                            do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
 
-                        addSemanticClassification sourceText textSpan classificationData result
+                            addSemanticClassification sourceText textSpan classificationData result
             }
             |> CancellableTask.startAsTask cancellationToken
 

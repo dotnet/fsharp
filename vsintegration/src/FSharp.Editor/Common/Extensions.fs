@@ -302,15 +302,15 @@ module ValueOption =
 module IEnumerator =
     let chooseV f (e: IEnumerator<'T>) =
         let mutable started = false
-        let mutable curr = None
+        let mutable curr = ValueNone
 
         let get () =
             if not started then
                 raise (InvalidOperationException("Not started"))
 
             match curr with
-            | None -> raise (InvalidOperationException("Already finished"))
-            | Some x -> x
+            | ValueNone -> raise (InvalidOperationException("Already finished"))
+            | ValueSome x -> x
 
         { new IEnumerator<'U> with
             member _.Current = get ()
@@ -321,12 +321,12 @@ module IEnumerator =
                   if not started then
                       started <- true
 
-                  curr <- None
+                  curr <- ValueNone
 
                   while (curr.IsNone && e.MoveNext()) do
                       curr <- f e.Current
 
-                  Option.isSome curr
+                  ValueOption.isSome curr
 
               member _.Reset() =
                   raise (NotSupportedException("Reset is not supported"))
@@ -387,7 +387,7 @@ module Seq =
 
         res
 
-    let chooseV chooser source =
+    let chooseV (chooser: 'a -> 'b voption) source =
         revamp (IEnumerator.chooseV chooser) source
 
 [<RequireQualifiedAccess>]
