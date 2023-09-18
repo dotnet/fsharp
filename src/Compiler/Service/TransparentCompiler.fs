@@ -41,6 +41,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.TypedTreeOps
+open System.Threading
 
 type internal FSharpFile =
     {
@@ -276,7 +277,7 @@ type internal CompilerCaches() =
 
     member val BootstrapInfo = AsyncMemoize(name = "BootstrapInfo")
 
-    member val TcLastFile = AsyncMemoize(name = "TcPrior")
+    member val TcLastFile = AsyncMemoize(name = "TcLastFile")
 
     member val TcIntermediate = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "TcIntermediate")
 
@@ -312,6 +313,10 @@ type internal TransparentCompiler
     let lexResourceManager = Lexhelp.LexResourceManager()
 
     let caches = CompilerCaches()
+
+    let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
+
+    let maxParallelismSemaphore = new SemaphoreSlim(maxTypeCheckingParallelism)
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -1082,33 +1087,39 @@ type internal TransparentCompiler
                 let input, moduleNamesDict =
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-                let! finisher =
-                    CheckOneInputWithCallback
-                        node
-                        ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
-                         tcConfig,
-                         tcImports,
-                         tcGlobals,
-                         None,
-                         TcResultsSink.WithSink sink,
-                         prevTcInfo.tcState,
-                         input,
-                         true)
-                    |> Cancellable.toAsync
+                let! ct = Async.CancellationToken
+                try
+                    do! maxParallelismSemaphore.WaitAsync(ct) |> Async.AwaitTask
 
-                //fileChecked.Trigger fileName
+                    let! finisher =
+                        CheckOneInputWithCallback
+                            node
+                            ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                             tcConfig,
+                             tcImports,
+                             tcGlobals,
+                             None,
+                             TcResultsSink.WithSink sink,
+                             prevTcInfo.tcState,
+                             input,
+                             true)
+                        |> Cancellable.toAsync
 
-                let newErrors =
-                    Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+                    //fileChecked.Trigger fileName
 
-                return
-                    {
-                        finisher = finisher
-                        moduleNamesDict = moduleNamesDict
-                        tcDiagnosticsRev = [ newErrors ]
-                        tcDependencyFiles = [ fileName ]
-                        sink = sink
-                    }
+                    let newErrors =
+                        Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+
+                    return
+                        {
+                            finisher = finisher
+                            moduleNamesDict = moduleNamesDict
+                            tcDiagnosticsRev = [ newErrors ]
+                            tcDependencyFiles = [ fileName ]
+                            sink = sink
+                        }
+                finally
+                    maxParallelismSemaphore.Release() |> ignore
             }
         )
 
@@ -1306,13 +1317,13 @@ type internal TransparentCompiler
 
                     let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags file
 
-                    let! result, priorTcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
+                    let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
                     let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile) = result
 
-                    let tcState = priorTcInfo.tcState
+                    let tcState = tcInfo.tcState
 
-                    let sink = priorTcInfo.sink.Head // TODO: don't use head
+                    let sink = tcInfo.sink.Head // TODO: don't use head
 
                     let tcResolutions = sink.GetResolutions()
                     let tcSymbolUses = sink.GetSymbolUses()
@@ -1322,7 +1333,7 @@ type internal TransparentCompiler
 
                     let tcDiagnostics =
                         seq {
-                            yield! priorTcInfo.TcDiagnostics
+                            yield! tcInfo.TcDiagnostics
 
                         //for x in tcIntermediate.tcDiagnosticsRev do
                         //    yield! x
