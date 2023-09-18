@@ -76,6 +76,8 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
+            // Old logic, rollback once https://github.com/dotnet/fsharp/issues/15972 is fixed (likely on Roslyn side, since we're returning diagnostics, but they're not getting to VS).
+            (*
             match diagnosticType with
             | DiagnosticsType.Syntax ->
                 for diagnostic in parseResults.Diagnostics do
@@ -88,6 +90,23 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     errors.Add(diagnostic) |> ignore
 
                 errors.ExceptWith(parseResults.Diagnostics)
+            *)
+
+            // TODO: see comment above, this is a workaround for issue we have in current VS/Roslyn
+            match diagnosticType with
+            | DiagnosticsType.Syntax ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+            // We always add syntactic, and do not exclude them when semantic is requested
+            | DiagnosticsType.Semantic ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
 
             if errors.Count = 0 then
                 return ImmutableArray.Empty

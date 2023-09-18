@@ -800,6 +800,28 @@ type internal TypeCheckInfo
         | Item.Types (_, ty :: _) when isInterfaceTy g ty -> true
         | _ -> false
 
+    /// Is the item suitable for completion in a pattern
+    let IsPatternCandidate (item: CompletionItem) =
+        match item.Item with
+        | Item.Value v -> v.LiteralValue.IsSome
+        | Item.ILField field -> field.LiteralValue.IsSome
+        | Item.ActivePatternCase _
+        | Item.ExnCase _
+        | Item.ModuleOrNamespaces _
+        | Item.Types _
+        | Item.UnionCase _ -> true
+        | _ -> false
+
+    /// Is the item suitable for completion in a type application or type annotation
+    let IsTypeCandidate (item: CompletionItem) =
+        match item.Item with
+        | Item.ModuleOrNamespaces _
+        | Item.Types _
+        | Item.TypeVar _
+        | Item.UnqualifiedType _
+        | Item.ExnCase _ -> true
+        | _ -> false
+
     /// Return only items with the specified name, modulo "Attribute" for type completions
     let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) =
         let attributedResidue = residue + "Attribute"
@@ -939,6 +961,10 @@ type internal TypeCheckInfo
             Unresolved = None
         }
 
+    let getItem (x: ItemWithInst) = x.Item
+
+    let getItem2 (x: CompletionItem) = x.Item
+
     /// Checks whether the suggested name is unused.
     /// In the future we could use an increasing numeric suffix for conflict resolution
     let CreateCompletionItemForSuggestedPatternName (pos: pos) name =
@@ -1044,7 +1070,7 @@ type internal TypeCheckInfo
                     |> List.map (fun (name, overloads) ->
                         Item.MethodGroup(name, overloads, None)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone)
+                        |> DefaultCompletionItem)
 
                 Some(overridableMethods, nenv.DisplayEnv, m)
             | _ -> None)
@@ -1063,12 +1089,77 @@ type internal TypeCheckInfo
                     else
                         Item.UnionCaseField(uci, index)
                         |> ItemWithNoInst
-                        |> CompletionItem ValueNone ValueNone
+                        |> DefaultCompletionItem
                         |> Some)
                 |> Some
             | _ -> None)
 
-    let getItem (x: ItemWithInst) = x.Item
+    let GetCompletionsForUnionCaseField pos indexOrName caseIdRange isTheOnlyField declaredItems =
+        let declaredItems =
+            declaredItems
+            |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
+
+        // When the user types `fun (Case (x| )) ->`, we do not yet know whether the intention is to use positional or named arguments,
+        // so let's show options for both.
+        let fields indexOrName isTheOnlyField (uci: UnionCaseInfo) =
+            match indexOrName, isTheOnlyField with
+            | Choice1Of2 (Some 0), true ->
+                uci.UnionCase.RecdFields
+                |> List.mapi (fun index _ -> Item.UnionCaseField(uci, index) |> ItemWithNoInst |> DefaultCompletionItem)
+            | _ -> []
+
+        sResolutions.CapturedNameResolutions
+        |> ResizeArray.tryPick (fun r ->
+            match r.Item with
+            | Item.UnionCase (uci, _) when equals r.Range caseIdRange ->
+                let list =
+                    declaredItems
+                    |> Option.map p13
+                    |> Option.defaultValue []
+                    |> List.append (fields indexOrName isTheOnlyField uci)
+
+                Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName list, r.DisplayEnv, r.Range)
+            | _ -> None)
+        |> Option.orElse declaredItems
+
+    let GetCompletionsForRecordField pos referencedFields declaredItems =
+        declaredItems
+        |> Option.map (fun (items: CompletionItem list, denv, range) ->
+            let fields =
+                // Try to find a name resolution for any of the referenced fields, and through it access all available fields of the record
+                referencedFields
+                |> List.tryPick (fun (_, fieldRange) ->
+                    sResolutions.CapturedNameResolutions
+                    |> ResizeArray.tryPick (fun cnr ->
+                        match cnr.Item with
+                        | Item.RecdField info when equals cnr.Range fieldRange ->
+                            info.TyconRef.AllFieldAsRefList
+                            |> List.choose (fun field ->
+                                if
+                                    referencedFields
+                                    |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName)
+                                then
+                                    None
+                                else
+                                    FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField |> Some)
+                            |> Some
+                        | _ -> None))
+                |> Option.defaultWith (fun () ->
+                    // Fall back to showing all record field names in scope
+                    let (nenv, _), _ = GetBestEnvForPos pos
+                    getRecordFieldsInScope nenv)
+                |> List.map (ItemWithNoInst >> DefaultCompletionItem)
+
+            let items =
+                items
+                |> List.filter (fun item ->
+                    match item.Item with
+                    | Item.ModuleOrNamespaces _ -> true
+                    | Item.Types (_, ty :: _) -> isRecdTy g ty
+                    | _ -> false)
+                |> List.append fields
+
+            items, denv, range)
 
     let GetDeclaredItems
         (
@@ -1316,6 +1407,22 @@ type internal TypeCheckInfo
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
+        let getDeclaredItemsNotInRangeOpWithAllSymbols () =
+            GetDeclaredItems(
+                parseResultsOpt,
+                lineStr,
+                origLongIdentOpt,
+                colAtEndOfNamesAndResidue,
+                residueOpt,
+                lastDotPos,
+                line,
+                loc,
+                filterCtors,
+                resolveOverloads,
+                false,
+                getAllSymbols
+            )
+
         let pos = mkPos line colAtEndOfNamesAndResidue
 
         // Look for a "special" completion context
@@ -1445,21 +1552,7 @@ type internal TypeCheckInfo
             | Some (CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
 
-                let declaredItems =
-                    GetDeclaredItems(
-                        parseResultsOpt,
-                        lineStr,
-                        origLongIdentOpt,
-                        colAtEndOfNamesAndResidue,
-                        residueOpt,
-                        lastDotPos,
-                        line,
-                        loc,
-                        filterCtors,
-                        resolveOverloads,
-                        false,
-                        getAllSymbols
-                    )
+                let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
                 match results with
                 | NameResResult.Members (items, denv, m) ->
@@ -1484,20 +1577,7 @@ type internal TypeCheckInfo
                 | _ -> declaredItems
 
             | Some (CompletionContext.AttributeApplication) ->
-                GetDeclaredItems(
-                    parseResultsOpt,
-                    lineStr,
-                    origLongIdentOpt,
-                    colAtEndOfNamesAndResidue,
-                    residueOpt,
-                    lastDotPos,
-                    line,
-                    loc,
-                    filterCtors,
-                    resolveOverloads,
-                    false,
-                    getAllSymbols
-                )
+                getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.map (fun (items, denv, m) ->
                     items
                     |> List.filter (fun cItem ->
@@ -1509,20 +1589,7 @@ type internal TypeCheckInfo
                     m)
 
             | Some (CompletionContext.OpenDeclaration isOpenType) ->
-                GetDeclaredItems(
-                    parseResultsOpt,
-                    lineStr,
-                    origLongIdentOpt,
-                    colAtEndOfNamesAndResidue,
-                    residueOpt,
-                    lastDotPos,
-                    line,
-                    loc,
-                    filterCtors,
-                    resolveOverloads,
-                    false,
-                    getAllSymbols
-                )
+                getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.map (fun (items, denv, m) ->
                     items
                     |> List.filter (fun x ->
@@ -1541,108 +1608,28 @@ type internal TypeCheckInfo
             | Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
             // Completion at 'Field1: ...'
             | Some (CompletionContext.RecordField (RecordContext.Declaration false)) ->
-                GetDeclaredItems(
-                    parseResultsOpt,
-                    lineStr,
-                    origLongIdentOpt,
-                    colAtEndOfNamesAndResidue,
-                    residueOpt,
-                    lastDotPos,
-                    line,
-                    loc,
-                    filterCtors,
-                    resolveOverloads,
-                    false,
-                    getAllSymbols
-                )
-                |> Option.map (fun (items, denv, m) ->
-                    items
-                    |> List.filter (fun cItem ->
-                        match cItem.Item with
-                        | Item.ModuleOrNamespaces _
-                        | Item.Types _
-                        | Item.TypeVar _
-                        | Item.UnqualifiedType _
-                        | Item.ExnCase _ -> true
-                        | _ -> false),
-                    denv,
-                    m)
-
-            | Some (CompletionContext.Pattern (PatternContext.UnionCaseFieldIdentifier (referencedFields, caseIdRange))) ->
-                GetUnionCaseFields caseIdRange referencedFields
-                |> Option.map (fun completions ->
-                    let (nenv, _ad), m = GetBestEnvForPos pos
-                    completions, nenv.DisplayEnv, m)
+                getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
             | Some (CompletionContext.Pattern patternContext) ->
-                let declaredItems =
-                    GetDeclaredItems(
-                        parseResultsOpt,
-                        lineStr,
-                        origLongIdentOpt,
-                        colAtEndOfNamesAndResidue,
-                        residueOpt,
-                        lastDotPos,
-                        line,
-                        loc,
-                        filterCtors,
-                        resolveOverloads,
-                        false,
-                        getAllSymbols
-                    )
-                    |> Option.map (fun (items, denv, range) ->
-                        let filtered =
-                            items
-                            |> List.filter (fun item ->
-                                match item.Item with
-                                | Item.Value v -> v.LiteralValue.IsSome
-                                | Item.ILField field -> field.LiteralValue.IsSome
-                                | Item.ActivePatternCase _
-                                | Item.ExnCase _
-                                | Item.ModuleOrNamespaces _
-                                | Item.NewDef _
-                                | Item.Types _
-                                | Item.UnionCase _ -> true
-                                | _ -> false)
-
-                        filtered, denv, range)
-
-                let indexOrName, caseIdRange =
-                    match patternContext with
-                    | PatternContext.PositionalUnionCaseField (index, _, m) -> Choice1Of2 index, m
-                    | PatternContext.NamedUnionCaseField (name, m) -> Choice2Of2 name, m
-                    | PatternContext.UnionCaseFieldIdentifier _
-                    | PatternContext.Other -> Choice1Of2 None, range0
-
-                // No special handling other than filtering out items that may not appear in a pattern
-                if equals caseIdRange range0 then
-                    declaredItems
-                else
-                    // When the user types `fun (Case (x| )) ->`, we do not yet know whether the intention is to use positional or named arguments,
-                    // so let's show options for both.
-                    let fields patternContext (uci: UnionCaseInfo) =
-                        match patternContext with
-                        | PatternContext.PositionalUnionCaseField (Some 0, true, _) ->
-                            uci.UnionCase.RecdFields
-                            |> List.mapi (fun index _ ->
-                                Item.UnionCaseField(uci, index)
-                                |> ItemWithNoInst
-                                |> CompletionItem ValueNone ValueNone)
-                        | _ -> []
-
-                    sResolutions.CapturedNameResolutions
-                    |> ResizeArray.tryPick (fun r ->
-                        match r.Item with
-                        | Item.UnionCase (uci, _) when equals r.Range caseIdRange ->
-                            let list =
-                                declaredItems
-                                |> Option.map p13
-                                |> Option.defaultValue []
-                                |> List.append (fields patternContext uci)
-
-                            Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName list, r.DisplayEnv, r.Range)
-                        | _ -> None)
-                    |> Option.orElse declaredItems
+                match patternContext with
+                | PatternContext.UnionCaseFieldIdentifier (referencedFields, caseIdRange) ->
+                    GetUnionCaseFields caseIdRange referencedFields
+                    |> Option.map (fun completions ->
+                        let (nenv, _ad), m = GetBestEnvForPos pos
+                        completions, nenv.DisplayEnv, m)
+                | PatternContext.PositionalUnionCaseField (fieldIndex, isTheOnlyField, caseIdRange) ->
+                    getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                    |> GetCompletionsForUnionCaseField pos (Choice1Of2 fieldIndex) caseIdRange isTheOnlyField
+                | PatternContext.NamedUnionCaseField (fieldName, caseIdRange) ->
+                    getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                    |> GetCompletionsForUnionCaseField pos (Choice2Of2 fieldName) caseIdRange false
+                | PatternContext.RecordFieldIdentifier referencedFields ->
+                    getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                    |> GetCompletionsForRecordField pos referencedFields
+                | PatternContext.Other ->
+                    getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                    |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
             | Some (CompletionContext.MethodOverride enclosingTypeNameRange) -> GetOverridableMethods pos enclosingTypeNameRange
 
@@ -2455,21 +2442,16 @@ module internal ParseAndCheckFile =
         let fileInfo = sourceText.GetLastCharacterPosition()
 
         let collectOne severity diagnostic =
-            for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(
-                    options,
-                    false,
-                    mainInputFileName,
-                    fileInfo,
-                    diagnostic,
-                    severity,
-                    suggestNamesForErrors,
-                    flatErrors
-                ) do
-                diagnosticsCollector.Add diagnostic
+            // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
+            // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
+            //    the formatting of types in it may change (for example, 'a to obj)
+            //
+            // So we'll create a diagnostic later, but cache the FormatCore message now
+            diagnostic.Exception.Data[ "CachedFormatCore" ] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnosticsCollector.Add(struct (diagnostic, severity))
 
-                if severity = FSharpDiagnosticSeverity.Error then
-                    errorCount <- errorCount + 1
+            if severity = FSharpDiagnosticSeverity.Error then
+                errorCount <- errorCount + 1
 
         // This function gets called whenever an error happens during parsing or checking
         let diagnosticSink severity (diagnostic: PhasedDiagnostic) =
@@ -2508,14 +2490,29 @@ module internal ParseAndCheckFile =
         // Public members
         member _.DiagnosticsLogger = diagnosticsLogger
 
-        member _.CollectedDiagnostics = diagnosticsCollector.ToArray()
-
         member _.ErrorCount = errorCount
 
         member _.DiagnosticOptions
             with set opts = options <- opts
 
         member _.AnyErrors = errorCount > 0
+
+        member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
+            [|
+                for struct (diagnostic, severity) in diagnosticsCollector do
+                    yield!
+                        DiagnosticHelpers.ReportDiagnostic(
+                            options,
+                            false,
+                            mainInputFileName,
+                            fileInfo,
+                            diagnostic,
+                            severity,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            symbolEnv
+                        )
+            |]
 
     let getLightSyntaxStatus fileName options =
         let indentationAwareSyntaxOnByDefault =
@@ -2726,7 +2723,7 @@ module internal ParseAndCheckFile =
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
-        errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
+        errHandler.CollectedDiagnostics(None), parseResult, errHandler.AnyErrors
 
     let ApplyLoadClosure
         (
@@ -2928,28 +2925,29 @@ module internal ParseAndCheckFile =
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
 
-            let errors = errHandler.CollectedDiagnostics
+            let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
+
+            let symbolEnv = SymbolEnv(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports)
+            let errors = errHandler.CollectedDiagnostics(Some symbolEnv)
 
             let res =
-                match resOpt with
-                | (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState ->
-                    TypeCheckInfo(
-                        tcConfig,
-                        tcGlobals,
-                        List.head ccuSigsForFiles,
-                        tcState.Ccu,
-                        tcImports,
-                        tcEnvAtEnd.AccessRights,
-                        projectFileName,
-                        mainInputFileName,
-                        projectOptions,
-                        sink.GetResolutions(),
-                        sink.GetSymbolUses(),
-                        tcEnvAtEnd.NameEnv,
-                        loadClosure,
-                        List.tryHead implFiles,
-                        sink.GetOpenDeclarations()
-                    )
+                TypeCheckInfo(
+                    tcConfig,
+                    tcGlobals,
+                    List.head ccuSigsForFiles,
+                    tcState.Ccu,
+                    tcImports,
+                    tcEnvAtEnd.AccessRights,
+                    projectFileName,
+                    mainInputFileName,
+                    projectOptions,
+                    sink.GetResolutions(),
+                    sink.GetSymbolUses(),
+                    tcEnvAtEnd.NameEnv,
+                    loadClosure,
+                    List.tryHead implFiles,
+                    sink.GetOpenDeclarations()
+                )
 
             return errors, res
         }

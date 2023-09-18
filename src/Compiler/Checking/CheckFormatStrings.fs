@@ -187,7 +187,7 @@ module internal Parse =
             if p = None then None, fmtPos else p, pos'
         | _ -> None, fmtPos
 
-    // Explicitly typed holes in interpolated strings "....%d{x}..." get additional '%P()' as a hole place marker
+    // Explicitly typed expression gaps in interpolated strings "....%d{x}..." get additional '%P()' as an expression gap place marker
     let skipPossibleInterpolationHole isInterpolated isFormattableString (fmt: string) i =
         let len = fmt.Length
         if isInterpolated then

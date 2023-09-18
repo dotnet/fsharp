@@ -17,4 +17,6 @@ neg71.fsx(128,5,128,81): parse info FS3520: XML comment is not placed on a valid
 
 neg71.fsx(168,1,168,28): typecheck error FS0960: 'let' and 'do' bindings must come before member and interface definitions in type definitions
 
-neg71.fsx(168,9,168,18): typecheck error FS0039: The value or constructor 'Simulator' is not defined.
+neg71.fsx(104,14,104,14): typecheck error FS0887: The type ''a' is not an interface type
+
+neg71.fsx(104,14,104,14): typecheck error FS0909: All implemented interfaces should be declared on the initial declaration of the type
