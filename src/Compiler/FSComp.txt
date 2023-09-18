@@ -1491,7 +1491,6 @@ notAFunctionButMaybeIndexerWithName2,"This value is not a function and cannot be
 notAFunctionButMaybeIndexer2,"This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?"
 3217,notAFunctionButMaybeIndexerErrorCode,""
 notAFunctionButMaybeDeclaration,"This value is not a function and cannot be applied. Did you forget to terminate a declaration?"
-3218,ArgumentsInSigAndImplMismatch,"The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling."
 3219,pickleUnexpectedNonZero,"An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct."
 3220,tcTupleMemberNotNormallyUsed,"This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead."
 3221,implicitlyDiscardedInSequenceExpression,"This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'."

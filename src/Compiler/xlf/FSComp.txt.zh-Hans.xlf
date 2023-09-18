@@ -8292,11 +8292,6 @@
         <target state="translated">此值不是一个函数，无法应用。您是否忘记结束某个声明?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">读取程序集“{0}”的 F# 元数据时出错。使用了保留的构造。可能需要升级 F# 编译器或使用不用特定构造的较早版本的程序集。</target>

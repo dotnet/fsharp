@@ -8292,11 +8292,6 @@
         <target state="translated">この値は関数ではないため、適用できません。宣言を終結しましたか?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">シグネチャ '{0}' と実装 '{1}' の引数の名前が一致しません。シグネチャ ファイルの引数の名前が使用されます。デバッグまたはプロファイルするときに問題が生じる原因となる可能性があります。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">アセンブリ '{0}' の F# メタデータ の読み取り中にエラーが発生しました。予約済みのコンストラクトが使用されました。F# コンパイラをアップグレードするか、特定のコンストラクトを使用しない以前のバージョンのアセンブリを使用しなければならない場合があります。</target>
