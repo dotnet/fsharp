@@ -987,11 +987,11 @@ type internal TypeCheckInfo
 
     /// Suggest name based on type
     let SuggestNameBasedOnType (g: TcGlobals) pos ty =
-        match ty with
+        match stripTyparEqns ty with
         | TType_app (tyconRef = tcref) when tcref.IsTypeAbbrev && (tcref.IsLocalRef || not (ccuEq g.fslibCcu tcref.nlr.Ccu)) ->
             // Respect user-defined aliases
             CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
-        | _ ->
+        | ty ->
             if isNumericType g ty then
                 CreateCompletionItemForSuggestedPatternName pos "num"
             else
@@ -1024,7 +1024,7 @@ type internal TypeCheckInfo
                     sResolutions.CapturedNameResolutions
                     |> ResizeArray.tryPick (fun r ->
                         match r.Item with
-                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqns vref.Type)
+                        | Item.Value vref when r.Pos = fieldPatternPos -> Some vref.Type
                         | _ -> None)
                     |> Option.defaultValue field.FormalType
                 else
