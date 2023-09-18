@@ -58,8 +58,7 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
                     match lexerSymbolOpt with
                     | None -> return ValueNone
                     | Some lexerSymbol ->
-                        let fcsTextLineNumber, textLine =
-                            MutableCodeFixHelper.getLineNumberAndText sourceText adjustedPosition
+                        let! fcsTextLineNumber, textLine = context.GetLineNumberAndText adjustedPosition
 
                         let! _, checkFileResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof UseMutationWhenValueIsMutableCodeFixProvider)
