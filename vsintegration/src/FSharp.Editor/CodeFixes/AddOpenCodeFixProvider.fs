@@ -62,13 +62,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                     match moduleDeclLineNumberOpt with
                     // implicit top level module
-                    | None ->
-                        insertionLineNumber, $"{margin}open {ns}{br}{br}"
+                    | None -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
                     // explicit top level module
                     | Some number ->
                         // add back the skipped lines
                         let moduleDeclLineNumber = insertionLineNumber + number
-                        let moduleDeclLineText = sourceText.Lines[moduleDeclLineNumber].ToString().Trim()
+                        let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
 
                         if moduleDeclLineText.EndsWith "=" then
                             insertionLineNumber, $"{margin}open {ns}{br}{br}"
