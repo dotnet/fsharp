@@ -35,7 +35,11 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
 
                     let adjustedPosition =
                         let rec loop ch pos =
-                            if Char.IsWhiteSpace(ch) then
+                            if
+                                Char.IsWhiteSpace(ch)
+                                // edge case - end of file
+                                || pos = sourceText.Length - 1
+                            then
                                 pos
                             else
                                 loop sourceText[pos + 1] (pos + 1)
