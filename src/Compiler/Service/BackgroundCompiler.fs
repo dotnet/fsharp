@@ -639,7 +639,8 @@ type internal BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -994,6 +995,10 @@ type internal BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let parseDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
                         diagnosticsOptions,
@@ -1001,7 +1006,8 @@ type internal BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -1013,7 +1019,8 @@ type internal BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1173,6 +1180,10 @@ type internal BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let tcDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
                         diagnosticsOptions,
@@ -1180,7 +1191,8 @@ type internal BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1359,7 +1371,8 @@ type internal BackgroundCompiler
                         isError,
                         range.Zero,
                         false,
-                        options.OtherOptions |> Array.contains "--flaterrors"
+                        options.OtherOptions |> Array.contains "--flaterrors",
+                        None
                     ))
 
             return options, (diags @ diagnostics.Diagnostics)

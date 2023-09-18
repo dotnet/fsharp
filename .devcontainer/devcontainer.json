@@ -4,9 +4,9 @@
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
-            // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0, 7.0
+            // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0, 7.0, 8.0, etc.
             // Append -bullseye(-slim), -focal, or -jammy to pin to an OS version.
-            "VARIANT": "8.0.100-preview.7-bookworm-slim-amd64"
+            "VARIANT": "8.0.100-rc.1-bookworm-slim-amd64"
         }
     },
     "hostRequirements": {

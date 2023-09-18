@@ -822,7 +822,7 @@ type internal TransparentCompiler
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors))
+                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1266,7 +1266,8 @@ type internal TransparentCompiler
                     file.FileName,
                     parseDiagnostics,
                     suggestNamesForErrors,
-                    bootstrapInfo.TcConfig.flatErrors
+                    bootstrapInfo.TcConfig.flatErrors,
+                    None
                 )
 
             let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -1336,7 +1337,8 @@ type internal TransparentCompiler
                             fileName,
                             tcDiagnostics,
                             suggestNamesForErrors,
-                            bootstrapInfo.TcConfig.flatErrors
+                            bootstrapInfo.TcConfig.flatErrors,
+                            None // TODO: Add SymbolEnv
                         )
 
                     let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1555,7 +1557,8 @@ type internal TransparentCompiler
                             fileName,
                             tcDiagnostics,
                             suggestNamesForErrors,
-                            bootstrapInfo.TcConfig.flatErrors
+                            bootstrapInfo.TcConfig.flatErrors,
+                            None
                         )
 
                     let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1648,10 +1651,10 @@ type internal TransparentCompiler
 
                 return
                     sinkOpt
-                    |> Option.bind (fun (sink, _) ->
+                    |> Option.bind (fun (sink, {TcGlobals = g}) ->
                         let sResolutions = sink.GetResolutions()
 
-                        let builder = ItemKeyStoreBuilder()
+                        let builder = ItemKeyStoreBuilder(g)
 
                         let preventDuplicates =
                             HashSet(
