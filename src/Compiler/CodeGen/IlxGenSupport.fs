@@ -129,8 +129,9 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
 
     let fieldName = bytePropertyName
     let fieldType = g.ilg.typ_ByteArray
-    let fieldDef =  g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, fieldType, None, ILMemberAccess.Public))           
-      
+
+    let fieldDef =
+        g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, fieldType, None, ILMemberAccess.Public))
 
     // Constructor taking an array
     let ilArrayCtorDef =
@@ -139,11 +140,33 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
                 Some g.ilg.typ_Attribute.TypeSpec,
                 ilTy,
                 [],
-                [(fieldName,fieldName,fieldType)],
+                [ (fieldName, fieldName, fieldType) ],
                 ILMemberAccess.Public,
                 None,
                 None
             )
+        )
+
+    let ilScalarCtorDef =
+        let scalarValueIlType = g.ilg.typ_Byte
+
+        g.AddMethodGeneratedAttributes(
+            let code =
+                [
+                    mkLdarg0
+                    mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType g.ilg.typ_Attribute.TypeSpec, [])) // Base class .ctor
+
+                    mkLdarg0 // Prepare 'this' to be on bottom of the stack
+                    mkLdcInt32 1
+                    I_newarr(ILArrayShape.SingleDimensional, scalarValueIlType) // new byte[1]
+                    mkLdcInt32 0
+                    mkLdarg 1us
+                    I_stelem DT_I1 // array[0] = argument from .ctor
+                    mkNormalStfld (mkILFieldSpecInTy (ilTy, fieldName, fieldType))
+                ]
+
+            let body = mkMethodBody (false, [], 8, nonBranchingInstrsToCode code, None, None)
+            mkILCtor (ILMemberAccess.Public, [ mkILParamNamed ("scalarByteValue", scalarValueIlType) ], body)
         )
 
     mkILGenericClass (
@@ -152,8 +175,8 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
         ILTypes.Empty,
-        mkILMethods ([ilArrayCtorDef]),
-        mkILFields [fieldDef],
+        mkILMethods ([ ilArrayCtorDef; ilScalarCtorDef ]),
+        mkILFields [ fieldDef ],
         emptyILTypeDefs,
         emptyILProperties,
         emptyILEvents,
@@ -264,10 +287,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
 let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo list) =
     let tref = g.attrib_NullableAttribute.TypeRef
 
-    g.TryEmbedILType(
-        tref,
-        (fun () ->mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g, tref.Name, "NullableFlags"))
-    )
+    g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g, tref.Name, "NullableFlags")))
 
     let byteValue ni =
         match ni with
@@ -277,7 +297,9 @@ let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo l
 
     let bytes = nullnessInfos |> List.map (fun ni -> byteValue ni |> ILAttribElem.Byte)
 
-    mkILCustomAttribute (tref, [ g.ilg.typ_ByteArray ], [ ILAttribElem.Array(g.ilg.typ_Byte, bytes) ], [])
+    match bytes with
+    | [ singleByte ] -> mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ singleByte ], [])
+    | listOfBytes -> mkILCustomAttribute (tref, [ g.ilg.typ_ByteArray ], [ ILAttribElem.Array(g.ilg.typ_Byte, listOfBytes) ], [])
 
 let GenReadOnlyIfNecessary g ty =
     if isInByrefTy g ty then
