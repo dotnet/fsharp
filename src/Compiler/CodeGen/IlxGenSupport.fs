@@ -8,7 +8,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTree 
+open FSharp.Compiler.TypedTree
 
 /// Make a method that simply loads a field
 let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
@@ -243,7 +243,7 @@ let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo l
 
     mkILCustomAttribute (tref, [ g.ilg.typ_ByteArray ], [ ILAttribElem.Array(g.ilg.typ_Byte, bytes) ], [])
 
-let GenReadOnlyIfNecessary g ty = 
+let GenReadOnlyIfNecessary g ty =
     if isInByrefTy g ty then
         let attr = GetReadOnlyAttribute g
         Some attr
@@ -263,63 +263,73 @@ Array: the nullability (0, 1, or 2), followed by the representation of the eleme
 Tuple: the representation of the underlying constructed type
 Type parameter reference: the nullability (0, 1, or 2, with 0 for unconstrained type parameter)
 *)
-let rec GetNullnessFromTType (g: TcGlobals) ty = 
-    match ty |> stripTyEqns g with        
-    | TType_app (tcref, tinst, nullness) -> 
+let rec GetNullnessFromTType (g: TcGlobals) ty =
+    match ty |> stripTyEqns g with
+    | TType_app (tcref, tinst, nullness) ->
         let isValueType = tcref.IsStructOrEnumTycon
         let isNonGeneric = tinst.IsEmpty
+
         if isNonGeneric && isValueType then
-        // Non-generic value type: skipped
+            // Non-generic value type: skipped
             []
         else
-            [ if tyconRefEq g g.system_Nullable_tcref tcref then
-                // Nullable value type: the representation of the type argument only
-                ()
-              else if isValueType then
-                // Generic value type: 0, followed by the representation of the type arguments in order including containing types
-                yield NullnessInfo.AmbivalentToNull               
-              else 
-               // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types
-                yield nullness.Evaluate()
+            [
+                if tyconRefEq g g.system_Nullable_tcref tcref then
+                    // Nullable value type: the representation of the type argument only
+                    ()
+                else if isValueType then
+                    // Generic value type: 0, followed by the representation of the type arguments in order including containing types
+                    yield NullnessInfo.AmbivalentToNull
+                else
+                    // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types
+                    yield nullness.Evaluate()
 
-              for tt in tinst do
-                yield! GetNullnessFromTType g tt ]
+                for tt in tinst do
+                    yield! GetNullnessFromTType g tt
+            ]
 
-    | TType_fun (domainTy, retTy, nullness) -> 
+    | TType_fun (domainTy, retTy, nullness) ->
         // FsharpFunc<DomainType,ReturnType>
-        [ yield nullness.Evaluate()
-          yield! GetNullnessFromTType g domainTy
-          yield! GetNullnessFromTType g retTy]
+        [
+            yield nullness.Evaluate()
+            yield! GetNullnessFromTType g domainTy
+            yield! GetNullnessFromTType g retTy
+        ]
 
-    | TType_tuple (tupInfo,elementTypes) -> 
-    // Tuple: the representation of the underlying constructed type
-        [ if evalTupInfoIsStruct tupInfo then 
-            yield NullnessInfo.AmbivalentToNull 
-          else 
-            yield NullnessInfo.WithoutNull
-          for t in elementTypes do
-            yield! GetNullnessFromTType g t]
+    | TType_tuple (tupInfo, elementTypes) ->
+        // Tuple: the representation of the underlying constructed type
+        [
+            if evalTupInfoIsStruct tupInfo then
+                yield NullnessInfo.AmbivalentToNull
+            else
+                yield NullnessInfo.WithoutNull
+            for t in elementTypes do
+                yield! GetNullnessFromTType g t
+        ]
 
-    | TType_anon (anonInfo,tys) -> 
-        [ if evalAnonInfoIsStruct anonInfo then 
-            yield NullnessInfo.AmbivalentToNull 
-          else 
-            yield NullnessInfo.WithoutNull
-          for t in tys do
-            yield! GetNullnessFromTType g t]
+    | TType_anon (anonInfo, tys) ->
+        [
+            if evalAnonInfoIsStruct anonInfo then
+                yield NullnessInfo.AmbivalentToNull
+            else
+                yield NullnessInfo.WithoutNull
+            for t in tys do
+                yield! GetNullnessFromTType g t
+        ]
     | TType_forall _
     | TType_ucase _
     | TType_var _
     | TType_measure _ -> []
 
-let GenNullnessIfNecessary (g: TcGlobals) ty = 
+let GenNullnessIfNecessary (g: TcGlobals) ty =
     if g.langFeatureNullness && g.checkNullness then
         let nullnessList = GetNullnessFromTType g ty
+
         match nullnessList with
         // Optimizations as done in C# :: If the byte[] is empty, the NullableAttribute is omitted.
-        | [] -> None 
+        | [] -> None
         // Optimizations as done in C# :: If all values in the byte[] are the same, the NullableAttribute is constructed with that single byte value.
-        | head :: tail when tail |> List.forall ((=) head) -> GetNullableAttribute g [head] |> Some
+        | head :: tail when tail |> List.forall ((=) head) -> GetNullableAttribute g [ head ] |> Some
         | nonUniformList -> GetNullableAttribute g nonUniformList |> Some
     else
         None

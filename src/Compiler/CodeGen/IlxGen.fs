@@ -5624,7 +5624,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
             match notNullReferenceTypeConstraint with
-            | Some nullness -> yield GetNullableAttribute g [nullness]
+            | Some nullness -> yield GetNullableAttribute g [ nullness ]
             | None -> ()
         ]
 
@@ -5720,7 +5720,6 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
         match GenAdditionalAttributesForTy cenv.g ty with
         | [] -> ilRet
         | attrs -> ilRet.WithCustomAttrs(mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ attrs))
-        
 
 and instSlotParam inst (TSlotParam (nm, ty, inFlag, fl2, fl3, attrs)) =
     TSlotParam(nm, instType inst ty, inFlag, fl2, fl3, attrs)
