@@ -55,21 +55,27 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                 // attribute, shouldn't be here
                 | line when line.StartsWith "[<" && line.EndsWith ">]" ->
-                    let moduleDeclLineNumber =
+                    let moduleDeclLineNumberOpt =
                         sourceText.Lines
                         |> Seq.skip insertionLineNumber
-                        |> Seq.findIndex (fun line -> line.ToString().Contains "module")
-                        // add back the skipped lines
-                        |> fun i -> insertionLineNumber + i
+                        |> Seq.tryFindIndex (fun line -> line.ToString().Contains "module")
 
-                    let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
-
-                    if moduleDeclLineText.EndsWith "=" then
+                    match moduleDeclLineNumberOpt with
+                    // implicit top level module
+                    | None ->
                         insertionLineNumber, $"{margin}open {ns}{br}{br}"
-                    else
-                        moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
+                    // explicit top level module
+                    | Some number ->
+                        // add back the skipped lines
+                        let moduleDeclLineNumber = insertionLineNumber + number
+                        let moduleDeclLineText = sourceText.Lines[moduleDeclLineNumber].ToString().Trim()
 
-                // something else, shot in the dark
+                        if moduleDeclLineText.EndsWith "=" then
+                            insertionLineNumber, $"{margin}open {ns}{br}{br}"
+                        else
+                            moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
+
+                // implicit top level module
                 | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
 
             | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
