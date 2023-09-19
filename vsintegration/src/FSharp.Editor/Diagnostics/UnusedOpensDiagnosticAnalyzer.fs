@@ -19,7 +19,7 @@ open CancellableTasks
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
-    static member GetUnusedOpenRanges(document: Document) : CancellableTask<ValueOption<range list>> =
+    static member GetUnusedOpenRanges(document: Document) =
         cancellableTask {
             if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled
             then return ValueNone
@@ -48,14 +48,11 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                     let! unusedOpens = 
                         UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
 
-                    let test = 
+                    return
                         unusedOpens
-                        |> ValueOption.map (
-                           List.map (fun range ->
-                              Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath))))
-                        |> ValueOption.map (Seq.toImmutableArray)
-                        |> ValueOption.defaultValue ImmutableArray.Empty
-
-                    return test
+                        |> ValueOption.defaultValue List.Empty
+                        |> List.map (fun range ->
+                            Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
+                        |> Seq.toImmutableArray
                 }
                 |> CancellableTask.start cancellationToken
