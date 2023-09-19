@@ -44,10 +44,6 @@ let multiArgumentTest (x:string) (y:string | null) = 42
         |> verifyIL ["""
 .method public static string  nonNullableInputOutputFunc(string x) cil managed
 {
-.param [0]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-.param [1]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     
 .maxstack  8
 IL_0000:  ldarg.0
@@ -101,8 +97,6 @@ IL_0001:  ret
 {
 .param [0]
 .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 01 01 02 00 00 ) 
-.param [1]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
 .param [2]
 .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
@@ -137,8 +131,6 @@ IL_0001:  ret
                                             string y) cil managed
 {
 .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-.param [1]
-.custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
 .param [2]
 .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     

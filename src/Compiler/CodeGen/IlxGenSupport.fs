@@ -73,8 +73,8 @@ type AttrDataGenerationStyle =
 
 let getFieldMemberAccess =
     function
-    | PublicFields -> ILMemberAccess.Private
-    | EncapsulatedProperties -> ILMemberAccess.Public
+    | PublicFields -> ILMemberAccess.Public
+    | EncapsulatedProperties -> ILMemberAccess.Private
 
 let mkLocalPrivateAttributeWithPropertyConstructors
     (
@@ -323,8 +323,8 @@ let GetNullableContextAttribute (g: TcGlobals) =
     g.TryEmbedILType(
         tref,
         (fun () ->
-            let properties = Some [ "Flag", g.ilg.typ_Byte ]
-            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties, PublicFields))
+            let fields = Some [ "Flag", g.ilg.typ_Byte ]
+            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, fields, PublicFields))
     )
 
     mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte 1uy ], [])
