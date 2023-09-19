@@ -212,9 +212,9 @@ module Test
 open System
 
 let test () =
-let span = Span<obj>.Empty
-for i in 0 .. span.Length-1 do
-    Console.WriteLine(span.[i])
+    let span = Span<obj>.Empty
+    for i in 0 .. span.Length-1 do
+        Console.WriteLine(span.[i])
         """
 
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -263,9 +263,9 @@ module Test
 open System
 
 let test () =
-let span = ReadOnlySpan<obj>.Empty
-for i in 0 .. span.Length-1 do
-Console.WriteLine(span.[i])
+    let span = ReadOnlySpan<obj>.Empty
+    for i in 0 .. span.Length-1 do
+        Console.WriteLine(span.[i])
     """
 
         CompilerAssert.CompileLibraryAndVerifyIL(
