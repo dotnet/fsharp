@@ -82,10 +82,7 @@ module internal CodeFixHelpers =
                     reportCodeFixTelemetry context.Diagnostics context.Document codeFix.Name [||]
                     return doc
                 }
-                |> CancellableTask.start cancellationToken),
-            // Equivalence key - should be unique!
-            // Otherwise VS will only show the first registered code fix.
-            codeFix.Message
+                |> CancellableTask.start cancellationToken)
         )
 
 [<AutoOpen>]
