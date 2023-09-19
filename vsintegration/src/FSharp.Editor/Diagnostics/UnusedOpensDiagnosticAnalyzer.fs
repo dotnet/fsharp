@@ -19,10 +19,10 @@ open CancellableTasks
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
-    static member GetUnusedOpenRanges(document: Document) : CancellableTask<Option<range list>> =
+    static member GetUnusedOpenRanges(document: Document) : CancellableTask<ValueOption<range list>> =
         cancellableTask {
             if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled
-            then return None
+            then return ValueNone
             else
                 let! ct = CancellableTask.getCancellationToken()
                 let! sourceText = document.GetTextAsync ct
@@ -33,7 +33,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                 let! unusedOpens =
                     UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
 
-                return (Some unusedOpens)
+                return (ValueSome unusedOpens)
         }
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
@@ -42,20 +42,20 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
                 Tasks.Task.FromResult(ImmutableArray.Empty)
             else
-
-                asyncMaybe {
+                cancellableTask {
                     do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! sourceText = document.GetTextAsync()
                     let! unusedOpens = 
-                        UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
-                        |> CancellableTask.start cancellationToken
-                        |> Async.AwaitTask
+                        UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
 
-                    return
+                    let test = 
                         unusedOpens
-                        |> List.map (fun range ->
-                            Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
-                        |> Seq.toImmutableArray
+                        |> ValueOption.map (
+                           List.map (fun range ->
+                              Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath))))
+                        |> ValueOption.map (Seq.toImmutableArray)
+                        |> ValueOption.defaultValue ImmutableArray.Empty
+
+                    return test
                 }
-                |> Async.map (Option.defaultValue ImmutableArray.Empty)
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                |> CancellableTask.start cancellationToken

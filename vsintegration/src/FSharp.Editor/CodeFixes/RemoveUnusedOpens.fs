@@ -35,7 +35,6 @@ type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
 
                 return
                     unusedOpensOpt
-                    |> ValueOption.ofOption
                     |> ValueOption.map (
                         List.map (fun m ->
                             let span = sourceText.Lines[Line.toZ m.StartLine].SpanIncludingLineBreak
