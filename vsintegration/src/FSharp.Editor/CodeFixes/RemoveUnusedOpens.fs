@@ -3,12 +3,13 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading.Tasks
 open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+
+open FSharp.Compiler.Text
 
 open CancellableTasks
 
@@ -30,14 +31,19 @@ type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
             cancellableTask {
                 let! sourceText = context.GetSourceTextAsync()
 
-                let span =
-                    sourceText.Lines.GetLineFromPosition(context.Span.Start).SpanIncludingLineBreak
+                let! unusedOpensOpt = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges context.Document
 
                 return
-                    ValueSome
+                    unusedOpensOpt
+                    |> ValueOption.map (
+                        List.map (fun m ->
+                            let span = sourceText.Lines[Line.toZ m.StartLine].SpanIncludingLineBreak
+                            TextChange(span, ""))
+                    )
+                    |> ValueOption.map (fun changes ->
                         {
                             Name = CodeFix.RemoveUnusedOpens
                             Message = title
-                            Changes = [ TextChange(span, "") ]
-                        }
+                            Changes = changes
+                        })
             }
