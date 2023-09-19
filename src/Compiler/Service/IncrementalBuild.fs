@@ -1069,7 +1069,7 @@ type IncrementalBuilderState with
                         HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
-                        Notified = false
+                        Notified = true
                         SyntaxTree = syntaxTree
                         BoundModel = model
                     }

@@ -53,6 +53,7 @@
     <Compile Include="CodeFixes\AddNewKeywordToDisposableConstructorInvocationTests.fs" />
     <Compile Include="CodeFixes\RemoveUnusedBindingTests.fs" />
     <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoDataTests.fs" />
+    <Compile Include="CodeFixes\FixIndexerAccessLegacyTests.fs" />
     <Compile Include="CodeFixes\FixIndexerAccessTests.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValueTests.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValueTests.fs" />
