@@ -67,7 +67,22 @@ let mkILNonGenericInstanceProperty (name, ilType, propertyAttribute, customAttri
         customAttrs = customAttributes
     )
 
-let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string, attrProperties: (string * ILType) list option) =
+type AttrDataGenerationStyle =
+    | PublicFields
+    | EncapsulatedProperties
+
+let getFieldMemberAccess =
+    function
+    | PublicFields -> ILMemberAccess.Private
+    | EncapsulatedProperties -> ILMemberAccess.Public
+
+let mkLocalPrivateAttributeWithPropertyConstructors
+    (
+        g: TcGlobals,
+        name: string,
+        attrProperties: (string * ILType) list option,
+        codegenStyle: AttrDataGenerationStyle
+    ) =
     let ilTypeRef = mkILTyRef (ILScopeRef.Local, name)
     let ilTy = mkILFormalNamedTy ILBoxity.AsObject ilTypeRef []
 
@@ -75,21 +90,34 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         attrProperties
         |> Option.defaultValue []
         |> List.map (fun (name, ilType) ->
-            let fieldName = name + "@"
+            match codegenStyle with
+            | PublicFields ->
+                (g.AddFieldGeneratedAttributes(mkILInstanceField (name, ilType, None, getFieldMemberAccess codegenStyle))),
+                [],
+                [],
+                (name, name, ilType)
+            | EncapsulatedProperties ->
+                let fieldName = name + "@"
 
-            (g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, ILMemberAccess.Private))),
-            (g.AddMethodGeneratedAttributes(mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, []))),
-            (g.AddPropertyGeneratedAttributes(
-                mkILNonGenericInstanceProperty (
-                    name,
-                    ilType,
-                    PropertyAttributes.None,
-                    emptyILCustomAttrs,
-                    Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + name, 0, [], ilType)),
-                    None
-                )
-            )),
-            (name, fieldName, ilType))
+                (g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, getFieldMemberAccess codegenStyle))),
+                [
+                    g.AddMethodGeneratedAttributes(
+                        mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
+                    )
+                ],
+                [
+                    g.AddPropertyGeneratedAttributes(
+                        mkILNonGenericInstanceProperty (
+                            name,
+                            ilType,
+                            PropertyAttributes.None,
+                            emptyILCustomAttrs,
+                            Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + name, 0, [], ilType)),
+                            None
+                        )
+                    )
+                ],
+                (name, fieldName, ilType))
 
     // Generate constructor with required arguments
     let ilCtorDef =
@@ -113,11 +141,11 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         ILTypes.Empty,
         mkILMethods (
             ilCtorDef
-            :: (ilElements |> List.fold (fun acc (_, getter, _, _) -> getter :: acc) [])
+            :: (ilElements |> List.fold (fun acc (_, getter, _, _) -> getter @ acc) [])
         ),
         mkILFields (ilElements |> List.map (fun (field, _, _, _) -> field)),
         emptyILTypeDefs,
-        mkILProperties (ilElements |> List.map (fun (_, _, property, _) -> property)),
+        mkILProperties (ilElements |> List.collect (fun (_, _, props, _) -> props)),
         emptyILEvents,
         emptyILCustomAttrs,
         ILTypeInit.BeforeField
@@ -159,6 +187,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
                     mkLdarg0 // Prepare 'this' to be on bottom of the stack
                     mkLdcInt32 1
                     I_newarr(ILArrayShape.SingleDimensional, scalarValueIlType) // new byte[1]
+                    AI_dup // Duplicate the array pointer in stack, 1 for stelem and 1 for stfld
                     mkLdcInt32 0
                     mkLdarg 1us
                     I_stelem DT_I1 // array[0] = argument from .ctor
@@ -271,7 +300,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
             let properties =
                 Some [ "MemberType", GetDynamicallyAccessedMemberTypes g; "Type", g.ilg.typ_Type ]
 
-            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
+            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties, EncapsulatedProperties))
     )
 
     let typIlMemberTypes =
@@ -283,6 +312,22 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
         [ ILAttribElem.Int32 memberTypes; ILAttribElem.TypeRef(Some ilType.TypeRef) ],
         []
     )
+
+/// Generates NullableContextAttribute[1], which has the meaning of:
+/// Nested items not being annotated with Nullable attribute themselves are interpreted as being withoutnull
+/// Doing it that way is a heuristical decision supporting limited usage of (| null) annotations and not allowing nulls in >50% of F# code
+/// (if majority of fields/parameters/return values would be nullable, this heuristic would lead to bloat of generated metadata)
+let GetNullableContextAttribute (g: TcGlobals) =
+    let tref = g.attrib_NullableContextAttribute.TypeRef
+
+    g.TryEmbedILType(
+        tref,
+        (fun () ->
+            let properties = Some [ "Flag", g.ilg.typ_Byte ]
+            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties, PublicFields))
+    )
+
+    mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte 1uy ], [])
 
 let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo list) =
     let tref = g.attrib_NullableAttribute.TypeRef
@@ -388,7 +433,12 @@ let GenNullnessIfNecessary (g: TcGlobals) ty =
         // Optimizations as done in C# :: If the byte[] is empty, the NullableAttribute is omitted.
         | [] -> None
         // Optimizations as done in C# :: If all values in the byte[] are the same, the NullableAttribute is constructed with that single byte value.
-        | head :: tail when tail |> List.forall ((=) head) -> GetNullableAttribute g [ head ] |> Some
+        | head :: tail when tail |> List.forall ((=) head) ->
+            match head with
+            // For F# code, each type has an automatically generated NullableContextAttribute(1)
+            // That means an implicit (hidden, not generated) Nullable(1) attribute
+            | NullnessInfo.WithoutNull -> None
+            | _ -> GetNullableAttribute g [ head ] |> Some
         | nonUniformList -> GetNullableAttribute g nonUniformList |> Some
     else
         None

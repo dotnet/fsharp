@@ -1868,13 +1868,22 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
     let gnested = TypeDefsBuilder()
 
-    member _.Close() =
+    member _.Close(g: TcGlobals) =
+        let needsNullableContext = (gmethods.Count + gfields.Count + gproperties.Count) > 0
+
+        let attrs =
+            if needsNullableContext && g.checkNullness && g.langFeatureNullness then
+                mkILCustomAttrsFromArray (Array.append (tdef.CustomAttrs.AsArray()) [| GetNullableContextAttribute g |])
+            else
+                tdef.CustomAttrs
+
         tdef.With(
             methods = mkILMethods (ResizeArray.toList gmethods),
             fields = mkILFields (ResizeArray.toList gfields),
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
             events = mkILEvents (ResizeArray.toList gevents),
-            nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close())
+            nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
+            customAttrs = attrs
         )
 
     member _.AddEventDef edef = gevents.Add edef
@@ -1922,14 +1931,14 @@ and TypeDefsBuilder() =
     let mutable countDown = System.Int32.MaxValue
     let mutable countUp = -1
 
-    member b.Close() =
+    member b.Close(g: TcGlobals) =
         //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
         // Ideally it shouldn't matter which order we use.
         // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
 
         [
             for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
-                let tdef = b.Close()
+                let tdef = b.Close(g)
                 // Skip the <PrivateImplementationDetails$> type if it is empty
                 if
                     not eliminateIfEmpty
@@ -2359,7 +2368,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             |> List.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
             |> List.map snd
 
-        gtdefs.Close(), orderedReflectedDefinitions
+        gtdefs.Close(g), orderedReflectedDefinitions
 
     member _.cenv = cenv
 
@@ -10330,6 +10339,8 @@ and GenWitnessParams cenv eenv m (witnessInfos: TraitWitnessInfos) =
         let nm = String.uncapitalize witnessInfo.MemberName
         let nm = if used.Contains nm then nm + string i else nm
 
+        let attribs = GenAdditionalAttributesForTy cenv.g ty
+
         let ilParam: ILParameter =
             {
                 Name = Some nm
@@ -10339,7 +10350,7 @@ and GenWitnessParams cenv eenv m (witnessInfos: TraitWitnessInfos) =
                 IsIn = false
                 IsOut = false
                 IsOptional = false
-                CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [])
+                CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attribs)
                 MetadataIndex = NoMetadataIdx
             }
 

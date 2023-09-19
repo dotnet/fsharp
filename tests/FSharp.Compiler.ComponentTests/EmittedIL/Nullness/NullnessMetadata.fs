@@ -8,7 +8,23 @@ open FSharp.Test.Compiler
 module NullnessMetadata =
 
     [<Fact>]
-    let ``Nullable attribute gets generated``() =    
+    let ``Nullable attribute gets generated for module level values``() =  
+        FSharp """
+module MyTestModule
+
+let notNullStringField : string = ""
+let nullableStringField : string | null = null
+let nullableNestedList : list<list<string | null> | null> | null = null
+let nullableInt : System.Nullable<int> = System.Nullable()
+let regularInt = 42"""
+        |> withLangVersionPreview
+        |> withOptions ["--checknulls"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [""" abc """]
+
+    [<Fact>]
+    let ``Nullable attribute gets generated for function parameters and return types``() =    
         FSharp """
 module MyTestModule
 
