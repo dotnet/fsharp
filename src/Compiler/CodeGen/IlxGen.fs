@@ -10836,7 +10836,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 literalValue = None,
                                 offset = ilFieldOffset,
                                 marshal = None,
-                                customAttrs = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs)
+                                customAttrs = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs @ GenAdditionalAttributesForTy g fspec.FormalType )
                             )
                                 .WithAccess(access)
                                 .WithStatic(isStatic)
