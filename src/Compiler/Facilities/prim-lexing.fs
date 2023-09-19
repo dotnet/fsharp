@@ -136,14 +136,9 @@ type StringText(str: string) =
                     line.Substring(range.StartColumn, length)
                 else
                     let firstLineContent = line.Substring(range.StartColumn)
+                    let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
 
-                    let capacity =
-                        [ (range.StartLine - 1) .. (range.EndLine - 1) ]
-                        |> List.sumBy (fun lineIdx -> (sourceText.GetLineString lineIdx).Length)
-
-                    let sb = System.Text.StringBuilder(capacity).AppendLine(firstLineContent)
-
-                    for lineNumber in [ range.StartLine .. range.EndLine - 2 ] do
+                    for lineNumber in range.StartLine .. range.EndLine - 2 do
                         sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
 
                     let lastLine = sourceText.GetLineString(range.EndLine - 1)
