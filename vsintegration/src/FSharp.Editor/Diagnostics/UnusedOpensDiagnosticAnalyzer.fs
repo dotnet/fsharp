@@ -21,17 +21,16 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static member GetUnusedOpenRanges(document: Document) =
         cancellableTask {
-            if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled
-            then return ValueNone
+            if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled then
+                return ValueNone
             else
-                let! ct = CancellableTask.getCancellationToken()
+                let! ct = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync ct
 
-                let! _, checkResults =
-                    document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
 
                 let! unusedOpens =
-                    UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
+                    UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[ Line.toZ lineNumber ].ToString()))
 
                 return (ValueSome unusedOpens)
         }
@@ -45,8 +44,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                 cancellableTask {
                     do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! sourceText = document.GetTextAsync()
-                    let! unusedOpens = 
-                        UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
+                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges document
 
                     return
                         unusedOpens
