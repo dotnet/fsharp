@@ -19,23 +19,21 @@ open CancellableTasks
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
 type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
 
-    static member GetUnusedOpenRanges(document: Document) : Async<Option<range list>> =
-        asyncMaybe {
-            do! Option.guard document.Project.IsFSharpCodeFixesUnusedOpensEnabled
-            let! ct = Async.CancellationToken |> liftAsync
-            let! sourceText = document.GetTextAsync(ct)
+    static member GetUnusedOpenRanges(document: Document) : CancellableTask<Option<range list>> =
+        cancellableTask {
+            if not document.Project.IsFSharpCodeFixesUnusedOpensEnabled
+            then return None
+            else
+                let! ct = CancellableTask.getCancellationToken()
+                let! sourceText = document.GetTextAsync ct
 
-            let! _, checkResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedOpensDiagnosticAnalyzer))
-                |> CancellableTask.start ct
-                |> Async.AwaitTask
-                |> liftAsync
+                let! _, checkResults =
+                    document.GetFSharpParseAndCheckResultsAsync(nameof UnusedOpensDiagnosticAnalyzer)
 
-            let! unusedOpens =
-                UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()))
-                |> liftAsync
+                let! unusedOpens =
+                    UnusedOpens.getUnusedOpens (checkResults, (fun lineNumber -> sourceText.Lines[Line.toZ lineNumber].ToString()))
 
-            return unusedOpens
+                return (Some unusedOpens)
         }
 
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
@@ -48,7 +46,10 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
                 asyncMaybe {
                     do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! sourceText = document.GetTextAsync()
-                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
+                    let! unusedOpens = 
+                        UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
+                        |> CancellableTask.start cancellationToken
+                        |> Async.AwaitTask
 
                     return
                         unusedOpens
