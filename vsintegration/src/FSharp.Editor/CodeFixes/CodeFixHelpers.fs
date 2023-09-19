@@ -83,7 +83,9 @@ module internal CodeFixHelpers =
                     return doc
                 }
                 |> CancellableTask.start cancellationToken),
-            codeFix.Name
+            // Equivalence key - should be unique!
+            // Otherwise VS will only show the first registered code fix.
+            codeFix.Message
         )
 
 [<AutoOpen>]
@@ -97,6 +99,16 @@ module internal CodeFixExtensions =
                     let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
                     ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
                 | ValueNone -> ()
+            }
+            |> CancellableTask.startAsTask ctx.CancellationToken
+
+        member ctx.RegisterFsharpFixes(codeFix: IFSharpMultiCodeFixProvider) =
+            cancellableTask {
+                let! codeFixes = codeFix.GetCodeFixesAsync ctx
+
+                for codeFix in codeFixes do
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
