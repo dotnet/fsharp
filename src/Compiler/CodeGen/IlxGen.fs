@@ -8356,7 +8356,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 propertyType = ilTy,
                 init = None,
                 args = [],
-                customAttrs = mkILCustomAttrs ilAttribs
+                customAttrs = mkILCustomAttrs (GenAdditionalAttributesForTy g vspec.Type @ ilAttribs)
             )
 
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
@@ -8453,6 +8453,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 vspec.Attribs
                 |> List.filter (fun (Attrib (_, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Property))
                 |> GenAttrs cenv eenv // property only gets attributes that target properties
+                |> List.append (GenAdditionalAttributesForTy g vspec.Type)
 
             let ilPropDef =
                 ILPropertyDef(

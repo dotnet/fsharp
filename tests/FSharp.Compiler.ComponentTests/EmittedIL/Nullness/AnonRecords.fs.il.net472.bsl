@@ -110,11 +110,13 @@
   } 
   .property string maybeString()
   {
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .get string MyTestModule::get_maybeString()
   } 
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>
           maybeListOfMaybeString()
   {
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> MyTestModule::get_maybeListOfMaybeString()
   } 

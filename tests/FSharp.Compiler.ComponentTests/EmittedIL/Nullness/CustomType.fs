@@ -7,6 +7,7 @@ type MyCustomType (x: MaybeString, y: string) =
 
     static let mutable uglyGlobalMutableString : string = ""
     static let mutable uglyGlobalMutableNullableString : MaybeString = null
+    static let dict = System.Collections.Generic.Dictionary<MaybeString,MaybeString>()
 
     member val Nullable = x
     member val NonNullable = y
@@ -18,3 +19,7 @@ type MyCustomType (x: MaybeString, y: string) =
     member this.UnitFunc() = ()
     member this.GetThis() = this
     member this.GetThisOrNull() : MaybeMyCustomType = null
+
+    member this.Item
+        with get (index) = dict.[index]
+        and set index value = dict.[index] <- value

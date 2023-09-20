@@ -5,6 +5,11 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern System.Collections
+{
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
+  .ver 7:0:0:0
+}
 .assembly assembly
 {
   .hash algorithm 0x00008004
@@ -29,11 +34,14 @@
   .class auto ansi serializable nested public Myassembly
          extends [runtime]System.Object
   {
+    .custom instance void [runtime]System.Reflection.DefaultMemberAttribute::.ctor(string) = ( 01 00 04 49 74 65 6D 00 00 )                      
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field static assembly string uglyGlobalMutableString
     .field static assembly string uglyGlobalMutableNullableString
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .field static assembly class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> dict
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
     .field assembly string Nullable@
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field assembly string NonNullable@
@@ -147,6 +155,57 @@
       IL_0001:  ret
     } 
 
+    .method public hidebysig specialname 
+            instance string  get_Item(string index) cil managed
+    {
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .param [1]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0007:  ldc.i4.4
+      IL_0008:  bge.s      IL_0011
+
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  br.s       IL_0011
+
+      IL_0011:  ldsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
+      IL_0016:  ldarg.1
+      IL_0017:  tail.
+      IL_0019:  callvirt   instance !1 class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::get_Item(!0)
+      IL_001e:  ret
+    } 
+
+    .method public hidebysig specialname 
+            instance void  set_Item(string index,
+                                    string 'value') cil managed
+    {
+      .param [1]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .param [2]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  volatile.
+      IL_0002:  ldsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0007:  ldc.i4.4
+      IL_0008:  bge.s      IL_0011
+
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  br.s       IL_0011
+
+      IL_0011:  ldsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
+      IL_0016:  ldarg.1
+      IL_0017:  ldarg.2
+      IL_0018:  tail.
+      IL_001a:  callvirt   instance void class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::set_Item(!0,
+                                                                                                                                    !1)
+      IL_001f:  ret
+    } 
+
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
@@ -171,6 +230,13 @@
     .property instance int32 JustSomeInt()
     {
       .get instance int32 MyTestModule/Myassembly::get_JustSomeInt()
+    } 
+    .property instance string Item(string)
+    {
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .set instance void MyTestModule/Myassembly::set_Item(string,
+                                                             string)
+      .get instance string MyTestModule/Myassembly::get_Item(string)
     } 
   } 
 
@@ -199,7 +265,12 @@
     IL_0018:  ldc.i4.3
     IL_0019:  volatile.
     IL_001b:  stsfld     int32 MyTestModule/Myassembly::init@6
-    IL_0020:  ret
+    IL_0020:  newobj     instance void class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::.ctor()
+    IL_0025:  stsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
+    IL_002a:  ldc.i4.4
+    IL_002b:  volatile.
+    IL_002d:  stsfld     int32 MyTestModule/Myassembly::init@6
+    IL_0032:  ret
   } 
 
 } 

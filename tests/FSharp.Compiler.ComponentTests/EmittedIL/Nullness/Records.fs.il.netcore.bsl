@@ -282,6 +282,7 @@
 
   .property string maybeString()
   {
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .get string MyTestModule::get_maybeString()
   } 
 } 
