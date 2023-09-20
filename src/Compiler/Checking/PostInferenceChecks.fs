@@ -2414,7 +2414,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter then
                 let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
                 let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
