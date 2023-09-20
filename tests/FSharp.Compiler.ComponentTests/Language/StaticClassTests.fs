@@ -694,7 +694,7 @@ type B() =
 type T =
     member _.Item with get i = 3
     member _.Item1 with set i value = ()
-    member _.Item2 with get i = 3 and set i value = ()
+    member _.Item2 with get i = 3 and set i (value: int) = ()
         """
          |> withLangVersion70
          |> compile
@@ -707,7 +707,7 @@ type T =
 type T =
     member _.Item with get i = 3
     member _.Item1 with set i value = ()
-    member _.Item2 with get i = 3 and set i value = ()
+    member _.Item2 with get i = 3 and set i (value: int) = ()
         """
          |> withLangVersionPreview
          |> compile
@@ -715,7 +715,7 @@ type T =
          |> withDiagnostics [
              (Warning 3554, Line 4, Col 5, Line 4, Col 33, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
-             (Warning 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 6, Col 5, Line 6, Col 62, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
          
     [<Fact>]
@@ -732,7 +732,7 @@ type T =
     val F : int
     val mutable G : int
     member _.H (i, j) = i + j
-    member _.Item with get i = 3 and set i value = ()
+    member _.Item with get i = 3 and set i (value: int) = ()
     override _.ToString () = "🙃"
     new () = { F = 3; G = 3 }
     new (x, y) = { F = x; G = y }
@@ -755,7 +755,7 @@ type T =
     val F : int
     val mutable G : int
     member _.H (i, j) = i + j
-    member _.Item with get i = 3 and set i value = ()
+    member _.Item with get i = 3 and set i (value: int) = ()
     override _.ToString () = "🙃"
     new () = { F = 3; G = 3 }
     new (x, y) = { F = x; G = y }
@@ -767,7 +767,7 @@ type T =
              (Warning 3554, Line 8, Col 5, Line 8, Col 26, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 9, Col 5, Line 9, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 12, Col 5, Line 12, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
-             (Warning 3554, Line 13, Col 5, Line 13, Col 54, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 13, Col 5, Line 13, Col 61, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 14, Col 5, Line 14, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3553, Line 15, Col 5, Line 15, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
              (Warning 3553, Line 16, Col 5, Line 16, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")

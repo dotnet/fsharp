@@ -597,7 +597,7 @@ type C =
     member x.InstanceMember    ( [<System.Runtime.InteropServices.Out >] p : int byref) = 0
     member x.InstanceP 
         with get (idx : int) = ()
-        and  set (idx : int) (v:int) = ()
+        and  set (idx : int) (v: unit) = ()
 
     [<Obsolete("obsolete")>]
     abstract VirtualMethod1 : p : int byref -> int
