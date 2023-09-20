@@ -269,7 +269,7 @@ module String =
 [<RequireQualifiedAccess>]
 module Option =
 
-    let guard (x: bool) : Option<unit> = if x then Some() else None
+    let guard (x: bool) : ValueOption<unit> = if x then ValueSome() else ValueNone
 
     let attempt (f: unit -> 'T) =
         try
