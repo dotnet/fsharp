@@ -293,6 +293,8 @@
 
   .method public static string  getVal(valuetype MyTestModule/Myassembly x) cil managed
   {
+    .param [0]
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  3
     .locals init (valuetype MyTestModule/Myassembly V_0,
@@ -302,11 +304,11 @@
     IL_0001:  stloc.0
     IL_0002:  ldloca.s   V_0
     IL_0004:  call       instance int32 MyTestModule/Myassembly::get_Tag()
-    IL_0009:  ldc.i4.1
+    IL_0009:  ldc.i4.2
     IL_000a:  bne.un.s   IL_0016
 
     IL_000c:  ldloca.s   V_0
-    IL_000e:  ldfld      string MyTestModule/Myassembly::_nonNullableString
+    IL_000e:  ldfld      string MyTestModule/Myassembly::_nullableString
     IL_0013:  stloc.1
     IL_0014:  ldloc.1
     IL_0015:  ret
