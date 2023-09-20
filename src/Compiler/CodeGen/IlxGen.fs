@@ -8432,6 +8432,8 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 else
                     GenAttrs cenv eenv vspec.Attribs // literals have no property, so preserve all the attributes on the field itself
 
+            let ilAttribs = GenAdditionalAttributesForTy g vspec.Type @ ilAttribs
+
             let ilFieldDef =
                 ilFieldDef.With(customAttrs = mkILCustomAttrs (ilAttribs @ [ g.DebuggerBrowsableNeverAttribute ]))
 

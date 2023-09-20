@@ -27,6 +27,10 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .field public static literal string nullableLiteral = ""
+  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public specialname static string 
           get_notNullStringField() cil managed
   {
@@ -54,7 +58,7 @@
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@5
+    IL_0000:  ldsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@6
     IL_0005:  ret
   } 
 
@@ -64,7 +68,7 @@
     
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  stsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@5
+    IL_0001:  stsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@6
     IL_0006:  ret
   } 
 
@@ -89,6 +93,18 @@
     .maxstack  8
     IL_0000:  ldc.i4.s   42
     IL_0002:  ret
+  } 
+
+  .method private specialname rtspecialname static 
+          void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$MyTestModule::init@
+    IL_000b:  pop
+    IL_000c:  ret
   } 
 
   .property string notNullStringField()
@@ -122,7 +138,8 @@
        extends [runtime]System.Object
 {
   .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-  .field static assembly string nullableMutableStringField@5
+  .field static assembly string nullableMutableStringField@6
+  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -134,7 +151,7 @@
     
     .maxstack  8
     IL_0000:  ldnull
-    IL_0001:  stsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@5
+    IL_0001:  stsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@6
     IL_0006:  ret
   } 
 
