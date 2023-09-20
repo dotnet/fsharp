@@ -1467,7 +1467,13 @@ let mkClassUnionDef
                         @ List.map (fun (_, _, _, _, fdef, _) -> fdef) altNullaryFields
                           @ td.Fields.AsList()
                     ),
-                properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps)
+                properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
+                customAttrs = 
+                    if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then 
+                        td.CustomAttrs.AsArray() 
+                        |> Array.append [|GetNullableAttribute g [FSharp.Compiler.TypedTree.NullnessInfo.WithNull]|]
+                        |> mkILCustomAttrsFromArray
+                    else td.CustomAttrs
             )
         // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
         |> addConstFieldInit

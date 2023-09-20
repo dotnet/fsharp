@@ -9,5 +9,5 @@ type MyStructDU =
 
 let getVal x = 
     match x with
-    | B text -> text
+    | C text -> text
     | _ -> failwith "fail"
