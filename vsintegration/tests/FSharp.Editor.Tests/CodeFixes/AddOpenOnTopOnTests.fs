@@ -153,7 +153,7 @@ module Module1 =
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0039 for missing opens - module has attributes`` () =
+let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
     let code =
         """
 [<AutoOpen>]
@@ -174,6 +174,33 @@ module Module1
 open System
 
 Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - implicit module has attributes`` () =
+    let code =
+        """
+[<Obsolete>]
+type MyType() =
+    let now = DateTime.Now
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """
+open System
+
+[<Obsolete>]
+type MyType() =
+    let now = DateTime.Now
 """
             }
 

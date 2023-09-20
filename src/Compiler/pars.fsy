@@ -5356,6 +5356,20 @@ recdExprCore:
             (None, l)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding()) }
 
+  | appExpr EQUALS recover
+     { match $1 with
+       | LongOrSingleIdent(false, (SynLongIdent _ as f), None, m) ->
+            let f = mkRecdField f
+            let mEquals = rhs parseState 2
+            let l = rebindRanges (f, Some mEquals, None) [] None
+            None, l
+       | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding ()) }
+
+  | appExpr
+    { let mExpr = rhs parseState 1
+      reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
+      Some($1, (mExpr.EndRange, None)), [] }
+
 /*
     handles cases when identifier can start from the underscore
 */
