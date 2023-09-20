@@ -25,7 +25,8 @@ module BraceCompletionSessionProviderHelpers =
     let inline tryGetCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
         ValueOption.ofNullable (session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor))
 
-    let inline tryGetCaretPosition (session: IBraceCompletionSession) =  tryGetCaretPoint session.SubjectBuffer session
+    let inline tryGetCaretPosition (session: IBraceCompletionSession) =
+        tryGetCaretPoint session.SubjectBuffer session
 
     let tryInsertAdditionalBracePair (session: IBraceCompletionSession) openingChar closingChar =
         let sourceCode = session.TextView.TextSnapshot
