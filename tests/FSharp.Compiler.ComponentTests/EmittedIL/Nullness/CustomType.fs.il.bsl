@@ -5,11 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 7:0:0:0
-}
 .assembly assembly
 {
   .hash algorithm 0x00008004
@@ -40,7 +35,7 @@
     .field static assembly string uglyGlobalMutableString
     .field static assembly string uglyGlobalMutableNullableString
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    .field static assembly class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> dict
+    .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> dict
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
     .field assembly string Nullable@
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -172,10 +167,10 @@
       IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_000f:  br.s       IL_0011
 
-      IL_0011:  ldsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
+      IL_0011:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
       IL_0016:  ldarg.1
       IL_0017:  tail.
-      IL_0019:  callvirt   instance !1 class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::get_Item(!0)
+      IL_0019:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string>::get_Item(!0)
       IL_001e:  ret
     } 
 
@@ -197,13 +192,21 @@
       IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_000f:  br.s       IL_0011
 
-      IL_0011:  ldsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
-      IL_0016:  ldarg.1
-      IL_0017:  ldarg.2
-      IL_0018:  tail.
-      IL_001a:  callvirt   instance void class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::set_Item(!0,
-                                                                                                                                    !1)
-      IL_001f:  ret
+      IL_0011:  volatile.
+      IL_0013:  ldsfld     int32 MyTestModule/Myassembly::init@6
+      IL_0018:  ldc.i4.4
+      IL_0019:  bge.s      IL_0022
+
+      IL_001b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_0020:  br.s       IL_0022
+
+      IL_0022:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
+      IL_0027:  ldarg.1
+      IL_0028:  ldarg.2
+      IL_0029:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!0,!1> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string>::Add(!0,
+                                                                                                                                                                                       !1)
+      IL_002e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
+      IL_0033:  ret
     } 
 
     .method private specialname rtspecialname static 
@@ -265,8 +268,8 @@
     IL_0018:  ldc.i4.3
     IL_0019:  volatile.
     IL_001b:  stsfld     int32 MyTestModule/Myassembly::init@6
-    IL_0020:  newobj     instance void class [System.Collections]System.Collections.Generic.Dictionary`2<string,string>::.ctor()
-    IL_0025:  stsfld     class [System.Collections]System.Collections.Generic.Dictionary`2<string,string> MyTestModule/Myassembly::dict
+    IL_0020:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::Empty<string,string>()
+    IL_0025:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> MyTestModule/Myassembly::dict
     IL_002a:  ldc.i4.4
     IL_002b:  volatile.
     IL_002d:  stsfld     int32 MyTestModule/Myassembly::init@6
