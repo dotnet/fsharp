@@ -3487,6 +3487,9 @@ let TryFindILAttributeOpt attr attrs =
     | Some (AttribInfo (atref, _)) -> HasILAttribute atref attrs
     | _ -> false
 
+let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
+    
+
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 //

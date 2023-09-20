@@ -52,6 +52,7 @@
     .class auto ansi serializable nested assembly beforefieldinit specialname _JustLabel
            extends MyTestModule/MyDu
     {
+      .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerTypeProxyAttribute::.ctor(class [runtime]System.Type) = ( 01 00 2B 4D 79 54 65 73 74 4D 6F 64 75 6C 65 2B   
                                                                                                                                         4D 79 44 75 2B 5F 4A 75 73 74 4C 61 62 65 6C 40   
                                                                                                                                         44 65 62 75 67 54 79 70 65 50 72 6F 78 79 00 00 ) 
@@ -77,6 +78,7 @@
     .class auto ansi serializable nested public beforefieldinit specialname JustInt
            extends MyTestModule/MyDu
     {
+      .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerTypeProxyAttribute::.ctor(class [runtime]System.Type) = ( 01 00 28 4D 79 54 65 73 74 4D 6F 64 75 6C 65 2B   
                                                                                                                                         4D 79 44 75 2B 4A 75 73 74 49 6E 74 40 44 65 62   
                                                                                                                                         75 67 54 79 70 65 50 72 6F 78 79 00 00 )          
@@ -130,6 +132,7 @@
     .class auto ansi serializable nested public beforefieldinit specialname MaybeString
            extends MyTestModule/MyDu
     {
+      .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerTypeProxyAttribute::.ctor(class [runtime]System.Type) = ( 01 00 2C 4D 79 54 65 73 74 4D 6F 64 75 6C 65 2B   
                                                                                                                                         4D 79 44 75 2B 4D 61 79 62 65 53 74 72 69 6E 67   
                                                                                                                                         40 44 65 62 75 67 54 79 70 65 50 72 6F 78 79 00   
@@ -163,6 +166,8 @@
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .param [0]
+        .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -393,6 +398,8 @@
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 
+      .param [1]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0

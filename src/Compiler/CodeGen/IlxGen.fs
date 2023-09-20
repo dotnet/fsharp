@@ -718,7 +718,7 @@ and GenUnionRef (cenv: cenv) m (tcref: TyconRef) =
                     |> Array.mapi (fun i cspec ->
                         {
                             altName = cspec.CompiledName
-                            altCustomAttrs = mkILCustomAttrs [ GetNullableContextAttribute g ]
+                            altCustomAttrs = emptyILCustomAttrs
                             altFields = GenUnionCaseRef cenv m tyenvinner i cspec.RecdFieldsArray
                         })
 
@@ -1864,19 +1864,20 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let gevents = ResizeArray<ILEventDef>(tdef.Events.AsList())
     let gnested = TypeDefsBuilder()
 
-    member _.Close(g: TcGlobals) =       
+    member _.Close(g: TcGlobals) =
 
         let attrs =
             if g.checkNullness && g.langFeatureNullness then
-                let attrsBefore = tdef.CustomAttrs 
+                let attrsBefore = tdef.CustomAttrs
+
                 [|
                     yield! attrsBefore.AsArray()
                     if attrsBefore |> TryFindILAttribute g.attrib_AllowNullLiteralAttribute then
-                        yield GetNullableAttribute g [NullnessInfo.WithNull]
+                        yield GetNullableAttribute g [ NullnessInfo.WithNull ]
                     if (gmethods.Count + gfields.Count + gproperties.Count) > 0 then
                         yield GetNullableContextAttribute g
                 |]
-                |> mkILCustomAttrsFromArray               
+                |> mkILCustomAttrsFromArray
             else
                 tdef.CustomAttrs
 
@@ -5579,7 +5580,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
 
     let notNullReferenceTypeConstraint =
         if g.langFeatureNullness && g.checkNullness then
-            let hasNotSupportsNull = 
+            let hasNotSupportsNull =
                 tp.Constraints
                 |> List.exists (function
                     | TyparConstraint.NotSupportsNull _ -> true
@@ -5641,7 +5642,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
             match notNullReferenceTypeConstraint with
-            | Some nullInfo -> yield GetNullableAttribute g [ nullInfo ]        
+            | Some nullInfo -> yield GetNullableAttribute g [ nullInfo ]
             | _ -> ()
         ]
 
