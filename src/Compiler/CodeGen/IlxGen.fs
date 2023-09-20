@@ -5633,8 +5633,10 @@ and GenGenericParam cenv eenv (tp: Typar) =
             if emitUnmanagedInIlOutput then
                 yield (GetIsUnmanagedAttribute g)
             match notNullReferenceTypeConstraint with
-            | Some nullness -> yield GetNullableAttribute g [ nullness ]
-            | None -> ()
+            // If using the `checknulls` flag, F# generated class has [<NullableContextAttribute(1)>]
+            // This means that everything inside is considered to be NOT-nullable by default
+            | Some NullnessInfo.WithNull -> yield GetNullableAttribute g [ NullnessInfo.WithNull ]
+            | _ -> ()
         ]
 
     let tpAttrs = mkILCustomAttrs (attributeList)
