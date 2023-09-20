@@ -64,7 +64,3 @@ let ``Nullable attr for custom type`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
-
-
-
-  
