@@ -312,6 +312,7 @@ type internal TransparentCompiler
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
+    // Mutable so we can easily clear them by creating a new instance
     let mutable caches = CompilerCaches()
 
     let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
@@ -520,10 +521,18 @@ type internal TransparentCompiler
         ]
 
     /// Bootstrap info that does not depend on contents of the files
-    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) removeReferences =
 
-        let key = projectSnapshot.WithoutFileVersions.Key
+        let projectSnapshot = if removeReferences then { projectSnapshot with ReferencedProjects = [] } else projectSnapshot
 
+        let projectSnapshotKey = projectSnapshot.WithoutFileVersions.Key
+
+        let key = 
+            { new ICacheKey<_, _> with 
+                member _.GetLabel() = projectSnapshotKey.GetLabel() 
+                member _.GetKey() = projectSnapshotKey.GetKey(), removeReferences
+                member _.GetVersion() = projectSnapshotKey.GetVersion() }
+        
         caches.BootstrapInfoStatic.Get(
             key,
             async {
@@ -749,7 +758,7 @@ type internal TransparentCompiler
                  tcGlobals,
                  initialTcInfo,
                  loadClosureOpt,
-                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot
+                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot false
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
@@ -866,7 +875,7 @@ type internal TransparentCompiler
                 }
         }
 
-    let ComputeParseFile bootstrapInfo (file: FSharpFileSnapshotWithSource) =
+    let ComputeParseFile (tcConfig: TcConfig) (file: FSharpFileSnapshotWithSource) =
 
         let key =
             { new ICacheKey<_, _> with
@@ -887,8 +896,6 @@ type internal TransparentCompiler
                             Activity.Tags.fileName, file.FileName |> shortPath
                             Activity.Tags.version, file.SourceHash
                         |]
-
-                let tcConfig = bootstrapInfo.TcConfig
 
                 let diagnosticsLogger =
                     CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
@@ -1247,7 +1254,7 @@ type internal TransparentCompiler
 
                 let! parsedInputs =
                     projectSnapshot.SourceFiles
-                    |> Seq.map (ComputeParseFile bootstrapInfo)
+                    |> Seq.map (ComputeParseFile bootstrapInfo.TcConfig)
                     |> Async.Parallel
 
                 let! graph, dependencyFiles =
@@ -1266,18 +1273,18 @@ type internal TransparentCompiler
             }
         )
 
-    let getParseResult (bootstrapInfo: BootstrapInfo) creationDiags file =
+    let getParseResult (tcConfig: TcConfig) creationDiags file =
         async {
-            let! parseTree, parseDiagnostics, sourceText = ComputeParseFile bootstrapInfo file
+            let! parseTree, parseDiagnostics, sourceText = ComputeParseFile tcConfig file
 
             let parseDiagnostics =
                 DiagnosticHelpers.CreateDiagnostics(
-                    bootstrapInfo.TcConfig.diagnosticsOptions,
+                    tcConfig.diagnosticsOptions,
                     false,
                     file.FileName,
                     parseDiagnostics,
                     suggestNamesForErrors,
-                    bootstrapInfo.TcConfig.flatErrors,
+                    tcConfig.flatErrors,
                     None
                 )
 
@@ -1315,7 +1322,7 @@ type internal TransparentCompiler
                     let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
                     let file = snapshotWithSources.SourceFiles |> List.last
 
-                    let! parseResults, _sourceText = getParseResult bootstrapInfo creationDiags file
+                    let! parseResults, _sourceText = getParseResult bootstrapInfo.TcConfig creationDiags file
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
@@ -1399,7 +1406,7 @@ type internal TransparentCompiler
 
                 let! parsedInputs =
                     projectSnapshot.SourceFiles
-                    |> Seq.map (ComputeParseFile bootstrapInfo)
+                    |> Seq.map (ComputeParseFile bootstrapInfo.TcConfig)
                     |> Async.Parallel
 
                 let! graph, dependencyFiles =
@@ -1560,7 +1567,7 @@ type internal TransparentCompiler
                     let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                     let tcDiagnostics = tcInfo.TcDiagnostics
                     let tcDependencyFiles = tcInfo.tcDependencyFiles
-
+                    
                     let tcDiagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
@@ -1692,12 +1699,13 @@ type internal TransparentCompiler
         async {
             //use _ =
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            let snapshotWithoutReferences = { projectSnapshot with ReferencedProjects = [] }
 
-            match! ComputeBootstrapInfo projectSnapshot with
+            match! ComputeBootstrapInfo snapshotWithoutReferences with
             | None, creationDiags -> return emptyParseResult fileName creationDiags
             | Some bootstrapInfo, creationDiags ->
                 let! file = bootstrapInfo.GetFile fileName |> LoadSource
-                let! parseResult, _ = getParseResult bootstrapInfo creationDiags file
+                let! parseResult, _ = getParseResult bootstrapInfo.TcConfig creationDiags file
                 return parseResult
         }
 
