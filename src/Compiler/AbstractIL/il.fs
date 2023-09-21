@@ -3413,7 +3413,9 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
     let byteIlType = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
-    let stringIlType = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+
+    let stringIlType =
+        mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
 
     member _.primaryAssemblyScopeRef = primaryScopeRef
 

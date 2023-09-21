@@ -823,13 +823,13 @@ let convAlternativeDef
                             && repr.RepresentAlternativeAsStructValue info
                             && not alt.IsNullary
                         then
-                            let notnullfields = 
+                            let notnullfields =
                                 alt.FieldDefs
                                 // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
                                 // Non-nullable fields are implicit in F#, therefore not annotated separately
                                 |> Array.filter (fun f -> TryFindILAttribute g.attrib_NullableAttribute f.ILField.CustomAttrs |> not)
 
-                            let fieldNames = 
+                            let fieldNames =
                                 notnullfields
                                 |> Array.map (fun f -> f.LowerName)
                                 |> Array.append (notnullfields |> Array.map (fun f -> f.Name))
@@ -838,7 +838,7 @@ let convAlternativeDef
                                 emptyILCustomAttrs
                             else
                                 mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
-                           
+
                         else
                             emptyILCustomAttrs
 
@@ -856,7 +856,8 @@ let convAlternativeDef
                                 attr,
                                 imports
                             )
-                        )).With(customAttrs = additionalAttributes)                       
+                        ))
+                            .With(customAttrs = additionalAttributes)
                         |> addMethodGeneratedAttrs
                     ],
                     [
@@ -1341,11 +1342,19 @@ let mkClassUnionDef
                                 else
                                     let attrs =
                                         let existingAttrs = field.ILField.CustomAttrs.AsArray()
-                                        let nullableIdx = existingAttrs |> Array.tryFindIndex(IsILAttrib g.attrib_NullableAttribute)
+
+                                        let nullableIdx =
+                                            existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
+
                                         match nullableIdx with
-                                        | None -> existingAttrs |> Array.append [|GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.AmbivalentToNull ]|]
+                                        | None ->
+                                            existingAttrs
+                                            |> Array.append
+                                                [|
+                                                    GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.AmbivalentToNull ]
+                                                |]
                                         | Some idx ->
-                                            let replacementAttr = 
+                                            let replacementAttr =
                                                 match existingAttrs[idx] with
                                                 (*
                                                  The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
@@ -1353,10 +1362,16 @@ let mkClassUnionDef
                                                  If the field was already declared as nullable (value = 2uy) or ambivalent(value = 1uy), we can keep it that way
                                                  If it was marked as non-nullable within that UnionCase, we have to convert it to ambivalent due to other cases being possible
                                                 *)
-                                                | Encoded(method,_data,[ILAttribElem.Byte 1uy]) ->                                                   
-                                                    mkILCustomAttribMethRef(method,[ILAttribElem.Byte 0uy],[])
-                                                | Encoded(method,_data,[ILAttribElem.Array (elemType,(ILAttribElem.Byte 1uy) :: otherElems)]) -> 
-                                                    mkILCustomAttribMethRef(method,[ILAttribElem.Array (elemType,(ILAttribElem.Byte 0uy) :: otherElems)],[])
+                                                | Encoded (method, _data, [ ILAttribElem.Byte 1uy ]) ->
+                                                    mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 0uy ], [])
+                                                | Encoded (method,
+                                                           _data,
+                                                           [ ILAttribElem.Array (elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
+                                                    mkILCustomAttribMethRef (
+                                                        method,
+                                                        [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 0uy) :: otherElems) ],
+                                                        []
+                                                    )
                                                 | attrAsBefore -> attrAsBefore
 
                                             existingAttrs |> Array.replace idx replacementAttr
