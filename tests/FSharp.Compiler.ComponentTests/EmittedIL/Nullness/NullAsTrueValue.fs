@@ -25,9 +25,9 @@ let mapNotNullableContents f myOpt =
 [<NoEquality; NoComparison; Struct>]
 type MyStructOption<'T when 'T: not null> = 
     | MyStructNone
-    | MyStructSome of notNullField1 : 'T * notNullField2 : string
+    | MyStructSome of nestedGenericField : list<list<string | null>> * notNullField2 : string * canBeNullField : (string | null) * notNullField1 : 'T
 
 let mapStructContents f myOpt =
     match myOpt with
     | MyStructNone -> MyStructNone
-    | MyStructSome(x,s) -> MyStructSome (f x,s)
+    | MyStructSome(ngf,s,ns,x) -> MyStructSome (ngf,s,ns,f x)

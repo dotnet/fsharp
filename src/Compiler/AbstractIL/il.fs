@@ -3413,6 +3413,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
     let byteIlType = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+    let stringIlType = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
 
     member _.primaryAssemblyScopeRef = primaryScopeRef
 
@@ -3431,7 +3432,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
 
-    member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+    member val typ_String = stringIlType
 
     member val typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
 
@@ -3448,6 +3449,8 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
     member val typ_Byte = byteIlType
 
     member val typ_ByteArray = mkILBoxedType (mkILTySpec (mkSysILTypeRef tname_Array, [ byteIlType ]))
+
+    member val typ_StringArray = mkILBoxedType (mkILTySpec (mkSysILTypeRef tname_Array, [ stringIlType ]))
 
     member val typ_UInt16 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
 

@@ -384,6 +384,14 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field assembly string _canBeNullField
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> _nestedGenericField
+    .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field assembly int32 _tag
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -416,12 +424,18 @@
 
     .method public static valuetype TestModule/MyStructOption`1<!T> 
             NewMyStructSome(!T _notNullField1,
-                            string _notNullField2) cil managed
+                            string _notNullField2,
+                            string _canBeNullField,
+                            class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> _nestedGenericField) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
+      .param [3]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .param [4]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 01 01 02 00 00 ) 
       
-      .maxstack  3
+      .maxstack  5
       .locals init (valuetype TestModule/MyStructOption`1<!T> V_0)
       IL_0000:  ldloca.s   V_0
       IL_0002:  initobj    valuetype TestModule/MyStructOption`1<!T>
@@ -434,13 +448,25 @@
       IL_0018:  ldloca.s   V_0
       IL_001a:  ldarg.1
       IL_001b:  stfld      string valuetype TestModule/MyStructOption`1<!T>::_notNullField2
-      IL_0020:  ldloc.0
-      IL_0021:  ret
+      IL_0020:  ldloca.s   V_0
+      IL_0022:  ldarg.2
+      IL_0023:  stfld      string valuetype TestModule/MyStructOption`1<!T>::_canBeNullField
+      IL_0028:  ldloca.s   V_0
+      IL_002a:  ldarg.3
+      IL_002b:  stfld      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> valuetype TestModule/MyStructOption`1<!T>::_nestedGenericField
+      IL_0030:  ldloc.0
+      IL_0031:  ret
     } 
 
     .method public hidebysig instance bool 
             get_IsMyStructSome() cil managed
     {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
+                                                                                                              class [runtime]System.Array<string>) = ( 01 00 01 04 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
+                                                                                                                                                              69 65 6C 64 31 0D 6E 6F 74 4E 75 6C 6C 46 69 65   
+                                                                                                                                                              6C 64 32 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C   
+                                                                                                                                                              64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C 64   
+                                                                                                                                                              32 00 00 )                                        
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -494,6 +520,34 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      string valuetype TestModule/MyStructOption`1<!T>::_notNullField2
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig instance string 
+            get_canBeNullField() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string valuetype TestModule/MyStructOption`1<!T>::_canBeNullField
+      IL_0006:  ret
+    } 
+
+    .method public hidebysig instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> 
+            get_nestedGenericField() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param [0]
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> valuetype TestModule/MyStructOption`1<!T>::_nestedGenericField
       IL_0006:  ret
     } 
 
@@ -564,6 +618,12 @@
     } 
     .property instance bool IsMyStructSome()
     {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
+                                                                                                              class [runtime]System.Array<string>) = ( 01 00 01 04 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
+                                                                                                                                                              69 65 6C 64 31 0D 6E 6F 74 4E 75 6C 6C 46 69 65   
+                                                                                                                                                              6C 64 32 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C   
+                                                                                                                                                              64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C 64   
+                                                                                                                                                              32 00 00 )                                        
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -588,6 +648,27 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance string TestModule/MyStructOption`1::get_notNullField2()
+    } 
+    .property instance string canBeNullField()
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 01 00 00 00 02 00 00 00 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .get instance string TestModule/MyStructOption`1::get_canBeNullField()
+    } 
+    .property instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>>
+            nestedGenericField()
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 01 00 00 00 03 00 00 00 00 00 ) 
+      .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 00 01 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .get instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> TestModule/MyStructOption`1::get_nestedGenericField()
     } 
   } 
 
@@ -677,10 +758,12 @@
     .param [2]
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     
-    .maxstack  4
+    .maxstack  6
     .locals init (valuetype TestModule/MyStructOption`1<!!a> V_0,
              !!a V_1,
-             string V_2)
+             string V_2,
+             string V_3,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> V_4)
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloca.s   V_0
@@ -699,13 +782,23 @@
     IL_001c:  ldloca.s   V_0
     IL_001e:  ldfld      string valuetype TestModule/MyStructOption`1<!!a>::_notNullField2
     IL_0023:  stloc.2
-    IL_0024:  ldarg.0
-    IL_0025:  ldloc.1
-    IL_0026:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b>::Invoke(!0)
-    IL_002b:  ldloc.2
-    IL_002c:  call       valuetype TestModule/MyStructOption`1<!0> valuetype TestModule/MyStructOption`1<!!b>::NewMyStructSome(!0,
-                                                                                                                               string)
-    IL_0031:  ret
+    IL_0024:  ldloca.s   V_0
+    IL_0026:  ldfld      string valuetype TestModule/MyStructOption`1<!!a>::_canBeNullField
+    IL_002b:  stloc.3
+    IL_002c:  ldloca.s   V_0
+    IL_002e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> valuetype TestModule/MyStructOption`1<!!a>::_nestedGenericField
+    IL_0033:  stloc.s    V_4
+    IL_0035:  ldarg.0
+    IL_0036:  ldloc.1
+    IL_0037:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,!!b>::Invoke(!0)
+    IL_003c:  ldloc.2
+    IL_003d:  ldloc.3
+    IL_003e:  ldloc.s    V_4
+    IL_0040:  call       valuetype TestModule/MyStructOption`1<!0> valuetype TestModule/MyStructOption`1<!!b>::NewMyStructSome(!0,
+                                                                                                                               string,
+                                                                                                                               string,
+                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>>)
+    IL_0045:  ret
   } 
 
 } 

@@ -816,8 +816,34 @@ let convAlternativeDef
                 elif repr.RepresentOneAlternativeAsNull info then
                     [], []
                 else
+                    let additionalAttributes =
+                        if
+                            g.checkNullness
+                            && g.langFeatureNullness
+                            && repr.RepresentAlternativeAsStructValue info
+                            && not alt.IsNullary
+                        then
+                            let notnullfields = 
+                                alt.FieldDefs
+                                // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
+                                // Non-nullable fields are implicit in F#, therefore not annotated separately
+                                |> Array.filter (fun f -> TryFindILAttribute g.attrib_NullableAttribute f.ILField.CustomAttrs |> not)
+
+                            let fieldNames = 
+                                notnullfields
+                                |> Array.map (fun f -> f.LowerName)
+                                |> Array.append (notnullfields |> Array.map (fun f -> f.Name))
+
+                            if fieldNames |> Array.isEmpty then
+                                emptyILCustomAttrs
+                            else
+                                mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
+                           
+                        else
+                            emptyILCustomAttrs
+
                     [
-                        mkILNonGenericInstanceMethod (
+                        (mkILNonGenericInstanceMethod (
                             "get_" + mkTesterName altName,
                             cud.HelpersAccessibility,
                             [],
@@ -830,7 +856,7 @@ let convAlternativeDef
                                 attr,
                                 imports
                             )
-                        )
+                        )).With(customAttrs = additionalAttributes)                       
                         |> addMethodGeneratedAttrs
                     ],
                     [
@@ -853,7 +879,7 @@ let convAlternativeDef
                             propertyType = g.ilg.typ_Bool,
                             init = None,
                             args = [],
-                            customAttrs = emptyILCustomAttrs
+                            customAttrs = additionalAttributes
                         )
                         |> addPropertyGeneratedAttrs
                         |> addPropertyNeverAttrs
@@ -862,9 +888,13 @@ let convAlternativeDef
             let baseMakerMeths, baseMakerProps =
 
                 if alt.IsNullary then
-                    let attributes = 
-                        if g.checkNullness && g.langFeatureNullness && repr.RepresentAlternativeAsNull(info,alt) then
-                            GetNullableAttribute g [FSharp.Compiler.TypedTree.NullnessInfo.WithNull]
+                    let attributes =
+                        if
+                            g.checkNullness
+                            && g.langFeatureNullness
+                            && repr.RepresentAlternativeAsNull(info, alt)
+                        then
+                            GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ]
                             |> Array.singleton
                             |> mkILCustomAttrsFromArray
                         else
@@ -1297,11 +1327,7 @@ let mkClassUnionDef
                             ]
 
                     let fieldDefs =
-                        // Since structs are flattened out for all cases together, all non-struct field are potentially nullable
-                        // TODO nullness
-                        // Invent C#-friendly access pattern that will work with nullability, e.g. bool this.TryGetCaseXXXData([NotNullWhen(true)]out field1,[NotNullWhen(true)]out field2)
-                        // TODO nullness
-                        // In case of type being a generic instantiation (e.g. | A of (list<string>)), we can at least mark the generic arguments as being not null
+                        // Since structs are flattened out for all cases together, all boxed fields are potentially nullable
                         if
                             isStruct
                             && cud.UnionCases.Length > 1
@@ -1314,12 +1340,26 @@ let mkClassUnionDef
                                     field
                                 else
                                     let attrs =
-                                        field.ILField.CustomAttrs.AsArray()
-                                        |> Array.filter (IsILAttrib g.attrib_NullableAttribute >> not)
-                                        |> Array.append
-                                            [|
-                                                GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.AmbivalentToNull ]
-                                            |]
+                                        let existingAttrs = field.ILField.CustomAttrs.AsArray()
+                                        let nullableIdx = existingAttrs |> Array.tryFindIndex(IsILAttrib g.attrib_NullableAttribute)
+                                        match nullableIdx with
+                                        | None -> existingAttrs |> Array.append [|GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.AmbivalentToNull ]|]
+                                        | Some idx ->
+                                            let replacementAttr = 
+                                                match existingAttrs[idx] with
+                                                (*
+                                                 The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
+                                                 The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
+                                                 If the field was already declared as nullable (value = 2uy) or ambivalent(value = 1uy), we can keep it that way
+                                                 If it was marked as non-nullable within that UnionCase, we have to convert it to ambivalent due to other cases being possible
+                                                *)
+                                                | Encoded(method,_data,[ILAttribElem.Byte 1uy]) ->                                                   
+                                                    mkILCustomAttribMethRef(method,[ILAttribElem.Byte 0uy],[])
+                                                | Encoded(method,_data,[ILAttribElem.Array (elemType,(ILAttribElem.Byte 1uy) :: otherElems)]) -> 
+                                                    mkILCustomAttribMethRef(method,[ILAttribElem.Array (elemType,(ILAttribElem.Byte 0uy) :: otherElems)],[])
+                                                | attrAsBefore -> attrAsBefore
+
+                                            existingAttrs |> Array.replace idx replacementAttr
 
                                     field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
                                     |> IlxUnionCaseField)

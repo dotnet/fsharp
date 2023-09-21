@@ -1876,6 +1876,7 @@ type internal ILGlobals =
     member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
+    member typ_StringArray : ILType
     member typ_Type: ILType
     member typ_Array: ILType
     member typ_IntPtr: ILType
