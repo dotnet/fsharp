@@ -312,7 +312,7 @@ type internal TransparentCompiler
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
-    let caches = CompilerCaches()
+    let mutable caches = CompilerCaches()
 
     let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
 
@@ -1773,7 +1773,10 @@ type internal TransparentCompiler
         member _.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit =
             backgroundCompiler.ClearCache(options, userOpName)
 
-        member _.ClearCaches() : unit = backgroundCompiler.ClearCaches()
+        member _.ClearCaches() : unit =
+            backgroundCompiler.ClearCaches()
+            caches <- CompilerCaches()
+
         member _.DownsizeCaches() : unit = backgroundCompiler.DownsizeCaches()
 
         member _.FileChecked: IEvent<string * FSharpProjectOptions> =

@@ -254,6 +254,11 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
     member this.Remove(key) =
         this.Remove(key, Unchecked.defaultof<_>)
 
+    member _.Clear() =
+        dictionary.Clear()
+        strongList.Clear()
+        weakList.Clear()
+
     member _.GetValues() =
         strongList
         |> Seq.append weakList
@@ -578,6 +583,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             | Existing job -> return! job |> Async.AwaitTask
         }
+
+    member _.Clear() = cache.Clear()
 
     member val Event = event.Publish
 

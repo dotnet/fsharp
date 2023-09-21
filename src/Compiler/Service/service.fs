@@ -363,7 +363,6 @@ type FSharpChecker
         backgroundCompiler.ClearCaches()
         ClearAllILModuleReaderCache()
 
-    // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         use _ =
             Activity.startNoTags "FsharpChecker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients"
