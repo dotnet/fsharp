@@ -335,13 +335,21 @@ let GetNotNullWhenTrueAttribute (g: TcGlobals) (propNames: string array) =
     g.TryEmbedILType(
         tref,
         (fun () ->
-            let fields = Some [ "ReturnValue", g.ilg.typ_Bool ; "Members", g.ilg.typ_StringArray ]
+            let fields =
+                Some [ "ReturnValue", g.ilg.typ_Bool; "Members", g.ilg.typ_StringArray ]
+
             mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, fields, EncapsulatedProperties))
     )
 
-    let stringArgs = propNames |> Array.map (Some >> ILAttribElem.String) |> List.ofArray
+    let stringArgs =
+        propNames |> Array.map (Some >> ILAttribElem.String) |> List.ofArray
 
-    mkILCustomAttribute (tref, [ g.ilg.typ_Bool; g.ilg.typ_StringArray  ], [ ILAttribElem.Bool true; ILAttribElem.Array(g.ilg.typ_String, stringArgs)], [])
+    mkILCustomAttribute (
+        tref,
+        [ g.ilg.typ_Bool; g.ilg.typ_StringArray ],
+        [ ILAttribElem.Bool true; ILAttribElem.Array(g.ilg.typ_String, stringArgs) ],
+        []
+    )
 
 let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo list) =
     let tref = g.attrib_NullableAttribute.TypeRef
@@ -456,7 +464,6 @@ let GenNullnessIfNecessary (g: TcGlobals) ty =
         | nonUniformList -> GetNullableAttribute g nonUniformList |> Some
     else
         None
-
 
 let GenAdditionalAttributesForTy g ty =
     let readOnly = GenReadOnlyIfNecessary g ty |> Option.toList
