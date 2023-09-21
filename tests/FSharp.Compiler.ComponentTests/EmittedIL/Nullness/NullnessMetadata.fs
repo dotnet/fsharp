@@ -64,3 +64,8 @@ let ``Nullable attr for custom type`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullAsTrueValue.fs"|])>]
+let ``Nullable attr for Option clones`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+

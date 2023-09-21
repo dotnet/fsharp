@@ -862,13 +862,20 @@ let convAlternativeDef
             let baseMakerMeths, baseMakerProps =
 
                 if alt.IsNullary then
+                    let attributes = 
+                        if g.checkNullness && g.langFeatureNullness && repr.RepresentAlternativeAsNull(info,alt) then
+                            GetNullableAttribute g [FSharp.Compiler.TypedTree.NullnessInfo.WithNull]
+                            |> Array.singleton
+                            |> mkILCustomAttrsFromArray
+                        else
+                            emptyILCustomAttrs
 
                     let nullaryMeth =
                         mkILNonGenericStaticMethod (
                             "get_" + altName,
                             cud.HelpersAccessibility,
                             [],
-                            mkILReturn baseTy,
+                            (mkILReturn baseTy).WithCustomAttrs attributes,
                             mkMethodBody (
                                 true,
                                 [],
@@ -892,7 +899,7 @@ let convAlternativeDef
                             propertyType = baseTy,
                             init = None,
                             args = [],
-                            customAttrs = emptyILCustomAttrs
+                            customAttrs = attributes
                         )
                         |> addPropertyGeneratedAttrs
                         |> addPropertyNeverAttrs
@@ -1292,7 +1299,7 @@ let mkClassUnionDef
                     let fieldDefs =
                         // Since structs are flattened out for all cases together, all non-struct field are potentially nullable
                         // TODO nullness
-                        // Invent C#-friendly access pattern that will work with nullability
+                        // Invent C#-friendly access pattern that will work with nullability, e.g. bool this.TryGetCaseXXXData([NotNullWhen(true)]out field1,[NotNullWhen(true)]out field2)
                         // TODO nullness
                         // In case of type being a generic instantiation (e.g. | A of (list<string>)), we can at least mark the generic arguments as being not null
                         if
@@ -1303,7 +1310,7 @@ let mkClassUnionDef
                         then
                             alt.FieldDefs
                             |> Array.map (fun field ->
-                                if field.Type.Boxity = AsValue then
+                                if field.Type.IsNominal && field.Type.Boxity = AsValue then
                                     field
                                 else
                                     let attrs =
