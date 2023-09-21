@@ -5173,6 +5173,7 @@ parenExpr:
       { let mComma = rhs parseState 2
         let mLparen = rhs parseState 1
         let mRparen = rhs parseState 3
+        reportParseErrorAt mComma (FSComp.SR.parsExpectingExpression ())
         let errorExpr = arbExpr ("tupleExpr3", mComma.EndRange)
         let mTuple = unionRanges mComma $3.Range
         let tupleExpr =
