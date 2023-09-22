@@ -56,11 +56,13 @@ let getRelevantDiagnostics (document: Document) =
     |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result
 
-let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds =
+let createTestCodeFixContext (code: string) (mode: Mode) (fixProvider: 'T :> CodeFixProvider) =
     cancellableTask {
         let! cancellationToken = CancellableTask.getCancellationToken ()
 
         let sourceText = SourceText.From code
+        let document = getDocument code mode
+        let diagnosticIds = fixProvider.FixableDiagnosticIds
 
         let diagnostics =
             match mode with
@@ -92,12 +94,11 @@ let createTestCodeFixContext (code: string) document (mode: Mode) diagnosticIds 
         return CodeFixContext(document, textSpan, roslynDiagnostics, mockAction, cancellationToken)
     }
 
-let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
+let tryFix (code: string) mode (fixProvider: 'T :> IFSharpCodeFixProvider) =
     cancellableTask {
         let sourceText = SourceText.From code
-        let document = getDocument code mode
 
-        let! context = createTestCodeFixContext code document mode fixProvider.FixableDiagnosticIds
+        let! context = createTestCodeFixContext code mode fixProvider
 
         let! result = fixProvider.GetCodeFixIfAppliesAsync context
 
@@ -109,6 +110,25 @@ let tryFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpCodeFixProvide
                      Message = codeFix.Message
                      FixedCode = (sourceText.WithChanges codeFix.Changes).ToString()
                  }))
+    }
+    |> CancellableTask.startWithoutCancellation
+    |> fun task -> task.Result
+
+let multiFix (code: string) mode (fixProvider: 'T :> IFSharpMultiCodeFixProvider) =
+    cancellableTask {
+        let sourceText = SourceText.From code
+
+        let! context = createTestCodeFixContext code mode fixProvider
+
+        let! result = fixProvider.GetCodeFixesAsync context
+
+        return
+            result
+            |> Seq.map (fun codeFix ->
+                {
+                    Message = codeFix.Message
+                    FixedCode = (sourceText.WithChanges codeFix.Changes).ToString()
+                })
     }
     |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result
