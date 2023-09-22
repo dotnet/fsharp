@@ -884,6 +884,37 @@ namespace N
               Message =
                 "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for non tail-rec traversal with List.collect`` () =
+        """
+namespace N
+
+    module M =
+    
+        type Tree =
+        | Leaf of int
+        | Node of Tree list
+
+        [<TailCall>]
+        let rec loop tree =
+            match tree with
+            | Leaf n -> [ n ]
+            | Node branches -> branches |> List.collect loop
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 57
+                        EndLine = 14
+                        EndColumn = 61 }
+              Message =
+                "The member or function 'loop' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda`` () =
