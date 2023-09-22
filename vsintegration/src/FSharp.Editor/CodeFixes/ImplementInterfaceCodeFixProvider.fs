@@ -30,6 +30,10 @@ type internal InterfaceState =
         Tokens: Tokenizer.SavedTokenInfo[]
     }
 
+// state machine not statically compilable
+// TODO: rewrite token arithmetics properly here
+#nowarn "3511"
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ImplementInterface); Shared>]
 type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
