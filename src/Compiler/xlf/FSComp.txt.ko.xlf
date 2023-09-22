@@ -82,6 +82,11 @@
         <target state="translated">형식이 [&lt;Sealed&gt;] 및 [&lt;AbstractClass&gt;] 특성을 모두 사용하는 경우 정적임을 의미합니다. 인터페이스 구현은 허용되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">F# 라이브러리의 ':=' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'cell := expr'을 'cell.Value &lt;- expr'로 변경하세요.</target>
@@ -480,6 +485,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C#과 F#의 관리되지 않는 제네릭 제약 조건 간의 Interop(추가 modreq 내보내기)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="new">Indexed properties getter and setter must have the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">

@@ -26,6 +26,21 @@ module MemberDefinitions_MethodsAndProperties =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
+    let ``IndexedPropertiesSameType_fs`` compilation =
+        compilation
+        |> withLangVersion70
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
+    let ``IndexedPropertiesSameType_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 5, Col 14, Line 5, Col 17, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type 'string' but setter of type 'float'.")
 
     // SOURCE=E_AbstractAndConcereteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcereteProp.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcereteProp.fs"|])>]
