@@ -56,7 +56,7 @@ type MyType() =
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0366 for partially implemented interfaces``() =
+let ``Fixes FS0366 for partially implemented interfaces`` () =
     let code =
         $"""
 type IMyInterface =
@@ -106,7 +106,7 @@ type MyType() =
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Doesn't handle FS0036 for inherited interfaces``() =
+let ``Doesn't handle FS0036 for inherited interfaces`` () =
     let code =
         $"""
 type IMyInterface1 =

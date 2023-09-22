@@ -176,7 +176,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
     interface IFSharpMultiCodeFixProvider with
         member _.GetCodeFixesAsync context =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+
                 let! parseResults, checkFileResults =
                     context.Document.GetFSharpParseAndCheckResultsAsync(nameof ImplementInterfaceCodeFixProvider)
 
@@ -217,6 +218,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                         | _ -> acc
 
                 let token = tryFindIdentifierToken None 0
+
                 match token with
                 | None -> return Seq.empty
                 | Some token ->
@@ -271,12 +273,21 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
                             | None -> return Seq.empty
                             | Some symbolUse ->
                                 match symbolUse.Symbol with
-                                | :? FSharpEntity as entity
+                                | :? FSharpEntity as entity when
                                     // Things get complicated with interface inheritance: https://github.com/dotnet/fsharp/issues/5813
                                     // With enough enthusiasm this probably can be handled though,
                                     // in that case change the check to `InterfaceStubGenerator.IsInterface entity`
-                                    when entity.AllInterfaces.Count = 1 ->
-                                    
-                                    return! getSuggestions (sourceText, checkFileResults, interfaceState, symbolUse.DisplayContext, entity, tabSize)
+                                    entity.AllInterfaces.Count = 1
+                                    ->
+
+                                    return!
+                                        getSuggestions (
+                                            sourceText,
+                                            checkFileResults,
+                                            interfaceState,
+                                            symbolUse.DisplayContext,
+                                            entity,
+                                            tabSize
+                                        )
                                 | _ -> return Seq.empty
             }
