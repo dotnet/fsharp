@@ -347,6 +347,7 @@ type ButtonExtensions =
         { this with Text = text }
         """
         |> ignoreWarnings
+        |> withOptions ["--nowarn:3560"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -590,6 +591,7 @@ let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
         """
         |> ignoreWarnings
+        |> withOptions ["--nowarn:3560"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
