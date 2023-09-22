@@ -521,25 +521,17 @@ type internal TransparentCompiler
         ]
 
     /// Bootstrap info that does not depend on contents of the files
-    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) removeReferences =
+    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
 
-        let projectSnapshot = if removeReferences then { projectSnapshot with ReferencedProjects = [] } else projectSnapshot
-
-        let projectSnapshotKey = projectSnapshot.WithoutFileVersions.Key
-
-        let key = 
-            { new ICacheKey<_, _> with 
-                member _.GetLabel() = projectSnapshotKey.GetLabel() 
-                member _.GetKey() = projectSnapshotKey.GetKey(), removeReferences
-                member _.GetVersion() = projectSnapshotKey.GetVersion() }
-        
         caches.BootstrapInfoStatic.Get(
-            key,
+            projectSnapshot.WithoutFileVersions.Key,
             async {
                 use _ =
                     Activity.start
                         "ComputeBootstrapInfoStatic"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName
+                           "references", projectSnapshot.ReferencedProjects.Length.ToString()
+                        |]
 
                 let useSimpleResolutionSwitch = "--simpleresolution"
                 let commandLineArgs = projectSnapshot.CommandLineOptions
@@ -758,7 +750,7 @@ type internal TransparentCompiler
                  tcGlobals,
                  initialTcInfo,
                  loadClosureOpt,
-                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot false
+                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
@@ -799,7 +791,10 @@ type internal TransparentCompiler
                     }
         }
 
-    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) withoutReferences =
+
+        let projectSnapshot = if withoutReferences then { projectSnapshot with ReferencedProjects = [] } else projectSnapshot
+
         caches.BootstrapInfo.Get(
             projectSnapshot.Key,
             async {
@@ -1313,7 +1308,7 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-                match! ComputeBootstrapInfo projectSnapshot with
+                match! ComputeBootstrapInfo projectSnapshot false with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
                 | Some bootstrapInfo, creationDiags ->
@@ -1535,7 +1530,7 @@ type internal TransparentCompiler
                     Trace.TraceInformation($"Using assembly on disk: {name}")
                     return ProjectAssemblyDataResult.Unavailable true
                 else
-                    match! ComputeBootstrapInfo projectSnapshot with
+                    match! ComputeBootstrapInfo projectSnapshot false with
                     | None, _ ->
                         Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
                         return ProjectAssemblyDataResult.Unavailable true
@@ -1552,7 +1547,7 @@ type internal TransparentCompiler
             projectSnapshot.Key,
             async {
 
-                match! ComputeBootstrapInfo projectSnapshot with
+                match! ComputeBootstrapInfo projectSnapshot false with
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
                 | Some bootstrapInfo, creationDiags ->
@@ -1567,7 +1562,7 @@ type internal TransparentCompiler
                     let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                     let tcDiagnostics = tcInfo.TcDiagnostics
                     let tcDependencyFiles = tcInfo.tcDependencyFiles
-                    
+
                     let tcDiagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
@@ -1617,7 +1612,7 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         async {
-            match! ComputeBootstrapInfo projectSnapshot with
+            match! ComputeBootstrapInfo projectSnapshot false with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
@@ -1699,9 +1694,8 @@ type internal TransparentCompiler
         async {
             //use _ =
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-            let snapshotWithoutReferences = { projectSnapshot with ReferencedProjects = [] }
 
-            match! ComputeBootstrapInfo snapshotWithoutReferences with
+            match! ComputeBootstrapInfo projectSnapshot true with
             | None, creationDiags -> return emptyParseResult fileName creationDiags
             | Some bootstrapInfo, creationDiags ->
                 let! file = bootstrapInfo.GetFile fileName |> LoadSource

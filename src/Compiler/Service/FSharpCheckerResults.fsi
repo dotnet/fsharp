@@ -65,6 +65,8 @@ type FSharpFileSnapshotWithSource =
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
+type ProjectSnapshotKey = string * bool
+
 [<NoComparison>]
 type FSharpProjectSnapshot =
     {
@@ -145,11 +147,11 @@ type FSharpProjectSnapshot =
 
     member GetLastModifiedTimeOnDisk: unit -> DateTime
 
-    member internal Key: ICacheKey<string, FSharpProjectSnapshotVersion>
+    member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
     member internal FileKey: fileName: string -> ICacheKey<(string * string), FSharpProjectSnapshotVersion>
 
-    interface ICacheKey<string, FSharpProjectSnapshotVersion>
+    interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
 and FSharpProjectSnapshotWithSources =
     { ProjectSnapshot: FSharpProjectSnapshot
@@ -166,8 +168,8 @@ and FSharpProjectSnapshotWithSources =
 
     member internal FileKey: fileName: string -> ICacheKey<(string * string), FSharpProjectSnapshotWithSourcesVersion>
 
-    member internal Key: ICacheKey<string, FSharpProjectSnapshotWithSourcesVersion>
-    interface ICacheKey<string, FSharpProjectSnapshotWithSourcesVersion>
+    member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
+    interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
 
 and FSharpProjectSnapshotWithSourcesDebugVersion =
     { ProjectSnapshotVersion: FSharpProjectSnapshotDebugVersion
@@ -209,7 +211,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     static member CreateFSharp:
         projectOutputFile: string * options: FSharpProjectSnapshot -> FSharpReferencedProjectSnapshot
 
-    member internal Key: ICacheKey<string, FSharpProjectSnapshotVersion>
+    member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =

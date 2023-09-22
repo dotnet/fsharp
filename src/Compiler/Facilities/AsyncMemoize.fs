@@ -37,7 +37,7 @@ type MemoizeRequest<'TValue> =
     | Sync
 
 type internal Job<'TValue> =
-    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue>
+    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime
     | Completed of 'TValue
 
 type internal CacheEvent =
@@ -407,7 +407,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     match msg, cached with
                     | Sync, _ -> New
                     | GetOrCompute _, Some (Completed result) -> Existing(Task.FromResult result)
-                    | GetOrCompute (_, ct), Some (Running (tcs, _, _)) ->
+                    | GetOrCompute (_, ct), Some (Running (tcs, _, _, _)) ->
                         incrRequestCount key
 
                         ct.Register(fun _ ->
@@ -429,7 +429,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             key.Key,
                             key.Version,
                             key.Label,
-                            (Running(TaskCompletionSource(), (new CancellationTokenSource()), computation))
+                            (Running(TaskCompletionSource(), (new CancellationTokenSource()), computation, DateTime.Now))
                         )
 
                         New
@@ -447,7 +447,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         match action, cached with
 
-                        | OriginatorCanceled, Some (Running (tcs, cts, computation)) ->
+                        | OriginatorCanceled, Some (Running (tcs, cts, computation, _)) ->
 
                             decrRequestCount key
 
@@ -480,7 +480,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                     cts.Token)
                                 |> ignore
 
-                        | CancelRequest, Some (Running (tcs, cts, _c)) ->
+                        | CancelRequest, Some (Running (tcs, cts, _c, _)) ->
 
                             decrRequestCount key
 
@@ -496,14 +496,14 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         | CancelRequest, None
                         | CancelRequest, Some (Completed _) -> ()
 
-                        | JobFailed ex, Some (Running (tcs, _cts, _c)) ->
+                        | JobFailed ex, Some (Running (tcs, _cts, _c, _ts)) ->
                             cancelRegistration key
                             cache.Remove(key.Key, key.Version)
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
                             tcs.TrySetException ex |> ignore
 
-                        | JobCompleted result, Some (Running (tcs, _cts, _c)) ->
+                        | JobCompleted result, Some (Running (tcs, _cts, _c, _ts)) ->
                             cancelRegistration key
                             cache.Set(key.Key, key.Version, key.Label, (Completed result))
                             requestCounts.Remove key |> ignore
