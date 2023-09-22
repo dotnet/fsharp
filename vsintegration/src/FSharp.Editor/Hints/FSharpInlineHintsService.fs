@@ -28,7 +28,7 @@ type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: Edito
                 Task.FromResult ImmutableArray.Empty
             else
                 cancellableTask {
-                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let! cancellationToken = CancellableTask.getCancellationToken ()
 
                     let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName

@@ -337,6 +337,8 @@
     <Compile Include="Checking\QuotationTranslator.fs" />
     <Compile Include="Checking\PostInferenceChecks.fsi" />
     <Compile Include="Checking\PostInferenceChecks.fs" />
+    <Compile Include="Checking\TailCallChecks.fsi" />
+    <Compile Include="Checking\TailCallChecks.fs" />
     <Compile Include="Checking\CheckBasics.fsi" />
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
@@ -351,6 +353,8 @@
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
+	<Compile Include="Checking\SignatureHash.fsi" />
+	<Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -436,12 +440,12 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
-    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
-    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />
     <Compile Include="Symbols\Symbols.fs" />
+    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
+    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\Exprs.fsi" />
     <Compile Include="Symbols\Exprs.fs" />
     <Compile Include="Symbols\SymbolPatterns.fsi" />

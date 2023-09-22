@@ -14,17 +14,17 @@ ImplFile
                      [ImplicitCtor
                         (None, [], SimplePats ([], [], (3,6--3,8)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         (3,5--3,6), { AsKeyword = None })], (3,9--3,9)), [],
+                         (3,5--3,6), { AsKeyword = None })], (3,5--3,10)), [],
                   Some
                     (ImplicitCtor
                        (None, [], SimplePats ([], [], (3,6--3,8)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        (3,5--3,6), { AsKeyword = None })), (3,5--3,9),
+                        (3,5--3,6), { AsKeyword = None })), (3,5--3,10),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,9--3,10)
-                    WithKeyword = None })], (3,0--3,9))],
+                    WithKeyword = None })], (3,0--3,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--3,9), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--3,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 

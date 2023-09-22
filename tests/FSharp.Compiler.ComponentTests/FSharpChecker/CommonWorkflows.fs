@@ -9,6 +9,13 @@ open Xunit
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
+#nowarn "57"
 
 let makeTestProject () =
     SyntheticProject.Create(
@@ -68,7 +75,7 @@ let ``Adding a file`` () =
         addFileAbove "Second" (sourceFile "New" [])
         updateFile "Second" (addDependency "New")
         saveAll
-        checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleNew.TNewV_1<'a> * ModuleFirst.TFirstV_1<'a> * ModuleSecond.TSecondV_1<'a>) * (ModuleFirst.TFirstV_1<'a> * ModuleThird.TThirdV_1<'a>) * TLastV_1<'a>")
+        checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_1<'a> * ModuleNew.TNewV_1<'a> * ModuleSecond.TSecondV_1<'a>) * (ModuleFirst.TFirstV_1<'a> * ModuleThird.TThirdV_1<'a>) * TLastV_1<'a>")
     }
 
 [<Fact>]
@@ -133,3 +140,29 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile last expectSignatureChanged
     }
 
+[<Fact>]
+let GetAllUsesOfAllSymbols() =
+    let traceProvider =
+        Sdk.CreateTracerProviderBuilder()
+                .AddSource("fsc")
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+                .AddJaegerExporter()
+                .Build()
+
+    use _ = Activity.start "GetAllUsesOfAllSymbols" [  ]
+    
+    let result = 
+        async { 
+            let project = makeTestProject()
+            let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true).Checker
+            do! saveProject project false checker 
+            let options = project.GetProjectOptions checker
+            let! checkProjectResults = checker.ParseAndCheckProject(options) 
+            return checkProjectResults.GetAllUsesOfAllSymbols()
+        } |> Async.RunSynchronously
+
+
+    traceProvider.ForceFlush() |> ignore
+    traceProvider.Dispose()
+
+    Assert.Equal(80, result.Length)

@@ -404,6 +404,8 @@ type MetadataTable<'T> =
 
     member tbl.GetTableEntry x = tbl.dict[x]
 
+    override x.ToString() = "table " + x.name
+
 //---------------------------------------------------------------------
 // Keys into some of the tables
 //---------------------------------------------------------------------
@@ -449,6 +451,8 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
             retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
+
+    override x.ToString() = nm
 
 /// We use this key type to help find ILFieldDefs for FieldRefs
 type FieldDefKey(tidx: int, nm: string, ty: ILType) =
@@ -2486,6 +2490,7 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
         (if gp.HasReferenceTypeConstraint then 0x0004 else 0x0000) |||
         (if gp.HasNotNullableValueTypeConstraint then 0x0008 else 0x0000) |||
         (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000)
+   
 
     let mdVersionMajor, _ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
     if (mdVersionMajor = 1) then
@@ -3799,6 +3804,7 @@ type options =
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
+     referenceAssemblySignatureHash : int option
      pathMap: PathMap }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
@@ -4126,11 +4132,17 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
               | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
           let hCode = sha.ComputeHash code
-          let hData = sha.ComputeHash data
-          let hMeta = sha.ComputeHash metadata
+          let hData = sha.ComputeHash data   
+          // Not yet suitable for the mvidsection optimization           
 
-          // Not yet suitable for the mvidsection optimization 
-          let deterministicId = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+          let deterministicId = 
+            [| hCode
+               hData
+               match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
+               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
+               | _ -> sha.ComputeHash metadata |] 
+            |> Array.collect id 
+            |> sha.ComputeHash
           let deterministicMvid () = deterministicId[0..15]
           let pdbData =
             // Hash code, data and metadata
@@ -4546,7 +4558,7 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
-    let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None }
+    let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None; referenceAssemblySignatureHash = None }
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
         writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
 

@@ -41,6 +41,8 @@ val mkSynSimplePatVar: isOpt: bool -> id: Ident -> SynSimplePat
 
 val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
+val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 val (|LongOrSingleIdent|_|):
     inp: SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) option
@@ -255,6 +257,8 @@ module SynInfo =
 
     val emptySynValData: SynValData
 
+    val emptySynArgInfo: SynArgInfo
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
@@ -287,6 +291,8 @@ val mkSynBinding:
         memberFlagsOpt: SynMemberFlags option *
         trivia: SynBindingTrivia ->
             SynBinding
+
+val updatePropertyIdentInSynBinding: propertyIdent: Ident -> SynBinding -> SynBinding
 
 val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 

@@ -104,7 +104,7 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list * string option),
+            getInfo: (unit -> DocumentId * string * string list * string option * bool option),
             intelliSenseOptions: IntelliSenseOptions,
             cancellationToken: CancellationToken
         ) =
@@ -130,13 +130,14 @@ type internal FSharpCompletionProvider
             then
                 false
             else
-                let documentId, filePath, defines, langVersion = getInfo ()
+                let documentId, filePath, defines, langVersion, strictIndentation = getInfo ()
 
                 CompletionUtils.shouldProvideCompletion (
                     documentId,
                     filePath,
                     defines,
                     langVersion,
+                    strictIndentation,
                     sourceText,
                     triggerPosition,
                     cancellationToken
@@ -155,7 +156,7 @@ type internal FSharpCompletionProvider
         cancellableTask {
             let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let! sourceText = document.GetTextAsync(ct)
             let textLines = sourceText.Lines
@@ -166,11 +167,15 @@ type internal FSharpCompletionProvider
             let line = caretLine.ToString()
             let partialName = QuickParse.GetPartialLongNameEx(line, caretLineColumn - 1)
 
-            let getAllSymbols () =
-                getAllSymbols checkFileResults
-                |> List.filter (fun assemblySymbol ->
-                    assemblySymbol.FullName.Contains "."
-                    && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
+            let inline getAllSymbols () =
+                [
+                    for assemblySymbol in getAllSymbols checkFileResults do
+                        if
+                            assemblySymbol.FullName.Contains(".")
+                            && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName)
+                        then
+                            yield assemblySymbol
+                ]
 
             let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
 
@@ -298,8 +303,10 @@ type internal FSharpCompletionProvider
         let getInfo () =
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
-            (documentId, document.FilePath, defines, Some langVersion)
+
+            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+
+            (documentId, document.FilePath, defines, Some langVersion, strictIndentation)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(
             sourceText,
@@ -315,7 +322,7 @@ type internal FSharpCompletionProvider
             use _logBlock =
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let document = context.Document
 
@@ -329,7 +336,8 @@ type internal FSharpCompletionProvider
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
 
             let! sourceText = context.Document.GetTextAsync(ct)
-            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+
+            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
             let shouldProvideCompetion =
                 CompletionUtils.shouldProvideCompletion (
@@ -337,6 +345,7 @@ type internal FSharpCompletionProvider
                     document.FilePath,
                     defines,
                     Some langVersion,
+                    strictIndentation,
                     sourceText,
                     context.Position,
                     ct
@@ -362,40 +371,33 @@ type internal FSharpCompletionProvider
             completionItem: Completion.CompletionItem,
             cancellationToken: CancellationToken
         ) : Task<CompletionDescription> =
-        cancellableTask {
-            use _logBlock =
-                Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
 
-            match completionItem.Properties.TryGetValue IndexPropName with
-            | true, completionItemIndexStr ->
+        match completionItem.Properties.TryGetValue IndexPropName with
+        | true, completionItemIndexStr when int completionItemIndexStr >= declarationItems.Length ->
+            Task.FromResult CompletionDescription.Empty
+        | true, completionItemIndexStr ->
+            // TODO: Not entirely sure why do we use tasks here, since everything here is synchronous.
+            cancellableTask {
+                use _logBlock =
+                    Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
+
                 let completionItemIndex = int completionItemIndexStr
 
-                if completionItemIndex < declarationItems.Length then
-                    let declarationItem = declarationItems.[completionItemIndex]
-                    let description = declarationItem.Description
-                    let documentation = List()
-                    let collector = RoslynHelpers.CollectTaggedText documentation
-                    // mix main description and xmldoc by using one collector
-                    XmlDocumentation.BuildDataTipText(
-                        documentationBuilder,
-                        collector,
-                        collector,
-                        collector,
-                        collector,
-                        collector,
-                        description
-                    )
+                let declarationItem = declarationItems.[completionItemIndex]
+                let description = declarationItem.Description
+                let documentation = List()
+                let collector = RoslynHelpers.CollectTaggedText documentation
+                // mix main description and xmldoc by using one collector
+                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description)
 
-                    return CompletionDescription.Create(documentation.ToImmutableArray())
-                else
-                    return CompletionDescription.Empty
-            | _ ->
-                // Try keyword descriptions if they exist
-                match completionItem.Properties.TryGetValue KeywordDescription with
-                | true, keywordDescription -> return CompletionDescription.FromText(keywordDescription)
-                | false, _ -> return CompletionDescription.Empty
-        }
-        |> CancellableTask.start cancellationToken
+                return CompletionDescription.Create(documentation.ToImmutableArray())
+            }
+            |> CancellableTask.start cancellationToken
+
+        | _ ->
+            match completionItem.Properties.TryGetValue KeywordDescription with
+            | true, keywordDescription -> Task.FromResult(CompletionDescription.FromText(keywordDescription))
+            | false, _ -> Task.FromResult(CompletionDescription.Empty)
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         cancellableTask {

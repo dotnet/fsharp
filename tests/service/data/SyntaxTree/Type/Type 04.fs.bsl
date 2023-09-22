@@ -9,10 +9,10 @@ ImplFile
                     ([], None, [], [T1],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,7)),
-                  ObjectModel (Unspecified, [], (5,0--5,0)), [], None,
-                  (3,5--5,0), { LeadingKeyword = Type (3,0--3,4)
-                                EqualsRange = Some (3,8--3,9)
-                                WithKeyword = None })], (3,0--5,0));
+                  Simple (None (3,5--3,9), (3,5--3,9)), [], None, (3,5--3,9),
+                  { LeadingKeyword = Type (3,0--3,4)
+                    EqualsRange = Some (3,8--3,9)
+                    WithKeyword = None })], (3,0--3,9));
            Types
              ([SynTypeDefn
                  (SynComponentInfo
