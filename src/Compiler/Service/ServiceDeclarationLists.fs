@@ -525,11 +525,7 @@ module DeclarationListHelpers =
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
-        | Item.AmbiguousMethGroupOrProperty _ ->
-        #if DEBUG
-            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
-        #endif
-            ToolTipElement.None
+
     /// Format the structured version of a tooltip for an item
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width = 
         DiagnosticsScope.Protect m 
@@ -881,9 +877,6 @@ module internal DescriptionListsImpl =
         | Item.CtorGroup(_,[])
         | Item.Property(info = []) -> 
             [], emptyL
-        | Item.AmbiguousMethGroupOrProperty _ ->
-            failwith "todo: type check based on delayed items?"
-
 
     /// Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv, item) : FSharpGlyph = 
@@ -976,11 +969,6 @@ module internal DescriptionListsImpl =
             | Item.NewDef _
             | Item.OtherName _
             | Item.SetterArg _ -> FSharpGlyph.Variable
-            | Item.AmbiguousMethGroupOrProperty _ ->
-            #if DEBUG
-                failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
-            #endif
-                FSharpGlyph.Error
 
             // These empty lists are not expected to occur
             | Item.ModuleOrNamespaces []
@@ -1013,8 +1001,6 @@ module internal DescriptionListsImpl =
         | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-        | Item.AmbiguousMethGroupOrProperty _ ->
-            failwith "todo: type check based on delayed items?"
 
 #if !NO_TYPEPROVIDERS
         | ItemIsWithStaticArguments m g _ -> 

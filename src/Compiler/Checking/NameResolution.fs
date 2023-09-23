@@ -246,11 +246,6 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
-    /// Represents resolution of property which may have extension methods of same name
-    | AmbiguousMethGroupOrProperty of displayName: string * infos: Item list
-
-    static member MakeAmbiguousMethGroupOrProperty (nm, infos: Item list) =
-        Item.AmbiguousMethGroupOrProperty (nm, infos)
     static member MakeMethGroup (nm, minfos: MethInfo list) =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
         Item.MethodGroup (nm, minfos, None)
@@ -276,7 +271,6 @@ type Item =
         | Item.Property(name = nm) -> nm |> ConvertValLogicalNameToDisplayNameCore
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
         | Item.MethodGroup(nm, _, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
-        | Item.AmbiguousMethGroupOrProperty(displayName=nm) -> nm |> ConvertValLogicalNameToDisplayNameCore
         | Item.CtorGroup(nm, ILMeth(_, ilMethInfo, _) :: _) ->
             match ilMethInfo.ApparentEnclosingType |> tryNiceEntityRefOfTy with
             | ValueSome tcref -> tcref.DisplayNameCore
@@ -2232,8 +2226,6 @@ let CheckAllTyparsInferrable amap m item =
                        (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnType(amap, m, fminst))))
             let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
-    | Item.AmbiguousMethGroupOrProperty(infos=_infos) ->
-        failwith "RFC XXX extension member priority over property when ..."
     | Item.Trait _
     | Item.CtorGroup _
     | Item.FakeInterfaceCtor _
@@ -2621,15 +2613,6 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 success [resInfo, Item.Trait traitInfo, rest]
 
             | Some (PropertyItem psets) when isLookUpExpr ->
-                // RFC XXXX prefer extension method when ...
-                let extensionMethods =
-                    match maybeAppliedArgExpr with
-                    | None -> None
-                    | Some _argExpr -> 
-                        // todo: consider if filtering candidates based on argExpr:SynExpr is meaningful
-                        // or to leave it to type checker
-                        let methods = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
-                        Some(Item.MakeMethGroup(nm, methods))
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
@@ -2639,9 +2622,13 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                 | Some x ->
-                    match extensionMethods with
+                    match maybeAppliedArgExpr with
                     | None -> success [resInfo, x, rest]
-                    | Some extensionMethods -> success [resInfo, Item.MakeAmbiguousMethGroupOrProperty(nm,[extensionMethods;x]), rest]
+                    | Some _argExpr ->
+                        // RFC XXXX prefer extension method when ...
+                        let methods = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
+                        let extensionMethods = Item.MakeMethGroup(nm, methods)
+                        success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
                 | None ->
                     // todo: consider if we should check extension method, but we'd probably won't have matched
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
@@ -4039,12 +4026,12 @@ let (|NonOverridable|_|) namedItem =
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
-let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeArgExpr =
+let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeAppliedArgExpr =
     let inline resolveExpr findFlag =
         let resInfo, item, rest =
             match lid with
             | id :: rest ->
-                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeArgExpr
+                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
         let itemRange = ComputeItemRange wholem lid rest
         resInfo, item, rest, itemRange
