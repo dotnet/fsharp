@@ -120,7 +120,11 @@ module internal SymbolHelpers =
         | Item.DelegateCtor ty 
         | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
-
+        | Item.AmbiguousMethGroupOrProperty(infos=infos) ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            rangeOfItem g preferFlag (List.head infos)
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref: TyconRef) = 
 #if !NO_TYPEPROVIDERS
@@ -217,7 +221,11 @@ module internal SymbolHelpers =
 
         // This is not expected: NewDef only occurs within checking
         | Item.NewDef _  -> None
-
+        | Item.AmbiguousMethGroupOrProperty _ ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            None
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName 
@@ -338,7 +346,11 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType []
         | Item.Types(_, []) ->
             FSharpXmlDoc.None
-
+        | Item.AmbiguousMethGroupOrProperty _ ->
+            #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+            #endif
+            FSharpXmlDoc.None
         |> GetXmlDocFromLoader infoReader
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
@@ -405,7 +417,11 @@ module internal SymbolHelpers =
               // These are not expected to occur
               | Item.Types(_, [])
               | Item.ModuleOrNamespaces [] -> false
-
+              | Item.AmbiguousMethGroupOrProperty _ ->
+              #if DEBUG
+                  failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+              #endif
+                  false
               //| _ -> false
               
           member x.Equals(item1, item2) = 
@@ -498,7 +514,11 @@ module internal SymbolHelpers =
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(info = pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
-
+              | Item.AmbiguousMethGroupOrProperty _ ->
+              #if DEBUG
+                  failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+              #endif
+                  0
               // These are not expected to occur, see InEqualityRelation and ItemWhereTypIsPreferred
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
@@ -511,6 +531,7 @@ module internal SymbolHelpers =
               | Item.Types _
               | Item.DelegateCtor _
               | Item.ModuleOrNamespaces [] -> 0
+
               ) }
     
     /// Remove all duplicate items
@@ -592,6 +613,11 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, [], _) 
         | Item.ModuleOrNamespaces []
         | Item.Property(info = []) -> ""
+        | Item.AmbiguousMethGroupOrProperty _ ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            ""
 
     /// Output the description of a language item
     let rec GetXmlCommentForItem (infoReader: InfoReader) m item = 
@@ -719,7 +745,11 @@ module internal SymbolHelpers =
         | Item.DelegateCtor _ ->
         //|  _ ->
             GetXmlCommentForItemAux None infoReader m item
-
+        | Item.AmbiguousMethGroupOrProperty _ ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            FSharpXmlDoc.None
         |> GetXmlDocFromLoader infoReader
 
     let IsAttribute (infoReader: InfoReader) item =
@@ -944,6 +974,11 @@ module internal SymbolHelpers =
         | Item.ImplicitOp _
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword
             ->  None
+        | Item.AmbiguousMethGroupOrProperty _ ->
+            #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+            #endif
+            None
 
     /// Select the items that participate in a MethodGroup.
     //
@@ -989,3 +1024,8 @@ module internal SymbolHelpers =
         | Item.UnionCaseField _
         | Item.UnqualifiedType _
         | Item.ActivePatternResult _ -> []
+        | Item.AmbiguousMethGroupOrProperty _ ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            []

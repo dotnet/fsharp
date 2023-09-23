@@ -343,6 +343,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         // These cases cover misc. corned cases (non-symbol types)
         | Item.Types _
         | Item.DelegateCtor _  -> dflt()
+        | Item.AmbiguousMethGroupOrProperty _ ->
+            failwith "todo: type check based on delayed items?"
 
     abstract Accessibility: FSharpAccessibility
     default _.Accessibility = FSharpAccessibility(taccessPublic)

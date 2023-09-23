@@ -929,7 +929,11 @@ type internal TypeCheckInfo
             | Item.CustomBuilder _
             | Item.OtherName _
             | Item.ActivePatternCase _ -> CompletionItemKind.Other
-
+            | Item.AmbiguousMethGroupOrProperty _ ->
+            #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+            #endif
+            CompletionItemKind.Other
         let isUnresolved =
             match assemblySymbol with
             | ValueSome x -> Some x.UnresolvedSymbol

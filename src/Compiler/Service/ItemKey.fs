@@ -582,6 +582,13 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         | Item.CtorGroup (_, (_ :: _ :: _)) -> ()
         | Item.ModuleOrNamespaces (_ :: _ :: _) -> ()
 
+        // todo: sort out
+        | Item.AmbiguousMethGroupOrProperty _ ->
+        #if DEBUG
+            failwith "Item.AmbiguousMethGroupOrProperty : not sorted out, maybe wrong design"
+        #endif
+            ()
+
         let postCount = b.Count
 
         fixup.WriteInt32(postCount - preCount)

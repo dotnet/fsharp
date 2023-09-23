@@ -144,6 +144,9 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
+    /// Represents resolution of property which may have extension methods of same name
+    | AmbiguousMethGroupOrProperty of displayName: string * infos: Item list
+
     /// The text for the item to use in the declaration list.
     /// This does not include backticks, parens etc.
     ///
@@ -808,6 +811,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
+    maybeAppliedArgExpr: SynExpr option ->
         Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
