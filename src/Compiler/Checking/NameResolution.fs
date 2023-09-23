@@ -2626,9 +2626,11 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                     | None -> success [resInfo, x, rest]
                     | Some _argExpr ->
                         // RFC XXXX prefer extension method when ...
-                        let methods = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
-                        let extensionMethods = Item.MakeMethGroup(nm, methods)
-                        success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
+                        match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
+                        | [] -> success [resInfo, x, rest]
+                        | methods ->
+                            let extensionMethods = Item.MakeMethGroup(nm, methods)
+                            success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
                 | None ->
                     // todo: consider if we should check extension method, but we'd probably won't have matched
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
