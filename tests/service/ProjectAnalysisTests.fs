@@ -2348,7 +2348,6 @@ let ``Test Project14 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
           [|("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)),
              ["attribute"]);
-            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["type"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
@@ -2503,14 +2502,10 @@ let ``Test Project16 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
           [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)),
              ["attribute"], ["class"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["type"],
-             ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [],
              ["member"]);
             ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)),
              ["attribute"], ["class"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["type"],
-             ["class"]);
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [],
              ["member"]);
             ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
@@ -5083,7 +5078,6 @@ let ``Test Project40 all symbols`` () =
            ("x", ((4, 33), (4, 34)), []);
            ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
            ("f", ((4, 4), (4, 5)), ["val"]);
-           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
            ("CompilationRepresentationFlags", ((6, 28), (6, 58)),
