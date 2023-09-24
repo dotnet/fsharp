@@ -59,6 +59,13 @@ type SourceCodeFileKind =
         | ".fsx" -> Fsx({FileName=path; SourceText=source})
         | ".cs" -> Cs({FileName=path; SourceText=source})
         | ".fs" | _ -> Fs({FileName=path; SourceText=source})
+    static member CreateReal(path:string) =
+        let source = Some(File.ReadAllText path)
+        match Path.GetExtension(path).ToLowerInvariant() with
+        | ".fsi" -> Fsi({FileName=path; SourceText=source})
+        | ".fsx" -> Fsx({FileName=path; SourceText=source})
+        | ".cs" -> Cs({FileName=path; SourceText=source})
+        | ".fs" | _ -> Fs({FileName=path; SourceText=source})
 
     member this.ChangeExtension =
         match this with
@@ -261,18 +268,24 @@ module rec CompilerAssertHelpers =
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
-    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
-        if entryPoint.GetParameters().Length = 1 then
+    let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
+        if not (isNull entryPoint) && entryPoint.GetParameters().Length = 1 then
             yield Array.empty<string>
     |]
 
-    let executeAssemblyEntryPoint (asm: Assembly) =
-        let entryPoint = asm.EntryPoint
+    let executeAssemblyEntryPoint (asm: Assembly) isFsx =
+        let entryPoint : MethodBase = asm.EntryPoint
+        let entryPoint =
+            if isNull entryPoint && isFsx then
+                let moduleInitType = asm.GetTypes() |> Array.last
+                moduleInitType.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic).[0] :> MethodBase
+            else
+                entryPoint
         let args = mkDefaultArgs entryPoint
         captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
 
 #if NETCOREAPP
-    let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps isFsx =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
             ctxt.add_Resolving(fun ctxt name ->
@@ -281,7 +294,7 @@ module rec CompilerAssertHelpers =
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
 
-            ctxt.LoadFromAssemblyPath assembly |> executeAssemblyEntryPoint
+            executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assembly) isFsx
         finally
             ctxt.Unload()
 #else
@@ -577,8 +590,8 @@ module rec CompilerAssertHelpers =
 
         succeeded, stdout.ToString(), stderr.ToString(), exn
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
         let exitCode = if succeeded then 0 else -1
         exitCode, stdout, stderr
 
@@ -681,10 +694,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member CompileRaw(cmpl: Compilation, ?ignoreWarnings) =
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
-    static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
+    static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
        if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps
+           executeBuiltAppAndReturnResult outputFilePath deps isFsx
        else
            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
@@ -710,7 +723,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
@@ -776,6 +789,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
+                
                 checker.ParseAndCheckFileInProject(
                     name,
                     0,
@@ -960,6 +974,42 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
         errorMessages, outStream.ToString()
 
+    static member RunRealScriptWithOptionsAndReturnResult options (scriptFile: FileInfo) =
+        //let savedDir = Environment.CurrentDirectory
+        //use _ = { new IDisposable with member x.Dispose() = Environment.CurrentDirectory <- savedDir }
+        //Environment.CurrentDirectory <- scriptFile.Directory.FullName
+        
+
+        // Intialize output and input streams
+        use inStream = new StringReader("")
+        use outStream = new StringWriter()
+        use errStream = new StringWriter()
+
+        // Build command line arguments & start FSI session
+        let argv = [| "C:\\fsi.exe" |]
+#if NETCOREAPP
+        let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+#else
+        let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
+#endif
+        let allArgs = Array.append args options
+
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
+        fsiSession.EvalInteraction($"""#cd @"{scriptFile.Directory.FullName}";; """)
+        let ch, errors = fsiSession.EvalScriptNonThrowing scriptFile.FullName
+
+        let errorMessages = ResizeArray()
+        errors
+        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
+
+        match ch with
+        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+        | _ -> ()
+
+        errorMessages, outStream.ToString()
+
+        
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         let errorMessages, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
         if expectedErrorMessages.Length <> errorMessages.Count then

@@ -206,6 +206,87 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
+    module NamingConventions =
+        let forActualFSCOutput sourceFilePath = sourceFilePath + ".actual.fsc.stdout.err"
+        let forActualIL sourceFilePath = sourceFilePath + ".actual.il.err"
+        let forBaselineFSCOutput sourceFilePath = sourceFilePath + ".fsc.stdout.bsl"
+
+        let forBaseLineIL sourceFilePath =
+            let ilBslPaths = [|
+    #if DEBUG
+    #if NETCOREAPP
+                yield sourceFilePath + ".il.netcore.debug.bsl"
+                yield sourceFilePath + ".il.netcore.bsl"
+    #else
+                yield sourceFilePath + ".il.net472.debug.bsl"
+                yield sourceFilePath + ".il.net472.bsl"
+    #endif
+                yield sourceFilePath + ".il.debug.bsl"
+                yield sourceFilePath + ".il.bsl"
+    #else
+    #if NETCOREAPP
+                yield sourceFilePath + ".il.netcore.release.bsl"
+                yield sourceFilePath + ".il.netcore.bsl"
+    #else
+                yield sourceFilePath + ".il.net472.release.bsl"
+                yield sourceFilePath + ".il.net472.bsl"
+    #endif
+                yield sourceFilePath + ".il.release.bsl"
+                yield sourceFilePath + ".il.bsl"
+    #endif
+            |]
+
+            let findBaseline =
+                ilBslPaths
+                |> Array.tryPick(fun p -> if File.Exists p then Some p else None)
+            match findBaseline with
+            | Some s -> s
+            | None -> sourceFilePath + ".il.bsl"
+
+    type BaseLineHelper =
+        
+        
+        
+
+        static member readFileOrDefault (path: string) : string option =
+            match FileSystem.FileExistsShim(path) with
+            | true -> Some (File.ReadAllText path)
+            | _ -> None
+        
+        static member makeBaseLine(sourceFilePath, ?baselineSuffix) =
+            let baselineSuffix = Option.defaultValue "" baselineSuffix
+            let fsBslFilePath = NamingConventions.forBaselineFSCOutput sourceFilePath
+            let ilBslFilePath = NamingConventions.forBaseLineIL (sourceFilePath + baselineSuffix)
+
+            let fsOutFilePath = normalizePathSeparator <| NamingConventions.forActualFSCOutput sourceFilePath
+            let ilOutFilePath = normalizePathSeparator <| NamingConventions.forActualIL sourceFilePath
+            let fsBslSource = BaseLineHelper.readFileOrDefault fsBslFilePath
+            let ilBslSource = BaseLineHelper.readFileOrDefault ilBslFilePath
+
+            {
+                SourceFilename = Some sourceFilePath
+                FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
+                ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
+            }
+        static member makeLegacyBaseLine(sourceFilePath, ?baselineSuffix) =
+            // using change extension is problematic, hence only for legacy baseline
+            let forActualFSCOutput sourceFilePath = Path.ChangeExtension(sourceFilePath, ".err")
+            let forActualIL sourceFilePath = Path.ChangeExtension(sourceFilePath, ".il")
+
+            let baselineSuffix = Option.defaultValue "" baselineSuffix
+            let fsBslFilePath = NamingConventions.forBaselineFSCOutput sourceFilePath
+            let ilBslFilePath = NamingConventions.forBaseLineIL (sourceFilePath + baselineSuffix)
+
+            let fsOutFilePath = normalizePathSeparator <| forActualFSCOutput sourceFilePath
+            let ilOutFilePath = normalizePathSeparator <| forActualIL sourceFilePath
+            let fsBslSource = BaseLineHelper.readFileOrDefault fsBslFilePath
+            let ilBslSource = BaseLineHelper.readFileOrDefault ilBslFilePath
+
+            {
+                SourceFilename = Some sourceFilePath
+                FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
+                ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
+            }
     let private defaultOptions : string list = []
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
@@ -353,6 +434,12 @@ module rec Compiler =
     let Fsx (source: string) : CompilationUnit =
         fsFromString (FsxSourceCode source) |> FS
 
+    let RealFsxFromPath (path: string) =
+        path
+        |> SourceCodeFileKind.CreateReal
+        |> fsFromString
+        |> FS
+
     let FsxFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path) |> FS
     
@@ -456,7 +543,12 @@ module rec Compiler =
 
     let withDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
-
+    let withBaseLine cUnit =
+        match cUnit with
+        | CompilationUnit.FS fs ->
+            let sourceFileName = fs.Source.GetSourceFileName
+            FS { fs with Baseline = Some(BaseLineHelper.makeBaseLine(sourceFileName)) }
+        | _ -> cUnit
     let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
 
@@ -945,7 +1037,14 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
-                let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                let isFsx =
+                    match s.Compilation with
+                    | FS fs ->
+                        match fs.Source with
+                        | SourceCodeFileKind.Fsx _ -> true
+                        | _ -> false
+                    | _ -> false
+                let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
                 printfn "---------output-------\n%s\n-------"  output
                 printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
@@ -1076,7 +1175,8 @@ module rec Compiler =
 
 
     let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        FileSystem.OpenFileForWriteShim(baselineFile.FilePath + ".err").Write(actualErrors)
+        printfn $"creating baseline error file for convenience {baselineFile}"
+        FileSystem.OpenFileForWriteShim(baselineFile.FilePath).Write(actualErrors)
 
     let private verifyFSBaseline (fs) : unit =
         match fs.Baseline with
@@ -1086,10 +1186,19 @@ module rec Compiler =
                 match bsl.FSBaseline.Content with
                 | Some b -> b.Replace("\r\n","\n")
                 | None ->  String.Empty
-
-            let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
-
-            let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
+            let errorsActual =
+                match fs.Source with
+                | SourceCodeFileKind.Fsx _->
+                    let fsxScriptFile = FileInfo fs.Source.GetSourceFileName
+                    //let dir = fsxScriptFile.Directory
+                    //RunRealScriptWithOptionsAndReturnResult
+                    let fsxResult = CompilerAssert.RunRealScriptWithOptionsAndReturnResult [||] fsxScriptFile
+                    
+                    snd fsxResult |> sanitizeFsxOutput
+                | SourceCodeFileKind.Fs _->
+                    let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
+                    (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
+                | _ -> failwith $"not supposed to check %A{fs.Source}"
 
             if errorsExpectedBaseLine <> errorsActual then
                 fs.CreateOutputDirectory()
@@ -1122,29 +1231,31 @@ module rec Compiler =
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
     let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
-        match baseline with
-        | None -> failwith "Baseline was not provided."
-        | Some bsl ->
-            match result.OutputPath with
-                | None -> failwith "Operation didn't produce any output!"
-                | Some p ->
-                    let expectedIL =
-                        match bsl.ILBaseline.Content with
-                        | Some b -> b
-                        | None ->  String.Empty
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
+        match result.OutputPath with
+        | None -> failwith "Operation didn't produce any output!"
+        | Some p ->
+            match baseline with
+            | None -> failwith "Baseline was not provided."
+            | Some bsl ->
+                let expectedIL =
+                    match bsl.ILBaseline.Content with
+                    | Some b -> b
+                    | None ->  String.Empty
+                
+                let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
-                    if not success then
-                        // Failed try update baselines if required
-                        // If we are here then the il file has been produced we can write it back to the baseline location
-                        // if the environment variable TEST_UPDATE_BSL has been set
-                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
-                            match baseline with
-                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                            | None -> ()
+                if not success then
+                    // Failed try update baselines if required
+                    // If we are here then the il file has been produced we can write it back to the baseline location
+                    // if the environment variable TEST_UPDATE_BSL has been set
+                    if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
+                        match baseline with
+                        | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.FilePath, true)
+                        | None -> ()
 
-                        createBaselineErrors bsl.ILBaseline actualIL
-                        Assert.Fail(errorMsg)
+                    createBaselineErrors bsl.ILBaseline actualIL
+                    let messagePrefix = $"failed IL base line\nactual file: {baseline.Value.ILBaseline.FilePath}\nexpected file: {baseline.Value.ILBaseline.BslSource}\n"
+                    Assert.Fail(messagePrefix + errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1177,6 +1288,14 @@ module rec Compiler =
         let pattern = @"(Microsoft \(R\) (.*) version (.*) F# (.*))"
         let result = regexStrip output pattern (RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
         result
+    let sanitizeFsxOutput output =
+        let slndir = (DirectoryInfo __SOURCE_DIRECTORY__).Parent.Parent.FullName
+        let pattern = @"(Microsoft \(R\) (.*) version (.*) F# (.*))"
+        let output = regexStrip output pattern (RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+        let pattern = @"\n\nCopyright (c) Microsoft Corporation. All Rights Reserved.\n\n"
+        let output = regexStrip output pattern (RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+        output.Replace(slndir, "")
+        
 
     let getOutput (cResult: CompilationResult) : string option =
         let result =
@@ -1198,10 +1317,25 @@ module rec Compiler =
         | Some actual ->
             let expected = stripVersion (normalizeNewlines expected)
             if expected <> actual then
-                failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+                let errFile =
+                    match cResult.Output.Compilation with
+                    | FS s -> s.Source.GetSourceFileName + ".stdout.err"
+                    | _ -> failwith "not supposed to check output of non F# source"
+                File.WriteAllText(errFile, actual)
+                failwith $"""Output does not match expected, err file generated at {errFile} for your convenience: \n ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
             else
                 cResult
 
+    let verifyOutputWithDefaultBaseline (cResult: CompilationResult) =
+        let expected =
+            match cResult.Output.Compilation with
+            | FS s ->
+                s.Source.GetSourceFileName + ".stdout.bsl"
+                |> File.ReadAllText
+                |> normalizeNewlines
+                |> stripVersion
+            | _ -> failwith "not supposed to check output of non F# source"
+        verifyOutput expected cResult                    
     let verifyOutputWithBaseline path =
         verifyOutput (File.ReadAllText(path).Replace(@"\r\n", Environment.NewLine))
 

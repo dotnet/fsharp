@@ -240,6 +240,7 @@
     <Compile Include="TypeChecks\Graph\GraphProcessingTests.fs" />
     <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="TypeChecks\CheckTypeTests.fs" />
+    <Compile Include="TypeChecks\typeextensions.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />

@@ -26,11 +26,6 @@ type DirectoryAttribute(dir: string) =
     let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
     
-    let readFileOrDefault (path: string) : string option =
-        match FileSystem.FileExistsShim(path) with
-        | true -> Some (File.ReadAllText path)
-        | _ -> None
-
     let createCompilationUnit path (filename: string) methodName multipleFiles =
         // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
         let extraDirectory =
@@ -39,58 +34,15 @@ type DirectoryAttribute(dir: string) =
                 |> normalizeName
             else ""
         let outputDirectory = outputDirectory methodName extraDirectory
-        let outputDirectoryPath =
+        let _outputDirectoryPath =
             match outputDirectory with
             | Some path -> path.FullName
             | None -> failwith "Can't set the output directory"
         let sourceFilePath = normalizePathSeparator (path ++ filename)
-        let fsBslFilePath = sourceFilePath + ".err.bsl"
-        let ilBslFilePath =
-            let ilBslPaths = [|
-#if DEBUG
-    #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
-#else
-    #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                yield sourceFilePath + baselineSuffix + ".il.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
-#endif
-            |]
-
-            let findBaseline =
-                ilBslPaths
-                |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
-            match findBaseline with
-            | Some s -> s
-            | None -> sourceFilePath + baselineSuffix + ".il.bsl"
-
-        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
-        let fsBslSource = readFileOrDefault fsBslFilePath
-        let ilBslSource = readFileOrDefault ilBslFilePath
-
+        
         {   Source            = SourceCodeFileKind.Create(sourceFilePath)
             AdditionalSources = []
-            Baseline          =
-                Some
-                    {
-                        SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
-                    }
+            Baseline          = Some (BaseLineHelper.makeLegacyBaseLine(sourceFilePath, baselineSuffix))
             Options           = []
             OutputType        = Library
             Name              = Some filename
