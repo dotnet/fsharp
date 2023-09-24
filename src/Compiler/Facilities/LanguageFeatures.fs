@@ -79,6 +79,7 @@ type LanguageFeature =
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    | ByrefFields
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -181,6 +182,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WhileBang, previewVersion
                 LanguageFeature.ExtendedFixedBindings, previewVersion
                 LanguageFeature.PreferStringGetPinnableReference, previewVersion
+                LanguageFeature.ByrefFields, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -315,6 +317,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
         | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
+        | LanguageFeature.ByrefFields -> FSComp.SR.featureByrefFields ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

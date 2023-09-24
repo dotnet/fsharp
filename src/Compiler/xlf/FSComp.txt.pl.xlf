@@ -227,6 +227,11 @@
         <target state="translated">Automatyczne generowanie właściwości „Wiadomość“ dla deklaracji „Wyjątek“</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureByrefFields">
+        <source>'byref' fields</source>
+        <target state="new">'byref' fields</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Zezwalaj na niejawny atrybut Rozszerzenie dla deklarujących typów, modułów</target>

@@ -25,19 +25,31 @@ type DirectoryAttribute(dir: string) =
     let outputDirectory methodName extraDirectory = getTestOutputDirectory dir methodName extraDirectory 
     let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
+    let mutable langVersion = None
     
     let readFileOrDefault (path: string) : string option =
         match FileSystem.FileExistsShim(path) with
         | true -> Some (File.ReadAllText path)
         | _ -> None
-
+    
+    let addLangVersion (compUnit: CompilationUnit) =
+        match langVersion with
+        | Some lv -> compUnit |> withLangVersion lv
+        | None -> compUnit
+    
     let createCompilationUnit path (filename: string) methodName multipleFiles =
-        // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
         let extraDirectory =
-            if multipleFiles then
-                filename.Substring(0, filename.Length - 3) // remove .fs
-                |> normalizeName
-            else ""
+            [|
+                // add extra directory if lang version is specified to disambiguate between other potential test runs with differing versions
+                match langVersion with
+                | Some lv -> lv
+                | None -> ()
+                // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
+                if multipleFiles then
+                    filename.Substring(0, filename.Length - 3) // remove .fs
+                    |> normalizeName
+            |]
+            |> Path.Combine
         let outputDirectory = outputDirectory methodName extraDirectory
         let outputDirectoryPath =
             match outputDirectory with
@@ -81,7 +93,7 @@ type DirectoryAttribute(dir: string) =
         let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
-
+        
         {   Source            = SourceCodeFileKind.Create(sourceFilePath)
             AdditionalSources = []
             Baseline          =
@@ -99,12 +111,15 @@ type DirectoryAttribute(dir: string) =
             OutputDirectory   = outputDirectory
             TargetFramework   = TargetFramework.Current
             StaticLink = false
-            } |> FS
+            }
+        |> FS
+        |> addLangVersion
 
-    new([<ParamArray>] dirs: string[]) = DirectoryAttribute(Path.Combine(dirs) : string)
+    new([<ParamArray>] dirs: string[]) = DirectoryAttribute((Path.Combine(dirs) : string))
     
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
+    member _.LangVersion with get () = Option.toObj langVersion and set v = langVersion <- Option.ofObj v
 
     override _.GetData(method: MethodInfo) =
         if not (Directory.Exists(dirInfo)) then
@@ -130,4 +145,14 @@ type DirectoryAttribute(dir: string) =
 
         fsFiles
         |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name multipleFiles)
-        |> Seq.map (fun c -> [| c |])
+        |> Seq.map (fun c -> [|
+            yield c
+            match langVersion with
+            | Some lv -> yield lv
+            | None -> ()
+        |])
+
+        // [|
+        //     for fs in fsFiles do
+        //         yield [| createCompilationUnit dirInfo fs method.Name multipleFiles |]
+        // |]
