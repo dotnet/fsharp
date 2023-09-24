@@ -580,7 +580,14 @@ type CalledMeth<'T>
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
                         if isIndexerSetter then
-                            unnamedCalledArgs[nUnnamedCalledArgs-2]
+                            let adjustedIndex =
+                                // see https://github.com/dotnet/fsharp/issues/16034
+                                // original code: nUnnamedCalledArgs-2
+                                // which doesn't account for property setter being called with named arguments
+                                nUnnamedCalledArgs-2
+                                // account for named arguments, e.g.: myObject.myProperty(argumentName=1) <- newValue
+                                + namedCallerArgs.Length 
+                            unnamedCalledArgs[adjustedIndex]
                         else
                             unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
