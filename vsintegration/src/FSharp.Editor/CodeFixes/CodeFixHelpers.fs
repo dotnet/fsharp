@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -19,13 +18,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 open CancellableTasks
-
-module internal MutableCodeFixHelper =
-    let getLineNumberAndText (sourceText: SourceText) position =
-        let textLine = sourceText.Lines.GetLineFromPosition position
-        let textLinePos = sourceText.Lines.GetLinePosition position
-        let fcsTextLineNumber = Line.fromZ textLinePos.Line
-        fcsTextLineNumber, textLine.ToString()
 
 module internal UnusedCodeFixHelper =
     let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
@@ -80,35 +72,40 @@ module internal CodeFixHelpers =
 
         TelemetryReporter.ReportSingleEvent(TelemetryEvents.CodefixActivated, props)
 
-    let createTextChangeCodeFix (name: string, title: string, context: CodeFixContext, changes: TextChange seq) =
+    let createTextChangeCodeFix (codeFix, context: CodeFixContext) =
         CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                backgroundTask {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                    let doc = context.Document.WithText(sourceText.WithChanges(changes))
-                    reportCodeFixTelemetry context.Diagnostics context.Document name [||]
+            codeFix.Message,
+            (fun cancellationToken ->
+                cancellableTask {
+                    let! sourceText = context.Document.GetTextAsync cancellationToken
+                    let doc = context.Document.WithText(sourceText.WithChanges(codeFix.Changes))
+                    reportCodeFixTelemetry context.Diagnostics context.Document codeFix.Name [||]
                     return doc
-                }),
-            name
+                }
+                |> CancellableTask.start cancellationToken)
         )
 
 [<AutoOpen>]
 module internal CodeFixExtensions =
     type CodeFixContext with
 
-        member ctx.RegisterFsharpFix(staticName, title, changes, ?diagnostics) =
-            let codeAction =
-                CodeFixHelpers.createTextChangeCodeFix (staticName, title, ctx, changes)
-
-            let diag = diagnostics |> Option.defaultValue ctx.Diagnostics
-            ctx.RegisterCodeFix(codeAction, diag)
-
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
                 match! codeFix.GetCodeFixIfAppliesAsync ctx with
-                | ValueSome codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
+                | ValueSome codeFix ->
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
                 | ValueNone -> ()
+            }
+            |> CancellableTask.startAsTask ctx.CancellationToken
+
+        member ctx.RegisterFsharpFixes(codeFix: IFSharpMultiCodeFixProvider) =
+            cancellableTask {
+                let! codeFixes = codeFix.GetCodeFixesAsync ctx
+
+                for codeFix in codeFixes do
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
@@ -128,6 +125,15 @@ module internal CodeFixExtensions =
             cancellableTask {
                 let! sourceText = ctx.GetSourceTextAsync()
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
+            }
+
+        member ctx.GetLineNumberAndText position =
+            cancellableTask {
+                let! sourceText = ctx.GetSourceTextAsync()
+                let textLine = sourceText.Lines.GetLineFromPosition position
+                let textLinePos = sourceText.Lines.GetLinePosition position
+                let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                return fcsTextLineNumber, textLine.ToString()
             }
 
 // This cannot be an extension on the code fix context

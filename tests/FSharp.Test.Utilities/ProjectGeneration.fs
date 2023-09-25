@@ -806,7 +806,7 @@ type ProjectWorkflowBuilder
         defaultArg
             checker
             (FSharpChecker.Create(
-                keepAllBackgroundSymbolUses = false,
+                keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
