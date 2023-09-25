@@ -1239,8 +1239,9 @@ type internal TransparentCompiler
 
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
+        let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
         caches.TcLastFile.Get(
-            projectSnapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne.Key,
+            projectSnapshot.FileKey fileName,
             async {
                 let file = projectSnapshot.SourceFiles |> List.last
 

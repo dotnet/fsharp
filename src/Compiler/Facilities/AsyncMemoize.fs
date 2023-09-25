@@ -249,10 +249,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
             |> Seq.map (fun node -> node.Value)
             |> Seq.filter (p24 >> ((<>) version))
             |> Seq.choose (function
-                | _, _, _, Strong v -> Some v
-                | _, _, _, Weak r ->
+                | _, ver, _, Strong v -> Some (ver, v)
+                | _, ver, _, Weak r ->
                     match r.TryGetTarget() with
-                    | true, x -> Some x
+                    | true, x -> Some (ver, x)
                     | _ -> None)
             |> Seq.toList
 
@@ -371,7 +371,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     ) =
 
     let name = defaultArg name "N/A"
-    let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs true
+    let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs false
 
     let event = Event<_>()
 
@@ -463,10 +463,13 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             (Running(TaskCompletionSource(), cts, computation, DateTime.Now))
                         )
 
-                        if cancelDuplicateRunningJobs then
-                            otherVersions
-                            |> Seq.choose (function Running (_tcs, cts, _, _) -> Some cts | _ -> None)
-                            |> Seq.iter (fun cts -> cts.Cancel())
+                        otherVersions
+                        |> Seq.choose (function v, Running (_tcs, cts, _, _) -> Some (v, cts) | _ -> None)
+                        |> Seq.iter (fun (_v, cts) -> 
+                            System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
+                            if cancelDuplicateRunningJobs then
+                                System.Diagnostics.Trace.TraceWarning("Canceling")
+                                cts.Cancel())
 
                         New cts.Token
             })
@@ -494,7 +497,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
-                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label} version: {key.Version}"
+                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                             else
                                 // We need to restart the computation
@@ -504,7 +507,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                         try
                                             log (Started, key)
-                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label} version: {key.Version}"
+                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
                                             let! result = Async.StartAsTask(computation, cancellationToken = cts.Token)
                                             post (key, (JobCompleted result))
                                         with
@@ -527,7 +530,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
-                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label} version: {key.Version}"
+                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                         | CancelRequest, None
                         | CancelRequest, Some (Completed _) -> ()
