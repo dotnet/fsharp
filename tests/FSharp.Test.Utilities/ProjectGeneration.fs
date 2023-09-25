@@ -833,7 +833,7 @@ type ProjectWorkflowBuilder
         ?autoStart
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler false
+    let useTransparentCompiler = defaultArg useTransparentCompiler true
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true

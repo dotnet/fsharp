@@ -7,6 +7,8 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 
+open Internal.Utilities.Library.Extras
+
 [<AutoOpen>]
 module Utils =
 
@@ -29,16 +31,23 @@ type internal StateUpdate<'TValue> =
     | JobFailed of exn
 
 type internal MemoizeReply<'TValue> =
-    | New
+    | New of CancellationToken
     | Existing of Task<'TValue>
 
 type MemoizeRequest<'TValue> =
     | GetOrCompute of Async<'TValue> * CancellationToken
     | Sync
 
+[<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
     | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime
     | Completed of 'TValue
+    member this.DebuggerDisplay =
+        match this with
+        | Running (_, cts, _, ts) ->
+            let cancellation = if cts.IsCancellationRequested then " ! Cancellation Requested" else ""
+            $"Running since {ts.ToShortTimeString()}{cancellation}"
+        | Completed value -> $"Completed {value}"
 
 type internal CacheEvent =
     | Evicted
@@ -229,6 +238,24 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                         event CacheEvent.Collected (label, key, version)
                         None
 
+    /// Returns an option of a value for given key and version, and also a list of all other versions for given key
+    member this.GetAll(key, version) =
+        this.TryGet(key, version),
+
+        match dictionary.TryGetValue key with
+        | false, _ -> []
+        | true, versionDict ->
+            versionDict.Values
+            |> Seq.map (fun node -> node.Value)
+            |> Seq.filter (p24 >> ((<>) version))
+            |> Seq.choose (function
+                | _, _, _, Strong v -> Some v
+                | _, _, _, Weak r ->
+                    match r.TryGetTarget() with
+                    | true, x -> Some x
+                    | _ -> None)
+            |> Seq.toList
+
     member _.Remove(key, version) =
         match dictionary.TryGetValue key with
         | false, _ -> ()
@@ -339,10 +366,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     (
         ?keepStrongly,
         ?keepWeakly,
-        ?name: string
+        ?name: string,
+        ?cancelDuplicateRunningJobs: bool
     ) =
 
     let name = defaultArg name "N/A"
+    let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs true
 
     let event = Event<_>()
 
@@ -401,11 +430,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         lock.Do(fun () ->
             task {
 
-                let cached = cache.TryGet(key.Key, key.Version)
+                let cached, otherVersions = cache.GetAll(key.Key, key.Version)
 
                 return
                     match msg, cached with
-                    | Sync, _ -> New
+                    | Sync, _ -> New Unchecked.defaultof<_>
                     | GetOrCompute _, Some (Completed result) -> Existing(Task.FromResult result)
                     | GetOrCompute (_, ct), Some (Running (tcs, _, _, _)) ->
                         incrRequestCount key
@@ -425,14 +454,21 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             post (key, OriginatorCanceled))
                         |> saveRegistration key
 
+                        let cts = new CancellationTokenSource()
+
                         cache.Set(
                             key.Key,
                             key.Version,
                             key.Label,
-                            (Running(TaskCompletionSource(), (new CancellationTokenSource()), computation, DateTime.Now))
+                            (Running(TaskCompletionSource(), cts, computation, DateTime.Now))
                         )
 
-                        New
+                        if cancelDuplicateRunningJobs then
+                            otherVersions
+                            |> Seq.choose (function Running (_tcs, cts, _, _) -> Some cts | _ -> None)
+                            |> Seq.iter (fun cts -> cts.Cancel())
+
+                        New cts.Token
             })
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
@@ -561,7 +597,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             let! ct = Async.CancellationToken
 
             match! processRequest post (key, GetOrCompute(computation, ct)) |> Async.AwaitTask with
-            | New ->
+            | New internalCt ->
+                
+                let linkedCtSource = CancellationTokenSource.CreateLinkedTokenSource(ct, internalCt)
+
                 try
                     return!
                         Async.StartAsTask(
@@ -571,7 +610,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 post (key, (JobCompleted result))
                                 return result
                             },
-                            cancellationToken = ct
+                            cancellationToken = linkedCtSource.Token
                         )
                         |> Async.AwaitTask
                 with

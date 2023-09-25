@@ -331,3 +331,40 @@ let ``Stress test`` () =
     Assert.Equal (started, completed + canceled + failed + timeout)
 
     Assert.True ((float completed) > ((float started) * 0.1), "Less than 10 % completed jobs")
+
+
+[<Fact>]
+let ``Cancel running jobs with the same key`` () =
+
+    let cache = AsyncMemoize(cancelDuplicateRunningJobs=false)
+
+    let mutable started = 0
+    let mutable cancelled = 0
+
+    let work () = async {
+        Interlocked.Increment &started |> ignore
+        let! ct = Async.CancellationToken
+        use _ = ct.Register(fun () -> Interlocked.Increment &cancelled |> ignore)
+        for _ in 1..10 do
+            do! Async.Sleep 30
+    }
+
+    let key1 =
+        { new ICacheKey<_, _> with
+              member _.GetKey() = 1
+              member _.GetVersion() = 1
+              member _.GetLabel() = "key1" }
+
+    cache.Get(key1, work()) |> Async.Start
+
+    let key2 =
+        { new ICacheKey<_, _> with
+              member _.GetKey() = key1.GetKey()
+              member _.GetVersion() = key1.GetVersion() + 1
+              member _.GetLabel() = "key2" }
+
+    cache.Get(key2, work()) |> Async.Start
+
+    Async.Sleep 100 |> Async.RunSynchronously
+
+    Assert.Equal((2, 1), (started, cancelled))
