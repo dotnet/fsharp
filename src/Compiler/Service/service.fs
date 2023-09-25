@@ -106,7 +106,7 @@ module CompileHelpers =
             { new DiagnosticsLogger("CompileAPI") with
 
                 member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors)) // Suggest names for errors
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors, None)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -506,6 +506,7 @@ type BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
+                    let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -515,15 +516,18 @@ type BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             flatErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
+                let! ct = Async.CancellationToken
+
                 let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing)
+                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, captureIdentifiersWhenParsing, ct)
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
@@ -552,7 +556,8 @@ type BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -775,6 +780,7 @@ type BackgroundCompiler
                         FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
 
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+                    let! ct = NodeCode.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -784,7 +790,8 @@ type BackgroundCompiler
                             userOpName,
                             suggestNamesForErrors,
                             builder.TcConfig.flatErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            ct
                         )
 
                     let parseResults =
@@ -851,6 +858,10 @@ type BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let parseDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
                         diagnosticsOptions,
@@ -858,7 +869,8 @@ type BackgroundCompiler
                         fileName,
                         parseDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        None
                     )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -870,7 +882,8 @@ type BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1024,6 +1037,10 @@ type BackgroundCompiler
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
+                let symbolEnv =
+                    SymbolEnv(tcProj.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, tcProj.TcImports)
+                    |> Some
+
                 let tcDiagnostics =
                     DiagnosticHelpers.CreateDiagnostics(
                         diagnosticsOptions,
@@ -1031,7 +1048,8 @@ type BackgroundCompiler
                         fileName,
                         tcDiagnostics,
                         suggestNamesForErrors,
-                        builder.TcConfig.flatErrors
+                        builder.TcConfig.flatErrors,
+                        symbolEnv
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
@@ -1198,7 +1216,7 @@ type BackgroundCompiler
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
                 |> List.map (fun (exn, isError) ->
-                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors"))
+                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors", None))
 
             return options, (diags @ diagnostics.Diagnostics)
         }
@@ -1433,8 +1451,10 @@ type FSharpChecker
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
             | Some res -> return res
             | None ->
+                let! ct = Async.CancellationToken
+
                 let res =
-                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors)
+                    ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors, ct)
 
                 braceMatchCache.Set(AnyCallerThread, (fileName, hash, options), res)
                 return res
@@ -1738,7 +1758,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None, None)
+        let tokenizer = FSharpSourceTokenizer([], None, None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

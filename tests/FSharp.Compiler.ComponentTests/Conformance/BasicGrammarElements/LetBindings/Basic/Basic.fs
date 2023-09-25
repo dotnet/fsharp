@@ -76,7 +76,7 @@ module LetBindings_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 58, Line 10, Col 1, Line 10, Col 5, "Possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 10, Col 1, Line 10, Col 5, "Possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this token further or using standard formatting conventions.")
             (Error 10, Line 10, Col 6, Line 10, Col 7, "Unexpected start of structured construct in expression")
             (Error 583, Line 9, Col 5, Line 9, Col 6, "Unmatched '('")
             (Error 10, Line 10, Col 16, Line 10, Col 17, "Unexpected symbol ')' in implementation file")
@@ -118,7 +118,7 @@ module LetBindings_Basic =
     let ``E_Literals02_fsi`` compilation =
         compilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++"E_Literals02.fs"))
-        |> verifyCompile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 876, Line 12, Col 1, Line 13, Col 18, "A declaration may only be the [<Literal>] attribute if a constant value is also given, e.g. 'val x: int = 1'")

@@ -8,7 +8,6 @@ open Xunit
 open CodeFixTestFramework
 
 let private codeFix = WrapExpressionInParenthesesCodeFixProvider()
-let private diagnostic = 0597 // ... arguments involving function or method applications should be parenthesized
 
 // Test case is taken from the original PR:
 // https://github.com/dotnet/fsharp/pull/10460
@@ -34,6 +33,6 @@ printfn "Hello %d" (rng.Next(5))
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

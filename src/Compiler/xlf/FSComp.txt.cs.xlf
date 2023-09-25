@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
+      <trans-unit id="alwaysUseTypedStringInterpolation">
+        <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
+        <target state="new">Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Všechny prvky pole musí být implicitně převoditelné na typ prvního elementu, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
@@ -40,6 +45,11 @@
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Pokud typ používá atribut [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Konstruktor s argumenty není povolený.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
+        <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
+        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -102,6 +112,11 @@
         <target state="translated">Pokud typ používá atribut [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Členové instance nejsou povoleni.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkNotTailRecursive">
+        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Atribut AssemblyKeyNameAttribute je zastaralý. Použijte místo něj AssemblyKeyFileAttribute.</target>
@@ -157,6 +172,11 @@
         <target state="translated">Argument {0} neodpovídá</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Všechny větve výrazu if musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
@@ -175,6 +195,11 @@
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
         <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst nebo neexistuje. Ohlášená výjimka: {2} – {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
@@ -205,6 +230,16 @@
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Povolit implicitní atribut Extension pro deklarující typy, moduly</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
+        <source>Constraint intersection on flexible types</source>
+        <target state="new">Constraint intersection on flexible types</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -250,6 +285,11 @@
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">více typů podporuje měrné jednotky</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureExtendedFixedBindings">
+        <source>extended fixed bindings for byref and GetPinnableReference</source>
+        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
@@ -357,6 +397,11 @@
         <target state="translated">správa balíčků</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferStringGetPinnableReference">
+        <source>prefer String.GetPinnableReference in fixed bindings</source>
+        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">formátování typu binary pro integery</target>
@@ -402,6 +447,11 @@
         <target state="translated">vzor s jedním podtržítkem</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
+        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
+        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
         <source>Static members in interfaces</source>
         <target state="translated">Statické členy v rozhraních</target>
@@ -427,6 +477,11 @@
         <target state="translated">Podpora try-with ve výrazech pořadí</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnmanagedConstraintCsharpInterop">
+        <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
+        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">Vyvolá upozornění, když výraz záznamu kopírování a aktualizace změní všechna pole záznamu.</target>
@@ -440,6 +495,11 @@
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWhileBang">
+        <source>'while!' expression</source>
+        <target state="new">'while!' expression</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -540,6 +600,11 @@
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">Slouží ke kontrole, zda je objekt daného typu ve vzoru nebo vazbě.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionWhileBang">
+        <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -727,6 +792,11 @@
         <target state="translated">Zahrnout informace o rozhraní F#, výchozí je soubor. Klíčové pro distribuci knihoven.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsStrictIndentation">
+        <source>Override indentation rules implied by the language version</source>
+        <target state="new">Override indentation rules implied by the language version</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Podporované jazykové verze:</target>
@@ -762,6 +832,11 @@
         <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0 nebo vyšší.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
+        <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
+        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">Neplatný interpolovaný řetězec. Vyplnění výrazu interpolovaného řetězce je prázdné, očekával se výraz.</target>
@@ -787,11 +862,6 @@
         <target state="translated">Tady nebo před tímto místem začal neúplný interpolovaný doslovný řetězec.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsEqualsMissingInTypeDefinition">
-        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
         <target state="translated">Za tímto bodem byl očekáván vzor</target>
@@ -802,9 +872,9 @@
         <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingPatternInTuple">
+      <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="translated">Očekává se vzorek.</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
@@ -842,6 +912,11 @@
         <target state="translated">Tento přístup člena je nejednoznačný. Při vytváření objektu použijte závorky, např. (new SomeType(args)).MemberName'</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
+        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
+        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Neočekávaný konec vstupu ve větvi else if nebo elif podmíněného výrazu Očekávalo se elif &lt;expr&gt; then &lt;expr&gt; nebo else if &lt;expr&gt; then &lt;expr&gt;.</target>
@@ -860,6 +935,11 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="translated">Algoritmus {0} není podporovaný.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="pickleFsharpCoreBackwardsCompatible">
+        <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
+        <target state="new">Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
@@ -942,6 +1022,16 @@
         <target state="translated">Sadu .NET SDK pro tento skript nešlo určit. Pokud se skript nachází v adresáři používajícím global.json, zkontrolujte, jestli je nainstalovaná odpovídající sada .NET SDK. Neočekávaná chyba {0}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="suggestedName">
+        <source>(Suggested name)</source>
+        <target state="new">(Suggested name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
+        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Tento výraz má typ {0} a je kompatibilní pouze s typem {1} prostřednictvím nejednoznačného implicitního převodu. Zvažte použití explicitního volání op_Implicit. Použitelnými implicitními převody jsou: {2}</target>
@@ -957,24 +1047,54 @@
         <target state="translated">Pole {0} se v tomto výrazu záznamu vyskytuje vícekrát.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="translated">Toto je nesprávný anonymní záznam. Měl by mít pole {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="translated">Tento anonymní záznam nemá dost polí. Přidejte chybějící pole {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="translated">Tento anonymní záznam má příliš mnoho polí. Odeberte nadbytečná pole {0}.</target>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">Tento anonymní záznam neodpovídá přesně očekávanému tvaru. Přidejte chybějící pole {0} a odeberte nadbytečná pole {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Neplatná deklarace typu anonymního záznamu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
+        <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
+        <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
+        <source>This anonymous record is missing fields {0}.</source>
+        <target state="new">This anonymous record is missing fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
+        <source>This anonymous record has extra fields. Remove fields {0}.</source>
+        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
+        <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
+        <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
+        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSubset">
+        <source>This anonymous record is missing field '{0}'.</source>
+        <target state="new">This anonymous record is missing field '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
+        <source>This anonymous record has an extra field. Remove field '{0}'.</source>
+        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -1107,6 +1227,11 @@
         <target state="translated">Je třeba inicializovat následující požadované vlastnosti:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleFieldsInRecord">
+        <source>The field '{0}' appears multiple times in this record expression or pattern</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
         <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
@@ -1202,6 +1327,11 @@
         <target state="translated">Nelze volat „{0}“ - metodu setter pro vlastnost pouze init. Použijte místo toho inicializaci objektu. Viz https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
+        <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
+        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
@@ -1240,6 +1370,11 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Neplatný interpolovaný řetězec. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
+        <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
+        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -3757,11 +3892,6 @@
         <target state="translated">Tyto popisky pole a očekávaný typ tohoto výrazu záznamu nebo vzoru neurčují jednoznačně odpovídající typ záznamu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcFieldAppearsTwiceInRecord">
-        <source>The field '{0}' appears twice in this record expression or pattern</source>
-        <target state="translated">Pole {0} se v tomto výrazu záznamu nebo vzoru vyskytuje dvakrát.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnknownUnion">
         <source>Unknown union case</source>
         <target state="translated">Neznámý případ typu union</target>
@@ -4065,11 +4195,6 @@
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
         <target state="translated">Toto není platný vzor.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUseWhenPatternGuard">
-        <source>Character range matches have been removed in F#. Consider using a 'when' pattern guard instead.</source>
-        <target state="translated">Porovnání rozsahu znaků se už v F# nepoužívá. Zvažte možnost použít místo toho ochrannou vazbu vzoru when.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalPattern">
@@ -4898,8 +5023,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">Statické definice hodnot se dají použít jenom u typů s primárním konstruktorem. Zvažte přidání argumentů do definice typu, třeba type X(args) = ...</target>
+        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -7733,8 +7858,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
-        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'</source>
-        <target state="translated">Neplatné použití fixed. fixed se dá použít jenom v deklaraci ve tvaru use x = fixed expr, kde výraz je pole, adresa pole nebo adresa prvku pole nebo řetězce.</target>
+        <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8167,11 +8292,6 @@
         <target state="translated">Tato hodnota není funkce a nedá se použít. Nezapomněli jste ukončit deklaraci?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">Názvy argumentů v signatuře {0} a implementaci {1} si neodpovídají. Použije se název argumentu ze souboru signatury. To může způsobit problémy při ladění nebo profilování.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Při čtení metadat jazyka F# sestavení {0} došlo k chybě. Byl použit rezervovaný konstruktor. Je možné, že budete muset upgradovat kompilátor jazyka F# nebo použít dřívější verzi sestavení, ve které se nevyužívá konkrétní konstruktor.</target>
@@ -8307,11 +8427,6 @@
         <target state="translated">Dva typy anonymních záznamů jsou z různých sestavení: {0} a {1}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="translated">Tento anonymní záznam neodpovídá přesně očekávanému tvaru. Přidejte chybějící pole {0} a odeberte nadbytečná pole {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
         <target state="translated">Nejde volat metodu rozšíření byref {0}. První parametr vyžaduje, aby hodnota byla měnitelná nebo typu byref, která není jen pro čtení.</target>
@@ -8403,8 +8518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="translated">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

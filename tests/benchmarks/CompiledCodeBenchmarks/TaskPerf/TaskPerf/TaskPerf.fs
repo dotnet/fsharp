@@ -1,6 +1,6 @@
 (*
-msbuild tests\fsharp\perf\tasks\FS\TaskPerf.fsproj /p:Configuration=Release
-dotnet artifacts\bin\TaskPerf\Release\netcoreapp2.1\TaskPerf.dll
+msbuild tests\benchmarks\CompiledCodeBenchmarks\TaskPerf\TaskPerf\TaskPerf.fsproj /p:Configuration=Release
+dotnet artifacts\bin\TaskPerf\Release\net7.0\TaskPerf.dll
 *)
 
 namespace TaskPerf

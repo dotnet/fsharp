@@ -155,7 +155,7 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 

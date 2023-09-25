@@ -355,7 +355,7 @@ module rec Compiler =
 
     let FsxFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path) |> FS
-
+    
     let Fs (source: string) : CompilationUnit =
         fsFromString (FsSource source) |> FS
 
@@ -1113,7 +1113,7 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
             | Some p -> func p il
-        | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+        | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
     let verifyIL = doILCheck ILChecker.checkIL
 
@@ -1404,11 +1404,13 @@ module rec Compiler =
                 $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
 
             let expectedErrors = expected |> List.map (fun error -> errorMessage error)
+            let expectedErrorsAsStr = expectedErrors |> String.concat ";\n" |> sprintf "[%s]"
             let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+            let sourceErrorsAsStr = sourceErrors |> String.concat ";\n" |> sprintf "[%s]"
 
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b sourceErrors expectedErrors)
+                 Assert.AreEqual(a, b, $"%s{what}: Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{sourceErrorsAsStr}\nExpected errors:\n%s{expectedErrorsAsStr}")
 
             // For lists longer than 100 errors:
             expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
@@ -1696,3 +1698,13 @@ module rec Compiler =
 
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
+
+
+    let getImpliedSignatureHash cUnit = 
+        let tcResults = cUnit |> typecheckResults
+        let hash = tcResults.CalculateSignatureHash()
+        match hash with
+        | Some h -> h
+        | None -> failwith "Implied signature hash returned 'None' which should not happen"
+        
+          

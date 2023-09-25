@@ -40,7 +40,7 @@ type UsingMSBuild() as this =
         let errorList = GetErrors(project)
         [for error in errorList do
             if (error.Severity = Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning) then
-            yield error]
+                yield error]
     
     let CheckErrorList (content : string) f : unit = 
         let (_, project, file) = this.CreateSingleFileProject(content)
@@ -514,19 +514,6 @@ type staticInInterface =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
-    //This test case Verify that the Warning list count is one in the Warning list item when there is incorrect indentation in the code.
-    member public this.``TypeProvider.StaticParameters.WarningListItem `` () =
-        
-         this.VerifyWarningListCountAtOpenProject(
-            fileContents = """
-                            type foo = N1.T< 
-                           const "Hello World",2>""",
-            expectedNum = 1,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
-    
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
     //This test case Verify that there is No Error list count in the Error list item when the file content is correct.
     member public this.``TypeProvider.StaticParameters.NoErrorListCount `` () =
                  
@@ -627,7 +614,7 @@ type staticInInterface =
                     let a = NoVal""",
             num = 1 )
 
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``CompilerErrorsInErrList4``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = """
@@ -644,13 +631,8 @@ type staticInInterface =
                 let f x = function A -> true | B -> false
 
 
-                #nowarn "58" // FS0058: possible incorrect indentation: this token is offside of context started at
   
-                let _fsyacc_gotos = [| 
-                0us; 
-                1us;
-                2us
-                |] """ )
+                let _fsyacc_gotos = [| 0us; 1us; 2us|] """ )
 
     [<Test>]
     member public this.``CompilerErrorsInErrList5``() = 

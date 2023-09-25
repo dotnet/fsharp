@@ -18,7 +18,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None), Wild (5,8--5,9), None,
+                                None, None), Wild (5,8--5,9), None,
                              ArbitraryAfterError ("localBinding2", (5,9--5,9)),
                              (5,8--5,9), Yes (5,4--5,9),
                              { LeadingKeyword = Let (5,4--5,7)
@@ -30,7 +30,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None), Const (Unit, (7,4--7,8)), None,
+                                None, None), Const (Unit, (7,4--7,8)), None,
                              Const (Int32 2, (7,7--7,8)), (7,4--7,8), NoneAtDo,
                              { LeadingKeyword = Do (7,4--7,6)
                                InlineKeyword = None

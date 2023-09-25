@@ -863,7 +863,7 @@ val TranslateSynValInfo:
 val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
-val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit
+val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> expectedTy: TType -> actualTy: TType -> unit
 
 val TcRuntimeTypeTest:
     isCast: bool ->
@@ -895,7 +895,7 @@ val BuildFieldMap:
     ty: TType ->
     flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
-        TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
+        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:

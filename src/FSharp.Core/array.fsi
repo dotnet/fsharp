@@ -2280,7 +2280,7 @@ module Array =
     ///
     /// Array.sort input
     /// </code>
-    /// Evaluates to <c>[| 1; 1 3; 4; 6; 8 |]</c>.
+    /// Evaluates to <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
     /// </example>
     [<CompiledName("Sort")>]
     val sort: array: 'T[] -> 'T[] when 'T: comparison
