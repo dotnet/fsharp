@@ -20,6 +20,14 @@ type private ReferenceType =
 // This code fix only works for the legacy, non-SDK projects.
 // In SDK projects, transitive references do this trick.
 // See: https://github.com/dotnet/fsharp/pull/2743
+
+// Because this code fix is barely applicable anymore 
+// and because it's very different from other code fixes
+// (applies to the projects files, not code itself),
+// it's not implemented via IFSharpCodeFix interfaces
+// and not tested automatically either.
+// If we happen to create similar code fixes,
+// it'd make sense to create some testing framework for them.
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MissingReference); Shared>]
 type internal MissingReferenceCodeFixProvider() =
     inherit CodeFixProvider()
