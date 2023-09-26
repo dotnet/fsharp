@@ -134,6 +134,49 @@ type System.Collections.Concurrent.ConcurrentDictionary<'key,'value> with
   member TryFind: key: 'key -> 'value option"""
 
 [<Fact>]
+let ``Don't update typar name in type extension when TyparStaticReq doesn't match`` () =
+    FSharp """        
+module Extensions
+
+type DataItem<'data> =
+    { Identifier: string
+      Label: string
+      Data: 'data }
+
+    static member Create<'data>(identifier: string, label: string, data: 'data) =
+        { DataItem.Identifier = identifier
+          DataItem.Label = label
+          DataItem.Data = data }
+
+#nowarn "957"
+
+type DataItem< ^input> with
+
+    static member inline Create(item: ^input) =
+        let stringValue: string = (^input: (member get_StringValue: unit -> string) (item))
+
+        let friendlyStringValue: string =
+            (^input: (member get_FriendlyStringValue: unit -> string) (item))
+
+        DataItem.Create< ^input>(stringValue, friendlyStringValue, item)
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Extensions
+
+type DataItem<'data> =
+  {
+    Identifier: string
+    Label: string
+    Data: 'data
+  }
+
+  static member inline Create: item: ^input -> DataItem<^input> when ^input: (member get_StringValue: unit -> string) and ^input: (member get_FriendlyStringValue: unit -> string)
+
+  static member Create<'data> : identifier: string * label: string * data: 'data -> DataItem<'data>"""
+
+[<Fact>]
 let ``ValText for C# abstract member override`` () =
     let csharp = CSharp """
 namespace CSharp.Library
