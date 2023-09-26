@@ -21,7 +21,7 @@ type private ReferenceType =
 // In SDK projects, transitive references do this trick.
 // See: https://github.com/dotnet/fsharp/pull/2743
 
-// Because this code fix is barely applicable anymore 
+// Because this code fix is barely applicable anymore
 // and because it's very different from other code fixes
 // (applies to the projects files, not code itself),
 // it's not implemented via IFSharpCodeFix interfaces
