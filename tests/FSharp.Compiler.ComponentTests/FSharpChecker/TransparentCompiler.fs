@@ -18,6 +18,10 @@ open System.Threading.Tasks
 open System.Threading
 open TypeChecks
 
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 
 [<Fact>]
 let ``Use Transparent Compiler`` () =
@@ -471,7 +475,7 @@ type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 let fuzzingTest seed (project: SyntheticProject) = task {
     let rng = System.Random seed
 
-    let checkingThreads = 10
+    let checkingThreads = 3
     let maxModificationDelayMs = 10
     let maxCheckingDelayMs = 20
     //let runTimeMs = 30000
@@ -484,7 +488,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 
     let builder = ProjectWorkflowBuilder(project, useTransparentCompiler = true, autoStart = false)
     let checker = builder.Checker
-
+        
     // Force creation and caching of options
     do! SaveAndCheckProject project checker |> Async.Ignore
 
@@ -590,6 +594,16 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 
             do! Task.Delay (rng.Next maxCheckingDelayMs)
     }
+    
+    use tracerProvider =
+        Sdk.CreateTracerProviderBuilder()
+            .AddSource("fsc")
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+            .AddJaegerExporter()
+            .Build()
+        |> Some
+
+    use _ = Activity.start $"Fuzzing {project.Name}" [ Activity.Tags.project, project.Name; "seed", seed.ToString() ] |> Some
 
     do! task {
         let threads =

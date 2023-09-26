@@ -8,6 +8,7 @@ open System.Threading
 open System.Threading.Tasks
 
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.Diagnostics
 
 [<AutoOpen>]
 module Utils =
@@ -375,6 +376,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let event = Event<_>()
 
+    let mutable hits = 0
+    let mutable started = 0
+    let mutable completed = 0
+    let mutable canceled = 0
+    let mutable restarted = 0
+    let mutable failed = 0
+    let mutable evicted = 0
+    let mutable collected = 0
+
     let cache =
         LruCache<'TKey, 'TVersion, Job<'TValue>>(
             keepStrongly = defaultArg keepStrongly 100,
@@ -385,8 +395,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _ -> false),
             event =
                 (function
-                | CacheEvent.Evicted -> (fun k -> event.Trigger(JobEvent.Evicted, k))
-                | CacheEvent.Collected -> (fun k -> event.Trigger(JobEvent.Collected, k))
+                | CacheEvent.Evicted -> (fun k -> 
+                    Interlocked.Increment &evicted
+                    event.Trigger(JobEvent.Evicted, k))
+                | CacheEvent.Collected -> (fun k -> 
+                    Interlocked.Increment &collected
+                    event.Trigger(JobEvent.Collected, k))
                 | CacheEvent.Weakened -> (fun k -> event.Trigger(JobEvent.Weakened, k))
                 | CacheEvent.Strengthened -> (fun k -> event.Trigger(JobEvent.Strengthened, k)))
         )
@@ -435,8 +449,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 return
                     match msg, cached with
                     | Sync, _ -> New Unchecked.defaultof<_>
-                    | GetOrCompute _, Some (Completed result) -> Existing(Task.FromResult result)
+                    | GetOrCompute _, Some (Completed result) -> 
+                        Interlocked.Increment &hits
+                        Existing(Task.FromResult result)
                     | GetOrCompute (_, ct), Some (Running (tcs, _, _, _)) ->
+                        Interlocked.Increment &hits
                         incrRequestCount key
 
                         ct.Register(fun _ ->
@@ -447,6 +464,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Existing tcs.Task
 
                     | GetOrCompute (computation, ct), None ->
+                        Interlocked.Increment &started
                         incrRequestCount key
 
                         ct.Register(fun _ ->
@@ -465,10 +483,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         otherVersions
                         |> Seq.choose (function v, Running (_tcs, cts, _, _) -> Some (v, cts) | _ -> None)
-                        |> Seq.iter (fun (_v, cts) -> 
-                            System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
+                        |> Seq.iter (fun (v, cts) -> 
+                            use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label; "version", $"%A{v}" |]
+                            //System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
                             if cancelDuplicateRunningJobs then
-                                System.Diagnostics.Trace.TraceWarning("Canceling")
+                                //System.Diagnostics.Trace.TraceWarning("Canceling")
                                 cts.Cancel())
 
                         New cts.Token
@@ -497,7 +516,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
-                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
+                                Interlocked.Increment &canceled
+                                use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label; "version", $"%A{key.Version}" |]
+                                ()
+                                //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                             else
                                 // We need to restart the computation
@@ -507,6 +529,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                                         try
                                             log (Started, key)
+                                            Interlocked.Increment &restarted
                                             System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
                                             let! result = Async.StartAsTask(computation, cancellationToken = cts.Token)
                                             post (key, (JobCompleted result))
@@ -530,7 +553,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cache.Remove(key.Key, key.Version)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
-                                System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
+                                Interlocked.Increment &canceled
+                                use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label; "version", $"%A{key.Version}" |]
+                                ()
+                                //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                         | CancelRequest, None
                         | CancelRequest, Some (Completed _) -> ()
@@ -540,6 +566,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             cache.Remove(key.Key, key.Version)
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
+                            Interlocked.Increment &failed
                             tcs.TrySetException ex |> ignore
 
                         | JobCompleted result, Some (Running (tcs, _cts, _c, _ts)) ->
@@ -547,6 +574,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             cache.Set(key.Key, key.Version, key.Label, (Completed result))
                             requestCounts.Remove key |> ignore
                             log (Finished, key)
+                            Interlocked.Increment &completed
 
                             if tcs.TrySetResult result = false then
                                 failwith "Invalid state: Completed job already completed"
