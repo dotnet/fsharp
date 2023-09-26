@@ -1049,7 +1049,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">Ten rekord anonimowy nie jest dokładnie zgodny z oczekiwanym kształtem. Dodaj brakujące pola {0} i usuń dodatkowe pola {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -5024,7 +5024,7 @@
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">Definicje wartości statycznych mogą być używane tylko w przypadku typów z konstruktorem podstawowym. Rozważ dodanie argumentów do definicji typu, na przykład „type X(argumenty) = ...”.</target>
+        <target state="new">For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -7859,7 +7859,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
-        <target state="needs-review-translation">Nieprawidłowe użycie wyrażenia „fixed”. Wyrażenia „fixed” można użyć tylko w deklaracji w postaci „use x = fixed expr”, gdzie wyrażenie jest tablicą, adresem pola, adresem elementu tablicy lub ciągiem</target>
+        <target state="new">Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8292,11 +8292,6 @@
         <target state="translated">Ta wartość nie jest funkcją i nie można jej zastosować. Czy deklaracja została zakończona?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">Nazwy argumentów w podpisie „{0}” i implementacji „{1}” nie są zgodne. Używana będzie nazwa argumentu z pliku podpisu. Może to spowodować problemy podczas debugowania lub profilowania.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Wystąpił błąd podczas odczytu metadanych języka F# z zestawu „{0}”. Została wykorzystana zarezerwowana konstrukcja. Może być konieczne uaktualnienie kompilatora języka F# lub użycie wcześniejszej wersji zestawu, która nie wykorzystuje określonej konstrukcji.</target>
@@ -8524,7 +8519,7 @@
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">Klucz menedżera pakietów „{0}” nie został zarejestrowany w elemencie {1}. Obecnie zarejestrowane: {2}</target>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

@@ -1710,6 +1710,16 @@ fun (Some v) -> ()
 
 type C =
     member _.M (Ids (c, o)) = ()
+
+
+type MyAlias = int
+
+type Id2<'a> = Id2 of fff: 'a
+
+let r: Id2<MyAlias> = Id2 3
+
+match r with
+| Id2 (a) -> ()
 """
 
         VerifyCompletionList(fileContents, "let x (Ids (c", [ "customerId"; "num" ], [])
@@ -1720,7 +1730,9 @@ type C =
         VerifyCompletionList(fileContents, "fun (Ids (c, o", [ "orderId"; "option" ], [])
         VerifyCompletionList(fileContents, "fun (Some v", [ "value" ], [])
         VerifyCompletionList(fileContents, "member _.M (Ids (c", [ "customerId"; "num" ], [ "orderId" ])
-        VerifyCompletionList(fileContents, "member _.M (Ids (c, o", [ "orderId"; "option" ], [ "customerId"; "num" ])
+
+        // Respecting the type alias
+        VerifyCompletionList(fileContents, "| Id2 (a", [ "fff"; "myAlias" ], [ "num" ])
 
     [<Fact>]
     let ``Completion list does not contain suggested names in tuple deconstruction`` () =
@@ -1735,7 +1747,9 @@ match Some (1, 2) with
         VerifyCompletionList(fileContents, "| Some v", [ "value" ], [])
         VerifyCompletionList(fileContents, "| Some (a", [], [ "value" ])
         VerifyCompletionList(fileContents, "| Some (a, b", [], [ "value" ])
-        VerifyCompletionList(fileContents, "| Some (c", [], [ "value" ])
+
+        // Binding the whole tuple here, so the field name should be present
+        VerifyCompletionList(fileContents, "| Some (c", [ "value" ], [])
 
     [<Fact>]
     let ``Completion list contains suggested names for union case field pattern based on the name of the generic type's solution`` () =
@@ -1935,7 +1949,14 @@ type R1 = { A: int; B: int }
 type R2 = { C: int; D: int }
 
 match [] with
-| [ { A = 2; l = 2 } ]
+| [ { A = 2; l = 2 } ] -> ()
+
+match { A = 1; B = 2 } with
+| { A = 1;  } -> ()
+| { A = 2; s } -> ()
+| { B = } -> ()
+| { X = ; A = 3 } -> ()
+| {   } -> ()
 """
 
         VerifyCompletionList(
@@ -1944,6 +1965,16 @@ match [] with
             [ "B"; "R1"; "R2"; "System"; "LanguagePrimitives" ],
             [ "A"; "C"; "D"; "DU"; "X"; "log"; "let"; "Lazy" ]
         )
+
+        VerifyCompletionList(fileContents, "| { A = 1; ", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { A = 2; s", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+
+        // Ideally C and D should not be present here, but right now we're not able to filter fields in an empty record pattern stub
+        VerifyCompletionList(fileContents, "| {  ", [ "A"; "B"; "C"; "D"; "R1"; "R2" ], [])
 
     [<Fact>]
     let ``Completion list for record field identifier in a pattern contains fields of all records in scope when the record type is not known yet``

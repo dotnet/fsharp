@@ -262,7 +262,7 @@ module A
         |> typecheck
         |> shouldFail
         |> withResult {
-            Error = Warning 58
+            Error = Error 58
             Range = { StartLine = 4
                       StartColumn = 5
                       EndLine = 4
@@ -480,6 +480,12 @@ raise (new Exception("exit 1"))
                         EndLine = 5
                         EndColumn = 31 }
               Message = "Expecting member body" }
+            { Error = Error 3113
+              Range = { StartLine = 6
+                        StartColumn = 9
+                        EndLine = 6
+                        EndColumn = 9 }
+              Message = "Unexpected end of input in type definition" }
         ] |> ignore
 
     [<Theory; File "RelaxWhitespace2.fs">]

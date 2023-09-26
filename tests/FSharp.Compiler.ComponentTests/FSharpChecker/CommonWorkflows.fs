@@ -9,6 +9,13 @@ open Xunit
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
+#nowarn "57"
 
 let makeTestProject () =
     SyntheticProject.Create(
@@ -132,3 +139,30 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile middle expectSignatureChanged
         checkFile last expectSignatureChanged
     }
+
+[<Fact>]
+let GetAllUsesOfAllSymbols() =
+    let traceProvider =
+        Sdk.CreateTracerProviderBuilder()
+                .AddSource("fsc")
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+                .AddJaegerExporter()
+                .Build()
+
+    use _ = Activity.start "GetAllUsesOfAllSymbols" [  ]
+    
+    let result = 
+        async { 
+            let project = makeTestProject()
+            let checker = ProjectWorkflowBuilder(project, useGetSource=true, useChangeNotifications = true).Checker
+            do! saveProject project false checker 
+            let options = project.GetProjectOptions checker
+            let! checkProjectResults = checker.ParseAndCheckProject(options) 
+            return checkProjectResults.GetAllUsesOfAllSymbols()
+        } |> Async.RunSynchronously
+
+
+    traceProvider.ForceFlush() |> ignore
+    traceProvider.Dispose()
+
+    Assert.Equal(80, result.Length)
