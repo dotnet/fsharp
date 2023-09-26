@@ -42,6 +42,7 @@ _Bulk code fixes_ perform the same actions for identical diagnostics across a do
 1. Create a matching unit test suite with both positive and negative cases.
 2. Seek a similar code fix for inspiration.
 3. Craft your new code fix, ensuring compliance with the framework described above.
+4. Just before submitting the code fix, manually double-check that it works in VS - demo videos are welcome. 
 
 ## Useful Links:
 
