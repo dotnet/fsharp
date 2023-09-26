@@ -986,24 +986,32 @@ type internal TypeCheckInfo
                 None
 
     /// Suggest name based on type
-    let SuggestNameBasedOnType g pos ty =
-        if isNumericType g ty then
-            CreateCompletionItemForSuggestedPatternName pos "num"
-        else
-            match tryTcrefOfAppTy g ty with
-            | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) ->
-                CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
-            | _ -> None
+    let SuggestNameBasedOnType (g: TcGlobals) pos ty =
+        match stripTyparEqns ty with
+        | TType_app (tyconRef = tcref) when tcref.IsTypeAbbrev && (tcref.IsLocalRef || not (ccuEq g.fslibCcu tcref.nlr.Ccu)) ->
+            // Respect user-defined aliases
+            CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
+        | ty ->
+            if isNumericType g ty then
+                CreateCompletionItemForSuggestedPatternName pos "num"
+            else
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) ->
+                    CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
+                | _ -> None
 
     /// Suggest names based on field name and type, add them to the list
-    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName completions =
+    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName isTheOnlyField completions =
         let field =
             match indexOrName with
             | Choice1Of2 index ->
-                // Index is None when parentheses were not used, i.e. "| Some v ->" - suggest a name only when the case has a single field
                 match uci.UnionCase.RecdFieldsArray, index with
-                | [| field |], None -> Some field
-                | [| _ |], Some _
+                | [| field |], None ->
+                    // Index is None when parentheses were not used, i.e. `| Some v ->` - suggest a name only when the case has a single field
+                    Some field
+                | [| _ |], Some _ when not isTheOnlyField ->
+                    // When completing `| Some (a| , b)`, we're binding the first tuple element, not the sole case field
+                    None
                 | _, None -> None
                 | arr, Some index -> arr |> Array.tryItem index
             | Choice2Of2 name -> uci.UnionCase.RecdFieldsArray |> Array.tryFind (fun x -> x.DisplayName = name)
@@ -1016,7 +1024,7 @@ type internal TypeCheckInfo
                     sResolutions.CapturedNameResolutions
                     |> ResizeArray.tryPick (fun r ->
                         match r.Item with
-                        | Item.Value vref when r.Pos = fieldPatternPos -> Some(stripTyparEqns vref.Type)
+                        | Item.Value vref when r.Pos = fieldPatternPos -> Some vref.Type
                         | _ -> None)
                     |> Option.defaultValue field.FormalType
                 else
@@ -1118,7 +1126,7 @@ type internal TypeCheckInfo
                     |> Option.defaultValue []
                     |> List.append (fields indexOrName isTheOnlyField uci)
 
-                Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName list, r.DisplayEnv, r.Range)
+                Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName isTheOnlyField list, r.DisplayEnv, r.Range)
             | _ -> None)
         |> Option.orElse declaredItems
 
@@ -2442,21 +2450,16 @@ module internal ParseAndCheckFile =
         let fileInfo = sourceText.GetLastCharacterPosition()
 
         let collectOne severity diagnostic =
-            for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(
-                    options,
-                    false,
-                    mainInputFileName,
-                    fileInfo,
-                    diagnostic,
-                    severity,
-                    suggestNamesForErrors,
-                    flatErrors
-                ) do
-                diagnosticsCollector.Add diagnostic
+            // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
+            // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
+            //    the formatting of types in it may change (for example, 'a to obj)
+            //
+            // So we'll create a diagnostic later, but cache the FormatCore message now
+            diagnostic.Exception.Data[ "CachedFormatCore" ] <- diagnostic.FormatCore(flatErrors, suggestNamesForErrors)
+            diagnosticsCollector.Add(struct (diagnostic, severity))
 
-                if severity = FSharpDiagnosticSeverity.Error then
-                    errorCount <- errorCount + 1
+            if severity = FSharpDiagnosticSeverity.Error then
+                errorCount <- errorCount + 1
 
         // This function gets called whenever an error happens during parsing or checking
         let diagnosticSink severity (diagnostic: PhasedDiagnostic) =
@@ -2495,14 +2498,29 @@ module internal ParseAndCheckFile =
         // Public members
         member _.DiagnosticsLogger = diagnosticsLogger
 
-        member _.CollectedDiagnostics = diagnosticsCollector.ToArray()
-
         member _.ErrorCount = errorCount
 
         member _.DiagnosticOptions
             with set opts = options <- opts
 
         member _.AnyErrors = errorCount > 0
+
+        member _.CollectedDiagnostics(symbolEnv: SymbolEnv option) =
+            [|
+                for struct (diagnostic, severity) in diagnosticsCollector do
+                    yield!
+                        DiagnosticHelpers.ReportDiagnostic(
+                            options,
+                            false,
+                            mainInputFileName,
+                            fileInfo,
+                            diagnostic,
+                            severity,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            symbolEnv
+                        )
+            |]
 
     let getLightSyntaxStatus fileName options =
         let indentationAwareSyntaxOnByDefault =
@@ -2713,7 +2731,7 @@ module internal ParseAndCheckFile =
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
-        errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
+        errHandler.CollectedDiagnostics(None), parseResult, errHandler.AnyErrors
 
     let ApplyLoadClosure
         (
@@ -2915,28 +2933,29 @@ module internal ParseAndCheckFile =
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
 
-            let errors = errHandler.CollectedDiagnostics
+            let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
+
+            let symbolEnv = SymbolEnv(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports)
+            let errors = errHandler.CollectedDiagnostics(Some symbolEnv)
 
             let res =
-                match resOpt with
-                | (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState ->
-                    TypeCheckInfo(
-                        tcConfig,
-                        tcGlobals,
-                        List.head ccuSigsForFiles,
-                        tcState.Ccu,
-                        tcImports,
-                        tcEnvAtEnd.AccessRights,
-                        projectFileName,
-                        mainInputFileName,
-                        projectOptions,
-                        sink.GetResolutions(),
-                        sink.GetSymbolUses(),
-                        tcEnvAtEnd.NameEnv,
-                        loadClosure,
-                        List.tryHead implFiles,
-                        sink.GetOpenDeclarations()
-                    )
+                TypeCheckInfo(
+                    tcConfig,
+                    tcGlobals,
+                    List.head ccuSigsForFiles,
+                    tcState.Ccu,
+                    tcImports,
+                    tcEnvAtEnd.AccessRights,
+                    projectFileName,
+                    mainInputFileName,
+                    projectOptions,
+                    sink.GetResolutions(),
+                    sink.GetSymbolUses(),
+                    tcEnvAtEnd.NameEnv,
+                    loadClosure,
+                    List.tryHead implFiles,
+                    sink.GetOpenDeclarations()
+                )
 
             return errors, res
         }

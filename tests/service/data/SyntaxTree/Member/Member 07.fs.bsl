@@ -108,4 +108,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,23)-(5,24) parse error Unexpected symbol '=' in member definition. Expected identifier, '(', '(*)' or other token.
+(5,23)-(5,24) parse error Unexpected symbol '=' in member definition

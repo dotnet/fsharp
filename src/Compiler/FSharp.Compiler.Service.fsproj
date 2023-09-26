@@ -440,12 +440,12 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
-    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
-    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />
     <Compile Include="Symbols\Symbols.fs" />
+    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
+    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\Exprs.fsi" />
     <Compile Include="Symbols\Exprs.fs" />
     <Compile Include="Symbols\SymbolPatterns.fsi" />
@@ -521,15 +521,15 @@
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>

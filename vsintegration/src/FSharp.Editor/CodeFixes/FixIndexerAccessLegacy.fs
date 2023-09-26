@@ -4,11 +4,12 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FixIndexerAccess); Shared>]
 type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
@@ -16,14 +17,14 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
 
     static let title = CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3217")
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS3217"
 
-    override _.RegisterCodeFixesAsync context : Task =
-        async {
-            let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            context.Diagnostics
-            |> Seq.iter (fun diagnostic ->
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! sourceText = context.GetSourceTextAsync()
 
                 let span, replacement =
                     try
@@ -31,7 +32,7 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
 
                         let notStartOfBracket (span: TextSpan) =
                             let t = sourceText.GetSubText(TextSpan(span.Start, span.Length + 1))
-                            t.[t.Length - 1] <> '['
+                            t[t.Length - 1] <> '['
 
                         // skip all braces and blanks until we find [
                         while span.End < sourceText.Length && notStartOfBracket span do
@@ -41,12 +42,11 @@ type internal LegacyFixAddDotToIndexerAccessCodeFixProvider() =
                     with _ ->
                         context.Span, sourceText.GetSubText(context.Span).ToString()
 
-                do
-                    context.RegisterFsharpFix(
-                        CodeFix.FixIndexerAccess,
-                        title,
-                        [| TextChange(span, replacement.TrimEnd() + ".") |],
-                        ImmutableArray.Create(diagnostic)
-                    ))
-        }
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                return
+                    ValueSome
+                        {
+                            Name = CodeFix.FixIndexerAccess
+                            Message = title
+                            Changes = [ TextChange(span, replacement.TrimEnd() + ".") ]
+                        }
+            }
