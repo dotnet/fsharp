@@ -7,6 +7,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.GraphChecking.GraphProcessing
+open FSharp.Compiler.Diagnostics
 
 open Xunit
 
@@ -548,6 +549,8 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             let modify project =
                 match getRandomModification() with
                 | Update n ->
+
+                    use _ = Activity.start "Update" [||]
                     let files = Set [ for _ in 1..n -> getRandomFile project |> snd ]
                     (project, files)
                     ||> Seq.fold (fun p file ->
@@ -578,6 +581,8 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             ct.CancelAfter(timeout)
             let job = Async.StartAsTask(checker |> checkFile file.Id p, cancellationToken = ct.Token)
             try
+                use _ = Activity.start "Check" [||]
+
                 let! parseResult, checkResult = job
                 log.Value.Add (DateTime.Now.Ticks, FinishedChecking (match checkResult with FSharpCheckFileAnswer.Succeeded _ -> true | _ -> false),  $"Loop #{n} {file.Id}")
                 expectOk (parseResult, checkResult) ()
@@ -595,15 +600,14 @@ let fuzzingTest seed (project: SyntheticProject) = task {
             do! Task.Delay (rng.Next maxCheckingDelayMs)
     }
     
-    use tracerProvider =
+    use _tracerProvider =
         Sdk.CreateTracerProviderBuilder()
             .AddSource("fsc")
-            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F# Fuzzing", serviceVersion = "1"))
             .AddJaegerExporter()
             .Build()
-        |> Some
-
-    use _ = Activity.start $"Fuzzing {project.Name}" [ Activity.Tags.project, project.Name; "seed", seed.ToString() ] |> Some
+        
+    use _ = Activity.start $"Fuzzing {project.Name}" [ Activity.Tags.project, project.Name; "seed", seed.ToString() ]
 
     do! task {
         let threads =
