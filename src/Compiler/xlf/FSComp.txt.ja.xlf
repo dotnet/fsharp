@@ -6143,8 +6143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">インデントが正しくない可能性があります。このトークンは位置 {0} から開始されるコンテキストのオフサイドになります。このトークンのインデントを増やすか、標準的な書式規則を使用してください。</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7. It is recommended to fix the indentation.</source>
+        <target state="needs-review-translation">インデントが正しくない可能性があります。このトークンは位置 {0} から開始されるコンテキストのオフサイドになります。このトークンのインデントを増やすか、標準的な書式規則を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

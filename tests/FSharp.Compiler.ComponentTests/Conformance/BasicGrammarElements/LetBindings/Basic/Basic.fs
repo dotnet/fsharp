@@ -76,7 +76,7 @@ module LetBindings_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 58, Line 10, Col 1, Line 10, Col 5, "Possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 10, Col 1, Line 10, Col 5, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
             (Error 10, Line 10, Col 6, Line 10, Col 7, "Unexpected start of structured construct in expression")
             (Error 583, Line 9, Col 5, Line 9, Col 6, "Unmatched '('")
             (Error 10, Line 10, Col 16, Line 10, Col 17, "Unexpected symbol ')' in implementation file")
