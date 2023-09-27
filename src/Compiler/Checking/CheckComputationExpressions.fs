@@ -229,10 +229,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery = 
         match stripDebugPoints interpExpr with 
-        // A regular custom builder, e.g., async.
+        // A non-generic custom builder, e.g., `query`, `async`.
         | Expr.Val (vref, _, m)
-        // A custom builder with generic type parameters, e.g., builder<…>.
-        | Expr.App (funcExpr=Expr.Val (vref, _, m)) ->
+        // A custom builder with parameters, e.g., `builder<…>`, `builder ()`.
+        | Expr.App (funcExpr = Expr.Val (vref, _, m)) ->
             let item = Item.CustomBuilder (vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref 
