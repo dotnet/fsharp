@@ -952,3 +952,99 @@ let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Ba
             assertRange (4, 87) (4, 90) fieldSymbolUse.Range
 
         | _ -> Assert.Fail "Symbol was not FSharpField"
+
+module ComputationExpressions =
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder = Builder ()
+
+let x = builder { return 3 }
+let y = builder
+"""
+
+        match checkResults.GetSymbolUseAtLocation(6, 11, "let builder = Builder ()", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(8, 15, "let x = builder { return 3 }", ["builder"]) with
+        | Some symbolUse -> Assert.True (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` in `builder { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(9, 15, "let y = builder", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder<…> { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder<'T> () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder<'T> = Builder<'T> ()
+
+let x = builder { return 3 }
+let y = builder<int> { return 3 }
+let z = builder<_> { return 3 }
+let p = builder<int>
+let q<'T> = builder<'T>
+"""
+
+        match checkResults.GetSymbolUseAtLocation(6, 11, "let builder<'T> = Builder<'T> ()", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(8, 15, "let x = builder { return 3 }", ["builder"]) with
+        | Some symbolUse -> Assert.True (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(9, 15, "let x = builder<int> { return 3 }", ["builder"]) with
+        | Some symbolUse -> Assert.True (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(10, 15, "let x = builder<_> { return 3 }", ["builder"]) with
+        | Some symbolUse -> Assert.True (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(11, 15, "let p = builder<int>", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(12, 15, "let q<'T> = builder<'T>", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder<…> { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder () { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder () = Builder ()
+
+let x = builder () { return 3 }
+let y = builder ()
+let z = builder
+"""
+
+        match checkResults.GetSymbolUseAtLocation(6, 11, "let builder () = Builder ()", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder () { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(8, 15, "let x = builder () { return 3 }", ["builder"]) with
+        | Some symbolUse -> Assert.True (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` in `builder () { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(9, 15, "let y = builder ()", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder () { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
+
+        match checkResults.GetSymbolUseAtLocation(10, 15, "let z = builder", ["builder"]) with
+        | Some symbolUse -> Assert.False (symbolUse.IsFromComputationExpression, "IsFromComputationExpression should return true for `builder` only in `builder () { … }`.")
+        | None -> Assert.Fail "Symbol was not 'builder'."
