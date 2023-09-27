@@ -965,11 +965,18 @@ let builder = Builder ()
 
 let x = builder { return 3 }
 let y = builder
+let z = Builder () { return 3 }
 """
 
         shouldEqual
             [
-                // let builder = Builder ()
+                // type Builder () =
+                (2, 5), false
+
+                // … = Builder ()
+                (6, 14), false
+
+                // let builder = …
                 (6, 4), false
 
                 // let x = builder { return 3 }
@@ -978,11 +985,15 @@ let y = builder
 
                 // let y = builder
                 (9, 8), false
+
+                // let z = Builder () { return 3 }
+                (10, 8), false
             ]
             [
                 for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
-                    if symbolUse.Symbol.DisplayName = "builder" then
-                        (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
+                    match symbolUse.Symbol.DisplayName with
+                    | "Builder" | "builder" -> (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
+                    | _ -> ()
             ]
 
     [<Test>]
