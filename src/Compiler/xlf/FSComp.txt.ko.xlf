@@ -482,6 +482,11 @@
         <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnIfFunctionShadowsUnionCase">
+        <source>Raises a warning when a function definition shadows a union case</source>
+        <target state="new">Raises a warning when a function definition shadows a union case</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">레코드 복사 및 업데이트 식이 레코드의 모든 필드를 변경할 때 경고를 발생합니다.</target>
@@ -1385,6 +1390,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">\"interfaces with static abstract methods\"를 선언하는 것은 고급 기능입니다. 지침은 https://aka.ms/fsharp-iwsams를 참조하세요. '#nowarn \"3535\"' 또는 '--nowarn:3535'를 사용하여 이 경고를 비활성화할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcWarnIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

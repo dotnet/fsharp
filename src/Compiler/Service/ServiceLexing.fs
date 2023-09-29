@@ -21,6 +21,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
+#nowarn "3582"   // Don't complain about shadowing the token cases by their tags
+
 module FSharpTokenTag =
 
     let Identifier = tagOfToken (IDENT "a")

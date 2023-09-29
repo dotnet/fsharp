@@ -482,6 +482,11 @@
         <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnIfFunctionShadowsUnionCase">
+        <source>Raises a warning when a function definition shadows a union case</source>
+        <target state="new">Raises a warning when a function definition shadows a union case</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">Zgłasza ostrzeżenia, gdy wyrażenie rekordu kopiowania i aktualizacji zmieni wszystkie pola rekordu.</target>
@@ -1385,6 +1390,11 @@
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
         <target state="translated">Deklarowanie \"interfejsów ze statycznymi metodami abstrakcyjnymi\" jest funkcją zaawansowaną. Aby uzyskać wskazówki, zobacz https://aka.ms/fsharp-iwsams. To ostrzeżenie można wyłączyć przy użyciu polecenia „#nowarn \"3535\"" lub "--nowarn:3535”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcWarnIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

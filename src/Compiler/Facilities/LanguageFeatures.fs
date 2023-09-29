@@ -79,6 +79,7 @@ type LanguageFeature =
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    | WarnIfFunctionShadowsUnionCase
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -185,6 +186,7 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
+                LanguageFeature.WarnIfFunctionShadowsUnionCase, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -321,6 +323,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
         | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
+        | LanguageFeature.WarnIfFunctionShadowsUnionCase -> FSComp.SR.featureWarnIfFunctionShadowsUnionCase ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

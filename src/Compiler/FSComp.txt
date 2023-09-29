@@ -1588,6 +1588,7 @@ featureChkNotTailRecursive,"Raises warnings if a member or function has the 'Tai
 featureWhileBang,"'while!' expression"
 featureExtendedFixedBindings,"extended fixed bindings for byref and GetPinnableReference"
 featurePreferStringGetPinnableReference,"prefer String.GetPinnableReference in fixed bindings"
+featureWarnIfFunctionShadowsUnionCase,"Raises a warning when a function definition shadows a union case"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3355,tcNotAnIndexerNamedIndexingNotYetEnabled,"The value '%s' is not a function and does not support index notation."
@@ -1724,3 +1725,4 @@ featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
 3579,alwaysUseTypedStringInterpolation,"Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended."
 3580,tcUnexpectedFunTypeInUnionCaseField,"Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -> b into | Case of (a -> b)."
+3582,tcWarnIfFunctionShadowsUnionCase,"This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses."

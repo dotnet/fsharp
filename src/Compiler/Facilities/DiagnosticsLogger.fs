@@ -13,6 +13,8 @@ open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
+#nowarn "3582"  // Remove this line when the Error function is removed as planned below
+
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
 type DiagnosticStyle =
