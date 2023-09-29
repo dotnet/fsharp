@@ -263,7 +263,7 @@ type internal CompilerCaches() =
 
     // member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
 
-    member val ParseFile = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "ParseFile")
+    member val ParseFile = AsyncMemoize(keepStrongly = 5000, keepWeakly = 2000, name = "ParseFile")
 
     member val ParseAndCheckFileInProject = AsyncMemoize(name = "ParseAndCheckFileInProject")
 
@@ -527,7 +527,7 @@ type internal TransparentCompiler
         let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
         let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
 
-        let projectReferences = getProjectReferences projectSnapshot "ComputeBootstrapInfo"
+        let projectReferences = getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
         // TODO: script support
         let loadClosureOpt: LoadClosure option = None
@@ -886,7 +886,9 @@ type internal TransparentCompiler
                 member _.GetKey() = projectKey.GetKey(), file.FileName
 
                 member _.GetVersion() =
-                    projectKey.GetVersion(), file.SourceHash, file.IsLastCompiland, file.IsExe
+                    projectKey.GetVersion(), file.SourceHash,
+                    // TODO: is there a situation where this is not enough and we need to have them separate?
+                    file.IsLastCompiland && file.IsExe
             }
 
         caches.ParseFile.Get(
