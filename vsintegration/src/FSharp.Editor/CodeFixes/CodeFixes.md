@@ -4,7 +4,7 @@ Code fixes are suggestions provided by IDEs to automatically address coding issu
 
 ## Quick Facts
 
-1. Code fixes are triggered by one or more diagnostics (e.g., FS0039 and/or IDE0005).
+1. Code fixes are triggered by one or more [diagnostics](https://github.com/dotnet/fsharp/blob/main/docs/diagnostics.md) (e.g., FS0039 and/or IDE0005).
 1. If there are multiple diagnostics, they are guaranteed to share the same _span_ (the red squiggly).
 1. Every code fix can produce:
   - No suggestions (got triggered but couldn't come up with a suitable suggestion for a fix).
