@@ -69,3 +69,35 @@ let ``Nullable attr for Option clones`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+
+module Interop  =
+    open System.IO
+
+    let FsharpFunctins = 
+        Path.Combine(__SOURCE_DIRECTORY__,"ModuleLevelFunctions.fs")
+        |> File.ReadAllText
+        |> FSharp
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withName "MyTestModule"
+        |> withOptions ["--checknulls"]
+
+    [<Fact>]
+    let ``Csharp code can work with annotated FSharp module`` () =
+        Path.Combine(__SOURCE_DIRECTORY__,"CsharpConsumer.cs")
+        |> File.ReadAllText
+        |> CSharp
+        |> withReferences [FsharpFunctins]
+        |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+        |> asLibrary
+        |> withName "CsharpAppConsumingNullness"
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 29, Line 31, Col 20, Line 31, Col 61, "Cannot implicitly convert type 'int' to 'string'"
+            Warning 8625, Line 12, Col 74, Line 12, Col 78, "Cannot convert null literal to non-nullable reference type."
+            Warning 8604, Line 14, Col 88, Line 14, Col 113, "Possible null reference argument for parameter 'x' in 'string MyTestModule.nonNullableInputOutputFunc(string x)'."
+            Warning 8620, Line 19, Col 88, Line 19, Col 101, "Argument of type '(string?, string?, int, int, int, int)' cannot be used for parameter 'x' of type '(string, string, int, int, int, int)' in '(string, string, int, int, int, int) MyTestModule.genericValueTypeTest((string, string, int, int, int, int) x)' due to differences in the nullability of reference types."
+            Warning 8620, Line 21, Col 78, Line 21, Col 109, "Argument of type '(string, string?, int, int, int, int)' cannot be used for parameter 'x' of type '(string, string, int, int, int, int)' in '(string, string, int, int, int, int) MyTestModule.genericValueTypeTest((string, string, int, int, int, int) x)' due to differences in the nullability of reference types."
+            Warning 8604, Line 26, Col 60, Line 26, Col 70, "Possible null reference argument for parameter 'x_0' in 'Tuple<string, string, int, int, int, int> MyTestModule.genericRefTypeTest(string x_0, string? x_1, int x_2, int x_3, int x_4, int x_5)'."
+            Warning 8625, Line 31, Col 51, Line 31, Col 55, "Cannot convert null literal to non-nullable reference type."]
