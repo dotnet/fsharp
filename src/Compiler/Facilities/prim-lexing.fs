@@ -7,6 +7,8 @@ namespace FSharp.Compiler.Text
 open System
 open System.IO
 open FSharp.Compiler
+open Internal.Utilities.Collections
+open System.Collections.Immutable
 
 type ISourceText =
 
@@ -27,6 +29,8 @@ type ISourceText =
     abstract ContentEquals: sourceText: ISourceText -> bool
 
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
+
+    abstract GetChecksum: unit -> System.Collections.Immutable.ImmutableArray<byte>
 
 [<Sealed>]
 type StringText(str: string) =
@@ -107,6 +111,11 @@ type StringText(str: string) =
 
         member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+        member _.GetChecksum() =
+            str
+            |> Md5Hasher.hashString
+            |> ImmutableArray.Create<byte>
 
 module SourceText =
 

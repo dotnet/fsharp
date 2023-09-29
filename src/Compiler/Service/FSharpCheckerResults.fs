@@ -272,6 +272,10 @@ type FSharpProjectSnapshot =
             SourceFiles = this.SourceFiles |> List.map (fun x -> { x with Version = "" })
         }
 
+    member this.WithoutReferences = { this with ReferencedProjects = []; ReferencesOnDisk = [] }
+
+    member this.WithoutSourceFiles = { this with SourceFiles = [] }
+
     override this.ToString() =
         Path.GetFileNameWithoutExtension this.ProjectFileName
         |> sprintf "FSharpProjectSnapshot(%s)"

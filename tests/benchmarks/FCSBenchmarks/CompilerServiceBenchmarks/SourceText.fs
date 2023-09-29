@@ -64,6 +64,8 @@ module internal SourceText =
 
                 member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
                     sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+                member _.GetChecksum() = sourceText.GetChecksum()
             }
 
         sourceText

@@ -145,6 +145,11 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project with file versions removed.
     member WithoutFileVersions: FSharpProjectSnapshot
 
+    /// A snapshot of the same project with ReferencedProjects and ReferencesOnDisk removed.
+    member WithoutReferences: FSharpProjectSnapshot
+
+    member WithoutSourceFiles: FSharpProjectSnapshot
+
     member GetLastModifiedTimeOnDisk: unit -> DateTime
 
     member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>

@@ -35,6 +35,8 @@ type ISourceText =
     /// Copies a section of the input to the given destination ad the given index
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
 
+    abstract GetChecksum: unit -> System.Collections.Immutable.ImmutableArray<byte>
+
 /// Functions related to ISourceText objects
 module SourceText =
 

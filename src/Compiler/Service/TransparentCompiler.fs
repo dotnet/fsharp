@@ -261,7 +261,7 @@ module private TypeCheckingGraphProcessing =
 
 type internal CompilerCaches() =
 
-    member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
+    // member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
 
     member val ParseFile = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "ParseFile")
 
@@ -277,7 +277,7 @@ type internal CompilerCaches() =
 
     member val BootstrapInfo = AsyncMemoize(name = "BootstrapInfo")
 
-    member val TcLastFile = AsyncMemoize(name = "TcLastFile")
+    // member val TcLastFile = AsyncMemoize(name = "TcLastFile")
 
     member val TcIntermediate = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "TcIntermediate")
 
@@ -520,6 +520,92 @@ type internal TransparentCompiler
                         }
         ]
 
+    let ComputeTcConfigBuilder (projectSnapshot: FSharpProjectSnapshot) =
+
+        let useSimpleResolutionSwitch = "--simpleresolution"
+        let commandLineArgs = projectSnapshot.CommandLineOptions
+        let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
+        let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+
+        let projectReferences = getProjectReferences projectSnapshot "ComputeBootstrapInfo"
+
+        // TODO: script support
+        let loadClosureOpt: LoadClosure option = None
+
+        let getSwitchValue (switchString: string) =
+            match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
+            | Some idx -> Some(commandLineArgs[ idx ].Substring(switchString.Length))
+            | _ -> None
+
+        let sdkDirOverride =
+            match loadClosureOpt with
+            | None -> None
+            | Some loadClosure -> loadClosure.SdkDirOverride
+
+        // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+        let tcConfigB =
+            TcConfigBuilder.CreateNew(
+                legacyReferenceResolver,
+                defaultFSharpBinariesDir,
+                implicitIncludeDir = projectSnapshot.ProjectDirectory,
+                reduceMemoryUsage = ReduceMemoryFlag.Yes,
+                isInteractive = useScriptResolutionRules,
+                isInvalidationSupported = true,
+                defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot,
+                sdkDirOverride = sdkDirOverride,
+                rangeForErrors = range0
+            )
+
+        tcConfigB.primaryAssembly <-
+            match loadClosureOpt with
+            | None -> PrimaryAssembly.Mscorlib
+            | Some loadClosure ->
+                if loadClosure.UseDesktopFramework then
+                    PrimaryAssembly.Mscorlib
+                else
+                    PrimaryAssembly.System_Runtime
+
+        tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
+
+        tcConfigB.conditionalDefines <-
+            let define =
+                if useScriptResolutionRules then
+                    "INTERACTIVE"
+                else
+                    "COMPILED"
+
+            define :: tcConfigB.conditionalDefines
+
+        tcConfigB.projectReferences <- projectReferences
+
+        tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+
+        // Apply command-line arguments and collect more source files if they are in the arguments
+        let sourceFilesNew =
+            ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
+
+        // Never open PDB files for the language service, even if --standalone is specified
+        tcConfigB.openDebugInformationForLaterStaticLinking <- false
+
+        tcConfigB.xmlDocInfoLoader <-
+            { new IXmlDocumentationInfoLoader with
+                /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
+                member _.TryLoad(assemblyFileName) =
+                    let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+
+                    // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
+                    XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
+            }
+            |> Some
+
+        tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+        tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
+
+        tcConfigB, sourceFilesNew, loadClosureOpt
+
+
+
     /// Bootstrap info that does not depend on contents of the files
     let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
 
@@ -533,89 +619,7 @@ type internal TransparentCompiler
                            "references", projectSnapshot.ReferencedProjects.Length.ToString()
                         |]
 
-                let useSimpleResolutionSwitch = "--simpleresolution"
-                let commandLineArgs = projectSnapshot.CommandLineOptions
-                let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
-                let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
-
-                let projectReferences = getProjectReferences projectSnapshot "ComputeBootstrapInfo"
-
-                // TODO: script support
-                let loadClosureOpt: LoadClosure option = None
-
-                let tcConfigB, sourceFiles =
-
-                    let getSwitchValue (switchString: string) =
-                        match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
-                        | Some idx -> Some(commandLineArgs[ idx ].Substring(switchString.Length))
-                        | _ -> None
-
-                    let sdkDirOverride =
-                        match loadClosureOpt with
-                        | None -> None
-                        | Some loadClosure -> loadClosure.SdkDirOverride
-
-                    // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                    let tcConfigB =
-                        TcConfigBuilder.CreateNew(
-                            legacyReferenceResolver,
-                            defaultFSharpBinariesDir,
-                            implicitIncludeDir = projectSnapshot.ProjectDirectory,
-                            reduceMemoryUsage = ReduceMemoryFlag.Yes,
-                            isInteractive = useScriptResolutionRules,
-                            isInvalidationSupported = true,
-                            defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
-                            tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                            sdkDirOverride = sdkDirOverride,
-                            rangeForErrors = range0
-                        )
-
-                    tcConfigB.primaryAssembly <-
-                        match loadClosureOpt with
-                        | None -> PrimaryAssembly.Mscorlib
-                        | Some loadClosure ->
-                            if loadClosure.UseDesktopFramework then
-                                PrimaryAssembly.Mscorlib
-                            else
-                                PrimaryAssembly.System_Runtime
-
-                    tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
-
-                    tcConfigB.conditionalDefines <-
-                        let define =
-                            if useScriptResolutionRules then
-                                "INTERACTIVE"
-                            else
-                                "COMPILED"
-
-                        define :: tcConfigB.conditionalDefines
-
-                    tcConfigB.projectReferences <- projectReferences
-
-                    tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
-
-                    // Apply command-line arguments and collect more source files if they are in the arguments
-                    let sourceFilesNew =
-                        ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
-
-                    // Never open PDB files for the language service, even if --standalone is specified
-                    tcConfigB.openDebugInformationForLaterStaticLinking <- false
-
-                    tcConfigB.xmlDocInfoLoader <-
-                        { new IXmlDocumentationInfoLoader with
-                            /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
-                            member _.TryLoad(assemblyFileName) =
-                                let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
-
-                                // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
-                                XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
-                        }
-                        |> Some
-
-                    tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
-                    tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
-
-                    tcConfigB, sourceFilesNew
+                let tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
 
                 // If this is a builder for a script, re-apply the settings inferred from the
                 // script and its load closure to the configuration.
@@ -770,7 +774,7 @@ type internal TransparentCompiler
                             })
 
                     {
-                        Range = m
+                        Range = m // TODO: is this used for anything?
                         Source = source
                         IsLastCompiland = isLastCompiland
                         IsExe = isExe
@@ -791,9 +795,7 @@ type internal TransparentCompiler
                     }
         }
 
-    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) withoutReferences =
-
-        let projectSnapshot = if withoutReferences then { projectSnapshot with ReferencedProjects = [] } else projectSnapshot
+    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
 
         caches.BootstrapInfo.Get(
             projectSnapshot.Key,
@@ -839,28 +841,26 @@ type internal TransparentCompiler
 
     // TODO: Not sure if we should cache this. For VS probably not. Maybe it can be configurable by FCS user.
     let LoadSource (file: FSharpFile) =
-        caches.Source.Get(
-            file.Source.Key,
-            async {
-                let! source = file.Source.GetSource() |> Async.AwaitTask
+        async {
+            let! source = file.Source.GetSource() |> Async.AwaitTask
 
-                return
-                    {
-                        FileName = file.Source.FileName
-                        Source = source
-                        SourceHash = Md5Hasher.empty |> Md5Hasher.addString <| source.ToString()
-                        IsLastCompiland = file.IsLastCompiland
-                        IsExe = file.IsExe
-                    }
-            }
-        )
+            return
+                {
+                    FileName = file.Source.FileName
+                    Source = source
+                    SourceHash = Md5Hasher.empty |> Md5Hasher.addBytes (source.GetChecksum().ToBuilder().ToArray())
+                    IsLastCompiland = file.IsLastCompiland
+                    IsExe = file.IsExe
+                }
+        }
 
     let LoadSources (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         async {
-            // TODO: deuglify/optimize
+            let sourceFileMap = bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName, f) |> Map
+
             let! sources =
                 projectSnapshot.SourceFiles
-                |> Seq.map (fun f -> f.FileName |> bootstrapInfo.GetFile |> LoadSource)
+                |> Seq.map (fun f -> f.FileName |> sourceFileMap.TryFind |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot.Key.GetLabel()}") |> LoadSource)
                 |> Async.Parallel
 
             return
@@ -870,15 +870,17 @@ type internal TransparentCompiler
                 }
         }
 
-    let ComputeParseFile (tcConfig: TcConfig) (file: FSharpFileSnapshotWithSource) =
+    let ComputeParseFile (projectSnapshot: FSharpProjectSnapshot) (file: FSharpFileSnapshotWithSource) =
+
+        let projectKey = projectSnapshot.WithoutSourceFiles.WithoutReferences.Key
 
         let key =
             { new ICacheKey<_, _> with
                 member _.GetLabel() = file.FileName |> shortPath
-                member _.GetKey() = file.FileName
+                member _.GetKey() = projectKey.GetKey(), file.FileName
 
                 member _.GetVersion() =
-                    file.SourceHash, file.IsLastCompiland, file.IsExe
+                    projectKey.GetVersion(), file.SourceHash, file.IsLastCompiland, file.IsExe
             }
 
         caches.ParseFile.Get(
@@ -892,6 +894,12 @@ type internal TransparentCompiler
                             Activity.Tags.version, file.SourceHash
                         |]
 
+                // TODO: might need to deal with exceptions here:
+                let tcConfigB, _, _ = ComputeTcConfigBuilder projectSnapshot
+
+                let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+
+
                 let diagnosticsLogger =
                     CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
@@ -904,7 +912,7 @@ type internal TransparentCompiler
                 let input =
                     ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
 
-                return input, diagnosticsLogger.GetDiagnostics(), sourceText
+                return input, diagnosticsLogger.GetDiagnostics(), sourceText, tcConfig
             }
         )
 
@@ -1138,7 +1146,7 @@ type internal TransparentCompiler
 
             match fileNode with
             | NodeToTypeCheck.PhysicalFile index ->
-                let input, parseErrors, _ = parsedInputs[index]
+                let input, parseErrors, _, _ = parsedInputs[index]
 
                 let! tcIntermediate =
                     ComputeTcIntermediate projectSnapshot dependencyFiles fileNode (input, parseErrors) bootstrapInfo tcInfo
@@ -1203,7 +1211,7 @@ type internal TransparentCompiler
                             then
                                 failwith $"Oops!!!"
 
-                            let parsedInput, _parseErrors, _ = parsedInputs[index]
+                            let parsedInput, _parseErrors, _, _ = parsedInputs[index]
                             let prefixPathOpt = None
                             // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
                             let partialResult, tcState =
@@ -1239,39 +1247,39 @@ type internal TransparentCompiler
 
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
-        let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
-        caches.TcLastFile.Get(
-            projectSnapshot.FileKey fileName,
-            async {
-                let file = projectSnapshot.SourceFiles |> List.last
-
-                use _ =
-                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
-
-                let! parsedInputs =
-                    projectSnapshot.SourceFiles
-                    |> Seq.map (ComputeParseFile bootstrapInfo.TcConfig)
-                    |> Async.Parallel
-
-                let! graph, dependencyFiles =
-                    ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p13)
-                //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
-
-                let! results, tcInfo =
-                    processTypeCheckingGraph
-                        graph
-                        (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles false)
-                        bootstrapInfo.InitialTcInfo
-
-                let lastResult = results |> List.head |> snd
-
-                return lastResult, tcInfo
-            }
-        )
-
-    let getParseResult (tcConfig: TcConfig) creationDiags file =
+        //let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
+        //caches.TcLastFile.Get(
+        //    projectSnapshot.FileKey fileName,
         async {
-            let! parseTree, parseDiagnostics, sourceText = ComputeParseFile tcConfig file
+            let file = projectSnapshot.SourceFiles |> List.last
+
+            use _ =
+                Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
+
+            let! parsedInputs =
+                projectSnapshot.SourceFiles
+                |> Seq.map (ComputeParseFile projectSnapshot.ProjectSnapshot)
+                |> Async.Parallel
+
+            let! graph, dependencyFiles =
+                ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p14)
+            //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
+
+            let! results, tcInfo =
+                processTypeCheckingGraph
+                    graph
+                    (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles false)
+                    bootstrapInfo.InitialTcInfo
+
+            let lastResult = results |> List.head |> snd
+
+            return lastResult, tcInfo
+        }
+        //)
+
+    let getParseResult (projectSnapshot: FSharpProjectSnapshot) creationDiags file =
+        async {
+            let! parseTree, parseDiagnostics, sourceText, tcConfig = ComputeParseFile projectSnapshot file
 
             let parseDiagnostics =
                 DiagnosticHelpers.CreateDiagnostics(
@@ -1309,7 +1317,7 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-                match! ComputeBootstrapInfo projectSnapshot false with
+                match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
                 | Some bootstrapInfo, creationDiags ->
@@ -1318,7 +1326,7 @@ type internal TransparentCompiler
                     let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
                     let file = snapshotWithSources.SourceFiles |> List.last
 
-                    let! parseResults, _sourceText = getParseResult bootstrapInfo.TcConfig creationDiags file
+                    let! parseResults, _sourceText = getParseResult projectSnapshot creationDiags file
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
@@ -1402,11 +1410,11 @@ type internal TransparentCompiler
 
                 let! parsedInputs =
                     projectSnapshot.SourceFiles
-                    |> Seq.map (ComputeParseFile bootstrapInfo.TcConfig)
+                    |> Seq.map (ComputeParseFile projectSnapshot.ProjectSnapshot)
                     |> Async.Parallel
 
                 let! graph, dependencyFiles =
-                    ComputeDependencyGraphForProject bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p13)
+                    ComputeDependencyGraphForProject bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p14)
 
                 return!
                     processTypeCheckingGraph
@@ -1416,13 +1424,12 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
         caches.ProjectExtras.Get(
             projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
             async {
-                let! snapshotWithSources = projectSnapshot |> LoadSources bootstrapInfo
 
-                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo snapshotWithSources
+                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1531,12 +1538,15 @@ type internal TransparentCompiler
                     Trace.TraceInformation($"Using assembly on disk: {name}")
                     return ProjectAssemblyDataResult.Unavailable true
                 else
-                    match! ComputeBootstrapInfo projectSnapshot false with
+                    match! ComputeBootstrapInfo projectSnapshot with
                     | None, _ ->
                         Trace.TraceInformation($"Using assembly on disk (unintentionally): {name}")
                         return ProjectAssemblyDataResult.Unavailable true
                     | Some bootstrapInfo, _creationDiags ->
-                        let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
+
+                        let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
+
+                        let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo snapshotWithSources
                         Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                         return assemblyDataResult
@@ -1548,12 +1558,14 @@ type internal TransparentCompiler
             projectSnapshot.Key,
             async {
 
-                match! ComputeBootstrapInfo projectSnapshot false with
+                match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
                 | Some bootstrapInfo, creationDiags ->
 
-                    let! tcInfo, ilAssemRef, assemblyDataResult = ComputeProjectExtras bootstrapInfo projectSnapshot
+                    let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
+
+                    let! tcInfo, ilAssemRef, assemblyDataResult = ComputeProjectExtras bootstrapInfo snapshotWithSources
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
@@ -1613,7 +1625,7 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         async {
-            match! ComputeBootstrapInfo projectSnapshot false with
+            match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
@@ -1696,12 +1708,23 @@ type internal TransparentCompiler
             //use _ =
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-            match! ComputeBootstrapInfo projectSnapshot true with
-            | None, creationDiags -> return emptyParseResult fileName creationDiags
-            | Some bootstrapInfo, creationDiags ->
-                let! file = bootstrapInfo.GetFile fileName |> LoadSource
-                let! parseResult, _ = getParseResult bootstrapInfo.TcConfig creationDiags file
-                return parseResult
+            // TODO: might need to deal with exceptions here:
+            let tcConfigB, _, _ = ComputeTcConfigBuilder projectSnapshot
+
+            let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+
+            let index, fileSnapshot = projectSnapshot.SourceFiles |> Seq.mapi pair |> Seq.tryFind (fun (_, f) -> f.FileName = fileName) |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
+
+            let file = {
+                Range = rangeStartup
+                Source = fileSnapshot
+                IsLastCompiland = index = projectSnapshot.SourceFiles.Length - 1
+                IsExe = tcConfig.target.IsExe
+            }
+
+            let! file = file |> LoadSource
+            let! parseResult, _ = getParseResult projectSnapshot Seq.empty file
+            return parseResult
         }
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =

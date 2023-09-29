@@ -317,10 +317,13 @@ module internal Md5Hasher =
 
     let private computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
 
+    let hashString (s: string) =
+        System.Text.Encoding.UTF8.GetBytes(s) |> computeHash
+
     let empty = String.Empty
 
     let addBytes (bytes: byte array) (s: string) =
-        let sbytes = System.Text.Encoding.UTF8.GetBytes(s)
+        let sbytes = s |> hashString
 
         Array.append sbytes bytes
         |> computeHash
@@ -385,6 +388,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable evicted = 0
     let mutable collected = 0
 
+    let failures = ResizeArray()
+    let durations = ResizeArray()
+
     let cache =
         LruCache<'TKey, 'TVersion, Job<'TValue>>(
             keepStrongly = defaultArg keepStrongly 100,
@@ -395,10 +401,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _ -> false),
             event =
                 (function
-                | CacheEvent.Evicted -> (fun k -> 
+                | CacheEvent.Evicted -> (fun k ->
                     Interlocked.Increment &evicted |> ignore
                     event.Trigger(JobEvent.Evicted, k))
-                | CacheEvent.Collected -> (fun k -> 
+                | CacheEvent.Collected -> (fun k ->
                     Interlocked.Increment &collected |> ignore
                     event.Trigger(JobEvent.Collected, k))
                 | CacheEvent.Weakened -> (fun k -> event.Trigger(JobEvent.Weakened, k))
@@ -449,7 +455,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 return
                     match msg, cached with
                     | Sync, _ -> New Unchecked.defaultof<_>
-                    | GetOrCompute _, Some (Completed result) -> 
+                    | GetOrCompute _, Some (Completed result) ->
                         Interlocked.Increment &hits |> ignore
                         Existing(Task.FromResult result)
                     | GetOrCompute (_, ct), Some (Running (tcs, _, _, _)) ->
@@ -483,7 +489,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         otherVersions
                         |> Seq.choose (function v, Running (_tcs, cts, _, _) -> Some (v, cts) | _ -> None)
-                        |> Seq.iter (fun (_v, cts) -> 
+                        |> Seq.iter (fun (_v, cts) ->
                             use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label |]
                             //System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
                             if cancelDuplicateRunningJobs then
@@ -492,6 +498,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         New cts.Token
             })
+
+    let internalError message =
+        let ex = exn(message)
+        failures.Add ex
+        raise ex
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
         task {
@@ -567,6 +578,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
                             Interlocked.Increment &failed |> ignore
+                            failures.Add ex
                             tcs.TrySetException ex |> ignore
 
                         | JobCompleted result, Some (Running (tcs, _cts, _c, _ts)) ->
@@ -575,29 +587,26 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             requestCounts.Remove key |> ignore
                             log (Finished, key)
                             Interlocked.Increment &completed |> ignore
+                            durations.Add (DateTime.Now - _ts)
 
                             if tcs.TrySetResult result = false then
-                                failwith "Invalid state: Completed job already completed"
-                                ()
+                                internalError "Invalid state: Completed job already completed"
 
                         // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
-                        | JobFailed _, None -> failwith "Invalid state: Running job missing in cache (failed)"
+                        | JobFailed _, None -> internalError "Invalid state: Running job missing in cache (failed)"
 
-                        | OriginatorCanceled, None -> failwith "Invalid state: Running job missing in cache (canceled)"
+                        | OriginatorCanceled, None -> internalError "Invalid state: Running job missing in cache (canceled)"
 
-                        | JobCompleted _, None -> failwith "Invalid state: Running job missing in cache (completed)"
+                        | JobCompleted _, None -> internalError "Invalid state: Running job missing in cache (completed)"
 
                         | JobFailed ex, Some (Completed _job) ->
-                            failwith $"Invalid state: Failed Completed job \n%A{ex}"
-                            ignore ex
+                            internalError $"Invalid state: Failed Completed job \n%A{ex}"
 
                         | JobCompleted _result, Some (Completed _job) ->
-                            failwith "Invalid state: Double-Completed job"
-                            ()
+                            internalError "Invalid state: Double-Completed job"
 
                         | OriginatorCanceled, Some (Completed _result) ->
-                            failwith "Invalid state: Canceled Completed job"
-                            ()
+                            internalError "Invalid state: Canceled Completed job"
                     })
         }
 
@@ -629,7 +638,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             match! processRequest post (key, GetOrCompute(computation, ct)) |> Async.AwaitTask with
             | New internalCt ->
-                
+
                 let linkedCtSource = CancellationTokenSource.CreateLinkedTokenSource(ct, internalCt)
 
                 try
@@ -678,8 +687,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _, _, Running _ -> "Running"
                 | _, _, Completed _ -> "Completed")
             |> Map
-            //|> Seq.map ((<||) (sprintf "%s: %d"))
-            //|> String.concat " "
-        let running = valueStats.TryFind "Running" |> Option.map (sprintf " Running: %d") |> Option.defaultValue ""
 
-        $"{name}{locked}{running} {cache.DebuggerDisplay} | hits: {hits} | started: {started} | completed: {completed} | canceled: {canceled} | restarted: {restarted} | failed: {failed} | evicted: {evicted} | collected: {collected}"
+        let running = valueStats.TryFind "Running" |> Option.map (sprintf " Running: %d") |> Option.defaultValue ""
+        let avgDuration = durations |> Seq.averageBy (fun x -> x.TotalMilliseconds) |> sprintf "%f ms"
+
+        $"{name}{locked}{running} {cache.DebuggerDisplay} | hits: {hits} | started: {started} | completed: {completed} | canceled: {canceled} | restarted: {restarted} | failed: {failed} | evicted: {evicted} | collected: {collected} | Avg: {avgDuration}"

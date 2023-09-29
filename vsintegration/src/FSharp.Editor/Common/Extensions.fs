@@ -165,6 +165,8 @@ module private SourceText =
 
                   member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
                       sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+                  member _.GetChecksum() = sourceText.GetChecksum()
             }
 
         sourceText
