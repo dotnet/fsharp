@@ -43,10 +43,16 @@ type MemoizeRequest<'TValue> =
 type internal Job<'TValue> =
     | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime
     | Completed of 'TValue
+
     member this.DebuggerDisplay =
         match this with
         | Running (_, cts, _, ts) ->
-            let cancellation = if cts.IsCancellationRequested then " ! Cancellation Requested" else ""
+            let cancellation =
+                if cts.IsCancellationRequested then
+                    " ! Cancellation Requested"
+                else
+                    ""
+
             $"Running since {ts.ToShortTimeString()}{cancellation}"
         | Completed value -> $"Completed {value}"
 
@@ -250,10 +256,10 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
             |> Seq.map (fun node -> node.Value)
             |> Seq.filter (p24 >> ((<>) version))
             |> Seq.choose (function
-                | _, ver, _, Strong v -> Some (ver, v)
+                | _, ver, _, Strong v -> Some(ver, v)
                 | _, ver, _, Weak r ->
                     match r.TryGetTarget() with
-                    | true, x -> Some (ver, x)
+                    | true, x -> Some(ver, x)
                     | _ -> None)
             |> Seq.toList
 
@@ -379,6 +385,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let event = Event<_>()
 
+    let mutable errors = 0
     let mutable hits = 0
     let mutable started = 0
     let mutable completed = 0
@@ -401,12 +408,14 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _ -> false),
             event =
                 (function
-                | CacheEvent.Evicted -> (fun k ->
-                    Interlocked.Increment &evicted |> ignore
-                    event.Trigger(JobEvent.Evicted, k))
-                | CacheEvent.Collected -> (fun k ->
-                    Interlocked.Increment &collected |> ignore
-                    event.Trigger(JobEvent.Collected, k))
+                | CacheEvent.Evicted ->
+                    (fun k ->
+                        Interlocked.Increment &evicted |> ignore
+                        event.Trigger(JobEvent.Evicted, k))
+                | CacheEvent.Collected ->
+                    (fun k ->
+                        Interlocked.Increment &collected |> ignore
+                        event.Trigger(JobEvent.Collected, k))
                 | CacheEvent.Weakened -> (fun k -> event.Trigger(JobEvent.Weakened, k))
                 | CacheEvent.Strengthened -> (fun k -> event.Trigger(JobEvent.Strengthened, k)))
         )
@@ -480,15 +489,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         let cts = new CancellationTokenSource()
 
-                        cache.Set(
-                            key.Key,
-                            key.Version,
-                            key.Label,
-                            (Running(TaskCompletionSource(), cts, computation, DateTime.Now))
-                        )
+                        cache.Set(key.Key, key.Version, key.Label, (Running(TaskCompletionSource(), cts, computation, DateTime.Now)))
 
                         otherVersions
-                        |> Seq.choose (function v, Running (_tcs, cts, _, _) -> Some (v, cts) | _ -> None)
+                        |> Seq.choose (function
+                            | v, Running (_tcs, cts, _, _) -> Some(v, cts)
+                            | _ -> None)
                         |> Seq.iter (fun (_v, cts) ->
                             use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label |]
                             //System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
@@ -499,9 +505,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         New cts.Token
             })
 
-    let internalError message =
-        let ex = exn(message)
-        failures.Add ex
+    let internalError key message =
+        let ex = exn (message)
+        failures.Add(key, ex)
+        Interlocked.Increment &errors |> ignore
         raise ex
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
@@ -530,7 +537,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 Interlocked.Increment &canceled |> ignore
                                 use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
                                 ()
-                                //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
+                            //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                             else
                                 // We need to restart the computation
@@ -567,7 +574,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 Interlocked.Increment &canceled |> ignore
                                 use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
                                 ()
-                                //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
+                        //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                         | CancelRequest, None
                         | CancelRequest, Some (Completed _) -> ()
@@ -578,7 +585,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
                             Interlocked.Increment &failed |> ignore
-                            failures.Add ex
+                            failures.Add(key.Label, ex)
                             tcs.TrySetException ex |> ignore
 
                         | JobCompleted result, Some (Running (tcs, _cts, _c, _ts)) ->
@@ -587,26 +594,23 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             requestCounts.Remove key |> ignore
                             log (Finished, key)
                             Interlocked.Increment &completed |> ignore
-                            durations.Add (DateTime.Now - _ts)
+                            durations.Add(DateTime.Now - _ts)
 
                             if tcs.TrySetResult result = false then
-                                internalError "Invalid state: Completed job already completed"
+                                internalError key.Label "Invalid state: Completed job already completed"
 
                         // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
-                        | JobFailed _, None -> internalError "Invalid state: Running job missing in cache (failed)"
+                        | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
 
-                        | OriginatorCanceled, None -> internalError "Invalid state: Running job missing in cache (canceled)"
+                        | OriginatorCanceled, None -> internalError key.Label "Invalid state: Running job missing in cache (canceled)"
 
-                        | JobCompleted _, None -> internalError "Invalid state: Running job missing in cache (completed)"
+                        | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
 
-                        | JobFailed ex, Some (Completed _job) ->
-                            internalError $"Invalid state: Failed Completed job \n%A{ex}"
+                        | JobFailed ex, Some (Completed _job) -> internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
 
-                        | JobCompleted _result, Some (Completed _job) ->
-                            internalError "Invalid state: Double-Completed job"
+                        | JobCompleted _result, Some (Completed _job) -> internalError key.Label "Invalid state: Double-Completed job"
 
-                        | OriginatorCanceled, Some (Completed _result) ->
-                            internalError "Invalid state: Canceled Completed job"
+                        | OriginatorCanceled, Some (Completed _result) -> internalError key.Label "Invalid state: Canceled Completed job"
                     })
         }
 
@@ -688,7 +692,31 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _, _, Completed _ -> "Completed")
             |> Map
 
-        let running = valueStats.TryFind "Running" |> Option.map (sprintf " Running: %d") |> Option.defaultValue ""
-        let avgDuration = durations |> Seq.averageBy (fun x -> x.TotalMilliseconds) |> sprintf "%f ms"
+        let running =
+            valueStats.TryFind "Running"
+            |> Option.map (sprintf " Running: %d")
+            |> Option.defaultValue ""
 
-        $"{name}{locked}{running} {cache.DebuggerDisplay} | hits: {hits} | started: {started} | completed: {completed} | canceled: {canceled} | restarted: {restarted} | failed: {failed} | evicted: {evicted} | collected: {collected} | Avg: {avgDuration}"
+        let avgDuration =
+            match durations.Count with
+            | 0 -> ""
+            | _ ->
+                durations
+                |> Seq.averageBy (fun x -> x.TotalMilliseconds)
+                |> sprintf "| Avg: %.0f ms"
+
+        let stats =
+            [|
+                if errors > 0 then $"| errors: {errors} " else ""
+                if hits > 0 then $"| hits: {hits} " else ""
+                if started > 0 then $"| started: {started} " else ""
+                if completed > 0 then $"| completed: {completed} " else ""
+                if canceled > 0 then $"| canceled: {canceled} " else ""
+                if restarted > 0 then $"| restarted: {restarted} " else ""
+                if failed > 0 then $"| failed: {failed} " else ""
+                if evicted > 0 then $"| evicted: {evicted} " else ""
+                if collected > 0 then $"| collected: {collected} " else ""
+            |]
+            |> String.concat ""
+
+        $"{name}{locked}{running} {cache.DebuggerDisplay} {stats}{avgDuration}"

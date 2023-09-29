@@ -150,7 +150,7 @@ type FSharpFileSnapshotWithSource =
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string * bool
+type ProjectSnapshotKey = string
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -272,7 +272,11 @@ type FSharpProjectSnapshot =
             SourceFiles = this.SourceFiles |> List.map (fun x -> { x with Version = "" })
         }
 
-    member this.WithoutReferences = { this with ReferencedProjects = []; ReferencesOnDisk = [] }
+    member this.WithoutReferences =
+        { this with
+            ReferencedProjects = []
+            ReferencesOnDisk = []
+        }
 
     member this.WithoutSourceFiles = { this with SourceFiles = [] }
 
@@ -285,7 +289,7 @@ type FSharpProjectSnapshot =
     member this.FileKey(fileName) =
         { new ICacheKey<_, _> with
             member _.GetLabel() = fileName |> shortPath
-            member _.GetKey() = fileName, this.Key.GetKey() |> fst
+            member _.GetKey() = fileName, this.Key.GetKey()
 
             member _.GetVersion() =
                 this
@@ -323,9 +327,9 @@ type FSharpProjectSnapshot =
             UseScriptResolutionRules = this.UseScriptResolutionRules
         }
 
-    interface ICacheKey<(string * bool), FSharpProjectSnapshotDebugVersion> with
+    interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotDebugVersion> with
         member this.GetLabel() = this.ToString()
-        member this.GetKey() = this.ProjectFileName, this.ReferencedProjects = [] // This is for bootstrapInfo cache where we might need to keep an extra version without project references to speed up getting TcConfig for just parsing files. Probably this should be reworked eventually...
+        member this.GetKey() = this.ProjectFileName
         member this.GetVersion() = this.GetDebugVersion()
 
 and FSharpProjectSnapshotWithSources =
@@ -387,7 +391,7 @@ and FSharpProjectSnapshotWithSources =
     member this.FileKey(fileName) =
         { new ICacheKey<_, _> with
             member _.GetLabel() = fileName |> shortPath
-            member _.GetKey() = fileName, this.Key.GetKey() |> fst
+            member _.GetKey() = fileName, this.Key.GetKey()
 
             member _.GetVersion() =
                 this
@@ -395,7 +399,7 @@ and FSharpProjectSnapshotWithSources =
                     .WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion()
         }
 
-    interface ICacheKey<(string * bool), FSharpProjectSnapshotWithSourcesVersion> with
+    interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion> with
         member this.GetLabel() = this.ProjectSnapshot.Key.ToString()
         member this.GetKey() = this.ProjectSnapshot.Key.GetKey()
 

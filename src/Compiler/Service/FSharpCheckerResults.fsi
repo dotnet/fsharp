@@ -65,7 +65,7 @@ type FSharpFileSnapshotWithSource =
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string * bool
+type ProjectSnapshotKey = string
 
 [<NoComparison>]
 type FSharpProjectSnapshot =

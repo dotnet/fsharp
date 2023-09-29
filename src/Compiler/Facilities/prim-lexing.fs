@@ -113,9 +113,7 @@ type StringText(str: string) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
         member _.GetChecksum() =
-            str
-            |> Md5Hasher.hashString
-            |> ImmutableArray.Create<byte>
+            str |> Md5Hasher.hashString |> ImmutableArray.Create<byte>
 
 module SourceText =
 

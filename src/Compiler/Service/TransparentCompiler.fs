@@ -604,8 +604,6 @@ type internal TransparentCompiler
 
         tcConfigB, sourceFilesNew, loadClosureOpt
 
-
-
     /// Bootstrap info that does not depend on contents of the files
     let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
 
@@ -615,8 +613,9 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start
                         "ComputeBootstrapInfoStatic"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName
-                           "references", projectSnapshot.ReferencedProjects.Length.ToString()
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName
+                            "references", projectSnapshot.ReferencedProjects.Length.ToString()
                         |]
 
                 let tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
@@ -848,7 +847,9 @@ type internal TransparentCompiler
                 {
                     FileName = file.Source.FileName
                     Source = source
-                    SourceHash = Md5Hasher.empty |> Md5Hasher.addBytes (source.GetChecksum().ToBuilder().ToArray())
+                    SourceHash =
+                        Md5Hasher.empty
+                        |> Md5Hasher.addBytes (source.GetChecksum().ToBuilder().ToArray())
                     IsLastCompiland = file.IsLastCompiland
                     IsExe = file.IsExe
                 }
@@ -856,11 +857,16 @@ type internal TransparentCompiler
 
     let LoadSources (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         async {
-            let sourceFileMap = bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName, f) |> Map
+            let sourceFileMap =
+                bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName, f) |> Map
 
             let! sources =
                 projectSnapshot.SourceFiles
-                |> Seq.map (fun f -> f.FileName |> sourceFileMap.TryFind |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot.Key.GetLabel()}") |> LoadSource)
+                |> Seq.map (fun f ->
+                    f.FileName
+                    |> sourceFileMap.TryFind
+                    |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot.Key.GetLabel()}")
+                    |> LoadSource)
                 |> Async.Parallel
 
             return
@@ -898,7 +904,6 @@ type internal TransparentCompiler
                 let tcConfigB, _, _ = ComputeTcConfigBuilder projectSnapshot
 
                 let tcConfig = TcConfig.Create(tcConfigB, validate = true)
-
 
                 let diagnosticsLogger =
                     CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
@@ -1098,6 +1103,7 @@ type internal TransparentCompiler
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
                 let! ct = Async.CancellationToken
+
                 try
                     do! maxParallelismSemaphore.WaitAsync(ct) |> Async.AwaitTask
 
@@ -1275,7 +1281,7 @@ type internal TransparentCompiler
 
             return lastResult, tcInfo
         }
-        //)
+    //)
 
     let getParseResult (projectSnapshot: FSharpProjectSnapshot) creationDiags file =
         async {
@@ -1677,7 +1683,7 @@ type internal TransparentCompiler
 
                 return
                     sinkOpt
-                    |> Option.bind (fun (sink, {TcGlobals = g}) ->
+                    |> Option.bind (fun (sink, { TcGlobals = g }) ->
                         let sResolutions = sink.GetResolutions()
 
                         let builder = ItemKeyStoreBuilder(g)
@@ -1713,14 +1719,19 @@ type internal TransparentCompiler
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
 
-            let index, fileSnapshot = projectSnapshot.SourceFiles |> Seq.mapi pair |> Seq.tryFind (fun (_, f) -> f.FileName = fileName) |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
+            let index, fileSnapshot =
+                projectSnapshot.SourceFiles
+                |> Seq.mapi pair
+                |> Seq.tryFind (fun (_, f) -> f.FileName = fileName)
+                |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
 
-            let file = {
-                Range = rangeStartup
-                Source = fileSnapshot
-                IsLastCompiland = index = projectSnapshot.SourceFiles.Length - 1
-                IsExe = tcConfig.target.IsExe
-            }
+            let file =
+                {
+                    Range = rangeStartup
+                    Source = fileSnapshot
+                    IsLastCompiland = index = projectSnapshot.SourceFiles.Length - 1
+                    IsExe = tcConfig.target.IsExe
+                }
 
             let! file = file |> LoadSource
             let! parseResult, _ = getParseResult projectSnapshot Seq.empty file
