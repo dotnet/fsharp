@@ -1147,6 +1147,11 @@
         <target state="translated">この式では、暗黙的な変換 '{0}' を使用して、型 '{1}' を型 '{2}' に変換しています。https://aka.ms/fsharp-implicit-convs をご確認ください。'#nowarn\"3391\" を使用して、この警告を無効にできる可能性があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">初期化コードの外部で init 専用プロパティ '{0}' を設定することはできません。https://aka.ms/fsharp-assigning-values-to-properties-at-initialization を参照してください</target>
