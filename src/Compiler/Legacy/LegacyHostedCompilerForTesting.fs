@@ -185,21 +185,21 @@ type internal FscCompiler(legacyReferenceResolver) =
     /// test if --test:ErrorRanges flag is set
     let errorRangesArg =
         let regex =
-            Regex(@"^(/|--)test:ErrorRanges$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+            Regex(@"^(/|--)test:ErrorRanges$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
 
         fun arg -> regex.IsMatch(arg)
 
     /// test if --vserrors flag is set
     let vsErrorsArg =
         let regex =
-            Regex(@"^(/|--)vserrors$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+            Regex(@"^(/|--)vserrors$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
 
         fun arg -> regex.IsMatch(arg)
 
     /// test if an arg is a path to fsc.exe
     let fscExeArg =
         let regex =
-            Regex(@"fsc(\.exe)?$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+            Regex(@"fsc(\.exe)?$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
 
         fun arg -> regex.IsMatch(arg)
 

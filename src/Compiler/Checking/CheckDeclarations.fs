@@ -267,7 +267,7 @@ let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) =
         g.isInteractive &&
         not (isNil rest) &&
         p.idText.StartsWithOrdinal FsiDynamicModulePrefix && 
-        p.idText[FsiDynamicModulePrefix.Length..] |> String.forall Char.IsDigit 
+        p.idText[FsiDynamicModulePrefix.Length..] |> String.forall isDigit
         -> Some(p, rest)
     | _ -> None
 

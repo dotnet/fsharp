@@ -415,7 +415,7 @@ module QuickParse =
             let partialLongName = AtStartOfIdentifier(0, [], false, None)
 
             match List.rev partialLongName.QualifyingIdents with
-            | s :: _ when s.Length > 0 && Char.IsDigit(s[0]) -> PartialLongName.Empty(index) // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
+            | s :: _ when s.Length > 0 && isDigit(s[0]) -> PartialLongName.Empty(index) // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
             | plid ->
                 { partialLongName with
                     QualifyingIdents = plid

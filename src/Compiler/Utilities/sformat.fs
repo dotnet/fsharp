@@ -1135,10 +1135,10 @@ module Display =
                                         let openingBracketIndex = postTextMatch.Groups["prop"].Index - 1
                                         buildObjMessageL remainingPropertyText[openingBracketIndex..] newLayouts
 
-                                | remaingPropertyText ->
+                                | remainingPropertyText ->
                                     // make sure we don't have any stray brackets
                                     let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(remaingPropertyText, illFormedBracketPattern)
+                                        System.Text.RegularExpressions.Regex.IsMatch(remainingPropertyText, illFormedBracketPattern)
 
                                     if strayClosingMatch then
                                         None
@@ -1149,7 +1149,7 @@ module Display =
                                             spaceListL (
                                                 List.rev (
                                                     (sepL (tagText preText)
-                                                     ^^ alternativeObjL ^^ sepL (tagText (replaceEscapedBrackets (remaingPropertyText))))
+                                                     ^^ alternativeObjL ^^ sepL (tagText (replaceEscapedBrackets (remainingPropertyText))))
                                                     :: layouts
                                                 )
                                             )

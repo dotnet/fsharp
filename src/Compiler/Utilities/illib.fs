@@ -78,6 +78,8 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+    let inline isDigit (c: char) = (uint)(c - '0') <= (uint)('9' - '0');
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
@@ -526,7 +528,7 @@ module List =
         | [] -> failwith "headAndTail"
         | h :: t -> (h, t)
 
-    // WARNING: not tail-recursive
+    /// WARNING: not tail-recursive
     let mapHeadTail fhead ftail =
         function
         | [] -> []
@@ -710,13 +712,13 @@ module String =
             match Array.tryHead strArr with
             | None -> str
             | Some c ->
-                strArr[0] <- Char.ToLower c
+                strArr[0] <- Char.ToLowerInvariant c
                 String strArr
 
     let extractTrailingIndex (str: string) =
         let charr = str.ToCharArray()
         Array.revInPlace charr
-        let digits = Array.takeWhile Char.IsDigit charr
+        let digits = Array.takeWhile isDigit charr
         Array.revInPlace digits
 
         String digits

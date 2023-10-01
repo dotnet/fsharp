@@ -56,7 +56,7 @@ module internal PrintfImpl =
     /// 1. Final pieces (1..5) - set of functions with arguments number 1..5. 
     /// Primary characteristic - these functions produce final result of the *printf* operation
     /// 2. Chained pieces (1..5) - set of functions with arguments number 1..5. 
-    /// Primary characteristic - these functions doesn not produce final result by itself, instead they tailed with some another piece (chained or final).
+    /// Primary characteristic - these functions does not produce final result by itself, instead they tailed with some another piece (chained or final).
     /// Plain parts correspond to simple format specifiers (that are projected to just one parameter of the function, say %d or %s). However we also have 
     /// format specifiers that can be projected to more than one argument (i.e %a, %t or any simple format specified with * width or precision). 
     /// For them we add special cases (both chained and final to denote that they can either return value themselves or continue with some other piece)
@@ -83,6 +83,8 @@ module internal PrintfImpl =
     let inline isPadWithZeros flags = hasFlag flags FormatFlags.PadWithZeros
     let inline isPlusForPositives flags = hasFlag flags FormatFlags.PlusForPositives
     let inline isSpaceForPositives flags = hasFlag flags FormatFlags.SpaceForPositives
+
+    let inline isDigit (c: char) = (uint)(c - '0') <= (uint)('9' - '0');
 
     /// Used for width and precision to denote that user has specified '*' flag
     [<Literal>]
@@ -146,15 +148,15 @@ module internal PrintfImpl =
             padChar, prefix    
 
         member spec.IsGFormat = 
-            spec.IsDecimalFormat || System.Char.ToLower(spec.TypeChar) = 'g'
+            spec.IsDecimalFormat || spec.TypeChar = 'g' || spec.TypeChar = 'G'
 
-    
+
     /// Set of helpers to parse format string
     module private FormatString =
 
         let intFromString (s: string) (i: byref<int>) =
             let mutable res = 0
-            while (Char.IsDigit s.[i]) do
+            while (isDigit s[i]) do
                 let n = int s.[i] - int '0'
                 res <- res * 10 + n
                 i <- i + 1
@@ -185,7 +187,7 @@ module internal PrintfImpl =
             if s.[i] = '*' then 
                 i <- i + 1
                 StarValue
-            elif Char.IsDigit s.[i] then
+            elif isDigit s[i] then
                 intFromString s (&i)
             else 
                 NotSpecifiedValue
@@ -195,7 +197,7 @@ module internal PrintfImpl =
                 if s.[i + 1] = '*' then 
                     i <- i + 2
                     StarValue
-                elif Char.IsDigit s.[i + 1] then
+                elif isDigit s[i + 1] then
                     i <- i + 1
                     intFromString s (&i)
                 else raise (ArgumentException("invalid precision value"))

@@ -4194,12 +4194,12 @@ module DebugPrint =
             | Const.UIntPtr x -> (x |> string)+"un"
             | Const.Single d -> 
                 (let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                 if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                 if String.forall (fun c -> isDigit c || c = '-') s
                  then s + ".0" 
                  else s) + "f"
             | Const.Double d -> 
                 let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                if String.forall (fun c -> isDigit c || c = '-') s
                 then s + ".0" 
                 else s
             | Const.Char c -> "'" + c.ToString() + "'" 

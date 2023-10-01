@@ -434,7 +434,7 @@ type VersionHelper() =
                                         let mutable breakLoop = false
 
                                         while (idx < elements[i].Length) && not breakLoop do
-                                            if not (Char.IsDigit elements[i].[idx]) then
+                                            if not (isDigit elements[i].[idx]) then
                                                 invalidFormat <- true
 
                                                 VersionHelper.TryGetValue((elements[ i ].Substring(0, idx)), ref values[i])

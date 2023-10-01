@@ -139,13 +139,13 @@ module internal Parse =
     let rec digitsPrecision (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadPrecision())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> digitsPrecision fmt (fmtPos+1)
+        | c when isDigit c -> digitsPrecision fmt (fmtPos+1)
         | _ -> fmtPos
 
     let precision (info: FormatInfoRegister) (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadWidth())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision fmt (fmtPos+1)
+        | c when isDigit c -> info.precision <- true; false,digitsPrecision fmt (fmtPos+1)
         | '*' -> info.precision <- true; true,(fmtPos+1)
         | _ -> failwith (FSComp.SR.forPrecisionMissingAfterDot())
 
@@ -160,14 +160,14 @@ module internal Parse =
         let rec go pos n =
             if pos >= len then failwith (FSComp.SR.forBadPrecision())
             match fmt[pos] with
-            | c when System.Char.IsDigit c -> go (pos+1) (n*10 + int c - int '0')
+            | c when isDigit c -> go (pos+1) (n*10 + int c - int '0')
             | _ -> Some n, optionalDotAndPrecision info fmt pos
         go fmtPos intAcc
 
     let widthAndPrecision (info: FormatInfoRegister) (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadPrecision())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision info fmt fmtPos 0
+        | c when isDigit c -> false,digitsWidthAndPrecision info fmt fmtPos 0
         | '*' -> true, (None, optionalDotAndPrecision info fmt (fmtPos+1))
         | _ -> false, (None, optionalDotAndPrecision info fmt fmtPos)
 
@@ -177,7 +177,7 @@ module internal Parse =
         let rec digitsPosition n pos =
             if pos >= len then failwith (FSComp.SR.forBadPrecision())
             match fmt[pos] with
-            | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (pos+1)
+            | c when isDigit c -> digitsPosition (n*10 + int c - int '0') (pos+1)
             | '$' -> Some n, pos+1
             | _ -> None, pos
 

@@ -61,6 +61,9 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
 
+    /// Returns true if the argument is ASCII digit (0-9).
+    val inline isDigit : c: char -> bool
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
@@ -182,7 +185,7 @@ module internal List =
 
     val headAndTail: l: 'a list -> 'a * 'a list
 
-    // WARNING: not tail-recursive
+    /// WARNING: not tail-recursive
     val mapHeadTail: fhead: ('a -> 'b) -> ftail: ('a -> 'b) -> _arg1: 'a list -> 'b list
 
     val collectFold: f: ('a -> 'b -> 'c list * 'a) -> s: 'a -> l: 'b list -> 'c list * 'a
