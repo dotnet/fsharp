@@ -428,7 +428,7 @@ let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
 let TryFindVersionAttribute g attrib attribName attribs deterministic =
     match AttributeHelpers.TryFindStringAttribute g attrib attribs with
     | Some versionString ->
-        if deterministic && versionString.Contains("*") then
+        if deterministic && versionString.Contains('*') then
             errorR (Error(FSComp.SR.fscAssemblyWildcardAndDeterminism (attribName, versionString), rangeStartup))
 
         try

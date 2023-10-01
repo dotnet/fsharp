@@ -212,7 +212,7 @@ module internal PrintfImpl =
         let parseInterpolatedHoleDotNetFormat typeChar (s: string) (i: byref<int>) =
             if typeChar = 'P' then 
                 if i < s.Length && s.[i] = '(' then  
-                     let i2 = s.IndexOf(")", i)
+                     let i2 = s.IndexOf(')', i)
                      if i2 = -1 then 
                          ValueNone
                      else 

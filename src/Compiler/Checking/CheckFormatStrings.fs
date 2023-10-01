@@ -370,7 +370,7 @@ let parseFormatStringInternal
             // type checker.  They should always have '(...)' after for format string.
             let requireAndSkipInterpolationHoleFormat i =
                 if i < len && fmt[i] = '(' then
-                    let i2 = fmt.IndexOf(")", i+1)
+                    let i2 = fmt.IndexOf(')', i+1)
                     if i2 = -1 then
                         failwith (FSComp.SR.forFormatInvalidForInterpolated3())
                     else

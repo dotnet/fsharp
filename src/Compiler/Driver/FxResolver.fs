@@ -238,7 +238,7 @@ type internal FxResolver
                             dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
                             + pattern.Length
 
-                        let endPos = dotnetConfig.IndexOf("\"", startPos)
+                        let endPos = dotnetConfig.IndexOf('\"', startPos)
                         let ver = dotnetConfig[startPos .. endPos - 1]
 
                         let path =
@@ -427,7 +427,7 @@ type internal FxResolver
                     let name = netcoreApp.Name
 
                     try
-                        if name.StartsWith(tfmPrefix, StringComparison.InvariantCultureIgnoreCase) then
+                        if name.StartsWithOrdinal(tfmPrefix) then
                             Some(
                                 Double.Parse(name.Substring(tfmPrefix.Length), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture)
                             )
@@ -560,7 +560,7 @@ type internal FxResolver
                 dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
                 + pattern.Length
 
-            let endPos = dotnetConfig.IndexOf("\"", startPos)
+            let endPos = dotnetConfig.IndexOf('\"', startPos)
             let tfm = dotnetConfig[startPos .. endPos - 1]
             tfm
         with _ ->

@@ -817,7 +817,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
             match fullName with
             | Some fullName ->
                 match Option.attempt (fun _ -> x.DisplayName) with
-                | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
+                | Some shortDisplayName when not (shortDisplayName.Contains '.') ->
                     Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
                 | _ -> Some fullName
             | None -> None 
@@ -831,7 +831,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
             match fullName with
             | Some fullName ->
                 match Option.attempt (fun _ -> x.CompiledName) with
-                | Some shortCompiledName when not (shortCompiledName.Contains ".") ->
+                | Some shortCompiledName when not (shortCompiledName.Contains '.') ->
                     Some (fullName |> Array.replace (fullName.Length - 1) shortCompiledName)
                 | _ -> Some fullName
             | None -> None 
@@ -2427,7 +2427,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match fullName with
         | Some fullName ->
             match Option.attempt (fun _ -> x.DisplayName) with
-            | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
+            | Some shortDisplayName when not (shortDisplayName.Contains '.') ->
                 Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
             | _ -> Some fullName
         | None -> None

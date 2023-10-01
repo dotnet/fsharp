@@ -4345,7 +4345,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                not (nm.Contains ',' && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
 #endif
 
                     minfos
@@ -4552,7 +4552,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
     | [] ->
          let tycons =
              mty.TypeDefinitions |> List.filter (fun tcref ->
-                 not (tcref.LogicalName.Contains ",") &&
+                 not (tcref.LogicalName.Contains ',') &&
                  not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
          // Collect up the accessible values in the module, excluding the members
@@ -4680,7 +4680,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        let tycons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                not tcref.IsFSharpException &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> Seq.map (ItemOfTyconRef ncenv m)
@@ -4760,7 +4760,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
        let tycons =
            mty.TypeDefinitions
            |> List.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                tcref.IsRecordTycon &&
                not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
@@ -4834,7 +4834,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
        let recdTyCons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (fun tcref ->
-               not (tcref.LogicalName.Contains ",") &&
+               not (tcref.LogicalName.Contains ',') &&
                tcref.IsRecordTycon &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> Seq.map (ItemOfTyconRef ncenv m)
@@ -5038,7 +5038,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                    not (nm.Contains ',' && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
         #endif
 
                         minfos
@@ -5156,7 +5156,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                  let tycons =
                      mty.TypeDefinitions
                      |> List.filter (fun tcref ->
-                         not (tcref.LogicalName.Contains ",") &&
+                         not (tcref.LogicalName.Contains ',') &&
                          not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tcref)))
 
                  // Get all the types and .NET constructor groups accessible from here
@@ -5230,7 +5230,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
            | Item.Types _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
                    if not tcref.IsFSharpException
-                      && not (tcref.LogicalName.Contains ",")
+                      && not (tcref.LogicalName.Contains ',')
                       && not (IsTyconUnseen ad g ncenv.amap m tcref)
                    then yield ItemOfTyconRef ncenv m tcref
 

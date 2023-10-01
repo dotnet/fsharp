@@ -55,6 +55,8 @@ module internal PervasiveAutoOpens =
 
     type String with
 
+        member inline Contains: value: char -> bool
+
         member inline StartsWithOrdinal: value: string -> bool
 
         member inline EndsWithOrdinal: value: string -> bool

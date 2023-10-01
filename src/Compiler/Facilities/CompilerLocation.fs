@@ -41,7 +41,7 @@ module internal FSharpEnvironment =
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
     let isRunningOnCoreClr =
-        typeof<obj>.Assembly.FullName.StartsWith ("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+        typeof<obj>.Assembly.FullName.StartsWith ("System.Private.CoreLib", StringComparison.OrdinalIgnoreCase)
 
     module Option =
         /// Convert string into Option string where null and String.Empty result in None

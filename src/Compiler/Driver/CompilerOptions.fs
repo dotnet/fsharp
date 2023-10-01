@@ -224,7 +224,7 @@ let DumpCompilerOptionBlocks blocks =
     List.iter dumpCompilerOptionBlock blocks
 
 let isSlashOpt (opt: string) =
-    opt[0] = '/' && (opt.Length = 1 || not (opt[ 1.. ].Contains "/"))
+    opt[0] = '/' && (opt.Length = 1 || not (opt[ 1.. ].Contains '/'))
 
 module ResponseFile =
 

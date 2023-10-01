@@ -603,8 +603,7 @@ module ScriptPreprocessClosure =
                     (codeContext <> CodeContext.Editing)
                     && (equals m range0 || equals m rangeStartup || equals m rangeCmdArgs)
 
-                let isThisFileName =
-                    (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
+                let isThisFileName = String.Equals(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase)
 
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true

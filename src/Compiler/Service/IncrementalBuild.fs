@@ -1317,8 +1317,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         // Get the slot of the given file and force it to build.
         let CompareFileNames f =
             let result =
-                   String.Compare(fileName, f.Source.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
-                || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f.Source.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
+                   String.Equals(fileName, f.Source.FilePath, StringComparison.OrdinalIgnoreCase)
+                || String.Equals(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f.Source.FilePath, StringComparison.OrdinalIgnoreCase)
             result
         match fileNames |> List.tryFindIndex CompareFileNames with
         | Some slot -> Some slot

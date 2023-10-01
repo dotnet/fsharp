@@ -1010,7 +1010,7 @@ exception InvalidMangledStaticArg of string
 
 /// Demangle the static parameters
 let DemangleProvidedTypeName (typeLogicalName: string) =
-    if typeLogicalName.Contains "," then
+    if typeLogicalName.Contains ',' then
         let pieces = splitAroundQuotation typeLogicalName ','
 
         match pieces with

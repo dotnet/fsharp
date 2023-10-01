@@ -427,7 +427,7 @@ module QuickParse =
         | NonNull lineStr -> GetPartialLongNameExAux(lineStr, index)
 
     let TokenNameEquals (tokenInfo: FSharpTokenInfo) (token2: string) =
-        String.Compare(tokenInfo.TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0
+        String.Equals(tokenInfo.TokenName, token2, StringComparison.OrdinalIgnoreCase)
 
     // The prefix of the sequence of token names to look for in TestMemberOrOverrideDeclaration, in reverse order
     let private expected = [ [| "dot" |]; [| "ident" |]; [| "member"; "override" |] ]

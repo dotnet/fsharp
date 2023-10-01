@@ -274,11 +274,11 @@ type AssemblyReference =
     member x.ProjectReference = (let (AssemblyReference (_, _, contents)) = x in contents)
 
     member x.SimpleAssemblyNameIs name =
-        (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)
-        || not (x.Text.Contains "/")
-           && not (x.Text.Contains "\\")
-           && not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
-           && not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
+        (String.Equals(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase))
+        || not (x.Text.Contains '/')
+           && not (x.Text.Contains '\\')
+           && not (x.Text.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+           && not (x.Text.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
            && (try
                    let aname = System.Reflection.AssemblyName x.Text in aname.Name = name
                with _ ->

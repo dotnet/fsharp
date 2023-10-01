@@ -29,8 +29,9 @@ module String =
         let concatArray sep (strings: string[]) =
             match length sep with
             | 0 -> String.Concat strings
-            // following line should be used when this overload becomes part of .NET Standard (it's only in .NET Core)
-            //| 1 -> String.Join(sep.[0], strings, 0, strings.Length)
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_0_OR_GREATER
+            | 1 -> String.Join(sep[0], strings, 0, strings.Length)
+#endif
             | _ -> String.Join(sep, strings, 0, strings.Length)
 
         match strings with

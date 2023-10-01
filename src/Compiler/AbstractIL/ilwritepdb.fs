@@ -402,7 +402,7 @@ type PortablePdbGenerator
     let includeSource file =
         let isInList =
             embedSourceList
-            |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase) = 0)
+            |> List.exists (fun f -> String.Equals(file, f, StringComparison.OrdinalIgnoreCase))
 
         if not embedAllSource && not isInList || not (FileSystem.FileExistsShim file) then
             None

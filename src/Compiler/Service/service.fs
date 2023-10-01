@@ -1847,11 +1847,11 @@ type CompilerEnvironment() =
         let ext = Path.GetExtension file
 
         compilableExtensions
-        |> List.exists (fun e -> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
+        |> List.exists (fun e -> String.Equals(e, ext, StringComparison.OrdinalIgnoreCase))
 
     /// Whether or not this file should be a single-file project
     static member MustBeSingleFileProject file =
         let ext = Path.GetExtension file
 
         singleFileProjectExtensions
-        |> List.exists (fun e -> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
+        |> List.exists (fun e -> String.Equals(e, ext, StringComparison.OrdinalIgnoreCase))

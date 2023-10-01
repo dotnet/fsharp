@@ -365,7 +365,7 @@ type Range(code1: int64, code2: int64) =
                     |> Seq.skip (m.StartLine - 1)
                     |> Seq.take (m.EndLine - m.StartLine + 1)
                     |> String.concat "\n"
-                    |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+                    |> fun s -> s.Substring(startCol + 1, s.LastIndexOf('\n') + 1 - startCol + endCol)
             with e ->
                 e.ToString()
 

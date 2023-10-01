@@ -68,6 +68,9 @@ module internal PervasiveAutoOpens =
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
     type String with
+        // char overload
+        member inline x.Contains (value: char) =
+            x.IndexOf value <> -1
 
         member inline x.StartsWithOrdinal value =
             x.StartsWith(value, StringComparison.Ordinal)

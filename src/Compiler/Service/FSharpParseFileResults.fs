@@ -15,9 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsSignatureFile file =
-        let ext = Path.GetExtension file
-        0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
+    let IsSignatureFile (file: string) = file.EndsWithOrdinalIgnoreCase ".fsi"
 
     /// Additional #defines that should be in place when editing a file in a file editor such as VS.
     let GetImplicitConditionalDefinesForEditing (isInteractive: bool) =

@@ -365,17 +365,11 @@ let isHashRReference (r: range) =
     && not (equals r rangeCmdArgs)
     && FileSystem.IsPathRootedShim r.FileName
 
-let IsNetModule fileName =
-    let ext = Path.GetExtension fileName
-    String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase) = 0
+let IsNetModule (fileName: string) = fileName.EndsWithOrdinalIgnoreCase ".netmodule"
 
-let IsDLL fileName =
-    let ext = Path.GetExtension fileName
-    String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase) = 0
+let IsDLL (fileName: string) = fileName.EndsWithOrdinalIgnoreCase ".dll"
 
-let IsExe fileName =
-    let ext = Path.GetExtension fileName
-    String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase) = 0
+let IsExe (fileName: string) = fileName.EndsWithOrdinalIgnoreCase ".exe"
 
 type TcConfig with
 
@@ -2380,10 +2374,7 @@ and [<Sealed>] TcImports
                     |> List.tryFind (fun dll ->
                         let baseName = Path.GetFileNameWithoutExtension(dll.resolvedPath)
 
-                        let res =
-                            String.Compare(baseName, tcConfig.primaryAssembly.Name, StringComparison.OrdinalIgnoreCase)
-
-                        res = 0)
+                        String.Equals(baseName, tcConfig.primaryAssembly.Name, StringComparison.OrdinalIgnoreCase))
 
                 match path with
                 | Some p -> AssemblyReference(range0, p.resolvedPath, None)

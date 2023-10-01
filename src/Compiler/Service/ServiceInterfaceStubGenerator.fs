@@ -186,7 +186,7 @@ module InterfaceStubGenerator =
         (if typar.IsSolveAtCompileTime then "^" else "'") + typar.Name
 
     let internal bracket (str: string) =
-        if str.Contains(" ") then "(" + str + ")" else str
+        if str.Contains(' ') then "(" + str + ")" else str
 
     let internal formatType ctx (ty: FSharpType) =
         let genericDefinition =

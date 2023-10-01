@@ -2760,7 +2760,7 @@ module internal ParseAndCheckFile =
             let sameFile file hashLoadInFile =
                 match file with
                 | None -> false
-                | Some file -> (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
+                | Some file -> (String.Equals(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
             //  walk the list of #loads and keep the ones for this file.
             let hashLoadsInFile =

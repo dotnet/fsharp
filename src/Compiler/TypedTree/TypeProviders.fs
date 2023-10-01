@@ -183,7 +183,7 @@ let GetTypeProvidersOfAssembly (
                 // Check if the attribute is pointing to the file being compiled, in which case ignore it
                 // This checks seems like legacy but is included for compat.
                 | Some designTimeAssemblyName, Some path 
-                    when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                    when String.Equals(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) ->
                     ()
 
                 | Some _, _ ->

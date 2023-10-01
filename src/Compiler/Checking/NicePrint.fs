@@ -1959,7 +1959,7 @@ module TastDefinitionPrinting =
                 not (impliedNames.Contains minfo.DisplayName) &&
                 IsMethInfoAccessible amap m ad minfo &&
                 // Discard method impls such as System.IConvertible.ToBoolean
-                not (minfo.IsILMethod && minfo.DisplayName.Contains(".")) &&
+                not (minfo.IsILMethod && minfo.DisplayName.Contains('.')) &&
                 not (minfo.DisplayName.Split('.') |> Array.exists (fun part -> isDiscard part)))
 
         let ilFields =

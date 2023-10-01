@@ -320,14 +320,14 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
         )
 
     let tryGetSummaryNode (xmlDocSig: string) =
-        if xmlDocSig.Contains "'" && xmlDocSig.Contains "\"" then
+        if xmlDocSig.Contains ''' && xmlDocSig.Contains '\"' then
             // No easy way to find this signature with XPath
             None
         else
             tryGetXmlDocument ()
             |> Option.bind (fun doc ->
                 let name =
-                    if xmlDocSig.Contains "'" then
+                    if xmlDocSig.Contains '\'' then
                         $"\"{xmlDocSig}\""
                     else
                         $"'{xmlDocSig}'"

@@ -612,7 +612,7 @@ type DependencyProvider
             path: string
         ) : string MaybeNull * IDependencyManagerProvider MaybeNull =
         try
-            if path.Contains ":" && not (Path.IsPathRooted path) then
+            if path.Contains ':' && not (Path.IsPathRooted path) then
                 let managers =
                     RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
 
