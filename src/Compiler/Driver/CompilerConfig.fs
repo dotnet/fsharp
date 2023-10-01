@@ -274,7 +274,7 @@ type AssemblyReference =
     member x.ProjectReference = (let (AssemblyReference (_, _, contents)) = x in contents)
 
     member x.SimpleAssemblyNameIs name =
-        (String.Equals(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase))
+        String.Equals(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase)
         || not (x.Text.Contains '/')
            && not (x.Text.Contains '\\')
            && not (x.Text.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
