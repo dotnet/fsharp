@@ -3739,7 +3739,7 @@ let writePdb (
                         let pdbfileInfo = FileInfo(pdbfile).FullName
 
                         // If pdbfilepath matches output filepath then error
-                        if String.Compare(outfileInfo, pdbfileInfo, StringComparison.InvariantCulture) = 0 then
+                        if outfileInfo = pdbfileInfo then
                             errorR(Error(FSComp.SR.optsPdbMatchesOutputFileName(), rangeStartup))
                         try FileSystem.FileDeleteShim pdbfile with _ -> ()
                         use fs = FileSystem.OpenFileForWriteShim(pdbfile, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
