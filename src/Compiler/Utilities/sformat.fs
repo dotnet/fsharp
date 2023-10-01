@@ -1149,7 +1149,8 @@ module Display =
                                             spaceListL (
                                                 List.rev (
                                                     (sepL (tagText preText)
-                                                     ^^ alternativeObjL ^^ sepL (tagText (replaceEscapedBrackets (remainingPropertyText))))
+                                                     ^^ alternativeObjL
+                                                        ^^ sepL (tagText (replaceEscapedBrackets (remainingPropertyText))))
                                                     :: layouts
                                                 )
                                             )

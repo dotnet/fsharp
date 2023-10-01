@@ -69,8 +69,7 @@ module internal PervasiveAutoOpens =
 
     type String with
         // char overload
-        member inline x.Contains (value: char) =
-            x.IndexOf value <> -1
+        member inline x.Contains(value: char) = x.IndexOf value <> -1
 
         member inline x.StartsWithOrdinal value =
             x.StartsWith(value, StringComparison.Ordinal)
@@ -81,7 +80,7 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
-    let inline isDigit (c: char) = (uint)(c - '0') <= (uint)('9' - '0');
+    let inline isDigit (c: char) = (uint) (c - '0') <= (uint) ('9' - '0')
 
     /// Get an initialization hole
     let getHole (r: _ ref) =

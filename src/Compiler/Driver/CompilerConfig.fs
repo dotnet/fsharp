@@ -97,7 +97,7 @@ let GetWarningNumber (m, warningNumber: string) =
         //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
-        if isDigit(warningNumber[0]) then
+        if isDigit (warningNumber[0]) then
             Some(int32 warningNumber)
         elif warningNumber.StartsWithOrdinal("FS") = true then
             raise (ArgumentException())

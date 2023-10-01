@@ -267,7 +267,7 @@ module MainModuleBuilder =
                     ((false, ""), v)
                     ||> Seq.fold (fun (finished, v) c ->
                         match finished with
-                        | false when isDigit(c) -> false, v + c.ToString()
+                        | false when isDigit (c) -> false, v + c.ToString()
                         | _ -> true, v)
                     |> snd
 

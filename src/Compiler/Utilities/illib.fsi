@@ -64,7 +64,7 @@ module internal PervasiveAutoOpens =
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
 
     /// Returns true if the argument is ASCII digit (0-9).
-    val inline isDigit : c: char -> bool
+    val inline isDigit: c: char -> bool
 
     type Async with
 
