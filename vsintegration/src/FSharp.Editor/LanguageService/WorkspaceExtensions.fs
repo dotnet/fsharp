@@ -2,7 +2,6 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
-open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
@@ -14,7 +13,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 
 open CancellableTasks
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -34,7 +32,7 @@ module private CheckerExtensions =
                     let project = projects.TryFind options.ProjectFileName
 
                     if project.IsNone then
-                        Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+                        System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
 
                     let documentOpt = project |> Option.bind (Map.tryFind path)
 
@@ -80,15 +78,15 @@ module private CheckerExtensions =
 
         /// Parse the source text from the Roslyn document.
         member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, userOpName: string) =
-            async {
-                let! ct = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            cancellableTask {
+                let! ct = CancellableTask.getCancellationToken ()
+                let! sourceText = document.GetTextAsync(ct)
 
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
             }
 
         member checker.ParseDocumentUsingTransparentCompiler(document: Document, options: FSharpProjectOptions, userOpName: string) =
-            async {
+            cancellableTask {
                 let! projectSnapshot = getProjectSnapshot (document, options)
                 return! checker.ParseFile(document.FilePath, projectSnapshot, userOpName = userOpName)
             }
@@ -235,21 +233,14 @@ type Document with
                     let! ct = CancellableTask.getCancellationToken ()
 
                     match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
-                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome (parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
                         return
                             ProjectCache.Projects.GetValue(this.Project, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
                 }
-
-    /// Get the compilation defines from F# project that is associated with the given F# document.
-    member this.GetFSharpCompilationDefinesAsync(userOpName) =
-        async {
-            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-        }
 
     /// Get the compilation defines and language version from F# project that is associated with the given F# document.
     member this.GetFsharpParsingOptionsAsync(userOpName) =
@@ -292,7 +283,7 @@ type Document with
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        async {
+        cancellableTask {
             let! checker, _, parsingOptions, options = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             if this.Project.UseTransparentCompiler then
@@ -360,10 +351,10 @@ type Document with
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
-        async {
+        cancellableTask {
             let! defines, langVersion, strictIndentation = this.GetFsharpParsingOptionsAsync(userOpName)
-            let! ct = Async.CancellationToken
-            let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
+            let! ct = CancellableTask.getCancellationToken ()
+            let! sourceText = this.GetTextAsync(ct)
 
             return
                 Tokenizer.getSymbolAtPosition (
@@ -446,8 +437,8 @@ type Project with
                     let projectOptionsManager = service.FSharpProjectOptionsManager
 
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
-                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome (parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 

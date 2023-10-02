@@ -95,10 +95,10 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
             let getSource filename =
                 async {
                     match workspace.CurrentSolution.TryGetDocumentFromPath filename with
-                    | Some document ->
+                    | ValueSome document ->
                         let! text = document.GetTextAsync() |> Async.AwaitTask
                         return Some(text.ToFSharpSourceText())
-                    | None -> return None
+                    | ValueNone -> return None
                 }
 
             lock gate (fun () ->
