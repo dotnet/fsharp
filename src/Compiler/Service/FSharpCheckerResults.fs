@@ -150,7 +150,7 @@ type FSharpFileSnapshotWithSource =
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string
+type ProjectSnapshotKey = string * string
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -200,6 +200,8 @@ type FSharpProjectSnapshot =
             && options1.LoadTime = options2.LoadTime
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
+
+    member this.OutputFileName = this.OtherOptions |> List.tryFind (fun x -> x.StartsWith("-o:")) |> Option.map (fun x -> x.Substring(3))
 
     member this.IndexOf fileName =
         this.SourceFiles
@@ -329,7 +331,7 @@ type FSharpProjectSnapshot =
 
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotDebugVersion> with
         member this.GetLabel() = this.ToString()
-        member this.GetKey() = this.ProjectFileName
+        member this.GetKey() = this.ProjectFileName, this.OutputFileName |> Option.defaultValue ""
         member this.GetVersion() = this.GetDebugVersion()
 
 and FSharpProjectSnapshotWithSources =

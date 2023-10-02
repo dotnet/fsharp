@@ -65,7 +65,7 @@ type FSharpFileSnapshotWithSource =
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string
+type ProjectSnapshotKey = string * string
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -123,6 +123,8 @@ type FSharpProjectSnapshot =
     /// Compute the project directory.
     member internal ProjectDirectory: string
 
+    member OutputFileName: string option
+
     member SourceFileNames: string list
 
     member CommandLineOptions: string list
@@ -154,7 +156,7 @@ type FSharpProjectSnapshot =
 
     member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
-    member internal FileKey: fileName: string -> ICacheKey<(string * string), FSharpProjectSnapshotVersion>
+    member internal FileKey: fileName: string -> ICacheKey<(string * ProjectSnapshotKey), FSharpProjectSnapshotVersion>
 
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
@@ -171,7 +173,7 @@ and FSharpProjectSnapshotWithSources =
     member WithoutImplFilesThatHaveSignatures: FSharpProjectSnapshotWithSources
     member WithoutImplFilesThatHaveSignaturesExceptLastOne: FSharpProjectSnapshotWithSources
 
-    member internal FileKey: fileName: string -> ICacheKey<(string * string), FSharpProjectSnapshotWithSourcesVersion>
+    member internal FileKey: fileName: string -> ICacheKey<(string * ProjectSnapshotKey), FSharpProjectSnapshotWithSourcesVersion>
 
     member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
