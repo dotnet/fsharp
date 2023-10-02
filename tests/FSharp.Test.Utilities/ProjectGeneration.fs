@@ -428,7 +428,7 @@ let private renderFsProj (p: SyntheticProject) =
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net7.0</TargetFramework>
+            <TargetFramework>net8.0</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>
@@ -848,7 +848,7 @@ type ProjectWorkflowBuilder
         defaultArg
             checker
             (FSharpChecker.Create(
-                keepAllBackgroundSymbolUses = false,
+                keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
