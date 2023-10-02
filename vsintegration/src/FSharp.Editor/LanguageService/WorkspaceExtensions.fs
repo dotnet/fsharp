@@ -55,9 +55,9 @@ module private CheckerExtensions =
 
                             }
                         | None ->
-                            Trace.TraceError("Could not find document {0} in project {1}", path, options.ProjectFileName)
+                            // This happens with files that are read from /obj
 
-                            // Fall back to file system, although this is already suspicious
+                            // Fall back to file system
                             let version = System.IO.File.GetLastWriteTimeUtc(path)
 
                             let getSource () =
