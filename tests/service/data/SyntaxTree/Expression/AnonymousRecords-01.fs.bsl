@@ -24,12 +24,18 @@ ImplFile
              (AnonRecd
                 (true, None, [], (4,0--4,12), { OpeningBraceRange = (4,7--4,9) }),
               (4,0--4,12));
-           Expr (ArbitraryAfterError ("braceBarExpr", (5,0--5,10)), (5,0--5,10));
-           Expr (ArbitraryAfterError ("braceBarExpr", (6,0--6,17)), (6,0--6,17))],
+           Expr
+             (AnonRecd
+                (false, Some (Null (5,3--5,7), ((5,7--5,7), None)), [],
+                 (5,0--5,10), { OpeningBraceRange = (5,0--5,2) }), (5,0--5,10));
+           Expr
+             (AnonRecd
+                (true, Some (Null (6,10--6,14), ((6,14--6,14), None)), [],
+                 (6,0--6,17), { OpeningBraceRange = (6,7--6,9) }), (6,0--6,17))],
           PreXmlDocEmpty, [], None, (1,0--6,17), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
 
-(5,8)-(5,10) parse error Unexpected symbol '|}' in definition
-(6,15)-(6,17) parse error Unexpected symbol '|}' in expression
+(5,3)-(5,7) parse error Field bindings must have the form 'id = expr;'
+(6,10)-(6,14) parse error Field bindings must have the form 'id = expr;'
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'AnonymousRecords-01' based on the file name 'AnonymousRecords-01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

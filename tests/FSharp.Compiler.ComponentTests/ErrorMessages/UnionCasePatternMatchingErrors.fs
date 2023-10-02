@@ -83,7 +83,7 @@ let x: X = X
 let myVal =
     match x with
     | X _ -> ()"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
@@ -129,7 +129,7 @@ let x: X = X
 let myVal =
     function
     | X _ -> ()"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
@@ -150,7 +150,7 @@ let myVal =
     | A _ -> 15
     | B (x, _, _) -> 16
     | C _ -> 17"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
@@ -171,7 +171,7 @@ let myVal =
     | A _ -> 15
     | B (x, _, _) -> 16
     | C _ -> 17"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
@@ -212,7 +212,7 @@ let myVal =
     | A _
     | B _
     | C _ -> 17"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
@@ -237,7 +237,7 @@ let myVal =
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -289,7 +289,7 @@ let myVal =
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -353,7 +353,7 @@ let ``Pattern named not allowed union case does not take any arguments with Lang
 let ``Pattern named not allowed union case does not take any arguments with Lang preview`` compilation =
     compilation
     |> asFs
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withOptions ["--nowarn:25"]
     |> typecheck
     |> shouldFail

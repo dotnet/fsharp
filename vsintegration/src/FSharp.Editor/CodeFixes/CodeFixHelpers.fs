@@ -82,8 +82,7 @@ module internal CodeFixHelpers =
                     reportCodeFixTelemetry context.Diagnostics context.Document codeFix.Name [||]
                     return doc
                 }
-                |> CancellableTask.start cancellationToken),
-            codeFix.Name
+                |> CancellableTask.start cancellationToken)
         )
 
 [<AutoOpen>]
@@ -97,6 +96,16 @@ module internal CodeFixExtensions =
                     let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
                     ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
                 | ValueNone -> ()
+            }
+            |> CancellableTask.startAsTask ctx.CancellationToken
+
+        member ctx.RegisterFsharpFixes(codeFix: IFSharpMultiCodeFixProvider) =
+            cancellableTask {
+                let! codeFixes = codeFix.GetCodeFixesAsync ctx
+
+                for codeFix in codeFixes do
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
