@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net7.0</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -19,6 +19,11 @@
     <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
 </PropertyGroup>
 
   <ItemGroup>

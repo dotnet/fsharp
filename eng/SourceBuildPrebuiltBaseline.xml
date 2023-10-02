@@ -6,7 +6,7 @@
     <UsagePattern IdentityGlob="Microsoft.SourceBuild.Intermediate.*/*" />
 
     <!-- Ignoring the known prebuilts. -->
-    
+
     <!--
       These will go away when repo updates targeting to net8.0
       Tracked with https://github.com/dotnet/fsharp/issues/14765

@@ -47,14 +47,15 @@ let f x =
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Doesn't fix unrelated FS0020`` () =
-    let code =
-        """
+[<Theory>]
+[<InlineData """
 let square x = x * x
 square 32
-"""
-
+""">]
+[<InlineData """
+let band = {| Name = "R.E.M." |}
+band""">]
+let ``Doesn't fix unrelated FS0020`` code =
     let expected = None
 
     let actual = codeFix |> tryFix code Auto
