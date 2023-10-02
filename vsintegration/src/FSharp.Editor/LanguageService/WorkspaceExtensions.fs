@@ -14,65 +14,79 @@ open FSharp.Compiler.Symbols
 
 open CancellableTasks
 
+open Internal.Utilities.Collections
+
 [<AutoOpen>]
 module private CheckerExtensions =
 
+    let snapshotCache = AsyncMemoize(5000, 500, "SnapshotCache")
+
     let getProjectSnapshot (document: Document, options: FSharpProjectOptions) =
-        async {
-            let project = document.Project
-            let solution = project.Solution
-            // TODO cache?
-            let projects =
-                solution.Projects
-                |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                |> Map
 
-            let getFileSnapshot (options: FSharpProjectOptions) path =
-                async {
-                    let project = projects.TryFind options.ProjectFileName
+        let key =
+            { new ICacheKey<_, _>
+                with member _.GetKey() = document.Id, options.ProjectFileName
+                     member _.GetVersion() = document
+                     member _.GetLabel() = document.FilePath }
 
-                    if project.IsNone then
-                        System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+        snapshotCache.Get(
+            key,
+            async {
 
-                    let documentOpt = project |> Option.bind (Map.tryFind path)
+                let project = document.Project
+                let solution = project.Solution
 
-                    let! version, getSource =
-                        match documentOpt with
-                        | Some document ->
-                            async {
+                let projects =
+                    solution.Projects
+                    |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                    |> Map
 
-                                let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+                let getFileSnapshot (options: FSharpProjectOptions) path =
+                    async {
+                        let project = projects.TryFind options.ProjectFileName
+
+                        if project.IsNone then
+                            System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+
+                        let documentOpt = project |> Option.bind (Map.tryFind path)
+
+                        let! version, getSource =
+                            match documentOpt with
+                            | Some document ->
+                                async {
+
+                                    let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                                    let getSource () =
+                                        task {
+                                            let! sourceText = document.GetTextAsync()
+                                            return sourceText.ToFSharpSourceText()
+                                        }
+
+                                    return version.ToString(), getSource
+
+                                }
+                            | None ->
+                                // This happens with files that are read from /obj
+
+                                // Fall back to file system
+                                let version = System.IO.File.GetLastWriteTimeUtc(path)
 
                                 let getSource () =
-                                    task {
-                                        let! sourceText = document.GetTextAsync()
-                                        return sourceText.ToFSharpSourceText()
-                                    }
+                                    task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
 
-                                return version.ToString(), getSource
+                                async.Return(version.ToString(), getSource)
 
+                        return
+                            {
+                                FileName = path
+                                Version = version
+                                GetSource = getSource
                             }
-                        | None ->
-                            // This happens with files that are read from /obj
+                    }
 
-                            // Fall back to file system
-                            let version = System.IO.File.GetLastWriteTimeUtc(path)
-
-                            let getSource () =
-                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
-
-                            async.Return(version.ToString(), getSource)
-
-                    return
-                        {
-                            FileName = path
-                            Version = version
-                            GetSource = getSource
-                        }
-                }
-
-            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
-        }
+                return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+            })
 
     type FSharpChecker with
 
