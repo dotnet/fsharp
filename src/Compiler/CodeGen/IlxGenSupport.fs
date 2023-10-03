@@ -204,7 +204,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
         ILTypes.Empty,
-        mkILMethods ([ ilArrayCtorDef; ilScalarCtorDef ]),
+        mkILMethods ([ ilScalarCtorDef; ilArrayCtorDef ]),
         mkILFields [ fieldDef ],
         emptyILTypeDefs,
         emptyILProperties,

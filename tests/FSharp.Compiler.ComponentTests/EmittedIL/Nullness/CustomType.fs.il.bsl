@@ -36,7 +36,7 @@
     .field static assembly string uglyGlobalMutableNullableString
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<string,string> dict
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(class [runtime]System.Array<uint8>) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
     .field assembly string Nullable@
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .field assembly string NonNullable@
@@ -281,24 +281,9 @@
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
-  .field public class [runtime]System.Array<uint8> NullableFlags
+  .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(class [runtime]System.Array<uint8> NullableFlags) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      class [runtime]System.Array<uint8> System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_000d:  ret
-  } 
-
   .method public specialname rtspecialname 
           instance void  .ctor(uint8 scalarByteValue) cil managed
   {
@@ -315,8 +300,23 @@
     IL_000e:  ldc.i4.0
     IL_000f:  ldarg.1
     IL_0010:  stelem.i1
-    IL_0011:  stfld      class [runtime]System.Array<uint8> System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_0011:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
     IL_0016:  ret
+  } 
+
+  .method public specialname rtspecialname 
+          instance void  .ctor(uint8[] NullableFlags) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_000d:  ret
   } 
 
 } 

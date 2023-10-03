@@ -107,9 +107,9 @@
             get_IsB() cil managed
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              class [runtime]System.Array<string>) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
-                                                                                                                                                              62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
-                                                                                                                                                              6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
+                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
+                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
+                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -269,9 +269,9 @@
     .property instance bool IsB()
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              class [runtime]System.Array<string>) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
-                                                                                                                                                              62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
-                                                                                                                                                              6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
+                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
+                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
+                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -345,24 +345,9 @@
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
-  .field public class [runtime]System.Array<uint8> NullableFlags
+  .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(class [runtime]System.Array<uint8> NullableFlags) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      class [runtime]System.Array<uint8> System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_000d:  ret
-  } 
-
   .method public specialname rtspecialname 
           instance void  .ctor(uint8 scalarByteValue) cil managed
   {
@@ -379,8 +364,23 @@
     IL_000e:  ldc.i4.0
     IL_000f:  ldarg.1
     IL_0010:  stelem.i1
-    IL_0011:  stfld      class [runtime]System.Array<uint8> System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_0011:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
     IL_0016:  ret
+  } 
+
+  .method public specialname rtspecialname 
+          instance void  .ctor(uint8[] NullableFlags) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
+    IL_000d:  ret
   } 
 
 } 

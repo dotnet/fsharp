@@ -1359,17 +1359,17 @@ let mkClassUnionDef
                                                 (*
                                                  The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
                                                  The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
-                                                 If the field was already declared as nullable (value = 2uy) or ambivalent(value = 1uy), we can keep it that way
-                                                 If it was marked as non-nullable within that UnionCase, we have to convert it to ambivalent due to other cases being possible
+                                                 If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
+                                                 If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
                                                 *)
                                                 | Encoded (method, _data, [ ILAttribElem.Byte 1uy ]) ->
-                                                    mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 0uy ], [])
+                                                    mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
                                                 | Encoded (method,
                                                            _data,
                                                            [ ILAttribElem.Array (elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
                                                     mkILCustomAttribMethRef (
                                                         method,
-                                                        [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 0uy) :: otherElems) ],
+                                                        [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],
                                                         []
                                                     )
                                                 | attrAsBefore -> attrAsBefore
