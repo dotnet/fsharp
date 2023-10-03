@@ -121,7 +121,11 @@ public class C {
 }"""
         csharpCode
         |> csharpLibCompile (FsharpFromFile "StructDU.fs")       
-        |> withDiagnostics []
+        |> withDiagnostics [
+                    Warning 8600, Line 6, Col 35, Line 6, Col 57, "Converting null literal or possible null value to non-nullable type."
+                    Warning 8600, Line 14, Col 78, Line 14, Col 97, "Converting null literal or possible null value to non-nullable type."
+                    Warning 8602, Line 15, Col 34, Line 15, Col 89, "Dereference of a possibly null reference."
+                    Warning 8625, Line 18, Col 62, Line 18, Col 66, "Cannot convert null literal to non-nullable reference type."]
 
     [<Fact>]
     let ``Csharp code understands Fsharp-produced generics`` () = 

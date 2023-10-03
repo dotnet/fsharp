@@ -1351,7 +1351,7 @@ let mkClassUnionDef
                                             existingAttrs
                                             |> Array.append
                                                 [|
-                                                    GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.AmbivalentToNull ]
+                                                    GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ]
                                                 |]
                                         | Some idx ->
                                             let replacementAttr =
