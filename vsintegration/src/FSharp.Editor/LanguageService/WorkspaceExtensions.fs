@@ -2,6 +2,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
+open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
@@ -16,12 +17,112 @@ open CancellableTasks
 
 open Internal.Utilities.Collections
 
+
+[<RequireQualifiedAccess>]
+module internal ProjectCache =
+
+    /// This is a cache to maintain FSharpParsingOptions and FSharpProjectOptions per Roslyn Project.
+    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharParsingOptions and FSharpProjectOptions will be cleaned up by the GC.
+    /// At some point, this will be the main caching mechanism for FCS projects instead of FCS itself.
+    let Projects =
+        ConditionalWeakTable<Project, FSharpChecker * FSharpProjectOptionsManager * FSharpParsingOptions * FSharpProjectOptions>()
+
+
+type Solution with
+
+    /// Get the instance of IFSharpWorkspaceService.
+    member internal this.GetFSharpWorkspaceService() =
+        this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+
+
 [<AutoOpen>]
 module private CheckerExtensions =
 
     let snapshotCache = AsyncMemoize(5000, 500, "SnapshotCache")
 
-    let getProjectSnapshot (document: Document, options: FSharpProjectOptions) =
+    let getFSharpOptionsForProject (this: Project) = 
+        if not this.IsFSharp then
+            raise (OperationCanceledException("Project is not a FSharp project."))
+        else
+            match ProjectCache.Projects.TryGetValue(this) with
+            | true, result -> CancellableTask.singleton result
+            | _ ->
+                cancellableTask {
+
+                    let! ct = CancellableTask.getCancellationToken ()
+
+                    let service = this.Solution.GetFSharpWorkspaceService()
+                    let projectOptionsManager = service.FSharpProjectOptionsManager
+
+                    match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome (parsingOptions, projectOptions) ->
+                        let result =
+                            (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
+
+                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
+                }
+
+    let getProjectSnapshot (snapshotAccumulatorOpt) (project: Project) =
+        cancellableTask {
+
+            let! _, _, _, options = getFSharpOptionsForProject project
+
+            let solution = project.Solution
+
+            let projects =
+                solution.Projects
+                |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                |> Map
+
+            let getFileSnapshot (options: FSharpProjectOptions) path =
+                async {
+                    let project = projects.TryFind options.ProjectFileName
+
+                    if project.IsNone then
+                        System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+
+                    let documentOpt = project |> Option.bind (Map.tryFind path)
+
+                    let! version, getSource =
+                        match documentOpt with
+                        | Some document ->
+                            async {
+
+                                let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                                let getSource () =
+                                    task {
+                                        let! sourceText = document.GetTextAsync()
+                                        return sourceText.ToFSharpSourceText()
+                                    }
+
+                                return version.ToString(), getSource
+
+                            }
+                        | None ->
+                            // This happens with files that are read from /obj
+
+                            // Fall back to file system
+                            let version = System.IO.File.GetLastWriteTimeUtc(path)
+
+                            let getSource () =
+                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
+
+                            async.Return(version.ToString(), getSource)
+
+                    return
+                        {
+                            FileName = path
+                            Version = version
+                            GetSource = getSource
+                        }
+                }
+
+            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator=snapshotAccumulatorOpt)
+        }
+
+    let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
 
         let key =
             { new ICacheKey<_, _>
@@ -101,7 +202,7 @@ module private CheckerExtensions =
 
         member checker.ParseDocumentUsingTransparentCompiler(document: Document, options: FSharpProjectOptions, userOpName: string) =
             cancellableTask {
-                let! projectSnapshot = getProjectSnapshot (document, options)
+                let! projectSnapshot = getProjectSnapshotForDocument (document, options)
                 return! checker.ParseFile(document.FilePath, projectSnapshot, userOpName = userOpName)
             }
 
@@ -112,7 +213,7 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             cancellableTask {
-                let! projectSnapshot = getProjectSnapshot (document, options)
+                let! projectSnapshot = getProjectSnapshotForDocument (document, options)
 
                 let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
 
@@ -216,21 +317,6 @@ module private CheckerExtensions =
                         checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName = userOpName)
             }
 
-[<RequireQualifiedAccess>]
-module internal ProjectCache =
-
-    /// This is a cache to maintain FSharpParsingOptions and FSharpProjectOptions per Roslyn Project.
-    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharParsingOptions and FSharpProjectOptions will be cleaned up by the GC.
-    /// At some point, this will be the main caching mechanism for FCS projects instead of FCS itself.
-    let Projects =
-        ConditionalWeakTable<Project, FSharpChecker * FSharpProjectOptionsManager * FSharpParsingOptions * FSharpProjectOptions>()
-
-type Solution with
-
-    /// Get the instance of IFSharpWorkspaceService.
-    member internal this.GetFSharpWorkspaceService() =
-        this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
-
 type Document with
 
     /// Get the FSharpParsingOptions and FSharpProjectOptions from the F# project that is associated with the given F# document.
@@ -324,7 +410,7 @@ type Document with
             let! result =
                 if this.Project.UseTransparentCompiler then
                     async {
-                        let! projectSnapshot = getProjectSnapshot (this, projectOptions)
+                        let! projectSnapshot = getProjectSnapshotForDocument (this, projectOptions)
                         return! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectSnapshot)
                     }
                 else
@@ -336,17 +422,14 @@ type Document with
         }
 
     /// Find F# references in the given F# document.
-    member inline this.FindFSharpReferencesAsync(symbol, [<InlineIfLambda>] onFound, userOpName) =
+    member inline this.FindFSharpReferencesAsync(symbol, projectSnapshot: FSharpProjectSnapshot, [<InlineIfLambda>] onFound, userOpName) =
         cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
 
                 if this.Project.UseTransparentCompiler then
-                    async {
-                        let! projectSnapshot = getProjectSnapshot (this, projectOptions)
-                        return! checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
-                    }
+                    checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
                 else
                     checker.FindBackgroundReferencesInFile(
                         this.FilePath,
@@ -389,7 +472,7 @@ type Document with
 type Project with
 
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName) =
+    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, projectSnapshot, onFound, userOpName) =
         cancellableTask {
 
             let declarationLocation =
@@ -429,32 +512,15 @@ type Project with
             if this.IsFastFindReferencesEnabled then
                 do!
                     documents
-                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName))
+                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (fun range -> onFound doc range), userOpName))
                     |> CancellableTask.whenAll
             else
                 for doc in documents do
-                    do! doc.FindFSharpReferencesAsync(symbol, (onFound doc), userOpName)
+                    do! doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (onFound doc), userOpName)
         }
 
     member this.GetFSharpCompilationOptionsAsync() =
-        if not this.IsFSharp then
-            raise (OperationCanceledException("Project is not a FSharp project."))
-        else
-            match ProjectCache.Projects.TryGetValue(this) with
-            | true, result -> CancellableTask.singleton result
-            | _ ->
-                cancellableTask {
+        this |> getFSharpOptionsForProject
 
-                    let! ct = CancellableTask.getCancellationToken ()
-
-                    let service = this.Solution.GetFSharpWorkspaceService()
-                    let projectOptionsManager = service.FSharpProjectOptionsManager
-
-                    match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
-                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | ValueSome (parsingOptions, projectOptions) ->
-                        let result =
-                            (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
-
-                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
-                }
+    member this.GetFSharpProjectSnapshot(?snapshotAccumulator) = 
+        this |> getProjectSnapshot snapshotAccumulator
