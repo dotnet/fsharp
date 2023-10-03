@@ -1189,6 +1189,12 @@ let convAlternativeDef
                                 .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
                             |> addMethodGeneratedAttrs
 
+                        let attrs =
+                            if g.checkNullness && g.langFeatureNullness then
+                                GetNullableContextAttribute g :: debugAttrs
+                            else
+                                debugAttrs
+
                         let altTypeDef =
                             mkILGenericClass (
                                 altTy.TypeSpec.Name,
@@ -1207,7 +1213,7 @@ let convAlternativeDef
                                 emptyILTypeDefs,
                                 mkILProperties basicProps,
                                 emptyILEvents,
-                                mkILCustomAttrs (GetNullableContextAttribute g :: debugAttrs),
+                                mkILCustomAttrs attrs,
                                 ILTypeInit.BeforeField
                             )
 
@@ -1349,10 +1355,7 @@ let mkClassUnionDef
                                         match nullableIdx with
                                         | None ->
                                             existingAttrs
-                                            |> Array.append
-                                                [|
-                                                    GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ]
-                                                |]
+                                            |> Array.append [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
                                         | Some idx ->
                                             let replacementAttr =
                                                 match existingAttrs[idx] with
