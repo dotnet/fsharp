@@ -133,7 +133,7 @@
     <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
-    <Compile Include="CodeFixes\MissingReferenceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\MissingReference.fs" />
     <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
