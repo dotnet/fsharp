@@ -99,6 +99,7 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\AddExplicitReturnType.fs" />
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
