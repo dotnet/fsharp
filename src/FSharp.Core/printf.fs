@@ -84,7 +84,8 @@ module internal PrintfImpl =
     let inline isPlusForPositives flags = hasFlag flags FormatFlags.PlusForPositives
     let inline isSpaceForPositives flags = hasFlag flags FormatFlags.SpaceForPositives
 
-    let inline isDigit (c: char) = (uint)(c - '0') <= (uint)('9' - '0');
+    // Backport of Char.IsAsciiDigit. Do not use Char.IsDigit
+    let inline isDigit (c: char) = uint (c - '0') <= uint ('9' - '0')
 
     /// Used for width and precision to denote that user has specified '*' flag
     [<Literal>]

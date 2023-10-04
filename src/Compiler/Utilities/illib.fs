@@ -80,7 +80,8 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
-    let inline isDigit (c: char) = (uint) (c - '0') <= (uint) ('9' - '0')
+    // Backport of Char.IsAsciiDigit. Do not use Char.IsDigit
+    let inline isDigit (c: char) = uint (c - '0') <= uint ('9' - '0')
 
     /// Get an initialization hole
     let getHole (r: _ ref) =
