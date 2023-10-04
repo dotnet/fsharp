@@ -216,6 +216,11 @@ Strich unterstrichen;</target>
         <target state="translated">"return!" entfernen</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">Nicht verwendete Bindung entfernen</target>

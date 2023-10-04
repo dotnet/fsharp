@@ -112,7 +112,7 @@ let tryFix (code: string) mode (fixProvider: 'T :> IFSharpCodeFixProvider) =
                  }))
     }
     |> CancellableTask.startWithoutCancellation
-    |> fun task -> task.Result
+    |> fun task -> task.GetAwaiter().GetResult()
 
 let multiFix (code: string) mode (fixProvider: 'T :> IFSharpMultiCodeFixProvider) =
     cancellableTask {
@@ -131,4 +131,4 @@ let multiFix (code: string) mode (fixProvider: 'T :> IFSharpMultiCodeFixProvider
                 })
     }
     |> CancellableTask.startWithoutCancellation
-    |> fun task -> task.Result
+    |> fun task -> task.GetAwaiter().GetResult()

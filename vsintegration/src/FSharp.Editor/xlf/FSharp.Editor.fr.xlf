@@ -216,6 +216,11 @@ Soulignement en tirets ;</target>
         <target state="translated">Supprimer 'return!'</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">Supprimer la liaison inutilisée</target>

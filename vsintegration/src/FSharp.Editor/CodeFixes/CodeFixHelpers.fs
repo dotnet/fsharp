@@ -142,12 +142,10 @@ module internal CodeFixExtensions =
 
 [<AutoOpen>]
 module IFSharpCodeFixProviderExtensions =
+    // Cache this no-op delegate.
+    let private registerCodeFix = Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+
     type IFSharpCodeFixProvider with
-
-        // this is not used anywhere, it's just needed to create the context
-        static member private Action =
-            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
-
         member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
             cancellableTask {
                 let sw = Stopwatch.StartNew()
@@ -163,7 +161,7 @@ module IFSharpCodeFixProviderExtensions =
                     // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
                     |> Seq.map (fun diag ->
-                        let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
+                        let context = CodeFixContext(doc, diag, registerCodeFix, token)
                         provider.GetCodeFixIfAppliesAsync context)
                     |> CancellableTask.whenAll
 
@@ -193,4 +191,10 @@ module IFSharpCodeFixProviderExtensions =
         member provider.RegisterFsharpFixAll() =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 provider.FixAllAsync fixAllCtx doc allDiagnostics
+                |> CancellableTask.start fixAllCtx.CancellationToken)
+
+        member provider.RegisterFsharpFixAll filter =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                let filteredDiagnostics = filter allDiagnostics
+                provider.FixAllAsync fixAllCtx doc filteredDiagnostics
                 |> CancellableTask.start fixAllCtx.CancellationToken)

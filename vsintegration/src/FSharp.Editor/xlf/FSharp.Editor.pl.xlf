@@ -216,6 +216,11 @@ Podkreślenie kreską;</target>
         <target state="translated">Usuń element „return!”</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">Usuń nieużywane powiązanie</target>

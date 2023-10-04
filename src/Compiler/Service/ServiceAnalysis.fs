@@ -7,6 +7,7 @@ open System.Runtime.CompilerServices
 open Internal.Utilities.Library
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -450,4 +451,816 @@ module UnusedDeclarations =
             let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges
+        }
+
+module UnnecessaryParentheses =
+    type Associativity =
+        | NonAssociative
+        | LeftAssociative
+        | RightAssociative
+
+    module SynExpr =
+        open FSharp.Compiler.SyntaxTrivia
+
+        let rec (|PrefixedNumericLiteral|_|) expr =
+            // An integral numeric literal is "likely" prefixed if the difference between
+            // the literal's range and the number of decimal digits, less any suffix, is 1.
+            let inline likelyPrefixed abs n (m: range) suffixLength = m.EndColumn - m.StartColumn - suffixLength - (int (log10 (float (abs n))) + 1) = 1
+            let inline likelyPrefixedU n m suffixLength = likelyPrefixed id n m suffixLength
+            let inline likelyPrefixed n m suffixLength = likelyPrefixed abs n m suffixLength
+
+            // TODO: We'd need to add a `prefix` (or `trivia`) field to these SynConst
+            // cases if wanted to be able to handle the following correctly:
+            //     +1e04, +1e-04
+            //     +1., +1.00, +1f, +1m, +1.0m
+            //     +1uy, +1L, +1UL
+            //     +0b1, +0x1, +0o1
+            //     +0b11111111y
+            //     …
+            match expr with
+            | SynExpr.Const (SynConst.SByte n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Int16 n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Int32 n, m) when likelyPrefixed n m 0 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Int64 n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Byte n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.UInt16 n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.UInt32 n, m) when likelyPrefixedU n m 1 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.UInt64 n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Decimal n, _) when sign n < 0 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Double n, _) when sign n < 0 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Single n, _) when sign n < 0 -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.UserNum (value = n), _) when (match n[0] with '-' | '+' -> true | _ -> false) -> Some PrefixedNumericLiteral
+            | SynExpr.Const (SynConst.Measure (constant = constant; constantRange = m), _) -> (|PrefixedNumericLiteral|_|) (SynExpr.Const (constant, m))
+            | _ -> None
+
+        /// Matches if the given expression represents a high-precedence
+        /// function application, e.g.,
+        ///
+        /// f x
+        ///
+        /// (+) x y
+        let (|HighPrecedenceApp|_|) expr =
+            match expr with
+            | SynExpr.App (isInfix = false; funcExpr = SynExpr.Ident _)
+            | SynExpr.App (isInfix = false; funcExpr = SynExpr.LongIdent (longDotId = SynLongIdent (trivia = [])))
+            | SynExpr.App (isInfix = false; funcExpr = SynExpr.App (isInfix = false)) -> Some HighPrecedenceApp
+            | _ -> None
+
+        module FuncExpr =
+            /// Matches when the given funcExpr is a direct application
+            /// of a symbolic operator, e.g., -, _not_ (~-).
+            let (|SymbolicOperator|_|) funcExpr =
+                match funcExpr with
+                | SynExpr.LongIdent (longDotId = SynLongIdent (trivia = trivia)) ->
+                    trivia |> List.tryPick (function Some (IdentTrivia.OriginalNotation op) -> Some op | _ -> None)
+                | _ -> None
+
+        /// Represents the infix application of a symbolic binary operator.
+        /// The original notation may include leading dots and trailing characters,
+        /// with the exception of TypeTest, Cons, Upcast, Downcast, BarBar, AmpAmp, and ColonEquals.
+        [<NoComparison; NoEquality>]
+        type InfixOperator =
+            /// :=
+            | ColonEquals
+
+            /// or, ||
+            ///
+            /// Refers to the exact operators or and ||.
+            /// Instances with leading dots or question marks or trailing characters are parsed as Bar instead.
+            | BarBar
+
+            /// &, &&
+            ///
+            /// Refers to the exact operators & and &&.
+            /// Instances with leading dots or question marks or trailing characters are parsed as Amp instead.
+            | AmpAmp
+
+            /// :?>
+            | Downcast
+
+            /// :>
+            | Upcast
+
+            /// =…
+            | Eq
+
+            /// |…
+            | Bar
+
+            /// &…
+            | Amp
+
+            /// $…
+            | Dollar
+
+            /// >…
+            | Greater
+
+            /// <…
+            | Less
+
+            /// !=…
+            | BangEq
+
+            /// ^…
+            | Hat
+
+            /// @…
+            | At
+
+            /// ::
+            | Cons
+
+            /// :?
+            | TypeTest
+
+            /// -…
+            | Sub
+
+            /// +…
+            | Add
+
+            /// %…
+            | Mod
+
+            /// /…
+            | Div
+
+            /// *…
+            | Mul
+
+            /// **…
+            | Exp
+
+        module InfixOperator =
+            open System
+
+            /// Tries to parse the given original notation as a symbolic infix operator.
+            let ofOriginalNotation (originalNotation: string) =
+                // Trim any leading dots or question marks from the given symbolic operator.
+                // Leading dots or question marks have no effect on operator precedence or associativity
+                // with the exception of &, &&, and ||.
+                let ignoredLeadingChars = ".?".AsSpan()
+                let trimmed = originalNotation.AsSpan().TrimStart ignoredLeadingChars
+                assert (trimmed.Length > 0)
+                match trimmed[0], originalNotation with
+                | _, ":=" -> Some ColonEquals
+                | _, ("||" | "or") -> Some BarBar
+                | _, ("&" | "&&") -> Some AmpAmp
+                | '|', _ -> Some Bar
+                | '&', _ -> Some Amp
+                | '<', _ -> Some Less
+                | '>', _ -> Some Greater
+                | '=', _ -> Some Eq
+                | '$', _ -> Some Dollar
+                | '!', _ when trimmed.Length > 1 && trimmed[1] = '=' -> Some BangEq
+                | '^', _ -> Some Hat
+                | '@', _ -> Some At
+                | _, "::" -> Some Cons
+                | '+', _ -> Some Add
+                | '-', _ -> Some Sub
+                | '/', _ -> Some Div
+                | '%', _ -> Some Mod
+                | '*', _ when trimmed.Length > 1 && trimmed[1] = '*' -> Some Exp
+                | '*', _ -> Some Mul
+                | _ -> None
+
+            /// Matches when the expression inside of the parentheses
+            /// is the application of an infix operator and returns the parsed operator.
+            let (|Inner|_|) synExpr =
+                match synExpr with
+                | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)
+                | SynExpr.App (funcExpr = SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)) -> ofOriginalNotation op
+                | SynExpr.Upcast _ -> Some Upcast
+                | SynExpr.Downcast _ -> Some Downcast
+                | SynExpr.TypeTest _ -> Some TypeTest
+                | _ -> None
+
+            /// Matches when the expression outside and to the left of the parentheses
+            /// is the application of an infix operator and returns the parsed operator.
+            ///
+            /// x + (y + z)
+            ///
+            /// (The upcast, downcast, and type test operators cannot be overloaded and
+            /// only ever have a type on the right, not an expression.)
+            let (|OuterLeft|_|) synExpr =
+                match synExpr with
+                | SynExpr.App (funcExpr = SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)) -> ofOriginalNotation op
+                | _ -> None
+
+            /// Matches when the expression outside and to the right of the parentheses
+            /// is the application of an infix operator and returns the parsed operator.
+            ///
+            /// (x + y) + z
+            let rec (|OuterRight|_|) synExpr =
+                match synExpr with
+                | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op) -> ofOriginalNotation op
+                | SynExpr.Upcast _ -> Some Upcast
+                | SynExpr.Downcast _ -> Some Downcast
+                | SynExpr.TypeTest _ -> Some TypeTest
+                | _ -> None
+
+            let associativity op =
+                match op with
+                | Exp -> RightAssociative
+                | Mod | Div | Mul -> LeftAssociative
+                | Sub | Add -> LeftAssociative
+                | TypeTest -> NonAssociative
+                | Cons -> RightAssociative
+                | Hat | At -> RightAssociative
+                | Eq | Bar | Amp | Dollar | Greater | Less | BangEq -> LeftAssociative
+                | Downcast | Upcast -> RightAssociative
+                | AmpAmp -> LeftAssociative
+                | BarBar -> LeftAssociative
+                | ColonEquals -> RightAssociative
+
+            let comparePrecedence op1 op2 =
+                match op1, op2 with
+                | Exp, Exp -> 0
+                | Exp, _ -> 1
+                | _, Exp -> -1
+
+                | (Mod | Div | Mul), (Mod | Div | Mul) -> 0
+                | (Mod | Div | Mul), _ -> 1
+                | _, (Mod | Div | Mul) -> -1
+
+                | (Sub | Add), (Sub | Add) -> 0
+                | (Sub | Add), _ -> 1
+                | _, (Sub | Add) -> -1
+
+                | TypeTest, TypeTest -> 0
+                | TypeTest, _ -> 1
+                | _, TypeTest -> -1
+
+                | Cons, Cons -> 0
+                | Cons, _ -> 1
+                | _, Cons -> -1
+
+                | (Hat | At), (Hat | At) -> 0
+                | (Hat | At), _ -> 1
+                | _, (Hat | At) -> -1
+
+                | (Eq | Bar | Amp | Dollar | Greater | Less | BangEq), (Eq | Bar | Amp | Dollar | Greater | Less | BangEq) -> 0
+                | (Eq | Bar | Amp | Dollar | Greater | Less | BangEq), _ -> 1
+                | _, (Eq | Bar | Amp | Dollar | Greater | Less | BangEq) -> -1
+
+                | (Downcast | Upcast), (Downcast | Upcast) -> 0
+                | (Downcast | Upcast), _ -> 1
+                | _, (Downcast | Upcast) -> -1
+
+                | AmpAmp, AmpAmp -> 0
+                | AmpAmp, _ -> 1
+                | _, AmpAmp -> -1
+
+                | BarBar, BarBar -> 0
+                | BarBar, _ -> 1
+                | _, BarBar -> -1
+
+                | ColonEquals, ColonEquals -> 0
+
+        let parenthesesNeededBetween outer inner =
+            match outer, inner with
+            // f (g x)
+            // (f x).Value <- y
+            // (f x).Value
+            | HighPrecedenceApp, HighPrecedenceApp
+            | SynExpr.DotSet _, HighPrecedenceApp
+            | SynExpr.App (funcExpr = SynExpr.DotGet _), HighPrecedenceApp -> true
+
+            // +(f x)
+            // (f x) + y
+            | _, HighPrecedenceApp -> false
+
+            // f (-x)
+            | HighPrecedenceApp, SynExpr.App (funcExpr = funcExpr & FuncExpr.SymbolicOperator _; argExpr = argExpr) when funcExpr.Range.IsAdjacentTo argExpr.Range -> false
+
+            // f (- x)
+            | HighPrecedenceApp, SynExpr.App _ -> true
+
+            // (x ** y) ** z
+            | InfixOperator.OuterRight Exp, InfixOperator.Inner Exp -> true
+
+            // x λ (y ρ z)
+            // (x λ y) ρ z
+            | (InfixOperator.OuterLeft outer | InfixOperator.OuterRight outer), InfixOperator.Inner inner ->
+                match InfixOperator.comparePrecedence outer inner with
+                | 0 ->
+                    match InfixOperator.associativity inner with
+                    | NonAssociative -> true
+                    | innerAssoc -> innerAssoc <> InfixOperator.associativity outer
+                | c -> c > 0
+
+            // … |> (fun … -> …)
+            // … |> (function … -> …)
+            | InfixOperator.OuterLeft _, (SynExpr.Lambda _ | SynExpr.MatchLambda _)
+            | InfixOperator.OuterLeft _, SynExpr.MatchLambda _ -> false
+
+            // -(-x)
+            | _, SynExpr.App (isInfix = false; funcExpr = FuncExpr.SymbolicOperator _) -> false
+
+            // -(x + y)
+            | SynExpr.App (isInfix = false; funcExpr = FuncExpr.SymbolicOperator _), InfixOperator.Inner _ -> true
+
+            // (async) { … }
+            // (id async) { … }
+            | SynExpr.App (argExpr = SynExpr.ComputationExpr _), SynExpr.Ident _ -> false
+            | SynExpr.App (argExpr = SynExpr.ComputationExpr _), HighPrecedenceApp -> false
+
+            // (x + y) { … }
+            | SynExpr.App (argExpr = SynExpr.ComputationExpr _), _ -> true
+
+            // (1).ToString "x", (1.).ToString "C"…
+            // In theory we could remove parens for the likes
+            // of (0b0).ToString() (1.0).ToString(), (1e01).ToString(), etc.,
+            // but we'd need more trivia about the numeric literals.
+            | SynExpr.DotGet _, SynExpr.Const (constant = SynConst.Int32 _ | SynConst.Double _) -> true
+
+            // (^a : (static member M : ^b -> ^c) x)
+            | _, SynExpr.TraitCall _ -> true
+
+            | SynExpr.WhileBang (whileExpr = SynExpr.Paren (expr = whileExpr)), SynExpr.Typed _
+            | SynExpr.While (whileExpr = SynExpr.Paren (expr = whileExpr)), SynExpr.Typed _ -> obj.ReferenceEquals(whileExpr, inner)
+
+            | SynExpr.Typed _, SynExpr.Typed _
+            | SynExpr.For _, SynExpr.Typed _
+            | SynExpr.ArrayOrList _, SynExpr.Typed _
+            | SynExpr.ArrayOrListComputed _, SynExpr.Typed _
+            | SynExpr.IndexRange _, SynExpr.Typed _
+            | SynExpr.IndexFromEnd _, SynExpr.Typed _
+            | SynExpr.ComputationExpr _, SynExpr.Typed _
+            | SynExpr.Lambda _, SynExpr.Typed _
+            | SynExpr.Assert _, SynExpr.Typed _
+            | SynExpr.App _, SynExpr.Typed _
+            | SynExpr.Lazy _, SynExpr.Typed _
+            | SynExpr.LongIdentSet _, SynExpr.Typed _
+            | SynExpr.DotSet _, SynExpr.Typed _
+            | SynExpr.Set _, SynExpr.Typed _
+            | SynExpr.DotIndexedSet _, SynExpr.Typed _
+            | SynExpr.NamedIndexedPropertySet _, SynExpr.Typed _
+            | SynExpr.Upcast _, SynExpr.Typed _
+            | SynExpr.Downcast _, SynExpr.Typed _
+            | SynExpr.AddressOf _, SynExpr.Typed _
+            | SynExpr.JoinIn _, SynExpr.Typed _ -> true
+
+            // assert (x = y)
+            | SynExpr.Assert _, InfixOperator.Inner _ -> true
+
+            // assert (not false)
+            | SynExpr.Assert _, _ -> false
+
+            // lazy (x + y)
+            | SynExpr.Lazy _, InfixOperator.Inner _ -> true
+
+            // lazy (not true)
+            | SynExpr.Lazy _, _ -> false
+
+            | _, SynExpr.Paren _
+            | _, SynExpr.Quote _
+            | _, SynExpr.Const _
+            | _, SynExpr.Typed _
+            | _, SynExpr.Tuple (isStruct = true)
+            | _, SynExpr.AnonRecd _
+            | _, SynExpr.ArrayOrList _
+            | _, SynExpr.Record _
+            | _, SynExpr.ObjExpr _
+            | _, SynExpr.ArrayOrListComputed _
+            | _, SynExpr.ComputationExpr _
+            | _, SynExpr.TypeApp _
+            | _, SynExpr.Ident _
+            | _, SynExpr.LongIdent _
+            | _, SynExpr.DotGet _
+            | _, SynExpr.DotLambda _
+            | _, SynExpr.DotIndexedGet _
+            | _, SynExpr.Null _
+            | _, SynExpr.AddressOf _
+            | _, SynExpr.InterpolatedString _ -> false
+
+            | SynExpr.Paren (rightParenRange = Some _), _
+            | SynExpr.Quote _, _
+            | SynExpr.Typed _, _
+            | SynExpr.AnonRecd _, _
+            | SynExpr.Record _, _
+            | SynExpr.ObjExpr _, _
+            | SynExpr.While _, _
+            | SynExpr.WhileBang _, _
+            | SynExpr.For _, _
+            | SynExpr.ForEach _, _
+            | SynExpr.Lambda _, _
+            | SynExpr.MatchLambda _, _
+            | SynExpr.Match _, _
+            | SynExpr.MatchBang _, _
+            | SynExpr.LetOrUse _, _
+            | SynExpr.LetOrUseBang _, _
+            | SynExpr.Do _, _
+            | SynExpr.DoBang _, _
+            | SynExpr.YieldOrReturn _, _
+            | SynExpr.YieldOrReturnFrom _, _
+            | SynExpr.IfThenElse _, _
+            | SynExpr.TryWith _, _
+            | SynExpr.TryFinally _, _
+            | SynExpr.InferredUpcast _, _
+            | SynExpr.InferredDowncast _, _
+            | SynExpr.InterpolatedString _, _ -> false
+
+            | _ -> true
+
+    module SynPat =
+        let parenthesesNeededBetween outer inner =
+            match outer, inner with
+            // (x :: xs) :: ys
+            | SynPat.ListCons (lhsPat = SynPat.Paren (pat = lhs)), SynPat.ListCons _ -> obj.ReferenceEquals(lhs, inner)
+
+            // A as (B | C)
+            // A as (B & C)
+            // x as (y, z)
+            | SynPat.As (rhsPat = SynPat.Paren (pat = rhs)), SynPat.Or _
+            | SynPat.As (rhsPat = SynPat.Paren (pat = rhs)), SynPat.Ands _
+            | SynPat.As (rhsPat = SynPat.Paren (pat = rhs)), SynPat.Tuple (isStruct = false) -> obj.ReferenceEquals(rhs, inner)
+
+            // (A | B) :: xs
+            // (A & B) :: xs
+            // (x as y) :: xs
+            | SynPat.ListCons _, SynPat.Or _
+            | SynPat.ListCons _, SynPat.Ands _
+            | SynPat.ListCons _, SynPat.As _
+
+            // Pattern (x : int)
+            // Pattern ([<Attr>] x)
+            // Pattern (:? int)
+            // Pattern (A :: _)
+            // Pattern (A | B)
+            // Pattern (A & B)
+            // Pattern (A as B)
+            // Pattern (A, B)
+            // Pattern1 (Pattern2 (x = A))
+            // Pattern1 (Pattern2 x y)
+            | SynPat.LongIdent _, SynPat.Typed _
+            | SynPat.LongIdent _, SynPat.Attrib _
+            | SynPat.LongIdent _, SynPat.IsInst _
+            | SynPat.LongIdent _, SynPat.ListCons _
+            | SynPat.LongIdent _, SynPat.Or _
+            | SynPat.LongIdent _, SynPat.Ands _
+            | SynPat.LongIdent _, SynPat.As _
+            | SynPat.LongIdent _, SynPat.Tuple (isStruct = false)
+            | SynPat.LongIdent _, SynPat.LongIdent (argPats = SynArgPats.NamePatPairs _)
+            | SynPat.LongIdent _, SynPat.LongIdent (argPats = SynArgPats.Pats (_ :: _))
+
+            // A | (B as C)
+            // A & (B as C)
+            // A, (B as C)
+            | SynPat.Or _, SynPat.As _
+            | SynPat.Ands _, SynPat.As _
+            | SynPat.Tuple _, SynPat.As _
+
+            // x, (y, z)
+            | SynPat.Tuple _, SynPat.Tuple (isStruct = false)
+
+            // A, (B | C)
+            // A & (B | C)
+            | SynPat.Tuple _, SynPat.Or _
+            | SynPat.Ands _, SynPat.Or _
+
+            // (x : int) | x
+            // (x : int) & y
+            | SynPat.Or _, SynPat.Typed _
+            | SynPat.Ands _, SynPat.Typed _
+
+            // let () = …
+            // member _.M() = …
+            | SynPat.Paren _, SynPat.Const (SynConst.Unit, _)
+            | SynPat.LongIdent _, SynPat.Const (SynConst.Unit, _) -> true
+
+            | _, SynPat.Const _
+            | _, SynPat.Wild _
+            | _, SynPat.Named _
+            | _, SynPat.Typed _
+            | _, SynPat.LongIdent (argPats = SynArgPats.Pats [])
+            | _, SynPat.Tuple (isStruct = true)
+            | _, SynPat.Paren _
+            | _, SynPat.ArrayOrList _
+            | _, SynPat.Record _
+            | _, SynPat.Null _
+            | _, SynPat.OptionalVal _
+            | _, SynPat.IsInst _
+            | _, SynPat.QuoteExpr _
+
+            | SynPat.Or _, _
+            | SynPat.ListCons _, _
+            | SynPat.Ands _, _
+            | SynPat.As _, _
+            | SynPat.LongIdent _, _
+            | SynPat.Tuple _, _
+            | SynPat.Paren _, _
+            | SynPat.ArrayOrList _, _
+            | SynPat.Record _, _ -> false
+
+            | _ -> true
+
+    /// Represents the range of a control-flow branching construct or part thereof.
+    [<NoComparison; NoEquality>]
+    type ControlFlowPart =
+        /// match … with … -> …
+        ///
+        /// match! … with … -> …
+        ///
+        /// function … -> …
+        ///
+        /// try … with … -> …
+        ///
+        /// try … finally …
+        | ControlFlowExpr of range
+
+        /// |, ->, finally
+        | BarOrArrowOrFinally of range
+
+        /// if … then … else …
+        | IfThenElse of range
+
+        /// then, else
+        | ThenOrElse of range
+
+    let getUnnecessaryParentheses (parsedInput: ParsedInput) : Async<range seq> =
+        async {
+            let ranges = HashSet Range.comparer
+
+            let visitor =
+                let branchingConstructParts =
+                    SortedDictionary
+                        { new IComparer<ControlFlowPart> with
+                            member _.Compare(x, y) =
+                                match x, y with
+                                | ControlFlowExpr exprRange, BarOrArrowOrFinally delimiterRange
+                                | IfThenElse exprRange, ThenOrElse delimiterRange
+                                    when exprRange.EndLine = delimiterRange.EndLine
+                                    && exprRange.EndColumn < delimiterRange.StartColumn -> 0
+
+                                | (ControlFlowExpr x | BarOrArrowOrFinally x | IfThenElse x | ThenOrElse x),
+                                    (ControlFlowExpr y | BarOrArrowOrFinally y | IfThenElse y | ThenOrElse y) ->
+                                    Range.rangeOrder.Compare(x, y) }
+
+                // Add the key and value to the dictionary, wrapping the value in a set.
+                // If the key already exists, add the value to the existing set.
+                let add key value (d: SortedDictionary<_, _>) =
+                    match d.TryGetValue key with
+                    | false, _ ->
+                        let values = HashSet Range.comparer
+                        ignore (values.Add value)
+                        d.Add(key, values)
+                    | true, values -> ignore (values.Add value)
+
+                { new SyntaxVisitorBase<obj>() with
+                    member _.VisitExpr(path, _, defaultTraverse, expr) =
+                        match expr, path with
+                        // Normally, we don't need parentheses around branching construct input or
+                        // result expressions, e.g.,
+                        //
+                        //     if (2 + 2 = 5) then (…)                       → if 2 + 2 = 5 then …
+                        //     match (…) with … when (…) -> (…) | (…) -> (…) → match … with … when … -> … | … -> …
+                        //
+                        // Given a parenthesized branching construct nested inside of another
+                        // construct of like kind, we can always remove the parentheses _unless_
+                        // the inner construct is on the same line as any of the outer construct's
+                        // delimiters (then, else, |, ->) and, if the parentheses were removed,
+                        // the inner construct would syntactically adhere to that delimiter.
+                        //
+                        // Note that, owing to precedence rules, the inner construct
+                        // could be syntactically nested arbitrarily deeply
+                        // and need not be top-level to be problematic. Consider:
+                        //
+                        //     // Second argument of an infix operator.
+                        //     if … (id <| if … then … else …) then …
+                        //     match … with … -> (id <| match … with … -> … | … -> …) | … -> …
+                        //
+                        //     // Last element of a tuple.
+                        //     if … (…, if … then … else …) then …
+                        //     match … with … -> (…, match … with … -> … | … -> …) | … -> …
+                        //
+                        //     // Result of yet another if-then-else.
+                        //     if … (if … then … else if … then … else …) then …
+                        //
+                        //     // Result of a match.
+                        //     if … (match … with … -> if … then … else …) then …
+                        //
+                        //     // Etc., etc., etc.
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr (SynExpr.IfThenElse (trivia = trivia) as outer) :: _ ->
+                            branchingConstructParts |> add (ThenOrElse trivia.ThenKeyword) range
+
+                            match trivia.ElseKeyword with
+                            | Some elseKeyword -> branchingConstructParts |> add (ThenOrElse elseKeyword) range
+                            | None -> ()
+
+                            if not (SynExpr.parenthesesNeededBetween outer inner) then
+                                ignore (ranges.Add range)
+
+                        // If this if-then-else is nested inside of another
+                        // and is on the same line as the outer's then or else keyword
+                        // and would directly precede it if the parentheses were removed,
+                        // the parentheses must stay.
+                        | SynExpr.IfThenElse (range = range), _ ->
+                            match branchingConstructParts.TryGetValue(IfThenElse range) with
+                            | true, parenRanges ->
+                                for parenRange in parenRanges do
+                                    if Range.rangeContainsRange parenRange range then
+                                        ignore (ranges.Remove parenRange)
+
+                            | false, _ -> ()
+
+                        // Try-finally has a similar problem.
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr (SynExpr.TryFinally (trivia = trivia) as outer) :: _ ->
+                            branchingConstructParts |> add (BarOrArrowOrFinally trivia.FinallyKeyword) range
+                            if not (SynExpr.parenthesesNeededBetween outer inner) then
+                                ignore (ranges.Add range)
+
+                        // If this try-finally directly precedes another control-flow delimiter, keep the parens.
+                        | SynExpr.TryFinally (range = range), _ ->
+                            match branchingConstructParts.TryGetValue(ControlFlowExpr range) with
+                            | true, parenRanges ->
+                                for parenRange in parenRanges do
+                                    if Range.rangeContainsRange parenRange range then
+                                        ignore (ranges.Remove parenRange)
+
+                            | false, _ -> ()
+
+                        // Match-clause-having constructs likewise.
+                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.Match (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchLambda (matchClauses = clauses)) :: _
+                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.YieldOrReturn _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.YieldOrReturnFrom _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses)) :: _ ->
+                            for SynMatchClause (trivia = trivia) in clauses do
+                                match trivia.BarRange with
+                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinally barRange) range
+                                | None -> ()
+
+                                match trivia.ArrowRange with
+                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinally arrowRange) range
+                                | None -> ()
+
+                            ignore (ranges.Add range)
+
+                        // If this match is nested inside of another
+                        // and is on the same line as any | or -> from the outer
+                        // and would directly precede it if the parentheses were removed,
+                        // the parentheses must stay.
+                        | SynExpr.Match (range = range), _
+                        | SynExpr.MatchLambda (range = range), _
+                        | SynExpr.MatchBang (range = range), _
+                        | SynExpr.TryWith (range = range), _ ->
+                            match branchingConstructParts.TryGetValue(ControlFlowExpr range) with
+                            | true, parenRanges ->
+                                for parenRange in parenRanges do
+                                    if Range.rangeContainsRange parenRange range then
+                                        ignore (ranges.Remove parenRange)
+                            | _ -> ()
+
+                        // Need the parens for trait calls, e.g.,
+                        //
+                        //     let inline f x = (^a : (static member Parse : string -> ^a) x)
+                        | SynExpr.Paren (expr=SynExpr.TraitCall _), _ -> ()
+
+                        // Parens are otherwise never required in these cases.
+                        //
+                        //     let x = (…)
+                        //     _.member X = (…)
+                        //
+                        // …Notwithstanding pathological cases like
+                        //
+                        //     let x = (2
+                        //   +             2)
+                        //
+                        // We don't currently handle those…
+                        | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynBinding _ :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynModule _ :: _ ->
+                            ignore (ranges.Add range)
+
+                        // High-precedence function application before multiple prefix ops or prefixed numeric literals, e.g.:
+                        //
+                        //     id -(-x)
+                        //     id -(-3)
+                        //     id -(+3)
+                        | SynExpr.Paren (expr = SynExpr.PrefixedNumericLiteral), SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr SynExpr.HighPrecedenceApp :: _
+                        | SynExpr.Paren (expr = SynExpr.App (isInfix = false; funcExpr = SynExpr.FuncExpr.SymbolicOperator _)), SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr SynExpr.HighPrecedenceApp :: _ -> ()
+
+                        // Parens are required in
+                        //
+                        //     join … on (… = …)
+                        | SynExpr.Paren (expr = SynExpr.App _), SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.JoinIn _) :: _ -> ()
+
+                        // We can't remove parens when they're required for fluent calls:
+                        //
+                        //     x.M(y).N z
+                        //     x.M(y).[z]
+                        //     x.M(y)[z]
+                        | SynExpr.Paren _, SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.DotGet _ | SynExpr.DotIndexedGet _) :: _
+                        | SynExpr.Paren _, SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.App (argExpr = SynExpr.ArrayOrListComputed (isArray = false))) :: _ -> ()
+
+                        // :: is parsed as follows when one of its arguments is the parenthesized application
+                        // of an infix operator with precedence equal to or higher than ::, viz. ::, :?, -, +, *, /, %, **.
+                        // When the other infix operator has lower precedence than ::,
+                        // the :: is parsed like a normal symbolic infix operator.
+
+                        //
+                        // Outer right:
+                        //
+                        //     (x :: y) :: z
+                        //     (x + y) :: z
+                        //     (x * y) :: z
+                        //     …
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr (SynExpr.Tuple (isStruct = false; exprs = SynExpr.Paren _ :: _)) :: SyntaxNode.SynExpr (SynExpr.App (isInfix = true) as outer) :: _
+                            when not (SynExpr.parenthesesNeededBetween outer inner) ->
+                            ignore (ranges.Add range)
+
+                        // Outer left:
+                        //
+                        //     x :: (y :: z)
+                        //     x :: (y + z)
+                        //     x :: (y * z)
+                        //     …
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range) as argExpr, SyntaxNode.SynExpr (SynExpr.Tuple (isStruct = false)) :: SyntaxNode.SynExpr (SynExpr.App (isInfix = true) as outer) :: _
+                            when not (SynExpr.parenthesesNeededBetween (SynExpr.App (ExprAtomicFlag.NonAtomic, false, outer, argExpr, outer.Range)) inner) ->
+                            ignore (ranges.Add range)
+
+                        // Ordinary nested exprs.
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr outer :: _
+                            when not (SynExpr.parenthesesNeededBetween outer inner) ->
+                            ignore (ranges.Add range)
+
+                        | _ -> ()
+
+                        defaultTraverse expr
+
+                    member _.VisitPat(path, defaultTraverse, pat) =
+                        match pat, path with
+                        // Parens are needed in:
+                        //
+                        //     let (Pattern …) = …
+                        //     let! (x: …) = …
+                        //     and! (x: …) = …
+                        //     use! (x: …) = …
+                        //     _.member M(x: …) = …
+                        //     match … with (x: …) -> …
+                        //     function (x: …) -> …
+                        //     fun (x, y, …) -> …
+                        //     fun (x: …) -> …
+                        //     fun (Pattern …) -> …
+                        | SynPat.Paren _, SyntaxNode.SynExpr (SynExpr.LetOrUseBang (pat = SynPat.Paren (pat = SynPat.Typed _))) :: _
+                        | SynPat.Paren _, SyntaxNode.SynMatchClause (SynMatchClause (pat = SynPat.Paren (pat = SynPat.Typed _))) :: _
+                        | SynPat.Paren (pat = SynPat.LongIdent _), SyntaxNode.SynBinding _ :: _
+                        | SynPat.Paren (pat = SynPat.LongIdent _), SyntaxNode.SynExpr (SynExpr.Lambda _) :: _
+                        | SynPat.Paren _, SyntaxNode.SynExpr (SynExpr.Lambda (args = SynSimplePats.SimplePats (pats = _ :: _ :: _ | [SynSimplePat.Typed _]))) :: _ -> ()
+
+                        // () is parsed as this in certain cases...
+                        //
+                        //     let () = …
+                        //     for () in … do …
+                        //     let! () = …
+                        //     and! () = …
+                        //     use! () = …
+                        //     match … with () -> …
+                        | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynBinding _ :: _
+                        | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.ForEach _) :: _
+                        | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+                        | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynMatchClause _ :: _ -> ()
+
+                        // Parens are otherwise never needed in these cases:
+                        //
+                        //     let (x: …) = …
+                        //     for (…) in (…) do …
+                        //     let! (…) = …
+                        //     and! (…) = …
+                        //     use! (…) = …
+                        //     match … with (…) -> …
+                        //     function (…) -> …
+                        //     function (Pattern …) -> …
+                        //     fun (x) -> …
+                        | SynPat.Paren (_, range), SyntaxNode.SynBinding _ :: _
+                        | SynPat.Paren (_, range), SyntaxNode.SynExpr (SynExpr.ForEach _) :: _
+                        | SynPat.Paren (_, range), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+                        | SynPat.Paren (_, range), SyntaxNode.SynMatchClause _ :: _
+                        | SynPat.Paren (_, range), SyntaxNode.SynExpr (SynExpr.Lambda (args = SynSimplePats.SimplePats (pats = [SynSimplePat.Id _]))) :: _ ->
+                            ignore (ranges.Add range)
+
+                        // Nested patterns.
+                        | SynPat.Paren (inner, range), SyntaxNode.SynPat outer :: _ when not (SynPat.parenthesesNeededBetween outer inner) ->
+                            ignore (ranges.Add range)
+
+                        | _ -> ()
+
+                        defaultTraverse pat
+                }
+
+            // Traverse every node in the input.
+            let pick _ _ _ diveResults =
+                let rec loop = function
+                    | [] -> None
+                    | (_, project) :: rest ->
+                        ignore (project ())
+                        loop rest
+
+                loop diveResults
+
+            let _ = SyntaxTraversal.traverseUntil pick parsedInput.Range.End visitor parsedInput
+
+            return ranges
         }

@@ -199,3 +199,6 @@ module internal CodeFix =
 
     [<Literal>]
     let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"
+
+    [<Literal>]
+    let RemoveUnnecessaryParentheses = "RemoveUnnecessaryParentheses"

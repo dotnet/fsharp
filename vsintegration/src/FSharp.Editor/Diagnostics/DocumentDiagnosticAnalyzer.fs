@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
@@ -108,7 +109,31 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 for diagnostic in checkResults.Diagnostics do
                     errors.Add(diagnostic) |> ignore
 
-            if errors.Count = 0 then
+            let! unnecessaryParentheses =
+                match diagnosticType with
+                | DiagnosticsType.Semantic -> cancellableTask { return ImmutableArray.Empty }
+                | DiagnosticsType.Syntax ->
+                    cancellableTask {
+                        let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses parseResults.ParseTree
+                        let descriptor =
+                            let title = "Parentheses can be removed."
+                            DiagnosticDescriptor(
+                                "IDE0047",
+                                title,
+                                title,
+                                "Style",
+                                DiagnosticSeverity.Hidden,
+                                isEnabledByDefault=true,
+                                description=null,
+                                helpLinkUri=null)
+
+                        return
+                            unnecessaryParentheses
+                            |> Seq.map (fun range -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
+                            |> Seq.toImmutableArray
+                    }
+
+            if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty
             else
                 let iab = ImmutableArray.CreateBuilder(errors.Count)
@@ -135,6 +160,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                         let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
                         iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
 
+                iab.AddRange unnecessaryParentheses
                 return iab.ToImmutable()
         }
 
