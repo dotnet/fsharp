@@ -2576,7 +2576,7 @@ let CheckNestedTypesOfType (ncenv: NameResolver) (resInfo: ResolutionInfo) ad nm
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
 
 // maybeAppliedArgExpr is used in context of resolving extension method that would override property name, it may contain argExpr coming from the DelayedApp(argExpr: SynExpr)
-// see RFC XXX
+// see RFC 1137
 let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad (id: Ident) (rest: Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) ty (maybeAppliedArgExpr: SynExpr option) =
     let g = ncenv.g
     let m = unionRanges m id.idRange
@@ -2614,7 +2614,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             | Some (PropertyItem psets) when isLookUpExpr ->
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
-
+                
                 // fold the available extension members into the overload resolution
                 let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
 
@@ -2622,15 +2622,36 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                 | Some x ->
-                    match maybeAppliedArgExpr with
-                    | None -> success [resInfo, x, rest]
-                    | Some _argExpr ->
-                        // RFC XXXX prefer extension method when ...
-                        match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
-                        | [] -> success [resInfo, x, rest]
-                        | methods ->
-                            let extensionMethods = Item.MakeMethGroup(nm, methods)
-                            success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
+                    match maybeAppliedArgExpr, g.langVersion.SupportsFeature LanguageFeature.PreferExtensionMethodOverPlainProperty  with
+                    | None, _
+                    | _, false ->
+                        success [resInfo, x, rest]
+                    | Some _argExpr, true ->
+                        // RFC 1137 prefer extension method when ...
+    
+                        let ignoreProperty (p: PropInfo) =
+                            // do not hide properties if:
+                            // * is indexed property
+                            // * is function type
+                            if p.IsIndexer then
+                                true
+                            else
+                                match p.GetPropertyType(ncenv.amap, m) with
+                                | TType_var(typar={typar_solution = Some (TType_fun _) }) ->
+                                    true
+                                | _ -> false
+                        
+                        match x with
+                        | Item.Property(info=ps) when ps |> List.exists ignoreProperty ->
+                            success [resInfo, x, rest]
+                        | _ ->
+                            // lookup in-scope extension methods
+                            // to keep in sync with the same expression in `| Some(MethodItem msets) when isLookupExpr` below
+                            match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
+                            | [] -> success [resInfo, x, rest]
+                            | methods ->
+                                let extensionMethods = Item.MakeMethGroup(nm, methods)
+                                success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
                 | None ->
                     // todo: consider if we should check extension method, but we'd probably won't have matched
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
