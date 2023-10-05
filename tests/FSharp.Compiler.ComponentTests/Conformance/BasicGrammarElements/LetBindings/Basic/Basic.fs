@@ -301,6 +301,6 @@ type C() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3582, Line 4, Col 5, Line 4, Col 12, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.")
-            (Warning 3582, Line 5, Col 5, Line 5, Col 11, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parantheses.")
+            (Warning 3582, Line 4, Col 5, Line 4, Col 12, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
+            (Warning 3582, Line 5, Col 5, Line 5, Col 11, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
         ]
