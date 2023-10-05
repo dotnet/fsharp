@@ -106,15 +106,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Capture identifiers while parsing.
-        /// </summary>
-        public static string Capture_Identifiers_When_Parsing {
-            get {
-                return ResourceManager.GetString("Capture_Identifiers_When_Parsing", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
