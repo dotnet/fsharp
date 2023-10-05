@@ -186,9 +186,6 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
-                LanguageFeature.WhileBang, previewVersion
-                LanguageFeature.ExtendedFixedBindings, previewVersion
-                LanguageFeature.PreferStringGetPinnableReference, previewVersion
                 
                 // F# preview next
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
