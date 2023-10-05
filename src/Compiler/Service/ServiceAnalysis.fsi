@@ -40,4 +40,4 @@ module public UnnecessaryParentheses =
     /// Note that this may include pairs of nested ranges each of whose
     /// lack of necessity depends on the other's presence, such
     /// that it is valid to remove either set of parentheses but not both.
-    val getUnnecessaryParentheses: parsedInput: ParsedInput -> Async<range seq>
+    val getUnnecessaryParentheses: getTextAtRange: (range -> string) -> parsedInput: ParsedInput -> Async<range seq>

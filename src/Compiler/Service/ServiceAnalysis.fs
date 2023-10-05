@@ -462,40 +462,6 @@ module UnnecessaryParentheses =
     module SynExpr =
         open FSharp.Compiler.SyntaxTrivia
 
-        let rec (|PrefixedNumericLiteral|_|) expr =
-            // An integral numeric literal is "likely" prefixed if the difference between
-            // the literal's range and the number of decimal digits, less any suffix, is 1.
-            let inline likelyPrefixed abs n (m: range) suffixLength =
-                m.EndColumn - m.StartColumn - suffixLength - (int (log10 (float (abs n))) + 1) = 1
-
-            let inline likelyPrefixedU n m suffixLength = likelyPrefixed id n m suffixLength
-            let inline likelyPrefixed n m suffixLength = likelyPrefixed abs n m suffixLength
-            let inline (|StartsWith|) (s: string) = s[0]
-
-            // TODO: We'd need to add a `prefix` (or `trivia`) field to these SynConst
-            // cases if wanted to be able to handle the following correctly:
-            //     +1e04, +1e-04
-            //     +1., +1.00, +1f, +1m, +1.0m
-            //     +1uy, +1L, +1UL
-            //     +0b1, +0x1, +0o1
-            //     +0b11111111y
-            //     …
-            match expr with
-            | SynExpr.Const (SynConst.SByte n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Int16 n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Int32 n, m) when likelyPrefixed n m 0 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Int64 n, m) when likelyPrefixed n m 1 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Byte n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.UInt16 n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.UInt32 n, m) when likelyPrefixedU n m 1 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.UInt64 n, m) when likelyPrefixedU n m 2 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Decimal n, _) when sign n < 0 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Double n, _) when sign n < 0 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Single n, _) when sign n < 0 -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.UserNum (StartsWith ('-' | '+'), _), _) -> Some PrefixedNumericLiteral
-            | SynExpr.Const (SynConst.Measure (constant, m, _, _), _) -> (|PrefixedNumericLiteral|_|) (SynExpr.Const(constant, m))
-            | _ -> None
-
         /// Matches if the given expression represents a high-precedence
         /// function application, e.g.,
         ///
@@ -1000,7 +966,7 @@ module UnnecessaryParentheses =
         /// then, else
         | ThenOrElse of range
 
-    let getUnnecessaryParentheses (parsedInput: ParsedInput) : Async<range seq> =
+    let getUnnecessaryParentheses (getTextAtRange: range -> string) (parsedInput: ParsedInput) : Async<range seq> =
         async {
             let ranges = HashSet Range.comparer
 
@@ -1035,6 +1001,27 @@ module UnnecessaryParentheses =
 
                 { new SyntaxVisitorBase<obj>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
+                        let (|Text|) = getTextAtRange
+                        let (|StartsWith|) (s: string) = s[0]
+                        let (|StartsWithSymbol|_|) = function
+                            | SynExpr.Quote _
+                            | SynExpr.InterpolatedString _
+                            | SynExpr.Const (SynConst.String (synStringKind = SynStringKind.Verbatim), _)
+                            | SynExpr.Const (SynConst.SByte _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Int16 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Int32 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Int64 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Byte _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.UInt16 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.UInt32 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.UInt64 _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Decimal _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Double _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Single _, Text (StartsWith ('-' | '+')))
+                            | SynExpr.Const (SynConst.Measure (_, Text (StartsWith ('-' | '+')), _, _), _)
+                            | SynExpr.Const (SynConst.UserNum (StartsWith ('-' | '+'), _), _) -> Some StartsWithSymbol
+                            | _ -> None
+
                         match expr, path with
                         // Normally, we don't need parentheses around control flow construct input or
                         // result expressions, e.g.,
@@ -1175,15 +1162,19 @@ module UnnecessaryParentheses =
                         | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynBinding _ :: _
                         | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynModule _ :: _ -> ignore (ranges.Add range)
 
-                        // High-precedence function application before multiple prefix ops or prefixed numeric literals, e.g.:
+                        // A high-precedence function application before a prefix op
+                        // before another expr that starts with a symbol.
                         //
                         //     id -(-x)
-                        //     id -(-3)
-                        //     id -(+3)
-                        | SynExpr.Paren(expr = SynExpr.PrefixedNumericLiteral),
-                          SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr SynExpr.HighPrecedenceApp :: _
+                        //     id ~~~(-1y)
+                        //     id -($"")
+                        //     id -(@"")
+                        //     id -(<@ () @>)
+                        //     let (~+) _ = true in assert +($"{true}")
+                        | SynExpr.Paren(expr = StartsWithSymbol),
+                          SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.HighPrecedenceApp | SynExpr.Assert _) :: _
                         | SynExpr.Paren(expr = SynExpr.App (isInfix = false; funcExpr = SynExpr.FuncExpr.SymbolicOperator _)),
-                          SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr SynExpr.HighPrecedenceApp :: _ -> ()
+                          SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.HighPrecedenceApp | SynExpr.Assert _) :: _ -> ()
 
                         // Parens are required in
                         //
