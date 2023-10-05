@@ -32,15 +32,17 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
             // There may be pairs of diagnostics with nested spans
             // for which it would be valid to apply either but not both.
             let builder = ImmutableArray.CreateBuilder diagnostics.Length
+
             let spans =
                 SortedSet
                     { new IComparer<TextSpan> with
                         member _.Compare(x, y) =
-                            if x.IntersectsWith y then 0
-                            else x.CompareTo y }
+                            if x.IntersectsWith y then 0 else x.CompareTo y
+                    }
 
             for i in 0 .. diagnostics.Length - 1 do
                 let diagnostic = diagnostics[i]
+
                 if spans.Add diagnostic.Location.SourceSpan then
                     builder.Add diagnostic
 
@@ -59,7 +61,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                 match firstChar, lastChar with
                 | '(', ')' ->
-                    let inline toPat f x = if f x then Some () else None
+                    let inline toPat f x = if f x then Some() else None
                     let (|LetterOrDigit|_|) = toPat Char.IsLetterOrDigit
                     let (|Punctuation|_|) = toPat Char.IsPunctuation
                     let (|Symbol|_|) = toPat Char.IsSymbol
@@ -89,21 +91,18 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                     let newText =
                         match txt with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter ->
-                            " " + txt[1 .. txt.Length - 2] + " "
-                        | ShouldPutSpaceBefore ->
-                            " " + txt[1 .. txt.Length - 2]
-                        | ShouldPutSpaceAfter ->
-                            txt[1 .. txt.Length - 2] + " "
-                        | _ ->
-                            txt[1 .. txt.Length - 2]
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> " " + txt[1 .. txt.Length - 2] + " "
+                        | ShouldPutSpaceBefore -> " " + txt[1 .. txt.Length - 2]
+                        | ShouldPutSpaceAfter -> txt[1 .. txt.Length - 2] + " "
+                        | _ -> txt[1 .. txt.Length - 2]
 
-                    return ValueSome
-                        {
-                            Name = CodeFix.RemoveUnnecessaryParentheses
-                            Message = title
-                            Changes = [TextChange(context.Span, newText)]
-                        }
+                    return
+                        ValueSome
+                            {
+                                Name = CodeFix.RemoveUnnecessaryParentheses
+                                Message = title
+                                Changes = [ TextChange(context.Span, newText) ]
+                            }
 
                 | notParens ->
                     System.Diagnostics.Debug.Fail $"%A{notParens} <> ('(', ')')"

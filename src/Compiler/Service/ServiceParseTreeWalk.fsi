@@ -188,6 +188,10 @@ module public SyntaxTraversal =
         pos: pos -> outerRange: range -> debugObj: obj -> diveResults: (range * (unit -> 'a option)) list -> 'a option
 
     val internal traverseUntil:
-        pick: (pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option) -> pos: pos -> visitor: SyntaxVisitorBase<'T> -> parseTree: ParsedInput -> 'T option
+        pick: (pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option) ->
+        pos: pos ->
+        visitor: SyntaxVisitorBase<'T> ->
+        parseTree: ParsedInput ->
+            'T option
 
     val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option

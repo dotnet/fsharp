@@ -143,9 +143,11 @@ module internal CodeFixExtensions =
 [<AutoOpen>]
 module IFSharpCodeFixProviderExtensions =
     // Cache this no-op delegate.
-    let private registerCodeFix = Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+    let private registerCodeFix =
+        Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
     type IFSharpCodeFixProvider with
+
         member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
             cancellableTask {
                 let sw = Stopwatch.StartNew()
@@ -196,5 +198,6 @@ module IFSharpCodeFixProviderExtensions =
         member provider.RegisterFsharpFixAll filter =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 let filteredDiagnostics = filter allDiagnostics
+
                 provider.FixAllAsync fixAllCtx doc filteredDiagnostics
                 |> CancellableTask.start fixAllCtx.CancellationToken)

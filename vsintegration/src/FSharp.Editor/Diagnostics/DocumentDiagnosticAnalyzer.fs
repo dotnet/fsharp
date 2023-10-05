@@ -115,21 +115,25 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 | DiagnosticsType.Syntax ->
                     cancellableTask {
                         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses parseResults.ParseTree
+
                         let descriptor =
                             let title = "Parentheses can be removed."
+
                             DiagnosticDescriptor(
                                 "IDE0047",
                                 title,
                                 title,
                                 "Style",
                                 DiagnosticSeverity.Hidden,
-                                isEnabledByDefault=true,
-                                description=null,
-                                helpLinkUri=null)
+                                isEnabledByDefault = true,
+                                description = null,
+                                helpLinkUri = null
+                            )
 
                         return
                             unnecessaryParentheses
-                            |> Seq.map (fun range -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
+                            |> Seq.map (fun range ->
+                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
                             |> Seq.toImmutableArray
                     }
 

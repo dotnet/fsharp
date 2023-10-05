@@ -305,8 +305,7 @@ module SyntaxTraversal =
         (pos: pos)
         (visitor: SyntaxVisitorBase<'T>)
         (parseTree: ParsedInput)
-        : 'T option
-        =
+        : 'T option =
         let pick x = pick pos x
 
         let rec traverseSynModuleDecl origPath (decl: SynModuleDecl) =
@@ -1100,4 +1099,3 @@ module SyntaxTraversal =
     ///
     let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
         traverseUntil pick pos visitor parseTree
-        
