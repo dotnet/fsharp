@@ -122,6 +122,9 @@
     <type fullname="Microsoft.FSharp.Core.StructuralEqualityAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
+    <type fullname="Microsoft.FSharp.Core.TailCallAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
     <type fullname="Microsoft.FSharp.Core.UnverifiableAttribute">
       <attribute internal="RemoveAttributeInstances" />
     </type>
