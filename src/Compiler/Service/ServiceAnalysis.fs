@@ -1006,6 +1006,7 @@ module UnnecessaryParentheses =
                         let values = HashSet Range.comparer
                         ignore (values.Add value)
                         d.Add(key, values)
+
                     | true, values -> ignore (values.Add value)
 
                 { new SyntaxVisitorBase<obj>() with
@@ -1112,7 +1113,8 @@ module UnnecessaryParentheses =
                                 for parenRange in parenRanges do
                                     if Range.rangeContainsRange parenRange range then
                                         ignore (ranges.Remove parenRange)
-                            | _ -> ()
+
+                            | false, _ -> ()
 
                         // Need the parens for trait calls, e.g.,
                         //
