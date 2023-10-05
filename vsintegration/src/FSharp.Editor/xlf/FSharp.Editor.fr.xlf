@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Options de performances du projet F # et de la mise en cache ;
+        <target state="needs-review-translation">Options de performances du projet F # et de la mise en cache ;
 Activer les références de projets croisés en mémoire ;
 Enable_partial_type_checking ;
 Options de performances IntelliSense ;
