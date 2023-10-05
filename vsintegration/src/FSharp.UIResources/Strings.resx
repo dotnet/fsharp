@@ -249,9 +249,6 @@
   <data name="Enable_Background_ItemKeyStore_And_Semantic_Classification" xml:space="preserve">
     <value>Keep background symbol keys</value>
   </data>
-  <data name="Capture_Identifiers_When_Parsing" xml:space="preserve">
-    <value>Capture identifiers while parsing</value>
-  </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
     <value>Use live (unsaved) buffers for checking (restart required)</value>
   </data>

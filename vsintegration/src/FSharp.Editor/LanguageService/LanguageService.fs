@@ -145,10 +145,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableBackgroundItemKeyStoreAndSemanticClassification =
                                 editorOptions.LanguageServicePerformance.EnableBackgroundItemKeyStoreAndSemanticClassification
 
-                            // Default should be true
-                            let captureIdentifiersWhenParsing =
-                                editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
-
                             let useTransparentCompiler = editorOptions.Advanced.UseTransparentCompiler
 
                             // Default is false here
@@ -171,7 +167,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
                                         nameof enableBackgroundItemKeyStoreAndSemanticClassification,
                                         enableBackgroundItemKeyStoreAndSemanticClassification
-                                        nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
+                                        "captureIdentifiersWhenParsing", enableFastFindReferences
                                         nameof useTransparentCompiler, useTransparentCompiler
                                         nameof solutionCrawler, solutionCrawler
                                     |],
@@ -189,7 +185,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    captureIdentifiersWhenParsing = captureIdentifiersWhenParsing,
+                                    captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then
                                              DocumentSource.Custom getSource

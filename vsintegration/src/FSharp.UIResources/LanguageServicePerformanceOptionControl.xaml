@@ -85,9 +85,6 @@
                         <CheckBox x:Name="enableBackgroundItemKeyStoreAndSemanticClassification"
                                   IsChecked="{Binding EnableBackgroundItemKeyStoreAndSemanticClassification}"
                                   Content="{x:Static local:Strings.Enable_Background_ItemKeyStore_And_Semantic_Classification}"/>
-                        <CheckBox x:Name="captureIdentifiersWhenParsing"
-                                  IsChecked="{Binding CaptureIdentifiersWhenParsing}"
-                                  Content="{x:Static local:Strings.Capture_Identifiers_When_Parsing}"/>                        
                     </StackPanel>
                 </GroupBox>
 
