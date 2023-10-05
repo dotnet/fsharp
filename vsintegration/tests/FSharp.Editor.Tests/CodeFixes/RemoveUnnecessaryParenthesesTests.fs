@@ -57,8 +57,7 @@ module private Aux =
         try
             Assert.All(Array.zip expected actual, fun (expected, actual) -> Assert.Equal(expected, actual))
         with
-        | :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 -> raise (WrongCodeFixException ("The generated code fix does not match the expected fix.", all.Failures[0]))
-        | e -> raise (WrongCodeFixException ("The generated code fix does not match the expected fix.", e))
+        | :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 -> raise  all.Failures[0]
 
     [<AutoOpen>]
     module TopLevel =
@@ -106,7 +105,8 @@ module private Aux =
                             let e = Assert.ThrowsAny(fun() -> shouldEqual fixedCode code)
                             raise (MissingCodeFixException("Expected a code fix but did not get one.", e)))
 
-                    do shouldEqual expected actual
+                    try shouldEqual expected actual
+                    with e -> raise (WrongCodeFixException ("The applied code fix did not match the expected fix.", e))
                 }
 
     [<Sealed>]
