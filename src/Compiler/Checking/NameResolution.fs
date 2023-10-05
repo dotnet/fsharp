@@ -2432,7 +2432,7 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
             modrefs
             |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
-                    notifyNameResolution modref id.idRange
+                    //notifyNameResolution modref id.idRange
                     look 1 modref rest
                 else
                     raze (namespaceOrModuleNotFound.Force()))
@@ -3097,7 +3097,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         | false, _ -> NoResultsOrUsefulErrors
                         | true, res -> OneSuccess (ResolutionInfo.Empty, ResolveUnqualifiedItem ncenv nenv m res, rest)
 
-                tyconSearch ad () +++ moduleSearch ad +++ envSearch
+                moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
               let res =
                   match AtMostOneResult m search with
