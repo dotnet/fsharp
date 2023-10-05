@@ -29,8 +29,10 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
     override this.GetFixAllProvider() =
         this.RegisterFsharpFixAll(fun diagnostics ->
+            // There may be pairs of diagnostics with nested spans
+            // for which it would be valid to apply either but not both.
             let builder = ImmutableArray.CreateBuilder diagnostics.Length
-            let mutable spans =
+            let spans =
                 SortedSet
                     { new IComparer<TextSpan> with
                         member _.Compare(x, y) =
