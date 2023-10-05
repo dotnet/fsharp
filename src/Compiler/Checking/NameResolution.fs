@@ -2226,6 +2226,7 @@ let CheckAllTyparsInferrable amap m item =
                        (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnType(amap, m, fminst))))
             let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
+
     | Item.Trait _
     | Item.CtorGroup _
     | Item.FakeInterfaceCtor _
@@ -2614,7 +2615,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             | Some (PropertyItem psets) when isLookUpExpr ->
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
-                
+
                 // fold the available extension members into the overload resolution
                 let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
 

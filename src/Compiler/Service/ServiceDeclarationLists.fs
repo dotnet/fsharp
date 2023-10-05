@@ -878,6 +878,7 @@ module internal DescriptionListsImpl =
         | Item.Property(info = []) -> 
             [], emptyL
 
+    
     /// Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv, item) : FSharpGlyph = 
          /// Find the glyph for the given representation.    
@@ -976,6 +977,7 @@ module internal DescriptionListsImpl =
                 FSharpGlyph.Error
             )
 
+
     /// Select the items that participate in a MethodGroup.
     let SelectMethodGroupItems g m item =
 #if NO_TYPEPROVIDERS
@@ -1001,7 +1003,6 @@ module internal DescriptionListsImpl =
         | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-
 #if !NO_TYPEPROVIDERS
         | ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them

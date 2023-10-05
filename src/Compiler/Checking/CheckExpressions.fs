@@ -8373,7 +8373,6 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     | Item.Types(_, []) ->
         error(Error(FSComp.SR.tcLookupMayNotBeUsedHere(), mItem))
 
-
 /// Type check the application of a union case. Also used to cover constructions of F# exception values, and
 /// applications of active pattern result labels.
 //

@@ -338,6 +338,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType []
         | Item.Types(_, []) ->
             FSharpXmlDoc.None
+        |> GetXmlDocFromLoader infoReader
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
@@ -404,7 +405,8 @@ module internal SymbolHelpers =
               | Item.Types(_, [])
               | Item.ModuleOrNamespaces [] -> false
               //| _ -> false
-              
+        
+                
           member x.Equals(item1, item2) = 
             // This may explore assemblies that are not in the reference set.
             // In this case just bail out and assume items are not equal
@@ -508,7 +510,6 @@ module internal SymbolHelpers =
               | Item.Types _
               | Item.DelegateCtor _
               | Item.ModuleOrNamespaces [] -> 0
-
               ) }
     
     /// Remove all duplicate items
@@ -717,6 +718,7 @@ module internal SymbolHelpers =
         | Item.DelegateCtor _ ->
         //|  _ ->
             GetXmlCommentForItemAux None infoReader m item
+
         |> GetXmlDocFromLoader infoReader
 
     let IsAttribute (infoReader: InfoReader) item =
