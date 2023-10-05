@@ -32,24 +32,25 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
 
 
-    static member refactor (context:CodeRefactoringContext) (symbolUse:FSharpSymbolUse,memberFunc:FSharpMemberOrFunctionOrValue,symbolSpan) =
+    static member refactor (context:CodeRefactoringContext) (symbolUse:FSharpSymbolUse,memberFunc:FSharpMemberOrFunctionOrValue,symbolSpan:TextSpan,textLine:TextLine) =
         let typeString = memberFunc.FullType.FormatWithConstraints symbolUse.DisplayContext
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
-            let debugInfo = $"{sourceText} : {typeString} : {symbolSpan}"
+            let debugInfo = $"{sourceText} : {typeString} : {symbolSpan} : {textLine}"
             debugInfo
-            let sub = sourceText.ToString(symbolSpan)
+            let sub = sourceText.ToString(textLine.Span)
 
             let newSub =
                 sub.Replace("=", $" :{memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName}=")
 
-            sourceText.Replace(symbolSpan, newSub)
+            sourceText.Replace(textLine.Span, newSub)
 
         let codeActionFunc = (fun (cancellationToken: CancellationToken) ->
-            backgroundTask  {
+            task  {
                 let! sourceText = context.Document.GetTextAsync(cancellationToken)
                 let changedText = getChangedText sourceText
+                context.Document.Project.Solution.Id
                 return context.Document.WithText(changedText)
             }
         )
@@ -103,7 +104,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
                         | Some span -> Some(symbolUse,memberFunc,span)
                         | None -> None
                 )
-                |> Option.map(fun (symbolUse,memberFunc,textSpan) -> AddExplicitReturnType.refactor context (symbolUse,memberFunc,textSpan))
+                |> Option.map(fun (symbolUse,memberFunc,textSpan) -> AddExplicitReturnType.refactor context (symbolUse,memberFunc,textSpan,textLine))
 
             return res
         }
