@@ -576,8 +576,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 ()
                         //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
+                        // Probably in some cases cancellation can be fired off even after we just unregistered it
                         | CancelRequest, None
-                        | CancelRequest, Some (Completed _) -> ()
+                        | CancelRequest, Some (Completed _)
+                        | OriginatorCanceled, None
+                        | OriginatorCanceled, Some (Completed _) -> ()
 
                         | JobFailed ex, Some (Running (tcs, _cts, _c, _ts)) ->
                             cancelRegistration key
@@ -602,15 +605,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
                         | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
 
-                        | OriginatorCanceled, None -> internalError key.Label "Invalid state: Running job missing in cache (canceled)"
-
                         | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
 
                         | JobFailed ex, Some (Completed _job) -> internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
 
                         | JobCompleted _result, Some (Completed _job) -> internalError key.Label "Invalid state: Double-Completed job"
-
-                        | OriginatorCanceled, Some (Completed _result) -> internalError key.Label "Invalid state: Canceled Completed job"
                     })
         }
 

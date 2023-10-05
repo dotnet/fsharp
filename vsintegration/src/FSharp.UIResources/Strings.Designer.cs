@@ -538,6 +538,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Transparent Compiler Cache Factor.
+        /// </summary>
+        public static string Transparent_Compiler_Cache_Factor {
+            get {
+                return ResourceManager.GetString("Transparent_Compiler_Cache_Factor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Higher number means more memory will be used for caching. Changing the value wipes cache..
+        /// </summary>
+        public static string Transparent_Compiler_Cache_Factor_Tooltip {
+            get {
+                return ResourceManager.GetString("Transparent_Compiler_Cache_Factor_Tooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Transparent Compiler (experimental).
         /// </summary>
         public static string TransparentCompiler {

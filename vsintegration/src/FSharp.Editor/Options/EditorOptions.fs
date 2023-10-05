@@ -79,6 +79,7 @@ type CodeFixesOptions =
 type LanguageServicePerformanceOptions =
     {
         EnableInMemoryCrossProjectReferences: bool
+        TransparentCompilerCacheFactor: int
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
@@ -93,6 +94,7 @@ type LanguageServicePerformanceOptions =
     static member Default =
         {
             EnableInMemoryCrossProjectReferences = true
+            TransparentCompilerCacheFactor = 100
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
@@ -262,3 +264,5 @@ module EditorOptionsExtensions =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
         member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
+
+        member this.TransparentCompilerCacheFactor = this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

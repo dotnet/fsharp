@@ -259,37 +259,41 @@ module private TypeCheckingGraphProcessing =
             return finalFileResults, state
         }
 
-type internal CompilerCaches() =
+type internal CompilerCaches(sizeFactor: int) =
 
     // member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
 
-    member val ParseFile = AsyncMemoize(keepStrongly = 5000, keepWeakly = 2000, name = "ParseFile")
+    let sf = sizeFactor
 
-    member val ParseAndCheckFileInProject = AsyncMemoize(name = "ParseAndCheckFileInProject")
+    member _.SizeFactor = sf
 
-    member val ParseAndCheckAllFilesInProject = AsyncMemoize(name = "ParseAndCheckFullProject")
+    member val ParseFile = AsyncMemoize(keepStrongly = 50 * sf, keepWeakly = 20 * sf, name = "ParseFile")
 
-    member val ParseAndCheckProject = AsyncMemoize(name = "ParseAndCheckProject")
+    member val ParseAndCheckFileInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFileInProject")
 
-    member val FrameworkImports = AsyncMemoize(name = "FrameworkImports")
+    member val ParseAndCheckAllFilesInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFullProject")
 
-    member val BootstrapInfoStatic = AsyncMemoize(name = "BootstrapInfoStatic")
+    member val ParseAndCheckProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckProject")
 
-    member val BootstrapInfo = AsyncMemoize(name = "BootstrapInfo")
+    member val FrameworkImports = AsyncMemoize(sf, 2 * sf, name = "FrameworkImports")
+
+    member val BootstrapInfoStatic = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfoStatic")
+
+    member val BootstrapInfo = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfo")
 
     // member val TcLastFile = AsyncMemoize(name = "TcLastFile")
 
-    member val TcIntermediate = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "TcIntermediate")
+    member val TcIntermediate = AsyncMemoize(20 * sf, 20 * sf, name = "TcIntermediate")
 
-    member val DependencyGraph = AsyncMemoize(name = "DependencyGraph")
+    member val DependencyGraph = AsyncMemoize(sf, 2 * sf, name = "DependencyGraph")
 
-    member val ProjectExtras = AsyncMemoize(name = "ProjectExtras")
+    member val ProjectExtras = AsyncMemoize(sf, 2 * sf, name = "ProjectExtras")
 
-    member val AssemblyData = AsyncMemoize(name = "AssemblyData")
+    member val AssemblyData = AsyncMemoize(sf, 2 * sf, name = "AssemblyData")
 
-    member val SemanticClassification = AsyncMemoize(name = "SemanticClassification")
+    member val SemanticClassification = AsyncMemoize(sf, 2 * sf, name = "SemanticClassification")
 
-    member val ItemKeyStore = AsyncMemoize(name = "ItemKeyStore")
+    member val ItemKeyStore = AsyncMemoize(sf, 2 * sf, name = "ItemKeyStore")
 
 type internal TransparentCompiler
     (
@@ -313,7 +317,7 @@ type internal TransparentCompiler
     let lexResourceManager = Lexhelp.LexResourceManager()
 
     // Mutable so we can easily clear them by creating a new instance
-    let mutable caches = CompilerCaches()
+    let mutable caches = CompilerCaches(100)
 
     let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
 
@@ -1758,6 +1762,10 @@ type internal TransparentCompiler
 
     member _.Caches = caches
 
+    member _.SetCacheSizeFactor(sizeFactor: int) =
+        if sizeFactor <> caches.SizeFactor then
+            caches <- CompilerCaches(sizeFactor)
+
     interface IBackgroundCompiler with
 
         member this.BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions> =
@@ -1814,7 +1822,7 @@ type internal TransparentCompiler
 
         member _.ClearCaches() : unit =
             backgroundCompiler.ClearCaches()
-            caches <- CompilerCaches()
+            caches <- CompilerCaches(100) // TODO: check
 
         member _.DownsizeCaches() : unit = backgroundCompiler.DownsizeCaches()
 

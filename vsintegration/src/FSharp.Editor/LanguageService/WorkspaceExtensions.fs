@@ -213,6 +213,9 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             cancellableTask {
+
+                checker.TransparentCompiler.SetCacheSizeFactor(document.Project.TransparentCompilerCacheFactor)
+
                 let! projectSnapshot = getProjectSnapshotForDocument (document, options)
 
                 let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
