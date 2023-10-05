@@ -956,7 +956,7 @@ module UnnecessaryParentheses =
 
             | _ -> true
 
-    /// Represents the range of a control-flow branching construct or part thereof.
+    /// Represents the range of a control-flow construct or part thereof.
     [<NoComparison; NoEquality>]
     type ControlFlowPart =
         /// match … with … -> …
@@ -968,10 +968,10 @@ module UnnecessaryParentheses =
         /// try … with … -> …
         ///
         /// try … finally …
-        | ControlFlowExpr of range
+        | MatchOrTry of range
 
-        /// |, ->, finally
-        | BarOrArrowOrFinally of range
+        /// |, ->, finally, with (of try-with)
+        | BarOrArrowOrFinallyOrWith of range
 
         /// if … then … else …
         | IfThenElse of range
@@ -989,14 +989,17 @@ module UnnecessaryParentheses =
                         { new IComparer<ControlFlowPart> with
                             member _.Compare(x, y) =
                                 match x, y with
-                                | ControlFlowExpr exprRange, BarOrArrowOrFinally delimiterRange
-                                | IfThenElse exprRange, ThenOrElse delimiterRange
-                                    when exprRange.EndLine = delimiterRange.EndLine
-                                    && exprRange.EndColumn < delimiterRange.StartColumn -> 0
+                                | MatchOrTry exprRange, BarOrArrowOrFinallyOrWith delimiterRange
+                                | IfThenElse exprRange, ThenOrElse delimiterRange when
+                                    exprRange.EndLine = delimiterRange.EndLine
+                                    && exprRange.EndColumn < delimiterRange.StartColumn
+                                    ->
+                                    0
 
-                                | (ControlFlowExpr x | BarOrArrowOrFinally x | IfThenElse x | ThenOrElse x),
-                                    (ControlFlowExpr y | BarOrArrowOrFinally y | IfThenElse y | ThenOrElse y) ->
-                                    Range.rangeOrder.Compare(x, y) }
+                                | (MatchOrTry x | BarOrArrowOrFinallyOrWith x | IfThenElse x | ThenOrElse x),
+                                  (MatchOrTry y | BarOrArrowOrFinallyOrWith y | IfThenElse y | ThenOrElse y) ->
+                                    Range.rangeOrder.Compare(x, y)
+                        }
 
                 // Add the key and value to the dictionary, wrapping the value in a set.
                 // If the key already exists, add the value to the existing set.
@@ -1012,16 +1015,16 @@ module UnnecessaryParentheses =
                 { new SyntaxVisitorBase<obj>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
                         match expr, path with
-                        // Normally, we don't need parentheses around branching construct input or
+                        // Normally, we don't need parentheses around control flow construct input or
                         // result expressions, e.g.,
                         //
                         //     if (2 + 2 = 5) then (…)                       → if 2 + 2 = 5 then …
                         //     match (…) with … when (…) -> (…) | (…) -> (…) → match … with … when … -> … | … -> …
                         //
-                        // Given a parenthesized branching construct nested inside of another
+                        // Given a parenthesized control flow construct nested inside of another
                         // construct of like kind, we can always remove the parentheses _unless_
                         // the inner construct is on the same line as any of the outer construct's
-                        // delimiters (then, else, |, ->) and, if the parentheses were removed,
+                        // delimiters (then, else, |, ->, finally, with (of try-with)) and, if the parentheses were removed,
                         // the inner construct would syntactically adhere to that delimiter.
                         //
                         // Note that, owing to precedence rules, the inner construct
@@ -1043,7 +1046,8 @@ module UnnecessaryParentheses =
                         //     if … (match … with … -> if … then … else …) then …
                         //
                         //     // Etc., etc., etc.
-                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr (SynExpr.IfThenElse (trivia = trivia) as outer) :: _ ->
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range),
+                          SyntaxNode.SynExpr (SynExpr.IfThenElse (trivia = trivia) as outer) :: _ ->
                             branchingConstructParts |> add (ThenOrElse trivia.ThenKeyword) range
 
                             match trivia.ElseKeyword with
@@ -1053,10 +1057,58 @@ module UnnecessaryParentheses =
                             if not (SynExpr.parenthesesNeededBetween outer inner) then
                                 ignore (ranges.Add range)
 
+                        // Try-finally has a similar problem.
+                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range),
+                          SyntaxNode.SynExpr (SynExpr.TryFinally (trivia = trivia) as outer) :: _ ->
+                            branchingConstructParts
+                            |> add (BarOrArrowOrFinallyOrWith trivia.FinallyKeyword) range
+
+                            if not (SynExpr.parenthesesNeededBetween outer inner) then
+                                ignore (ranges.Add range)
+
+                        | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses; trivia = trivia)) :: _
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses; trivia = trivia)) :: _ ->
+                            branchingConstructParts
+                            |> add (BarOrArrowOrFinallyOrWith trivia.WithKeyword) range
+
+                            for SynMatchClause (trivia = trivia) in clauses do
+                                match trivia.BarRange with
+                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
+                                | None -> ()
+
+                                match trivia.ArrowRange with
+                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
+                                | None -> ()
+
+                            ignore (ranges.Add range)
+
+                        // Match-clause-having constructs do, too.
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.Match (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchLambda (matchClauses = clauses)) :: _
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynExpr (SynExpr.YieldOrReturn _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
+                        | SynExpr.Paren (range = range),
+                          SyntaxNode.SynExpr (SynExpr.YieldOrReturnFrom _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _ ->
+                            for SynMatchClause (trivia = trivia) in clauses do
+                                match trivia.BarRange with
+                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
+                                | None -> ()
+
+                                match trivia.ArrowRange with
+                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
+                                | None -> ()
+
+                            ignore (ranges.Add range)
+
                         // If this if-then-else is nested inside of another
-                        // and is on the same line as the outer's then or else keyword
-                        // and would directly precede it if the parentheses were removed,
-                        // the parentheses must stay.
+                        // and is on the same line as a then or else from the outer that
+                        // it would directly precede and to which it would adhere
+                        // if the parentheses were removed, the parentheses must stay.
                         | SynExpr.IfThenElse (range = range), _ ->
                             match branchingConstructParts.TryGetValue(IfThenElse range) with
                             | true, parenRanges ->
@@ -1066,49 +1118,16 @@ module UnnecessaryParentheses =
 
                             | false, _ -> ()
 
-                        // Try-finally has a similar problem.
-                        | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr (SynExpr.TryFinally (trivia = trivia) as outer) :: _ ->
-                            branchingConstructParts |> add (BarOrArrowOrFinally trivia.FinallyKeyword) range
-                            if not (SynExpr.parenthesesNeededBetween outer inner) then
-                                ignore (ranges.Add range)
-
-                        // If this try-finally directly precedes another control-flow delimiter, keep the parens.
-                        | SynExpr.TryFinally (range = range), _ ->
-                            match branchingConstructParts.TryGetValue(ControlFlowExpr range) with
-                            | true, parenRanges ->
-                                for parenRange in parenRanges do
-                                    if Range.rangeContainsRange parenRange range then
-                                        ignore (ranges.Remove parenRange)
-
-                            | false, _ -> ()
-
-                        // Match-clause-having constructs likewise.
-                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.Match (clauses = clauses)) :: _
-                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchLambda (matchClauses = clauses)) :: _
-                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
-                        | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.YieldOrReturn _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
-                        | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.YieldOrReturnFrom _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _
-                        | SynExpr.Paren (range = range), SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses)) :: _ ->
-                            for SynMatchClause (trivia = trivia) in clauses do
-                                match trivia.BarRange with
-                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinally barRange) range
-                                | None -> ()
-
-                                match trivia.ArrowRange with
-                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinally arrowRange) range
-                                | None -> ()
-
-                            ignore (ranges.Add range)
-
-                        // If this match is nested inside of another
-                        // and is on the same line as any | or -> from the outer
-                        // and would directly precede it if the parentheses were removed,
-                        // the parentheses must stay.
+                        // If this control flow construct is nested inside of another
+                        // and is on the same line as a delimiter from the outer that
+                        // it would directly precede and to which it would adhere
+                        // if the parentheses were removed, the parentheses must stay.
+                        | SynExpr.TryFinally (range = range), _
                         | SynExpr.Match (range = range), _
                         | SynExpr.MatchLambda (range = range), _
                         | SynExpr.MatchBang (range = range), _
                         | SynExpr.TryWith (range = range), _ ->
-                            match branchingConstructParts.TryGetValue(ControlFlowExpr range) with
+                            match branchingConstructParts.TryGetValue(MatchOrTry range) with
                             | true, parenRanges ->
                                 for parenRange in parenRanges do
                                     if Range.rangeContainsRange parenRange range then

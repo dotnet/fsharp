@@ -263,6 +263,8 @@ let _ =
             "try raise null with (_) -> reraise ()", "try raise null with _ -> reraise ()"
             "try raise null with _ -> (reraise ())", "try raise null with _ -> reraise ()"
             "try raise null with :? exn -> (try raise null with _ -> reraise ()) | _ -> reraise ()", "try raise null with :? exn -> (try raise null with _ -> reraise ()) | _ -> reraise ()"
+            "try (try raise null with _ -> null) with _ -> null", "try (try raise null with _ -> null) with _ -> null"
+            "try (try raise null with _ -> null ) with _ -> null", "try (try raise null with _ -> null ) with _ -> null"
 
             // TryFinally
             "try (raise null) finally 3", "try raise null finally 3"
