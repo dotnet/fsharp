@@ -3097,7 +3097,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         | false, _ -> NoResultsOrUsefulErrors
                         | true, res -> OneSuccess (ResolutionInfo.Empty, ResolveUnqualifiedItem ncenv nenv m res, rest)
 
-                moduleSearch ad () +++ tyconSearch ad +++ envSearch
+                tyconSearch ad () +++ moduleSearch ad +++ envSearch
 
               let res =
                   match AtMostOneResult m search with
