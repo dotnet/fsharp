@@ -1003,10 +1003,12 @@ module UnnecessaryParentheses =
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
                         let (|Text|) = getTextAtRange
                         let (|StartsWith|) (s: string) = s[0]
-                        let (|StartsWithSymbol|_|) = function
+
+                        let (|StartsWithSymbol|_|) =
+                            function
                             | SynExpr.Quote _
                             | SynExpr.InterpolatedString _
-                            | SynExpr.Const (SynConst.String (synStringKind = SynStringKind.Verbatim), _)
+                            | SynExpr.Const (SynConst.String(synStringKind = SynStringKind.Verbatim), _)
                             | SynExpr.Const (SynConst.SByte _, Text (StartsWith ('-' | '+')))
                             | SynExpr.Const (SynConst.Int16 _, Text (StartsWith ('-' | '+')))
                             | SynExpr.Const (SynConst.Int32 _, Text (StartsWith ('-' | '+')))

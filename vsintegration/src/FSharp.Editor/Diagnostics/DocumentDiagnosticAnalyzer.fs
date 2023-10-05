@@ -114,7 +114,9 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 | DiagnosticsType.Semantic -> cancellableTask { return ImmutableArray.Empty }
                 | DiagnosticsType.Syntax ->
                     cancellableTask {
-                        let getTextAtRange m = sourceText.ToString(RoslynHelpers.FSharpRangeToTextSpan(sourceText, m))
+                        let getTextAtRange m =
+                            sourceText.ToString(RoslynHelpers.FSharpRangeToTextSpan(sourceText, m))
+
                         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getTextAtRange parseResults.ParseTree
 
                         let descriptor =
