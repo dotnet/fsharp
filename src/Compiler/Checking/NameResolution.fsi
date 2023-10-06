@@ -684,6 +684,7 @@ val internal ResolveLongIdentAsModuleOrNamespace:
     id: Ident ->
     rest: Ident list ->
     isOpenDecl: bool ->
+    notifySink: bool ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
 /// Resolve a long identifier to an object constructor.
