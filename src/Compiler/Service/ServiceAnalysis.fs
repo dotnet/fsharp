@@ -633,7 +633,7 @@ module UnnecessaryParentheses =
             ///
             /// (x + y) + z
             [<return: Struct>]
-            let rec (|OuterRight|_|) synExpr =
+            let (|OuterRight|_|) synExpr =
                 match synExpr with
                 | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op) -> ofOriginalNotation op
                 | SynExpr.Upcast _ -> ValueSome Upcast
