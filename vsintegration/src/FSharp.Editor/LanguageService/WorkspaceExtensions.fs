@@ -126,67 +126,15 @@ module private CheckerExtensions =
 
         let key =
             { new ICacheKey<_, _>
-                with member _.GetKey() = document.Id, options.ProjectFileName
-                     member _.GetVersion() = document
-                     member _.GetLabel() = document.FilePath }
+                with member _.GetKey() = document.Project.Id
+                     member _.GetVersion() = document.Project
+                     member _.GetLabel() = options.ProjectFileName }
 
         snapshotCache.Get(
             key,
             async {
-
-                let project = document.Project
-                let solution = project.Solution
-
-                let projects =
-                    solution.Projects
-                    |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                    |> Map
-
-                let getFileSnapshot (options: FSharpProjectOptions) path =
-                    async {
-                        let project = projects.TryFind options.ProjectFileName
-
-                        if project.IsNone then
-                            System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
-
-                        let documentOpt = project |> Option.bind (Map.tryFind path)
-
-                        let! version, getSource =
-                            match documentOpt with
-                            | Some document ->
-                                async {
-
-                                    let! version = document.GetTextVersionAsync() |> Async.AwaitTask
-
-                                    let getSource () =
-                                        task {
-                                            let! sourceText = document.GetTextAsync()
-                                            return sourceText.ToFSharpSourceText()
-                                        }
-
-                                    return version.ToString(), getSource
-
-                                }
-                            | None ->
-                                // This happens with files that are read from /obj
-
-                                // Fall back to file system
-                                let version = System.IO.File.GetLastWriteTimeUtc(path)
-
-                                let getSource () =
-                                    task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
-
-                                async.Return(version.ToString(), getSource)
-
-                        return
-                            {
-                                FileName = path
-                                Version = version
-                                GetSource = getSource
-                            }
-                    }
-
-                return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+                let! ct = Async.CancellationToken
+                return! getProjectSnapshot None document.Project ct |> Async.AwaitTask
             })
 
     type FSharpChecker with

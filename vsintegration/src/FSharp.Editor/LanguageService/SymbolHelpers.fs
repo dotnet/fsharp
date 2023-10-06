@@ -83,10 +83,10 @@ module internal SymbolHelpers =
 
                 let snapshotAccumulator = Dictionary()
                 let! projects =
-                    projects 
+                    projects
                     |> Seq.map (fun project -> project.GetFSharpProjectSnapshot(snapshotAccumulator) |> CancellableTask.map (fun s -> project, s))
                     |> CancellableTask.sequential
-                    
+
                 do!
                     projects
                     |> Seq.map (fun (project, snapshot) -> project.FindFSharpReferencesAsync(symbol, snapshot, onFound, "getSymbolUsesInProjects"))
