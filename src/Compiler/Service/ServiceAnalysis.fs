@@ -468,29 +468,34 @@ module UnnecessaryParentheses =
         /// f x
         ///
         /// (+) x y
+        [<return: Struct>]
         let (|HighPrecedenceApp|_|) expr =
             match expr with
             | SynExpr.App (isInfix = false; funcExpr = SynExpr.Ident _)
             | SynExpr.App (isInfix = false; funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent(trivia = [])))
-            | SynExpr.App (isInfix = false; funcExpr = SynExpr.App(isInfix = false)) -> Some HighPrecedenceApp
-            | _ -> None
+            | SynExpr.App (isInfix = false; funcExpr = SynExpr.App(isInfix = false)) -> ValueSome HighPrecedenceApp
+            | _ -> ValueNone
 
         module FuncExpr =
             /// Matches when the given funcExpr is a direct application
             /// of a symbolic operator, e.g., -, _not_ (~-).
+            [<return: Struct>]
             let (|SymbolicOperator|_|) funcExpr =
                 match funcExpr with
                 | SynExpr.LongIdent(longDotId = SynLongIdent (trivia = trivia)) ->
-                    trivia
-                    |> List.tryPick (function
-                        | Some (IdentTrivia.OriginalNotation op) -> Some op
-                        | _ -> None)
-                | _ -> None
+                    let rec tryPick =
+                        function
+                        | [] -> ValueNone
+                        | Some (IdentTrivia.OriginalNotation op) :: _ -> ValueSome op
+                        | _ :: rest -> tryPick rest
+
+                    tryPick trivia
+                | _ -> ValueNone
 
         /// Represents the infix application of a symbolic binary operator.
         /// The original notation may include leading dots and trailing characters,
         /// with the exception of TypeTest, Cons, Upcast, Downcast, BarBar, AmpAmp, and ColonEquals.
-        [<NoComparison; NoEquality>]
+        [<Struct; NoComparison; NoEquality>]
         type InfixOperator =
             /// :=
             | ColonEquals
@@ -577,37 +582,38 @@ module UnnecessaryParentheses =
                 assert (trimmed.Length > 0)
 
                 match trimmed[0], originalNotation with
-                | _, ":=" -> Some ColonEquals
-                | _, ("||" | "or") -> Some BarBar
-                | _, ("&" | "&&") -> Some AmpAmp
-                | '|', _ -> Some Bar
-                | '&', _ -> Some Amp
-                | '<', _ -> Some Less
-                | '>', _ -> Some Greater
-                | '=', _ -> Some Eq
-                | '$', _ -> Some Dollar
-                | '!', _ when trimmed.Length > 1 && trimmed[1] = '=' -> Some BangEq
-                | '^', _ -> Some Hat
-                | '@', _ -> Some At
-                | _, "::" -> Some Cons
-                | '+', _ -> Some Add
-                | '-', _ -> Some Sub
-                | '/', _ -> Some Div
-                | '%', _ -> Some Mod
-                | '*', _ when trimmed.Length > 1 && trimmed[1] = '*' -> Some Exp
-                | '*', _ -> Some Mul
-                | _ -> None
+                | _, ":=" -> ValueSome ColonEquals
+                | _, ("||" | "or") -> ValueSome BarBar
+                | _, ("&" | "&&") -> ValueSome AmpAmp
+                | '|', _ -> ValueSome Bar
+                | '&', _ -> ValueSome Amp
+                | '<', _ -> ValueSome Less
+                | '>', _ -> ValueSome Greater
+                | '=', _ -> ValueSome Eq
+                | '$', _ -> ValueSome Dollar
+                | '!', _ when trimmed.Length > 1 && trimmed[1] = '=' -> ValueSome BangEq
+                | '^', _ -> ValueSome Hat
+                | '@', _ -> ValueSome At
+                | _, "::" -> ValueSome Cons
+                | '+', _ -> ValueSome Add
+                | '-', _ -> ValueSome Sub
+                | '/', _ -> ValueSome Div
+                | '%', _ -> ValueSome Mod
+                | '*', _ when trimmed.Length > 1 && trimmed[1] = '*' -> ValueSome Exp
+                | '*', _ -> ValueSome Mul
+                | _ -> ValueNone
 
             /// Matches when the expression inside of the parentheses
             /// is the application of an infix operator and returns the parsed operator.
+            [<return: Struct>]
             let (|Inner|_|) synExpr =
                 match synExpr with
                 | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)
                 | SynExpr.App(funcExpr = SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)) -> ofOriginalNotation op
-                | SynExpr.Upcast _ -> Some Upcast
-                | SynExpr.Downcast _ -> Some Downcast
-                | SynExpr.TypeTest _ -> Some TypeTest
-                | _ -> None
+                | SynExpr.Upcast _ -> ValueSome Upcast
+                | SynExpr.Downcast _ -> ValueSome Downcast
+                | SynExpr.TypeTest _ -> ValueSome TypeTest
+                | _ -> ValueNone
 
             /// Matches when the expression outside and to the left of the parentheses
             /// is the application of an infix operator and returns the parsed operator.
@@ -616,22 +622,24 @@ module UnnecessaryParentheses =
             ///
             /// (The upcast, downcast, and type test operators cannot be overloaded and
             /// only ever have a type on the right, not an expression.)
+            [<return: Struct>]
             let (|OuterLeft|_|) synExpr =
                 match synExpr with
                 | SynExpr.App(funcExpr = SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op)) -> ofOriginalNotation op
-                | _ -> None
+                | _ -> ValueNone
 
             /// Matches when the expression outside and to the right of the parentheses
             /// is the application of an infix operator and returns the parsed operator.
             ///
             /// (x + y) + z
+            [<return: Struct>]
             let rec (|OuterRight|_|) synExpr =
                 match synExpr with
                 | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator op) -> ofOriginalNotation op
-                | SynExpr.Upcast _ -> Some Upcast
-                | SynExpr.Downcast _ -> Some Downcast
-                | SynExpr.TypeTest _ -> Some TypeTest
-                | _ -> None
+                | SynExpr.Upcast _ -> ValueSome Upcast
+                | SynExpr.Downcast _ -> ValueSome Downcast
+                | SynExpr.TypeTest _ -> ValueSome TypeTest
+                | _ -> ValueNone
 
             let associativity op =
                 match op with

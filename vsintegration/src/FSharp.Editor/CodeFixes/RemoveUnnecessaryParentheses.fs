@@ -13,6 +13,19 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
+[<AutoOpen>]
+module private Patterns =
+    let inline toPat f x = if f x then ValueSome() else ValueNone
+
+    [<return: Struct>]
+    let inline (|LetterOrDigit|_|) c = toPat Char.IsLetterOrDigit c
+
+    [<return: Struct>]
+    let inline (|Punctuation|_|) c = toPat Char.IsPunctuation c
+
+    [<return: Struct>]
+    let inline (|Symbol|_|) c = toPat Char.IsSymbol c
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
@@ -61,11 +74,6 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
 
                 match firstChar, lastChar with
                 | '(', ')' ->
-                    let inline toPat f x = if f x then Some() else None
-                    let (|LetterOrDigit|_|) = toPat Char.IsLetterOrDigit
-                    let (|Punctuation|_|) = toPat Char.IsPunctuation
-                    let (|Symbol|_|) = toPat Char.IsSymbol
-
                     let (|ShouldPutSpaceBefore|_|) (s: string) =
                         // "……(……)"
                         //  ↑↑ ↑
