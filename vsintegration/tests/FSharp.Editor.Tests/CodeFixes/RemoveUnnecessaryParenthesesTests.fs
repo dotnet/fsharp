@@ -75,7 +75,7 @@ module private Aux =
                 | ValueNone -> ()
                 | ValueSome actual ->
                     let expected = string { Message = "Remove unnecessary parentheses"; FixedCode = code }
-                    let e = Assert.ThrowsAny(fun() -> shouldEqual expected (string actual))
+                    let e = Assert.ThrowsAny(fun () -> shouldEqual expected (string actual))
                     raise (UnexpectedCodeFixException("Did not expect a code fix but got one anyway.", e))
             }
 
@@ -102,11 +102,11 @@ module private Aux =
                         actual
                         |> ValueOption.map string
                         |> ValueOption.defaultWith (fun () ->
-                            let e = Assert.ThrowsAny(fun() -> shouldEqual fixedCode code)
+                            let e = Assert.ThrowsAny(fun () -> shouldEqual fixedCode code)
                             raise (MissingCodeFixException("Expected a code fix but did not get one.", e)))
 
                     try shouldEqual expected actual
-                    with e -> raise (WrongCodeFixException ("The applied code fix did not match the expected fix.", e))
+                    with e -> raise (WrongCodeFixException("The applied code fix did not match the expected fix.", e))
                 }
 
     [<Sealed>]
