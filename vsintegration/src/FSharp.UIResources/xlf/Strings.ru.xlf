@@ -22,11 +22,6 @@
         <target state="new">Background analysis</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
         <target state="new">Keep background symbol keys</target>

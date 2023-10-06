@@ -252,7 +252,12 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     |> liftAsync
 
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
-                let! implSymbol = symbolUses |> Array.tryHead
+
+                let! implSymbol =
+                    symbolUses
+                    |> Array.sortByDescending (fun x -> x.IsFromDefinition)
+                    |> Array.tryHead
+
                 return implSymbol.Range
         }
 
