@@ -133,10 +133,14 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                 if kind.IsInterpolated then
                     fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
                     BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
-                elif Lexhelp.stringBufferIsBytes buf then
-                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
                 else
-                    fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
+                    match Lexhelp.errorsInByteStringBuffer buf with
+                    | Some (largerThanOneByte, largerThan127) ->
+                        if largerThanOneByte > 0 then
+                            fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode(largerThanOneByte)) ()
+                        if largerThan127 > 0 then
+                            warning (Error(FSComp.SR.lexByteArrayOutisdeAscii(largerThan127), lexbuf.LexemeRange))
+                    | None -> ()
                     BYTEARRAY (Lexhelp.stringBufferAsBytes buf, synByteStringKind, cont)
             elif kind.IsInterpolated then
                 let s = Lexhelp.stringBufferAsString buf
