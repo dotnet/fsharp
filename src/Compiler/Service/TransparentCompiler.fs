@@ -319,8 +319,8 @@ type internal TransparentCompiler
     // Mutable so we can easily clear them by creating a new instance
     let mutable caches = CompilerCaches(100)
 
-    let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
-
+    // TODO: do we need this?
+    let maxTypeCheckingParallelism = Environment.ProcessorCount
     let maxParallelismSemaphore = new SemaphoreSlim(maxTypeCheckingParallelism)
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
@@ -531,7 +531,8 @@ type internal TransparentCompiler
         let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
         let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
 
-        let projectReferences = getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
+        let projectReferences =
+            getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
         // TODO: script support
         let loadClosureOpt: LoadClosure option = None
@@ -890,7 +891,8 @@ type internal TransparentCompiler
                 member _.GetKey() = projectKey.GetKey(), file.FileName
 
                 member _.GetVersion() =
-                    projectKey.GetVersion(), file.SourceHash,
+                    projectKey.GetVersion(),
+                    file.SourceHash,
                     // TODO: is there a situation where this is not enough and we need to have them separate?
                     file.IsLastCompiland && file.IsExe
             }

@@ -174,7 +174,8 @@ and FSharpProjectSnapshotWithSources =
     member WithoutImplFilesThatHaveSignatures: FSharpProjectSnapshotWithSources
     member WithoutImplFilesThatHaveSignaturesExceptLastOne: FSharpProjectSnapshotWithSources
 
-    member internal FileKey: fileName: string -> ICacheKey<(string * ProjectSnapshotKey), FSharpProjectSnapshotWithSourcesVersion>
+    member internal FileKey:
+        fileName: string -> ICacheKey<(string * ProjectSnapshotKey), FSharpProjectSnapshotWithSourcesVersion>
 
     member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
@@ -315,9 +316,11 @@ type FSharpProjectSnapshot with
     member ToOptions: unit -> FSharpProjectOptions
 
     /// Create snapshot from FSharpProjectOptions using given function to retrieve file contnets.
-    /// If given a snapshotAccumulator, it will be filled with any snapshots created during the operation, i.e. from this project and any referenced projects  
+    /// If given a snapshotAccumulator, it will be filled with any snapshots created during the operation, i.e. from this project and any referenced projects
     static member FromOptions:
-        options: FSharpProjectOptions * getFileSnapshot: (FSharpProjectOptions -> string -> Async<FSharpFileSnapshot>) * ?snapshotAccumulator: Dictionary<FSharpProjectOptions, FSharpProjectSnapshot> ->
+        options: FSharpProjectOptions *
+        getFileSnapshot: (FSharpProjectOptions -> string -> Async<FSharpFileSnapshot>) *
+        ?snapshotAccumulator: Dictionary<FSharpProjectOptions, FSharpProjectSnapshot> ->
             Async<FSharpProjectSnapshot>
 
     /// Create snapshot from FSharpProjectOptions using the filesystem to retrieve file contents.

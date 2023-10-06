@@ -396,7 +396,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable collected = 0
 
     let failures = ResizeArray()
-    let durations = ResizeArray()
+    let mutable avgDurationMs = 0.0
 
     let cache =
         LruCache<'TKey, 'TVersion, Job<'TValue>>(
@@ -591,13 +591,19 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             failures.Add(key.Label, ex)
                             tcs.TrySetException ex |> ignore
 
-                        | JobCompleted result, Some (Running (tcs, _cts, _c, _ts)) ->
+                        | JobCompleted result, Some (Running (tcs, _cts, _c, started)) ->
                             cancelRegistration key
                             cache.Set(key.Key, key.Version, key.Label, (Completed result))
                             requestCounts.Remove key |> ignore
                             log (Finished, key)
                             Interlocked.Increment &completed |> ignore
-                            durations.Add(DateTime.Now - _ts)
+                            let duration = float (DateTime.Now - started).Milliseconds
+
+                            avgDurationMs <-
+                                if completed < 2 then
+                                    duration
+                                else
+                                    avgDurationMs + (duration - avgDurationMs) / float completed
 
                             if tcs.TrySetResult result = false then
                                 internalError key.Label "Invalid state: Completed job already completed"
@@ -697,12 +703,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |> Option.defaultValue ""
 
         let avgDuration =
-            match durations.Count with
-            | 0 -> ""
-            | _ ->
-                durations
-                |> Seq.averageBy (fun x -> x.TotalMilliseconds)
-                |> sprintf "| Avg: %.0f ms"
+            avgDurationMs |> sprintf "| Avg: %.0f ms"
 
         let stats =
             [|

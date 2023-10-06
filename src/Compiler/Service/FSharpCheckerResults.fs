@@ -202,7 +202,10 @@ type FSharpProjectSnapshot =
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
-    member this.OutputFileName = this.OtherOptions |> List.tryFind (fun x -> x.StartsWith("-o:")) |> Option.map (fun x -> x.Substring(3))
+    member this.OutputFileName =
+        this.OtherOptions
+        |> List.tryFind (fun x -> x.StartsWith("-o:"))
+        |> Option.map (fun x -> x.Substring(3))
 
     member this.IndexOf fileName =
         this.SourceFiles
@@ -332,7 +335,10 @@ type FSharpProjectSnapshot =
 
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotDebugVersion> with
         member this.GetLabel() = this.ToString()
-        member this.GetKey() = this.ProjectFileName, this.OutputFileName |> Option.defaultValue ""
+
+        member this.GetKey() =
+            this.ProjectFileName, this.OutputFileName |> Option.defaultValue ""
+
         member this.GetVersion() = this.GetDebugVersion()
 
 and FSharpProjectSnapshotWithSources =
@@ -575,6 +581,7 @@ type FSharpProjectSnapshot with
 
     static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
         let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
+
         async {
 
             // TODO: check if options is a good key here
@@ -609,7 +616,7 @@ type FSharpProjectSnapshot with
                             })
                     )
 
-                let snapshot = 
+                let snapshot =
                     {
                         ProjectFileName = options.ProjectFileName
                         ProjectId = options.ProjectId
@@ -624,6 +631,7 @@ type FSharpProjectSnapshot with
                         OriginalLoadReferences = options.OriginalLoadReferences
                         Stamp = options.Stamp
                     }
+
                 snapshotAccumulator.Add(options, snapshot)
 
             return snapshotAccumulator[options]
