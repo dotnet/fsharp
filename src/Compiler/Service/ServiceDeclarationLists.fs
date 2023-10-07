@@ -878,7 +878,7 @@ module internal DescriptionListsImpl =
         | Item.Property(info = []) -> 
             [], emptyL
 
-    
+
     /// Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv, item) : FSharpGlyph = 
          /// Find the glyph for the given representation.    

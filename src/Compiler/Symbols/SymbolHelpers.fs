@@ -338,6 +338,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType []
         | Item.Types(_, []) ->
             FSharpXmlDoc.None
+
         |> GetXmlDocFromLoader infoReader
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
@@ -404,7 +405,9 @@ module internal SymbolHelpers =
               // These are not expected to occur
               | Item.Types(_, [])
               | Item.ModuleOrNamespaces [] -> false
+
               //| _ -> false
+
         
                 
           member x.Equals(item1, item2) = 
