@@ -186,7 +186,7 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
-                
+
                 // F# preview next
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
             ]
@@ -325,7 +325,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
         | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
-        | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty()
+        | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
+
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
         match features.TryGetValue feature with
