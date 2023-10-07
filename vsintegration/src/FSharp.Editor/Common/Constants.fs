@@ -164,6 +164,9 @@ module internal CodeFix =
     let MakeDeclarationMutable = "MakeDeclarationMutable"
 
     [<Literal>]
+    let MissingReference = "MissingReference"
+
+    [<Literal>]
     let ChangePrefixNegationToInfixSubtraction =
         "ChangePrefixNegationToInfixSubtraction"
 
