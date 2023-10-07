@@ -2623,36 +2623,40 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                 | Some x ->
-                    match maybeAppliedArgExpr, g.langVersion.SupportsFeature LanguageFeature.PreferExtensionMethodOverPlainProperty  with
-                    | None, _
-                    | _, false ->
+                    if
+                        not (g.langVersion.SupportsFeature LanguageFeature.PreferExtensionMethodOverPlainProperty)
+                        || not (List.isEmpty rest) // if not empty, it is .X.Y...
+                    then
                         success [resInfo, x, rest]
-                    | Some _argExpr, true ->
-                        // RFC 1137 prefer extension method when ...
-    
-                        let ignoreProperty (p: PropInfo) =
-                            // do not hide properties if:
-                            // * is indexed property
-                            // * is function type
-                            if p.IsIndexer then
-                                true
-                            else
-                                match p.GetPropertyType(ncenv.amap, m) with
-                                | TType_var(typar={typar_solution = Some (TType_fun _) }) ->
+                    else
+                        match maybeAppliedArgExpr with
+                        | None -> success [resInfo, x, rest]
+                        | Some _argExpr ->
+                            // RFC 1137 prefer extension method when ...
+        
+                            let ignoreProperty (p: PropInfo) =
+                                // do not hide properties if:
+                                // * is indexed property
+                                // * is function type
+                                if p.IsIndexer then
                                     true
-                                | _ -> false
-                        
-                        match x with
-                        | Item.Property(info=ps) when ps |> List.exists ignoreProperty ->
-                            success [resInfo, x, rest]
-                        | _ ->
-                            // lookup in-scope extension methods
-                            // to keep in sync with the same expression in `| Some(MethodItem msets) when isLookupExpr` below
-                            match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
-                            | [] -> success [resInfo, x, rest]
-                            | methods ->
-                                let extensionMethods = Item.MakeMethGroup(nm, methods)
-                                success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
+                                else
+                                    match p.GetPropertyType(ncenv.amap, m) with
+                                    | TType_var(typar={typar_solution = Some (TType_fun _) }) ->
+                                        true
+                                    | _ -> false
+                            
+                            match x with
+                            | Item.Property(info=ps) when ps |> List.exists ignoreProperty ->
+                                success [resInfo, x, rest]
+                            | _ ->
+                                // lookup in-scope extension methods
+                                // to keep in sync with the same expression in `| Some(MethodItem msets) when isLookupExpr` below
+                                match ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty with
+                                | [] -> success [resInfo, x, rest]
+                                | methods ->
+                                    let extensionMethods = Item.MakeMethGroup(nm, methods)
+                                    success ((resInfo,extensionMethods,rest)::[resInfo,x,rest])
                 | None ->
                     // todo: consider if we should check extension method, but we'd probably won't have matched
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.

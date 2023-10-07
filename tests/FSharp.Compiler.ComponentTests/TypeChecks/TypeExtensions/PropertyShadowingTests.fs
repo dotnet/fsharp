@@ -11,6 +11,7 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
     , Includes=[|
         "ShadowWithExtensionMethod.fsx"
         "ShadowWithTypeExtension.fsx"
+        "ShadowingAndStillOkWithChainedCalls.fsx"
     |]
 )>]
 let ``can hide property`` compilation =
