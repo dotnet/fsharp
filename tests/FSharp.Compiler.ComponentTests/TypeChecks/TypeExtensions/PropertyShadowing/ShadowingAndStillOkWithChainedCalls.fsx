@@ -1,3 +1,4 @@
+#nowarn "52"
 open System.Runtime.CompilerServices
 
 type Foo() = 
@@ -9,11 +10,8 @@ type FooExt =
     static member X (f: Foo, i: int) = f.X <- i; f
     [<Extension>]
     static member X (f: Foo, i: string) =
-        f.X <-
-            let x = f.X
-            let v = x.ToString()
-            v.Length + i.Length
-        f
+        // chained call on the property are still ok
+        f.X <- f.X.ToString().Length + i.Length; f
 
 
 let f = Foo()

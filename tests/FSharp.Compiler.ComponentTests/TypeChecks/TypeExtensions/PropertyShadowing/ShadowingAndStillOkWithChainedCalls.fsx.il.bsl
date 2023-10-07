@@ -117,8 +117,7 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  5
-      .locals init (int32 V_0,
-               string V_1)
+      .locals init (int32 V_0)
       IL_0000:  ldarg.0
       IL_0001:  ldarg.0
       IL_0002:  ldfld      int32 assembly/Foo::X@
@@ -126,15 +125,13 @@
       IL_0008:  ldloca.s   V_0
       IL_000a:  constrained. [runtime]System.Int32
       IL_0010:  callvirt   instance string [runtime]System.Object::ToString()
-      IL_0015:  stloc.1
-      IL_0016:  ldloc.1
-      IL_0017:  callvirt   instance int32 [runtime]System.String::get_Length()
-      IL_001c:  ldarg.1
-      IL_001d:  callvirt   instance int32 [runtime]System.String::get_Length()
-      IL_0022:  add
-      IL_0023:  stfld      int32 assembly/Foo::X@
-      IL_0028:  ldarg.0
-      IL_0029:  ret
+      IL_0015:  callvirt   instance int32 [runtime]System.String::get_Length()
+      IL_001a:  ldarg.1
+      IL_001b:  callvirt   instance int32 [runtime]System.String::get_Length()
+      IL_0020:  add
+      IL_0021:  stfld      int32 assembly/Foo::X@
+      IL_0026:  ldarg.0
+      IL_0027:  ret
     } 
 
   } 
@@ -144,25 +141,25 @@
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@19
+    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@17
     IL_0005:  ret
   } 
 
   .method assembly specialname static class assembly/Foo 
-          get_f@9() cil managed
+          get_f@10() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@9-1'
+    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@10-1'
     IL_0005:  ret
   } 
 
   .method assembly specialname static class assembly/Foo 
-          'get_f@9-1'() cil managed
+          'get_f@10-1'() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@9-2'
+    IL_0000:  ldsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@10-2'
     IL_0005:  ret
   } 
 
@@ -173,27 +170,27 @@
     .get class assembly/Foo assembly::get_f()
   } 
   .property class assembly/Foo
-          f@9()
+          f@10()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class assembly/Foo assembly::get_f@9()
+    .get class assembly/Foo assembly::get_f@10()
   } 
   .property class assembly/Foo
-          'f@9-1'()
+          'f@10-1'()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class assembly/Foo assembly::'get_f@9-1'()
+    .get class assembly/Foo assembly::'get_f@10-1'()
   } 
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly$fsx
        extends [runtime]System.Object
 {
-  .field static assembly initonly class assembly/Foo f@19
+  .field static assembly initonly class assembly/Foo f@17
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly class assembly/Foo 'f@9-1'
+  .field static assembly initonly class assembly/Foo 'f@10-1'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly class assembly/Foo 'f@9-2'
+  .field static assembly initonly class assembly/Foo 'f@10-2'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -205,7 +202,7 @@
     
     .maxstack  4
     IL_0000:  newobj     instance void assembly/Foo::.ctor()
-    IL_0005:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@19
+    IL_0005:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::f@17
     IL_000a:  call       class assembly/Foo assembly::get_f()
     IL_000f:  ldc.i4.1
     IL_0010:  stfld      int32 assembly/Foo::X@
@@ -224,16 +221,16 @@
     IL_0035:  ldc.i4.1
     IL_0036:  stfld      int32 assembly/Foo::X@
     IL_003b:  call       class assembly/Foo assembly::get_f()
-    IL_0040:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@9-2'
-    IL_0045:  call       class assembly/Foo assembly::'get_f@9-1'()
+    IL_0040:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@10-2'
+    IL_0045:  call       class assembly/Foo assembly::'get_f@10-1'()
     IL_004a:  ldc.i4.2
     IL_004b:  stfld      int32 assembly/Foo::X@
-    IL_0050:  call       class assembly/Foo assembly::'get_f@9-1'()
-    IL_0055:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@9-1'
-    IL_005a:  call       class assembly/Foo assembly::get_f@9()
+    IL_0050:  call       class assembly/Foo assembly::'get_f@10-1'()
+    IL_0055:  stsfld     class assembly/Foo '<StartupCode$assembly>'.$assembly$fsx::'f@10-1'
+    IL_005a:  call       class assembly/Foo assembly::get_f@10()
     IL_005f:  ldc.i4.3
     IL_0060:  stfld      int32 assembly/Foo::X@
-    IL_0065:  call       class assembly/Foo assembly::get_f@9()
+    IL_0065:  call       class assembly/Foo assembly::get_f@10()
     IL_006a:  pop
     IL_006b:  call       class assembly/Foo assembly::get_f()
     IL_0070:  ldfld      int32 assembly/Foo::X@
@@ -248,8 +245,3 @@
   } 
 
 } 
-
-
-
-
-
