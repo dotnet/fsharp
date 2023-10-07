@@ -72,6 +72,7 @@
     <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestionTests.fs" />
     <Compile Include="CodeFixes\RemoveUnnecessaryParenthesesTests.fs" />
+    <Compile Include="Refactors\RefactorTestFramework.fs" />
     <Compile Include="Refactors\AddExplicitReturnType.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />

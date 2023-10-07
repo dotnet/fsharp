@@ -17,6 +17,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open CancellableTasks
+open System.Diagnostics
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitReturnType"); Shared>]
 type internal AddExplicitReturnType [<ImportingConstructor>] () =
@@ -48,10 +49,15 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
 
         let codeActionFunc = (fun (cancellationToken: CancellationToken) ->
             task  {
+                let oldDocument = context.Document
+
                 let! sourceText = context.Document.GetTextAsync(cancellationToken)
                 let changedText = getChangedText sourceText
-                context.Document.Project.Solution.Id
-                return context.Document.WithText(changedText)
+
+                let newDocument = context.Document.WithText(changedText)
+                let! changes = newDocument.GetTextChangesAsync(oldDocument)
+                Debugger.Log(0,"",$"{changes}")
+                return newDocument
             }
         )
         let codeAction = 
