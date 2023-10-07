@@ -17,29 +17,33 @@ let queryTriePartial (trie: TrieNode) (path: LongIdentifier) : TrieNode option =
 
     visit trie path
 
-let mapNodeToQueryResult (node: TrieNode option) : QueryTrieNodeResult =
+let mapNodeToQueryResult (currentFileIndex: FileIndex) (node: TrieNode option) : QueryTrieNodeResult =
     match node with
     | Some finalNode ->
-        if Set.isEmpty finalNode.Files then
+        if
+            Set.isEmpty finalNode.Files
+            // If this node exposes files which the current index cannot see, we consider it not to have data at all.
+            || Set.forall (fun idx -> idx >= currentFileIndex) finalNode.Files
+        then
             QueryTrieNodeResult.NodeDoesNotExposeData
         else
             QueryTrieNodeResult.NodeExposesData(finalNode.Files)
     | None -> QueryTrieNodeResult.NodeDoesNotExist
 
 /// <summary>Find a path in the Trie.</summary>
-let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
-    queryTriePartial trie path |> mapNodeToQueryResult
+let queryTrie (currentFileIndex: FileIndex) (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
+    queryTriePartial trie path |> mapNodeToQueryResult currentFileIndex
 
 /// <summary>Same as 'queryTrie' but allows passing in a path combined from two parts, avoiding list allocation.</summary>
-let queryTrieDual (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
+let queryTrieDual (currentFileIndex: FileIndex) (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
     match queryTriePartial trie path1 with
     | Some intermediateNode -> queryTriePartial intermediateNode path2
     | None -> None
-    |> mapNodeToQueryResult
+    |> mapNodeToQueryResult currentFileIndex
 
 /// Process namespace declaration.
 let processNamespaceDeclaration (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie trie path
+    let queryResult = queryTrie state.CurrentFile trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -49,7 +53,7 @@ let processNamespaceDeclaration (trie: TrieNode) (path: LongIdentifier) (state: 
 /// Process an "open" statement.
 /// The statement could link to files and/or should be tracked as an open namespace.
 let processOpenPath (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie trie path
+    let queryResult = queryTrie state.CurrentFile trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -99,12 +103,13 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
             ||> Array.fold (fun state takeParts ->
                 let path = List.take takeParts path
                 // process the name was if it were a FQN
-                let stateAfterFullIdentifier = processIdentifier (queryTrieDual trie [] path) state
+                let stateAfterFullIdentifier =
+                    processIdentifier (queryTrieDual state.CurrentFile trie [] path) state
 
                 // Process the name in combination with the existing open namespaces
                 (stateAfterFullIdentifier, state.OpenNamespaces)
                 ||> Set.fold (fun acc openNS ->
-                    let queryResult = queryTrieDual trie openNS path
+                    let queryResult = queryTrieDual state.CurrentFile trie openNS path
                     processIdentifier queryResult acc))
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
@@ -137,7 +142,7 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: Fi
     // For each opened namespace, if none of already resolved dependencies define it, return the top-most file that defines it.
     Set.toArray result.OpenedNamespaces
     |> Array.choose (fun path ->
-        match queryTrie trie path with
+        match queryTrie fileIndex trie path with
         | QueryTrieNodeResult.NodeExposesData _
         | QueryTrieNodeResult.NodeDoesNotExist -> None
         | QueryTrieNodeResult.NodeDoesNotExposeData ->
