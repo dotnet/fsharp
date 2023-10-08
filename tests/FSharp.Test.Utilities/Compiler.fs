@@ -1162,22 +1162,22 @@ Actual:
 
     let private verifyFSILBaseline (baseline: Baseline) (result: CompilationOutput) : unit =
         match result.OutputPath with
-            | None -> failwith "Operation didn't produce any output!"
-            | Some p ->
-                let expectedIL =
-                    match baseline.ILBaseline.Content with
-                    | Some b -> b
-                    | None ->  String.Empty
-                let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual p expectedIL
+        | None -> failwith "Operation didn't produce any output!"
+        | Some p ->
+            let expectedIL =
+                match baseline.ILBaseline.Content with
+                | Some b -> b
+                | None ->  String.Empty
+            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual p expectedIL
 
-                if not success then
-                    // Failed try update baselines if required
-                    // If we are here then the il file has been produced we can write it back to the baseline location
-                    // if the environment variable TEST_UPDATE_BSL has been set
-                    updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                    createBaselineErrors baseline.ILBaseline actualIL
-                    let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                    Assert.Fail(errorMsg)
+            if not success then
+                // Failed try update baselines if required
+                // If we are here then the il file has been produced we can write it back to the baseline location
+                // if the environment variable TEST_UPDATE_BSL has been set
+                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                createBaselineErrors baseline.ILBaseline actualIL
+                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
