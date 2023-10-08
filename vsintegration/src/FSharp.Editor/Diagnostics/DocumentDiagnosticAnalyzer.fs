@@ -111,7 +111,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! unnecessaryParentheses =
                 match diagnosticType with
-                | DiagnosticsType.Semantic -> cancellableTask { return ImmutableArray.Empty }
+                | DiagnosticsType.Semantic -> CancellableTask.singleton ImmutableArray.Empty
                 | DiagnosticsType.Syntax ->
                     cancellableTask {
                         let fsharpSourceText = sourceText.ToFSharpSourceText()
