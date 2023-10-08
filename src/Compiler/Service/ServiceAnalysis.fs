@@ -454,11 +454,6 @@ module UnusedDeclarations =
         }
 
 module UnnecessaryParentheses =
-    type Associativity =
-        | NonAssociative
-        | LeftAssociative
-        | RightAssociative
-
     module SynExpr =
         open FSharp.Compiler.SyntaxTrivia
 
@@ -568,6 +563,11 @@ module UnnecessaryParentheses =
 
             /// **…
             | Exp
+
+        type Associativity =
+            | NonAssociative
+            | LeftAssociative
+            | RightAssociative
 
         module InfixOperator =
             open System
