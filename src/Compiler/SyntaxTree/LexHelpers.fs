@@ -224,14 +224,15 @@ let addByteChar buf (c: char) = addIntChar buf (int32 c % 256)
 
 type LargerThanOneByte = int
 type LargerThan127ButInsideByte = int
+
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127
 let errorsInByteStringBuffer (buf: ByteBuffer) =
     let bytes = buf.AsMemory()
-    assert(bytes.Length % 2 = 0)
-    
+    assert (bytes.Length % 2 = 0)
+
     // Enhancement?: return faulty values?
     //     But issue: we don't know range of values -> no direct mapping from value to range & notation
-    
+
     // values with high byte <> 0
     let mutable largerThanOneByteCount = 0
     // values with high byte = 0, but low byte > 127
@@ -244,7 +245,7 @@ let errorsInByteStringBuffer (buf: ByteBuffer) =
             largerThan127ButSingleByteCount <- largerThan127ButSingleByteCount + 1
 
     if largerThanOneByteCount + largerThan127ButSingleByteCount > 0 then
-        Some (largerThanOneByteCount, largerThan127ButSingleByteCount)
+        Some(largerThanOneByteCount, largerThan127ButSingleByteCount)
     else
         None
 
