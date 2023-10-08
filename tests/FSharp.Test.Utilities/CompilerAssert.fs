@@ -297,7 +297,7 @@ module rec CompilerAssertHelpers =
     type Worker () =
         inherit MarshalByRefObject()
 
-        member x.ExecuteTestCase assemblyPath (deps: string[]) =
+        member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
@@ -305,7 +305,8 @@ module rec CompilerAssertHelpers =
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
 
-            Assembly.LoadFrom assemblyPath |> executeAssemblyEntryPoint
+            let assembly = Assembly.LoadFrom assemblyPath
+            executeAssemblyEntryPoint assembly isFsx
 
     let adSetup =
         let setup = new System.AppDomainSetup ()
@@ -629,7 +630,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] |> ignore
+            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
