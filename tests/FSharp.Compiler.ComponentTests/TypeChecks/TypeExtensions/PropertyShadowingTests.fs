@@ -12,6 +12,7 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
         "ShadowWithExtensionMethod.fsx"
         "ShadowWithTypeExtension.fsx"
         "ShadowingAndStillOkWithChainedCalls.fsx"
+        "LinqCount.fsx"
     |]
 )>]
 let ``can hide property`` compilation =
@@ -21,7 +22,25 @@ let ``can hide property`` compilation =
     |> verifyBaselines
     |> compileAndRun
     |> shouldSucceed
-
+    
+[<Theory;
+  Directory(
+      folder
+      , Includes = [|
+        "ShadowWithExtensionMethod.fsx"
+        "ShadowWithTypeExtension.fsx"
+        "ShadowingAndStillOkWithChainedCalls.fsx"
+        "LinqCount.fsx"
+      |]
+      , BaselineSuffix = ".support.added.later"
+)>]
+let ``cannot hide property v7.0 support added later`` compilation =
+    compilation
+    |> asFsx
+    |> withOptions ["--langversion:7.0"]
+    |> verifyBaselines
+    |> compile
+    |> shouldFail
 
 [<Theory;
   Directory(
@@ -59,4 +78,3 @@ let ``cannot hide property v7.0`` compilation =
     |> verifyBaselines
     |> compile
     |> shouldFail
-    

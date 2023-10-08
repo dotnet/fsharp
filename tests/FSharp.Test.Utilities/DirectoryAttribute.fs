@@ -45,7 +45,7 @@ type DirectoryAttribute(dir: string) =
             | Some path -> path.FullName
             | None -> failwith "Can't set the output directory"
         let sourceFilePath = normalizePathSeparator (path ++ filename)
-        let fsBslFilePath = sourceFilePath + ".err.bsl"
+        let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
 #if DEBUG
