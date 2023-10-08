@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddExplicitReturnTypeAnnotation">
+        <source>Add explicit return type annotation</source>
+        <target state="new">Add explicit return type annotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
         <target state="translated">형식 정의에 누락된 '=' 추가</target>
