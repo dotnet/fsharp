@@ -747,8 +747,18 @@ module UnnecessaryParentheses =
 
             // … |> (fun … -> …)
             // … |> (function … -> …)
-            | InfixOperator.OuterLeft _, (SynExpr.Lambda _ | SynExpr.MatchLambda _)
-            | InfixOperator.OuterLeft _, SynExpr.MatchLambda _ -> false
+            // x > (match … with … -> …)
+            // x > (try … with … -> …)
+            // x > (try … finally …)
+            // x > (if p then q else r)
+            // x > (let y = z in y)
+            | InfixOperator.OuterLeft _, SynExpr.Lambda _
+            | InfixOperator.OuterLeft _, SynExpr.MatchLambda _
+            | InfixOperator.OuterLeft _, SynExpr.Match _
+            | InfixOperator.OuterLeft _, SynExpr.TryWith _
+            | InfixOperator.OuterLeft _, SynExpr.TryFinally _
+            | InfixOperator.OuterLeft _, SynExpr.IfThenElse _
+            | InfixOperator.OuterLeft _, SynExpr.LetOrUse _ -> false
 
             // -(-x)
             | _, SynExpr.App (isInfix = false; funcExpr = FuncExpr.SymbolicOperator _) -> false
@@ -1250,27 +1260,6 @@ module UnnecessaryParentheses =
                         // Parens are required here if the parenthesized expression
                         // would be invalid without its parentheses, e.g.,
                         //
-                        //     … <- (x
-                        //        + y)
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.Set (rhsExpr = outer)) :: _
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.DotSet (rhsExpr = outer)) :: _
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.LongIdentSet (expr = outer)) :: _
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.DotIndexedSet (valueExpr = outer)) :: _
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.NamedIndexedPropertySet (expr2 = outer)) :: _
-                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
-                          SyntaxNode.SynExpr (SynExpr.DotNamedIndexedPropertySet (rhsExpr = outer)) :: _ when
-                            obj.ReferenceEquals(inner, outer) && containsSensitiveIndentation parenRange
-                            ->
-                            ()
-
-                        // Parens are required here if the parenthesized expression
-                        // would be invalid without its parentheses, e.g.,
-                        //
                         //     let x = (x
                         //           + y)
                         | SynExpr.Paren (rightParenRange = Some _; range = parenRange), SyntaxNode.SynBinding _ :: _ when
@@ -1355,6 +1344,7 @@ module UnnecessaryParentheses =
                         // Ordinary nested exprs.
                         | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr outer :: _ when
                             not (SynExpr.parenthesesNeededBetween outer inner)
+                            && not (containsSensitiveIndentation range)
                             ->
                             ignore (ranges.Add range)
 

@@ -235,6 +235,18 @@ let _ =
             "match 3 with _ when (true) -> 3 | _ -> 3", "match 3 with _ when true -> 3 | _ -> 3"
             "match 3 with 1 -> (match 3 with _ -> 3) | _ -> match 3 with _ -> 3", "match 3 with 1 -> (match 3 with _ -> 3) | _ -> match 3 with _ -> 3"
             "match 3 with 1 -> (match 3 with _ -> 3) | _ -> (match 3 with _ -> 3)", "match 3 with 1 -> (match 3 with _ -> 3) | _ -> match 3 with _ -> 3"
+            "3 > (match x with _ -> 3)", "3 > match x with _ -> 3"
+            "(match x with _ -> 3) > 3", "(match x with _ -> 3) > 3"
+            "
+            3 > (match x with
+                 | 1
+                 | _ -> 3)
+            ",
+            "
+            3 >  match x with
+                 | 1
+                 | _ -> 3
+            "
 
             // Do
             "do (ignore 3)", "do ignore 3"
@@ -391,6 +403,32 @@ let _ =
             in x + y
             "
 
+            "
+            x <
+                (2
+             + 3
+                )
+            ",
+            "
+            x <
+                (2
+             + 3
+                )
+            "
+
+            "
+            x <
+                (2
+               + 3
+                )
+            ",
+            "
+            x <
+                 2
+               + 3
+                
+            "
+
             // LetOrUse
             "let x = 3 in let y = (4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
@@ -423,9 +461,7 @@ let _ =
             "if 3 = 3 then (3) else 3", "if 3 = 3 then 3 else 3"
             "if 3 = 3 then 3 else (3)", "if 3 = 3 then 3 else 3"
             "(if true then 1 else 2) > 3", "(if true then 1 else 2) > 3"
-            "(+if true then 1 else 2) > 3", "(+if true then 1 else 2) > 3"
-            //"3 > (if true then 1 else 2)", "3 > if true then 1 else 2" // TODO: In theory this is OK.
-            //"3 > (+if true then 1 else 2)", "3 > +if true then 1 else 2" // TODO: In theory this is OK.
+            "3 > (if true then 1 else 2)", "3 > if true then 1 else 2"
             "if (if true then true else true) then 3 else 3", "if (if true then true else true) then 3 else 3"
             "if (id <| if true then true else true) then 3 else 3", "if (id <| if true then true else true) then 3 else 3"
             "
