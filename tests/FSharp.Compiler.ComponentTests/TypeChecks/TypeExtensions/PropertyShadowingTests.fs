@@ -50,6 +50,7 @@ let ``cannot hide property v7.0 support added later`` compilation =
         "E_CannotShadowIndexedPropertyWithTypeExtension.fsx"
         "E_CannotShadowFunctionPropertyWithExtensionMethod.fsx"
         "E_CannotShadowFunctionPropertyWithTypeExtension.fsx"
+        "E_NoChangeForEvent.fsx"
     |]
 )>]
 let ``cannot hide property`` compilation =
@@ -69,6 +70,7 @@ let ``cannot hide property`` compilation =
         "E_CannotShadowIndexedPropertyWithTypeExtension.fsx"
         "E_CannotShadowFunctionPropertyWithExtensionMethod.fsx"
         "E_CannotShadowFunctionPropertyWithTypeExtension.fsx"
+        "E_NoChangeForEvent.fsx"
     |]
 )>]
 let ``cannot hide property v7.0`` compilation =
