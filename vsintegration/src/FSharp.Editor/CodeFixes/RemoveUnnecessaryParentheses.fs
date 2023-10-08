@@ -13,6 +13,40 @@ open Microsoft.CodeAnalysis.Text
 
 open CancellableTasks
 
+#if !NET7_0_OR_GREATER
+open System.Runtime.CompilerServices
+
+[<Sealed; AbstractClass; Extension>]
+type ReadOnlySpanExtensions =
+    [<Extension>]
+    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
+        let mutable i = 0
+        let mutable found = false
+
+        while not found && i < span.Length do
+            let c = span[i]
+
+            if c <> value0 && c <> value1 then
+                found <- true
+            else
+                i <- i + 1
+
+        if found then i else -1
+
+    [<Extension>]
+    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, values: ReadOnlySpan<char>) =
+        let mutable i = 0
+        let mutable found = false
+
+        while not found && i < span.Length do
+            if values.IndexOf span[i] < 0 then
+                found <- true
+            else
+                i <- i + 1
+
+        if found then i else -1
+#endif
+
 [<AutoOpen>]
 module private Patterns =
     let inline toPat f x = if f x then ValueSome() else ValueNone
@@ -25,6 +59,38 @@ module private Patterns =
 
     [<return: Struct>]
     let inline (|Symbol|_|) c = toPat Char.IsSymbol c
+
+module private SourceText =
+    let containsSensitiveIndentation (span: TextSpan) (sourceText: SourceText) =
+        let startLinePosition = sourceText.Lines.GetLinePosition span.Start
+        let endLinePosition = sourceText.Lines.GetLinePosition span.End
+        let startLine = startLinePosition.Line
+        let startCol = startLinePosition.Character
+        let endLine = endLinePosition.Line
+
+        if startLine = endLine then
+            false
+        else
+            let rec loop offsides lineNo startCol =
+                if lineNo <= endLine then
+                    let line = sourceText.Lines[ lineNo ].ToString()
+
+                    match offsides with
+                    | ValueNone ->
+                        let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
+
+                        if i >= 0 then
+                            loop (ValueSome(i + startCol)) (lineNo + 1) 0
+                        else
+                            loop offsides (lineNo + 1) 0
+
+                    | ValueSome offsidesCol ->
+                        let i = line.AsSpan(0, min offsidesCol line.Length).IndexOfAnyExcept(' ', ')')
+                        i <= offsidesCol || loop offsides (lineNo + 1) 0
+                else
+                    false
+
+            loop ValueNone startLine startCol
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
@@ -78,6 +144,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         // "……(……)"
                         //  ↑↑ ↑
                         match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[1] with
+                        | _, _, ('\n' | '\r') -> None
                         | _, ('(' | '[' | '{'), _ -> None
                         | _, '>', _ -> Some ShouldPutSpaceBefore
                         | ' ', '=', _ -> Some ShouldPutSpaceBefore
@@ -86,7 +153,11 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | _, LetterOrDigit, '(' -> None
                         | _, LetterOrDigit, _ -> Some ShouldPutSpaceBefore
                         | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _ -> None
+                        | _ ->
+                            if SourceText.containsSensitiveIndentation context.Span sourceText then
+                                Some ShouldPutSpaceBefore
+                            else
+                                None
 
                     let (|ShouldPutSpaceAfter|_|) (s: string) =
                         // "(……)…"

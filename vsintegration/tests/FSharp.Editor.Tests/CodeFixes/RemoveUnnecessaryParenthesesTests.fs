@@ -252,6 +252,145 @@ let _ =
             "id<int>(3)", "id<int> 3"
             "nameof(nameof)", "nameof nameof"
 
+            """
+            let x = (printfn $"{y}"
+                     2)
+            in x
+            """,
+            """
+            let x =  printfn $"{y}"
+                     2
+            in x
+            """
+
+            "
+            let x = (2
+         +             2)
+            in x
+            ",
+            "
+            let x = (2
+         +             2)
+            in x
+            "
+
+            "
+            let x = (2
+                     +             2)
+            in x
+            ",
+            "
+            let x =  2
+                     +             2
+            in x
+            "
+
+            "
+            let x = (2
+                   +             2)
+            in x
+            ",
+            "
+            let x =  2
+                   +             2
+            in x
+            "
+
+            "
+            let x = (2
+                   + 2)
+            in x
+            ",
+            "
+            let x =  2
+                   + 2
+            in x
+            "
+
+            "
+            let x = (2
+                    +2)
+            in x
+            ",
+            "
+            let x =  2
+                    +2
+            in x
+            "
+
+            "
+            let x = (2
+                     +2)
+            in x
+            ",
+            "
+            let x =  2
+                     +2
+            in x
+            "
+
+            "
+            let x = (2
+                 <<< 2)
+            in x
+            ",
+            "
+            let x =  2
+                 <<< 2
+            in x
+            "
+
+            "
+            let x = (
+                     2
+         +             2)
+            in x
+            ",
+            "
+            let x = (
+                     2
+         +             2)
+            in x
+            "
+
+            "
+            let x = (
+                     2
+                     +             2)
+            in x
+            ",
+            "
+            let x = 
+                     2
+                     +             2
+            in x
+            "
+
+            "
+            let x =
+                (2
+             + 3
+                )
+
+            let y =
+                (2
+               + 2)
+
+            in x + y
+            ",
+            "
+            let x =
+                (2
+             + 3
+                )
+
+            let y =
+                 2
+               + 2
+
+            in x + y
+            "
+
             // LetOrUse
             "let x = 3 in let y = (4) in x + y", "let x = 3 in let y = 4 in x + y"
             "let x = 3 in let y = 4 in (x + y)", "let x = 3 in let y = 4 in x + y"
@@ -283,6 +422,10 @@ let _ =
             "if (3 = 3) then 3 else 3", "if 3 = 3 then 3 else 3"
             "if 3 = 3 then (3) else 3", "if 3 = 3 then 3 else 3"
             "if 3 = 3 then 3 else (3)", "if 3 = 3 then 3 else 3"
+            "(if true then 1 else 2) > 3", "(if true then 1 else 2) > 3"
+            "(+if true then 1 else 2) > 3", "(+if true then 1 else 2) > 3"
+            //"3 > (if true then 1 else 2)", "3 > if true then 1 else 2" // TODO: In theory this is OK.
+            //"3 > (+if true then 1 else 2)", "3 > +if true then 1 else 2" // TODO: In theory this is OK.
             "if (if true then true else true) then 3 else 3", "if (if true then true else true) then 3 else 3"
             "if (id <| if true then true else true) then 3 else 3", "if (id <| if true then true else true) then 3 else 3"
             "
@@ -312,6 +455,28 @@ let _ =
             // Set
             "let mutable x = 3 in (x) <- 3", "let mutable x = 3 in x <- 3"
             "let mutable x = 3 in x <- (3)", "let mutable x = 3 in x <- 3"
+
+            """
+            let mutable x = 3
+            x <- (printfn $"{y}"
+                  3)
+            """,
+            """
+            let mutable x = 3
+            x <-  printfn $"{y}"
+                  3
+            """
+
+            """
+            let mutable x = 3
+            x <- (3
+              <<< 3)
+            """,
+            """
+            let mutable x = 3
+            x <-  3
+              <<< 3
+            """
 
             // DotIndexedGet
             "[(0)][0]", "[0][0]"
@@ -1178,6 +1343,7 @@ match Unchecked.defaultof<_> with
                 "(A as B) & C", "(A as B) & C"
                 "(A as B) :: C", "(A as B) :: C"
                 "(A as B) as C", "A as B as C"
+                "(A as B), C", "(A as B), C"
             }
 
         [<Theory; MemberData(nameof infixPatterns)>]

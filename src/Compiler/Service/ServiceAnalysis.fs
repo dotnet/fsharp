@@ -618,7 +618,7 @@ module UnnecessaryParentheses =
             /// Matches when the expression outside and to the left of the parentheses
             /// is the application of an infix operator and returns the parsed operator.
             ///
-            /// x + (y + z)
+            /// x λ (y ρ z)
             ///
             /// (The upcast, downcast, and type test operators cannot be overloaded and
             /// only ever have a type on the right, not an expression.)
@@ -631,7 +631,7 @@ module UnnecessaryParentheses =
             /// Matches when the expression outside and to the right of the parentheses
             /// is the application of an infix operator and returns the parsed operator.
             ///
-            /// (x + y) + z
+            /// (x λ y) ρ z
             [<return: Struct>]
             let (|OuterRight|_|) synExpr =
                 match synExpr with
@@ -796,6 +796,12 @@ module UnnecessaryParentheses =
             | SynExpr.Downcast _, SynExpr.Typed _
             | SynExpr.AddressOf _, SynExpr.Typed _
             | SynExpr.JoinIn _, SynExpr.Typed _ -> true
+
+            | SynExpr.LongIdentSet(expr = SynExpr.Paren (expr = rhsExpr)), _
+            | SynExpr.DotSet(rhsExpr = SynExpr.Paren (expr = rhsExpr)), _
+            | SynExpr.Set(rhsExpr = SynExpr.Paren (expr = rhsExpr)), _
+            | SynExpr.DotIndexedSet(valueExpr = SynExpr.Paren (expr = rhsExpr)), _
+            | SynExpr.NamedIndexedPropertySet(expr2 = SynExpr.Paren (expr = rhsExpr)), _ when obj.ReferenceEquals(rhsExpr, inner) -> false
 
             // assert (x = y)
             | SynExpr.Assert _, InfixOperator.Inner _ -> true
@@ -974,27 +980,68 @@ module UnnecessaryParentheses =
         /// then, else
         | ThenOrElse of range
 
-    let getUnnecessaryParentheses (getTextAtRange: range -> string) (parsedInput: ParsedInput) : Async<range seq> =
+    module ControlFlowPart =
+        /// A comparer that considers the first control flow part
+        /// equal to the second if both end on the same line,
+        /// the first ends before the second begins on that line,
+        /// and both are of kinds that would be syntactically ambiguous
+        /// when in such a position and unseparated by parentheses.
+        /// Falls back to range comparison otherwise.
+        let comparer =
+            { new IComparer<ControlFlowPart> with
+                member _.Compare(x, y) =
+                    match x, y with
+                    | MatchOrTry exprRange, BarOrArrowOrFinallyOrWith delimiterRange
+                    | IfThenElse exprRange, ThenOrElse delimiterRange when
+                        exprRange.EndLine = delimiterRange.EndLine
+                        && exprRange.EndColumn < delimiterRange.StartColumn
+                        ->
+                        0
+
+                    | (MatchOrTry x | BarOrArrowOrFinallyOrWith x | IfThenElse x | ThenOrElse x),
+                      (MatchOrTry y | BarOrArrowOrFinallyOrWith y | IfThenElse y | ThenOrElse y) -> Range.rangeOrder.Compare(x, y)
+            }
+
+    open System
+
+#if !NET7_0_OR_GREATER
+    [<Sealed; AbstractClass; Extension>]
+    type ReadOnlySpanExtensions =
+        [<Extension>]
+        static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
+            let mutable i = 0
+            let mutable found = false
+
+            while not found && i < span.Length do
+                let c = span[i]
+
+                if c <> value0 && c <> value1 then
+                    found <- true
+                else
+                    i <- i + 1
+
+            if found then i else -1
+
+        [<Extension>]
+        static member IndexOfAnyExcept(span: ReadOnlySpan<char>, values: ReadOnlySpan<char>) =
+            let mutable i = 0
+            let mutable found = false
+
+            while not found && i < span.Length do
+                if values.IndexOf span[i] < 0 then
+                    found <- true
+                else
+                    i <- i + 1
+
+            if found then i else -1
+#endif
+
+    let getUnnecessaryParentheses (getSourceLineStr: int -> string) (parsedInput: ParsedInput) : Async<range seq> =
         async {
             let ranges = HashSet Range.comparer
 
             let visitor =
-                let branchingConstructParts =
-                    SortedDictionary
-                        { new IComparer<ControlFlowPart> with
-                            member _.Compare(x, y) =
-                                match x, y with
-                                | MatchOrTry exprRange, BarOrArrowOrFinallyOrWith delimiterRange
-                                | IfThenElse exprRange, ThenOrElse delimiterRange when
-                                    exprRange.EndLine = delimiterRange.EndLine
-                                    && exprRange.EndColumn < delimiterRange.StartColumn
-                                    ->
-                                    0
-
-                                | (MatchOrTry x | BarOrArrowOrFinallyOrWith x | IfThenElse x | ThenOrElse x),
-                                  (MatchOrTry y | BarOrArrowOrFinallyOrWith y | IfThenElse y | ThenOrElse y) ->
-                                    Range.rangeOrder.Compare(x, y)
-                        }
+                let controlFlowConstructParts = SortedDictionary ControlFlowPart.comparer
 
                 // Add the key and value to the dictionary, wrapping the value in a set.
                 // If the key already exists, add the value to the existing set.
@@ -1007,9 +1054,51 @@ module UnnecessaryParentheses =
 
                     | true, values -> ignore (values.Add value)
 
+                // Indicates whether the parentheses with the given range
+                // enclose an expression whose indentation would be invalid
+                // in context if it were not surrounded by parentheses.
+                let containsSensitiveIndentation (parenRange: range) =
+                    let startLine = parenRange.StartLine
+                    let endLine = parenRange.EndLine
+
+                    if startLine = endLine then
+                        false
+                    else
+                        let rec loop offsides lineNo startCol =
+                            if lineNo <= endLine then
+                                let line = getSourceLineStr lineNo
+
+                                match offsides with
+                                | ValueNone ->
+                                    let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
+
+                                    if i >= 0 then
+                                        loop (ValueSome(i + startCol)) (lineNo + 1) 0
+                                    else
+                                        loop offsides (lineNo + 1) 0
+
+                                | ValueSome offsidesCol ->
+                                    let i = line.AsSpan(0, min offsidesCol line.Length).IndexOfAnyExcept(' ', ')')
+
+                                    if i >= 0 && i < offsidesCol then
+                                        let slice = line.AsSpan(i, min (offsidesCol - i) (line.Length - i))
+                                        let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|0$.?".AsSpan())
+
+                                        i + (if j >= 0 && slice[j] = ' ' then j else 0) < offsidesCol - 1
+                                        || loop offsides (lineNo + 1) 0
+                                    else
+                                        loop offsides (lineNo + 1) 0
+                            else
+                                false
+
+                        loop ValueNone startLine (parenRange.StartColumn + 1)
+
                 { new SyntaxVisitorBase<obj>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
-                        let (|Text|) = getTextAtRange
+                        let (|TextStartsWith|) (m: range) =
+                            let line = getSourceLineStr m.StartLine
+                            line[m.StartColumn]
+
                         let (|StartsWith|) (s: string) = s[0]
 
                         let (|StartsWithSymbol|_|) =
@@ -1017,18 +1106,18 @@ module UnnecessaryParentheses =
                             | SynExpr.Quote _
                             | SynExpr.InterpolatedString _
                             | SynExpr.Const (SynConst.String(synStringKind = SynStringKind.Verbatim), _)
-                            | SynExpr.Const (SynConst.SByte _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Int16 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Int32 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Int64 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Byte _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.UInt16 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.UInt32 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.UInt64 _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Decimal _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Double _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Single _, Text (StartsWith ('-' | '+')))
-                            | SynExpr.Const (SynConst.Measure (_, Text (StartsWith ('-' | '+')), _, _), _)
+                            | SynExpr.Const (SynConst.SByte _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Int16 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Int32 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Int64 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Byte _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.UInt16 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.UInt32 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.UInt64 _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Decimal _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Double _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Single _, TextStartsWith ('-' | '+'))
+                            | SynExpr.Const (SynConst.Measure (_, TextStartsWith ('-' | '+'), _, _), _)
                             | SynExpr.Const (SynConst.UserNum (StartsWith ('-' | '+'), _), _) -> Some StartsWithSymbol
                             | _ -> None
 
@@ -1066,10 +1155,10 @@ module UnnecessaryParentheses =
                         //     // Etc., etc., etc.
                         | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range),
                           SyntaxNode.SynExpr (SynExpr.IfThenElse (trivia = trivia) as outer) :: _ ->
-                            branchingConstructParts |> add (ThenOrElse trivia.ThenKeyword) range
+                            controlFlowConstructParts |> add (ThenOrElse trivia.ThenKeyword) range
 
                             match trivia.ElseKeyword with
-                            | Some elseKeyword -> branchingConstructParts |> add (ThenOrElse elseKeyword) range
+                            | Some elseKeyword -> controlFlowConstructParts |> add (ThenOrElse elseKeyword) range
                             | None -> ()
 
                             if not (SynExpr.parenthesesNeededBetween outer inner) then
@@ -1078,7 +1167,7 @@ module UnnecessaryParentheses =
                         // Try-finally has a similar problem.
                         | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range),
                           SyntaxNode.SynExpr (SynExpr.TryFinally (trivia = trivia) as outer) :: _ ->
-                            branchingConstructParts
+                            controlFlowConstructParts
                             |> add (BarOrArrowOrFinallyOrWith trivia.FinallyKeyword) range
 
                             if not (SynExpr.parenthesesNeededBetween outer inner) then
@@ -1087,16 +1176,16 @@ module UnnecessaryParentheses =
                         | SynExpr.Paren (range = range), SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses; trivia = trivia)) :: _
                         | SynExpr.Paren (range = range),
                           SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.TryWith (withCases = clauses; trivia = trivia)) :: _ ->
-                            branchingConstructParts
+                            controlFlowConstructParts
                             |> add (BarOrArrowOrFinallyOrWith trivia.WithKeyword) range
 
                             for SynMatchClause (trivia = trivia) in clauses do
                                 match trivia.BarRange with
-                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
+                                | Some barRange -> controlFlowConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
                                 | None -> ()
 
                                 match trivia.ArrowRange with
-                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
+                                | Some arrowRange -> controlFlowConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
                                 | None -> ()
 
                             ignore (ranges.Add range)
@@ -1114,11 +1203,11 @@ module UnnecessaryParentheses =
                           SyntaxNode.SynExpr (SynExpr.YieldOrReturnFrom _) :: SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr (SynExpr.MatchBang (clauses = clauses)) :: _ ->
                             for SynMatchClause (trivia = trivia) in clauses do
                                 match trivia.BarRange with
-                                | Some barRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
+                                | Some barRange -> controlFlowConstructParts |> add (BarOrArrowOrFinallyOrWith barRange) range
                                 | None -> ()
 
                                 match trivia.ArrowRange with
-                                | Some arrowRange -> branchingConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
+                                | Some arrowRange -> controlFlowConstructParts |> add (BarOrArrowOrFinallyOrWith arrowRange) range
                                 | None -> ()
 
                             ignore (ranges.Add range)
@@ -1128,7 +1217,7 @@ module UnnecessaryParentheses =
                         // it would directly precede and to which it would adhere
                         // if the parentheses were removed, the parentheses must stay.
                         | SynExpr.IfThenElse (range = range), _ ->
-                            match branchingConstructParts.TryGetValue(IfThenElse range) with
+                            match controlFlowConstructParts.TryGetValue(IfThenElse range) with
                             | true, parenRanges ->
                                 for parenRange in parenRanges do
                                     if Range.rangeContainsRange parenRange range then
@@ -1145,7 +1234,7 @@ module UnnecessaryParentheses =
                         | SynExpr.MatchLambda (range = range), _
                         | SynExpr.MatchBang (range = range), _
                         | SynExpr.TryWith (range = range), _ ->
-                            match branchingConstructParts.TryGetValue(MatchOrTry range) with
+                            match controlFlowConstructParts.TryGetValue(MatchOrTry range) with
                             | true, parenRanges ->
                                 for parenRange in parenRanges do
                                     if Range.rangeContainsRange parenRange range then
@@ -1158,17 +1247,42 @@ module UnnecessaryParentheses =
                         //     let inline f x = (^a : (static member Parse : string -> ^a) x)
                         | SynExpr.Paren(expr = SynExpr.TraitCall _), _ -> ()
 
-                        // Parens are otherwise never required in these cases.
+                        // Parens are required here if the parenthesized expression
+                        // would be invalid without its parentheses, e.g.,
+                        //
+                        //     … <- (x
+                        //        + y)
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.Set (rhsExpr = outer)) :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.DotSet (rhsExpr = outer)) :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.LongIdentSet (expr = outer)) :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.DotIndexedSet (valueExpr = outer)) :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.NamedIndexedPropertySet (expr2 = outer)) :: _
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange) & inner,
+                          SyntaxNode.SynExpr (SynExpr.DotNamedIndexedPropertySet (rhsExpr = outer)) :: _ when
+                            obj.ReferenceEquals(inner, outer) && containsSensitiveIndentation parenRange
+                            ->
+                            ()
+
+                        // Parens are required here if the parenthesized expression
+                        // would be invalid without its parentheses, e.g.,
+                        //
+                        //     let x = (x
+                        //           + y)
+                        | SynExpr.Paren (rightParenRange = Some _; range = parenRange), SyntaxNode.SynBinding _ :: _ when
+                            containsSensitiveIndentation parenRange
+                            ->
+                            ()
+
+                        // Parens are otherwise never required for bindings or for top-level expressions:
                         //
                         //     let x = (…)
                         //     _.member X = (…)
-                        //
-                        // …Notwithstanding pathological cases like
-                        //
-                        //     let x = (2
-                        //   +             2)
-                        //
-                        // We don't currently handle those…
+                        //     (printfn "Hello, world.")
                         | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynBinding _ :: _
                         | SynExpr.Paren (rightParenRange = Some _; range = range), SyntaxNode.SynModule _ :: _ -> ignore (ranges.Add range)
 

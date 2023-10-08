@@ -114,10 +114,12 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 | DiagnosticsType.Semantic -> cancellableTask { return ImmutableArray.Empty }
                 | DiagnosticsType.Syntax ->
                     cancellableTask {
-                        let getTextAtRange m =
-                            sourceText.ToString(RoslynHelpers.FSharpRangeToTextSpan(sourceText, m))
+                        let fsharpSourceText = sourceText.ToFSharpSourceText()
 
-                        let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getTextAtRange parseResults.ParseTree
+                        let! unnecessaryParentheses =
+                            UnnecessaryParentheses.getUnnecessaryParentheses
+                                (FSharp.Compiler.Text.Line.toZ >> fsharpSourceText.GetLineString)
+                                parseResults.ParseTree
 
                         let descriptor =
                             let title = "Parentheses can be removed."
