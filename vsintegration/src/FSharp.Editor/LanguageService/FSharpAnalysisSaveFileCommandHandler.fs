@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.Text.Editor.Commanding.Commands
 open Microsoft.VisualStudio.Commanding
 open Microsoft.VisualStudio.Utilities
 open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // This causes re-analysis to happen when a F# document is saved.
 // We do this because FCS relies on the file system and existing open documents
@@ -88,7 +89,7 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                                     if docIdsToReanalyze.Length > 0 then
                                         analyzerService.Reanalyze(workspace, documentIds = docIdsToReanalyze)
                                 with ex ->
-                                    Telemetry.TelemetryReporter.ReportFault("FSharpAnalysisSaveFileCommandHandler.ExecuteCommand", e = ex)
+                                    TelemetryReporter.ReportFault(TelemetryEvents.AnalysisSaveFileHandler, e = ex)
                                     logException ex
                             }
                             |> CancellableTask.startWithoutCancellation

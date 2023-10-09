@@ -355,7 +355,7 @@ type internal FSharpCompletionProvider
                     if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                     else
-                        [||]
+                        Array.empty
 
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
 

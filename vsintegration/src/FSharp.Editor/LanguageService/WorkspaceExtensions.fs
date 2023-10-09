@@ -94,8 +94,7 @@ module private CheckerExtensions =
 
                     return results
                 else
-                    let! results = parseAndCheckFile
-                    return results
+                    return! parseAndCheckFile
             }
 
         /// Parse and check the source text from the Roslyn document.

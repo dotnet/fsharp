@@ -25,7 +25,6 @@ type internal AssemblyContentProvider() =
                 |> Seq.groupBy (fun asm -> asm.FileName)
                 |> Seq.map (fun (fileName, asms) -> fileName, List.ofSeq asms)
                 |> Seq.rev // if mscorlib.dll is the first then FSC raises exception when we try to get Content.Entities from it.
-                |> Seq.toArray
 
             for fileName, signatures in assembliesByFileName do
                 let contentType = AssemblyContentType.Public // it's always Public for now since we don't support InternalsVisibleTo attribute yet
