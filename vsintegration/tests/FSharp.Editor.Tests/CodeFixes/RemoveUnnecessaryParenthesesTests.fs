@@ -485,6 +485,8 @@ let _ =
             "([]).Length", "[].Length"
 
             // DotLambda
+            "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+
             // DotSet
             "(ref 3).Value <- (3)", "(ref 3).Value <- 3"
 
