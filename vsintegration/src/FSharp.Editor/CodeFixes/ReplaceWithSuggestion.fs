@@ -23,12 +23,12 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
 
     override this.RegisterCodeFixesAsync context =
         if context.Document.Project.IsFSharpCodeFixesSuggestNamesForErrorsEnabled then
-            context.RegisterFsharpFix this
+            context.RegisterFsharpFixes this
         else
             Task.CompletedTask
 
-    interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync context =
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
             cancellableTask {
                 let! parseFileResults, checkFileResults =
                     context.Document.GetFSharpParseAndCheckResultsAsync(nameof ReplaceWithSuggestionCodeFixProvider)
@@ -49,20 +49,14 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
                     for item in declInfo.Items do
                         addToBuffer item.NameInList
 
-                let suggestionOpt =
+                return
                     CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText
-                    |> Seq.tryHead
+                    |> Seq.map (fun suggestion ->
+                        let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
 
-                match suggestionOpt with
-                | None -> return ValueNone
-                | Some suggestion ->
-                    let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
-
-                    return
-                        ValueSome
-                            {
-                                Name = CodeFix.ReplaceWithSuggestion
-                                Message = CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
-                                Changes = [ TextChange(context.Span, replacement) ]
-                            }
+                        {
+                            Name = CodeFix.ReplaceWithSuggestion
+                            Message = CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
+                            Changes = [ TextChange(context.Span, replacement) ]
+                        })
             }

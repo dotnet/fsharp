@@ -12,7 +12,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-
 [<AutoOpen>]
 module private CheckerExtensions =
 

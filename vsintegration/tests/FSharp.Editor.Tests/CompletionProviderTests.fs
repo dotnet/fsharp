@@ -1710,6 +1710,16 @@ fun (Some v) -> ()
 
 type C =
     member _.M (Ids (c, o)) = ()
+
+
+type MyAlias = int
+
+type Id2<'a> = Id2 of fff: 'a
+
+let r: Id2<MyAlias> = Id2 3
+
+match r with
+| Id2 (a) -> ()
 """
 
         VerifyCompletionList(fileContents, "let x (Ids (c", [ "customerId"; "num" ], [])
@@ -1720,7 +1730,9 @@ type C =
         VerifyCompletionList(fileContents, "fun (Ids (c, o", [ "orderId"; "option" ], [])
         VerifyCompletionList(fileContents, "fun (Some v", [ "value" ], [])
         VerifyCompletionList(fileContents, "member _.M (Ids (c", [ "customerId"; "num" ], [ "orderId" ])
-        VerifyCompletionList(fileContents, "member _.M (Ids (c, o", [ "orderId"; "option" ], [ "customerId"; "num" ])
+
+        // Respecting the type alias
+        VerifyCompletionList(fileContents, "| Id2 (a", [ "fff"; "myAlias" ], [ "num" ])
 
     [<Fact>]
     let ``Completion list does not contain suggested names in tuple deconstruction`` () =
@@ -1735,7 +1747,9 @@ match Some (1, 2) with
         VerifyCompletionList(fileContents, "| Some v", [ "value" ], [])
         VerifyCompletionList(fileContents, "| Some (a", [], [ "value" ])
         VerifyCompletionList(fileContents, "| Some (a, b", [], [ "value" ])
-        VerifyCompletionList(fileContents, "| Some (c", [], [ "value" ])
+
+        // Binding the whole tuple here, so the field name should be present
+        VerifyCompletionList(fileContents, "| Some (c", [ "value" ], [])
 
     [<Fact>]
     let ``Completion list contains suggested names for union case field pattern based on the name of the generic type's solution`` () =

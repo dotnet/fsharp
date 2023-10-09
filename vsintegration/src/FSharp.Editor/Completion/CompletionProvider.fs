@@ -218,7 +218,8 @@ type internal FSharpCompletionProvider
                                 if n <> 0 then
                                     n
                                 else
-                                    x.MinorPriority.CompareTo(y.MinorPriority)) declarations.Items
+                                    x.MinorPriority.CompareTo(y.MinorPriority))
+                declarations.Items
 
             declarationItems <- declarations.Items
 
@@ -230,6 +231,7 @@ type internal FSharpCompletionProvider
 
             for number = 0 to declarationItems.Length - 1 do
                 let declarationItem = declarationItems[number]
+
                 let glyph =
                     Tokenizer.FSharpGlyphToRoslynGlyph(declarationItem.Glyph, declarationItem.Accessibility)
 
@@ -280,7 +282,7 @@ type internal FSharpCompletionProvider
                 let sortText = priority.ToString("D6")
                 let completionItem = completionItem.WithSortText(sortText)
                 results.Add(completionItem)
-                
+
             if
                 results.Count > 0
                 && not declarations.IsForType
@@ -431,7 +433,9 @@ type internal FSharpCompletionProvider
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
 
                 let fullNameIdents =
-                    fullName |> ValueOption.map (fun x -> x.Split '.') |> ValueOption.defaultValue [||]
+                    fullName
+                    |> ValueOption.map (fun x -> x.Split '.')
+                    |> ValueOption.defaultValue [||]
 
                 let insertionPoint =
                     if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then

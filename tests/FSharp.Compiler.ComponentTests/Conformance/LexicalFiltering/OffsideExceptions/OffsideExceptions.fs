@@ -262,7 +262,7 @@ module A
         |> typecheck
         |> shouldFail
         |> withResult {
-            Error = Warning 58
+            Error = Error 58
             Range = { StartLine = 4
                       StartColumn = 5
                       EndLine = 4

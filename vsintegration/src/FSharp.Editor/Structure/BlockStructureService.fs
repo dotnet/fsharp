@@ -145,7 +145,9 @@ module internal BlockStructure =
                     else
                         FSharpBlockTypes.Nonstructural
 
-                ValueSome(FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
+                ValueSome(
+                    FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope)
+                )
             | _, _ -> ValueNone)
 
 open BlockStructure
