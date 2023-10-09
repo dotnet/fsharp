@@ -20,14 +20,16 @@
             "type": "shell",
             "args": [
                 "build",
-                "-c Debug",
+                "-c",
+                "Debug",
                 "FSharp.Compiler.Service.sln"
             ],
             "windows": {
                 "command": "dotnet",
                 "args": [
                     "build",
-                    "-c Debug",
+                    "-c",
+                    "Debug",
                     "FSharp.Compiler.Service.sln"
                 ],
             },
@@ -40,14 +42,16 @@
             "type": "shell",
             "args": [
                 "build",
-                "-c Release",
+                "-c",
+                "Release",
                 "FSharp.Compiler.Service.sln"
             ],
             "windows": {
                 "command": "dotnet",
                 "args": [
                     "build",
-                    "-c Release",
+                    "-c",
+                    "Release",
                     "FSharp.Compiler.Service.sln"
                 ],
             },

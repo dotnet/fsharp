@@ -2210,7 +2210,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
 
-            if enableImplicitYield then 
+            if enableImplicitYield then
                 let hasTypeUnit, expr, tpenv = TryTcStmt cenv env tpenv comp
                 if hasTypeUnit then 
                     Choice2Of2 expr, tpenv
@@ -2218,6 +2218,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
+                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
                     let resExpr = mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr(expr, genResultTy, mExpr, exprTy))
