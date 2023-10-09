@@ -1,17 +1,17 @@
 ﻿module internal FSharp.Compiler.GraphChecking.TrieMapping
 
-open System.Collections.Generic 
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Text
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 
-// TODO: Deal with Immutable collections and benchmark whether they are worth it?
-
 [<RequireQualifiedAccess>]
 module private ImmutableHashSet =
     /// Create a new HashSet<'T> with a single element.
-    let singleton (value: 'T) = ImmutableHashSet.Create<'T>(Array.singleton value)
+    let singleton (value: 'T) =
+        ImmutableHashSet.Create<'T>(Array.singleton value)
+
     /// Create new new HashSet<'T> with zero elements.
     let empty () = ImmutableHashSet.Empty
 
@@ -61,61 +61,45 @@ let doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
             || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
 /// Merge all the accumulator Trie nodes into the current Trie node.
-let mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : TrieNode =
-    /// Add the current node as child node to the root node.
-    /// If the node already exists and is a namespace node, the existing node will be updated with new information via mutation.
-    let rec mergeTrieNodesAux (root: TrieNode) (KeyValue (k, v)) =
-        if root.Children.ContainsKey k then
-            let node = root.Children[k]
+let rec mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : TrieNode =
+    let nextNodeInfo: TrieNodeInfo =
+        match accumulatorTrie.Current, currentTrie.Current with
+        | TrieNodeInfo.Root accFiles, TrieNodeInfo.Root currentFiles -> TrieNodeInfo.Root(accFiles.Union currentFiles)
+        | TrieNodeInfo.Namespace (name = name
+                                  filesThatExposeTypes = currentFilesThatExposeTypes
+                                  filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
+          TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
+            TrieNodeInfo.Namespace(
+                name,
+                currentFilesThatExposeTypes.Union otherFiles,
+                currentFilesWithoutTypes.Union otherFilesWithoutTypes
+            )
+        // Edge case scenario detected in https://github.com/dotnet/fsharp/issues/15985
+        // Keep the namespace (as it can still have nested children).
+        | TrieNodeInfo.Namespace (name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes), TrieNodeInfo.Module (_name, file)
+        // Replace the module in favour of the namespace (which can hold nested children).
+        | TrieNodeInfo.Module (_name, file), TrieNodeInfo.Namespace (name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
+            TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes.Add file, filesDefiningNamespaceWithoutTypes)
+        | _ -> accumulatorTrie.Current
 
-            match node.Current, v.Current with
-            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes
-                                      filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
-              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->                
-                currentFilesThatExposeTypes.UnionWith otherFiles
-                currentFilesWithoutTypes.UnionWith otherFilesWithoutTypes
-            // Edge case scenario detected in https://github.com/dotnet/fsharp/issues/15985
-            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes), TrieNodeInfo.Module (_name, file) ->
-                // Keep the namespace (as it can still have nested children).
-                currentFilesThatExposeTypes.Add file |> ignore
-            | TrieNodeInfo.Module (_name, file), TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes) ->
-                currentFilesThatExposeTypes.Add file |> ignore
-                // Replace the module in favour of the namespace (which can hold nested children).
-                root.Children[ k ] <- v
-            | _ -> ()
+    let nextChildren =
+        (accumulatorTrie.Children, currentTrie.Children)
+        ||> Seq.fold (fun accChildren (KeyValue (k, v)) ->
+            if not (accChildren.ContainsKey k) then
+                accChildren.Add(k, v)
+            else
+                let accNode = accChildren[k]
+                accChildren.SetItem(k, mergeTrieNodes accNode v))
 
-            for kv in v.Children do
-                mergeTrieNodesAux node kv
+    {
+        Current = nextNodeInfo
+        Children = nextChildren
+    }
 
-        else
-            root.Children.Add(k, v)
-
-    match accumulatorTrie.Current, currentTrie.Current with
-    | TrieNodeInfo.Root accFiles, TrieNodeInfo.Root currentFiles ->
-        
-        
-        for rootIndex in currentTrie.Files do
-            accFiles.Add rootIndex |> ignore
-
-        for kv in currentTrie.Children do
-            mergeTrieNodesAux accumulatorTrie kv
-
-        accumulatorTrie
-    | _ ->
-        System.Diagnostics.Debug.Assert(
-            false,
-            $"The top level node info of the accumulator and current trie should be Root, got {accumulatorTrie.Current} and {currentTrie.Current}"
-        )
-
-        accumulatorTrie
-
-let mkImmutableDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) =
-    ImmutableDictionary.CreateRange(items)
+let mkImmutableDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) = ImmutableDictionary.CreateRange(items)
 
 let mkSingletonDict key value =
-    let dict = Dictionary(1)
-    dict.Add(key, value)
-    dict
+    ImmutableDictionary.Empty.Add(key, value)
 
 /// Process a top level SynModuleOrNamespace(Sig)
 let processSynModuleOrNamespace<'Decl>
@@ -151,9 +135,9 @@ let processSynModuleOrNamespace<'Decl>
                     if isNamespace then
                         let filesThatExposeTypes, filesDefiningNamespaceWithoutTypes =
                             if hasTypesOrAutoOpenNestedModules then
-                                HashSet.singleton idx, HashSet.empty ()
+                                ImmutableHashSet.singleton idx, ImmutableHashSet.empty ()
                             else
-                                HashSet.empty (), HashSet.singleton idx
+                                ImmutableHashSet.empty (), ImmutableHashSet.singleton idx
 
                         TrieNodeInfo.Namespace(name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes)
                     else
@@ -186,10 +170,10 @@ let processSynModuleOrNamespace<'Decl>
                                 let topLevelModuleOrNamespaceHasAutoOpen = isAnyAttributeAutoOpen attributes
 
                                 if topLevelModuleOrNamespaceHasAutoOpen && not isNamespace then
-                                    HashSet.singleton idx, HashSet.empty ()
+                                    ImmutableHashSet.singleton idx, ImmutableHashSet.empty ()
                                 else
-                                    HashSet.empty (), HashSet.singleton idx
-                            | _ -> HashSet.empty (), HashSet.singleton idx
+                                    ImmutableHashSet.empty (), ImmutableHashSet.singleton idx
+                            | _ -> ImmutableHashSet.empty (), ImmutableHashSet.singleton idx
 
                         let current =
                             TrieNodeInfo.Namespace(name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes)
@@ -199,12 +183,14 @@ let processSynModuleOrNamespace<'Decl>
 
         if kind = SynModuleOrNamespaceKind.AnonModule then
             // We collect the child nodes from the decls
-            decls |> List.choose (mkTrieForDeclaration idx) |> mkImmutableDictFromKeyValuePairs
+            decls
+            |> List.choose (mkTrieForDeclaration idx)
+            |> mkImmutableDictFromKeyValuePairs
         else
             visit id name
 
     {
-        Current = Root(HashSet.empty ())
+        Current = Root(ImmutableHashSet.empty ())
         Children = children
     }
 
@@ -215,7 +201,7 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
         // If a file exposes content which does not need an open statement to access, we consider the file to be part of the root.
         idx,
         {
-            Current = Root (ImmutableHashSet.singleton idx)
+            Current = Root(ImmutableHashSet.singleton idx)
             Children = ImmutableDictionary.Empty
         }
     else
@@ -312,10 +298,8 @@ let mkTrie (files: FileInProject array) : (FileIndex * TrieNode) array =
         |> Array.Parallel.map mkTrieNodeFor
         |> Array.scan
             (fun (_, acc) (idx, current) ->
-                // We first need to create a copy of the Trie as Children are inside a mutable Dictionary.
-                let accCopy = mergeTrieNodes TrieNode.Empty acc
-                // Next we add the data of the current file to the copy.
-                idx, mergeTrieNodes accCopy current)
+                let next = mergeTrieNodes acc current
+                idx, next)
             (System.Int32.MinValue, TrieNode.Empty)
         // We can ignore the initial state that was used in the scan
         |> Array.skip 1
@@ -335,7 +319,7 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
         | Module (name, _) -> $"mod_{name}"
         | Namespace (name, _, _) -> $"ns_{name}"
 
-    let toBoxList (boxPos: MermaidBoxPos) (files: HashSet<FileIndex>) =
+    let toBoxList (boxPos: MermaidBoxPos) (files: ImmutableHashSet<FileIndex>) =
         let sb = StringBuilder()
         let orderedIndexes = Seq.sort files
 

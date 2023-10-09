@@ -1,6 +1,7 @@
 ﻿module TypeChecks.QueryTrieTests
 
 open System.Collections.Generic
+open System.Collections.Immutable
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.GraphChecking.DependencyResolution
@@ -614,15 +615,12 @@ let private files =
     |]
 
 let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) =
-    let dict = Dictionary(Seq.length entries)
+    entries
+    |> Seq.map KeyValuePair
+    |> ImmutableDictionary.CreateRange
 
-    for k, v in entries do
-        dict.Add(k, v)
-
-    dict
-
-let private noChildren = Dictionary(0)
-let emptyHS () = HashSet(0)
+let private noChildren = ImmutableDictionary.Empty
+let emptyHS () = ImmutableHashSet.Empty
 
 let indexOf name =
     Array.find (fun (fc: FileContent) -> fc.FileName = name) files |> fun fc -> fc.Idx
@@ -653,14 +651,14 @@ let private fantomasCoreTrie: TrieNode =
                             TrieNodeInfo.Namespace(
                                 "Fantomas",
                                 emptyHS (),
-                                HashSet([|
-                                    indexOf "ISourceTextExtensions.fs"
-                                    indexOf "RangeHelpers.fs"
-                                    indexOf "AstExtensions.fs"
-                                    indexOf "TriviaTypes.fs"
-                                    indexOf "Utils.fs"
-                                    indexOf "SourceParser.fs"
-                                |]))
+                                ImmutableHashSet.CreateRange [|
+                                   indexOf "ISourceTextExtensions.fs"
+                                   indexOf "RangeHelpers.fs"
+                                   indexOf "AstExtensions.fs"
+                                   indexOf "TriviaTypes.fs"
+                                   indexOf "Utils.fs"
+                                   indexOf "SourceParser.fs"
+                               |])
                         Children =
                             dictionary
                                 [|
@@ -670,14 +668,14 @@ let private fantomasCoreTrie: TrieNode =
                                             TrieNodeInfo.Namespace(
                                                 "Core",
                                                 emptyHS (),
-                                                HashSet([|
-                                                    indexOf "ISourceTextExtensions.fs"
-                                                    indexOf "RangeHelpers.fs"
-                                                    indexOf "AstExtensions.fs"
-                                                    indexOf "TriviaTypes.fs"
-                                                    indexOf "Utils.fs"
-                                                    indexOf "SourceParser.fs"
-                                                |]))
+                                                ImmutableHashSet.CreateRange [|
+                                                   indexOf "ISourceTextExtensions.fs"
+                                                   indexOf "RangeHelpers.fs"
+                                                   indexOf "AstExtensions.fs"
+                                                   indexOf "TriviaTypes.fs"
+                                                   indexOf "Utils.fs"
+                                                   indexOf "SourceParser.fs"
+                                               |])
                                         Children =
                                             dictionary
                                                 [|

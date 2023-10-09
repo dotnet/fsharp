@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
-open System.Collections.Generic
+open System.Collections.Immutable
 open FSharp.Compiler.Syntax
 
 /// The index of a file inside a project.
@@ -30,9 +30,12 @@ type internal FileInProject =
 /// Only when the namespace exposes types that could later be inferred.
 /// Children of a namespace don't automatically depend on each other for that reason
 type internal TrieNodeInfo =
-    | Root of files: HashSet<FileIndex>
+    | Root of files: ImmutableHashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
-    | Namespace of name: Identifier * filesThatExposeTypes: HashSet<FileIndex> * filesDefiningNamespaceWithoutTypes: HashSet<FileIndex>
+    | Namespace of
+        name: Identifier *
+        filesThatExposeTypes: ImmutableHashSet<FileIndex> *
+        filesDefiningNamespaceWithoutTypes: ImmutableHashSet<FileIndex>
 
     member x.Files: Set<FileIndex> =
         match x with
@@ -43,17 +46,17 @@ type internal TrieNodeInfo =
 type internal TrieNode =
     {
         Current: TrieNodeInfo
-        Children: Dictionary<Identifier, TrieNode>
+        Children: ImmutableDictionary<Identifier, TrieNode>
     }
 
     member x.Files = x.Current.Files
 
     static member Empty =
-        let rootFiles = HashSet(Seq.empty)
+        let rootFiles = ImmutableHashSet.Empty
 
         {
             Current = TrieNodeInfo.Root rootFiles
-            Children = Dictionary<_, _>(0)
+            Children = ImmutableDictionary.Empty
         }
 
 /// A significant construct found in the syntax tree of a file.
