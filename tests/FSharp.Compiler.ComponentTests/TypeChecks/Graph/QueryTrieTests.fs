@@ -795,15 +795,6 @@ let ``ProcessOpenStatement full path match`` () =
     let state =
         FileContentQueryState.Create
             sourceParser.Idx
-            (set
-                [|
-                    indexOf "AssemblyInfo.fs"
-                    indexOf "ISourceTextExtensions.fs"
-                    indexOf "RangeHelpers.fs"
-                    indexOf "AstExtensions.fsi"
-                    indexOf "TriviaTypes.fs"
-                    indexOf "Utils.fs"
-                |])
             Set.empty
 
     let result =

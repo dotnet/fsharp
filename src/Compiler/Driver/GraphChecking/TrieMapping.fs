@@ -1,16 +1,19 @@
 ﻿module internal FSharp.Compiler.GraphChecking.TrieMapping
 
-open System.Collections.Generic
+open System.Collections.Generic 
+open System.Collections.Immutable
 open System.Text
 open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 
+// TODO: Deal with Immutable collections and benchmark whether they are worth it?
+
 [<RequireQualifiedAccess>]
-module private HashSet =
+module private ImmutableHashSet =
     /// Create a new HashSet<'T> with a single element.
-    let singleton value = HashSet(Seq.singleton value)
+    let singleton (value: 'T) = ImmutableHashSet.Create<'T>(Array.singleton value)
     /// Create new new HashSet<'T> with zero elements.
-    let empty () = HashSet(Seq.empty)
+    let empty () = ImmutableHashSet.Empty
 
 let autoOpenShapes =
     set
@@ -57,7 +60,8 @@ let doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
             (isAnyAttributeAutoOpen attribs && longId.Length < 2)
             || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
-let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
+/// Merge all the accumulator Trie nodes into the current Trie node.
+let mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : TrieNode =
     /// Add the current node as child node to the root node.
     /// If the node already exists and is a namespace node, the existing node will be updated with new information via mutation.
     let rec mergeTrieNodesAux (root: TrieNode) (KeyValue (k, v)) =
@@ -67,7 +71,7 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
             match node.Current, v.Current with
             | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes
                                       filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
-              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
+              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->                
                 currentFilesThatExposeTypes.UnionWith otherFiles
                 currentFilesWithoutTypes.UnionWith otherFilesWithoutTypes
             // Edge case scenario detected in https://github.com/dotnet/fsharp/issues/15985
@@ -86,38 +90,27 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
         else
             root.Children.Add(k, v)
 
-    match Array.tryExactlyOne tries with
-    | Some ({ Current = TrieNodeInfo.Root _ } as singleTrie) -> singleTrie
+    match accumulatorTrie.Current, currentTrie.Current with
+    | TrieNodeInfo.Root accFiles, TrieNodeInfo.Root currentFiles ->
+        
+        
+        for rootIndex in currentTrie.Files do
+            accFiles.Add rootIndex |> ignore
+
+        for kv in currentTrie.Children do
+            mergeTrieNodesAux accumulatorTrie kv
+
+        accumulatorTrie
     | _ ->
-        let rootFiles = HashSet.empty ()
+        System.Diagnostics.Debug.Assert(
+            false,
+            $"The top level node info of the accumulator and current trie should be Root, got {accumulatorTrie.Current} and {currentTrie.Current}"
+        )
 
-        let root =
-            {
-                Current = TrieNodeInfo.Root rootFiles
-                Children = Dictionary<_, _>(defaultChildSize)
-            }
+        accumulatorTrie
 
-        for trie in tries do
-            for rootIndex in trie.Files do
-                rootFiles.Add rootIndex |> ignore
-
-            match trie.Current with
-            | TrieNodeInfo.Root _ -> ()
-            | current -> System.Diagnostics.Debug.Assert(false, $"The top level node info of a trie should be Root, got {current}")
-
-            for kv in trie.Children do
-                mergeTrieNodesAux root kv
-
-        root
-
-let mkDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) =
-    let dict = Dictionary(Seq.length items)
-
-    for KeyValue (k, v) in items do
-        if not (dict.ContainsKey(k)) then
-            dict.Add(k, v)
-
-    dict
+let mkImmutableDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) =
+    ImmutableDictionary.CreateRange(items)
 
 let mkSingletonDict key value =
     let dict = Dictionary(1)
@@ -167,7 +160,7 @@ let processSynModuleOrNamespace<'Decl>
                         TrieNodeInfo.Module(name, idx)
 
                 let children =
-                    List.choose (mkTrieForDeclaration idx) decls |> mkDictFromKeyValuePairs
+                    List.choose (mkTrieForDeclaration idx) decls |> mkImmutableDictFromKeyValuePairs
 
                 mkSingletonDict
                     name
@@ -206,7 +199,7 @@ let processSynModuleOrNamespace<'Decl>
 
         if kind = SynModuleOrNamespaceKind.AnonModule then
             // We collect the child nodes from the decls
-            decls |> List.choose (mkTrieForDeclaration idx) |> mkDictFromKeyValuePairs
+            decls |> List.choose (mkTrieForDeclaration idx) |> mkImmutableDictFromKeyValuePairs
         else
             visit id name
 
@@ -215,52 +208,58 @@ let processSynModuleOrNamespace<'Decl>
         Children = children
     }
 
-let rec mkTrieNodeFor (file: FileInProject) : TrieNode =
+let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
     let idx = file.Idx
 
     if doesFileExposeContentToTheRoot file.ParsedInput then
         // If a file exposes content which does not need an open statement to access, we consider the file to be part of the root.
+        idx,
         {
-            Current = Root(HashSet.singleton idx)
-            Children = Dictionary(0)
+            Current = Root (ImmutableHashSet.singleton idx)
+            Children = ImmutableDictionary.Empty
         }
     else
-        match file.ParsedInput with
-        | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-            contents
-            |> List.map
-                (fun (SynModuleOrNamespaceSig (longId = longId
-                                               kind = kind
-                                               attribs = attribs
-                                               decls = decls
-                                               accessibility = _accessibility)) ->
-                    let hasTypesOrAutoOpenNestedModules =
-                        decls
-                        |> List.exists (function
-                            | SynModuleSigDecl.Types _ -> true
-                            | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
-                                isAnyAttributeAutoOpen attributes
-                            | _ -> false)
-
-                    processSynModuleOrNamespace mkTrieForSynModuleSigDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
-            |> List.toArray
-            |> mergeTrieNodes contents.Length
-        | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-            contents
-            |> List.map
-                (fun (SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls; accessibility = _accessibility)) ->
-                    let hasTypesOrAutoOpenNestedModules =
-                        List.exists
-                            (function
-                            | SynModuleDecl.Types _ -> true
-                            | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
-                                isAnyAttributeAutoOpen attributes
-                            | _ -> false)
+        let trie =
+            match file.ParsedInput with
+            | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
+                contents
+                |> List.map
+                    (fun (SynModuleOrNamespaceSig (longId = longId
+                                                   kind = kind
+                                                   attribs = attribs
+                                                   decls = decls
+                                                   accessibility = _accessibility)) ->
+                        let hasTypesOrAutoOpenNestedModules =
                             decls
+                            |> List.exists (function
+                                | SynModuleSigDecl.Types _ -> true
+                                | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
+                                    isAnyAttributeAutoOpen attributes
+                                | _ -> false)
 
-                    processSynModuleOrNamespace mkTrieForSynModuleDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
-            |> List.toArray
-            |> mergeTrieNodes contents.Length
+                        processSynModuleOrNamespace mkTrieForSynModuleSigDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
+                |> List.reduce mergeTrieNodes
+            | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
+                contents
+                |> List.map
+                    (fun (SynModuleOrNamespace (longId = longId
+                                                attribs = attribs
+                                                kind = kind
+                                                decls = decls
+                                                accessibility = _accessibility)) ->
+                        let hasTypesOrAutoOpenNestedModules =
+                            List.exists
+                                (function
+                                | SynModuleDecl.Types _ -> true
+                                | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
+                                    isAnyAttributeAutoOpen attributes
+                                | _ -> false)
+                                decls
+
+                        processSynModuleOrNamespace mkTrieForSynModuleDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
+                |> List.reduce mergeTrieNodes
+
+        idx, trie
 
 and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
@@ -270,7 +269,7 @@ and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyVal
         let children =
             decls
             |> List.choose (mkTrieForSynModuleDecl fileIndex)
-            |> mkDictFromKeyValuePairs
+            |> mkImmutableDictFromKeyValuePairs
 
         Some(
             KeyValuePair(
@@ -291,7 +290,7 @@ and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : 
         let children =
             decls
             |> List.choose (mkTrieForSynModuleSigDecl fileIndex)
-            |> mkDictFromKeyValuePairs
+            |> mkImmutableDictFromKeyValuePairs
 
         Some(
             KeyValuePair(
@@ -302,11 +301,24 @@ and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : 
                 }
             )
         )
-
     | _ -> None
 
-let mkTrie (files: FileInProject array) : TrieNode =
-    mergeTrieNodes 0 (files |> Array.Parallel.map mkTrieNodeFor)
+let mkTrie (files: FileInProject array) : (FileIndex * TrieNode) array =
+    if files.Length = 1 then
+        Array.singleton (mkTrieNodeFor files[0])
+    else
+        files
+        |> Array.take (files.Length - 1) // Do not process the last file, it will never be looked up by anything anyway.
+        |> Array.Parallel.map mkTrieNodeFor
+        |> Array.scan
+            (fun (_, acc) (idx, current) ->
+                // We first need to create a copy of the Trie as Children are inside a mutable Dictionary.
+                let accCopy = mergeTrieNodes TrieNode.Empty acc
+                // Next we add the data of the current file to the copy.
+                idx, mergeTrieNodes accCopy current)
+            (System.Int32.MinValue, TrieNode.Empty)
+        // We can ignore the initial state that was used in the scan
+        |> Array.skip 1
 
 type MermaidBoxPos =
     | First

@@ -48,6 +48,14 @@ type internal TrieNode =
 
     member x.Files = x.Current.Files
 
+    static member Empty =
+        let rootFiles = HashSet(Seq.empty)
+
+        {
+            Current = TrieNodeInfo.Root rootFiles
+            Children = Dictionary<_, _>(0)
+        }
+
 /// A significant construct found in the syntax tree of a file.
 /// This construct needs to be processed in order to deduce potential links to other files in the project.
 type internal FileContentEntry =
@@ -76,24 +84,21 @@ type internal FileContentQueryState =
         OpenedNamespaces: Set<LongIdentifier>
         FoundDependencies: Set<FileIndex>
         CurrentFile: FileIndex
-        KnownFiles: Set<FileIndex>
     }
 
-    static member Create (fileIndex: FileIndex) (knownFiles: Set<FileIndex>) (filesAtRoot: Set<FileIndex>) =
+    static member Create (fileIndex: FileIndex) (filesAtRoot: Set<FileIndex>) =
         {
             OwnNamespace = None
             OpenedNamespaces = Set.empty
             FoundDependencies = filesAtRoot
             CurrentFile = fileIndex
-            KnownFiles = knownFiles
         }
 
     member x.AddOwnNamespace(ns: LongIdentifier, ?files: Set<FileIndex>) =
         match files with
         | None -> { x with OwnNamespace = Some ns }
         | Some files ->
-            let foundDependencies =
-                Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+            let foundDependencies = files |> Set.union x.FoundDependencies
 
             { x with
                 OwnNamespace = Some ns
@@ -101,7 +106,7 @@ type internal FileContentQueryState =
             }
 
     member x.AddDependencies(files: Set<FileIndex>) : FileContentQueryState =
-        let files = Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+        let files = files |> Set.union x.FoundDependencies
         { x with FoundDependencies = files }
 
     member x.AddOpenNamespace(path: LongIdentifier, ?files: Set<FileIndex>) =
@@ -111,8 +116,7 @@ type internal FileContentQueryState =
                 OpenedNamespaces = Set.add path x.OpenedNamespaces
             }
         | Some files ->
-            let foundDependencies =
-                Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
+            let foundDependencies = files |> Set.union x.FoundDependencies
 
             { x with
                 FoundDependencies = foundDependencies
