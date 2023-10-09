@@ -8,6 +8,7 @@ open FSharp.Compiler.IlxGenSupport
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
@@ -665,6 +666,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
 
 let mkMethodsAndPropertiesForFields
     (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
+    (g: TcGlobals)
     access
     attr
     imports
@@ -704,15 +706,28 @@ let mkMethodsAndPropertiesForFields
             for field in fields do
                 let fspec = mkILFieldSpecInTy (ilTy, field.LowerName, field.Type)
 
+                let ilReturn = mkILReturn field.Type
+
+                let ilReturn =
+                    if TryFindILAttribute g.attrib_NullableAttribute field.ILField.CustomAttrs then
+                        let attrs =
+                            field.ILField.CustomAttrs.AsArray()
+                            |> Array.filter (IsILAttrib g.attrib_NullableAttribute)
+
+                        ilReturn.WithCustomAttrs(mkILCustomAttrsFromArray attrs)
+                    else
+                        ilReturn
+
                 yield
                     mkILNonGenericInstanceMethod (
                         "get_" + adjustFieldName hasHelpers field.Name,
                         access,
                         [],
-                        mkILReturn field.Type,
+                        ilReturn,
                         mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg 0us; mkNormalLdfld fspec ], attr, imports)
                     )
                     |> addMethodGeneratedAttrs
+
         ]
 
     basicProps, basicMethods
@@ -801,8 +816,34 @@ let convAlternativeDef
                 elif repr.RepresentOneAlternativeAsNull info then
                     [], []
                 else
+                    let additionalAttributes =
+                        if
+                            g.checkNullness
+                            && g.langFeatureNullness
+                            && repr.RepresentAlternativeAsStructValue info
+                            && not alt.IsNullary
+                        then
+                            let notnullfields =
+                                alt.FieldDefs
+                                // Fields that are nullable even from F# perspective has an [Nullable] attribute on them
+                                // Non-nullable fields are implicit in F#, therefore not annotated separately
+                                |> Array.filter (fun f -> TryFindILAttribute g.attrib_NullableAttribute f.ILField.CustomAttrs |> not)
+
+                            let fieldNames =
+                                notnullfields
+                                |> Array.map (fun f -> f.LowerName)
+                                |> Array.append (notnullfields |> Array.map (fun f -> f.Name))
+
+                            if fieldNames |> Array.isEmpty then
+                                emptyILCustomAttrs
+                            else
+                                mkILCustomAttrsFromArray [| GetNotNullWhenTrueAttribute g fieldNames |]
+
+                        else
+                            emptyILCustomAttrs
+
                     [
-                        mkILNonGenericInstanceMethod (
+                        (mkILNonGenericInstanceMethod (
                             "get_" + mkTesterName altName,
                             cud.HelpersAccessibility,
                             [],
@@ -815,7 +856,8 @@ let convAlternativeDef
                                 attr,
                                 imports
                             )
-                        )
+                        ))
+                            .With(customAttrs = additionalAttributes)
                         |> addMethodGeneratedAttrs
                     ],
                     [
@@ -838,7 +880,7 @@ let convAlternativeDef
                             propertyType = g.ilg.typ_Bool,
                             init = None,
                             args = [],
-                            customAttrs = emptyILCustomAttrs
+                            customAttrs = additionalAttributes
                         )
                         |> addPropertyGeneratedAttrs
                         |> addPropertyNeverAttrs
@@ -847,13 +889,24 @@ let convAlternativeDef
             let baseMakerMeths, baseMakerProps =
 
                 if alt.IsNullary then
+                    let attributes =
+                        if
+                            g.checkNullness
+                            && g.langFeatureNullness
+                            && repr.RepresentAlternativeAsNull(info, alt)
+                        then
+                            GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ]
+                            |> Array.singleton
+                            |> mkILCustomAttrsFromArray
+                        else
+                            emptyILCustomAttrs
 
                     let nullaryMeth =
                         mkILNonGenericStaticMethod (
                             "get_" + altName,
                             cud.HelpersAccessibility,
                             [],
-                            mkILReturn baseTy,
+                            (mkILReturn baseTy).WithCustomAttrs attributes,
                             mkMethodBody (
                                 true,
                                 [],
@@ -877,7 +930,7 @@ let convAlternativeDef
                             propertyType = baseTy,
                             init = None,
                             args = [],
-                            customAttrs = emptyILCustomAttrs
+                            customAttrs = attributes
                         )
                         |> addPropertyGeneratedAttrs
                         |> addPropertyNeverAttrs
@@ -921,7 +974,19 @@ let convAlternativeDef
                             mkMakerName cuspec altName,
                             cud.HelpersAccessibility,
                             fields
-                            |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type))
+                            |> Array.map (fun fd ->
+                                let plainParam = mkILParamNamed (fd.LowerName, fd.Type)
+
+                                if TryFindILAttribute g.attrib_NullableAttribute fd.ILField.CustomAttrs then
+                                    let attrs =
+                                        fd.ILField.CustomAttrs.AsArray()
+                                        |> Array.filter (IsILAttrib g.attrib_NullableAttribute)
+
+                                    { plainParam with
+                                        CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrsFromArray attrs)
+                                    }
+                                else
+                                    plainParam)
                             |> Array.toList,
                             mkILReturn baseTy,
                             mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
@@ -1090,6 +1155,7 @@ let convAlternativeDef
                         let basicProps, basicMethods =
                             mkMethodsAndPropertiesForFields
                                 (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
+                                g
                                 cud.UnionCasesAccessibility
                                 attr
                                 imports
@@ -1123,6 +1189,12 @@ let convAlternativeDef
                                 .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
                             |> addMethodGeneratedAttrs
 
+                        let attrs =
+                            if g.checkNullness && g.langFeatureNullness then
+                                GetNullableContextAttribute g :: debugAttrs
+                            else
+                                debugAttrs
+
                         let altTypeDef =
                             mkILGenericClass (
                                 altTy.TypeSpec.Name,
@@ -1141,7 +1213,7 @@ let convAlternativeDef
                                 emptyILTypeDefs,
                                 mkILProperties basicProps,
                                 emptyILEvents,
-                                mkILCustomAttrs debugAttrs,
+                                mkILCustomAttrs attrs,
                                 ILTypeInit.BeforeField
                             )
 
@@ -1261,15 +1333,67 @@ let mkClassUnionDef
                                 |> addMethodGeneratedAttrs
                             ]
 
+                    let fieldDefs =
+                        // Since structs are flattened out for all cases together, all boxed fields are potentially nullable
+                        if
+                            isStruct
+                            && cud.UnionCases.Length > 1
+                            && g.checkNullness
+                            && g.langFeatureNullness
+                        then
+                            alt.FieldDefs
+                            |> Array.map (fun field ->
+                                if field.Type.IsNominal && field.Type.Boxity = AsValue then
+                                    field
+                                else
+                                    let attrs =
+                                        let existingAttrs = field.ILField.CustomAttrs.AsArray()
+
+                                        let nullableIdx =
+                                            existingAttrs |> Array.tryFindIndex (IsILAttrib g.attrib_NullableAttribute)
+
+                                        match nullableIdx with
+                                        | None ->
+                                            existingAttrs
+                                            |> Array.append [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
+                                        | Some idx ->
+                                            let replacementAttr =
+                                                match existingAttrs[idx] with
+                                                (*
+                                                 The attribute carries either a single byte, or a list of bytes for the fields itself and all its generic type arguments
+                                                 The way we lay out DUs does not affect nullability of the typars of a field, therefore we just change the very first byte
+                                                 If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
+                                                 If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
+                                                *)
+                                                | Encoded (method, _data, [ ILAttribElem.Byte 1uy ]) ->
+                                                    mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
+                                                | Encoded (method,
+                                                           _data,
+                                                           [ ILAttribElem.Array (elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
+                                                    mkILCustomAttribMethRef (
+                                                        method,
+                                                        [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],
+                                                        []
+                                                    )
+                                                | attrAsBefore -> attrAsBefore
+
+                                            existingAttrs |> Array.replace idx replacementAttr
+
+                                    field.ILField.With(customAttrs = mkILCustomAttrsFromArray attrs)
+                                    |> IlxUnionCaseField)
+                        else
+                            alt.FieldDefs
+
                     let props, meths =
                         mkMethodsAndPropertiesForFields
                             (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
+                            g
                             cud.UnionCasesAccessibility
                             cud.DebugPoint
                             cud.DebugImports
                             cud.HasHelpers
                             baseTy
-                            alt.FieldDefs
+                            fieldDefs
 
                     yield (fields, (ctor @ meths), props)
         ]
@@ -1467,7 +1591,14 @@ let mkClassUnionDef
                         @ List.map (fun (_, _, _, _, fdef, _) -> fdef) altNullaryFields
                           @ td.Fields.AsList()
                     ),
-                properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps)
+                properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps),
+                customAttrs =
+                    if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then
+                        td.CustomAttrs.AsArray()
+                        |> Array.append [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
+                        |> mkILCustomAttrsFromArray
+                    else
+                        td.CustomAttrs
             )
         // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
         |> addConstFieldInit

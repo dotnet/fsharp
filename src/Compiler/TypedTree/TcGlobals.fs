@@ -347,6 +347,9 @@ type TcGlobals(
       match name with
       | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
       | "System.Runtime.CompilerServices.IsUnmanagedAttribute"
+      | "System.Runtime.CompilerServices.NullableAttribute"
+      | "System.Runtime.CompilerServices.NullableContextAttribute"
+      | "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
       | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
       | _ -> false
@@ -1448,6 +1451,9 @@ type TcGlobals(
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
   member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val attrib_NullableAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableAttribute"
+  member val attrib_NullableContextAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableContextAttribute"
+  member val attrib_MemberNotNullWhenAttribute  = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"

@@ -2238,6 +2238,8 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
+val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
+
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
