@@ -265,4 +265,5 @@ module EditorOptionsExtensions =
 
         member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler
 
-        member this.TransparentCompilerCacheFactor = this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor
+        member this.TransparentCompilerCacheFactor =
+            this.EditorOptions.LanguageServicePerformance.TransparentCompilerCacheFactor

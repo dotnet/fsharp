@@ -95,6 +95,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
             let getSource filename =
                 async {
                     let! ct = Async.CancellationToken
+
                     match workspace.CurrentSolution.TryGetDocumentFromPath filename with
                     | ValueSome document ->
                         let! text = document.GetTextAsync(ct) |> Async.AwaitTask

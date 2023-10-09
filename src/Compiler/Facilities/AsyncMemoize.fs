@@ -702,8 +702,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |> Option.map (sprintf " Running: %d")
             |> Option.defaultValue ""
 
-        let avgDuration =
-            avgDurationMs |> sprintf "| Avg: %.0f ms"
+        let avgDuration = avgDurationMs |> sprintf "| Avg: %.0f ms"
 
         let stats =
             [|

@@ -17,7 +17,6 @@ open CancellableTasks
 
 open Internal.Utilities.Collections
 
-
 [<RequireQualifiedAccess>]
 module internal ProjectCache =
 
@@ -27,20 +26,18 @@ module internal ProjectCache =
     let Projects =
         ConditionalWeakTable<Project, FSharpChecker * FSharpProjectOptionsManager * FSharpParsingOptions * FSharpProjectOptions>()
 
-
 type Solution with
 
     /// Get the instance of IFSharpWorkspaceService.
     member internal this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
-
 [<AutoOpen>]
 module private CheckerExtensions =
 
     let snapshotCache = AsyncMemoize(5000, 500, "SnapshotCache")
 
-    let getFSharpOptionsForProject (this: Project) = 
+    let getFSharpOptionsForProject (this: Project) =
         if not this.IsFSharp then
             raise (OperationCanceledException("Project is not a FSharp project."))
         else
@@ -80,7 +77,11 @@ module private CheckerExtensions =
                     let project = projects.TryFind options.ProjectFileName
 
                     if project.IsNone then
-                        System.Diagnostics.Trace.TraceError("Could not find project {0} in solution {1}", options.ProjectFileName, solution.FilePath)
+                        System.Diagnostics.Trace.TraceError(
+                            "Could not find project {0} in solution {1}",
+                            options.ProjectFileName,
+                            solution.FilePath
+                        )
 
                     let documentOpt = project |> Option.bind (Map.tryFind path)
 
@@ -119,23 +120,25 @@ module private CheckerExtensions =
                         }
                 }
 
-            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator=snapshotAccumulatorOpt)
+            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
         }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
 
         let key =
-            { new ICacheKey<_, _>
-                with member _.GetKey() = document.Project.Id
-                     member _.GetVersion() = document.Project
-                     member _.GetLabel() = options.ProjectFileName }
+            { new ICacheKey<_, _> with
+                member _.GetKey() = document.Project.Id
+                member _.GetVersion() = document.Project
+                member _.GetLabel() = options.ProjectFileName
+            }
 
         snapshotCache.Get(
             key,
             async {
                 let! ct = Async.CancellationToken
                 return! getProjectSnapshot None document.Project ct |> Async.AwaitTask
-            })
+            }
+        )
 
     type FSharpChecker with
 
@@ -463,15 +466,15 @@ type Project with
             if this.IsFastFindReferencesEnabled then
                 do!
                     documents
-                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (fun range -> onFound doc range), userOpName))
+                    |> Seq.map (fun doc ->
+                        doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (fun range -> onFound doc range), userOpName))
                     |> CancellableTask.whenAll
             else
                 for doc in documents do
                     do! doc.FindFSharpReferencesAsync(symbol, projectSnapshot, (onFound doc), userOpName)
         }
 
-    member this.GetFSharpCompilationOptionsAsync() =
-        this |> getFSharpOptionsForProject
+    member this.GetFSharpCompilationOptionsAsync() = this |> getFSharpOptionsForProject
 
-    member this.GetFSharpProjectSnapshot(?snapshotAccumulator) = 
+    member this.GetFSharpProjectSnapshot(?snapshotAccumulator) =
         this |> getProjectSnapshot snapshotAccumulator

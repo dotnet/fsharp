@@ -82,14 +82,18 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 let snapshotAccumulator = Dictionary()
+
                 let! projects =
                     projects
-                    |> Seq.map (fun project -> project.GetFSharpProjectSnapshot(snapshotAccumulator) |> CancellableTask.map (fun s -> project, s))
+                    |> Seq.map (fun project ->
+                        project.GetFSharpProjectSnapshot(snapshotAccumulator)
+                        |> CancellableTask.map (fun s -> project, s))
                     |> CancellableTask.sequential
 
                 do!
                     projects
-                    |> Seq.map (fun (project, snapshot) -> project.FindFSharpReferencesAsync(symbol, snapshot, onFound, "getSymbolUsesInProjects"))
+                    |> Seq.map (fun (project, snapshot) ->
+                        project.FindFSharpReferencesAsync(symbol, snapshot, onFound, "getSymbolUsesInProjects"))
                     |> CancellableTask.whenAll
 
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
