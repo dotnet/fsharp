@@ -414,8 +414,8 @@ let typedSeq =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withErrorCode 193
-    |> withDiagnosticMessageMatches "Type constraint mismatch"
+    |> withErrorCode 1
+    |> withDiagnosticMessageMatches "This expression was expected to have type"
 
 
 [<Literal>]
