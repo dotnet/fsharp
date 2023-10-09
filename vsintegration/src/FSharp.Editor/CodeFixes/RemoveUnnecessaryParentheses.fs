@@ -153,11 +153,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | _, LetterOrDigit, '(' -> None
                         | _, LetterOrDigit, _ -> Some ShouldPutSpaceBefore
                         | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _ ->
-                            if SourceText.containsSensitiveIndentation context.Span sourceText then
-                                Some ShouldPutSpaceBefore
-                            else
-                                None
+                        | _ when SourceText.containsSensitiveIndentation context.Span sourceText -> Some ShouldPutSpaceBefore
+                        | _ -> None
 
                     let (|ShouldPutSpaceAfter|_|) (s: string) =
                         // "(……)…"
