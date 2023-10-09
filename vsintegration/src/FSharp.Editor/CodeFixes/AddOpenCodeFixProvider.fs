@@ -55,21 +55,26 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                 // attribute, shouldn't be here
                 | line when line.StartsWith "[<" && line.EndsWith ">]" ->
-                    let moduleDeclLineNumber =
+                    let moduleDeclLineNumberOpt =
                         sourceText.Lines
                         |> Seq.skip insertionLineNumber
-                        |> Seq.findIndex (fun line -> line.ToString().Contains "module")
+                        |> Seq.tryFindIndex (fun line -> line.ToString().Contains "module")
+
+                    match moduleDeclLineNumberOpt with
+                    // implicit top level module
+                    | None -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
+                    // explicit top level module
+                    | Some number ->
                         // add back the skipped lines
-                        |> fun i -> insertionLineNumber + i
+                        let moduleDeclLineNumber = insertionLineNumber + number
+                        let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
 
-                    let moduleDeclLineText = sourceText.Lines[ moduleDeclLineNumber ].ToString().Trim()
+                        if moduleDeclLineText.EndsWith "=" then
+                            insertionLineNumber, $"{margin}open {ns}{br}{br}"
+                        else
+                            moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
 
-                    if moduleDeclLineText.EndsWith "=" then
-                        insertionLineNumber, $"{margin}open {ns}{br}{br}"
-                    else
-                        moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
-
-                // something else, shot in the dark
+                // implicit top level module
                 | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
 
             | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
@@ -183,8 +188,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                            |> Array.collect (fun s ->
-                                [|
+                            |> List.collect (fun s ->
+                                [
                                     yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
@@ -199,7 +204,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                                 s.Namespace,
                                                 s.CleanedIdents
                                                 |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9))
-                                |])
+                                ])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
                         |> Option.bind (fun longIdent ->
