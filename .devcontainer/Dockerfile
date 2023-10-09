@@ -14,6 +14,7 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     # Verify bash, git, process tools, lsb-release (common in install instructions for CLIs) installed
     && apt-get -y install bash git openssh-client less iproute2 procps lsb-release \
+    && apt-get -y install gnupg \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \

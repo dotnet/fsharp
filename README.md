@@ -75,6 +75,8 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 <add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json" />
 ```
 
+**NOTE:** Official NuGet releases of FCS and FSharp.Core are synched with SDK releases (on purpose - we want to be in sync). Nightly packages release to Azure feeds on every successful insertion.
+
 ## Branches
 
 These are the branches in use:
