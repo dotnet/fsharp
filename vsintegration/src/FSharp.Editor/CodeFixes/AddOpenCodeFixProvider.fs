@@ -188,7 +188,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
-                            |> List.collect (fun s ->
+                            |> Seq.collect (fun s ->
                                 [
                                     yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
                                     if isAttribute then
