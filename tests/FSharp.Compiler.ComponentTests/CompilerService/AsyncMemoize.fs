@@ -3,7 +3,6 @@ module CompilerService.AsyncMemoize
 open System
 open System.Threading
 open Xunit
-open FSharp.Test
 open Internal.Utilities.Collections
 open System.Threading.Tasks
 open System.Diagnostics

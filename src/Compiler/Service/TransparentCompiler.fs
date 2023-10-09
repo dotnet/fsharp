@@ -320,7 +320,7 @@ type internal TransparentCompiler
     let mutable caches = CompilerCaches(100)
 
     // TODO: do we need this?
-    let maxTypeCheckingParallelism = Environment.ProcessorCount
+    let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
     let maxParallelismSemaphore = new SemaphoreSlim(maxTypeCheckingParallelism)
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
@@ -1179,6 +1179,7 @@ type internal TransparentCompiler
                                 tcInfo.stateContainsNodes
                                 |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
                             then
+                                // TODO: this can actually happen, probably related to adding new files or moving files around
                                 failwith $"Oops???"
 
                             let partialResult, tcState = finisher tcInfo.tcState
