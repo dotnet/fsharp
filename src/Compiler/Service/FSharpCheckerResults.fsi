@@ -184,7 +184,7 @@ and FSharpProjectSnapshotWithSourcesDebugVersion =
     { ProjectSnapshotVersion: FSharpProjectSnapshotDebugVersion
       SourceVersions: string list }
 
-and FSharpProjectSnapshotWithSourcesVersion = FSharpProjectSnapshotWithSourcesDebugVersion
+and FSharpProjectSnapshotWithSourcesVersion = string
 
 and FSharpProjectSnapshotDebugVersion =
     { ProjectFileName: string
@@ -195,7 +195,7 @@ and FSharpProjectSnapshotDebugVersion =
       IsIncompleteTypeCheckEnvironment: bool
       UseScriptResolutionRules: bool }
 
-and FSharpProjectSnapshotVersion = FSharpProjectSnapshotDebugVersion
+and FSharpProjectSnapshotVersion = string
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal

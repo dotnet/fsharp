@@ -307,17 +307,18 @@ type FSharpProjectSnapshot =
         // TODO:
         DateTime.Now
 
-    member this.GetMd5Version() = Md5Hasher.empty
-    //|> Md5Hasher.addString this.ProjectFileName
-    //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
-    //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
-    //|> Md5Hasher.addStrings this.OtherOptions
-    //|> Md5Hasher.addVersions (
-    //    this.ReferencedProjects
-    //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
-    //)
-    //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
-    //|> Md5Hasher.addBool this.UseScriptResolutionRules
+    member this.GetMd5Version() =
+        Md5Hasher.empty
+        |> Md5Hasher.addString this.ProjectFileName
+        |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
+        |> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
+        |> Md5Hasher.addStrings this.OtherOptions
+        |> Md5Hasher.addVersions (
+            this.ReferencedProjects
+            |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
+        )
+        |> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
+        |> Md5Hasher.addBool this.UseScriptResolutionRules
 
     member this.GetDebugVersion() : FSharpProjectSnapshotDebugVersion =
         {
@@ -333,13 +334,13 @@ type FSharpProjectSnapshot =
             UseScriptResolutionRules = this.UseScriptResolutionRules
         }
 
-    interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotDebugVersion> with
+    interface ICacheKey<ProjectSnapshotKey, string> with
         member this.GetLabel() = this.ToString()
 
         member this.GetKey() =
             this.ProjectFileName, this.OutputFileName |> Option.defaultValue ""
 
-        member this.GetVersion() = this.GetDebugVersion()
+        member this.GetVersion() = this.GetMd5Version()
 
 and FSharpProjectSnapshotWithSources =
     {
@@ -408,15 +409,21 @@ and FSharpProjectSnapshotWithSources =
                     .WithoutImplFilesThatHaveSignaturesExceptLastOne.Key.GetVersion()
         }
 
+    member this.GetDebugVersion() =
+        {
+            ProjectSnapshotVersion = this.ProjectSnapshot.WithoutFileVersions.GetDebugVersion()
+            SourceVersions = this.SourceFiles |> List.map (fun x -> x.SourceHash)
+        }
+
+    member this.GetMd5Version() =
+        this.ProjectSnapshot.GetMd5Version()
+        |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.SourceHash))
+
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion> with
         member this.GetLabel() = this.ProjectSnapshot.Key.ToString()
         member this.GetKey() = this.ProjectSnapshot.Key.GetKey()
 
-        member this.GetVersion() =
-            {
-                ProjectSnapshotVersion = this.ProjectSnapshot.WithoutFileVersions.Key.GetVersion()
-                SourceVersions = this.SourceFiles |> List.map (fun x -> x.SourceHash)
-            }
+        member this.GetVersion() = this.GetMd5Version()
 
 and FSharpProjectSnapshotWithSourcesDebugVersion =
     {
@@ -424,7 +431,7 @@ and FSharpProjectSnapshotWithSourcesDebugVersion =
         SourceVersions: string list
     }
 
-and FSharpProjectSnapshotWithSourcesVersion = FSharpProjectSnapshotWithSourcesDebugVersion
+and FSharpProjectSnapshotWithSourcesVersion = string
 
 and FSharpProjectSnapshotDebugVersion =
     {
@@ -437,7 +444,7 @@ and FSharpProjectSnapshotDebugVersion =
         UseScriptResolutionRules: bool
     }
 
-and FSharpProjectSnapshotVersion = FSharpProjectSnapshotDebugVersion
+and FSharpProjectSnapshotVersion = string
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal
