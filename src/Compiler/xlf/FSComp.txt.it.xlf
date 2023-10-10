@@ -8428,8 +8428,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Non è possibile chiamare il metodo di estensione byref '{0}. Il valore del primo parametro deve essere modificabile oppure un tipo byref non di sola lettura.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="needs-review-translation">Non è possibile chiamare il metodo di estensione byref '{0}. Il valore del primo parametro deve essere modificabile oppure un tipo byref non di sola lettura.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
