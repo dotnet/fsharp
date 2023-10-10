@@ -303,7 +303,7 @@ module String =
 [<RequireQualifiedAccess>]
 module Option =
 
-    let guard (x: bool) : Option<unit> = if x then Some() else None
+    let guard (x: bool) : ValueOption<unit> = if x then ValueSome() else ValueNone
 
     let attempt (f: unit -> 'T) =
         try
@@ -333,9 +333,61 @@ module ValueOption =
         | _ -> None
 
 [<RequireQualifiedAccess>]
+module IEnumerator =
+    let chooseV f (e: IEnumerator<'T>) =
+        let mutable started = false
+        let mutable curr = ValueNone
+
+        let get () =
+            if not started then
+                raise (InvalidOperationException("Not started"))
+
+            match curr with
+            | ValueNone -> raise (InvalidOperationException("Already finished"))
+            | ValueSome x -> x
+
+        { new IEnumerator<'U> with
+            member _.Current = get ()
+          interface System.Collections.IEnumerator with
+              member _.Current = box (get ())
+
+              member _.MoveNext() =
+                  if not started then
+                      started <- true
+
+                  curr <- ValueNone
+
+                  while (curr.IsNone && e.MoveNext()) do
+                      curr <- f e.Current
+
+                  ValueOption.isSome curr
+
+              member _.Reset() =
+                  raise (NotSupportedException("Reset is not supported"))
+          interface System.IDisposable with
+              member _.Dispose() = e.Dispose()
+        }
+
+[<RequireQualifiedAccess>]
 module Seq =
 
+    let mkSeq f =
+        { new IEnumerable<'U> with
+            member _.GetEnumerator() = f ()
+          interface System.Collections.IEnumerable with
+              member _.GetEnumerator() =
+                  (f () :> System.Collections.IEnumerator)
+        }
+
+    let inline revamp f (ie: seq<_>) =
+        mkSeq (fun () -> f (ie.GetEnumerator()))
+
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+
+    let inline tryHeadV (source: seq<_>) =
+        use e = source.GetEnumerator()
+
+        if (e.MoveNext()) then ValueSome e.Current else ValueNone
 
     let inline tryFindV ([<InlineIfLambda>] predicate) (source: seq<'T>) =
         use e = source.GetEnumerator()
@@ -360,6 +412,18 @@ module Seq =
 
         loop 0
 
+    let inline tryPickV ([<InlineIfLambda>] chooser) (source: seq<'T>) =
+        use e = source.GetEnumerator()
+        let mutable res = ValueNone
+
+        while (ValueOption.isNone res && e.MoveNext()) do
+            res <- chooser e.Current
+
+        res
+
+    let chooseV (chooser: 'a -> 'b voption) source =
+        revamp (IEnumerator.chooseV chooser) source
+
 [<RequireQualifiedAccess>]
 module Array =
     let inline foldi ([<InlineIfLambda>] folder: 'State -> int -> 'T -> 'State) (state: 'State) (xs: 'T[]) =
@@ -374,6 +438,9 @@ module Array =
 
     let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
 
+    let inline tryHeadV (array: _[]) =
+        if array.Length = 0 then ValueNone else ValueSome array[0]
+
     let inline tryFindV ([<InlineIfLambda>] predicate) (array: _[]) =
 
         let rec loop i =
@@ -382,6 +449,75 @@ module Array =
             else loop (i + 1)
 
         loop 0
+
+    let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
+
+        let mutable i = 0
+        let mutable first = Unchecked.defaultof<'U>
+        let mutable found = false
+
+        while i < array.Length && not found do
+            let element = array.[i]
+
+            match chooser element with
+            | ValueNone -> i <- i + 1
+            | ValueSome b ->
+                first <- b
+                found <- true
+
+        if i <> array.Length then
+
+            let chunk1: 'U[] = Array.zeroCreate ((array.Length >>> 2) + 1)
+
+            chunk1.[0] <- first
+            let mutable count = 1
+            i <- i + 1
+
+            while count < chunk1.Length && i < array.Length do
+                let element = array.[i]
+
+                match chooser element with
+                | ValueNone -> ()
+                | ValueSome b ->
+                    chunk1.[count] <- b
+                    count <- count + 1
+
+                i <- i + 1
+
+            if i < array.Length then
+                let chunk2: 'U[] = Array.zeroCreate (array.Length - i)
+
+                count <- 0
+
+                while i < array.Length do
+                    let element = array.[i]
+
+                    match chooser element with
+                    | ValueNone -> ()
+                    | ValueSome b ->
+                        chunk2.[count] <- b
+                        count <- count + 1
+
+                    i <- i + 1
+
+                let res: 'U[] = Array.zeroCreate (chunk1.Length + count)
+
+                Array.Copy(chunk1, res, chunk1.Length)
+                Array.Copy(chunk2, 0, res, chunk1.Length, count)
+                res
+            else
+                Array.sub chunk1 0 count
+        else
+            Array.empty
+
+[<RequireQualifiedAccess>]
+module ImmutableArray =
+    let inline tryHeadV (xs: ImmutableArray<'T>) : 'T voption =
+        if xs.Length = 0 then ValueNone else ValueSome xs[0]
+
+    let inline empty<'T> = ImmutableArray<'T>.Empty
+
+    let inline create<'T> (x: 'T) = ImmutableArray.Create<'T>(x)
 
 [<RequireQualifiedAccess>]
 module List =
@@ -412,6 +548,10 @@ module Exception =
         | _ -> root
         |> flattenInner
         |> String.concat " ---> "
+
+[<RequireQualifiedAccess>]
+module TextSpan =
+    let empty = TextSpan()
 
 type Async with
 
