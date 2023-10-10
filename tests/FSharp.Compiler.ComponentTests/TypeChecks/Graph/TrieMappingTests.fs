@@ -30,10 +30,7 @@ namespace X.Y
 
 type C = { CX: int; CY: int }
     """
-            "D.fs",
-            """
-module D
-    """
+            "D.fs", "module D"
         |]
 
     let files =
@@ -50,19 +47,19 @@ module D
     match trie.Current with
     | TrieNodeInfo.Root _ -> ()
     | current -> Assert.Fail($"mkTrie should always return a TrieNodeInfo.Root, got {current}")
-    
+
     let xNode = trie.Children.["X"]
     Assert.AreEqual(1, xNode.Children.Count)
     Assert.True(Seq.isEmpty xNode.Files)
-    
+
     let yNode = xNode.Children["Y"]
     Assert.AreEqual(2, yNode.Children.Count)
     Assert.AreEqual(set [| 2 |], yNode.Files)
-    
+
     let aNode = yNode.Children["A"]
     Assert.AreEqual(0, aNode.Children.Count)
     Assert.AreEqual(set [| 0 |], aNode.Files)
-    
+
     let bNode = yNode.Children["B"]
     Assert.AreEqual(0, bNode.Children.Count)
     Assert.AreEqual(set [| 1 |], bNode.Files)
