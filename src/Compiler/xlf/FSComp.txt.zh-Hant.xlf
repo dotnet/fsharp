@@ -1147,6 +1147,11 @@
         <target state="translated">此運算式使用隱含轉換 '{0}' 將類型 '{1}' 轉換為類型 '{2}'。請參閱 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 停用此警告。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">初始化程式碼之外不能設定僅初始化屬性 '{0}'。請參閱 https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>

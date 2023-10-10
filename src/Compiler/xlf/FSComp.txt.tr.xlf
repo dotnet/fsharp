@@ -1147,6 +1147,11 @@
         <target state="translated">Bu ifade '{1}' türünü '{2}' türüne dönüştürmek için '{0}' örtük dönüştürmesini kullanır. https://aka.ms/fsharp-implicit-convs adresine bakın. Bu uyarı '#nowarn \"3391\" kullanılarak devre dışı bırakılabilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">'{0}' yalnızca başlatma özelliği başlatma kodunun dışında ayarlanamaz. Bkz. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
