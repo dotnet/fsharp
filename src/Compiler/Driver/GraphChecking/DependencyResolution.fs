@@ -185,7 +185,6 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
             | ParsedInput.SigFile _ -> Some f)
 
     let trie = TrieMapping.mkTrie trieInput
-    ignore trie
 
     let fileContents =
         files
@@ -207,8 +206,6 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
             let trieForFile =
                 trie
                 |> Array.fold (fun acc (idx, t) -> if idx < file.Idx then t else acc) TrieNode.Empty
-
-            ignore trieForFile
 
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
             let filesFromRoot =
