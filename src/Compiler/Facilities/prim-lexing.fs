@@ -6,9 +6,9 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
-open FSharp.Compiler
-open Internal.Utilities.Collections
 open System.Collections.Immutable
+
+open Internal.Utilities.Collections
 
 type ISourceText =
 
@@ -29,6 +29,8 @@ type ISourceText =
     abstract ContentEquals: sourceText: ISourceText -> bool
 
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
+
+    abstract GetSubTextFromRange: range: range -> string
 
     abstract GetChecksum: unit -> System.Collections.Immutable.ImmutableArray<byte>
 
@@ -111,6 +113,41 @@ type StringText(str: string) =
 
         member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+        member this.GetSubTextFromRange(range) =
+            let totalAmountOfLines = getLines.Value.Length
+
+            if
+                range.StartLine = 0
+                && range.StartColumn = 0
+                && range.EndLine = 0
+                && range.EndColumn = 0
+            then
+                String.Empty
+            elif
+                range.StartLine < 1
+                || (range.StartLine - 1) > totalAmountOfLines
+                || range.EndLine < 1
+                || (range.EndLine - 1) > totalAmountOfLines
+            then
+                invalidArg (nameof range) "The range is outside the file boundaries"
+            else
+                let sourceText = this :> ISourceText
+                let startLine = range.StartLine - 1
+                let line = sourceText.GetLineString startLine
+
+                if range.StartLine = range.EndLine then
+                    let length = range.EndColumn - range.StartColumn
+                    line.Substring(range.StartColumn, length)
+                else
+                    let firstLineContent = line.Substring(range.StartColumn)
+                    let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
+
+                    for lineNumber in range.StartLine .. range.EndLine - 2 do
+                        sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
+
+                    let lastLine = sourceText.GetLineString(range.EndLine - 1)
+                    sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
         member _.GetChecksum() =
             str |> Md5Hasher.hashString |> ImmutableArray.Create<byte>

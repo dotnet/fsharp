@@ -226,6 +226,7 @@
     <Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
+    <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />
     <Compile Include="TypeChecks\Graph\QueryTrieTests.fs" />

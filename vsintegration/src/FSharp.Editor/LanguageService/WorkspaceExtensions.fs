@@ -2,9 +2,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
-open System.Collections.Generic
 open System.Runtime.CompilerServices
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
@@ -245,8 +243,7 @@ module private CheckerExtensions =
 
                     return results
                 else
-                    let! results = parseAndCheckFile
-                    return results
+                    return! parseAndCheckFile
             }
 
         /// Parse and check the source text from the Roslyn document.

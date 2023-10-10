@@ -388,6 +388,7 @@ type PhasedDiagnostic with
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
+        | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
