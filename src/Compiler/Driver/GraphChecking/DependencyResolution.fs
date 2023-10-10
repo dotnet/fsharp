@@ -209,7 +209,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 |> Array.fold (fun acc (idx, t) -> if idx < file.Idx then t else acc) TrieNode.Empty
 
             ignore trieForFile
-            
+
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
             let filesFromRoot =
                 trieForFile.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
