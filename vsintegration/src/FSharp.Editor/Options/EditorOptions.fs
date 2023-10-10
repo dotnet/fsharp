@@ -88,7 +88,6 @@ type LanguageServicePerformanceOptions =
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
-        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
@@ -103,7 +102,6 @@ type LanguageServicePerformanceOptions =
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
-            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]

@@ -688,4 +688,66 @@ module ColdTasks =
 """
                     (set [| 0; 2 |])
             ]
+        scenario
+            "ModuleSuffix clash"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "ModuleSuffix clash, module before namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 0 |])
+            ]
     ]
