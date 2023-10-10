@@ -167,10 +167,10 @@ type internal InlineRenameInfo
                                 [|
                                     for symbolUse in symbolUses do
                                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                                        | Some span ->
+                                        | ValueSome span ->
                                             let textSpan = Tokenizer.fixupSpan (sourceText, span)
                                             yield FSharpInlineRenameLocation(document, textSpan)
-                                        | None -> ()
+                                        | ValueNone -> ()
                                 |]
                         }
                 }
@@ -220,8 +220,8 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
                     match span with
-                    | None -> return Unchecked.defaultof<_>
-                    | Some span ->
+                    | ValueNone -> return Unchecked.defaultof<_>
+                    | ValueSome span ->
                         let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
 
                         let result =

@@ -33,8 +33,8 @@ module FSharpFindUsagesService =
 
             match declarationRange, RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
             | Some declRange, _ when Range.equals declRange symbolUse -> ()
-            | _, None -> ()
-            | _, Some textSpan ->
+            | _, ValueNone -> ()
+            | _, ValueSome textSpan ->
                 if allReferences then
                     let definitionItem =
                         if isExternal then
@@ -71,10 +71,10 @@ module FSharpFindUsagesService =
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
 
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
-                                | Some span ->
+                                | ValueSome span ->
                                     let span = Tokenizer.fixupSpan (sourceText, span)
                                     return Some(FSharpDocumentSpan(doc, span))
-                                | None -> return None
+                                | ValueNone -> return None
                             }
                     }
                     |> CancellableTask.whenAll
@@ -122,14 +122,14 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> cancellableTask { return! rangeToDocumentSpans (document.Project.Solution, range) }
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
                         declarationSpans
                         |> Array.distinctBy (fun x -> x.Document.FilePath, x.Document.Project.FilePath)
 
-                    let isExternal = declarationSpans |> Array.isEmpty
+                    let isExternal = Array.isEmpty declarationSpans
 
                     let displayParts =
                         ImmutableArray.Create(Microsoft.CodeAnalysis.TaggedText(TextTags.Text, symbol.Ident.idText))
