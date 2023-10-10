@@ -94,6 +94,7 @@
       <Link>RangeTests.fs</Link>
     </Compile>
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="SourceTextTests.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
