@@ -70,6 +70,14 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
               TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
                 currentFilesThatExposeTypes.UnionWith otherFiles
                 currentFilesWithoutTypes.UnionWith otherFilesWithoutTypes
+            // Edge case scenario detected in https://github.com/dotnet/fsharp/issues/15985
+            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes), TrieNodeInfo.Module (_name, file) ->
+                // Keep the namespace (as it can still have nested children).
+                currentFilesThatExposeTypes.Add file |> ignore
+            | TrieNodeInfo.Module (_name, file), TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes) ->
+                currentFilesThatExposeTypes.Add file |> ignore
+                // Replace the module in favour of the namespace (which can hold nested children).
+                root.Children[ k ] <- v
             | _ -> ()
 
             for kv in v.Children do
