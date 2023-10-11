@@ -64,8 +64,8 @@ type internal FSharpAsyncQuickInfoSource
                 let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
 
                 match textSpan with
-                | None -> return None
-                | Some textSpan ->
+                | ValueNone -> return None
+                | ValueSome textSpan ->
                     let trackingSpan =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
 
