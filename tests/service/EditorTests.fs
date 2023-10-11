@@ -781,7 +781,6 @@ type Class1() =
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
-          ("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
           ("val ModuleValue", (3, 20, 3, 31))
           ("val op_Addition", (6, 26, 6, 27))
@@ -793,10 +792,8 @@ type Class1() =
           ("Class1", (10, 5, 10, 11))
           ("member .ctor", (10, 5, 10, 11))
           ("LiteralAttribute", (11, 10, 11, 17))
-          ("LiteralAttribute", (11, 10, 11, 17))
           ("member .ctor", (11, 10, 11, 17))
           ("val ClassValue", (11, 20, 11, 30))
-          ("LiteralAttribute", (12, 17, 12, 24))
           ("LiteralAttribute", (12, 17, 12, 24))
           ("member .ctor", (12, 17, 12, 24))
           ("val StaticClassValue", (12, 27, 12, 43))

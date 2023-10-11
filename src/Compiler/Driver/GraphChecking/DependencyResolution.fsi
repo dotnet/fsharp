@@ -1,9 +1,12 @@
 /// Logic for constructing a file dependency graph for the purposes of parallel type-checking.
 module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
-/// <summary>Query a TrieNode to find a certain path.</summary>
+/// <summary>
+/// Query a TrieNode to find a certain path.
+/// The result will take the current file index into account to determine if the result node contains data.
+/// </summary>
 /// <remarks>This code is only used directly in unit tests.</remarks>
-val queryTrie: trie: TrieNode -> path: LongIdentifier -> QueryTrieNodeResult
+val queryTrie: currentFileIndex: FileIndex -> trie: TrieNode -> path: LongIdentifier -> QueryTrieNodeResult
 
 /// <summary>Process an open path (found in the ParsedInput) with a given FileContentQueryState.</summary>
 /// <remarks>This code is only used directly in unit tests.</remarks>
