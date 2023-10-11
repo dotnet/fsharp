@@ -7,6 +7,7 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.NameResolution
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -19,7 +20,6 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -218,6 +218,12 @@ type cenv =
       isLastCompiland : bool*bool
 
       isInternalTestSpanStackReferring: bool
+      
+      tcSink: TcResultsSink
+      
+      nameEnv: NameResolutionEnv
+      
+      accessRights:AccessorDomain
 
       // outputs
       mutable usesQuotations: bool
@@ -2423,6 +2429,21 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     if not pinfo.IsIndexer then
                         errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
+            if pinfo.HasGetter && pinfo.HasSetter then
+                match pinfo.GetterMethod, pinfo.SetterMethod with
+                | MethInfo.FSMeth(valRef = vGet), MethInfo.FSMeth(valRef = vSet) when (Range.equals vGet.Id.idRange vSet.Id.idRange) ->
+                    match vGet.ApparentEnclosingEntity with
+                    | ParentNone -> ()
+                    | Parent parentRef ->
+                    let item =
+                        Item.Property(
+                            vGet.Id.idText,
+                            [ PropInfo.FSProp(g, generalizedTyconRef g parentRef, Some vGet, Some vSet) ],
+                            Some vGet.Id.idRange
+                        )
+                    CallNameResolutionSink cenv.tcSink (vGet.Id.idRange, cenv.nameEnv, item, emptyTyparInst, ItemOccurence.Binding, cenv.accessRights)
+                | _ -> ()
+
             hashOfImmediateProps[nm] <- pinfo :: others
 
         if not (isInterfaceTy g ty) then
@@ -2601,7 +2622,7 @@ let CheckImplFileContents cenv env implFileTy implFileContents  =
     UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
-let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring, tcSink, nameEnv, accessRights) =
     let cenv =
         { g = g
           reportErrors = reportErrors
@@ -2619,7 +2640,10 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           tcVal = tcValF
-          entryPointGiven = false}
+          entryPointGiven = false
+          tcSink = tcSink
+          nameEnv = nameEnv
+          accessRights = accessRights }
 
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
     // This is because pre-resolving allows tycon equality to be determined by pointer equality on the entities.

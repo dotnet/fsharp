@@ -2074,7 +2074,7 @@ classDefnMember:
        let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
        let mEquals = rhs parseState 6
        let expr = $7
-       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
+       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
        let vis = $2
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
        // Check that 'SynPatForConstructorDecl' matches this correctly
@@ -2090,7 +2090,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let m = unionRanges (rhs parseState 1) mEnd |> unionRangeWithXmlDoc xmlDoc
        let expr = arbExpr ("new1", mEnd.EndRange)
-       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
+       let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], $2, rhs parseState 3)
        assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
@@ -2104,7 +2104,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let m = unionRanges (rhs parseState 1) mEnd |> unionRangeWithXmlDoc xmlDoc
        let expr = arbExpr ("new2", mEnd.EndRange)
-       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5, None)
+       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.bind snd $5)
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], $2, rhs parseState 3)
        assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
@@ -2116,7 +2116,7 @@ classDefnMember:
        let xmlDoc = grabXmlDoc (parseState, $1, 1)
        let pat = patFromParseError (SynPat.Wild(mNew.EndRange))
        let expr = arbExpr ("new3", mNew.EndRange)
-       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat pat], SynInfo.unnamedRetVal), None, None)
+       let valSynData = SynValData(Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat pat], SynInfo.unnamedRetVal), None)
        let vis = $2
        let declPat = SynPat.LongIdent(SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [pat], vis, rhs parseState 3)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
