@@ -1839,7 +1839,10 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
           | SynMemberDefn.ImplicitCtor _ :: _ -> ()
           | _ ->
             if not tcref.IsFSharpEnumTycon && not tcref.IsFSharpDelegateTycon && not tcref.IsFSharpException && not tcref.IsTypeAbbrev then
-                TyconBindingDefn(containerInfo, newslotsOK, declKind, None, tcref.Range)
+                if members |> List.exists (function | SynMemberDefn.LetBindings(isStatic=true) -> true | _ -> false ) then
+                    // Introduction of this member has caused the regression #16009, due to a missed Lazy<>.Force access from a member to a value in recursive module
+                    // Minimizing the impact by only yielding in case of actually emitting static let bindings.
+                    TyconBindingDefn(containerInfo, newslotsOK, declKind, None, tcref.Range)
 
           // Yield the other members
           for memb in members do

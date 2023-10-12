@@ -18,7 +18,7 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
-  <ItemGroup>    
+  <ItemGroup>
     <EmbeddedResource Include="FSharp.Editor.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
@@ -130,7 +130,7 @@
     <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
-    <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\ImplementInterface.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFixes\MissingReference.fs" />
