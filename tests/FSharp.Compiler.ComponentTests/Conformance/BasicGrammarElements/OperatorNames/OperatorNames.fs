@@ -74,32 +74,3 @@ module OperatorNames =
         |> withOptions ["--warnaserror+"; "--nowarn:3370"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorGreaterColon01.fs"|])>]
-    let``E_OperatorGreaterColon01_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:1172" ; "--nowarn:1173"]
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 35, Line 2, Col 10, Line 2, Col 12, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 4, Col 10, Line 4, Col 12, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 4, Col 15, Line 4, Col 17, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 7, Col 24, Line 7, Col 26, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 10, Col 24, Line 10, Col 26, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 10, Col 29, Line 10, Col 31, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 13, Col 24, Line 13, Col 26, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-            (Error 35, Line 13, Col 29, Line 13, Col 31, "This construct is deprecated: ':' is not permitted as a character in operator names and is reserved for future use")
-        ]
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorGreaterColon02.fs"|])>]
-    let ``E_OperatorGreaterColon02_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:1172" ; "--nowarn:1173"]
-        |> asFsx
-        |> runFsi
-        |> shouldFail
-        |> withDiagnostics [
-            
-        ]
