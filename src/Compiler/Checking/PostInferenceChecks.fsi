@@ -26,10 +26,7 @@ val CheckImplFile:
     implFileContents: ModuleOrNamespaceContents *
     extraAttribs: Attribs *
     (bool * bool) *
-    isInternalTestSpanStackReferring: bool *
-    tcSink: TcResultsSink *
-    nameEnv: NameResolutionEnv *
-    accessRights: AccessorDomain ->
+    isInternalTestSpanStackReferring: bool ->
         bool * StampMap<AnonRecdTypeInfo>
 
 /// It's unlikely you want to use this module except within

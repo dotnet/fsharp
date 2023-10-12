@@ -992,6 +992,37 @@ module MutRecBindingChecking =
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 
+                // Report any desugared properties
+                if defnAs.Length > 1 then
+                    for b1, b2 in List.pairwise defnAs do
+                        match b1, b2 with
+                        | TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = getIdent)); valSynData = SynValData(memberFlags = Some mf))
+                            RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
+                          },
+                          TyconBindingPhase2A.Phase2AMember {
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = setIdent)))
+                            RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
+                          } when Range.equals getIdent.idRange setIdent.idRange ->
+                            match  vGet.ApparentEnclosingEntity with
+                            | ParentNone -> ()
+                            | Parent parentRef ->
+                                let apparentEnclosingType =  generalizedTyconRef g parentRef
+                                let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
+                                let propertyName =
+                                    if vGet.Id.idText.StartsWith("get_", StringComparison.InvariantCulture) then
+                                        vGet.Id.idText.Replace("get_", "")
+                                    else
+                                        vGet.Id.idText
+                                let item =
+                                    Item.Property(
+                                        propertyName,
+                                        [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
+                                        Some getIdent.idRange
+                                    )
+                                CallNameResolutionSink cenv.tcSink (getIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                        | _ -> ()
+
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
                     match defnAs with 
@@ -5595,7 +5626,7 @@ let CheckOneImplFile
                        (g, cenv.amap, reportErrors, cenv.infoReader, 
                         env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
                         implFileTy, implFileContents, extraAttribs, isLastCompiland, 
-                        isInternalTestSpanStackReferring, cenv.tcSink, envAtEnd.NameEnv, envAtEnd.AccessRights)
+                        isInternalTestSpanStackReferring)
 
                 with RecoverableException exn -> 
                     errorRecovery exn m
