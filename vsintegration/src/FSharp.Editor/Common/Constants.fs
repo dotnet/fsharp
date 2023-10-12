@@ -148,6 +148,9 @@ module internal CodeFix =
     let FixIndexerAccess = "FixIndexerAccess"
 
     [<Literal>]
+    let ImplementInterface = "ImplementInterface"
+
+    [<Literal>]
     let RemoveReturnOrYield = "RemoveReturnOrYield"
 
     [<Literal>]
