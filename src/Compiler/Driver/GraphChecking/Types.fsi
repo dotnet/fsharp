@@ -77,10 +77,9 @@ type internal FileContent =
 type internal FileContentQueryState =
     { OwnNamespace: LongIdentifier option
       OpenedNamespaces: Set<LongIdentifier>
-      FoundDependencies: Set<FileIndex>
-      CurrentFile: FileIndex }
+      FoundDependencies: Set<FileIndex> }
 
-    static member Create: fileIndex: FileIndex -> filesAtRoot: Set<FileIndex> -> FileContentQueryState
+    static member Create: filesAtRoot: Set<FileIndex> -> FileContentQueryState
     member AddOwnNamespace: ns: LongIdentifier * ?files: Set<FileIndex> -> FileContentQueryState
     member AddDependencies: files: Set<FileIndex> -> FileContentQueryState
     member AddOpenNamespace: path: LongIdentifier * ?files: Set<FileIndex> -> FileContentQueryState

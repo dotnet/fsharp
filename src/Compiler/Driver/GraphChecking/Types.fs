@@ -86,15 +86,13 @@ type internal FileContentQueryState =
         OwnNamespace: LongIdentifier option
         OpenedNamespaces: Set<LongIdentifier>
         FoundDependencies: Set<FileIndex>
-        CurrentFile: FileIndex
     }
 
-    static member Create (fileIndex: FileIndex) (filesAtRoot: Set<FileIndex>) =
+    static member Create(filesAtRoot: Set<FileIndex>) =
         {
             OwnNamespace = None
             OpenedNamespaces = Set.empty
             FoundDependencies = filesAtRoot
-            CurrentFile = fileIndex
         }
 
     member x.AddOwnNamespace(ns: LongIdentifier, ?files: Set<FileIndex>) =
