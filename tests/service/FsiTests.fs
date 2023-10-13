@@ -248,8 +248,8 @@ let ``EvalInteraction parse failure nothrow``() =
     |> shouldEqual 
           ["exception Operation could not be completed due to earlier error";
            "error 1,5 - 1,8; Unexpected keyword 'let' or 'use' in binding";
-           "warning 1,0 - 1,22; Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:14). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7";
-           "warning 1,22 - 1,22; Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:14). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7"]
+           "warning 1,0 - 1,22; Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:14). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+           "warning 1,22 - 1,22; Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:14). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7."]
 
 [<Test>]
 let ``PartialAssemblySignatureUpdated test``() = 
