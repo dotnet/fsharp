@@ -24,12 +24,22 @@ module FSharpDependencyManager =
         | true, false -> v
         | _ -> ""
 
-    let validateAndFormatRestoreSources (sources: string) =
+    let validateAndFormatRestoreSources (directoryPath: string) (sources: string) =
         [|
             let items = sources.Split(';')
 
             for item in items do
-                let uri = Uri(item)
+                let uri =
+                    let mutable res: Uri = null
+                    if Uri.TryCreate(item, UriKind.Absolute, &res) then
+                        res
+                    else
+                        let baseUri =
+                            if directoryPath.EndsWith @"\" || directoryPath.EndsWith "/" then
+                                Uri(directoryPath)
+                            else
+                                Uri(directoryPath + "/")
+                        Uri(baseUri, item)
 
                 if uri.IsFile then
                     let directoryName = uri.LocalPath
@@ -49,7 +59,7 @@ module FSharpDependencyManager =
                             uri.OriginalString
         |]
 
-    let formatPackageReference p =
+    let formatPackageReference (directoryPath: string) p =
         let {
                 Include = inc
                 Version = ver
@@ -68,7 +78,7 @@ module FSharpDependencyManager =
             | _ -> ()
 
             match not (String.IsNullOrEmpty(src)) with
-            | true -> yield! validateAndFormatRestoreSources src
+            | true -> yield! validateAndFormatRestoreSources directoryPath src
             | _ -> ()
         }
 
@@ -200,6 +210,7 @@ module FSharpDependencyManager =
 
     let computeHashForResolutionInputs
         (
+            scriptDirectory: string,
             scriptExt: string,
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
@@ -232,7 +243,7 @@ module FSharpDependencyManager =
         else
             let packageReferenceText =
                 packageReferences
-                |> List.map formatPackageReference
+                |> List.map (formatPackageReference scriptDirectory)
                 |> Seq.concat
                 |> Seq.distinct
                 |> Seq.toArray
@@ -378,7 +389,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
         let packageReferenceLines =
             packageReferences
-            |> List.map FSharpDependencyManager.formatPackageReference
+            |> List.map (FSharpDependencyManager.formatPackageReference scriptDirectory)
             |> Seq.concat
 
         let generatedNugetSources =
@@ -492,6 +503,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         let generateAndBuildProjectArtifacts =
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
+                    scriptDirectory,
                     scriptExt,
                     packageManagerTextLines,
                     targetFrameworkMoniker,
