@@ -34,12 +34,7 @@ module FSharpDependencyManager =
                     if Uri.TryCreate(item, UriKind.Absolute, &res) then
                         res
                     else
-                        let baseUri =
-                            if directoryPath.EndsWith @"\" || directoryPath.EndsWith "/" then
-                                Uri(directoryPath)
-                            else
-                                Uri(directoryPath + "/")
-                        Uri(baseUri, item)
+                        Uri(Path.Combine(directoryPath, item))
 
                 if uri.IsFile then
                     let directoryName = uri.LocalPath
