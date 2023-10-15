@@ -1,11 +1,10 @@
 {
   "sdk": {
-    "version": "8.0.100-rc.1.23455.8",
-    "allowPrerelease": true,
-    "rollForward": "latestMajor"
+    "version": "8.0.100-rc.1.23463.5",
+    "allowPrerelease": true
   },
   "tools": {
-    "dotnet": "8.0.100-rc.1.23455.8",
+    "dotnet": "8.0.100-rc.1.23463.5",
     "vs": {
       "version": "17.6",
       "components": [

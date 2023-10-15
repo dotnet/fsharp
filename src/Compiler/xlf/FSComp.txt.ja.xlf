@@ -1152,6 +1152,11 @@
         <target state="translated">この式では、暗黙的な変換 '{0}' を使用して、型 '{1}' を型 '{2}' に変換しています。https://aka.ms/fsharp-implicit-convs をご確認ください。'#nowarn\"3391\" を使用して、この警告を無効にできる可能性があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">初期化コードの外部で init 専用プロパティ '{0}' を設定することはできません。https://aka.ms/fsharp-assigning-values-to-properties-at-initialization を参照してください</target>
@@ -8433,8 +8438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">byref 拡張メソッド '{0} を呼び出すことはできません。最初のパラメーターでは、値を変更可能な byref 型または読み取り専用以外の byref 型にする必要があります。</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="needs-review-translation">byref 拡張メソッド '{0} を呼び出すことはできません。最初のパラメーターでは、値を変更可能な byref 型または読み取り専用以外の byref 型にする必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">

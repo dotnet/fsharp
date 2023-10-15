@@ -33,18 +33,17 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
                 sourceText.GetSubText(sourceText.Lines.[textLinePos.Line].Span).ToString()
 
             if String.IsNullOrWhiteSpace textInLine then
-                return None
+                return ValueNone
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
 
-                let! parseResults =
-                    document.GetFSharpParseResultsAsync(nameof (FSharpBreakpointResolutionService))
-                    |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpBreakpointResolutionService))
 
-                match parseResults with
-                | Some parseResults -> return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
-                | _ -> return None
+                let location =
+                    parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
+
+                return ValueOption.ofOption location
         }
 
     interface IFSharpBreakpointResolutionService with
@@ -58,14 +57,14 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(document, textSpan)
 
                 match range with
-                | None -> return Unchecked.defaultof<_>
-                | Some range ->
+                | ValueNone -> return Unchecked.defaultof<_>
+                | ValueSome range ->
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
 
                     match span with
-                    | None -> return Unchecked.defaultof<_>
-                    | Some span -> return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
+                    | ValueNone -> return Unchecked.defaultof<_>
+                    | ValueSome span -> return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             }
             |> CancellableTask.start cancellationToken
 

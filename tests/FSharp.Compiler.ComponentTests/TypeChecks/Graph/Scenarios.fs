@@ -750,4 +750,26 @@ let main _ =
 """
                     (set [| 0 |])
             ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
     ]
