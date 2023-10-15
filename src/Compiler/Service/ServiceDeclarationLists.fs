@@ -1138,6 +1138,11 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
             |> RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
+                // RFC-1137
+                // we do not solely group by item name but also add Kind, 
+                // due to not desiring to merge Property and Method bearing same name
+                // (from type extension or extension methods).
+                x.Kind,
                 match x.Unresolved with
                 | Some u -> 
                     match u.Namespace with
