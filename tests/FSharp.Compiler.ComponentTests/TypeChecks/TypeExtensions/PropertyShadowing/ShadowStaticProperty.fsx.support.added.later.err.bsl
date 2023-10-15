@@ -1,0 +1,2 @@
+ShadowStaticProperty.fsx (12,1)-(12,6) typecheck error This value is not a function and cannot be applied.
+ShadowStaticProperty.fsx (23,1)-(23,6) typecheck error This value is not a function and cannot be applied.

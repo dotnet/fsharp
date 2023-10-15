@@ -13,6 +13,7 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/PropertyShadowing"
         "ShadowWithTypeExtension.fsx"
         "ShadowingAndStillOkWithChainedCalls.fsx"
         "LinqCount.fsx"
+        "ShadowStaticProperty.fsx"
     |]
 )>]
 let ``can hide property`` compilation =
@@ -31,6 +32,7 @@ let ``can hide property`` compilation =
         "ShadowWithTypeExtension.fsx"
         "ShadowingAndStillOkWithChainedCalls.fsx"
         "LinqCount.fsx"
+        "ShadowStaticProperty.fsx"
       |]
       , BaselineSuffix = ".support.added.later"
 )>]

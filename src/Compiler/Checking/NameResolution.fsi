@@ -774,6 +774,7 @@ val internal ResolveExprLongIdent:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
@@ -794,6 +795,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
