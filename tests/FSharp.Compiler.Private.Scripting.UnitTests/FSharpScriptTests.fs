@@ -211,16 +211,6 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         Assert.Equal(errors.Length, 1)
         Assert.Equal(errors.[0].ToString(), error0)
 
-    [<Theory>]
-    [<InlineData("""#i "nuget:foo" """,
-                 "input.fsx (1,1)-(1,15) interactive error Invalid URI: The format of the URI could not be determined.")>]
-    member _.``Script with #i and forgot to add quotes``(code, error) =
-        use script = new FSharpScript()
-        let result, errors = script.Eval(code)
-        Assert.NotEmpty(errors)
-        Assert.Equal(1, errors.Length)
-        Assert.Equal(error, errors.[0].ToString())
-
     [<Fact>]
     member _.``#i to a directory that exists``() =
         let path = Path.GetTempPath()
@@ -245,6 +235,19 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
+    [<Fact>]
+    member _.``#i with a relative path``() =
+        let pathA = Path.GetTempPath()
+        let pathB = Uri(Uri(pathA), "..").AbsolutePath
+        Environment.CurrentDirectory <- pathB
+
+        let path = System.IO.Path.GetRelativePath (pathB, pathA)
+        let code = $"#i \"\"\"nuget: {path}\"\"\""
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.Empty(errors)
+        Assert.Equal(0, errors.Length)
+
     [<Fact>]
     member _.``ML - use assembly with native dependencies``() =
         let code = @"
