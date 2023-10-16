@@ -48,6 +48,21 @@ module private Patterns =
     let inline (|Symbol|_|) c = toPat Char.IsSymbol c
 
 module private SourceText =
+    /// Returns true if the given span contains an expression
+    /// whose indentation would be made invalid if the open paren
+    /// were removed (because the offside line would be shifted), e.g.,
+    ///
+    ///     // Valid.
+    ///     (let x = 2
+    ///      x)
+    ///
+    ///     // Invalid.
+    ///    ←let x = 2
+    ///      x◌
+    ///
+    ///     // Valid.
+    ///     ◌let x = 2
+    ///      x◌
     let containsSensitiveIndentation (span: TextSpan) (sourceText: SourceText) =
         let startLinePosition = sourceText.Lines.GetLinePosition span.Start
         let endLinePosition = sourceText.Lines.GetLinePosition span.End
