@@ -451,3 +451,74 @@ module UnusedDeclarations =
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges
         }
+
+module public Naming =
+
+    type UnnamedFieldsLocations =
+        | InDiscriminatedUnionCases
+        | InExceptions
+
+    let defaultOptions = Set.ofArray [|InDiscriminatedUnionCases; InExceptions|]
+
+    let fieldNotOk (field: FSharpField) =
+        field.IsNameGenerated 
+        || isNull field.Name 
+        || System.String.Empty = field.Name
+
+    [<TailCall>]
+    let rec checkDeclaration (options: Set<UnnamedFieldsLocations>) declaration =
+        match declaration with
+        | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue _ -> Seq.empty
+        | FSharpImplementationFileDeclaration.InitAction _ -> Seq.empty
+        | FSharpImplementationFileDeclaration.Entity(entity, _declarations) ->
+            seq {
+                if options.Contains InDiscriminatedUnionCases then
+                    for case in entity.UnionCases do
+                        // lenient on non public members
+                        if not case.Accessibility.IsPublic then () else
+                        // lenient on single field cases
+                        if case.Fields.Count <= 1 then () else
+                        for field in case.Fields do
+                            if fieldNotOk field then
+                                field.DeclarationLocation
+                                match field.ImplementationLocation with
+                                | None -> ()
+                                | Some range -> range
+                                match field.SignatureLocation with
+                                | None -> ()
+                                | Some range -> range
+                if options.Contains InExceptions then
+                    if entity.IsFSharpExceptionDeclaration then
+                        // lenient on non public members
+                        if not entity.Accessibility.IsPublic then () else
+                        // lenient on single field cases
+                        if entity.FSharpFields.Count <= 1 then () else
+                        for field in entity.FSharpFields do
+                            if fieldNotOk field then
+                                field.DeclarationLocation
+                                match field.ImplementationLocation with
+                                | None -> ()
+                                | Some range -> range
+                                match field.SignatureLocation with
+                                | None -> ()
+                                | Some range -> range
+                for declaration in _declarations do
+                    yield! checkDeclaration options declaration
+            }
+
+    let getUnnamedDiscriminatedUnionAndExceptionFields (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
+        async {
+            let options = defaultOptions
+            // be lenient in case of script
+            if isScriptFile then return Seq.empty else
+            match checkFileResults.ImplementationFile with
+            | None -> return Seq.empty
+            | Some checkResults ->
+                return (seq {
+                    for d in checkResults.Declarations do
+                        yield! checkDeclaration options d
+                }
+                |> Seq.distinct // not comparable but distinct works :)
+                //|> Seq.sort // not comparable
+                )
+        }
