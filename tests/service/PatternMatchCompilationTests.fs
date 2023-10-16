@@ -259,7 +259,7 @@ let dowork () =
     dumpDiagnostics checkResults |> shouldEqual [
         "(6,6--6,10): This constructor is applied to 0 argument(s) but expects 1"
     ]
-    
+
 [<Test>]
 let ``Or 01 - No errors`` () =
     let _, checkResults = getParseAndCheckResults """
@@ -319,8 +319,8 @@ match 3 with
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "w"; "x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual []
-    
-    
+
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -345,7 +345,7 @@ match box 1 with
         "(8,41--8,42): The type 'obj' does not match the type 'int8'"
         "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
-    
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -422,15 +422,15 @@ let ``As 07 - syntactical precedence matrix testing right - total patterns`` () 
 bindingPattern:
   | headBindingPattern
 headBindingPattern:
-  | headBindingPattern AS constrPattern 
-  | headBindingPattern BAR headBindingPattern  
-  | headBindingPattern COLON_COLON  headBindingPattern 
-  | tuplePatternElements  %prec pat_tuple 
+  | headBindingPattern AS constrPattern
+  | headBindingPattern BAR headBindingPattern
+  | headBindingPattern COLON_COLON  headBindingPattern
+  | tuplePatternElements  %prec pat_tuple
   | conjPatternElements   %prec pat_conj
-  | constrPattern 
+  | constrPattern
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
-  | atomicPatternLongIdent opt_explicitValTyparDecls2 atomicPatsOrNamePatPairs %prec pat_app 
+  | atomicPatternLongIdent opt_explicitValTyparDecls2 atomicPatsOrNamePatPairs %prec pat_app
   | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
   | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
   | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst
@@ -455,9 +455,9 @@ atomicPattern:
   | STRUCT LPAREN tupleParenPatternElements rparen
   | STRUCT LPAREN tupleParenPatternElements recover
   | STRUCT LPAREN error rparen
-  | STRUCT LPAREN recover 
-parenPatternBody: 
-  | parenPattern 
+  | STRUCT LPAREN recover
+parenPatternBody:
+  | parenPattern
   | /* EMPTY */
 parenPattern:
   | parenPattern AS constrPattern
@@ -494,7 +494,7 @@ Some v |> eq<struct(int * int)>
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpDiagnostics checkResults |> shouldEqual []
-    
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -630,7 +630,7 @@ Some x |> eq<struct(int * int)>
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpDiagnostics checkResults |> shouldEqual []
-    
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -807,7 +807,7 @@ Some x |> eq<obj>
         "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
-    
+
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
@@ -920,8 +920,7 @@ let :? z as
         "(14,12--14,13): Unexpected symbol '|' in binding";
         "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token.";
         "(15,12--15,13): Unmatched '('";
-        "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token.";
         "(20,0--20,0): Incomplete structured construct at or before this point in binding";
         "(3,7--3,8): The type 'a' is not defined.";
@@ -1130,19 +1129,14 @@ let as :? z =
         "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token.";
         "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
         "(16,6--16,7): Unmatched '('";
-        "(17,0--17,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(17,0--17,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,0--17,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token.";
         "(16,0--16,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(17,8--17,10): Unexpected keyword 'as' in pattern. Expected ']' or other token.";
-        "(18,0--18,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(19,0--19,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo 
-continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(18,0--18,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(19,0--19,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(3,12--3,13): The type 'a' is not defined.";
         "(3,9--3,13): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(4,15--4,16): The type 'b' is not defined.";
