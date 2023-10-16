@@ -17,7 +17,7 @@ open CancellableTasks
 open System.Runtime.CompilerServices
 
 [<Sealed; AbstractClass; Extension>]
-type ReadOnlySpanExtensions =
+type private ReadOnlySpanExtensions =
     [<Extension>]
     static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
         let mutable i = 0
