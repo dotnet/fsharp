@@ -993,8 +993,12 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft ((":?" | ":>" | ":?>"), _) -> invalidPairing
                     | OuterLeft (_, "**op") -> fixable pair
                     | OuterLeft ("**op", _) -> unfixable pair
+                    | OuterLeft ("*op", "*op") -> fixable pair
+                    | OuterLeft (("%op" | "/op" | "*op"), ("%op" | "/op" | "*op")) -> unfixable pair
                     | OuterLeft (_, ("%op" | "/op" | "*op")) -> fixable pair
                     | OuterLeft (("%op" | "/op" | "*op"), _) -> unfixable pair
+                    | OuterLeft ("+op", "+op") -> fixable pair
+                    | OuterLeft (("-op" | "+op"), ("-op" | "+op")) -> unfixable pair
                     | OuterLeft (_, ("-op" | "+op")) -> fixable pair
                     | OuterLeft (("-op" | "+op"), _) -> unfixable pair
                     | OuterLeft (_, ":?") -> fixable pair
@@ -1002,6 +1006,7 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft ("::", _) -> unfixable pair
                     | OuterLeft (_, ("^op" | "@op")) -> fixable pair
                     | OuterLeft (("^op" | "@op"), _) -> unfixable pair
+                    | OuterLeft (l & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), r & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> if l = r then fixable pair else unfixable pair
                     | OuterLeft (_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
                     | OuterLeft (("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
                     | OuterLeft (_, (":>" | ":?>")) -> fixable pair
@@ -1019,8 +1024,10 @@ let _ = (2 + 2) { return 5 }
                     | OuterRight (("-op" | "+op"), _) -> fixable pair
                     | OuterRight (_, ("-op" | "+op")) -> unfixable pair
                     | OuterRight (_, ":?") -> unfixable pair
+                    | OuterRight ("::", "::") -> unfixable pair
                     | OuterRight ("::", _) -> fixable pair
                     | OuterRight (_, "::") -> unfixable pair
+                    | OuterRight (("^op" | "@op"), ("^op" | "@op")) -> unfixable pair
                     | OuterRight (("^op" | "@op"), _) -> fixable pair
                     | OuterRight (_, ("^op" | "@op")) -> unfixable pair
                     | OuterRight (("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> fixable pair
@@ -1030,7 +1037,7 @@ let _ = (2 + 2) { return 5 }
                     | OuterRight (_, ("&" | "&&")) -> unfixable pair
                     | OuterRight (("||" | "or"), _) -> fixable pair
                     | OuterRight (_, ("||" | "or")) -> unfixable pair
-                    | OuterRight (":=", ":=") -> fixable pair
+                    | OuterRight (":=", ":=") -> unfixable pair
 
                     | _ -> unfixable pair
 
