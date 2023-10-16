@@ -254,7 +254,7 @@ let _ =
             // Assert
             "assert(true)", "assert true"
             "assert (true)", "assert true"
-            "assert (not false)", "assert not false"
+            "assert (not false)", "assert (not false)" // Technically we could remove here, but probably better not to.
             "assert (2 + 2 = 5)", "assert (2 + 2 = 5)"
 
             // App
@@ -451,7 +451,7 @@ let _ =
             // Lazy
             "lazy(3)", "lazy 3"
             "lazy (3)", "lazy 3"
-            "lazy (id 3)", "lazy id 3"
+            "lazy (id 3)", "lazy (id 3)" // Technically we could remove here, but probably better not to.
 
             // Sequential
             "let x = 3; (5) in x", "let x = 3; 5 in x"
@@ -489,10 +489,20 @@ let _ =
 
             // DotSet
             "(ref 3).Value <- (3)", "(ref 3).Value <- 3"
+            "(ref 3).Value <- (id 3)", "(ref 3).Value <- id 3"
 
             // Set
             "let mutable x = 3 in (x) <- 3", "let mutable x = 3 in x <- 3"
             "let mutable x = 3 in x <- (3)", "let mutable x = 3 in x <- 3"
+
+            """
+            let mutable x = 3
+            x <- (printfn $"{y}"; 3)
+            """,
+            """
+            let mutable x = 3
+            x <- (printfn $"{y}"; 3)
+            """
 
             """
             let mutable x = 3
@@ -501,8 +511,8 @@ let _ =
             """,
             """
             let mutable x = 3
-            x <-  printfn $"{y}"
-                  3
+            x <- (printfn $"{y}"
+                  3)
             """
 
             """
@@ -683,14 +693,32 @@ let _ =
                 "id -(1e4)", "id -1e4"
                 "id -(1e-4)", "id -1e-4"
                 "id -(-(-x))", "id -(- -x)"
+                "(~-) -(-(-x))", "(~-) -(- -x)"
                 "id -(-(-3))", "id -(- -3)"
                 "id -(- -3)", "id -(- -3)"
                 "-(x)", "-x"
                 "-(3)", "-3"
                 "-(-x)", "- -x"
                 "-(-3)", "- -3"
-                "-(- -x)", "- - -x"
-                "-(- -3)", "- - -3"
+                "-(- -x)", "-(- -x)"
+                "-(- -3)", "-(- -3)"
+                "(3).ToString()", "(3).ToString()"
+                "(3l).ToString()", "3l.ToString()"
+                "(-3).ToString()", "(-3).ToString()"
+                "(-x).ToString()", "(-x).ToString()"
+                "(-3y).ToString()", "-3y.ToString()"
+                "(3y).ToString()", "3y.ToString()"
+                "(1.).ToString()", "(1.).ToString()"
+                "(1.0).ToString()", "1.0.ToString()"
+                "(1e10).ToString()", "1e10.ToString()"
+                "(-1e10).ToString()", "-1e10.ToString()"
+                "(1)<(id<_>1)>true", "(1)<(id<_>1)>true"
+                "(1<1)>true", "(1<1)>true"
+                "true<(1>2)", "true<(1>2)"
+                "(1)<1>true", "(1)<1>true"
+                "(1<2),2>3", "(1<2),2>3"
+                "1<2,(2>3)", "1<2,(2>3)"
+                "(1)<2,2>3", "(1)<2,2>3"
                 """ let (~+) _ = true in assert +($"{true}") """, """ let (~+) _ = true in assert +($"{true}") """
                 """ let (~-) s = false in lazy -($"") """, """ let (~-) s = false in lazy - $"" """
                 """ let (~-) s = $"-%s{s}" in id -($"") """, """ let (~-) s = $"-%s{s}" in id -($"") """
@@ -741,12 +769,16 @@ let _ =
                 "x |> (fun x -> x)", "x |> fun x -> x"
                 "id <| (fun x -> x)", "id <| fun x -> x"
                 "id <| (fun x -> x) |> id", "id <| fun x -> x |> id"
+                "(id <| fun x -> x) |> id", "(id <| fun x -> x) |> id"
+                """(printfn ""; fun x -> x) |> id""", """(printfn ""; fun x -> x) |> id"""
 
                 // MatchLambda
                 "id (function x when true -> x | y -> y)", "id (function x when true -> x | y -> y)"
+                "(id <| function x -> x) |> id", "(id <| function x -> x) |> id"
 
                 // Match
                 "id (match x with y -> y)", "id (match x with y -> y)"
+                "(id <| match x with _ -> x) |> id", "(id <| match x with _ -> x) |> id"
 
                 // Do
                 "id (do ())", "id (do ())"
@@ -777,21 +809,26 @@ let _ =
 
                 // LetOrUse
                 "id (let x = 1 in x)", "id (let x = 1 in x)"
+                "(id <| let x = 1 in x) |> id", "(id <| let x = 1 in x) |> id"
 
                 // TryWith
                 "id (try raise null with _ -> null)", "id (try raise null with _ -> null)"
+                "(id <| try raise null with _ -> null) |> id", "(id <| try raise null with _ -> null) |> id"
 
                 // TryFinally
                 "id (try raise null finally null)", "id (try raise null finally null)"
+                "(id <| try raise null finally null) |> id", "(id <| try raise null finally null) |> id"
 
                 // Lazy
                 "id (lazy x)", "id (lazy x)"
 
                 // Sequential
                 "id (let x = 1; () in x)", "id (let x = 1; () in x)"
+                "id (let x = 1 in (); y)", "id (let x = 1 in (); y)"
 
                 // IfThenElse
                 "id (if x then y else z)", "id (if x then y else z)"
+                "(id <| if x then y else z) |> id", "(id <| if x then y else z) |> id"
 
                 // Ident
                 "id (x)", "id x"
@@ -822,6 +859,9 @@ let _ =
 
                 // Set
                 "let mutable x = y in id (x <- z)", "let mutable x = y in id (x <- z)"
+                "let mutable x = y in (x <- z) |> id", "let mutable x = y in (x <- z) |> id"
+                "let mutable x = y in ((); x <- z) |> id", "let mutable x = y in ((); x <- z) |> id"
+                "let mutable x = y in (if true then x <- z) |> id", "let mutable x = y in (if true then x <- z) |> id"
 
                 // DotIndexedGet
                 "id ([x].[y])", "id [x].[y]"
@@ -1215,6 +1255,7 @@ match Unchecked.defaultof<_> with
             "fun (x) -> x", "fun x -> x"
             "fun (x: int) -> x", "fun (x: int) -> x"
             "fun x (y) -> x", "fun x y -> x"
+            "fun x -> fun (y) -> x", "fun x -> fun y -> x"
             "fun (Lazy x) -> x", "fun (Lazy x) -> x"
             "fun (x, y) -> x, y", "fun (x, y) -> x, y"
             "fun (struct (x, y)) -> x, y", "fun struct (x, y) -> x, y"
