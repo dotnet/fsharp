@@ -581,19 +581,17 @@ module SyntaxTraversal =
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
 
-                | SynExpr.Lambda (args = SynSimplePats.SimplePats (pats = pats); body = synExpr; parsedData = parsedData) ->
-                    match traverseSynSimplePats path pats with
-                    | None ->
-                        [
-                            yield dive synExpr synExpr.Range traverseSynExpr
-                            match parsedData with
-                            | Some (pats, _) ->
-                                for pat in pats do
-                                    yield dive pat pat.Range traversePat
-                            | None -> ()
-                        ]
-                        |> pick expr
-                    | x -> x
+                | SynExpr.Lambda (parsedData = parsedData) ->
+                    [
+                        match parsedData with
+                        | Some (pats, body) ->
+                            for pat in pats do
+                                yield dive pat pat.Range traversePat
+
+                            yield dive body body.Range traverseSynExpr
+                        | None -> ()
+                    ]
+                    |> pick expr
 
                 | SynExpr.MatchLambda (matchClauses = synMatchClauseList) ->
                     synMatchClauseList
