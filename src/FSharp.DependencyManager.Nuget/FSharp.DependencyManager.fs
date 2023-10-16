@@ -31,6 +31,7 @@ module FSharpDependencyManager =
             for item in items do
                 let uri =
                     let mutable res: Uri = null
+
                     if Uri.TryCreate(item, UriKind.Absolute, &res) then
                         res
                     else
