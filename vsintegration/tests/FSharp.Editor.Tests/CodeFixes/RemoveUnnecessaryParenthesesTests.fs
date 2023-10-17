@@ -728,6 +728,7 @@ let _ =
                 """ let (~-) s = $"-%s{s}" in id -(@$"") """, """ let (~-) s = $"-%s{s}" in id -(@$"") """
                 """ let (~-) s = $"-%s{s}" in id -($@"") """, """ let (~-) s = $"-%s{s}" in id -($@"") """
                 "let (~-) q = q in id -(<@ () @>)", "let (~-) q = q in id -(<@ () @>)"
+                "let ``f`` x = x in ``f``(3)", "let ``f`` x = x in ``f`` 3"
 
                 // Typed
                 "id (x : int)", "id (x : int)"
