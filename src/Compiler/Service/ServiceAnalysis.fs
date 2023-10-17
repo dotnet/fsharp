@@ -900,81 +900,82 @@ module UnnecessaryParentheses =
             | SynExpr.DotSet _ -> ValueSome Set
             | _ -> ValueNone
 
-        /// Returns the range of the first matching nested right-hand target expression, if any.
-        let dangling (target: SynExpr -> SynExpr option) =
-            let (|Target|_|) = target
-            let (|Last|) = List.last
+        module Dangling =
+            /// Returns the range of the first matching nested right-hand target expression, if any.
+            let private dangling (target: SynExpr -> SynExpr option) =
+                let (|Target|_|) = target
+                let (|Last|) = List.last
 
-            let rec loop expr =
-                match expr with
-                | Target expr -> ValueSome expr.Range
-                | SynExpr.Tuple (isStruct = false; exprs = Last expr)
-                | SynExpr.App (argExpr = expr)
-                | SynExpr.IfThenElse(elseExpr = Some expr)
-                | SynExpr.IfThenElse (ifExpr = expr)
-                | SynExpr.Sequential (expr2 = expr)
-                | SynExpr.Set (rhsExpr = expr)
-                | SynExpr.DotSet (rhsExpr = expr)
-                | SynExpr.DotNamedIndexedPropertySet (rhsExpr = expr)
-                | SynExpr.DotIndexedSet (valueExpr = expr)
-                | SynExpr.LongIdentSet (expr = expr)
-                | SynExpr.LetOrUse (body = expr)
-                | SynExpr.Match(clauses = Last (SynMatchClause (resultExpr = expr)))
-                | SynExpr.MatchLambda(matchClauses = Last (SynMatchClause (resultExpr = expr)))
-                | SynExpr.MatchBang(clauses = Last (SynMatchClause (resultExpr = expr)))
-                | SynExpr.TryWith(withCases = Last (SynMatchClause (resultExpr = expr)))
-                | SynExpr.TryFinally (finallyExpr = expr) -> loop expr
-                | _ -> ValueNone
+                let rec loop expr =
+                    match expr with
+                    | Target expr -> ValueSome expr.Range
+                    | SynExpr.Tuple (isStruct = false; exprs = Last expr)
+                    | SynExpr.App (argExpr = expr)
+                    | SynExpr.IfThenElse(elseExpr = Some expr)
+                    | SynExpr.IfThenElse (ifExpr = expr)
+                    | SynExpr.Sequential (expr2 = expr)
+                    | SynExpr.Set (rhsExpr = expr)
+                    | SynExpr.DotSet (rhsExpr = expr)
+                    | SynExpr.DotNamedIndexedPropertySet (rhsExpr = expr)
+                    | SynExpr.DotIndexedSet (valueExpr = expr)
+                    | SynExpr.LongIdentSet (expr = expr)
+                    | SynExpr.LetOrUse (body = expr)
+                    | SynExpr.Match(clauses = Last (SynMatchClause (resultExpr = expr)))
+                    | SynExpr.MatchLambda(matchClauses = Last (SynMatchClause (resultExpr = expr)))
+                    | SynExpr.MatchBang(clauses = Last (SynMatchClause (resultExpr = expr)))
+                    | SynExpr.TryWith(withCases = Last (SynMatchClause (resultExpr = expr)))
+                    | SynExpr.TryFinally (finallyExpr = expr) -> loop expr
+                    | _ -> ValueNone
 
-            loop
+                loop
 
-        /// Matches a dangling if-then construct.
-        [<return: Struct>]
-        let (|DanglingIfThen|_|) =
-            dangling (function
-                | SynExpr.IfThenElse _ as expr -> Some expr
-                | _ -> None)
+            /// Matches a dangling if-then construct.
+            [<return: Struct>]
+            let (|IfThen|_|) =
+                dangling (function
+                    | SynExpr.IfThenElse _ as expr -> Some expr
+                    | _ -> None)
 
-        /// Matches a dangling try-with or try-finally construct.
-        [<return: Struct>]
-        let (|DanglingTry|_|) =
-            dangling (function
-                | SynExpr.TryWith _
-                | SynExpr.TryFinally _ as expr -> Some expr
-                | _ -> None)
+            /// Matches a dangling try-with or try-finally construct.
+            [<return: Struct>]
+            let (|Try|_|) =
+                dangling (function
+                    | SynExpr.TryWith _
+                    | SynExpr.TryFinally _ as expr -> Some expr
+                    | _ -> None)
 
-        /// Matches a dangling match-like construct.
-        [<return: Struct>]
-        let (|DanglingMatch|_|) =
-            dangling (function
-                | SynExpr.Match _
-                | SynExpr.MatchBang _
-                | SynExpr.MatchLambda _
-                | SynExpr.TryWith _ as expr -> Some expr
-                | _ -> None)
+            /// Matches a dangling match-like construct.
+            [<return: Struct>]
+            let (|Match|_|) =
+                dangling (function
+                    | SynExpr.Match _
+                    | SynExpr.MatchBang _
+                    | SynExpr.MatchLambda _
+                    | SynExpr.TryWith _ as expr -> Some expr
+                    | _ -> None)
 
-        /// Returns true if the expression contains
-        /// a dangling construct that would become problematic
-        /// if the surrounding parens were removed.
-        let danglingProblematic =
-            dangling (function
-                | SynExpr.Lambda _
-                | SynExpr.MatchLambda _
-                | SynExpr.Match _
-                | SynExpr.MatchBang _
-                | SynExpr.TryWith _
-                | SynExpr.TryFinally _
-                | SynExpr.IfThenElse _
-                | SynExpr.Sequential _
-                | SynExpr.LetOrUse _
-                | SynExpr.Set _
-                | SynExpr.LongIdentSet _
-                | SynExpr.DotIndexedSet _
-                | SynExpr.DotNamedIndexedPropertySet _
-                | SynExpr.DotSet _
-                | SynExpr.NamedIndexedPropertySet _ as expr -> Some expr
-                | _ -> None)
-            >> ValueOption.isSome
+            /// Returns true if the expression contains
+            /// a dangling construct that would become problematic
+            /// if the surrounding parens were removed.
+            let problematic =
+                dangling (function
+                    | SynExpr.Lambda _
+                    | SynExpr.MatchLambda _
+                    | SynExpr.Match _
+                    | SynExpr.MatchBang _
+                    | SynExpr.TryWith _
+                    | SynExpr.TryFinally _
+                    | SynExpr.IfThenElse _
+                    | SynExpr.Sequential _
+                    | SynExpr.LetOrUse _
+                    | SynExpr.Set _
+                    | SynExpr.LongIdentSet _
+                    | SynExpr.DotIndexedSet _
+                    | SynExpr.DotNamedIndexedPropertySet _
+                    | SynExpr.DotSet _
+                    | SynExpr.NamedIndexedPropertySet _ as expr -> Some expr
+                    | _ -> None)
+                >> ValueOption.isSome
 
         /// If the given expression is a parenthesized expression and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
@@ -1213,18 +1214,18 @@ module UnnecessaryParentheses =
                 match outer, inner with
                 | ConfusableWithTypeApp, _ -> ValueNone
 
-                | SynExpr.IfThenElse (trivia = trivia), DanglingIfThen ifThenElseRange when
+                | SynExpr.IfThenElse (trivia = trivia), Dangling.IfThen ifThenElseRange when
                     problematic ifThenElseRange trivia.ThenKeyword
                     || trivia.ElseKeyword |> Option.exists (problematic ifThenElseRange)
                     ->
                     ValueNone
 
-                | SynExpr.TryFinally (trivia = trivia), DanglingTry tryRange when problematic tryRange trivia.FinallyKeyword -> ValueNone
+                | SynExpr.TryFinally (trivia = trivia), Dangling.Try tryRange when problematic tryRange trivia.FinallyKeyword -> ValueNone
 
                 | (SynExpr.Match (clauses = clauses) | SynExpr.MatchLambda (matchClauses = clauses) | SynExpr.MatchBang (clauses = clauses)),
-                  DanglingMatch matchOrTryRange when anyProblematic matchOrTryRange clauses -> ValueNone
+                  Dangling.Match matchOrTryRange when anyProblematic matchOrTryRange clauses -> ValueNone
 
-                | SynExpr.TryWith (withCases = clauses; trivia = trivia), DanglingMatch matchOrTryRange when
+                | SynExpr.TryWith (withCases = clauses; trivia = trivia), Dangling.Match matchOrTryRange when
                     anyProblematic matchOrTryRange clauses
                     || problematic matchOrTryRange trivia.WithKeyword
                     ->
@@ -1250,7 +1251,7 @@ module UnnecessaryParentheses =
 
                         | c -> c > 0
 
-                    if ambiguous || danglingProblematic inner then
+                    if ambiguous || Dangling.problematic inner then
                         ValueNone
                     else
                         ValueSome range
