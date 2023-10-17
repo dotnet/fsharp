@@ -1143,7 +1143,8 @@ module UnnecessaryParentheses =
             //     (1.0).ToStringValueNone
             | SynExpr.Paren (expr = DotSafeNumericLiteral; rightParenRange = Some _; range = range), _ -> ValueSome range
 
-            // Parens are required around bare decimal ints or doubles ending in dots, e.g.,
+            // Parens are required around bare decimal ints or doubles ending
+            // in dots when being dotted into, e.g.,
             //
             //     (1).ToStringValueNone
             //     (1.).ToStringValueNone
@@ -1333,6 +1334,8 @@ module UnnecessaryParentheses =
             | _ -> ValueNone
 
     module SynPat =
+        /// If the given pattern is a parenthesized pattern and the parentheses
+        /// are unnecessary in the given context, returns the unnecessary parentheses' range.
         let unnecessaryParentheses pat path =
             match pat, path with
             // Parens are needed in:
