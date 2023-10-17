@@ -187,7 +187,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
         Assert.NotEmpty(errors)
-        Assert.Equal(errors.[0].ToString(), error0)
+        Assert.Equal(errors[0].ToString(), error0)
 
     [<Theory>]
     [<InlineData("""#i " """,                                                                           // Single quote
@@ -198,8 +198,8 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         let result, errors = script.Eval(code)
         Assert.NotEmpty(errors)
         Assert.Equal(errors.Length, 2)
-        Assert.Equal(error0, errors.[0].ToString())
-        Assert.Equal(error1, errors.[1].ToString())
+        Assert.Equal(error0, errors[0].ToString())
+        Assert.Equal(error1, errors[1].ToString())
 
     [<Theory>]
     [<InlineData("""#i "Obviously I am not a package manager" """,
@@ -209,7 +209,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         let result, errors = script.Eval(code)
         Assert.NotEmpty(errors)
         Assert.Equal(errors.Length, 1)
-        Assert.Equal(errors.[0].ToString(), error0)
+        Assert.Equal(errors[0].ToString(), error0)
 
     [<Fact>]
     member _.``#i to a directory that exists``() =
@@ -231,7 +231,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         let result, errors = script.Eval(code)
         Assert.NotEmpty(errors)
         Assert.Equal(1, errors.Length)
-        Assert.True(errors.[0].ToString().EndsWith(error))
+        Assert.True(errors[0].ToString().EndsWith(error))
 
     [<Fact>]
     member _.``#i with a relative path``() =
@@ -243,7 +243,6 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
         Assert.Empty(errors)
-        Assert.Equal(0, errors.Length)
 
     [<Fact>]
     member _.``#i with relative path to a non-existing directory``() =
@@ -254,6 +253,13 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         Assert.NotEmpty(errors)
         Assert.Equal(1, errors.Length)
         Assert.Matches(".*The source directory .* not found", errors[0].ToString())
+
+    [<Fact>]
+    member _.``#i with a https uri``() =
+        let code = @"#i ""nuget: https://api.nuget.org/v3/index.json"""
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.Empty(errors)
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
@@ -273,18 +279,18 @@ let Shuffle (arr:int[]) =
     let rnd = Random()
     for i in 0 .. arr.Length - 1 do
         let r = i + rnd.Next(arr.Length - i)
-        let temp = arr.[r]
-        arr.[r] <- arr.[i]
-        arr.[i] <- temp
+        let temp = arr[r]
+        arr[r] <- arr[i]
+        arr[i] <- temp
     arr
 
 let housingPath = ""housing.csv""
 let housingData = DataFrame.LoadCsv(housingPath)
 let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
 let testSize = int (float (housingData.Rows.Count) * 0.1)
-let trainRows = randomIndices.[testSize..]
-let testRows = randomIndices.[..testSize]
-let housing_train = housingData.[trainRows]
+let trainRows = randomIndices[testSize..]
+let testRows = randomIndices[..testSize]
+let housing_train = housingData[trainRows]
 
 open Microsoft.ML
 open Microsoft.ML.Data
