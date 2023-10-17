@@ -652,6 +652,13 @@ let _ =
             "$\"{-(3)}\"", "$\"{-3}\""
             "$\"{(id 3)}\"", "$\"{id 3}\""
             "$\"{(x)}\"", "$\"{x}\""
+
+            """
+            $"{(3 + LanguagePrimitives.GenericZero<int>):N0}"
+            """,
+            """
+            $"{3 + LanguagePrimitives.GenericZero<int> :N0}"
+            """
         }
 
     [<Theory; MemberData(nameof exprs)>]
