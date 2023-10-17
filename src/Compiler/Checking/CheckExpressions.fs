@@ -6820,7 +6820,7 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
 
     let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _), tpenv =
         let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv bind
-        TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind
+        TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind None
 
     // 4c. generalize the binding - only relevant when implementing a generic virtual method
 
@@ -10458,7 +10458,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
-and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind =
+and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind (attrTgt: AttributeTargets option)  =
 
     let g = cenv.g
 
@@ -10487,7 +10487,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let envinner = {envinner with eCallerMemberName = callerName }
 
-        let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
+        let attrTgt =
+            match attrTgt with
+            | Some v -> v
+            | None -> declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
@@ -10758,7 +10761,7 @@ and TcNonrecBindingTyparDecls cenv env tpenv bind =
     let (NormalizedBinding(_, _, _, _, _, _, synTyparDecls, _, _, _, _, _)) = bind
     TcBindingTyparDecls true cenv env tpenv synTyparDecls
 
-and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
+and TcNonRecursiveBinding (declKind: DeclKind) cenv env tpenv ty binding =
     // Check for unintended shadowing
     match binding with
     | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ident]); range = headPatRange)) ->
@@ -10768,9 +10771,19 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
         | _ -> ()
     | _ -> ()
 
+    let attrTgt =
+        match binding with
+        | SynBinding(headPat = pat; expr= rhsExpr) ->
+            match pat with
+            | SynPat.Named _ | SynPat.As _ ->
+                match rhsExpr with
+                | SynExpr.Lambda _ -> None
+                | _ -> Some(AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue)
+            | _ -> None
+        
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
-    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
+    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding attrTgt
 
 //-------------------------------------------------------------------------
 // TcAttribute*
@@ -11812,7 +11825,7 @@ and TcLetrecBinding
     let envRec = MakeInnerEnvForMember envRec vspec
 
     let checkedBind, tpenv =
-        TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, explicitTyparInfo) rbind.SyntacticBinding
+        TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, explicitTyparInfo) rbind.SyntacticBinding None
 
     (try UnifyTypes cenv envRec vspec.Range (allDeclaredTypars +-> tau) vspec.Type
      with e -> error (Recursion(envRec.DisplayEnv, vspec.Id, tau, vspec.Type, vspec.Range)))

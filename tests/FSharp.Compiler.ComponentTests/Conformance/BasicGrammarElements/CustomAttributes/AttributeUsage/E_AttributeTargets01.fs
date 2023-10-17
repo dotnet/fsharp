@@ -30,3 +30,13 @@ type A() =
                        
     [<method: M>]
     static member (+) (op1 : A, op2 : A) = new A()
+
+[<AttributeUsage(AttributeTargets.Method)>]
+type MethodOnlyAttribute() = 
+  inherit Attribute()
+
+[<MethodOnly>]
+let def = "def"
+
+[<MethodOnly>]
+let abc () = "abc"
