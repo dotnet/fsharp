@@ -263,6 +263,8 @@ let _ =
             "id id (3)", "id id 3"
             "id<int>(3)", "id<int> 3"
             "nameof(nameof)", "nameof nameof"
+            "(x) :: []", "x :: []"
+            "x :: ([])", "x :: []"
 
             """
             let x = (printfn $"{y}"
@@ -856,6 +858,7 @@ let _ =
 
                 // DotSet
                 "id ((ref x).Value <- y)", "id ((ref x).Value <- y)"
+                "(ignore <| (ref x).Value <- y), 3", "(ignore <| (ref x).Value <- y), 3"
 
                 // Set
                 "let mutable x = y in id (x <- z)", "let mutable x = y in id (x <- z)"
