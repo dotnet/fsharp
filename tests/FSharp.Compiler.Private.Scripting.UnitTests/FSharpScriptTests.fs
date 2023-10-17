@@ -233,21 +233,30 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         Assert.Equal(1, errors.Length)
         Assert.True(errors.[0].ToString().EndsWith(error))
 
-/// Native dll resolution is not implemented on desktop
-#if NETSTANDARD
     [<Fact>]
     member _.``#i with a relative path``() =
-        let pathA = Path.GetTempPath()
-        let pathB = Uri(Uri(pathA), "..").AbsolutePath
-        Environment.CurrentDirectory <- pathB
+        let uri1 = Uri(Path.GetTempPath())
+        let uri2 = Uri(uri1, "..")
+        Environment.CurrentDirectory <- uri2.AbsolutePath
 
-        let path = System.IO.Path.GetRelativePath (pathB, pathA)
-        let code = $"#i \"\"\"nuget: {path}\"\"\""
+        let code = $"#i \"\"\"nuget: {uri2.MakeRelativeUri(uri1).OriginalString}\"\"\""
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
         Assert.Empty(errors)
         Assert.Equal(0, errors.Length)
 
+    [<Fact>]
+    member _.``#i with relative path to a non-existing directory``() =
+        let guid = Guid.NewGuid().ToString()
+        let code = $"#i \"\"\"nuget: {guid}\"\"\""
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(1, errors.Length)
+        Assert.Matches(".*The source directory .* not found", errors[0].ToString())
+
+/// Native dll resolution is not implemented on desktop
+#if NETSTANDARD
     [<Fact>]
     member _.``ML - use assembly with native dependencies``() =
         let code = @"
