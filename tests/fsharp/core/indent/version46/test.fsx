@@ -1,44 +1,36 @@
-//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\).*</Expects>
-//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\).*</Expects>
-
+//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(60,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(59:19\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(64,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(63:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(70,3)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(69:23\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(78,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(77:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(84,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(83:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(89,7)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(88:25\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(92,5)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(91:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(96,9)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(95:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(101,2)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(100:20\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\). Try indenting this further.*"</Expects>
+//<Expects id="FS0058" status="warning" span="(105,6)">"Unexpected syntax or possible incorrect indentation: this token is offside of context started at position \(104:21\). Try indenting this further.*"</Expects>
 
 module Global
 
