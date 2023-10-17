@@ -1,3 +1,15 @@
+namespace FSharp.Compiler
+
+open System
+open System.Threading
+
+[<Sealed>]
+type Cancellable =
+    static member internal UsingToken: CancellationToken -> IDisposable
+    static member Token: CancellationToken
+    static member CheckAndThrow: unit -> unit
+
+
 namespace Internal.Utilities.Library
 
 open System

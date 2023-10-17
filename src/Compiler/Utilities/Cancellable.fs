@@ -1,7 +1,44 @@
+namespace FSharp.Compiler
+
+open System
+open System.Threading
+open Internal.Utilities.Library
+
+[<Sealed>]
+type Cancellable =
+    [<ThreadStatic; DefaultValue>]
+    static val mutable private tokens: CancellationToken list
+
+    static member private Tokens
+        with get () =
+            match box Cancellable.tokens with
+            | Null -> []
+            | _ -> Cancellable.tokens
+        and set v = Cancellable.tokens <- v
+
+    static member UsingToken(ct) =
+        Cancellable.Tokens <- ct :: Cancellable.Tokens
+
+        { new IDisposable with
+            member this.Dispose() =
+                Cancellable.Tokens <- Cancellable.Tokens |> List.tail }
+
+    static member Token =
+        match Cancellable.Tokens with
+        | [] -> CancellationToken.None
+        | token :: _ -> token
+
+    static member CheckAndThrow() =
+        match Cancellable.Tokens with
+        | [] -> ()
+        | token :: _ -> token.ThrowIfCancellationRequested()
+
+
 namespace Internal.Utilities.Library
 
 open System
 open System.Threading
+open FSharp.Compiler
 
 [<RequireQualifiedAccess; Struct>]
 type ValueOrCancelled<'TResult> =
@@ -17,7 +54,11 @@ module Cancellable =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
-            oper ct
+            try
+                use _ = Cancellable.UsingToken(ct)
+                oper ct
+            with :? OperationCanceledException as e ->
+                ValueOrCancelled.Cancelled(OperationCanceledException e.CancellationToken)
 
     let fold f acc seq =
         Cancellable(fun ct ->
