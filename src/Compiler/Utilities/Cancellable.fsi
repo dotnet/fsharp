@@ -12,8 +12,8 @@ type Cancellable =
 [<AutoOpen>]
 module internal Cancellable =
     type Exception with
-        member IsOperationCancelled: bool
 
+        member IsOperationCancelled: bool
 
 namespace Internal.Utilities.Library
 

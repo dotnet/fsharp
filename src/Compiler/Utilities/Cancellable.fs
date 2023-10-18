@@ -9,19 +9,20 @@ type Cancellable =
     [<ThreadStatic; DefaultValue>]
     static val mutable private tokens: CancellationToken list
 
-    static member private Tokens
-        with get () =
+    static member Tokens
+        with private get () =
             match box Cancellable.tokens with
             | Null -> []
             | _ -> Cancellable.tokens
-        and set v = Cancellable.tokens <- v
+        and private set v = Cancellable.tokens <- v
 
     static member UsingToken(ct) =
         Cancellable.Tokens <- ct :: Cancellable.Tokens
 
         { new IDisposable with
             member this.Dispose() =
-                Cancellable.Tokens <- Cancellable.Tokens |> List.tail }
+                Cancellable.Tokens <- Cancellable.Tokens |> List.tail
+        }
 
     static member Token =
         match Cancellable.Tokens with
@@ -36,6 +37,7 @@ type Cancellable =
 [<AutoOpen>]
 module Cancellable =
     type Exception with
+
         member this.IsOperationCancelled =
             match this with
             | :? OperationCanceledException -> true
