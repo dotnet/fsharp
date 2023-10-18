@@ -10,7 +10,7 @@ type Cancellable =
     static member CheckAndThrow: unit -> unit
 
 [<AutoOpen>]
-module Cancellable =
+module internal Cancellable =
     type Exception with
         member IsOperationCancelled: bool
 
