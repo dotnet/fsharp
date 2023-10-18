@@ -680,7 +680,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                                 tcConfig.ResolveLibWithDirectories(CcuLoadFailureAction.RaiseError, assemblyReference)
 
                             Choice1Of2 resolutionOpt.Value
-                        with e ->
+                        with e when not e.IsOperationCancelled ->
                             errorRecovery e assemblyReference.Range
                             Choice2Of2 assemblyReference)
 
@@ -1913,7 +1913,7 @@ and [<Sealed>] TcImports
 
                         for providedNamespace in providedNamespaces do
                             loop providedNamespace
-                    with e ->
+                    with e when not e.IsOperationCancelled ->
                         errorRecovery e m
 
                 if startingErrorCount < DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount then

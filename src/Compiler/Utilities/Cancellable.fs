@@ -33,6 +33,13 @@ type Cancellable =
         | [] -> ()
         | token :: _ -> token.ThrowIfCancellationRequested()
 
+[<AutoOpen>]
+module Cancellable =
+    type Exception with
+        member this.IsOperationCancelled =
+            match this with
+            | :? OperationCanceledException -> true
+            | _ -> false
 
 namespace Internal.Utilities.Library
 

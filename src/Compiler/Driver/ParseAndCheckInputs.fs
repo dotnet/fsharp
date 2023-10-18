@@ -683,7 +683,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
         input
 
-    with exn ->
+    with exn when not exn.IsOperationCancelled ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -756,7 +756,7 @@ let ParseOneInputStream
     ) =
     try
         parseInputStreamAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream)
-    with exn ->
+    with exn when not exn.IsOperationCancelled ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -772,7 +772,7 @@ let ParseOneInputSourceText
     ) =
     try
         parseInputSourceTextAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-    with exn ->
+    with exn when not exn.IsOperationCancelled ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -781,7 +781,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
     try
         checkInputFile tcConfig fileName
         parseInputFileAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked)
-    with exn ->
+    with exn when not exn.IsOperationCancelled ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -937,7 +937,7 @@ let ProcessMetaCommandsFromInput
 
                 (* warning(Error("This meta-command has been ignored", m)) *)
                 state
-        with e ->
+        with e when not e.IsOperationCancelled ->
             errorRecovery e matchedm
             state
 
@@ -1036,7 +1036,7 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
                 TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (checkOperatorsModule, initm)
 
             tcEnv, openDecls0 @ openDecls1
-        with e ->
+        with e when not e.IsOperationCancelled ->
             errorRecovery e initm
             tcEnv, openDecls0
     else
@@ -1378,7 +1378,7 @@ let CheckOneInput
                 let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
                 return result, tcState
 
-        with e ->
+        with e when not e.IsOperationCancelled ->
             errorRecovery e range0
             return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
     }
@@ -1605,7 +1605,7 @@ let CheckOneInputWithCallback
                             partialResult, tcState)
                     )
 
-        with e ->
+        with e when not e.IsOperationCancelled ->
             errorRecovery e range0
             return Finisher(node, (fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState))
     }

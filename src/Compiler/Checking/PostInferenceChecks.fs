@@ -2212,7 +2212,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             match TryChopPropertyName v.DisplayName with
             | Some res -> check true res
             | None -> ()
-        with e -> errorRecovery e v.Range
+        with e when not e.IsOperationCancelled -> errorRecovery e v.Range
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore

@@ -216,7 +216,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
 and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValFlags) patEnv ty (synPat: SynPat) =
     try
        TcPat warnOnUpper cenv env valReprInfo vFlags patEnv ty synPat
-    with e ->
+    with e when not e.IsOperationCancelled ->
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
         let m = synPat.Range
@@ -335,7 +335,7 @@ and TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m =
         try
             let c = TcConst cenv ty m env synConst
             (fun _ -> TPat_const (c, m)), patEnv
-        with e ->
+        with e when not e.IsOperationCancelled ->
             errorRecovery e m
             (fun _ -> TPat_error m), patEnv
 
@@ -394,7 +394,7 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
         match names2.TryGetValue id1.idText with
         | true, PrelimVal1 (id=id2; prelimType=ty2) ->
             try UnifyTypes cenv env id2.idRange ty1 ty2
-            with exn -> errorRecovery exn m
+            with exn when not exn.IsOperationCancelled -> errorRecovery exn m
         | _ -> ())
 
     let namesR = NameMap.layer names1 names2
@@ -417,7 +417,7 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
         phase2, acc
-    with e ->
+    with e when not e.IsOperationCancelled ->
         errorRecovery e m
         let _, acc = TcPatterns warnOnUpper cenv env vFlags patEnv (NewInferenceTypes g args) args
         let phase2 _ = TPat_error m
@@ -462,7 +462,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
 and TcNullPat cenv env patEnv ty m =
     try
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace ty
-    with exn ->
+    with exn when not exn.IsOperationCancelled ->
         errorRecovery exn m
     (fun _ -> TPat_null m), patEnv
 

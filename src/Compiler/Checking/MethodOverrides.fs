@@ -826,7 +826,7 @@ module DispatchSlotChecking =
 
                     CheckOverridesAreAllUsedOnce (denv, g, infoReader, false, reqdTy, dispatchSlotsKeyed, availPriorOverrides, overridesToCheck)
 
-            with e -> errorRecovery e m
+            with e when not e.IsOperationCancelled -> errorRecovery e m
 
         // Now record the full slotsigs of the abstract members implemented by each override.
         // This is used to generate IL MethodImpls in the code generator.

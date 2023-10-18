@@ -9,6 +9,11 @@ type Cancellable =
     static member Token: CancellationToken
     static member CheckAndThrow: unit -> unit
 
+[<AutoOpen>]
+module Cancellable =
+    type Exception with
+        member IsOperationCancelled: bool
+
 
 namespace Internal.Utilities.Library
 

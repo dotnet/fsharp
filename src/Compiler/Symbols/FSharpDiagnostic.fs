@@ -271,7 +271,7 @@ type DiagnosticsScope(flatErrors: bool)  =
                 // Here we only call errorRecovery to save the error message for later use by TryGetFirstErrorText.
                 try 
                     errorRecovery e m
-                with _ -> 
+                with e when not e.IsOperationCancelled -> 
                     ()
                 None
         match res with 

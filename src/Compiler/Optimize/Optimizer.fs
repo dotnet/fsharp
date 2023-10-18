@@ -4127,7 +4127,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
         (TBind(vref, exprOptimized, spBind), einfo), env
-    with exn -> 
+    with exn when not exn.IsOperationCancelled -> 
         errorRecovery exn vref.Range 
         raise (ReportedError (Some exn))
           
