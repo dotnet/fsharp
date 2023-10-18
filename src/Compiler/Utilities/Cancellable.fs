@@ -49,6 +49,10 @@ open System
 open System.Threading
 open FSharp.Compiler
 
+#if !FSHARPCORE_USE_PACKAGE
+open FSharp.Core.CompilerServices.StateMachineHelpers
+#endif
+
 [<RequireQualifiedAccess; Struct>]
 type ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
