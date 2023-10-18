@@ -10,9 +10,6 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !FSHARPCORE_USE_PACKAGE
-open FSharp.Core.CompilerServices.StateMachineHelpers
-#endif
 
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
