@@ -1147,6 +1147,11 @@
         <target state="translated">Cette expression utilise la conversion implicite '{0}' pour convertir le type '{1}' en type '{2}'. Voir https://aka.ms/fsharp-implicit-convs. Cet avertissement peut être désactivé en utilisant '#nowarn \"3391\".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">La propriété init-only '{0}' ne peut pas être définie en dehors du code d’initialisation. Voir https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
@@ -8428,8 +8433,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Impossible d’appeler la méthode d’extension byref « {0} ». Le premier paramètre nécessite que la valeur soit mutable ou un type byref autre qu'en lecture seule.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="needs-review-translation">Impossible d’appeler la méthode d’extension byref « {0} ». Le premier paramètre nécessite que la valeur soit mutable ou un type byref autre qu'en lecture seule.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
