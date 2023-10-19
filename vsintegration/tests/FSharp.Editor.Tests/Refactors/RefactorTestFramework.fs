@@ -1,6 +1,5 @@
 ﻿module FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
-
 open System
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -22,95 +21,54 @@ open Microsoft.CodeAnalysis.Tags
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
-type DynamicHelper =  
-  static member MkMethod<'t,'u> (mi:MethodInfo) o : 't -> 'u=
-    let typ = typeof<'t>
-    fun t -> 
-      let args = 
-        if (typ = typeof<unit>) then [||]
-        else
-          if not (FSharpType.IsTuple typ) then [| box t |]
-          else
-            FSharpValue.GetTupleFields t
-      mi.Invoke(o, args) :?> 'u
-
-let (?) (o:'a) s : 'b =
-  let ty = o.GetType()
-  let field = ty.GetField(s, BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-  if field <> null then field.GetValue(o) :?> 'b
-  else
-    let prop = ty.GetProperty(s, BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-    if prop <> null then prop.GetValue(o, null) :?> 'b
-    else
-      let meth = ty.GetMethod(s, BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-      let d,r = FSharpType.GetFunctionElements(typeof<'b>)
-      typeof<DynamicHelper>.GetMethod("MkMethod").MakeGenericMethod([|d;r|]).Invoke(null, [| box meth; box o |]) :?> 'b
 type TestCodeFix = { Message: string; FixedCode: string }
 
-type Mode =
-    | Auto
-    | WithOption of CustomProjectOption: string
-    | WithSignature of FsiCode: string
-    | Manual of Squiggly: string * Diagnostic: string
-    | WithSettings of CodeFixesOptions
+type TestContext(Solution: Solution, CT) =
+    let mutable _solution = Solution
+    member this.CT = CT
 
-let inline toOption o =
-    match o with
-    | ValueSome v -> Some v
-    | _ -> None
+    member this.Solution
+        with set value = _solution <- value
+        and get () = _solution
+
+    interface IDisposable with
+        member this.Dispose() = Solution.Workspace.Dispose()
+
+    static member CreateWithCode(code: string) =
+        let solution = RoslynTestHelpers.CreateSolution(code)
+        let ct = CancellationToken false
+        new TestContext(solution, ct)
 
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-let parseDiagnostic diagnostic =
-    let regex = Regex "([A-Z]+)(\d+)"
-    let matchGroups = regex.Match(diagnostic).Groups
-    let prefix = matchGroups[1].Value
-    let number = int matchGroups[2].Value
-    number, prefix
-
-let getDocument code mode =
-    match mode with
-    | Auto -> RoslynTestHelpers.GetFsDocument code
-    | WithOption option -> RoslynTestHelpers.GetFsDocument(code, option)
-    | WithSignature fsiCode -> RoslynTestHelpers.GetFsiAndFsDocuments fsiCode code |> Seq.last
-    | Manual _ -> RoslynTestHelpers.GetFsDocument code
-    | WithSettings settings -> RoslynTestHelpers.GetFsDocument(code, customEditorOptions = settings)
-
-let getRelevantDiagnostics (document: Document) =
+let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     cancellableTask {
-        let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync "test"
+        let refactoringActions = new List<CodeAction>()
+        let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
 
-        return checkFileResults.Diagnostics
-    }
-    |> CancellableTask.startWithoutCancellation
-    |> fun task -> task.Result
+        context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
+        let document = RoslynTestHelpers.GetSingleDocument context.Solution
 
+        let mutable workspace = context.Solution.Workspace
 
-let tryRefactor (code: string) (cursorPosition) (ct) (refactorProvider: 'T when 'T :> CodeRefactoringProvider ) =
-    cancellableTask {
-        let refactoringActions= new List<CodeAction>()
+        let refactoringContext =
+            CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
 
-        let mutable solution = RoslynTestHelpers.CreateSolution(code)
+        do! refactorProvider.ComputeRefactoringsAsync refactoringContext
 
-        let document = RoslynTestHelpers.GetSingleDocument solution
-
-        use mutable workspace = solution.Workspace
-
-        let context = CodeRefactoringContext(document, TextSpan(cursorPosition,1), (fun a -> refactoringActions.Add a),ct)
-
-        do! refactorProvider.ComputeRefactoringsAsync context
         for action in refactoringActions do
-            let! operations = action.GetOperationsAsync ct
+            let! operations = action.GetOperationsAsync context.CT
+
             for operation in operations do
                 let codeChangeOperation = operation :?> ApplyChangesOperation
-                codeChangeOperation.Apply(workspace,ct)
-                solution <- codeChangeOperation.ChangedSolution 
+                codeChangeOperation.Apply(workspace, context.CT)
+                context.Solution <- codeChangeOperation.ChangedSolution
                 ()
 
-
-        let! changedText = solution.GetDocument(document.Id).GetTextAsync(ct)
-        return changedText
+        let newDocument = context.Solution.GetDocument(document.Id)
+        let! changedText = newDocument.GetTextAsync(context.CT)
+        return (newDocument, changedText)
     }
     |> CancellableTask.startWithoutCancellation

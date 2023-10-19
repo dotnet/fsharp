@@ -23,7 +23,14 @@ open System.Diagnostics
 type internal AddExplicitReturnType [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
-    static member isValidMethodWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) (parseFileResults:FSharpParseFileResults) =
+    static member isValidMethodWithoutTypeAnnotation
+        (funcOrValue: FSharpMemberOrFunctionOrValue)
+        (symbolUse: FSharpSymbolUse)
+        (parseFileResults: FSharpParseFileResults)
+        =
+        let typeAnnotationRange =
+            parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
+
         let isLambdaIfFunction =
             funcOrValue.IsFunction
             && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
@@ -31,42 +38,40 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         (not funcOrValue.IsValue || not isLambdaIfFunction)
         && not (funcOrValue.ReturnParameter.Type.IsUnresolved)
         && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
+        && not typeAnnotationRange.IsNone
 
-
-    static member refactor (context:CodeRefactoringContext) (symbolUse:FSharpSymbolUse,memberFunc:FSharpMemberOrFunctionOrValue,symbolSpan:TextSpan,textLine:TextLine) =
-        let typeString = memberFunc.FullType.FormatWithConstraints symbolUse.DisplayContext
+    static member refactor
+        (context: CodeRefactoringContext)
+        (symbolUse: FSharpSymbolUse, memberFunc: FSharpMemberOrFunctionOrValue, parseFileResults: FSharpParseFileResults)
+        =
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
-            let debugInfo = $"{sourceText} : {typeString} : {symbolSpan} : {textLine}"
-            debugInfo
-            let sub = sourceText.ToString(textLine.Span)
+            let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
 
-            let newSub =
-                sub.Replace("=", $" :{memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName}=")
+            let rangeOfReturnType =
+                parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
 
-            sourceText.Replace(textLine.Span, newSub)
+            let textChange =
+                rangeOfReturnType
+                |> Option.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                |> Option.map (fun textSpan -> TextChange(textSpan, $":{inferredType}"))
 
-        let codeActionFunc = (fun (cancellationToken: CancellationToken) ->
-            task  {
-                let oldDocument = context.Document
+            match textChange with
+            | Some textChange -> sourceText.WithChanges(textChange)
+            | None -> sourceText
 
-                let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                let changedText = getChangedText sourceText
+        let codeActionFunc =
+            (fun (cancellationToken: CancellationToken) ->
+                task {
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                    let changedText = getChangedText sourceText
 
-                let newDocument = context.Document.WithText(changedText)
-                let! changes = newDocument.GetTextChangesAsync(oldDocument)
-                Debugger.Log(0,"",$"{changes}")
-                return newDocument
-            }
-        )
-        let codeAction = 
-                CodeAction.Create(
-                    title,
-                    codeActionFunc,
-                    title
-                )
-                                
+                    let newDocument = context.Document.WithText(changedText)
+                    return newDocument
+                })
+
+        let codeAction = CodeAction.Create(title, codeActionFunc, title)
 
         do context.RegisterRefactoring(codeAction)
 
@@ -83,34 +88,30 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
 
             let! lexerSymbol =
                 document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddExplicitReturnType))
+                |> CancellableTask.start ct
 
-
-            let! (parseFileResults,checkFileResults) =
+            let! (parseFileResults, checkFileResults) =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
                 |> CancellableTask.start ct
 
-            let res = 
+            let res =
                 lexerSymbol
-                |> Option.bind(fun lexer -> 
+                |> Option.bind (fun lexer ->
                     checkFileResults.GetSymbolUseAtLocation(
-                    fcsTextLineNumber,
-                    lexer.Ident.idRange.EndColumn,
-                    textLine.ToString(),
-                    lexer.FullIsland
-                ))
-                |> Option.bind(fun symbolUse->
-                        match symbolUse.Symbol with
-                        | :? FSharpMemberOrFunctionOrValue as v 
-                            when AddExplicitReturnType.isValidMethodWithoutTypeAnnotation v symbolUse parseFileResults->
-                                Some (symbolUse,v)
-                        | _ -> None
-                )
-                |> Option.bind(fun (symbolUse,memberFunc)->
-                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
-                        | Some span -> Some(symbolUse,memberFunc,span)
-                        | None -> None
-                )
-                |> Option.map(fun (symbolUse,memberFunc,textSpan) -> AddExplicitReturnType.refactor context (symbolUse,memberFunc,textSpan,textLine))
+                        fcsTextLineNumber,
+                        lexer.Ident.idRange.EndColumn,
+                        textLine.ToString(),
+                        lexer.FullIsland
+                    ))
+                |> Option.bind (fun symbolUse ->
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue as v when
+                        AddExplicitReturnType.isValidMethodWithoutTypeAnnotation v symbolUse parseFileResults
+                        ->
+                        Some(symbolUse, v)
+                    | _ -> None)
+                |> Option.map (fun (symbolUse, memberFunc) ->
+                    AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults))
 
             return res
         }
