@@ -15,7 +15,8 @@ open CancellableTasks
 // This interface is not defined in Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 // and so we are not currently exporting the type below as an implementation of it
 // using [<Export(typeof<IFSharpUnnecessaryParenthesesDiagnosticAnalyzer>)>], since it would not be recognized.
-type IFSharpUnnecessaryParenthesesDiagnosticAnalyzer = inherit IFSharpDocumentDiagnosticAnalyzer
+type IFSharpUnnecessaryParenthesesDiagnosticAnalyzer =
+    inherit IFSharpDocumentDiagnosticAnalyzer
 
 [<Sealed>]
 type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] () =
@@ -32,15 +33,20 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
             DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
             description = null,
-            helpLinkUri = null)
+            helpLinkUri = null
+        )
 
     static member GetDiagnostics(document: Document) =
         cancellableTask {
             let! parseResults = document.GetFSharpParseResultsAsync(nameof UnnecessaryParenthesesDiagnosticAnalyzer)
             let! cancellationToken = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync cancellationToken
-            let getLineString line = sourceText.Lines[Line.toZ line].ToString()
+
+            let getLineString line =
+                sourceText.Lines[ Line.toZ line ].ToString()
+
             let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getLineString parseResults.ParseTree
+
             return
                 unnecessaryParentheses
                 |> Seq.map (fun range -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
