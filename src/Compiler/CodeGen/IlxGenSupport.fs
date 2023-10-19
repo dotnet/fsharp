@@ -106,6 +106,8 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
             )
         )
 
+    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
+
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -120,7 +122,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
         emptyILTypeDefs,
         mkILProperties (ilElements |> List.map (fun (_, _, property, _) -> property)),
         emptyILEvents,
-        emptyILCustomAttrs,
+        ilCustomAttrs,
         ILTypeInit.BeforeField
     )
 
@@ -218,7 +220,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
             let properties =
                 Some [ "MemberType", GetDynamicallyAccessedMemberTypes g; "Type", g.ilg.typ_Type ]
 
-            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
+            mkLocalPrivateAttributeWithPropertyConstr   uctors (g, tref.Name, properties))
     )
 
     let typIlMemberTypes =
