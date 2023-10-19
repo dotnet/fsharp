@@ -13,7 +13,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
@@ -112,35 +111,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             let! unnecessaryParentheses =
                 match diagnosticType with
                 | DiagnosticsType.Semantic -> CancellableTask.singleton ImmutableArray.Empty
-                | DiagnosticsType.Syntax ->
-                    cancellableTask {
-                        let fsharpSourceText = sourceText.ToFSharpSourceText()
-
-                        let! unnecessaryParentheses =
-                            UnnecessaryParentheses.getUnnecessaryParentheses
-                                (FSharp.Compiler.Text.Line.toZ >> fsharpSourceText.GetLineString)
-                                parseResults.ParseTree
-
-                        let descriptor =
-                            let title = "Parentheses can be removed."
-
-                            DiagnosticDescriptor(
-                                "IDE0047",
-                                title,
-                                title,
-                                "Style",
-                                DiagnosticSeverity.Hidden,
-                                isEnabledByDefault = true,
-                                description = null,
-                                helpLinkUri = null
-                            )
-
-                        return
-                            unnecessaryParentheses
-                            |> Seq.map (fun range ->
-                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
-                            |> Seq.toImmutableArray
-                    }
+                | DiagnosticsType.Syntax -> UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
 
             if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty

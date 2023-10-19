@@ -70,11 +70,11 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
-    <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="DocComments\XMLDocumentation.fs" />
     <Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
