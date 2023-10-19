@@ -26,6 +26,7 @@ open System.Threading
 open FSharp.Test.ReflectionHelper
 open Microsoft.Build.Utilities
 open FSharp.Test.ProjectGeneration.ProjectOperations
+open FSharp.Compiler.Symbols
 
 [<Fact>]
 let ``Refactor changes something`` () =
@@ -89,7 +90,9 @@ let ``Correctly infer int as explicit return type`` () =
         let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile context.CT
         let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = "sum")
 
-        text.ToString().Contains(":int=") |> Assert.IsTrue
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as v -> Assert.AreEqual("int", v.ReturnParameter.Type.TypeDefinition.CompiledName)
+        | _ -> failwith "Unexpected symbol"
 
         ()
     }
