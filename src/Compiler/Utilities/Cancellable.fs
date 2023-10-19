@@ -9,6 +9,12 @@ type Cancellable =
     [<ThreadStatic; DefaultValue>]
     static val mutable private tokens: CancellationToken list
 
+    static let disposable =
+        { new IDisposable with
+            member this.Dispose() =
+                Cancellable.Tokens <- Cancellable.Tokens |> List.tail
+        }
+
     static member Tokens
         with private get () =
             match box Cancellable.tokens with
@@ -18,11 +24,7 @@ type Cancellable =
 
     static member UsingToken(ct) =
         Cancellable.Tokens <- ct :: Cancellable.Tokens
-
-        { new IDisposable with
-            member this.Dispose() =
-                Cancellable.Tokens <- Cancellable.Tokens |> List.tail
-        }
+        disposable
 
     static member Token =
         match Cancellable.Tokens with
