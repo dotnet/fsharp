@@ -116,7 +116,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty
             else
-                let iab = ImmutableArray.CreateBuilder(errors.Count)
+                let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
 
                 for diagnostic in errors do
                     if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
