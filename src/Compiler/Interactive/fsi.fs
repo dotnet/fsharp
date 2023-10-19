@@ -1837,7 +1837,7 @@ type internal FsiDynamicCompiler
         let opts =
             {
                 ilg = tcGlobals.ilg
-                outfile = multiAssemblyName + ".dll"
+                outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
                 pdbfile = Some(Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
@@ -3306,8 +3306,8 @@ type internal MagicAssemblyResolution() =
                 | None ->
                     // Check dynamic assemblies by simple name
                     match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
-                    | Some asm -> asm
-                    | None ->
+                    | Some asm when not (tcConfigB.fsiMultiAssemblyEmit) -> asm
+                    | _ ->
 
                         // Otherwise continue
                         let assemblyReferenceTextDll = (simpleAssemName + ".dll")
