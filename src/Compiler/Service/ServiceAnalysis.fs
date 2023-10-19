@@ -1302,7 +1302,7 @@ module UnnecessaryParentheses =
                 | _, SynExpr.DotIndexedGet _
                 | _, SynExpr.Null _
                 | _, SynExpr.AddressOf _
-                | _, SynExpr.InterpolatedString _ -> ValueSome range
+                | _, SynExpr.InterpolatedString _
 
                 | SynExpr.Paren(rightParenRange = Some _), _
                 | SynExpr.Quote _, _
