@@ -237,12 +237,15 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
     member _.``#i with a relative path``() =
         let uri1 = Uri(Path.GetTempPath())
         let uri2 = Uri(uri1, "..")
+        let prevDir = Environment.CurrentDirectory
         Environment.CurrentDirectory <- uri2.AbsolutePath
-
-        let code = $"#i \"\"\"nuget: {uri2.MakeRelativeUri(uri1).OriginalString}\"\"\""
-        use script = new FSharpScript()
-        let result, errors = script.Eval(code)
-        Assert.Empty(errors)
+        try
+            let code = $"#i \"\"\"nuget: {uri2.MakeRelativeUri(uri1).OriginalString}\"\"\""
+            use script = new FSharpScript()
+            let result, errors = script.Eval(code)
+            Assert.Empty(errors)
+        finally
+            Environment.CurrentDirectory <- prevDir
 
     [<Fact>]
     member _.``#i with relative path to a non-existing directory``() =
