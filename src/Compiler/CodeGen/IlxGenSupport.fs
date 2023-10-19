@@ -220,7 +220,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
             let properties =
                 Some [ "MemberType", GetDynamicallyAccessedMemberTypes g; "Type", g.ilg.typ_Type ]
 
-            mkLocalPrivateAttributeWithPropertyConstr   uctors (g, tref.Name, properties))
+            mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
     )
 
     let typIlMemberTypes =
