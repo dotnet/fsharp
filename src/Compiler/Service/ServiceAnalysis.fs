@@ -1488,7 +1488,7 @@ module UnnecessaryParentheses =
             let ranges = HashSet Range.comparer
 
             let visitor =
-                { new SyntaxVisitorBase<obj>() with
+                { new SyntaxVisitorBase<unit>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
                         SynExpr.unnecessaryParentheses getSourceLineStr expr path
                         |> ValueOption.iter (ranges.Add >> ignore)
@@ -1502,18 +1502,6 @@ module UnnecessaryParentheses =
                         defaultTraverse pat
                 }
 
-            // Traverse every node in the input.
-            let pick _ _ _ diveResults =
-                let rec loop =
-                    function
-                    | [] -> None
-                    | (_, project) :: rest ->
-                        ignore (project ())
-                        loop rest
-
-                loop diveResults
-
-            let _ = SyntaxTraversal.traverseUntil pick parsedInput.Range.End visitor parsedInput
-
+            SyntaxTraversal.traverseAll visitor parsedInput
             return ranges
         }
