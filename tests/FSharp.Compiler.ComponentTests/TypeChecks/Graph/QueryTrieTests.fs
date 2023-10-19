@@ -762,7 +762,7 @@ let private fantomasCoreTrie: TrieNode =
 [<Test>]
 let ``Query non existing node in trie`` () =
     let result =
-        queryTrie fantomasCoreTrie [ "System"; "System"; "Runtime"; "CompilerServices" ]
+        queryTrie 7 fantomasCoreTrie [ "System"; "System"; "Runtime"; "CompilerServices" ]
 
     match result with
     | QueryTrieNodeResult.NodeDoesNotExist -> Assert.Pass()
@@ -770,7 +770,7 @@ let ``Query non existing node in trie`` () =
 
 [<Test>]
 let ``Query node that does not expose data in trie`` () =
-    let result = queryTrie fantomasCoreTrie [ "Fantomas"; "Core" ]
+    let result = queryTrie 7 fantomasCoreTrie [ "Fantomas"; "Core" ]
 
     match result with
     | QueryTrieNodeResult.NodeDoesNotExposeData -> Assert.Pass()
@@ -779,7 +779,7 @@ let ``Query node that does not expose data in trie`` () =
 [<Test>]
 let ``Query module node that exposes one file`` () =
     let result =
-        queryTrie fantomasCoreTrie [ "Fantomas"; "Core"; "ISourceTextExtensions" ]
+        queryTrie 7 fantomasCoreTrie [ "Fantomas"; "Core"; "ISourceTextExtensions" ]
 
     match result with
     | QueryTrieNodeResult.NodeExposesData file ->

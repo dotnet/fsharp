@@ -216,7 +216,31 @@ and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
     | _ -> ()
 
 /// Check call arguments, including the return argument.
-and CheckCall cenv args ctxts = CheckExprs cenv args ctxts TailCall.No
+and CheckCall cenv args ctxts (tailCall: TailCall) =
+    // detect CPS-like expressions
+    let rec (|IsAppInLambdaBody|_|) e =
+        match stripDebugPoints e with
+        | Expr.TyLambda (bodyExpr = bodyExpr)
+        | Expr.Lambda (bodyExpr = bodyExpr) ->
+            match (stripDebugPoints bodyExpr) with
+            | Expr.App _ -> Some(TailCall.YesFromExpr cenv.g e)
+            | IsAppInLambdaBody t -> Some t
+            | _ -> None
+        | _ -> None
+
+    // if we haven't already decided this is no tail call, try to detect CPS-like expressions
+    let tailCall =
+        if tailCall = TailCall.No then
+            tailCall
+        else
+            args
+            |> List.tryPick (fun a ->
+                match a with
+                | IsAppInLambdaBody t -> Some t
+                | _ -> None)
+            |> Option.defaultValue TailCall.No
+
+    CheckExprs cenv args ctxts tailCall
 
 /// Check call arguments, including the return argument. The receiver argument is handled differently.
 and CheckCallWithReceiver cenv args ctxts =
@@ -330,7 +354,25 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
         | TypeDefOfExpr g ty when isVoidTy g ty -> ()
 
         // Check an application
-        | Expr.App (f, _fty, _tyargs, argsl, _m) -> CheckApplication cenv (f, argsl) tailCall
+        | Expr.App (f, _fty, _tyargs, argsl, _m) ->
+            // detect expressions like List.collect
+            let checkArgForLambdaWithAppOfMustTailCall e =
+                match stripDebugPoints e with
+                | Expr.TyLambda (bodyExpr = bodyExpr)
+                | Expr.Lambda (bodyExpr = bodyExpr) ->
+                    match bodyExpr with
+                    | Expr.App (ValUseAtApp (vref, _valUseFlags), _formalType, _typeArgs, _exprs, _range) ->
+                        cenv.mustTailCall.Contains vref.Deref
+                    | _ -> false
+                | _ -> false
+
+            let tailCall =
+                if argsl |> List.exists checkArgForLambdaWithAppOfMustTailCall then
+                    TailCall.No
+                else
+                    tailCall
+
+            CheckApplication cenv (f, argsl) tailCall
 
         | Expr.Lambda (_, _, _, argvs, _, m, bodyTy) -> CheckLambda cenv expr (argvs, m, bodyTy) tailCall
 
@@ -388,7 +430,7 @@ and CheckApplication cenv (f, argsl) (tailCall: TailCall) : unit =
     if hasReceiver then
         CheckCallWithReceiver cenv argsl ctxts
     else
-        CheckCall cenv argsl ctxts
+        CheckCall cenv argsl ctxts tailCall
 
 and CheckLambda cenv expr (argvs, m, bodyTy) (tailCall: TailCall) =
     let valReprInfo =
@@ -470,12 +512,12 @@ and CheckExprOp cenv (op, tyargs, args, m) ctxt : unit =
             if hasReceiver then
                 CheckCallWithReceiver cenv args argContexts
             else
-                CheckCall cenv args argContexts
+                CheckCall cenv args argContexts TailCall.No
         | _ ->
             if hasReceiver then
                 CheckCallWithReceiver cenv args argContexts
             else
-                CheckCall cenv args argContexts
+                CheckCall cenv args argContexts TailCall.No
 
     | TOp.Tuple tupInfo, _, _ when not (evalTupInfoIsStruct tupInfo) ->
         match ctxt with
@@ -604,7 +646,7 @@ and CheckLambdas
             // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv body
         else
-            CheckExprNoByrefs cenv (TailCall.YesFromExpr cenv.g body) body // TailCall.Yes for CPS
+            CheckExprNoByrefs cenv tailCall body
 
     // This path is for expression bindings that are not actually lambdas
     | _ ->
