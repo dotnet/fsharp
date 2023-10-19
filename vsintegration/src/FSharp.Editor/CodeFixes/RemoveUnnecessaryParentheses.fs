@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Composition
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open CancellableTasks
@@ -77,7 +76,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
     inherit CodeFixProvider()
 
     static let title = SR.RemoveUnnecessaryParentheses()
-    static let fixableDiagnosticIds = ImmutableArray.Create "IDE0047" // TODO: FSharpIDEDiagnosticIds.RemoveUnnecessaryParentheses
+    static let fixableDiagnosticIds = ImmutableArray.Create "IDE0047"
 
     /// IDE0047: Remove unnecessary parentheses.
     ///
