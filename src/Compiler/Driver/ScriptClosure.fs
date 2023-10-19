@@ -254,7 +254,7 @@ module ScriptPreprocessClosure =
 
             let source = reader.ReadToEnd()
             [ ClosureSource(fileName, m, SourceText.ofString source, parseRequired) ]
-        with exn when not exn.IsOperationCancelled ->
+        with RecoverableException exn ->
             errorRecovery exn m
             []
 

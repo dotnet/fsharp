@@ -2334,7 +2334,7 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
 
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
         sourceFilesAcc |> CheckAndReportSourceFileDuplicates
-    with e when not e.IsOperationCancelled ->
+    with RecoverableException e ->
         errorRecovery e range0
         sourceFiles
 

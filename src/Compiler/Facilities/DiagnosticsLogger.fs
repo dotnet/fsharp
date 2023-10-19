@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
+open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -44,6 +45,10 @@ exception ReportedError of exn option with
         match this :> exn with
         | ReportedError (Some exn) -> msg + " Original message: " + exn.Message + ")"
         | _ -> msg
+
+[<return: Struct>]
+let (|RecoverableException|_|) (exn: Exception) =
+    if exn.IsOperationCancelled then ValueNone else ValueSome exn
 
 let rec findOriginalException err =
     match err with
