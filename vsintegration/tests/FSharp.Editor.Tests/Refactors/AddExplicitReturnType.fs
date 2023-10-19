@@ -68,6 +68,20 @@ let ``Refactor changes nothing`` () =
         ()
     }
 
+let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
+    task {
+        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
+
+        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
+        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
+
+        return
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as v -> Some(v.ReturnParameter.Type.TypeDefinition.CompiledName)
+            | _ -> None
+
+    }
+
 [<Fact>]
 let ``Correctly infer int as explicit return type`` () =
     task {
@@ -83,16 +97,11 @@ let ``Correctly infer int as explicit return type`` () =
 
         let! (document, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-        let! (parseFileResults, checkFileResults) =
-            document.GetFSharpParseAndCheckResultsAsync "test"
-            |> CancellableTask.start context.CT
+        let! returnType = GetReturnTypeOfSymbol "sum" document context.CT
 
-        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile context.CT
-        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = "sum")
-
-        match symbolUse.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as v -> Assert.AreEqual("int", v.ReturnParameter.Type.TypeDefinition.CompiledName)
-        | _ -> failwith "Unexpected symbol"
+        match returnType with
+        | Some t -> Assert.AreEqual("int", t)
+        | None -> failwith "Unexpected symbol"
 
         ()
     }
