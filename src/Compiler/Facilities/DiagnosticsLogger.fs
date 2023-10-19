@@ -48,7 +48,10 @@ exception ReportedError of exn option with
 
 [<return: Struct>]
 let (|RecoverableException|_|) (exn: Exception) =
-    if exn.IsOperationCancelled then ValueNone else ValueSome exn
+    if exn.IsOperationCancelled then
+        ValueNone
+    else
+        ValueSome exn
 
 let rec findOriginalException err =
     match err with
