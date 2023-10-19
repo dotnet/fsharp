@@ -6,33 +6,11 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Composition
-
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open Microsoft.CodeAnalysis.Text
-
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open CancellableTasks
-
-#if !NET7_0_OR_GREATER
-open System.Runtime.CompilerServices
-
-[<Sealed; AbstractClass; Extension>]
-type private ReadOnlySpanExtensions =
-    [<Extension>]
-    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
-        let mutable i = 0
-        let mutable found = false
-
-        while not found && i < span.Length do
-            let c = span[i]
-
-            if c <> value0 && c <> value1 then
-                found <- true
-            else
-                i <- i + 1
-
-        if found then i else -1
-#endif
 
 [<AutoOpen>]
 module private Patterns =
