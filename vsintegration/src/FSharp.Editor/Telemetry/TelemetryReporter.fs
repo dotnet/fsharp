@@ -87,7 +87,7 @@ module TelemetryReporter =
         // We need to utilize TelemetryEvent's Correlation id, so we can track (for example) events on one document in the project.
 
         // TODO: need to carefully review the code, since it will be a hot path when we are sending telemetry
-        // This particular approach is here to avoid alocations for properties, which is likely the case if we destructing them.
+        // This particular approach is here to avoid allocations for properties, which is likely the case if we destructing them.
         for prop in props do
             event.Properties.Add(propPrefix + prop.Item1, prop.Item2)
 

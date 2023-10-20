@@ -143,11 +143,11 @@ type SetModule() =
         let alphabet = new Set<char>(['a' .. 'z'])
         let vowels   = new Set<char>(['a'; 'e'; 'i'; 'o'; 'u'])
         
-        let noVowelAlpa = alphabet - vowels
-        if compare noVowelAlpa alphabet     <> 1  then Assert.Fail()
-        if compare alphabet alphabet        <> 0  then Assert.Fail()
-        if compare noVowelAlpa noVowelAlpa  <> 0  then Assert.Fail()
-        if compare alphabet noVowelAlpa     <> -1 then Assert.Fail()
+        let noVowelAlpha = alphabet - vowels
+        if compare noVowelAlpha alphabet     <> 1  then Assert.Fail()
+        if compare alphabet alphabet         <> 0  then Assert.Fail()
+        if compare noVowelAlpha noVowelAlpha <> 0  then Assert.Fail()
+        if compare alphabet noVowelAlpha     <> -1 then Assert.Fail()
         ()
 
     [<Fact>]

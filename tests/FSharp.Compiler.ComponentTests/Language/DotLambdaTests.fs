@@ -249,7 +249,7 @@ let ``Regression 16318 typeof dotlambda should fail`` () =
     |> withDiagnostics [Error 72, Line 1, Col 10, Line 1, Col 18, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
 
 [<Fact>]
-let ``Nested anonymous unary function shorthands fails because of ambigous discard`` () =
+let ``Nested anonymous unary function shorthands fails because of ambiguous discard`` () =
     FSharp """
 module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])

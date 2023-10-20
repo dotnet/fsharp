@@ -206,7 +206,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             context.RemoveAttribute(null, null);
             TextSpan span = ptsSelection[0];
             IVsTextLines lastActiveBuffer;
-            IVsTextView lastAciveView = this.LastActiveTextView;
+            IVsTextView lastActiveView = this.LastActiveTextView;
             if (lastActiveView == null) return NativeMethods.E_FAIL;
             NativeMethods.ThrowOnFailure(lastActiveView.GetBuffer(out lastActiveBuffer));
             if (lastActiveBuffer != buffer) return NativeMethods.E_FAIL;

@@ -1523,7 +1523,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 1.4.0.8 -
 
 * FSharpType.Format now prettifies type variables.  If necessary, FSharpType.Prettify can also be called
-* Add maximum-memory trigger to downsize FCS caches. Defaults to 1.7GB of allocaed memory in the system
+* Add maximum-memory trigger to downsize FCS caches. Defaults to 1.7GB of allocated memory in the system
   process for a 32-bit process, and 2x this for a 64-bit process
 
 ### 1.4.0.7 -

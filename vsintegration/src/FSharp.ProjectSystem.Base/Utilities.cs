@@ -543,7 +543,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Returns true if thename that can represent a path, absolut or relative, or a file name contains invalid filename characters.
+        /// Returns true if thename that can represent a path, absolute or relative, or a file name contains invalid filename characters.
         /// </summary>
         /// <param name="name">File name</param>
         /// <returns>true if file name is invalid</returns>
@@ -570,7 +570,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             Microsoft.VisualStudio.Shell.Url uri = new Microsoft.VisualStudio.Shell.Url(name);
 
-            // This might be confusing bur Url.IsFile means that the uri represented by the name is either absolut or relative.
+            // This might be confusing bur Url.IsFile means that the uri represented by the name is either absolute or relative.
             if (uri.IsFile)
             {
                 string[] segments = uri.Segments;
@@ -869,7 +869,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 // We want to verify here everything but the extension.
-                // We cannot use GetFileNameWithoutExtension because it might be that for example (..\\filename.txt) is passed in asnd that should fail, since that is not a valid filename.
+                // We cannot use GetFileNameWithoutExtension because it might be that for example (..\\filename.txt) is passed in and that should fail, since that is not a valid filename.
                 fileNameToVerify = filePart.Substring(0, filePart.Length - extension.Length);
 
                 if (String.IsNullOrEmpty(fileNameToVerify))

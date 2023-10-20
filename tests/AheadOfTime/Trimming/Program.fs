@@ -9091,7 +9091,7 @@ module PercentAPublicTests =
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
         test "test8900" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
-    let testPercentAMyAnnonymousRecord () =
+    let testPercentAMyAnonymousRecord () =
         let data = {| A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 |}
         test "test8901" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
@@ -9126,7 +9126,7 @@ module PercentAPublicTests =
 
     let tests () =
         testPercentAMyRecord ()
-        testPercentAMyAnnonymousRecord ()
+        testPercentAMyAnonymousRecord ()
         testDiscriminatedUnion ()
         testPercentAOptionChoiceTypes ()
         testUnit ()

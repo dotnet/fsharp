@@ -863,7 +863,7 @@ type UsingMSBuild()  =
              "let aaa = Interlocked.Exchange<obj>(&n$, new obj())", 10) // "I" of Interlocked
           
     // A several cases that are tricky and we don't want to show anything
-    // in the following cases, we may return a location of an operator (its ambigous), but we don't want to show info about it!
+    // in the following cases, we may return a location of an operator (its ambiguous), but we don't want to show info about it!
     
     [<Test>]
     member public this.``Single.Negative.OperatorTrick1``() =

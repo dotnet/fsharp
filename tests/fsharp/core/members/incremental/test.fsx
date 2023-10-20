@@ -23,7 +23,7 @@ let check s b1 b2 = test s (b1 = b2)
 
 //! Address of incremental class local mutable
   
-module AddresOfIncrementalClassLocalMutable = begin
+module AddressOfIncrementalClassLocalMutable = begin
 
     open System.Drawing
     open System.Windows.Forms
@@ -37,7 +37,7 @@ end
 
 //! Address of mutable record field (related to above)
 
-module AddresOfMutableRecordField = begin
+module AddressOfMutableRecordField = begin
     open System.Drawing
     open System.Windows.Forms
 

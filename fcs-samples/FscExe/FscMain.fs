@@ -147,7 +147,7 @@ module FSharpResidentCompiler =
                     cmdProcess.EnableRaisingEvents <- true;
                      
                     // Create the client proxy and attempt to connect to the server
-                    let rec tryAcccesServer nRemaining =
+                    let rec tryAccessServer nRemaining =
                         if !progress then printfn "client: trying to access server, nRemaining = '%d'" nRemaining
                         if nRemaining = 0 then 
                             // Failed to connect to server, give up 
@@ -163,9 +163,9 @@ module FSharpResidentCompiler =
                             with _ (* System.Runtime.Remoting.RemotingException *) ->
                                 // Sleep a bit
                                 System.Threading.Thread.Sleep 50
-                                tryAcccesServer (nRemaining - 1)
+                                tryAccessServer (nRemaining - 1)
 
-                    tryAcccesServer 20
+                    tryAccessServer 20
 
             match clientOpt with
             | Some client -> 

@@ -56,11 +56,11 @@ let foo =
 // This was causing bad codegen in debug code
 module InnerFunctionGenericOnlyByMeasure =
     let nullReferenceError weightedList =
-        let rec loop accumululatedWeight (remaining : float<'u> list) =
+        let rec loop accumulatedWeight (remaining : float<'u> list) =
             match remaining with
-            | [] -> accumululatedWeight
+            | [] -> accumulatedWeight
             | weight :: tail ->
-                loop (accumululatedWeight + weight) tail
+                loop (accumulatedWeight + weight) tail
 
         loop 0.0<_> weightedList
 

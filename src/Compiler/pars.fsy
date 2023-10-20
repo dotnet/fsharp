@@ -1412,7 +1412,7 @@ namedModuleDefnBlock:
          //    module M2 = ID.ID.ID.ID
          // will be taken as a module abbreviation, regardles of the identifiers themselves.
          //
-         // This is similar to the ambiguitty between
+         // This is similar to the ambiguity between
          //    type X = int
          // and
          //    type X = OneValue

@@ -455,7 +455,7 @@ module TestInferObjExprTypeParamFromKNownType =
 
 // These tests are activate for the case where warnings are on
 #if NEGATIVE
-module TestAcessibilityOfOpImplicit =
+module TestAccessibilityOfOpImplicit =
     [<Sealed>]
     type C() = 
         static member private op_Implicit(x:int) = C()

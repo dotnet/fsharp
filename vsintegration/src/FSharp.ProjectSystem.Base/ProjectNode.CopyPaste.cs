@@ -340,7 +340,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Determines if a node can accept drop opertaion.
         /// </summary>
         /// <param name="itemId">The id of the node.</param>
-        /// <returns>true if the node acceots drag operation.</returns>
+        /// <returns>true if the node accepts drag operation.</returns>
         public virtual bool CanTargetNodeAcceptDrop(uint itemId)
         {
             HierarchyNode targetNode = NodeFromItemId(itemId);

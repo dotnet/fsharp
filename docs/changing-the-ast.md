@@ -82,6 +82,6 @@ SynRationalConst.Rational(fst $1, rhs parseState 1, rhs parseState 2, fst $3, rh
 ```	
 
 That's it. Adjusting the other constructor calls of `Rational` in `pars.fsy` should be enough to have a working parser again which returns the modified AST.  
-While fixing the remaining compiler errors outside of `pars.fsy`, it's a good idea to use named access to the fields of the `SynRationalConst.Rational` union case instead of positional access. This way, the compilation won't fail if aditional fields are added to the union case in the future.  
+While fixing the remaining compiler errors outside of `pars.fsy`, it's a good idea to use named access to the fields of the `SynRationalConst.Rational` union case instead of positional access. This way, the compilation won't fail if additional fields are added to the union case in the future.  
 After a successful compilation, you can run the parser tests in `SyntaxTreeTests.fs` to verify that everything works as expected.  
 It's likely that you'll need to update the baseline files as decribed in `SyntaxTreeTests.fs`.

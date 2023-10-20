@@ -134,7 +134,7 @@ let SampleArithmetic3() =
     let pi1 = float   3 + 0.1415 
     let pi2 = float 3 + 0.1415   // identical - int32 and int are the same
     let pi3 = float 3 + 0.1415   // identical - A.to_B and B.of_A often both exist
-    let pi4 = float 3          + 0.1415   // identical - 'float' is an addiitonal ahortcuts
+    let pi4 = float 3          + 0.1415   // identical - 'float' is an additional ahortcuts
     printf "pi1 = %f, pi2 = %f, pi3 = %f\n" pi1 pi2 pi3;
   
     let i1 = int   3.1415 

@@ -43,7 +43,7 @@ module EventTest2 =
     check "fewnew0" (typeof<SomeComponent>.GetEvent("Paint").GetRaiseMethod()) null
     check "fewnew0" (typeof<SomeComponent>.GetEvent("Paint").GetRemoveMethod().Name) "remove_Paint"
 
-module AbtsractEventTests =
+module AbstractEventTests =
 
 
     type ChannelChangedHandler = delegate of obj * int -> unit

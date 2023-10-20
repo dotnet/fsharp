@@ -8226,7 +8226,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             // Nameof resolution resolves to a symbol and in general we make that the same symbol as
             // would resolve if the long ident was used as an expression at the given location.
             //
-            // So we first check if the first identifier resolves as an expression, if so commit and and resolve.
+            // So we first check if the first identifier resolves as an expression, if so commit and resolve.
             //
             // However we don't commit for a type names - nameof allows 'naked' type names and thus all type name
             // resolutions are checked separately in the next step.
@@ -8282,7 +8282,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             if resolvedToModuleOrNamespaceName then result else
 
             ForceRaise nameResolutionResult |> ignore
-            // If that didn't give aan exception then raise a generic error
+            // If that didn't give an exception then raise a generic error
             error (Error(FSComp.SR.expressionHasNoName(), m))
 
         // expr<tyargs> allowed, even with qualifications

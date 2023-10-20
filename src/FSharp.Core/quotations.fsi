@@ -214,7 +214,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     ///
-    /// <example id="addresset-1">
+    /// <example id="addressset-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     ///

@@ -10157,7 +10157,7 @@ namespace ProviderImplementation.ProvidedTypes
                 else failwith "getTypeDefOrRefAsUncodedToken"
             getUncodedToken tab idx
 
-        // REVIEW: write into an accumuating buffer
+        // REVIEW: write into an accumulating buffer
         let EmitArrayShape (bb: ByteBuffer) (ILArrayShape shape) = 
             let sized = Array.filter (function (_, Some _) -> true | _ -> false) shape
             let lobounded = Array.filter (function (Some _, _) -> true | _ -> false) shape
@@ -10185,7 +10185,7 @@ namespace ProviderImplementation.ProvidedTypes
             | ILArgConvention.VarArg -> e_IMAGE_CEE_CS_CALLCONV_VARARG)
           
 
-        // REVIEW: write into an accumuating buffer
+        // REVIEW: write into an accumulating buffer
         let rec EmitTypeSpec cenv env (bb: ByteBuffer) (et, tspec:ILTypeSpec) = 
             if isEmpty tspec.GenericArgs then 
                 bb.EmitByte et
@@ -10295,7 +10295,7 @@ namespace ProviderImplementation.ProvidedTypes
         let rec GetFieldInitAsBlobIdx cenv (x:ILFieldInit) = 
             GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> GetFieldInit bb x))
 
-        // REVIEW: write into an accumuating buffer
+        // REVIEW: write into an accumulating buffer
         and GetFieldInit (bb: ByteBuffer) x = 
             match x with 
             | :? string as b -> bb.EmitBytes (Encoding.Unicode.GetBytes b)
@@ -10356,7 +10356,7 @@ namespace ProviderImplementation.ProvidedTypes
             | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
             | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
             | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
-            | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
+            | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type access"
 
         let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) = 
             let nselem, nelem = GetTypeNameAsElemPair cenv (td.Namespace, td.Name)
@@ -10716,7 +10716,7 @@ namespace ProviderImplementation.ProvidedTypes
             let fenv = envForFieldSpec fspec
             FindOrAddSharedRow cenv ILTableNames.MemberRef (GetFieldSpecAsMemberRefRow cenv env fenv fspec)
 
-        // REVIEW: write into an accumuating buffer
+        // REVIEW: write into an accumulating buffer
         and EmitFieldSpecSig cenv env (bb: ByteBuffer) (fspec:ILFieldSpec) = 
             bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD
             EmitType cenv env bb fspec.FormalType

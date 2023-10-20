@@ -149,7 +149,7 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 //       in these new cases, take care to have let binding sequence (eval order...)
 
 
-// Merge a tyapp node and and app node.
+// Merge a tyapp node and app node.
 [<return: Struct>]
 let (|TyappAndApp|_|) e =
     match e with

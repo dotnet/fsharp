@@ -1165,7 +1165,7 @@ let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
-        // REVIEW: Addded(vlza, fixes #14937):
+        // REVIEW: Added(vlza, fixes #14937):
         //   We also emit methods that are marked as HideBySig and static,
         //   since they're not virtual or abstract, but we want (?) the same behaviour as normal instance implementations.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly

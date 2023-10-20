@@ -3,7 +3,7 @@
 ///
 /// This benchmarking suite will perform JIT warmups, collect system environment data
 /// run multiple trials, and produce convenient reports.  
-/// You will find csv, markdown, and and html versions of the reports in .\BenchmarkDotNet.Artifacts\results
+/// You will find csv, markdown, and html versions of the reports in .\BenchmarkDotNet.Artifacts\results
 /// after running the tests.
 ///
 /// Be sure to run tests in Release mode, optimizations on, etc.

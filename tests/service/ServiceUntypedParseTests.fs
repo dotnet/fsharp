@@ -1407,7 +1407,7 @@ type C(x: int, y: int) = class end
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGivenAtPosition - method - args no unannotions``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - args no annotations``() =
         let source = """
 type C() =
     member _.M(x, y) = ()
@@ -1447,7 +1447,7 @@ type C() =
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGivenAtPosition - method currying - args no unannotions``() =
+    let ``IsTypeAnnotationGivenAtPosition - method currying - args no annotations``() =
         let source = """
 type C() =
     member _.M x y = ()

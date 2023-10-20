@@ -16,7 +16,7 @@ let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else re
 
 // Address of incremental  local mutable
   
-module AddresOfIncrementalClassLocalMutable = 
+module AddressOfIncrementalClassLocalMutable = 
 
     open System.Drawing
     open System.Windows.Forms
@@ -30,7 +30,7 @@ module AddresOfIncrementalClassLocalMutable =
 
 // Address of mutable record field (related to above)
 
-module AddresOfMutableRecordField = 
+module AddressOfMutableRecordField = 
     open System.Drawing
     open System.Windows.Forms
 
