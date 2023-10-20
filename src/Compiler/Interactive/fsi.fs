@@ -2776,7 +2776,7 @@ type internal FsiDynamicCompiler
                                 istate // error already reported
 
                         with _ ->
-                            // An exception occured during processing, so remove the lines causing the error from the package manager list.
+                            // An exception occurred during processing, so remove the lines causing the error from the package manager list.
                             tcConfigB.packageManagerLines <-
                                 PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
 

@@ -572,7 +572,7 @@ x |> Seq.iter(fun r ->
         do
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
 
-            // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
             Assert.True (found, "Failed to invoke the nativeProbingRoots callback")
 
@@ -616,11 +616,11 @@ x |> Seq.iter(fun r ->
         do
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
 
-            // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
             Assert.True (nativeFound, "Failed to invoke the nativeProbingRoots callback")
 
-            // Invoking a non-existent assembly causes a probe. which should invoke the call back
+            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
             Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 
@@ -647,7 +647,7 @@ x |> Seq.iter(fun r ->
         do
             use dp = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
 
-            // Invoking a non-existent assembly causes a probe. which should invoke the call back
+            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
             Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 

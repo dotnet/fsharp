@@ -4292,7 +4292,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Obsolete.CompletionOnObsoleteType``() =
       this.AutoCompleteObsoleteTest "level <- Module.ObsoleteT" true [ "B" ] [ "Chars" ]
 
-    /// BUG: Referencing a non-existent DLL caused an assert.
+    /// BUG: Referencing a nonexistent DLL caused an assert.
     [<Test;Category("Repro")>]
     member public this.``WithNonExistentDll``() = 
         use _guard = this.UsingNewVS()

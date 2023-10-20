@@ -293,7 +293,7 @@ bound:
 /* ldc.r8     0. */
 /* float64(-657435.)     */
 /* and int32[0...,0...] */
-/* The problem is telling an integer-followed-by-ellipses from a floating-point-nubmer-followed-by-dots */
+/* The problem is telling an integer-followed-by-ellipses from a floating-point-number-followed-by-dots */
    | VAL_INT32_ELLIPSES int32
        { (Some $1, Some ($2 - $1 + 1)) }       
    | VAL_INT32_ELLIPSES

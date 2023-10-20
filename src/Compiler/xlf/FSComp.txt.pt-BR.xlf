@@ -1013,7 +1013,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">Um constructo genérico restrito ocorreu na especificação de código retomável</target>
         <note />
       </trans-unit>
@@ -1028,7 +1028,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Ocorreu um "let rec" na especificação do código retomável</target>
         <note />
       </trans-unit>
@@ -1393,7 +1393,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Código inválido retomável. Ocorreu um "let rec" na especificação do código retomável</target>
         <note />
       </trans-unit>
@@ -6978,7 +6978,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">O serviço de compilação residente não foi usado porque houve um problema de comunicação com o servidor.</target>
         <note />
       </trans-unit>
@@ -7178,7 +7178,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">Erro ao aplicar os argumentos estáticos a um tipo fornecido</target>
         <note />
       </trans-unit>
@@ -7828,7 +7828,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">Ocorreu um erro ao aplicar os argumentos estáticos para um método fornecido</target>
         <note />
       </trans-unit>

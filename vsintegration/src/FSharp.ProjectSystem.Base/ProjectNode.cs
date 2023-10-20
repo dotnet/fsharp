@@ -5025,7 +5025,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     // Copy the file to the correct location.
                     // We will suppress the file change events to be triggered to this item, since we are going to copy over the existing file and thus we will trigger a file change event. 
-                    // We do not want the filechange event to ocur in this case, similar that we do not want a file change event to occur when saving a file.
+                    // We do not want the filechange event to occur in this case, similar that we do not want a file change event to occur when saving a file.
                     IVsFileChangeEx fileChange = this.site.GetService(typeof(SVsFileChangeEx)) as IVsFileChangeEx;
                     if (fileChange == null)
                     {

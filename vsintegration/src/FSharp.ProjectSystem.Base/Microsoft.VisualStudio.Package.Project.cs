@@ -181,7 +181,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string InvalidOutputPath = "InvalidOutputPath";
         public const string ProjectRefOnlyExeOrDll = "ProjectRefOnlyExeOrDll";
         public const string CannotBuildWhenBuildInProgress = "CannotBuildWhenBuildInProgress";
-        public const string WorkingDirectoryNotExists = "WorkingDirectoryNotExists";
+        public const string WorkingDirectoryNonexistent = "WorkingDirectoryNonexistent";
         public const string CannotLoadUnknownTargetFrameworkProject = "CannotLoadUnknownTargetFrameworkProject";
         public const string ProductName = "ProductName";
         public const string ProjectReferencesHigherVersionWarning = "ProjectReferencesHigherVersionWarning";

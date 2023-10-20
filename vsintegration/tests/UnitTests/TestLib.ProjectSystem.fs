@@ -609,7 +609,7 @@ module LanguageServiceExtension =
                         else
                             assem, false  // assem is a simple/fusion name of an assembly
                     let node = referencesFolder.CreateAssemblyReferenceNode(assem, Microsoft.VisualStudio.FSharp.ProjectSystem.AddReferenceDialogTab.BrowseTab, isFullPath)
-                    if node <> null then  // node may be null if reference was to non-existent file
+                    if node <> null then  // node may be null if reference was to nonexistent file
                         if node.AddReference() then
                             // still need to add it to underlying representation (SimpleOpenProject) so that
                             // subsequent Reload() calls will have right info

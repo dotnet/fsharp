@@ -758,7 +758,7 @@ let private fantomasCoreTrie: TrieNode =
     }
 
 [<Test>]
-let ``Query non existing node in trie`` () =
+let ``Query nonexistent node in trie`` () =
     let result =
         queryTrie fantomasCoreTrie [ "System"; "System"; "Runtime"; "CompilerServices" ]
 

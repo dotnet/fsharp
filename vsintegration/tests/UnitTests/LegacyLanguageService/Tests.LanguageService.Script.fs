@@ -138,7 +138,7 @@ type UsingMSBuild() as this =
         let fileContent = """open Thing1.Thing2"""
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Thing1")
         
-    /// Regression test for FSharp1.0:4861 - #r to non-existent file causes the first line to be squiggled
+    /// Regression test for FSharp1.0:4861 - #r to nonexistent file causes the first line to be squiggled
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
     [<Test>]
     member public this.``Fsx.Hash.RProperSquiggleForNonExistentFile``() =  

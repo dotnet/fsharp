@@ -8558,7 +8558,7 @@ namespace ProviderImplementation.ProvidedTypes
                 | _ ->
                     let msg =
                         if toTgt then sprintf "The design-time type '%O' utilized by a type provider was not found in the target reference assembly set '%A'. You may be referencing a profile which contains fewer types than those needed by the type provider you are using." t (getTargetAssemblies() |> Seq.toList)
-                        elif getSourceAssemblies() |> Seq.length = 0 then sprintf "A failure occured while determining compilation references"
+                        elif getSourceAssemblies() |> Seq.length = 0 then sprintf "A failure occurred while determining compilation references"
                         else sprintf "The target type '%O' utilized by a type provider was not found in the design-time assembly set '%A'. Please report this problem to the project site for the type provider." t (getSourceAssemblies() |> Seq.toList)
                     failwith msg
 

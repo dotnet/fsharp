@@ -1013,7 +1013,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드 사양에서 제약이 있는 제네릭 구문이 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -1028,7 +1028,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -1393,7 +1393,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -6978,7 +6978,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">서버와 통신하는 동안 문제가 발생하여 상주 컴파일 서비스를 사용하지 않았습니다.</target>
         <note />
       </trans-unit>
@@ -7178,7 +7178,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">제공된 형식에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -7828,7 +7828,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">제공된 메서드에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
         <note />
       </trans-unit>

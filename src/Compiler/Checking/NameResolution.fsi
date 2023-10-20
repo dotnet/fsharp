@@ -492,7 +492,7 @@ type ITypecheckResultsSink =
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation: range * int -> unit
 
-    /// Record that an open declaration occured in a given scope range
+    /// Record that an open declaration occurred in a given scope range
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
 
     /// Get the current source

@@ -100,7 +100,7 @@ type UsingMSBuild() =
         let AssertIdentifierInToolTipExactlyOnce(ident, (tooltip:string)) =
             let count = tooltip.Split([| '='; '.'; ' '; '\t'; '('; ':'; ')'; '\n' |]) |> Array.filter ((=) ident) |> Array.length
             if (count <> 1) then
-                Assert.Fail(sprintf "Identifier '%s' doesn't occure once in the tooltip '%s'" ident tooltip)
+                Assert.Fail(sprintf "Identifier '%s' doesn't occur once in the tooltip '%s'" ident tooltip)
         
         let (_, _, file) = this.CreateSingleFileProject(code)
 

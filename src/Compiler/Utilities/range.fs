@@ -359,7 +359,7 @@ type Range(code1: int64, code2: int64) =
                 if FileSystem.IsInvalidPathShim m.FileName then
                     "path invalid: " + m.FileName
                 elif not (FileSystem.FileExistsShim m.FileName) then
-                    "non existing file: " + m.FileName
+                    "nonexistent file: " + m.FileName
                 else
                     FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
                     |> Seq.skip (m.StartLine - 1)

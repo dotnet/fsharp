@@ -1013,7 +1013,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">再開可能なコード指定で制約付きジェネリック コンストラクトが発生しました</target>
         <note />
       </trans-unit>
@@ -1028,7 +1028,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">再開可能なコード仕様で 'let rec' が発生しました</target>
         <note />
       </trans-unit>
@@ -1393,7 +1393,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">再開可能なコードが無効です。再開可能なコード仕様で 'let rec' が発生しました</target>
         <note />
       </trans-unit>
@@ -6978,7 +6978,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
         <note />
       </trans-unit>
@@ -7178,7 +7178,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">指定された型に静的引数を適用する際にエラーが発生しました</target>
         <note />
       </trans-unit>
@@ -7828,7 +7828,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">静的な引数を指定されたメソッドに適用する際エラーが発生しました</target>
         <note />
       </trans-unit>

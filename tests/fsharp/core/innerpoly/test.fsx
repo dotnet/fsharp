@@ -467,7 +467,7 @@ module Bug11620B =
 
     let main _ =
         let dummyThing : Thing<int> = { Thing.Metadata = 42 }
-        // crash occured on the following line
+        // crash occurred on the following line
         let callback = getCreateServiceCallback<int> dummyThing
         let resolvedService = callback ()
         printfn "Resolved service: %A" resolvedService

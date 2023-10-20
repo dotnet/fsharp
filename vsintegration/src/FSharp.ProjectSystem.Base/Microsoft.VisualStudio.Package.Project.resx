@@ -566,7 +566,7 @@
   <data name="CannotBuildWhenBuildInProgress" xml:space="preserve">
     <value>Cannot start a build, because another build is already in progress.</value>
   </data>
-  <data name="WorkingDirectoryNotExists" xml:space="preserve">
+  <data name="WorkingDirectoryNonexistent" xml:space="preserve">
     <value>The working directory does not exist:\n'{0}'.</value>
   </data>
   <data name="ProjectReferencesDifferentFramework" xml:space="preserve">

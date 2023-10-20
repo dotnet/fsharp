@@ -744,12 +744,12 @@ let EnumerateCSVFile1() =
     let test = CSVFileEnumerator(@"test.csv")  
     printf "-------Enumeration 1------\n";
     test |> Seq.iter (sprintf "%A" >> printf "line %s\n");
-    // Now do it again, this time determining the numer of entries on each line.
+    // Now do it again, this time determining the number of entries on each line.
     // Note how the file is read from the start again, since each enumeration is 
     // independent.
     printf "-------Enumeration 2------\n";
     test |> Seq.iter (List.length >> printf "line has %d entries\n");
-    // Now do it again, this time determining the numer of entries on each line.
+    // Now do it again, this time determining the number of entries on each line.
     // Note how the file is read from the start again, since each enumeration is 
     // independent.
     printf "-------Enumeration 3------\n";

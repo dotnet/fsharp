@@ -202,7 +202,7 @@ module EventCombinators =
                               { new System.IDisposable with 
                                       member __.Dispose() = () }  }
 
-        // Obervers should ignore subsequent failures
+        // Observers should ignore subsequent failures
         let failTwice () = 
             { new IObservable<_> with  
                 member __.Subscribe(o:IObserver<_>) = 

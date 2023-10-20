@@ -1048,7 +1048,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     }
 
                     if (!Directory.Exists(fullPath))
-                        throw new WorkingDirectoryNotExistsException(fullPath);
+                        throw new WorkingDirectoryNonexistentException(fullPath);
                     
                     info.bstrCurDir = fullPath;
                 }
@@ -1687,9 +1687,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public ClassLibraryCannotBeStartedDirectlyException() : base(SR.GetStringWithCR(SR.CannotStartLibraries)) { }
     }
 
-    internal class WorkingDirectoryNotExistsException : COMException
+    internal class WorkingDirectoryNonexistentException : COMException
     {
-        public WorkingDirectoryNotExistsException(string path) : base(string.Format(SR.GetStringWithCR(SR.WorkingDirectoryNotExists), path)) { }
+        public WorkingDirectoryNonexistentException(string path) : base(string.Format(SR.GetStringWithCR(SR.WorkingDirectoryNonexistent), path)) { }
     }
 
     //=============================================================================

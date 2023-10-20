@@ -1415,7 +1415,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     else
                     {
                         // Could not resolve the reference, e.g. because someone changed the .fsproj file
-                        // to point to a non-existent file on disk.  In this case there is nothing we can do,
+                        // to point to a nonexistent file on disk.  In this case there is nothing we can do,
                         // so fail silently (that's what C# does).
                     }
                 }

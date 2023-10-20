@@ -56,7 +56,7 @@
   (*
     Creates a string error snippet 
     that points out the exact source position
-    where the error occured, for example:
+    where the error occurred, for example:
   
     4: if(x == y) {
     5:   print'x equals y');
