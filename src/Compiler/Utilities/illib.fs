@@ -118,25 +118,50 @@ module internal PervasiveAutoOpens =
 
             task.Result
 
-/// An efficient lazy for inline storage in a class type. Results in fewer thunks.
-[<Struct>]
-type InlineDelayInit<'T when 'T: not struct> =
-    new(f: unit -> 'T) =
-        {
-            store = Unchecked.defaultof<'T>
-            func = Func<_>(f)
-        }
+[<AbstractClass>]
+type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
+    let syncObj = obj()
 
-    val mutable store: 'T
-    val mutable func: Func<'T> MaybeNull
+    let mutable arrayStore = null
+    let mutable dictStore = null
 
-    member x.Value =
-        match x.func with
-        | null -> x.store
+    let mutable func = f
+
+    member this.GetArray() =
+        match arrayStore with
+        | NonNull value -> value
         | _ ->
-            let res = LazyInitializer.EnsureInitialized(&x.store, x.func)
-            x.func <- null
-            res
+            Monitor.Enter(syncObj)
+            try
+                match arrayStore with
+                | NonNull value -> value
+                | _ ->
+            
+                arrayStore <- func ()
+
+                func <- Unchecked.defaultof<_>
+                arrayStore
+            finally
+                Monitor.Exit(syncObj)
+
+    member this.GetDictionary() =
+        match dictStore with
+        | NonNull value -> value
+        | _ ->
+            let array = this.GetArray()
+            Monitor.Enter(syncObj)
+            try
+                match dictStore with
+                | NonNull value -> value
+                | _ ->
+            
+                dictStore <- this.CreateDictionary(array)
+                dictStore
+            finally
+                Monitor.Exit(syncObj)
+
+    abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
+
 
 //-------------------------------------------------------------------------
 // Library: projections

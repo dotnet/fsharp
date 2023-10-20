@@ -70,13 +70,14 @@ module internal PervasiveAutoOpens =
 
     val notFound: unit -> 'a
 
-[<Struct>]
-type internal InlineDelayInit<'T when 'T: not struct> =
+[<AbstractClass>]
+type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
+    new: f: (unit -> 'T[]) -> DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>
 
-    new: f: (unit -> 'T) -> InlineDelayInit<'T>
-    val mutable store: 'T
-    val mutable func: Func<'T>
-    member Value: 'T
+    member GetArray: unit -> 'T[]
+    member GetDictionary: unit -> IDictionary<'TDictKey, 'TDictValue>
+
+    abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
 module internal Order =
 
