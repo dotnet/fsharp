@@ -1,6 +1,6 @@
 // #Conformance #SignatureFiles #Namespaces 
 // This file has been compiled with AnonModule01.fs, so 
-// open the generated anonmys module.
+// open the generated anonymous module.
 
 open AnonModule01
 

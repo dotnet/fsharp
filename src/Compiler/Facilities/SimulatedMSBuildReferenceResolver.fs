@@ -12,7 +12,7 @@ open FSharp.Compiler.IO
 // 1. List of frameworks
 // 2. DeriveTargetFrameworkDirectoriesFor45Plus
 // 3. HighestInstalledRefAssembliesOrDotNETFramework
-// 4. GetPathToDotNetFrameworkImlpementationAssemblies
+// 4. GetPathToDotNetFrameworkImplementationAssemblies
 [<Literal>]
 let private Net45 = "v4.5"
 
@@ -50,7 +50,7 @@ let private SimulatedMSBuildResolver =
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies _ =
+    let GetPathToDotNetFrameworkImplementationAssemblies _ =
         let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
 
         if isDesktop then
@@ -112,7 +112,7 @@ let private SimulatedMSBuildResolver =
                     yield fsharpCoreDir
                     yield implicitIncludeDir
                     yield! GetPathToDotNetFrameworkReferenceAssemblies targetFrameworkVersion
-                    yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
+                    yield! GetPathToDotNetFrameworkImplementationAssemblies targetFrameworkVersion
                 ]
 
             for r, baggage in references do

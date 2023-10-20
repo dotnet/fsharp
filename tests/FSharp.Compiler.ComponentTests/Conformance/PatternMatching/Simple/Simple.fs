@@ -37,8 +37,8 @@ module Simple =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     //<Expects id="FS0049" span="(10,16-10,19)" status="warning">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_BindCaptialIdent.fs"|])>]
-    let ``Simple - W_BindCaptialIdent_fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_BindCapitalIdent.fs"|])>]
+    let ``Simple - W_BindCapitalIdent_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]

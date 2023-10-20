@@ -39,7 +39,7 @@ type LoadClosure =
         /// The resolved references along with the ranges of the #r positions in each file.
         References: (string * AssemblyResolution list) list
 
-        /// The resolved pacakge references along with the ranges of the #r positions in each file.
+        /// The resolved package references along with the ranges of the #r positions in each file.
         PackageReferences: (range * string list)[]
 
         /// Whether we're decided to use .NET Framework analysis for this script

@@ -222,7 +222,7 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
-    [<Guid(Guids.advancedSettingsPageIdSring)>]
+    [<Guid(Guids.advancedSettingsPageIdString)>]
     type internal AdvancedSettingsOptionPage() =
         inherit AbstractOptionPage<AdvancedOptions>()
         override _.CreateView() = upcast AdvancedOptionsControl()

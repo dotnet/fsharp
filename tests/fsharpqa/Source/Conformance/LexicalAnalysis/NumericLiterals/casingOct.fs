@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Constants 
-// Number type specifier are not case sensitive
+// Number type specifier are not case-sensitive
 // Oct
 //<Expects status="success"></Expects>
 #light

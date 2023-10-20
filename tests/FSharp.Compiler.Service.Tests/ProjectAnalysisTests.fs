@@ -2821,7 +2821,7 @@ let ``Test Project17 all symbols`` () =
 
 
 //-----------------------------------------------------------------------------------------
-// Misc - generic type definnitions
+// Misc - generic type definitions
 
 module internal Project18 =
 

@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #InterfacesAndImplementations 
 #light
 
-// FS1 2504, Generic interface instatiated with unit
+// FS1 2504, Generic interface instantiated with unit
 
 type IT<'state> =
     abstract Init: 'state -> unit

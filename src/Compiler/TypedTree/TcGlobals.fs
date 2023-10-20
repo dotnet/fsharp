@@ -1079,7 +1079,7 @@ type TcGlobals(
             | true, builder -> builder tinst nullness
             | _ -> TType_app (tcref, tinst, nullness)
 
-  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
+  // Adding an unnecessary "let" instead of inlining into a multi-line pipelined compute-once "member val" that is too complex for @dsyme
   let v_attribs_Unsupported = [
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
@@ -1893,7 +1893,7 @@ type TcGlobals(
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
-  /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
+  /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =
