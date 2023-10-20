@@ -2887,6 +2887,7 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
             | null ->
                 let syncObj = storage
                 Monitor.Enter(syncObj)
+
                 try
                     match box store with
                     | null ->
@@ -2895,6 +2896,7 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
                             | ILTypeDefStored.Given td -> td
                             | ILTypeDefStored.Computed f -> f ()
                             | ILTypeDefStored.Reader f -> f metadataIndex
+
                         store <- value
                         storage <- Unchecked.defaultof<_>
                         value
