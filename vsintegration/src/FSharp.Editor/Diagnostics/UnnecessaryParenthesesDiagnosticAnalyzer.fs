@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
+open System.Runtime.Caching
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.EditorServices
@@ -17,6 +18,13 @@ open CancellableTasks
 // using [<Export(typeof<IFSharpUnnecessaryParenthesesDiagnosticAnalyzer>)>], since it would not be recognized.
 type IFSharpUnnecessaryParenthesesDiagnosticAnalyzer =
     inherit IFSharpDocumentDiagnosticAnalyzer
+
+[<NoEquality; NoComparison>]
+type private DocumentData =
+    {
+        Hash: int
+        Diagnostics: ImmutableArray<Diagnostic>
+    }
 
 [<Sealed>]
 type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] () =
@@ -36,21 +44,56 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
             helpLinkUri = null
         )
 
+    static let cache =
+        new MemoryCache $"FSharp.Editor.{nameof UnnecessaryParenthesesDiagnosticAnalyzer}"
+
+    static let semaphore = new SemaphoreSlim 3
+
     static member GetDiagnostics(document: Document) =
         cancellableTask {
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof UnnecessaryParenthesesDiagnosticAnalyzer)
             let! cancellationToken = CancellableTask.getCancellationToken ()
-            let! sourceText = document.GetTextAsync cancellationToken
+            let! textVersion = document.GetTextVersionAsync cancellationToken
+            let textVersionHash = textVersion.GetHashCode()
 
-            let getLineString line =
-                sourceText.Lines[ Line.toZ line ].ToString()
+            match! semaphore.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken) with
+            | false -> return ImmutableArray.Empty
+            | true ->
+                try
+                    let key = string document.Id
 
-            let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getLineString parseResults.ParseTree
+                    match cache.Get key with
+                    | :? DocumentData as data when data.Hash = textVersionHash -> return data.Diagnostics
+                    | _ ->
+                        let! parseResults = document.GetFSharpParseResultsAsync(nameof UnnecessaryParenthesesDiagnosticAnalyzer)
+                        let! sourceText = document.GetTextAsync cancellationToken
 
-            return
-                unnecessaryParentheses
-                |> Seq.map (fun range -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
-                |> Seq.toImmutableArray
+                        let getLineString line =
+                            sourceText.Lines[ Line.toZ line ].ToString()
+
+                        let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getLineString parseResults.ParseTree
+
+                        let diagnostics =
+                            unnecessaryParentheses
+                            |> Seq.map (fun range ->
+                                Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
+                            |> Seq.toImmutableArray
+
+                        ignore (cache.Remove key)
+
+                        cache.Set(
+                            CacheItem(
+                                key,
+                                {
+                                    Hash = textVersionHash
+                                    Diagnostics = diagnostics
+                                }
+                            ),
+                            CacheItemPolicy(SlidingExpiration = DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                        )
+
+                        return diagnostics
+                finally
+                    ignore (semaphore.Release())
         }
 
     interface IFSharpUnnecessaryParenthesesDiagnosticAnalyzer with
