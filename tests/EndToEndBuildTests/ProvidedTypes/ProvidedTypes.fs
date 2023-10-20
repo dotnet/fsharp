@@ -13404,8 +13404,8 @@ namespace ProviderImplementation.ProvidedTypes
                 lambdaLocals.[v] <- l
 
             let expectedState = if (retType = ILType.Void) then ExpectedStackState.Empty else ExpectedStackState.Value
-            let lambadParamVars = [| Var("this", typeof<obj>); v|]
-            let codeGen = CodeGenerator(assemblyMainModule, genUniqueTypeName, implicitCtorArgsAsFields, convTypeToTgt, transType, transFieldSpec, transMeth, transMethRef, transCtorSpec, ilg, lambdaLocals, lambadParamVars)
+            let lambdaParamVars = [| Var("this", typeof<obj>); v|]
+            let codeGen = CodeGenerator(assemblyMainModule, genUniqueTypeName, implicitCtorArgsAsFields, convTypeToTgt, transType, transFieldSpec, transMeth, transMethRef, transCtorSpec, ilg, lambdaLocals, lambdaParamVars)
             codeGen.EmitExpr (expectedState, body)
             ilg.Emit(I_ret)
 

@@ -312,7 +312,7 @@ module BasicErasedProvidedTypeTest =
                    
 
     let testIntrinsics() = 
-            FSharp.HelloWorld.HelloWorldType.CallInstrinsics()
+            FSharp.HelloWorld.HelloWorldType.CallIntrinsics()
 
     testIntrinsics()
 

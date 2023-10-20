@@ -10,10 +10,10 @@ open System.Threading
 
 module CtrlBreakHandlers =
 
-    let interuptCommand = "Interactive-CtrlCNotificationCommand-Interupt"
+    let interruptCommand = "Interactive-CtrlCNotificationCommand-Interrupt"
 
-    let lineInteruptCommand =
-        Encoding.UTF8.GetBytes(interuptCommand + Environment.NewLine)
+    let lineInterruptCommand =
+        Encoding.UTF8.GetBytes(interruptCommand + Environment.NewLine)
 
     let connectionTimeout = 1000
 
@@ -35,7 +35,7 @@ module CtrlBreakHandlers =
                 while not (stream.EndOfStream) do
                     let line = stream.ReadLine()
 
-                    if line = interuptCommand then
+                    if line = interruptCommand then
                         this.Interrupt()
             finally
                 stream.Close()
@@ -56,7 +56,7 @@ module CtrlBreakHandlers =
                 with _ ->
                     ()
 
-                client.Write(lineInteruptCommand, 0, lineInteruptCommand.Length)
+                client.Write(lineInterruptCommand, 0, lineInterruptCommand.Length)
                 client.Flush()
 
         interface IDisposable with

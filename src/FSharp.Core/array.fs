@@ -2493,7 +2493,7 @@ module Array =
                 | _ ->
                     let left, right = partitioningFunc segment
                     // If either of the two is too small, sort small segments straight away.
-                    // If the other happens to be big, leave it with all workes in it's recursive step
+                    // If the other happens to be big, leave it with all workes in its recursive step
                     if left.Count <= minChunkSize || right.Count <= minChunkSize then
                         sortChunk left freeWorkers
                         sortChunk right freeWorkers

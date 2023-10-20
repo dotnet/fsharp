@@ -1876,7 +1876,7 @@ type TcGlobals(
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
-  /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
+  /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =

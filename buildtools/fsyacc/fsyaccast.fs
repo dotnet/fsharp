@@ -648,7 +648,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
 
     // Compute the "spontaneous" and "propagate" maps for each LR(0) kernelItem 
     //
-    // Input: The kernal K of a set of LR(0) items I and a grammar symbol X
+    // Input: The kernel K of a set of LR(0) items I and a grammar symbol X
     //
     // Output: The lookaheads generated spontaneously by items in I for kernel items 
     // in goto(I,X) and the items I from which lookaheads are propagated to kernel

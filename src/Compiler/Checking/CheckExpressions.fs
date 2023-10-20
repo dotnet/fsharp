@@ -8395,7 +8395,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->
-        // Type-directed invokables
+        // Type-directed invocables
 
         match synArg with
         // leftExpr[idx]

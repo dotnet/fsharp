@@ -1575,29 +1575,29 @@ type UsingMSBuild() as this =
 
         let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
-        let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
-        Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
-        let totalInvaldiationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
-        Assert.IsNotNull(totalInvaldiationHandlersRemovedMeth, "totalInvaldiationHandlersRemovedMeth should not be null")
+        let totalInvalidationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
+        Assert.IsNotNull(totalInvalidationHandlersAddedMeth, "totalInvalidationHandlersAddedMeth should not be null")
+        let totalInvalidationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
+        Assert.IsNotNull(totalInvalidationHandlersRemovedMeth, "totalInvalidationHandlersRemovedMeth should not be null")
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
         let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
-        let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
-        let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersAdded() = totalInvalidationHandlersAddedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersRemoved() = totalInvalidationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
          
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
-        let startInvaldiationHandlersAdded = totalInvaldiationHandlersAdded()
-        let startInvaldiationHandlersRemoved =  totalInvaldiationHandlersRemoved()
+        let startInvalidationHandlersAdded = totalInvalidationHandlersAdded()
+        let startInvalidationHandlersRemoved =  totalInvalidationHandlersRemoved()
         let countCreations() = totalCreations() - startCreations
         let countDisposals() = totalDisposals() - startDisposals
-        let countInvaldiationHandlersAdded() = totalInvaldiationHandlersAdded() - startInvaldiationHandlersAdded
-        let countInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemoved() - startInvaldiationHandlersRemoved
+        let countInvalidationHandlersAdded() = totalInvalidationHandlersAdded() - startInvalidationHandlersAdded
+        let countInvalidationHandlersRemoved() = totalInvalidationHandlersRemoved() - startInvalidationHandlersRemoved
 
         Assert.IsTrue(startCreations >= startDisposals, "Check0")
-        Assert.IsTrue(startInvaldiationHandlersAdded >= startInvaldiationHandlersRemoved, "Check0")
+        Assert.IsTrue(startInvalidationHandlersAdded >= startInvalidationHandlersRemoved, "Check0")
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
@@ -1633,7 +1633,7 @@ type UsingMSBuild() as this =
                 // there should be some roots to project builds still present
                 if i >= 3 then 
                     Assert.IsTrue(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
-                    printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
+                    printfn "Check4a2, i = %d, countInvalidationHandlersRemoved() = %d" i (countInvalidationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
@@ -1643,7 +1643,7 @@ type UsingMSBuild() as this =
 
                 // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
                 Assert.IsTrue((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
-                Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check4b2, all invlidation handlers removed, iteration " + string i)
+                Assert.IsTrue((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check4b2, all invalidation handlers removed, iteration " + string i)
         
         let c = countCreations()
         let d = countDisposals()
@@ -1655,7 +1655,7 @@ type UsingMSBuild() as this =
         let d = countDisposals()
         // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
         Assert.IsTrue((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
-        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit clearing")
+        Assert.IsTrue((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit clearing")
         checkConfigsDisposed()
 
     [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]

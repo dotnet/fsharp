@@ -201,7 +201,7 @@ type public Provider(config: TypeProviderConfig) =
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest",typeof<int -> int >, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest2",typeof<unit -> unit >, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest3",typeof<int -> int -> int>, isStatic=true, parameters=[|  |]) :> MemberInfo 
-                   yield TypeBuilder.CreateMethod(theType ,"CallInstrinsics",typeof<obj list>, isStatic=true, parameters=[|  |]) :> MemberInfo 
+                   yield TypeBuilder.CreateMethod(theType ,"CallIntrinsics",typeof<obj list>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest1",typeof<list<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest2",typeof<list<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest3",typeof<option<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
@@ -597,7 +597,7 @@ type public Provider(config: TypeProviderConfig) =
                     <@@ (%%(parameterExpressions.[1]) : double) @@>
                 elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDecimalParameter") then 
                     <@@ (%%(parameterExpressions.[1]) : decimal) @@>                     
-                elif syntheticMethodBase.Name = "CallInstrinsics" then 
+                elif syntheticMethodBase.Name = "CallIntrinsics" then 
                      <@@ [ ((true & false) |> box);
                            ((true && false) |> box);
                            ((true || false) |> box);

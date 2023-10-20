@@ -974,7 +974,7 @@ Most items here contributed by community members.
 * Semantic document highlighting for selected symbols
 * Support for Structured Guidelines and code outlining, which is toggleable
 * Support for `EditorBrowsable(EditorBrowsableState.Never)`
-* Code fix for making Record and Discriminated Union case lables upper-case
+* Code fix for making Record and Discriminated Union case labels upper-case
 * Code fix to make suggestions for an unkown identifier
 * Code fix for prefixing or replacing an unused value with an underscore
 * Code fix to add the `new` keyword to a disposable type

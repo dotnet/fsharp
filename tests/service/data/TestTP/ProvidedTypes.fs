@@ -14154,8 +14154,8 @@ namespace ProviderImplementation.ProvidedTypes
 
             let unitType = transType (convTypeToTgt (typeof<unit>))
             let expectedState = if (retType = ILType.Void || retType.QualifiedName = unitType.QualifiedName) then ExpectedStackState.Empty else ExpectedStackState.Value
-            let lambadParamVars = [| Var("this", typeof<obj>); v|]
-            let codeGen = CodeGenerator(assemblyMainModule, genUniqueTypeName, implicitCtorArgsAsFields, convTypeToTgt, transType, transFieldSpec, transMeth, transMethRef, transCtorSpec, ilg, lambdaLocals, lambadParamVars)
+            let lambdaParamVars = [| Var("this", typeof<obj>); v|]
+            let codeGen = CodeGenerator(assemblyMainModule, genUniqueTypeName, implicitCtorArgsAsFields, convTypeToTgt, transType, transFieldSpec, transMeth, transMethRef, transCtorSpec, ilg, lambdaLocals, lambdaParamVars)
             codeGen.EmitExpr (expectedState, body)
             if retType.QualifiedName = unitType.QualifiedName then 
                 ilg.Emit(I_ldnull)

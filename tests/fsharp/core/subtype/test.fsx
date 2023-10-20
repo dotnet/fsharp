@@ -274,7 +274,7 @@ module SomeRandomOperatorConstraints = begin
 end
 
 (* This test is funky because the type constraint on the variable associated with parameter 'x' *)
-(* invloves the type variable from the enclosing class.  This exposed a bug with fixing up type *)
+(* involves the type variable from the enclosing class.  This exposed a bug with fixing up type *)
 (* constraints correctly. *)
 module NestedGenericMethodWithSubtypeConstraint = begin
     type I<'a> =
@@ -1766,7 +1766,7 @@ module GenericPropertyConstraintSolvedByRecord =
 
 /// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
 /// overload, even before the full signature of the trait constraint was known.
-module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
+module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnown =
     type X =
         static member Method (a: obj) = 1
         static member Method (a: int) = 2

@@ -280,7 +280,7 @@ val TryFindIntrinsicPropInfo:
     infoReader: InfoReader -> m: range -> ad: AccessorDomain -> nm: string -> ty: TType -> PropInfo list
 
 /// Get a set of most specific override methods.
-val GetIntrinisicMostSpecificOverrideMethInfoSetsOfType:
+val GetIntrinsicMostSpecificOverrideMethInfoSetsOfType:
     infoReader: InfoReader -> m: range -> ty: TType -> NameMultiMap<TType * MethInfo>
 
 /// Represents information about the delegate - the Invoke MethInfo, the delegate argument types, the delegate return type

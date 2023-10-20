@@ -968,7 +968,7 @@ let TryFindIntrinsicPropInfo (infoReader: InfoReader) m ad nm ty =
     infoReader.TryFindIntrinsicPropInfo m ad nm ty
 
 /// Get a set of most specific override methods.
-let GetIntrinisicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
+let GetIntrinsicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
     infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------

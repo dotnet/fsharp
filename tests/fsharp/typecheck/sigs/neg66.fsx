@@ -42,7 +42,7 @@ form.Paint.Add (fun args ->
                 form.Invalidate() } |> Async.Start
    )
 
-// Set things going with an initial Invaldiate
+// Set things going with an initial Invalidate
 form.Invalidate()
 
 //-----------------------------------------------

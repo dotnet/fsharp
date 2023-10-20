@@ -2773,7 +2773,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // Now loop all selected items and add to the list only those that are selected within this hierarchy
                         if (!isSingleHierarchy || (isSingleHierarchy && Utilities.IsSameComObject(this, hierarchy)))
                         {
-                            Debug.Assert(numberOfSelectedItems > 0, "Bad number of selected itemd");
+                            Debug.Assert(numberOfSelectedItems > 0, "Bad number of selected items");
                             VSITEMSELECTION[] vsItemSelections = new VSITEMSELECTION[numberOfSelectedItems];
                             uint flags = (isSingleHierarchy) ? (uint)__VSGSIFLAGS.GSI_fOmitHierPtrs : 0;
                             ErrorHandler.ThrowOnFailure(multiItemSelect.GetSelectedItems(flags, numberOfSelectedItems, vsItemSelections));

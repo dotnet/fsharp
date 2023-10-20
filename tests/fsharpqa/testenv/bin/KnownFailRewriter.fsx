@@ -256,6 +256,6 @@ let f(x : Tags[], y : Tags[], z : string) =
 #if INTERACTIVE    
 File2List fsi.CommandLineArgs.[1]       // typically "Knownfail.txt"
 #else
-File2List "Knowfail.lst"                // for testing purposes
+File2List "Knownfail.lst"                // for testing purposes
 #endif
 |> Seq.iter f

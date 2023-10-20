@@ -482,7 +482,7 @@ module DispatchSlotChecking =
 
             // Get the most specific method overrides for each interface type.
             |> List.choose (fun (ty, m) -> 
-                let mostSpecificOverrides = GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
+                let mostSpecificOverrides = GetIntrinsicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
                 if mostSpecificOverrides.IsEmpty then None
                 else Some mostSpecificOverrides)
 
