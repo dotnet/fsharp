@@ -2855,7 +2855,7 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
     member x.FindByName nm =
         let ns, n = splitILTypeName nm
-        x.GetDictionary().[ (ns, n) ].GetTypeDef()
+        x.GetDictionary().[(ns, n)].GetTypeDef()
 
     member x.ExistsByName nm =
         let ns, n = splitILTypeName nm

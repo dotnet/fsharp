@@ -120,7 +120,7 @@ module internal PervasiveAutoOpens =
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
-    let syncObj = obj()
+    let syncObj = obj ()
 
     let mutable arrayStore = null
     let mutable dictStore = null
@@ -132,15 +132,16 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
         | NonNull value -> value
         | _ ->
             Monitor.Enter(syncObj)
+
             try
                 match arrayStore with
                 | NonNull value -> value
                 | _ ->
-            
-                arrayStore <- func ()
 
-                func <- Unchecked.defaultof<_>
-                arrayStore
+                    arrayStore <- func ()
+
+                    func <- Unchecked.defaultof<_>
+                    arrayStore
             finally
                 Monitor.Exit(syncObj)
 
@@ -150,18 +151,18 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
         | _ ->
             let array = this.GetArray()
             Monitor.Enter(syncObj)
+
             try
                 match dictStore with
                 | NonNull value -> value
                 | _ ->
-            
-                dictStore <- this.CreateDictionary(array)
-                dictStore
+
+                    dictStore <- this.CreateDictionary(array)
+                    dictStore
             finally
                 Monitor.Exit(syncObj)
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
-
 
 //-------------------------------------------------------------------------
 // Library: projections
