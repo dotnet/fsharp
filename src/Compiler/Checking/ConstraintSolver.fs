@@ -1058,7 +1058,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let aenv = csenv.EquivEnv
     let g = csenv.g
 
-    // Pre F# 6.0 we asssert the trait solution here
+    // Pre F# 6.0 we assert the trait solution here
 #if TRAIT_CONSTRAINT_CORRECTIONS
     if not (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections) then
 #endif

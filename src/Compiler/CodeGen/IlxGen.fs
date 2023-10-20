@@ -919,7 +919,7 @@ type ArityInfo = int list
 //
 // or, for witnesses:
 //
-//    let inline incr{addWitnessForT} (x: 'T) = x + GenericZero<'T> // has witness argment for '+'
+//    let inline incr{addWitnessForT} (x: 'T) = x + GenericZero<'T> // has witness argument for '+'
 //
 //    LAM <'T when 'T :... op_Addition ...>{addWitnessForT}.  (incr<'T>{addWitnessForT}, incr<'U>{addWitnessForU}, incr<'V>{addWitnessForV}) :  ('T -> 'T) * ('U -> 'U) * ('V -> 'V)
 //    directTypars = 'T

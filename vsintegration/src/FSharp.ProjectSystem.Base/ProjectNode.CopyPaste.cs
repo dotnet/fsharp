@@ -441,7 +441,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         /// <summary>
-        /// This is used to recursively add a folder from an other project.
+        /// This is used to recursively add a folder from another project.
         /// Note that while we copy the folder content completely, we only
         /// add to the project items which are part of the source project.
         /// </summary>

@@ -566,7 +566,7 @@ val MakeInnerEnvWithAcc:
         TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
-/// is appplied.
+/// is applied.
 val NonGenericTypeScheme: ty: TType -> GeneralizedType
 
 /// Publish a module definition to the module/namespace type accumulator.

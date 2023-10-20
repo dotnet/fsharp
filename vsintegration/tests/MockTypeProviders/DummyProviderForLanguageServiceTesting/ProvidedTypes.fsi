@@ -484,7 +484,7 @@ namespace ProviderImplementation.ProvidedTypes
         /// Invoked by the host of the type provider to get the static parameters for a method.
         member GetStaticParametersForMethod: MethodBase -> ParameterInfo[]
 
-        /// Invoked by the host of the type provider to apply the static argumetns for a method.
+        /// Invoked by the host of the type provider to apply the static arguments for a method.
         member ApplyStaticArgumentsForMethod: MethodBase * string * obj[] -> MethodBase
 
 #if !FX_NO_LOCAL_FILESYSTEM

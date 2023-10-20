@@ -156,7 +156,7 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 //   no generic method op_Implicit as yet
 //
 // Search for an adhoc conversion based on op_Implicit, optionally returing a new equational type constraint to 
-// eliminate articifical constrained type variables.
+// eliminate artificial constrained type variables.
 //
 // Allow adhoc for X --> Y where there is an op_Implicit from X to Y, and there is
 // no feasible subtype relationship between X and Y.
@@ -309,7 +309,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
                 reqdTy, TypeDirectedConversionUsed.No, None
     
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
-    // eliminate articifical constrained type variables.
+    // eliminate artificial constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn

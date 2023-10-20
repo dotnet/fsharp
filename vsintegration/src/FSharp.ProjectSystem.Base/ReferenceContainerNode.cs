@@ -536,7 +536,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates an assemby or com reference node given a selector data.
+        /// Creates an assembly or com reference node given a selector data.
         /// </summary>
         internal virtual ReferenceNode CreateFileComponent(VSCOMPONENTSELECTORDATA selectorData, AddReferenceDialogTab tab)
         {

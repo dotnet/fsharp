@@ -1900,7 +1900,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string"])
 
     [<Test>]
-    member public this.``Regression.OptionalArguuments.Bug4042``() = 
+    member public this.``Regression.OptionalArguments.Bug4042``() = 
         let fileContents = """
             module ParameterInfo
             type TT(x : int, ?y : int) = 

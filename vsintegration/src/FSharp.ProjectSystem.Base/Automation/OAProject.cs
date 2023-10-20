@@ -436,7 +436,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Saves or Save Asthe project.
+        /// Saves or Save As the project.
         /// </summary>
         /// <param name="isCalledFromSaveAs">Flag determining which Save method called , the SaveAs or the Save.</param>
         /// <param name="fileName">The name of the project file.</param>        

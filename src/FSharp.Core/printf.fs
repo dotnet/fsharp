@@ -395,7 +395,7 @@ module internal PrintfImpl =
     /// Type of results produced by specialization.
     ///
     /// This is a function that accepts a thunk to create PrintfEnv on demand (at the very last
-    /// appliction of an argument) and returns a concrete instance of an appriate curried printer.
+    /// application of an argument) and returns a concrete instance of an appropriate curried printer.
     ///
     /// After all arguments are collected, specialization obtains concrete PrintfEnv from the thunk
     /// and uses it to output collected data.

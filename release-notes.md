@@ -942,7 +942,7 @@ We made the following enhancements to infrastructure, packaging, and our open so
 * Significant improvements to error messages, particularly to aid with suggestions
 * Performance improvements
 * Interoperability improvements
-* Support for geenerating F# AssymblyInfo from properties for .NET SDK projects
+* Support for geenerating F# AssemblyInfo from properties for .NET SDK projects
 * `--debug:full` support for F# on .NET Core on Windows
 * `MakeTuple` support for struct tuples
 * Warnings are forwarded when searching for method overloads

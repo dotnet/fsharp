@@ -762,7 +762,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Logs a message to the output window, if the original predicate returns true
         /// </summary>
         /// <param name="message">Log message, can be a String.Format-style format string</param>
-        /// <param name="args">Optional aruments for format string</param>
+        /// <param name="args">Optional arguments for format string</param>
         public void WriteLine(string message, params object[] args)
         {
             if (this.predicate())

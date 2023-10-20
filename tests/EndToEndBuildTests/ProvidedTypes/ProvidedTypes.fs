@@ -1699,7 +1699,7 @@ namespace ProviderImplementation.ProvidedTypes
 // AssemblyReader for ProvidedTypesContext
 //
 // A lightweight .NET assembly reader that fits in a single F# file.  Based on the well-tested Abstract IL
-// binary reader code.  Used by the type provider to read referenced asssemblies.
+// binary reader code.  Used by the type provider to read referenced assemblies.
 
 namespace ProviderImplementation.ProvidedTypes.AssemblyReader
 

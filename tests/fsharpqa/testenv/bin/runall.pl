@@ -2919,7 +2919,7 @@ sub get_targetdef_file($$) {
 
     if ( $cannon ) {
 	#
-	# Reduce to canonical form. Expand all compound archtecture names for
+	# Reduce to canonical form. Expand all compound architecture names for
 	# each element in the rhs of the map.
 	#
 	my $key;

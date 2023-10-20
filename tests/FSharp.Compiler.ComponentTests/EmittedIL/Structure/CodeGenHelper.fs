@@ -111,12 +111,12 @@ let notContainMember membName (ty : Type) =
     | null | [| |] -> ()
     | _    -> failwithf "Error: Type %s does contain member %s" ty.Name membName
 
-/// Has airity (number of arguments and types)
+/// Has arity (number of arguments and types)
 let takeParams (args : Type list) (methInfo : MethodInfo) =
     let parameters = methInfo.GetParameters()
     if parameters.Length <> List.length args then
         failwithf 
-            "Error: Method [%s] doesn't have expected airity. Method takes %d params, but expected %d"
+            "Error: Method [%s] doesn't have expected arity. Method takes %d params, but expected %d"
             methInfo.Name
             parameters.Length
             (List.length args)

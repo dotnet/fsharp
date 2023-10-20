@@ -627,7 +627,7 @@ type internal FsiToolWindow() as this =
         oleCommandTarget.Exec(&cmdSetGuid, uint32 VSStd97CmdID.Copy, 0u, IntPtr.Zero, IntPtr.Zero) |> ignore
 
     // Set the image that will appear on the tab of the window frame
-    // when docked with an other window
+    // when docked with another window
     // The resource ID correspond to the one defined in the resx file
     // while the Index is the offset in the bitmap strip. Each image in
     // the strip being 16x16.
