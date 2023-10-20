@@ -24,7 +24,7 @@ The following tables are split into two categories: syntactic and semantic. They
 | Code fixes operating only on syntax    | Current doc's source text | Small text change for document | S |
 | XML doc template generation            | Current doc's syntax tree | Small (usually) text change for document | S |
 | Brace pair completion                  | Current doc's source text | Additional brace pair inserted into source text | S |
-| Souce document navigation              | Current doc's syntax tree | "Navigation Items" with optional child navigation items containing ranges in source code | S |
+| Source document navigation             | Current doc's syntax tree | "Navigation Items" with optional child navigation items containing ranges in source code | S |
 | Code outlining                         | Current doc's source text | Text spans representing blocks of F# code that are collapsable as a group | S - M |
 | Editor formatting                      | Current doc's source text | New source text for the document | S - L |
 | Syntax diagnostics                     | Current doc's source text | List of diagnostic data including the span of text corresponding to the diagnostic | S |

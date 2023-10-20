@@ -19,7 +19,7 @@ module ComputationExpressionOptimizations =
     // - Computed functions must be reduced.
     //
     // This is for the "sync { ... }" builder that simply runs code synchronously - no
-    // one uses this in practice but it's a good baseline test for the elimination and redution of constructs.
+    // one uses this in practice but it's a good baseline test for the elimination and reduction of constructs.
     //
     let ``check reduction of sample builder for synchronous code``() =
         CompilerAssert.CompileLibraryAndVerifyIL(

@@ -52,7 +52,7 @@ Diagnostics must often format types.
 
 * When displaying a type, you will normally want to "prettify" the type first. This converts any remaining type inference variables to new, better user-friendly type variables with names like `'a`. Various functions prettify types prior to display, for example, `NicePrint.layoutPrettifiedTypes` and others.
 
-* When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of infomation to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
+* When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of information to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
 
 * When displaying a type, you have the option of displaying the constraints implied by any type variables mentioned in the types, appended as `when ...`. For example, `NicePrint.layoutPrettifiedTypeAndConstraints`.
 

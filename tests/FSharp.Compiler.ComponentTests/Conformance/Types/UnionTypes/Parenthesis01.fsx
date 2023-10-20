@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Unions 
-// Paretheses are significant in DU definitions
+// Parentheses are significant in DU definitions
 //<Expects status="success"></Expects>
 #light
 

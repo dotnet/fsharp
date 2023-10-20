@@ -200,7 +200,7 @@
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
-    <Compile Include="ErrorMessages\UnitGenericAbstactType.fs" />
+    <Compile Include="ErrorMessages\UnitGenericAbstractType.fs" />
     <Compile Include="ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />

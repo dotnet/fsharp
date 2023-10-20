@@ -75,7 +75,7 @@ type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>>
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
-/// Defines the implementation of the code reun after the creation of a struct state machine.
+/// Defines the implementation of the code run after the creation of a struct state machine.
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 [<AutoOpen>]

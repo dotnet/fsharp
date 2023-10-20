@@ -1287,7 +1287,7 @@ let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGett
 let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter =
     mkValSpecAux g tcref.Range tcref ty vis slotsig methn valTy argData isGetter true
 
-// Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+// Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
 let mkImpliedValSpec g m tcref ty vis slotsig methn valTy argData isGetter =
     let v = mkValSpecAux g m tcref ty vis slotsig methn valTy argData isGetter false
     v.SetIsImplied()
@@ -1685,7 +1685,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
 
     tcref.UnionCasesAsList
     |> List.map (fun uc ->
-        // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+        // Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
         let v =
             mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
 

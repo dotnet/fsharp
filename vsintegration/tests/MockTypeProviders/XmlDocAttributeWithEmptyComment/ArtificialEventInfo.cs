@@ -10,7 +10,7 @@ using Microsoft.FSharp.Core.CompilerServices;
 
 namespace TypeProviderInCSharp
 {
-    class ArtificalEventInfo : EventInfo
+    class ArtificialEventInfo : EventInfo
     {
         string _Name;
         Type _DeclaringType;
@@ -18,7 +18,7 @@ namespace TypeProviderInCSharp
         MethodInfo _AddMethod;
         MethodInfo _RemoveMethod;
 
-        public ArtificalEventInfo(string Name, Type DeclaringType, Type EventHandleType)
+        public ArtificialEventInfo(string Name, Type DeclaringType, Type EventHandleType)
         {
             _Name = Name;
             _DeclaringType = DeclaringType;
@@ -89,15 +89,15 @@ namespace TypeProviderInCSharp
 
         public override MethodInfo GetRaiseMethod(bool nonPublic)
         {
-            
-            Debug.Assert(false, "NYI");
-            throw new NotImplementedException();
+            Debug.Assert(false, "Why are we calling into GetCustomAttributes()?");
+            return null;
         }
 
         public override object[] GetCustomAttributes(bool inherit)
         {
-            Debug.Assert(false, "Why are we calling into GetCustomAttributes()?");
-            return null;
+            
+            Debug.Assert(false, "NYI");
+            throw new NotImplementedException();
         }
 
         public override bool IsDefined(Type attributeType, bool inherit)
@@ -120,9 +120,9 @@ namespace TypeProviderInCSharp
         public override IList<CustomAttributeData> GetCustomAttributesData()
         {
             var attrs = new List<CustomAttributeData>();
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute(string.Format("This is a synthetic *event* created by me for {0}.{1}", this._DeclaringType.Namespace, this._DeclaringType.Name))));
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 21, FilePath = "Temp.fs", Line = 4 }));
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
+            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute(string.Format(""))));
+            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 5 + this._DeclaringType.Name.Length, FilePath = "", Line = 3 }));
+            // attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
             return attrs;
         }
 

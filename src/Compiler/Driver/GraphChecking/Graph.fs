@@ -69,7 +69,7 @@ module internal Graph =
         originalGraph
         // Collect all edges
         |> Seq.collect (fun (KeyValue(idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))
-        // Group dependants of the same dependencies together
+        // Group dependents of the same dependencies together
         |> Seq.groupBy snd
         // Construct reversed graph
         |> Seq.map (fun (dep, edges) -> dep, edges |> Seq.map fst |> Seq.toArray)

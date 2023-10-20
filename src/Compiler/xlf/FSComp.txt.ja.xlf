@@ -533,7 +533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">空白の緩和</target>
         <note />
       </trans-unit>
@@ -1098,7 +1098,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">再開可能なコード指定で制約付きジェネリック コンストラクトが発生しました</target>
         <note />
       </trans-unit>
@@ -1113,7 +1113,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">再開可能なコード仕様で 'let rec' が発生しました</target>
         <note />
       </trans-unit>
@@ -1418,7 +1418,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">次の必須プロパティを初期化する必要があります:{0}</target>
         <note />
       </trans-unit>
@@ -1543,7 +1543,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">再開可能なコードが無効です。再開可能なコード仕様で 'let rec' が発生しました</target>
         <note />
       </trans-unit>
@@ -1613,8 +1613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -5863,7 +5863,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">デバッグの種類 full、portable、pdbonly を指定します (デバッグの種類が指定されない場合には '{0}' が既定で、実行中のプログラムにデバッガーを付加することができます。'portable' はクロスプラットフォーム形式、'embedded' は出力ファイルに埋め込まれたクロスプラットフォーム形式です)。</target>
         <note />
       </trans-unit>
@@ -7123,7 +7123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
         <note />
       </trans-unit>
@@ -7323,7 +7323,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">指定された型に静的引数を適用する際にエラーが発生しました</target>
         <note />
       </trans-unit>
@@ -7388,7 +7388,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">アセンブリ '{0}' の TypeProviderAssembly 属性に、無効な値 '{1}' が含まれています。この値は有効なアセンブリ名であることが必要です</target>
         <note />
       </trans-unit>
@@ -7973,7 +7973,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">静的な引数を指定されたメソッドに適用する際エラーが発生しました</target>
         <note />
       </trans-unit>
@@ -8102,7 +8102,7 @@
         <target state="translated">マルチケース共用体の型が構造体の場合は、すべての共用体ケースに一意の名前を付ける必要があります。例: 'type A = B of b: int | c の C: int'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">パラメーター '{0}' に適用された CallerMemberNameAttribute は、CallerFilePathAttribute.によってオーバーライドされるため無効となります。</target>
         <note />
@@ -8418,8 +8418,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">例外を生成する可能性があるコード ブロックを開始するために使用します。with または finally と一緒に使用します。</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">例外を生成する可能性があるコード ブロックを開始するために使用します。with または finally と一緒に使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

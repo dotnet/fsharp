@@ -42,7 +42,7 @@ form.Paint.Add (fun args ->
                 form.Invalidate() } |> Async.Start
    )
 
-// Set things going with an initial Invaldiate
+// Set things going with an initial Invalidate
 form.Invalidate()
 
 //-----------------------------------------------
@@ -177,10 +177,10 @@ let mercuryDistanceFromSun  = 57910000.0<km> * AU_per_km
 let venusDistanceFromSun    = 0.723332<AU>
 let distanceFromMoonToEarth =384403.0<km> * AU_per_km
 
-let orbitalSpeedOfMoon   = 1.023<km/s> * AU_per_km
-let orbitalSpeedOfMecury = 47.87<km/s> * AU_per_km
-let orbitalSpeedOfVenus  = 35.02<km/s> * AU_per_km
-let orbitalSpeedOfEarth  = 29.8<km/s>  * AU_per_km 
+let orbitalSpeedOfMoon    = 1.023<km/s> * AU_per_km
+let orbitalSpeedOfMercury = 47.87<km/s> * AU_per_km
+let orbitalSpeedOfVenus   = 35.02<km/s> * AU_per_km
+let orbitalSpeedOfEarth   = 29.8<km/s>  * AU_per_km 
 
 let sun   = new Planet(ipx=1.1<AU>,                        
                        ipy=1.1<AU>,
@@ -194,7 +194,7 @@ let sun   = new Planet(ipx=1.1<AU>,
 let mercury = new Planet(ipx=sun.X+mercuryDistanceFromSun,
                        ipy=sun.Y,
                        ivx=0.0<AU/s>,
-                       ivy=orbitalSpeedOfMecury,
+                       ivy=orbitalSpeedOfMercury,
                        brush=Brushes.Goldenrod,
                        mass=massOfMercury,
                        width=10,

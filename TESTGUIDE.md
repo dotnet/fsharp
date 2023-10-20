@@ -1,6 +1,6 @@
 # F# Compiler, Core Library and Visual F# Tools Tests
 
-Where this guide mentions the command `build` it means either `build.cmd` in the root folder for Windows, or `build.sh` for Linux/MacOS.
+Where this guide mentions the command `build` it means either `build.cmd` in the root folder for Windows, or `build.sh` for Linux/macOS.
 
 ## In this guide
 
@@ -49,9 +49,9 @@ Some test groups can only be run in `CI` configuration, for that, you need to pa
 
 To run tests, from a command prompt, use variations such as the following, depending on which test suite and build configuration you want.
 
-### Tests that can be run on Linux and MacOS
+### Tests that can be run on Linux and macOS
 
-If you're using Linux or MacOS to develop, the group of tests that are known to succeed are all in `-testCoreClr`. Any other `-testXXX` argument will currently fail. An effort is underway to make testing and running tests easier on all systems.
+If you're using Linux or macOS to develop, the group of tests that are known to succeed are all in `-testCoreClr`. Any other `-testXXX` argument will currently fail. An effort is underway to make testing and running tests easier on all systems.
 
 ### Tests that can only be run in Release mode
 
@@ -123,7 +123,7 @@ This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsha
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed. 
 
-There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" (.bsl) files.
+There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" below for tests checking expectations against "baseline" (.bsl) files.
 
 ### FSharpQA Suite
 
@@ -174,7 +174,7 @@ All test execution logs and result files will be dropped into the `tests\TestRes
 ### Working with baseline tests
 
 FSharp Test Suite works with a couple of `.bsl` (or `.bslpp`) files describing "expected test results" and are called the _Baseline Tests_. Those are matched against the actual output that resides under `.err` or `.vserr` files of the same name during test execution.
-When doing so keep in mind to carefully review the diff before comitting updated baseline files.
+When doing so keep in mind to carefully review the diff before committing updated baseline files.
 
 The `.bslpp` (for: baseline pre-process) files are specially designed to enable substitution of certain tokens to generate the `.bsl` file. You can look further about the pre-processing logic under [tests/fsharp/TypeProviderTests.fs](tests/fsharp/TypeProviderTests.fs), this is used only for type provider tests for now.
 

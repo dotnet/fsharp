@@ -134,9 +134,9 @@ let ProcessParserSpecAst (spec: ParserSpec) =
 // Process LALR(1) grammars to tables
 
 type ProductionIndex = int
-type ProdictionDotIndex = int
+type ProductionDotIndex = int
 
-/// Represent (ProductionIndex,ProdictionDotIndex) as one integer 
+/// Represent (ProductionIndex,ProductionDotIndex) as one integer 
 type Item0 = uint32  
 
 let mkItem0 (prodIdx,dotIdx) : Item0 = (uint32 prodIdx <<< 16) ||| uint32 dotIdx
@@ -287,7 +287,7 @@ type ProductionTable(ntTab:NonTerminalTable, termTab:TerminalTable, nonTerminals
         if n >= syms.Length then None else Some syms.[n]
     member prodTab.Productions = productions
 
-/// A mutable table maping kernels to sets of lookahead tokens
+/// A mutable table mapping kernels to sets of lookahead tokens
 type LookaheadTable() = 
     let t = Dictionary<KernelItemIndex,Set<TerminalIndex>>()
     member table.Add(x,y) = 
@@ -311,7 +311,7 @@ type KernelTable(kernels) =
     member t.Index(kernel) = toIdxMap.[kernel]
     member t.Kernel(i) = ofIdxMap.[i]
 
-/// Hold the results of cpmuting the LALR(1) closure of an LR(0) kernel
+/// Hold the results of computing the LALR(1) closure of an LR(0) kernel
 type Closure1Table() = 
     let t = Dictionary<Item0,HashSet<TerminalIndex>>()
     member table.Add(a,b) = 
@@ -648,7 +648,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
 
     // Compute the "spontaneous" and "propagate" maps for each LR(0) kernelItem 
     //
-    // Input: The kernal K of a set of LR(0) items I and a grammar symbol X
+    // Input: The kernel K of a set of LR(0) items I and a grammar symbol X
     //
     // Output: The lookaheads generated spontaneously by items in I for kernel items 
     // in goto(I,X) and the items I from which lookaheads are propagated to kernel
@@ -661,7 +661,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
     //
     // PLAN TO OPTIMIZE THIS;
     //   - Clarify and comment what's going on here
-    //   - verify if we really have to do these enormouos closure computations
+    //   - verify if we really have to do these enormous closure computations
     //   - assess if it's possible to use the symbol we're looking for to help trim the jset
     
     reportTime(); printf "computing lookahead relations..."; stdout.Flush();
@@ -741,7 +741,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
         // into the table, taking into account precedences etc. and reporting errors. 
         let addResolvingPrecedence (arr: _[]) kernelIdx termIdx (precNew, actionNew) = 
             // printf "DEBUG: state %d: adding action for %s, precNew = %a, actionNew = %a\n" kernelIdx (termTab.OfIndex termIdx) outputPrec precNew OutputAction actionNew; 
-            // We add in order of precedence - however the precedences may be the same, and we give warnings when rpecedence resolution is based on implicit file orderings 
+            // We add in order of precedence - however the precedences may be the same, and we give warnings when precedence resolution is based on implicit file orderings 
 
             let _, actionSoFar as itemSoFar = arr.[termIdx]
 

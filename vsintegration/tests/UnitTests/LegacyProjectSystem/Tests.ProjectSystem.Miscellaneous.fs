@@ -589,7 +589,7 @@ type Miscellaneous() =
 
         DoWithTempFile "Test.fsproj" (fun file ->
             let text =
-                TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashSceen.fs"; "Dude.fs"],[],[],"")
+                TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashScreen.fs"; "Dude.fs"],[],[],"")
                 |> replace "Compile\s+Include='([a-zA-Z]+)\.fs'" "$1 Include='$1.fs'"            
             File.AppendAllText(file, text)
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()

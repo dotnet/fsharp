@@ -528,7 +528,7 @@ type DefaultFileSystem() as this =
         let fileStream = new FileStream(filePath, fileMode, fileAccess, fileShare)
         let length = fileStream.Length
 
-        // We want to use mmaped files only when:
+        // We want to use mmapped files only when:
         //   -  Opening large binary files (no need to use for source or resource files really)
 
         if not useMemoryMappedFile then

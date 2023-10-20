@@ -533,7 +533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">уменьшение строгости для пробелов</target>
         <note />
       </trans-unit>
@@ -1098,7 +1098,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">В спецификации возобновляемого кода возникла ограниченная универсальная конструкция</target>
         <note />
       </trans-unit>
@@ -1113,7 +1113,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">В спецификации возобновляемого кода возникла ошибка "let rec"</target>
         <note />
       </trans-unit>
@@ -1418,7 +1418,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">Необходимо инициализировать следующие обязательные свойства:{0}</target>
         <note />
       </trans-unit>
@@ -1543,7 +1543,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Недопустимый возобновляемый код. В спецификации возобновляемого кода возникла ошибка "let rec"</target>
         <note />
       </trans-unit>
@@ -1613,8 +1613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -5863,7 +5863,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Укажите тип отладки: full, portable, embedded, pdbonly (если тип отладки не указан, по умолчанию используется тип "{0}", позволяющий подключить отладчик к выполняющейся программе; тип portable представляет собой кроссплатформенный формат; тип embedded — кроссплатформенный формат, встроенный в выходной файл).</target>
         <note />
       </trans-unit>
@@ -7123,7 +7123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">Служба резидентной компиляции не использовалась, поскольку возникла проблема при взаимодействии с сервером.</target>
         <note />
       </trans-unit>
@@ -7323,7 +7323,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">Ошибка при применении статических аргументов к предоставленному типу</target>
         <note />
       </trans-unit>
@@ -7388,7 +7388,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">У сборки "{0}" имеется атрибут TypeProviderAssembly с недопустимым значением "{1}". Значение должно представлять собой допустимое имя сборки</target>
         <note />
       </trans-unit>
@@ -7973,7 +7973,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">Произошла ошибка при применении статических аргументов к предоставленному методу</target>
         <note />
       </trans-unit>
@@ -8102,7 +8102,7 @@
         <target state="translated">Если тип объединения с несколькими регистрами является структурой, все случаи объединения должны иметь уникальные имена. Например: "type A = B of b: int | C of c: int".</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">Атрибут CallerMemberNameAttribute, примененный для параметра "{0}", не будет действовать. Он будет переопределен атрибутом CallerFilePathAttribute.</target>
         <note />
@@ -8418,8 +8418,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Используется для введения блока кода, который может создать исключение. Используется вместе с with или finally.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">Используется для введения блока кода, который может создать исключение. Используется вместе с with или finally.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

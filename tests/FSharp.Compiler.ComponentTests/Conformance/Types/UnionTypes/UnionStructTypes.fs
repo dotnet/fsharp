@@ -706,7 +706,7 @@ let main _argv =
     [<InlineData(15)>]
     [<InlineData(65)>]
     [<Theory>]
-    let ``Struct DU compilation does not embarassingly fail when having many data-less cases`` (countOfCases:int) =
+    let ``Struct DU compilation does not embarrassingly fail when having many data-less cases`` (countOfCases:int) =
         createMassiveStructDuProgram countOfCases
         |> asExe
         |> compile

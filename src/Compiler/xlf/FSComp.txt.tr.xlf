@@ -533,7 +533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">boşluk genişlemesi</target>
         <note />
       </trans-unit>
@@ -1098,7 +1098,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">Sürdürülebilir kod belirtiminde kısıtlanmış bir genel yapı oluştu</target>
         <note />
       </trans-unit>
@@ -1113,7 +1113,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Sürdürülebilir kod belirtiminde 'let rec' oluştu</target>
         <note />
       </trans-unit>
@@ -1418,7 +1418,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">Aşağıdaki gerekli özelliklerin başlatılması gerekiyor:{0}</target>
         <note />
       </trans-unit>
@@ -1543,7 +1543,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Geçersiz sürdürülebilir kod. Sürdürülebilir kod belirtiminde bir 'let rec' oluştu</target>
         <note />
       </trans-unit>
@@ -1613,8 +1613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -5863,7 +5863,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Hata ayıklama türünü belirtin: full, portable, embedded, pdbonly. (Hata ayıklama türü belirtilmemişse '{0}' varsayılandır ve çalışan bir programa hata ayıklayıcı iliştirmeyi etkinleştirir. 'portable' bir çoklu platform biçimidir, 'embedded' çıkış dosyasına gömülü bir çoklu platform biçimidir).</target>
         <note />
       </trans-unit>
@@ -7123,7 +7123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">Sunucuyla iletişimde bir sorun oluştuğu için yerleşik derleme hizmeti kullanılmadı.</target>
         <note />
       </trans-unit>
@@ -7323,7 +7323,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">Sağlanan türe statik bağımsız değişkenler uygulanırken bir hata oluştu</target>
         <note />
       </trans-unit>
@@ -7388,7 +7388,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">{0}' bütünleştirilmiş kodunun geçersiz '{1}' değerli TypeProviderAssembly özniteliği var. Bu değer geçerli bir bütünleştirilmiş kod adı olmalıdır</target>
         <note />
       </trans-unit>
@@ -7973,7 +7973,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">Sağlanan metoda statik bağımsız değişkenler uygulanırken bir sorun oluştu</target>
         <note />
       </trans-unit>
@@ -8102,7 +8102,7 @@
         <target state="translated">Çok durumlu bir birleşim türü bir yapıysa, tüm birleşim durumlarının adları benzersiz olmalıdır. Örneğin: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">{0}' parametresi için geçerli olan CallerMemberNameAttribute öğesinin hiçbir etkisi olmaz. CallerFilePathAttribute tarafından geçersiz kılındı.</target>
         <note />
@@ -8418,8 +8418,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Özel durum oluşturabilen bir kod bloğunu tanıtmak için kullanılır. with veya finally ile birlikte kullanılır.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">Özel durum oluşturabilen bir kod bloğunu tanıtmak için kullanılır. with veya finally ile birlikte kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

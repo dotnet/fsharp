@@ -248,16 +248,16 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
 // Generate Local embeddable versions of framework types when necessary
 //--------------------------------------------------------------------------
 
-let private getPotentiallyEmbedableAttribute (g: TcGlobals) (info: BuiltinAttribInfo) =
+let private getPotentiallyEmbeddableAttribute (g: TcGlobals) (info: BuiltinAttribInfo) =
     let tref = info.TypeRef
     g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithDefaultConstructor (g, tref.Name)))
     mkILCustomAttribute (info.TypeRef, [], [], [])
 
 let GetReadOnlyAttribute (g: TcGlobals) =
-    getPotentiallyEmbedableAttribute g g.attrib_IsReadOnlyAttribute
+    getPotentiallyEmbeddableAttribute g g.attrib_IsReadOnlyAttribute
 
 let GetIsUnmanagedAttribute (g: TcGlobals) =
-    getPotentiallyEmbedableAttribute g g.attrib_IsUnmanagedAttribute
+    getPotentiallyEmbeddableAttribute g g.attrib_IsUnmanagedAttribute
 
 let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
     let tref = g.enum_DynamicallyAccessedMemberTypes.TypeRef
