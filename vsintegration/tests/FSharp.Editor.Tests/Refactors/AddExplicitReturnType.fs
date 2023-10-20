@@ -105,3 +105,28 @@ let ``Correctly infer int as explicit return type`` () =
 
         ()
     }
+
+[<Fact>]
+let ``Correctly infer custom type that is declared earlier in file`` () =
+    task {
+
+        let code =
+            """
+            type MyType = { Value: int }
+            let sum a b = {Value=a+b}
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf "sum"
+
+        let! (document, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+        let! returnType = GetReturnTypeOfSymbol "sum" document context.CT
+
+        match returnType with
+        | Some t -> Assert.AreEqual("MyType", t)
+        | None -> failwith "Unexpected symbol"
+
+        ()
+    }
