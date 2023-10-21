@@ -502,7 +502,7 @@ module UnnecessaryParentheses =
             if found then i else -1
 #endif
 
-    /// Represents the precedence of a binary expression.
+    /// Represents the precedence of a binary-ish expression.
     type Precedence =
         /// <-
         | Set
