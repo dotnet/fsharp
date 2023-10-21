@@ -588,7 +588,7 @@ module UnnecessaryParentheses =
         /// f x
         | Apply
 
-        /// -x, ! x
+        /// -x, ! x, ~~~ x
         | High
 
         // x.y
