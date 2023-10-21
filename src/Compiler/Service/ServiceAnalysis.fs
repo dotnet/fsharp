@@ -1126,7 +1126,7 @@ module UnnecessaryParentheses =
             // before a prefix operator application before another expression that starts with a symbol, e.g.,
             //
             //     id -(-x)
-            //     id ~~~(-1y)
+            //     id -(-1y)
             //     id -($"")
             //     id -(@"")
             //     id -(<@ ValueNone @>)
