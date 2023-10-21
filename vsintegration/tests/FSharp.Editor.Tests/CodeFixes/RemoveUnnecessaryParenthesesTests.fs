@@ -505,6 +505,8 @@ let _ =
             "lazy (id 3)", "lazy (id 3)" // Technically we could remove here, but probably better not to.
 
             // Sequential
+            """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
+            """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
             // IfThenElse
@@ -588,6 +590,9 @@ let _ =
             "[|0|][0] <- (0)", "[|0|][0] <- 0"
 
             // NamedIndexedPropertySet
+            "let xs = [|0|] in xs.Item(0) <- 0", "let xs = [|0|] in xs.Item 0 <- 0"
+            "let xs = [|0|] in xs.Item 0 <- (0)", "let xs = [|0|] in xs.Item 0 <- 0"
+
             // DotNamedIndexedPropertySet
             "[|0|].Item(0) <- 0", "[|0|].Item 0 <- 0"
             "[|0|].Item (0) <- 0", "[|0|].Item 0 <- 0"
@@ -764,16 +769,22 @@ let _ =
                 "id -(0o1)", "id -0o1"
                 "id -(1e4)", "id -1e4"
                 "id -(1e-4)", "id -1e-4"
-                "id -(-(-x))", "id -(- -x)"
-                "(~-) -(-(-x))", "(~-) -(- -x)"
+                "id -(-(-x))", "id -(-(-x))"
+                "(~-) -(-(-x))", "(~-) -(-(-x))"
                 "id -(-(-3))", "id -(- -3)"
                 "id -(- -3)", "id -(- -3)"
                 "-(x)", "-x"
                 "-(3)", "-3"
-                "-(-x)", "- -x"
+                "-(-x)", "-(-x)"
                 "-(-3)", "- -3"
                 "-(- -x)", "-(- -x)"
                 "-(- -3)", "-(- -3)"
+                "~~~(-1)", "~~~ -1"
+                "~~~(-1)", "~~~ -1"
+                "~~~(-1y)", "~~~ -1y"
+                "~~~(+1)", "~~~ +1"
+                "~~~(+1y)", "~~~ +1y"
+                "~~~(+1uy)", "~~~(+1uy)"
                 "(3).ToString()", "(3).ToString()"
                 "(3l).ToString()", "3l.ToString()"
                 "(-3).ToString()", "(-3).ToString()"
@@ -869,6 +880,10 @@ let _ =
                 "id (id id) id", "id (id id) id" // While it would be valid in this case to remove the parens, it is not in general.
                 "id ((<|) ((+) x)) y", "id ((<|) ((+) x)) y"
 
+                "~~~(-1)", "~~~ -1"
+                "~~~(-x)", "~~~(-x)"
+                "~~~(-(1))", "~~~(-1)"
+
                 "
                 let f x y = 0
                 f ((+) x y) z
@@ -897,6 +912,7 @@ let _ =
                 "id (lazy x)", "id (lazy x)"
 
                 // Sequential
+                "id ((); ())", "id ((); ())"
                 "id (let x = 1; () in x)", "id (let x = 1; () in x)"
                 "id (let x = 1 in (); y)", "id (let x = 1 in (); y)"
 
@@ -924,7 +940,13 @@ let _ =
                 "id (id.ToString)", "id id.ToString"
 
                 // LongIdentSet
+                "let x = ref 3 in id (x.Value <- 3)", "let x = ref 3 in id (x.Value <- 3)"
+
                 // DotGet
+                "(-1).ToString()", "(-1).ToString()"
+                "(-x).ToString()", "(-x).ToString()"
+                "(~~~x).ToString()", "(~~~x).ToString()"
+
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
 
@@ -945,7 +967,11 @@ let _ =
                 "id ([|x|].[y] <- z)", "id ([|x|].[y] <- z)"
 
                 // NamedIndexedPropertySet
+                "let xs = [|0|] in id (xs.Item 0 <- 0)", "let xs = [|0|] in id (xs.Item 0 <- 0)"
+
                 // DotNamedIndexedPropertySet
+                "id ([|0|].Item 0 <- 0)", "id ([|0|].Item 0 <- 0)"
+
                 // TypeTest
                 "id (x :? int)", "id (x :? int)"
 
@@ -974,6 +1000,28 @@ let _ =
                 let f (_: byref<int>) = ()
                 let mutable x = 0
                 f &x
+                "
+
+                "
+                let f (_: byref<int>) = ()
+                let mutable x = 0
+                f (& x)
+                ",
+                "
+                let f (_: byref<int>) = ()
+                let mutable x = 0
+                f (& x)
+                "
+
+                "
+                let (~~) (x: byref<int>) = x <- -x
+                let mutable x = 3
+                ~~(&x)
+                ",
+                "
+                let (~~) (x: byref<int>) = x <- -x
+                let mutable x = 3
+                ~~(&x)
                 "
 
                 // TraitCall

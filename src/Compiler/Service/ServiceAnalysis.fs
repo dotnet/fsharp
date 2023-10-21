@@ -588,7 +588,7 @@ module UnnecessaryParentheses =
         /// f x
         | Apply
 
-        /// -x, ! x, ~~~ x
+        /// -x, !… x, ~~… x
         | High
 
         // x.y
@@ -768,6 +768,12 @@ module UnnecessaryParentheses =
                     | '~' -> ValueSome High
                     | _ -> ValueSome UnaryPrefix
 
+            | SynExpr.AddressOf (expr = expr; opRange = opRange) ->
+                if opRange.IsAdjacentTo expr.Range then
+                    ValueSome High
+                else
+                    ValueSome UnaryPrefix
+
             | _ -> ValueNone
 
         /// Tries to parse the given original notation as a symbolic infix operator.
@@ -859,6 +865,7 @@ module UnnecessaryParentheses =
             | SynExpr.Lazy _
             | SynExpr.InferredUpcast _
             | SynExpr.InferredDowncast _ -> ValueSome(Apply, Non)
+            | PrefixApp High -> ValueSome(High, Non)
             | PrefixApp prec -> ValueSome(prec, Left)
             | InfixApp (prec, side) -> ValueSome(prec, side)
             | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
@@ -1260,10 +1267,11 @@ module UnnecessaryParentheses =
                 | OuterBinaryExpr inner (_, Right), _ -> ValueSome range
 
                 | SynExpr.WhileBang(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
-                | SynExpr.While(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _ -> ValueNone
-
+                | SynExpr.While(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
                 | SynExpr.Typed _, SynExpr.Typed _
-                | SynExpr.For _, SynExpr.Typed _
+                | SynExpr.For (identBody = Is inner), SynExpr.Typed _
+                | SynExpr.For (toBody = Is inner), SynExpr.Typed _
+                | SynExpr.ForEach (enumExpr = Is inner), SynExpr.Typed _
                 | SynExpr.ArrayOrList _, SynExpr.Typed _
                 | SynExpr.ArrayOrListComputed _, SynExpr.Typed _
                 | SynExpr.IndexRange _, SynExpr.Typed _
@@ -1301,7 +1309,6 @@ module UnnecessaryParentheses =
                 | _, SynExpr.DotLambda _
                 | _, SynExpr.DotIndexedGet _
                 | _, SynExpr.Null _
-                | _, SynExpr.AddressOf _
                 | _, SynExpr.InterpolatedString _
 
                 | SynExpr.Paren(rightParenRange = Some _), _
@@ -1320,6 +1327,7 @@ module UnnecessaryParentheses =
                 | SynExpr.MatchBang _, _
                 | SynExpr.LetOrUse _, _
                 | SynExpr.LetOrUseBang _, _
+                | SynExpr.Sequential _, _
                 | SynExpr.Do _, _
                 | SynExpr.DoBang _, _
                 | SynExpr.YieldOrReturn _, _
