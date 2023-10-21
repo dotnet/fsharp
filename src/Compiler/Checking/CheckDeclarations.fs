@@ -178,7 +178,6 @@ module MutRecShapes =
 
    let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
-
 /// Indicates a declaration is contained in the given module 
 let ModuleOrNamespaceContainerInfo modref =
     ContainerInfo(Parent modref, Some(MemberOrValContainerInfo(modref, None, None, NoSafeInitInfo, [])))
@@ -260,7 +259,7 @@ let BuildRootModuleContents (isModule: bool) enclosingNamespacePath (cpath: Comp
         ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace isModule id cpath.ParentCompPath moduleContents))
         |> snd
 
-/// Try to take the "FSINNN" prefix off a namespace path
+/// Try to take the "FSI_NNN" prefix off a namespace path
 let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) = 
     match enclosingNamespacePath with 
     | p :: rest when
@@ -1840,7 +1839,10 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
           | SynMemberDefn.ImplicitCtor _ :: _ -> ()
           | _ ->
             if not tcref.IsFSharpEnumTycon && not tcref.IsFSharpDelegateTycon && not tcref.IsFSharpException && not tcref.IsTypeAbbrev then
-                TyconBindingDefn(containerInfo, newslotsOK, declKind, None, tcref.Range)
+                if members |> List.exists (function | SynMemberDefn.LetBindings(isStatic=true) -> true | _ -> false ) then
+                    // Introduction of this member has caused the regression #16009, due to a missed Lazy<>.Force access from a member to a value in recursive module
+                    // Minimizing the impact by only yielding in case of actually emitting static let bindings.
+                    TyconBindingDefn(containerInfo, newslotsOK, declKind, None, tcref.Range)
 
           // Yield the other members
           for memb in members do
