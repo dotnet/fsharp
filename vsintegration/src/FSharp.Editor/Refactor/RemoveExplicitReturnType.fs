@@ -28,38 +28,29 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
         (symbolUse: FSharpSymbolUse)
         (parseFileResults: FSharpParseFileResults)
         =
-        let typeAnnotationRange =
+        let returnTypeHintAlreadyPresent =
             parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
+            |> Option.isNone
 
         let isLambdaIfFunction =
             funcOrValue.IsFunction
             && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
 
         (not funcOrValue.IsValue || not isLambdaIfFunction)
-        && not (funcOrValue.ReturnParameter.Type.IsUnresolved)
-        && (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
-        && typeAnnotationRange.IsNone
+        && returnTypeHintAlreadyPresent
 
-    static member refactor
-        (context: CodeRefactoringContext)
-        (symbolUse: FSharpSymbolUse, memberFunc: FSharpMemberOrFunctionOrValue, parseFileResults: FSharpParseFileResults)
-        =
+    static member refactor (context: CodeRefactoringContext) (memberFunc: FSharpMemberOrFunctionOrValue) =
         let title = SR.RemoveExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
             let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
+            inferredType
+            let rangeOfReturnType = memberFunc.ReturnParameter.DeclarationLocation
 
-            let rangeOfReturnType =
-                parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
+            let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, rangeOfReturnType)
+            let textChange = TextChange(textSpan, $"")
 
-            let textChange =
-                rangeOfReturnType
-                |> Option.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                |> Option.map (fun textSpan -> TextChange(textSpan, $":{inferredType}"))
-
-            match textChange with
-            | Some textChange -> sourceText.WithChanges(textChange)
-            | None -> sourceText
+            sourceText.WithChanges(textChange)
 
         let codeActionFunc =
             (fun (cancellationToken: CancellationToken) ->
@@ -108,10 +99,9 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
                     | :? FSharpMemberOrFunctionOrValue as v when
                         RemoveExplicitReturnType.isValidMethodWithoutTypeAnnotation v symbolUse parseFileResults
                         ->
-                        Some(symbolUse, v)
+                        Some(v)
                     | _ -> None)
-                |> Option.map (fun (symbolUse, memberFunc) ->
-                    RemoveExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults))
+                |> Option.map (fun (memberFunc) -> RemoveExplicitReturnType.refactor context memberFunc)
 
             return res
         }

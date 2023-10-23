@@ -13,6 +13,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
@@ -61,15 +62,15 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             | Some textChange -> sourceText.WithChanges(textChange)
             | None -> sourceText
 
-        let codeActionFunc =
-            (fun (cancellationToken: CancellationToken) ->
+        let codeActionFunc: CancellationToken -> Task<Document> =
+            fun (cancellationToken: CancellationToken) ->
                 task {
                     let! sourceText = context.Document.GetTextAsync(cancellationToken)
                     let changedText = getChangedText sourceText
 
                     let newDocument = context.Document.WithText(changedText)
                     return newDocument
-                })
+                }
 
         let codeAction = CodeAction.Create(title, codeActionFunc, title)
 
