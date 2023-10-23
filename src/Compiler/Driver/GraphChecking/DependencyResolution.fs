@@ -17,33 +17,29 @@ let queryTriePartial (trie: TrieNode) (path: LongIdentifier) : TrieNode option =
 
     visit trie path
 
-let mapNodeToQueryResult (currentFileIndex: FileIndex) (node: TrieNode option) : QueryTrieNodeResult =
+let mapNodeToQueryResult (node: TrieNode option) : QueryTrieNodeResult =
     match node with
     | Some finalNode ->
-        if
-            Set.isEmpty finalNode.Files
-            // If this node exposes files which the current index cannot see, we consider it not to have data at all.
-            || Set.forall (fun idx -> idx >= currentFileIndex) finalNode.Files
-        then
+        if Set.isEmpty finalNode.Files then
             QueryTrieNodeResult.NodeDoesNotExposeData
         else
             QueryTrieNodeResult.NodeExposesData(finalNode.Files)
     | None -> QueryTrieNodeResult.NodeDoesNotExist
 
 /// <summary>Find a path in the Trie.</summary>
-let queryTrie (currentFileIndex: FileIndex) (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
-    queryTriePartial trie path |> mapNodeToQueryResult currentFileIndex
+let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
+    queryTriePartial trie path |> mapNodeToQueryResult
 
 /// <summary>Same as 'queryTrie' but allows passing in a path combined from two parts, avoiding list allocation.</summary>
-let queryTrieDual (currentFileIndex: FileIndex) (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
+let queryTrieDual (trie: TrieNode) (path1: LongIdentifier) (path2: LongIdentifier) : QueryTrieNodeResult =
     match queryTriePartial trie path1 with
     | Some intermediateNode -> queryTriePartial intermediateNode path2
     | None -> None
-    |> mapNodeToQueryResult currentFileIndex
+    |> mapNodeToQueryResult
 
 /// Process namespace declaration.
 let processNamespaceDeclaration (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie state.CurrentFile trie path
+    let queryResult = queryTrie trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -53,7 +49,7 @@ let processNamespaceDeclaration (trie: TrieNode) (path: LongIdentifier) (state: 
 /// Process an "open" statement.
 /// The statement could link to files and/or should be tracked as an open namespace.
 let processOpenPath (trie: TrieNode) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie state.CurrentFile trie path
+    let queryResult = queryTrie trie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -103,13 +99,12 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
             ||> Array.fold (fun state takeParts ->
                 let path = List.take takeParts path
                 // process the name was if it were a FQN
-                let stateAfterFullIdentifier =
-                    processIdentifier (queryTrieDual state.CurrentFile trie [] path) state
+                let stateAfterFullIdentifier = processIdentifier (queryTrieDual trie [] path) state
 
                 // Process the name in combination with the existing open namespaces
                 (stateAfterFullIdentifier, state.OpenNamespaces)
                 ||> Set.fold (fun acc openNS ->
-                    let queryResult = queryTrieDual state.CurrentFile trie openNS path
+                    let queryResult = queryTrieDual trie openNS path
                     processIdentifier queryResult acc))
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
@@ -142,7 +137,7 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: Fi
     // For each opened namespace, if none of already resolved dependencies define it, return the top-most file that defines it.
     Set.toArray result.OpenedNamespaces
     |> Array.choose (fun path ->
-        match queryTrie fileIndex trie path with
+        match queryTrie trie path with
         | QueryTrieNodeResult.NodeExposesData _
         | QueryTrieNodeResult.NodeDoesNotExist -> None
         | QueryTrieNodeResult.NodeDoesNotExposeData ->
@@ -201,20 +196,25 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         else
             let fileContent = fileContents[file.Idx]
 
-            let knownFiles = [| 0 .. (file.Idx - 1) |] |> set
+            // The Trie we want to use is the one that contains only files before our current index.
+            // As we skip implementation files (backed by a signature), we cannot just use the current file index to find the right Trie.
+            let trieForFile =
+                trie
+                |> Array.fold (fun acc (idx, t) -> if idx < file.Idx then t else acc) TrieNode.Empty
+
             // File depends on all files above it that define accessible symbols at the root level (global namespace).
-            let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
+            let filesFromRoot =
+                trieForFile.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
             // Start by listing root-level dependencies.
-            let initialDepsResult =
-                (FileContentQueryState.Create file.Idx knownFiles filesFromRoot), fileContent
+            let initialDepsResult = (FileContentQueryState.Create filesFromRoot), fileContent
             // Sequentially process all relevant entries of the file and keep updating the state and set of dependencies.
             let depsResult =
                 initialDepsResult
                 // Seq is faster than List in this case.
-                ||> Seq.fold (processStateEntry trie)
+                ||> Seq.fold (processStateEntry trieForFile)
 
             // Add missing links for cases where an unused open namespace did not create a link.
-            let ghostDependencies = collectGhostDependencies file.Idx trie depsResult
+            let ghostDependencies = collectGhostDependencies file.Idx trieForFile depsResult
 
             // Add a link from implementation files to their signature files.
             let signatureDependency =
@@ -236,5 +236,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         files
         |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
         |> readOnlyDict
+
+    let trie = trie |> Array.last |> snd
 
     graph, trie
