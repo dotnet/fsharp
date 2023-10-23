@@ -822,7 +822,7 @@ module AsyncPrimitives =
             WhileLoop())
 #endif
 
-    /// Implement the for loop construct of async commputation expressions
+    /// Implement the for loop construct of async computation expressions
     ///   - No initial cancellation check before GetEnumerator call.
     ///   - No initial cancellation check before entering protection of implied try/finally
     ///   - Cancellation check after 'entering' the implied try/finally and before loop

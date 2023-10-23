@@ -330,7 +330,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     ///
-    /// <example id="callwithwitnesses-1">In this example, we show how to use a witness to cosntruct an `op_Addition` call for a type that doesn't support addition directly:
+    /// <example id="callwithwitnesses-1">In this example, we show how to use a witness to construct an `op_Addition` call for a type that doesn't support addition directly:
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns

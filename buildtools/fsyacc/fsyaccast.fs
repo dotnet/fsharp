@@ -311,7 +311,7 @@ type KernelTable(kernels) =
     member t.Index(kernel) = toIdxMap.[kernel]
     member t.Kernel(i) = ofIdxMap.[i]
 
-/// Hold the results of cpmuting the LALR(1) closure of an LR(0) kernel
+/// Hold the results of computing the LALR(1) closure of an LR(0) kernel
 type Closure1Table() = 
     let t = Dictionary<Item0,HashSet<TerminalIndex>>()
     member table.Add(a,b) = 

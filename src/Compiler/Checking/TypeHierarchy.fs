@@ -119,7 +119,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 //
 // NOTE: Anonymous record types are not directly considered to implement IComparable,
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
-// consitutent types, which may not yet be known in type inference.
+// constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
     [
         match tryAppTy g ty with

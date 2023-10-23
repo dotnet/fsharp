@@ -174,7 +174,7 @@ All test execution logs and result files will be dropped into the `tests\TestRes
 ### Working with baseline tests
 
 FSharp Test Suite works with a couple of `.bsl` (or `.bslpp`) files describing "expected test results" and are called the _Baseline Tests_. Those are matched against the actual output that resides under `.err` or `.vserr` files of the same name during test execution.
-When doing so keep in mind to carefully review the diff before comitting updated baseline files.
+When doing so keep in mind to carefully review the diff before committing updated baseline files.
 
 The `.bslpp` (for: baseline pre-process) files are specially designed to enable substitution of certain tokens to generate the `.bsl` file. You can look further about the pre-processing logic under [tests/fsharp/TypeProviderTests.fs](tests/fsharp/TypeProviderTests.fs), this is used only for type provider tests for now.
 

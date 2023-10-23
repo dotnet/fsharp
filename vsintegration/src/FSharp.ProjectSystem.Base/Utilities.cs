@@ -438,7 +438,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the active configuration name.
         /// </summary>
         /// <param name="automationObject">The automation object.</param>
-        /// <returns>The name of the active configuartion.</returns>        
+        /// <returns>The name of the active configuration.</returns>        
         public static string GetActiveConfigurationName(EnvDTE.Project automationObject)
         {
             if (automationObject == null)

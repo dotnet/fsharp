@@ -1207,10 +1207,10 @@ let _ = printString "tuple object equality null test (b25): "; if (1,2,3,4,5,C) 
 let _ = printString "ref equality test (b25): "; if ref 1 = ref 1 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 let _ = printString "ref equality test (b25): "; if ref 1 <> ref 2 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
-let _ = printString "compaure nativeint test (b25): "; if compare [0n] [1n] = -(compare [1n] [0n]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0un] [1un] = -(compare [1un] [0un]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0un] [0un] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0n] [0n] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0n] [1n] = -(compare [1n] [0n]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0un] [1un] = -(compare [1un] [0un]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0un] [0un] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0n] [0n] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
 
 (*---------------------------------------------------------------------------

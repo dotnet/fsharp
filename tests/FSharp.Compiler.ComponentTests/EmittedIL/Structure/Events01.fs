@@ -13,7 +13,7 @@ namespace Test
         let channelChanged = new Event<ChannelChanged,_>()
         let triggerChanelChanged channelNumber = channelChanged.Trigger(this, channelNumber)
             
-        // When TV constrcuted, fire channel changed event.
+        // When TV constructed, fire channel changed event.
         do triggerChanelChanged(3)
         
         // Static event

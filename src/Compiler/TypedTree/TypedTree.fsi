@@ -4110,7 +4110,7 @@ type CcuThunk =
     /// Create a CCU with the given name but where the contents have not yet been specified
     static member CreateDelayed: nm: CcuReference -> CcuThunk
 
-    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// Used at the end of compiling an assembly to get a frozen, final stable CCU
     /// for the compilation which we no longer mutate.
     member CloneWithFinalizedContents: ccuContents: ModuleOrNamespace -> CcuThunk
 

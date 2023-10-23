@@ -898,7 +898,7 @@ type internal TypeCheckInfo
 
             if p >= 0 then Some p else None
 
-    /// Build a CompetionItem
+    /// Build a CompletionItem
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with

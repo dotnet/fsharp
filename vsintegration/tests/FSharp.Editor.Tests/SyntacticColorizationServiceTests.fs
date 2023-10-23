@@ -103,7 +103,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     [<Fact>]
-    member this.Conment_SingleLine_MultiConments() =
+    member this.Comment_SingleLine_MultiComments() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """

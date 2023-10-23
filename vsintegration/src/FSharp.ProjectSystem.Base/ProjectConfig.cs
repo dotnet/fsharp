@@ -1591,7 +1591,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project.ProjectIDGuid, out activeConfig) ||
                 activeConfig != this.ConfigCanonicalName)
             {
-                logger.WriteLine("Not up to date: active confic does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
+                logger.WriteLine("Not up to date: active config does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
                 if (!testing)
                     return false;
             }

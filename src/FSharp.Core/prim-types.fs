@@ -4956,7 +4956,7 @@ namespace Microsoft.FSharp.Core
                 | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
                 | _ -> value.ToString()
 
-             // other commmon mscorlib reference types
+             // other common mscorlib reference types
              when 'T : StringBuilder =
                 if value = unsafeDefault<'T> then ""
                 else let x = (# "" value : StringBuilder #) in x.ToString()

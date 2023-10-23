@@ -196,7 +196,7 @@ open System
   // any delegate type.
   //
   // Note 'a and 'args must correspond - if they do not runtime exceptions will arise.
-  // We could add a constrinat of the form 
+  // We could add a constraint of the form 
   //    when 'a :> delegate(object * 'arg -> void)
   type EventForDelegateType<'a> =
     { Add: 'a -> unit;

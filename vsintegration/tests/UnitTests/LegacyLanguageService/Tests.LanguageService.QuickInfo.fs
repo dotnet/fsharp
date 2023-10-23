@@ -2234,7 +2234,7 @@ query."
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker3*)","Full name: Test.printer")
 
     [<Test>]
-    member public this.``Automation.Regression.ConstrutorWithSameNameAsType.Bug2739``() =
+    member public this.``Automation.Regression.ConstructorWithSameNameAsType.Bug2739``() =
         let fileContent = """namespace AA
                              module AA = 
                                  type AA = | AA(*Marker1*) = 1

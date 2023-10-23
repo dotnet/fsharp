@@ -4591,7 +4591,7 @@ sub RunMultiProcess() {
     # determine whether the queues are consistent
     #
     #
-    sub check_queues_consistancy() {
+    sub check_queues_consistency() {
 	my $prev = -1;
 	my $x;
 	foreach $x (sort @waitlist) {
@@ -4658,7 +4658,7 @@ sub RunMultiProcess() {
 
 	    };
 	};
-	check_queues_consistancy();	
+	check_queues_consistency();	
     };
 
     sub add_queue_idle($) {
@@ -4796,7 +4796,7 @@ sub RunMultiProcess() {
 
 	while (1) {
 
-	    check_queues_consistancy();
+	    check_queues_consistency();
 
 	    $cLoopActions = 0;
 

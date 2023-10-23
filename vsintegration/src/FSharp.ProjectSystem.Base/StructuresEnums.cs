@@ -310,7 +310,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         VSIDEResolvedNonMSBuildProjectOutputs,
 
         /// <summary>
-        /// The Configuartion property.
+        /// The Configuration property.
         /// </summary>
         Configuration,
 

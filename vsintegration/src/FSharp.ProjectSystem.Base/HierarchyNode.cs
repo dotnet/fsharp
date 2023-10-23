@@ -2589,7 +2589,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // the root
             itemId = 0;
 
-            // The default implemenation will check for case insensitive comparision.
+            // The default implemenation will check for case insensitive comparison.
             if (String.Compare(name, this.Url, StringComparison.OrdinalIgnoreCase) == 0)
             {
                 itemId = this.hierarchyId;
