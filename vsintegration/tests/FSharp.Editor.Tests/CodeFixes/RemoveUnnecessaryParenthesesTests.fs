@@ -202,6 +202,7 @@ let _ =
             "1, (1)", "1, 1"
             "struct ((1), 1)", "struct (1, 1)"
             "struct (1, (1))", "struct (1, 1)"
+            "(fun x -> x), y", "(fun x -> x), y"
 
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
@@ -282,6 +283,7 @@ let _ =
 
             "3 > (match x with _ -> 3)", "3 > match x with _ -> 3"
             "(match x with _ -> 3) > 3", "(match x with _ -> 3) > 3"
+            "match x with 1 -> (fun x -> x) | _ -> id", "match x with 1 -> (fun x -> x) | _ -> id"
 
             "
             3 > (match x with
@@ -517,6 +519,7 @@ let _ =
             "3 > (if true then 1 else 2)", "3 > if true then 1 else 2"
             "if (if true then true else true) then 3 else 3", "if (if true then true else true) then 3 else 3"
             "if (id <| if true then true else true) then 3 else 3", "if (id <| if true then true else true) then 3 else 3"
+            "if id <| (if true then true else true) then 3 else 3", "if id <| (if true then true else true) then 3 else 3"
 
             "
                 if (if true then true else true)
@@ -851,8 +854,50 @@ let _ =
                 // Lambda
                 "id (fun x -> x)", "id (fun x -> x)"
                 "x |> (fun x -> x)", "x |> fun x -> x"
+
+                "
+                x
+                |> id
+                |> id
+                |> id
+                |> id
+                |> id
+                |> (fun x -> x)
+                ",
+                "
+                x
+                |> id
+                |> id
+                |> id
+                |> id
+                |> id
+                |> fun x -> x
+                "
+
+                "
+                x
+                |> id
+                |> id
+                |> id
+                |> (fun x -> x)
+                |> id
+                |> id
+                ",
+                "
+                x
+                |> id
+                |> id
+                |> id
+                |> (fun x -> x)
+                |> id
+                |> id
+                "
+
+                "x |> (id |> fun x -> x)", "x |> id |> fun x -> x"
+                "x |> (id <| fun x -> x)", "x |> (id <| fun x -> x)"
                 "id <| (fun x -> x)", "id <| fun x -> x"
-                "id <| (fun x -> x) |> id", "id <| fun x -> x |> id"
+                "id <| (fun x -> x) |> id", "id <| (fun x -> x) |> id"
+                "id <| (id <| fun x -> x) |> id", "id <| (id <| fun x -> x) |> id"
                 "(id <| fun x -> x) |> id", "(id <| fun x -> x) |> id"
                 """(printfn ""; fun x -> x) |> id""", """(printfn ""; fun x -> x) |> id"""
 
@@ -863,6 +908,7 @@ let _ =
                 // Match
                 "id (match x with y -> y)", "id (match x with y -> y)"
                 "(id <| match x with _ -> x) |> id", "(id <| match x with _ -> x) |> id"
+                "id <| (match x with _ -> x) |> id", "id <| (match x with _ -> x) |> id"
 
                 // Do
                 "id (do ())", "id (do ())"
@@ -919,6 +965,7 @@ let _ =
                 // IfThenElse
                 "id (if x then y else z)", "id (if x then y else z)"
                 "(id <| if x then y else z) |> id", "(id <| if x then y else z) |> id"
+                "id <| (if x then y else z) |> id", "id <| (if x then y else z) |> id"
 
                 // Ident
                 "id (x)", "id x"
