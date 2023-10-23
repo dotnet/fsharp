@@ -1209,7 +1209,7 @@ module UnnecessaryParentheses =
                             let parenzedSubExpr = SynExpr.Paren(subExpr, leftParenRange, rightParenRange, range)
 
                             match outer with
-                            | SynExpr.Tuple (isStruct = false; exprs = exprs) -> not (obj.ReferenceEquals(subExpr, List.last exprs))
+                            | SynExpr.Tuple (exprs = exprs) -> not (obj.ReferenceEquals(subExpr, List.last exprs))
                             | InfixApp (_, Left) -> true
                             | _ -> unnecessaryParentheses parenzedSubExpr outerPath |> ValueOption.isNone
 
