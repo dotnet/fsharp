@@ -908,14 +908,14 @@ module UnnecessaryParentheses =
             | _ -> ValueNone
 
         module Dangling =
-            /// Returns the range of the first matching nested right-hand target expression, if any.
+            /// Returns the first matching nested right-hand target expression, if any.
             let private dangling (target: SynExpr -> SynExpr option) =
                 let (|Target|_|) = target
                 let (|Last|) = List.last
 
                 let rec loop expr =
                     match expr with
-                    | Target expr -> ValueSome expr.Range
+                    | Target expr -> ValueSome expr
                     | SynExpr.Tuple (isStruct = false; exprs = Last expr)
                     | SynExpr.App (argExpr = expr)
                     | SynExpr.IfThenElse(elseExpr = Some expr)
@@ -927,6 +927,7 @@ module UnnecessaryParentheses =
                     | SynExpr.DotIndexedSet (valueExpr = expr)
                     | SynExpr.LongIdentSet (expr = expr)
                     | SynExpr.LetOrUse (body = expr)
+                    | SynExpr.Lambda (body = expr)
                     | SynExpr.Match(clauses = Last (SynMatchClause (resultExpr = expr)))
                     | SynExpr.MatchLambda(matchClauses = Last (SynMatchClause (resultExpr = expr)))
                     | SynExpr.MatchBang(clauses = Last (SynMatchClause (resultExpr = expr)))
@@ -958,13 +959,14 @@ module UnnecessaryParentheses =
                     | SynExpr.Match _
                     | SynExpr.MatchBang _
                     | SynExpr.MatchLambda _
-                    | SynExpr.TryWith _ as expr -> Some expr
+                    | SynExpr.TryWith _
+                    | SynExpr.Lambda _ as expr -> Some expr
                     | _ -> None)
 
-            /// Returns true if the expression contains
-            /// a dangling construct that would become problematic
+            /// Matches a nested dangling construct that could become problematic
             /// if the surrounding parens were removed.
-            let problematic =
+            [<return: Struct>]
+            let (|Problematic|_|) =
                 dangling (function
                     | SynExpr.Lambda _
                     | SynExpr.MatchLambda _
@@ -982,12 +984,11 @@ module UnnecessaryParentheses =
                     | SynExpr.DotSet _
                     | SynExpr.NamedIndexedPropertySet _ as expr -> Some expr
                     | _ -> None)
-                >> ValueOption.isSome
 
         /// If the given expression is a parenthesized expression and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
-        let rec unnecessaryParentheses (getSourceLineStr: int -> string) expr path =
-            let unnecessaryParentheses = unnecessaryParentheses getSourceLineStr
+        let rec unnecessaryParentheses (getSourceLineStr: int -> string) memo expr path =
+            let unnecessaryParentheses = unnecessaryParentheses getSourceLineStr memo
 
             // Indicates whether the parentheses with the given range
             // enclose an expression whose indentation would be invalid
@@ -1200,9 +1201,20 @@ module UnnecessaryParentheses =
                      :: path)
 
             // Ordinary nested expressions.
-            | SynExpr.Paren (expr = inner; rightParenRange = Some _; range = range), SyntaxNode.SynExpr outer :: _ when
-                not (containsSensitiveIndentation range)
-                ->
+            | SynExpr.Paren (expr = inner; leftParenRange = leftParenRange; rightParenRange = Some _ as rightParenRange; range = range),
+              SyntaxNode.SynExpr outer :: outerPath when not (containsSensitiveIndentation range) ->
+                let dangling =
+                    memo (function
+                        | Dangling.Problematic subExpr ->
+                            let parenzedSubExpr = SynExpr.Paren(subExpr, leftParenRange, rightParenRange, range)
+
+                            match outer with
+                            | SynExpr.Tuple (isStruct = false; exprs = exprs) -> not (obj.ReferenceEquals(subExpr, List.last exprs))
+                            | InfixApp (_, Left) -> true
+                            | _ -> unnecessaryParentheses parenzedSubExpr outerPath |> ValueOption.isNone
+
+                        | _ -> false)
+
                 let problematic (exprRange: range) (delimiterRange: range) =
                     exprRange.EndLine = delimiterRange.EndLine
                     && exprRange.EndColumn < delimiterRange.StartColumn
@@ -1221,20 +1233,21 @@ module UnnecessaryParentheses =
                 match outer, inner with
                 | ConfusableWithTypeApp, _ -> ValueNone
 
-                | SynExpr.IfThenElse (trivia = trivia), Dangling.IfThen ifThenElseRange when
-                    problematic ifThenElseRange trivia.ThenKeyword
-                    || trivia.ElseKeyword |> Option.exists (problematic ifThenElseRange)
+                | SynExpr.IfThenElse (trivia = trivia), Dangling.IfThen ifThenElse when
+                    problematic ifThenElse.Range trivia.ThenKeyword
+                    || trivia.ElseKeyword |> Option.exists (problematic ifThenElse.Range)
                     ->
                     ValueNone
 
-                | SynExpr.TryFinally (trivia = trivia), Dangling.Try tryRange when problematic tryRange trivia.FinallyKeyword -> ValueNone
+                | SynExpr.TryFinally (trivia = trivia), Dangling.Try tryExpr when problematic tryExpr.Range trivia.FinallyKeyword ->
+                    ValueNone
 
                 | (SynExpr.Match (clauses = clauses) | SynExpr.MatchLambda (matchClauses = clauses) | SynExpr.MatchBang (clauses = clauses)),
-                  Dangling.Match matchOrTryRange when anyProblematic matchOrTryRange clauses -> ValueNone
+                  Dangling.Match matchOrTry when anyProblematic matchOrTry.Range clauses -> ValueNone
 
-                | SynExpr.TryWith (withCases = clauses; trivia = trivia), Dangling.Match matchOrTryRange when
-                    anyProblematic matchOrTryRange clauses
-                    || problematic matchOrTryRange trivia.WithKeyword
+                | SynExpr.TryWith (withCases = clauses; trivia = trivia), Dangling.Match matchOrTry when
+                    anyProblematic matchOrTry.Range clauses
+                    || problematic matchOrTry.Range trivia.WithKeyword
                     ->
                     ValueNone
 
@@ -1258,20 +1271,20 @@ module UnnecessaryParentheses =
 
                         | c -> c > 0
 
-                    if ambiguous || Dangling.problematic inner then
+                    if ambiguous || dangling inner then
                         ValueNone
                     else
                         ValueSome range
 
                 | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse(trivia = { InKeyword = None })) -> ValueNone
-                | OuterBinaryExpr inner (_, Right), _ -> ValueSome range
+                | OuterBinaryExpr inner (_, Right), inner -> if dangling inner then ValueNone else ValueSome range
 
+                | SynExpr.Typed _, SynExpr.Typed _
                 | SynExpr.WhileBang(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
                 | SynExpr.While(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
-                | SynExpr.Typed _, SynExpr.Typed _
-                | SynExpr.For (identBody = Is inner), SynExpr.Typed _
-                | SynExpr.For (toBody = Is inner), SynExpr.Typed _
-                | SynExpr.ForEach (enumExpr = Is inner), SynExpr.Typed _
+                | SynExpr.For(identBody = Is inner), SynExpr.Typed _
+                | SynExpr.For(toBody = Is inner), SynExpr.Typed _
+                | SynExpr.ForEach(enumExpr = Is inner), SynExpr.Typed _
                 | SynExpr.ArrayOrList _, SynExpr.Typed _
                 | SynExpr.ArrayOrListComputed _, SynExpr.Typed _
                 | SynExpr.IndexRange _, SynExpr.Typed _
@@ -1311,7 +1324,7 @@ module UnnecessaryParentheses =
                 | _, SynExpr.Null _
                 | _, SynExpr.InterpolatedString _
 
-                | SynExpr.Paren(rightParenRange = Some _), _
+                | SynExpr.Paren _, _
                 | SynExpr.Quote _, _
                 | SynExpr.Typed _, _
                 | SynExpr.AnonRecd _, _
@@ -1495,10 +1508,23 @@ module UnnecessaryParentheses =
         async {
             let ranges = HashSet Range.comparer
 
+            // The check for dangling exprs is exponential
+            // in the worst case unless we memoize.
+            let memo =
+                let d = Dictionary<obj, bool>()
+
+                fun dangling expr ->
+                    match d.TryGetValue expr with
+                    | true, dangling -> dangling
+                    | false, _ ->
+                        let dangling = dangling expr
+                        d.Add(expr, dangling)
+                        dangling
+
             let visitor =
                 { new SyntaxVisitorBase<unit>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
-                        SynExpr.unnecessaryParentheses getSourceLineStr expr path
+                        SynExpr.unnecessaryParentheses getSourceLineStr memo expr path
                         |> ValueOption.iter (ranges.Add >> ignore)
 
                         defaultTraverse expr
