@@ -1509,7 +1509,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3234,chkNoSpanLikeVariable,"The Span or IsByRefLike variable '%s' cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
 3235,chkNoSpanLikeValueFromExpression,"A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope."
 3236,tastCantTakeAddressOfExpression,"Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address."
-3237,tcCannotCallExtensionMethodInrefToByref,"Cannot call the byref extension method '%s. The first parameter requires the value to be mutable or a non-readonly byref type."
+3237,tcCannotCallExtensionMethodInrefToByref,"Cannot call the byref extension method '%s. 'this' parameter requires the value to be mutable or a non-readonly byref type."
 3238,tcByrefsMayNotHaveTypeExtensions,"Byref types are not allowed to have optional type extensions."
 3239,tcCannotPartiallyApplyExtensionMethodForByref,"Cannot partially apply the extension method '%s' because the first parameter is a byref type."
 3242,tcTypeDoesNotInheritAttribute,"This type does not inherit Attribute, it will not work correctly with other .NET languages."
@@ -1724,3 +1724,4 @@ featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
 3579,alwaysUseTypedStringInterpolation,"Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended."
 3580,tcUnexpectedFunTypeInUnionCaseField,"Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -> b into | Case of (a -> b)."
+3582,tcInfoIfFunctionShadowsUnionCase,"This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses."

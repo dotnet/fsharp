@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+        <target state="needs-review-translation">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
 Bellek içi çapraz proje başvurularını etkinleştir;
 Enable_partial_type_checking;
 IntelliSense Performans Seçenekleri;

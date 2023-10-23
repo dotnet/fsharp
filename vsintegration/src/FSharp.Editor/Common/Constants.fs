@@ -148,6 +148,9 @@ module internal CodeFix =
     let FixIndexerAccess = "FixIndexerAccess"
 
     [<Literal>]
+    let ImplementInterface = "ImplementInterface"
+
+    [<Literal>]
     let RemoveReturnOrYield = "RemoveReturnOrYield"
 
     [<Literal>]
@@ -162,6 +165,9 @@ module internal CodeFix =
 
     [<Literal>]
     let MakeDeclarationMutable = "MakeDeclarationMutable"
+
+    [<Literal>]
+    let MissingReference = "MissingReference"
 
     [<Literal>]
     let ChangePrefixNegationToInfixSubtraction =

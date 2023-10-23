@@ -1147,6 +1147,11 @@
         <target state="translated">Это выражение использует неявное преобразование "{0}" для преобразования типа "{1}" в тип "{2}". См. сведения на странице https://aka.ms/fsharp-implicit-convs. Это предупреждение можно отключить, используя параметр '#nowarn \"3391\"</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
         <target state="translated">Свойство только для инициализации "{0}" невозможно установить за пределами кода инициализации. См. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
@@ -8428,8 +8433,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Не удается вызвать метод расширения byref "{0}". В качестве первого параметра необходимо указать изменяемое значение или значение типа byref, доступное не только для чтения.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="needs-review-translation">Не удается вызвать метод расширения byref "{0}". В качестве первого параметра необходимо указать изменяемое значение или значение типа byref, доступное не только для чтения.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
