@@ -111,7 +111,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
             assert (context.Span.Length >= 3) // (…)
 
             cancellableTask {
-                let! sourceText = context.Document.GetTextAsync context.CancellationToken
+                let! sourceText = context.GetSourceTextAsync()
                 let txt = sourceText.ToString(TextSpan(context.Span.Start, context.Span.Length))
 
                 let firstChar = txt[0]
