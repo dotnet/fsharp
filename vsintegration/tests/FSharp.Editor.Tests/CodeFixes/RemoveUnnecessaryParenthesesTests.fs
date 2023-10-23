@@ -1617,7 +1617,7 @@ match Unchecked.defaultof<_> with
                 "A | (B :: C)", "A | B :: C"
                 "A & (B :: C)", "A & B :: C"
                 "A :: (B :: C)", "A :: B :: C"
-                "A as (B :: C)", "A as B :: C"
+                "A as (B :: C)", "A as (B :: C)"
                 "A | (B as C)", "A | (B as C)"
                 "_ as x | (_ as x)", "_ as x | (_ as x)"
                 "A & (B as C)", "A & (B as C)"
