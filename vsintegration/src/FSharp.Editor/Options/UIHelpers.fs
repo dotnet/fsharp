@@ -63,7 +63,7 @@ module internal OptionsUIHelpers =
             scm.GetService<'T>()
 
     //data binding helpers
-    let radioButtonCoverter =
+    let radioButtonConverter =
         { new IValueConverter with
             member _.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
 
@@ -73,7 +73,7 @@ module internal OptionsUIHelpers =
 
     let bindRadioButton (radioButton: RadioButton) path value =
         let binding =
-            Binding(path, Converter = radioButtonCoverter, ConverterParameter = value)
+            Binding(path, Converter = radioButtonConverter, ConverterParameter = value)
 
         radioButton.SetBinding(RadioButton.IsCheckedProperty, binding) |> ignore
 

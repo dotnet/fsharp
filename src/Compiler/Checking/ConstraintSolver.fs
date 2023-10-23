@@ -3254,7 +3254,7 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
         // into account when comparing overloads.  So adding a name to an argument might mean 
-        // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
+        // overloads could no longer be distinguished.  We thus look at *all* arguments (whether
         // optional or not) as an additional comparison technique.
         let c = 
             if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then

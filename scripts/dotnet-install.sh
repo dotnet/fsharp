@@ -740,7 +740,7 @@ calculate_vars() {
     if [ "$valid_legacy_download_link" = true ]; then
         say_verbose "legacy_download_link=$legacy_download_link"
     else
-        say_verbose "Cound not construct a legacy_download_link; omitting..."
+        say_verbose "Could not construct a legacy_download_link; omitting..."
     fi
 
     install_root="$(resolve_installation_path "$install_dir")"

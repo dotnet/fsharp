@@ -629,7 +629,7 @@ type SetModule() =
                 set <- Set.add i set) 
             // Check that the set equals the full list
             Assert.True(Set.toList set = [0 .. i])
-            // Remove items in permutation order, ensuring set is delt with correctly
+            // Remove items in permutation order, ensuring set is dealt with correctly
             Array.iteri
                 (fun idx i -> set <- Set.remove i set
                               // Verify all elements have been correctly removed

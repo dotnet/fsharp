@@ -189,7 +189,7 @@ type UsingMSBuild()  =
             MoveCursorToStartOfMarker (file,columnMarker)
             let _,column = GetCursorLocation(file)
 
-            // Put curson at start of marker and then hit F12
+            // Put cursor at start of marker and then hit F12
             MoveCursorToStartOfMarker (file, marker)
             let identifier = (GetIdentifierAtCursor file).Value |> fst
             let result = GotoDefinitionAtCursor file

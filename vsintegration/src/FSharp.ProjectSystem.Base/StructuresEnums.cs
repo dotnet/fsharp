@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the currect state of a property page.
+    /// Defines the current state of a property page.
     /// </summary>
     [Flags]
     internal enum PropPageStatus

@@ -40,7 +40,7 @@ do if nestedInnerRec2() <> 102 then report_failure "ewiew8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 
@@ -70,7 +70,7 @@ do if z2.g2.contents.g1 <> 3 then report_failure "ceewieds32w8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 (* --------------------------------------------------------------------

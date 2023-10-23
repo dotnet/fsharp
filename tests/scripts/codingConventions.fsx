@@ -53,7 +53,7 @@ let commas =
 printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
-printfn "------DANGLINE SEMICOLONS----------"
+printfn "------DANGLING SEMICOLONS----------"
 
 let semis =
     lines

@@ -100,7 +100,7 @@ type UsingMSBuild() as this =
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
 
 
-    //Verify the error list in fsx file containd the expected string
+    //Verify the error list in fsx file contained the expected string
     member private this.VerifyFSXErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
         VerifyErrorListContainedExpetedStr(expectedStr,project)    
@@ -109,7 +109,7 @@ type UsingMSBuild() as this =
     member private this.VerifyFSXNoErrorList(fileContents : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
         AssertNoErrorsOrWarnings(project)  
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile (code : string) marker expected =
 
         let (_, _, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
@@ -117,14 +117,14 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile (code : string) marker expected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Not Containd In Fsx file     
+    //Verify QuickInfo Not Contained In Fsx file     
     member public this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile code marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 

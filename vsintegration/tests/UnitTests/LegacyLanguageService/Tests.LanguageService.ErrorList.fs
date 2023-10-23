@@ -112,7 +112,7 @@ type UsingMSBuild() as this =
             printf "%s\n" (error.ToString()) 
         Assert.IsTrue(errorList.IsEmpty)
     
-    //Verify the error list containd the expected string
+    //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         

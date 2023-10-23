@@ -593,7 +593,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         /// <summary>
         /// Called from Comment Selection. Default behavior is to insert line style comments
-        /// at beginning and end of selection. Override to add custome behavior.
+        /// at beginning and end of selection. Override to add custom behavior.
         /// </summary>
         /// <param name="span"></param>
         /// <param name="lineComment"></param>
@@ -603,7 +603,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         /// <summary>
         /// Called from Comment Selection. Default behavior is to insert block style comments
-        /// at beginning and end of selection. Override to add custome behavior.
+        /// at beginning and end of selection. Override to add custom behavior.
         /// </summary>
         /// <returns>The final span of the commented block including the comment delimiters</returns>
         private TextSpan CommentBlock(TextSpan span, string blockStart, string blockEnd)

@@ -534,19 +534,19 @@ type ArrayModule() =
     member this.Copy() =
         // int array
         let intSrc:int [] = [| 3;5;7 |]    
-        let intCopyed = Array.copy  intSrc
-        if intCopyed <> [| 3;5;7 |] then Assert.Fail()
+        let intCopied = Array.copy  intSrc
+        if intCopied <> [| 3;5;7 |] then Assert.Fail()
         
         // string array
         let stringSrc: string [] = [|"Lists"; "are";  "commonly"  |]
         
-        let strCopyed = Array.copy  stringSrc   
-        if strCopyed <> [|"Lists"; "are";  "commonly"  |] then Assert.Fail()
+        let strCopied = Array.copy  stringSrc   
+        if strCopied <> [|"Lists"; "are";  "commonly"  |] then Assert.Fail()
         
         // empty array
         let emptySrc :int[] = [| |]
-        let emptyCopyed = Array.copy emptySrc
-        if emptyCopyed <> [| |] then Assert.Fail()
+        let emptyCopied = Array.copy emptySrc
+        if emptyCopied <> [| |] then Assert.Fail()
 
         // null array
         let nullArr = null:int[]    

@@ -2668,7 +2668,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="path">full path to the subfolder we want to verify.</param>
         /// <param name="parent">the parent node where to add the subfolder if it does not exist.</param>
-        /// <returns>the foldernode correcsponding to the path.</returns>
+        /// <returns>the foldernode corresponding to the path.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "SubFolder")]
         public virtual FolderNode VerifySubFolderExists(string path, HierarchyNode parent)
         {

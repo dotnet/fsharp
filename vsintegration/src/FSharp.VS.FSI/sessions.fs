@@ -334,7 +334,7 @@ type FsiSession(sourceFile) =
     do readOutputAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
 
     let inputQueue = 
-        // Write the input asynchronously, freeing up the IDE thread to contrinue doing work
+        // Write the input asynchronously, freeing up the IDE thread to continue doing work
         // Force input to be written in UTF8 regardless of the apparent encoding.
         let inputWriter = new StreamWriter(cmdProcess.StandardInput.BaseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier=false), AutoFlush = false)
         MailboxProcessor<string>.Start(fun inbox -> 

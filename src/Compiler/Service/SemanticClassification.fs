@@ -176,7 +176,7 @@ module TcResolutionsExtensions =
                             | _ -> None
                         | _ -> None
 
-                    // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
+                    // Custom builders like 'async { }' are both Item.Value and Item.CustomBuilder.
                     // We should prefer the latter, otherwise they would not get classified as CEs.
                     let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
                         assert (cnrs.Length > 0)

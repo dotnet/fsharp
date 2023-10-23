@@ -23,7 +23,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public class ProjectReferenceNode : ReferenceNode
     {
         /// <summary>
-        /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
+        /// Contains either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
         /// </summary>
         private Task projectRefError;

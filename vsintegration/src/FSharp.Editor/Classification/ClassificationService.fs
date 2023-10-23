@@ -214,7 +214,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.
                 // We do this for find all references when it is populating results.
-                // We cache it temporarily so we do not have to continously call into the checker and perform a background operation.
+                // We cache it temporarily so we do not have to continuously call into the checker and perform a background operation.
                 let isOpenDocument = document.Project.Solution.Workspace.IsDocumentOpen document.Id
 
                 if not isOpenDocument then

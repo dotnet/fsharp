@@ -104,7 +104,7 @@ let CreateTableLayoutPanel columns =
 	panel.Dock <- DockStyle.Fill; 
 	panel
 
-/// Creats a PictureBox with the specified Bitmap	
+/// Creates a PictureBox with the specified Bitmap	
 let CreatePictureBox (bm:Bitmap) =
 	let pict = new PictureBox() in	
 	pict.Size <- bm.Size;	pict.Image <- bm;

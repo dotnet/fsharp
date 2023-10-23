@@ -3275,7 +3275,7 @@ query."
     [<Test>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
-    // quickinfo should be corroct including when the operator is causing an error
+    // quickinfo should be correct including when the operator is causing an error
     member public this.``Query.ArgumentToQuery.OperatorError``() =
         let fileContent ="""
             let numbers = [ 1;2; 8; 9; 15; 23; 3; 42; 4;0; 55;]
@@ -3290,7 +3290,7 @@ query."
     [<Test>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
-    // quickinfo should be corroct In a nested query
+    // quickinfo should be correct In a nested query
     member public this.``Query.ArgumentToQuery.InNestedQuery``() =
         let fileContent ="""
             open DataSource
