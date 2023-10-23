@@ -127,7 +127,8 @@ type FSharpReferencedProject =
         | :? FSharpReferencedProject as o ->
             match this, o with
             | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
-                projectOutputFile1 = projectOutputFile2 && FSharpProjectOptions.AreSameForChecking(options1, options2)
+                projectOutputFile1 = projectOutputFile2
+                && FSharpProjectOptions.AreSameForChecking(options1, options2)
             | PEReference (getStamp1, reader1), PEReference (getStamp2, reader2) ->
                 reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
             | ILModuleReference (projectOutputFile1, getStamp1, _), ILModuleReference (projectOutputFile2, getStamp2, _) ->
