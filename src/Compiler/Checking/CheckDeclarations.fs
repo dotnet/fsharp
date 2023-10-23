@@ -4069,6 +4069,10 @@ module TcDeclarations =
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
 
+        let isDelegateOrEnum = 
+            tcref.Deref.IsFSharpDelegateTycon ||
+            tcref.Deref.IsFSharpEnumTycon
+
         let reqTypars = tcref.Typars m
 
         // Member definitions are intrinsic (added directly to the type) if:
@@ -4104,7 +4108,7 @@ module TcDeclarations =
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, reqTypars
             else 
-                if isInSameModuleOrNamespace && isInterfaceOrDelegateOrEnum then 
+                if isInSameModuleOrNamespace && isDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
