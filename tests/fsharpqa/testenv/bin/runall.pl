@@ -4571,7 +4571,7 @@ sub RunMultiProcess() {
     my $cLoopActions;     # number of queue actions in this loop (used for deadlock detection)
 
     my @queueIdleTime;    # number of seconds each process is idle
-    my @queueEmptyTime;   # time when each process bacame idle
+    my @queueEmptyTime;   # time when each process became idle
 
     my @run_with;         # a semicolon separated list of each test the indexed test is run with
 

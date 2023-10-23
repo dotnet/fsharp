@@ -177,7 +177,7 @@ module Utils =
             let gtype = typedefof<Attributes<_>>.MakeGenericType([| typ |])
             // the Empty member is private due to the presence of the fsi file
             // but when getting rid of the fsi for diagnostic purpose, it becomes public
-            // this is the reason for having both Public and NonPublic flag bellow
+            // this is the reason for having both Public and NonPublic flag below
             let gmethod = gtype.GetMethod("Empty", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
             gmethod.Invoke(null, [||]) :?> obj array
 
@@ -893,7 +893,7 @@ module Misc =
             lazy
                 (match xmlDocDelayed with None -> assert false; "" | Some f -> f())
 
-        // Custom atttributes that we only compute once
+        // Custom attributes that we only compute once
         let customAttributesOnce =
             lazy
                 [|

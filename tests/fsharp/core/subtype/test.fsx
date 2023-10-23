@@ -356,7 +356,7 @@ module SimpleDatatypeInModuleThatFailedToLoad = begin
 end
     
     
-module AttrbuteArgTest = 
+module AttributeArgTest = 
     [<System.AttributeUsage (System.AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type RowAttribute(values: obj[]) = 

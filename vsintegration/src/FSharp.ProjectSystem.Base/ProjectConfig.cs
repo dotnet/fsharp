@@ -1954,7 +1954,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Now repaint references if that is needed. 
                 // We hardly rely here on the fact the ResolveAssemblyReferences target has been run as part of the build.
-                // One scenario to think at is when an assembly reference is renamed on disk thus becomming unresolvable, 
+                // One scenario to think at is when an assembly reference is renamed on disk thus becoming unresolvable, 
                 // but msbuild can actually resolve it.
                 // Another one if the project was opened only for browsing and now the user chooses to build or rebuild.
                 if (shouldRepaintReferences && (result.IsSuccessful))

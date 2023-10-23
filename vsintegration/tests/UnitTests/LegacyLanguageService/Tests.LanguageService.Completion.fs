@@ -2109,7 +2109,7 @@ let x = new MyClass2(0)
     // FEATURE: Pressing ctrl+space or ctrl+j will give a list of valid completions.
     
     [<Test>]
-    //Verified atleast "Some" is contained in the Ctrl-Space Completion list
+    //Verified at least "Some" is contained in the Ctrl-Space Completion list
     member public this.``NonDotCompletion``() =  
         this.AssertCtrlSpaceCompletionContains(
             ["let x = S"],
@@ -7514,7 +7514,7 @@ let rec f l =
 
     //Regression Test of 4405:intelisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
     [<Test>]
-    member this.``Regression4405.Identifier.ReBinded``() =
+    member this.``Regression4405.Identifier.ReBound``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 let f x = 

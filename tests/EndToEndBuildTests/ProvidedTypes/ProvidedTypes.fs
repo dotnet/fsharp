@@ -803,7 +803,7 @@ namespace ProviderImplementation.ProvidedTypes
                 lazy
                     (match xmlDocDelayed with None -> assert false; "" | Some f -> f())
 
-            // Custom atttributes that we only compute once
+            // Custom attributes that we only compute once
             let customAttributesOnce =
                 lazy
                    [| if hideObjectMethods then yield mkEditorHideMethodsCustomAttributeData()

@@ -173,7 +173,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 pathProperty = prj.Properties.Item("FullPath");
                 if (null == pathProperty)
                 {
-                    // The full path should alway be availabe, but if this is not the
+                    // The full path should alway be available, but if this is not the
                     // case then we have to skip it.
                     return;
                 }

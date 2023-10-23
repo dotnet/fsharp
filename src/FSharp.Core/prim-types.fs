@@ -5845,7 +5845,7 @@ namespace Microsoft.FSharp.Core
                     else                                               false              
 
                 // NOTE: The ordering Before is an argument. It will be < or > depending on direction.
-                // We assume assume "Before n m" 
+                // We assume "Before n m" 
                 abstract Before: 'T -> 'T -> bool
                 abstract Equal: 'T -> 'T -> bool
                 abstract Step: 'T -> 'T 

@@ -973,7 +973,7 @@ type DontPressThisButtonAttribute =
   end
 
 // BUG:
-type [<DontPressThisButton("Please don't press this again")>] button = Buttpon
+type [<DontPressThisButton("Please don't press this again")>] button = Button
 let [<DontPressThisButton("Please don't press this again")>] button () = 1
 
 

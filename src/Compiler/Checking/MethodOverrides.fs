@@ -345,7 +345,7 @@ module DispatchSlotChecking =
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
-        // we accumulate those to compose a more complete error message, see noimpl() bellow.
+        // we accumulate those to compose a more complete error message, see noimpl() below.
         let missingOverloadImplementation = ResizeArray()
 
         for reqdSlot in dispatchSlots do

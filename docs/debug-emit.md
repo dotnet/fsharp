@@ -480,7 +480,7 @@ See [shadowed locals mini-spec](https://github.com/dotnet/fsharp/pull/12018).
 
 ### Discriminated union debug display text
 
-For discriminated union types and all implied subtypes we emit a `DebuggerDisplayAttrubte` and a private `__DebugDisplay()` method that uses `sprintf "%+0.8A" obj` to format the object.
+For discriminated union types and all implied subtypes we emit a `DebuggerDisplayAttribute` and a private `__DebugDisplay()` method that uses `sprintf "%+0.8A" obj` to format the object.
 
 ## Missing debug emit
 

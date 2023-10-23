@@ -62,7 +62,7 @@ module OverloadSamples =
     // we would use the standard F# pattern of defining a type 
     // (i.e. it's data representation), then defining
     // a module that carries the operations associated with the type, then 
-    // using an augmentation to assocaite the operations with the type.  However
+    // using an augmentation to associate the operations with the type.  However
     // here we've just added the augmentation straight away.
 
     type IntVector = 

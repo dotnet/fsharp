@@ -485,7 +485,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Improved batch compilation performance (up to 30% faster depending on the project type)
 * Support for editing `#r "nuget:..."` scripts in Visual Studio
 * Various fixes for F# script editing performance, especially for scripts with significant dependencies getting loaded
-* Support for compiling against .NET Core on Windows when no STAThread is availble
+* Support for compiling against .NET Core on Windows when no STAThread is available
 * Support for validating signatures against XML doc comments when compiling via `/warnon:3390`
 * Fixed a bug where FSharp.Core XML doc contents were not displayed in F# scripts in Visual Studio
 * Support for strong name signing against F# projects when compiling using the .NET SDK
@@ -1509,7 +1509,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 ### 1.4.1 -
 
-* Add pause before backgrounnd work starts. The FCS request queue must be empty for 1 second before work will start
+* Add pause before background work starts. The FCS request queue must be empty for 1 second before work will start
 * Write trace information about the reactor queue to the event log
 * Rewrite reactor to consistently prioritize queued work
 * Implement cancellation for queued work if it is cancelled prior to being executed

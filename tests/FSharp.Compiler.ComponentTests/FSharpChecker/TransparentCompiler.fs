@@ -752,7 +752,7 @@ let ``File moving test`` signatureFiles =
 
 [<GiraffeTheory>]
 [<InlineData true>]
-let ``What happens if bootrstapInfoStatic needs to be recomputed`` _ =
+let ``What happens if bootstrapInfoStatic needs to be recomputed`` _ =
 
     let giraffeProject = SyntheticProject.CreateFromRealProject giraffeSignaturesDir
     let giraffeProject = { giraffeProject with OtherOptions = "--nowarn:FS3520"::giraffeProject.OtherOptions }

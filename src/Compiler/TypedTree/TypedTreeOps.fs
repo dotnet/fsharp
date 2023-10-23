@@ -6373,7 +6373,7 @@ let rec remarkExpr (m: range) x =
 
         // This code allows a feature where if a 'while'/'for' etc in a computation expression is
         // implemented using code inlining and is ultimately implemented by a corresponding construct somewhere
-        // in the remark'd code then aat least one debug point is recovered, based on the noted debug point for the original construct.
+        // in the remark'd code then at least one debug point is recovered, based on the noted debug point for the original construct.
         //
         // However it is imperfect, since only one debug point is recovered
         let op = 

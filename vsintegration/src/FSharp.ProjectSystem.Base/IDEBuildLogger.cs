@@ -206,7 +206,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // the pane reference we have will no longer accept input from us.
             // But here there is no race, because
             //  - we only log user-invoked builds to the Output window
-            //  - user-invoked buils always run MSBuild ASYNC
+            //  - user-invoked builds always run MSBuild ASYNC
             //  - in an ASYNC build, the BuildCoda uses UIThread.Run() to schedule itself to be run on the UI thread
             //  - UIThread.Run() protects against re-entrancy and thus always preserves the queuing order of its actions
             //  - the pane is good until at least the point when BuildCoda runs and we declare to MSBuild that we are finished with this build

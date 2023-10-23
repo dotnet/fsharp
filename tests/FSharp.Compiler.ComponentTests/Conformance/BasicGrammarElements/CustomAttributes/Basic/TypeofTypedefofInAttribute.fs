@@ -2,7 +2,7 @@
 #light
 
 // FSB 3565, verify typeof<_> and typedefof<_> can be used in
-// attributes. Also, verify that their behaivor is the same in
+// attributes. Also, verify that their behavior is the same in
 // attributes as in normal usage.
 
 open System

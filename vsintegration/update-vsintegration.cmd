@@ -184,7 +184,7 @@ set COMPILER47ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\F
 rem Try to create target and backup folders, if needed
 set RESTOREBASE=%RESTOREDIR%
 
-rem Only create backup dirs if we are backupping or restoring 
+rem Only create backup dirs if we are backing-up or restoring 
 rem (in the latter case, the directories should already be there, but if not, it prevents errors later on)
 if "!DEPLOY!" == "no" (
     CALL :tryCreateFolder "!RESTOREBASE!\compiler_sdk"
