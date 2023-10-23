@@ -17,9 +17,9 @@ let updateOk r = { r with F1 = 1 }
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
     |> withLangVersion80
+    |> withOptions ["--warnon:FS3560"]
     |> typecheck
     |> shouldFail
-    |> withOptions ["--warnon:FS3560"]
     |> withDiagnostics [
         (Warning 3560, Line 7, Col 20, Line 7, Col 46, "This copy-and-update record expression changes all fields of record type 'Records.R'. Consider using the record construction syntax instead.")
     ]
