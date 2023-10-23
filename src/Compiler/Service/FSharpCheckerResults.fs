@@ -127,7 +127,7 @@ type FSharpReferencedProject =
         | :? FSharpReferencedProject as o ->
             match this, o with
             | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
-                projectOutputFile1 = projectOutputFile2 && options1 = options2
+                projectOutputFile1 = projectOutputFile2 && FSharpProjectOptions.AreSameForChecking(options1, options2)
             | PEReference (getStamp1, reader1), PEReference (getStamp2, reader2) ->
                 reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
             | ILModuleReference (projectOutputFile1, getStamp1, _), ILModuleReference (projectOutputFile2, getStamp2, _) ->
@@ -174,14 +174,7 @@ and FSharpProjectOptions =
             && options1.UnresolvedReferences = options2.UnresolvedReferences
             && options1.OriginalLoadReferences = options2.OriginalLoadReferences
             && options1.ReferencedProjects.Length = options2.ReferencedProjects.Length
-            && (options1.ReferencedProjects, options2.ReferencedProjects)
-               ||> Array.forall2 (fun r1 r2 ->
-                   match r1, r2 with
-                   | FSharpReferencedProject.FSharpReference (n1, a), FSharpReferencedProject.FSharpReference (n2, b) ->
-                       n1 = n2 && FSharpProjectOptions.AreSameForChecking(a, b)
-                   | FSharpReferencedProject.PEReference (getStamp1, reader1), FSharpReferencedProject.PEReference (getStamp2, reader2) ->
-                       reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
-                   | _ -> false)
+            && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
