@@ -448,9 +448,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// The reason while the file has chnaged on disk.
+        /// The reason while the file has changed on disk.
         /// </summary>
-        /// <value>The reason while the file has chnaged on disk.</value>
+        /// <value>The reason while the file has changed on disk.</value>
         public _VSFILECHANGEFLAGS FileChangeFlag
         {
             get
@@ -461,7 +461,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the event args for the active configuration chnage event.
+    /// Defines the event args for the active configuration change event.
     /// </summary>
     internal class ActiveConfigurationChangedEventArgs : EventArgs
     {

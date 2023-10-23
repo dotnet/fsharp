@@ -178,7 +178,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     |]
 
                 use _eventDuration =
-                    TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
+                    TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticClassifications, eventProps)
 
                 if not isOpenDocument then
                     let classifiedSpans =
@@ -230,7 +230,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     | ValueNone ->
@@ -244,7 +244,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService))
 
@@ -265,7 +265,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     | ValueNone ->
@@ -280,7 +280,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService))
 

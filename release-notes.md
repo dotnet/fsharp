@@ -101,7 +101,7 @@ The primary namespaces are now:
 
 ```
 FSharp.Compiler.IO                // FileSystem
-FSharp.Compiler.CodeAnalysis      // FSharpChecker, FSharpCheckFileResults, FSharpChecProjectResults and friends
+FSharp.Compiler.CodeAnalysis      // FSharpChecker, FSharpCheckFileResults, FSharpCheckProjectResults and friends
 FSharp.Compiler.Diagnostics       // FSharpDiagnostic and friends
 FSharp.Compiler.EditorServices    // Misc functionality for editors, e.g. interface stub generation
 FSharp.Compiler.Interactive.Shell // F# Interactive

@@ -165,7 +165,7 @@ module String =
     /// <param name="action">The function to be applied to each character of the string.</param>
     /// <param name="str">The input string.</param>
     ///
-    /// <example id="iter-1"> Printing the ASCII code for each characater in the string
+    /// <example id="iter-1"> Printing the ASCII code for each character in the string
     /// <code lang="fsharp">
     /// let input = "Hello"
     /// input |> String.iter (fun c -> printfn "%c %d" c (int c))
@@ -189,7 +189,7 @@ module String =
     /// <param name="str">The input string.</param>
     ///
     /// <example id="iteri-1"> Numbering the characters and printing the associated ASCII code
-    /// for each characater in the input string
+    /// for each character in the input string
     /// <code lang="fsharp">
     /// let input = "Hello"
     /// input |> String.iteri (fun i c -> printfn "%d. %c %d" (i + 1) c (int c))

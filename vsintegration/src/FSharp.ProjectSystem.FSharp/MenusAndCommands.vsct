@@ -5,7 +5,7 @@
   <Extern href="vsshlids.h"/>
   <Include href="KnownImageIds.vsct"/>
 
-  <!-- Stake a claime to existing commands so they aren't marked as unused and removed. -->
+  <!-- Stake a claim to existing commands so they aren't marked as unused and removed. -->
   <UsedCommands>
     <UsedCommand guid="guidVSStd97" id="cmdidCut"/>
     <UsedCommand guid="guidVSStd97" id="cmdidCopy"/>

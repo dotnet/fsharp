@@ -44,5 +44,5 @@ set TEST_UPDATE_BSL=1
 
 Updating baselines en-masse should be done very carefully and subject to careful code review.   Where possible the
 compiler change causing the en-masse update should be isolated and minimized so it is obvious at review time that no other
-code generation chagnes will be caused.
+code generation changes will be caused.
 

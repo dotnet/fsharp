@@ -385,8 +385,8 @@ type ArrayModule() =
         // int array
         let intSrc:int [] = [| 1..100 |]    
         let funcInt x = if (x%5=0) then Some x else None       
-        let intChoosed : int[] = chooseInt funcInt intSrc
-        if intChoosed.[1] <> 10 then Assert.Fail()
+        let intChosen : int[] = chooseInt funcInt intSrc
+        if intChosen.[1] <> 10 then Assert.Fail()
         
         // string array
         let stringSrc: string [] = "Lists are a commonly used data structure. They are not mutable, i.e., you can't delete an element of a list  instead you create a new list with the element deleted. List values often share storage under the hood, i.e., a list value only allocate more memory when you actually execute construction operations.".Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
@@ -394,13 +394,13 @@ type ArrayModule() =
                            | "list"-> Some x
                            | "List" -> Some x
                            | _ -> None
-        let strChoosed : string[]  = chooseString funcString stringSrc   
-        if strChoosed.[1].ToLower() <> "list" then Assert.Fail()
+        let strChosen : string[]  = chooseString funcString stringSrc   
+        if strChosen.[1].ToLower() <> "list" then Assert.Fail()
         
         // empty array
         let emptySrc :int[] = [| |]
-        let emptyChoosed = chooseInt funcInt emptySrc
-        Assert.True( (emptyChoosed = [| |]) )
+        let emptyChosen = chooseInt funcInt emptySrc
+        Assert.True( (emptyChosen = [| |]) )
 
         // null array
         let nullArr = null:int[]    

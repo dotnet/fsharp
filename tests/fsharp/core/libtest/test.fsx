@@ -5554,7 +5554,7 @@ module TripleQuoteStrings =
 ""world""" "Hello \r\n\"\"world"
 #endif
 #endif
-    // cehcek there is no escaping...
+    // check there is no escaping...
     check "ckjenew-0ecwe5" """Hello \"world""" "Hello \\\"world"
     check "ckjenew-0ecwe6" """Hello \\"world""" "Hello \\\\\"world"
     check "ckjenew-0ecwe7" """Hello \nworld""" "Hello \\nworld"

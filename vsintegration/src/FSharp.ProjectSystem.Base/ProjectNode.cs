@@ -3964,7 +3964,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="eventArgs">The event args</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2109:ReviewVisibleEventHandlers",
             Justification = "This method will give the opportunity to update global properties based on active configuration change. " +
-            "There is no security threat that could otherwise not be reached by listening to configuration chnage events.")]
+            "There is no security threat that could otherwise not be reached by listening to configuration change events.")]
         internal virtual void OnHandleConfigurationRelatedGlobalProperties(object sender, ActiveConfigurationChangedEventArgs eventArgs)
         {
             Debug.Assert(eventArgs != null, "Wrong hierarchy passed as event arg for the configuration change listener.");

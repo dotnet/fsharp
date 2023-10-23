@@ -1655,7 +1655,7 @@ type UsingMSBuild() as this =
         let d = countDisposals()
         // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
         Assert.IsTrue((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
-        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit clearing")
         checkConfigsDisposed()
 
     [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]

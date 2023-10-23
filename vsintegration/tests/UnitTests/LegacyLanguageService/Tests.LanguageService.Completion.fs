@@ -2576,7 +2576,7 @@ let aaaaaa = 0
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
 
     [<Test>]
-    /// This is a sanity check that the multiple-line case is much the same as the single-line cae
+    /// This is a sanity check that the multiple-line case is much the same as the single-line case
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
     [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]

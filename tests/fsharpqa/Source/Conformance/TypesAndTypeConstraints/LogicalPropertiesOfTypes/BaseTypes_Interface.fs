@@ -14,7 +14,7 @@ type InterfaceType =
 
 // As far as reflection is concerned, interfaces do have null as a basetype
 if baseTypeName<InterfaceType> <> null then exit 1
-// But for purposes of 'compiler goo' they do not, such as coersion between types.
+// But for purposes of 'compiler goo' they do not, such as coercion between types.
 type AClass() =
     interface InterfaceType
     

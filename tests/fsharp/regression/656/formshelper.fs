@@ -72,7 +72,7 @@ let CreateTrackBar label extent tickFreq value changedHandler =
 	slider.ValueChanged.AddHandler(new EventHandler(changedHandler)); 
 	slider	
 	
-/// Create a combox box with the specified names
+/// Create a combo box with the specified names
 let CreateCombo names =
 	let combo = new ComboBox() in
 	Array.iter ( fun name -> let _ = combo.Items.Add(name) in () ) names;

@@ -1282,9 +1282,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Returns the Cannonical Name
+        /// Returns the Canonical Name
         /// </summary>
-        /// <returns>Cannonical Name</returns>
+        /// <returns>Canonical Name</returns>
         public virtual string GetCanonicalName()
         {
             return this.GetMkDocument();

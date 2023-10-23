@@ -488,7 +488,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                                   (line,idx)
                               if decls.GetCount("") > 0 && 
                                   (source.Service.Preferences.AutoListMembers || completeWord || reason = BackgroundRequestReason.DisplayMemberList) &&
-                                  line = req.Line && idx = req.Col // ensure user has not chaged cursor location (note: ideally, we would allow typing if still in 'applicative span' for completion)
+                                  line = req.Line && idx = req.Col // ensure user has not changed cursor location (note: ideally, we would allow typing if still in 'applicative span' for completion)
                                   then
                                   source.CompletionSet.Init(req.View, decls, completeWord)
                           source.ResetFSharpIntelliSenseToAppearAdornment()

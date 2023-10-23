@@ -31,10 +31,10 @@ module TelemetryEvents =
     let GetSymbolUsesInProjectsFinished = "getsymbolusesinprojectsfinished"
 
     [<Literal>]
-    let AddSyntacticCalssifications = "addsyntacticclassifications"
+    let AddSyntacticClassifications = "addsyntacticclassifications"
 
     [<Literal>]
-    let AddSemanticCalssifications = "addsemanticclassifications"
+    let AddSemanticClassifications = "addsemanticclassifications"
 
     [<Literal>]
     let GetDiagnosticsForDocument = "getdiagnosticsfordocument"
