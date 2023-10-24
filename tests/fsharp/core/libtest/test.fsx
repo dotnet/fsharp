@@ -136,7 +136,7 @@ let getObjectHashCode (x:'a) = (box x).GetHashCode()
 let (===) (x:'a) (y:'a) = (box x).Equals(box y)
 
 let _ = stdout.WriteLine "90erw9"
-let _ = if true && true then stdout.WriteLine "YES" else  reportFailure "intial test"
+let _ = if true && true then stdout.WriteLine "YES" else  reportFailure "initial test"
 let _ = if true && false then reportFailure "basic test 1" else  stdout.WriteLine "YES"
 let _ = if false && true then reportFailure "basic test 2" else  stdout.WriteLine "YES"
 let _ = if false && false then reportFailure "basic test 3" else  stdout.WriteLine "YES"

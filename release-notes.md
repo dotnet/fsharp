@@ -1621,7 +1621,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 ### 0.0.80 -
 
-* Update to latest F# 3.1.3 (inclunding updated FsLex/FsYacc used in build of FCS)
+* Update to latest F# 3.1.3 (including updated FsLex/FsYacc used in build of FCS)
 * Report printf specifiers from Service API
 * Improve Accessibility of non-F# symbols
 
@@ -2096,7 +2096,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Bugfix [#61](https://visualfsharp.codeplex.com/workitem/61) Nonverifiable code generated with units of measure conversion
 * Bugfix [#68](https://visualfsharp.codeplex.com/workitem/68) BadImageFormatException with Units of Measure
 * Bugfix [#146](https://visualfsharp.codeplex.com/workitem/146) BadImageFormatException in both Release and Debug build with units of measure
-* Bugfix: Incorrent cross-module inlining between different .NET profiles
+* Bugfix: Incorrect cross-module inlining between different .NET profiles
 * Bugfix: Properly document exceptions in `Array` module
 * Bugfix [#24](https://visualfsharp.codeplex.com/workitem/24): Error reporting of exceptions in type providers `AddMemberDelayed`
 * Bugfix [#13](https://github.com/fsharp/fsharp/issues/13): Error on FSI terminal resize

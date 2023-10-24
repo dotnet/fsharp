@@ -2073,7 +2073,7 @@ module Seq =
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
     /// </code>
-    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 1; -1; 2 }</c>. Note <c>0</c> is the intial
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 1; -1; 2 }</c>. Note <c>0</c> is the initial
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
     /// </example>
     [<CompiledName("Scan")>]
@@ -2106,7 +2106,7 @@ module Seq =
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
     /// </code>
-    /// Evaluates to a sequence yielding the same results as <c>seq { 2; 1; 3; 0 }</c> by processing each input from back to front. Note <c>0</c> is the intial
+    /// Evaluates to a sequence yielding the same results as <c>seq { 2; 1; 3; 0 }</c> by processing each input from back to front. Note <c>0</c> is the initial
     /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state, and the states
     /// are produced from back to front.
     /// </example>

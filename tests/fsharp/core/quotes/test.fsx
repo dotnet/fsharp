@@ -2561,7 +2561,7 @@ module LoopsOverArraysInQuotations =
         )
 
 module QuotationOfResizeArrayIteration = 
-    // Quotation of an iteration which implictly does a "use" on a value of struct type
+    // Quotation of an iteration which implicitly does a "use" on a value of struct type
     let q = 
       let a = ResizeArray<_>()
       <@ for i in a do ignore i @>

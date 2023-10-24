@@ -251,7 +251,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Gets or sets a value indicatingwhether the object has not been modified since last being saved or opened.
+        /// Gets or sets a value indicating whether the object has not been modified since last being saved or opened.
         /// </summary>
         public virtual bool Saved
         {

@@ -816,7 +816,7 @@ type PropInfo =
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member IsSetterInitOnly: bool
 
     /// Is the property requied (has the RequiredMemberAttribute).

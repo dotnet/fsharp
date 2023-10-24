@@ -683,7 +683,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                                     // Target range will point to .fsi file if only there is one so we can just use Roslyn navigation service.
                                     do gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
                                 else
-                                    // Navigation request was made in a .fs file, so we try to find the implmentation of the symbol at target range.
+                                    // Navigation request was made in a .fs file, so we try to find the implementation of the symbol at target range.
                                     // This is the part that may take some time, because of type checks involved.
                                     let! result = gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range)
 

@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #Attributes
 // Regression: FSB 4014
-// Need to tighten up our imlementation of StructLayout.Sequential.
+// Need to tighten up our implementation of StructLayout.Sequential.
 
 module PositiveTests =
 

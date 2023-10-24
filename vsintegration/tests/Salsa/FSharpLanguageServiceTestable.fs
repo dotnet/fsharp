@@ -66,7 +66,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.Unhooked = unhooked
     member this.DocumentationBuilder = documentationBuilder.Value
     
-    /// Handle late intialization pieces
+    /// Handle late initialization pieces
     member this.Initialize (sp, dp, prefs, sourceFact) = 
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())

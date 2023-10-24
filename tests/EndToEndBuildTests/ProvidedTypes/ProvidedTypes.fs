@@ -14035,14 +14035,14 @@ namespace ProviderImplementation.ProvidedTypes
                         |> Seq.choose (function :? ProvidedConstructor as pcinfo when not pcinfo.IsTypeInitializer -> Some pcinfo | _ -> None)
                         |> Seq.toList
 
-                    let implictCtorArgs =
+                    let implicitCtorArgs =
                         match ctors  |> List.filter (fun x -> x.IsImplicitConstructor)  with
                         | [] -> []
                         | [ pcinfo ] -> [ for p in pcinfo.GetParameters() -> p ]
                         | _ -> failwith "at most one implicit constructor allowed"
 
                     let implicitCtorArgsAsFields =
-                        [ for ctorArg in implictCtorArgs ->
+                        [ for ctorArg in implicitCtorArgs ->
                               tb.DefineField(ctorArg.Name, transType ctorArg.ParameterType, FieldAttributes.Private) ]
 
 

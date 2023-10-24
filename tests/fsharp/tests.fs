@@ -1763,7 +1763,7 @@ module RegressionTests =
 #if !NETCOREAPP
 
     [<Test>]
-    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+    let ``SRTP doesn't handle calling member hiding inherited members`` () =
         let cfg = 
             testConfig "regression/5531"
        

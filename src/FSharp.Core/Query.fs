@@ -1605,7 +1605,7 @@ module Query =
     // propagate a immutable-->mutable-->immutable translation if any.
     //
     /// This is used on recursive translations of yielded elements to translate nested queries
-    /// in 'yield' position and still propagate information about a possible imutable->mutable->mutable
+    /// in 'yield' position and still propagate information about a possible immutable->mutable->mutable
     //  translation.
     //      e.g. yield (1, query { ... })
     and TransInnerNoCheck e =

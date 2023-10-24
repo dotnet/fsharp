@@ -2782,7 +2782,7 @@ type internal FsiDynamicCompiler
 
                             reraise ())
 
-    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, directiveKind, path, show, m) =
+    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, directiveKind, path, show, m) =
         let dm =
             fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(
                 tcConfigB.compilerToolPaths,
@@ -2830,7 +2830,7 @@ type internal FsiDynamicCompiler
                     st),
                  (fun st (m, path, directive) ->
                      let st, _ =
-                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, st, directive, path, false, m)
+                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
                      st),
                  (fun _ _ -> ()))
@@ -3731,10 +3731,10 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [ path ], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
         | ParsedHashDirective("i", ParsedHashDirectiveArguments [ path ], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Include, path, true, m)
 
         | ParsedHashDirective("I", ParsedHashDirectiveArguments [ path ], m) ->
             tcConfigB.AddIncludePath(m, path, tcConfigB.implicitIncludeDir)

@@ -97,7 +97,7 @@ module CompilationTests = begin
      *INDEX: tlr polymorphic constants?
      *-------------------------------------------------------------------------*)    
 
-    (* Concerned about polymorphic constants. Arity 0, but infact type-functions. *)
+    (* Concerned about polymorphic constants. Arity 0, but in fact type-functions. *)
     let enclosing1 (a:int) =
       let tlrInnerFreePolymorphicConstant = None in
       if  tlrInnerFreePolymorphicConstant = None then 0 else 1

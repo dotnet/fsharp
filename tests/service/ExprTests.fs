@@ -171,8 +171,8 @@ module internal Utils =
         | [t] :: a ->
             "member " + t.CompiledName + "." + o.Signature.Name + printCurriedParams a + " = " + printExpr 10 o.Body
         | _ -> failwith "wrong this argument in object expression override"
-    and printIimpls iis = String.concat ";" (List.map printImlementation iis)
-    and printImlementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
+    and printIimpls iis = String.concat ";" (List.map printImplementation iis)
+    and printImplementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
 
     let rec printFSharpDecls prefix decls =
         seq {

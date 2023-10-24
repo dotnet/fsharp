@@ -105,7 +105,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
+%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immediately followed by 'if', when they become 'ELIF' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
