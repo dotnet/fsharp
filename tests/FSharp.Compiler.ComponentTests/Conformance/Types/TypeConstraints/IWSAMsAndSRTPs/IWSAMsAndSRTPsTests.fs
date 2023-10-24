@@ -931,18 +931,23 @@ module StaticAbstractBug =
     type IOperation =
         static abstract member Execute: unit -> unit
         abstract member Execute2: unit -> unit
+        static abstract member Property: int
+        abstract member Property2: int
 
     type FaultyOperation() =
         interface IOperation with
             member _.Execute() = ()
             member _.Execute2() = ()
+            member this.Property = 0
+            member this.Property2 = 0
         """
          |> withOptions [ "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 855, Line 9, Col 22, Line 9, Col 29, "No abstract or interface member was found that corresponds to this override")
+             (Error 855, Line 11, Col 22, Line 11, Col 29, "No abstract or interface member was found that corresponds to this override")
+             (Error 855, Line 13, Col 25, Line 13, Col 33, "No abstract or interface member was found that corresponds to this override")
          ]
          
     [<Fact>]
