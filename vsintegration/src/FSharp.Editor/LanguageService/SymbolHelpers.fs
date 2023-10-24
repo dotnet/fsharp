@@ -110,12 +110,12 @@ module internal SymbolHelpers =
 
                 let! otherFileCheckResults =
                     match currentDocument.Project.Solution.TryGetDocumentFromPath otherFile with
-                    | Some doc ->
+                    | ValueSome doc ->
                         cancellableTask {
                             let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
                             return [ checkFileResults, doc ]
                         }
-                    | None -> CancellableTask.singleton []
+                    | ValueNone -> CancellableTask.singleton []
 
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults

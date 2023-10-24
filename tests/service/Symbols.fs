@@ -952,3 +952,126 @@ let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Ba
             assertRange (4, 87) (4, 90) fieldSymbolUse.Range
 
         | _ -> Assert.Fail "Symbol was not FSharpField"
+
+module ComputationExpressions =
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder = Builder ()
+
+let x = builder { return 3 }
+let y = builder
+let z = Builder () { return 3 }
+"""
+
+        shouldEqual
+            [
+                // type Builder () =
+                (2, 5), false
+
+                // … = Builder ()
+                (6, 14), false
+
+                // let builder = …
+                (6, 4), false
+
+                // let x = builder { return 3 }
+                (8, 8), false   // Item.Value _
+                (8, 8), true    // Item.CustomBuilder _
+
+                // let y = builder
+                (9, 8), false
+
+                // let z = Builder () { return 3 }
+                (10, 8), false
+            ]
+            [
+                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
+                    match symbolUse.Symbol.DisplayName with
+                    | "Builder" | "builder" -> (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
+                    | _ -> ()
+            ]
+
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder<…> { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder<'T> () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder<'T> = Builder<'T> ()
+
+let x = builder { return 3 }
+let y = builder<int> { return 3 }
+let z = builder<_> { return 3 }
+let p = builder<int>
+let q<'T> = builder<'T>
+"""
+
+        shouldEqual
+            [
+                // let builder<'T> = Builder<'T> ()
+                (6, 4), false
+
+                // let x = builder { return 3 }
+                (8, 8), false   // Item.Value _
+                (8, 8), true    // Item.CustomBuilder _
+
+                // let y = builder<int> { return 3 }
+                (9, 8), false   // Item.Value _
+                (9, 8), true    // Item.CustomBuilder _
+
+                // let z = builder<_> { return 3 }
+                (10, 8), false  // Item.Value _
+                (10, 8), true   // Item.CustomBuilder _
+
+                // let p = builder<int>
+                (11, 8), false
+
+                // let q<'T> = builder<'T>
+                (12, 12), false
+            ]
+            [
+                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
+                    if symbolUse.Symbol.DisplayName = "builder" then
+                        (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
+            ]
+
+    [<Test>]
+    let ``IsFromComputationExpression only returns true for 'builder' in 'builder () { … }'`` () =
+        let _, checkResults = getParseAndCheckResults """
+type Builder () =
+    member _.Return x = x
+    member _.Run x = x
+
+let builder () = Builder ()
+
+let x = builder () { return 3 }
+let y = builder ()
+let z = builder
+"""
+
+        shouldEqual
+            [
+                // let builder () = Builder ()
+                (6, 4), false
+
+                // let x = builder () { return 3 }
+                (8, 8), false   // Item.Value _
+                (8, 8), true    // Item.CustomBuilder _
+
+                // let y = builder ()
+                (9, 8), false
+
+                // let z = builder
+                (10, 8), false
+            ]
+            [
+                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
+                    if symbolUse.Symbol.DisplayName = "builder" then
+                        (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
+            ]

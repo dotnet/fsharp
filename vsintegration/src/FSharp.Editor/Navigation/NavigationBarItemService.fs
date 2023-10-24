@@ -9,6 +9,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.EditorServices
+open CancellableTasks
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit FSharpNavigationBarItem(text, glyph, spans, childItems)
@@ -20,10 +21,11 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
 
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> =
-            asyncMaybe {
-                let! parseResults =
-                    document.GetFSharpParseResultsAsync(nameof (FSharpNavigationBarItemService))
-                    |> liftAsync
+            cancellableTask {
+
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigationBarItemService))
 
                 let navItems = Navigation.getNavigation parseResults.ParseTree
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -31,27 +33,30 @@ type internal FSharpNavigationBarItemService [<ImportingConstructor>] () =
                 let rangeToTextSpan range =
                     RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
 
-                return
-                    navItems.Declarations
-                    |> Array.choose (fun topLevelDecl ->
-                        rangeToTextSpan (topLevelDecl.Declaration.Range)
-                        |> Option.map (fun topLevelTextSpan ->
-                            let childItems =
-                                topLevelDecl.Nested
-                                |> Array.choose (fun decl ->
-                                    rangeToTextSpan (decl.Range)
-                                    |> Option.map (fun textSpan ->
-                                        NavigationBarSymbolItem(decl.LogicalName, decl.RoslynGlyph, [| textSpan |], null)
-                                        :> FSharpNavigationBarItem))
+                if navItems.Declarations.Length = 0 then
+                    return emptyResult
+                else
 
-                            NavigationBarSymbolItem(
-                                topLevelDecl.Declaration.LogicalName,
-                                topLevelDecl.Declaration.RoslynGlyph,
-                                [| topLevelTextSpan |],
-                                childItems
-                            )
-                            :> FSharpNavigationBarItem))
-                    :> IList<_>
+                    return
+                        navItems.Declarations
+                        |> Array.chooseV (fun topLevelDecl ->
+                            rangeToTextSpan (topLevelDecl.Declaration.Range)
+                            |> ValueOption.map (fun topLevelTextSpan ->
+                                let childItems =
+                                    topLevelDecl.Nested
+                                    |> Array.chooseV (fun decl ->
+                                        rangeToTextSpan (decl.Range)
+                                        |> ValueOption.map (fun textSpan ->
+                                            NavigationBarSymbolItem(decl.LogicalName, decl.RoslynGlyph, [| textSpan |], null)
+                                            :> FSharpNavigationBarItem))
+
+                                NavigationBarSymbolItem(
+                                    topLevelDecl.Declaration.LogicalName,
+                                    topLevelDecl.Declaration.RoslynGlyph,
+                                    [| topLevelTextSpan |],
+                                    childItems
+                                )
+                                :> FSharpNavigationBarItem))
+                        :> IList<_>
             }
-            |> Async.map (Option.defaultValue emptyResult)
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> CancellableTask.start cancellationToken

@@ -97,8 +97,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                         [|
                             for symbolUse in symbolUses do
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
-                                | None -> ()
-                                | Some span ->
+                                | ValueNone -> ()
+                                | ValueSome span ->
                                     yield
                                         {
                                             IsDefinition = symbolUse.IsFromDefinition

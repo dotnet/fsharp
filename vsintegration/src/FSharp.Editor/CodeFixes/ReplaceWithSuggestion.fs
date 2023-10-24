@@ -19,7 +19,7 @@ open CancellableTasks
 type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0495")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0495", "FS1129")
 
     override this.RegisterCodeFixesAsync context =
         if context.Document.Project.IsFSharpCodeFixesSuggestNamesForErrorsEnabled then
