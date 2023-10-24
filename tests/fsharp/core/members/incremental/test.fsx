@@ -85,7 +85,7 @@ module Misc = begin
 end
 
 
-//! Wire prevously
+//! Wire previously
     
 (* accepted *)
 module WireOld = begin

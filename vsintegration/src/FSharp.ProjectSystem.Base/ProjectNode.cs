@@ -766,7 +766,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The target name that will be used for evaluating the project file (i.e., pseudo-builds).
         /// This target is used to trigger a build with when the project system changes. 
-        /// Example: The language projrcts are triggering a build with the Compile target whenever 
+        /// Example: The language projects are triggering a build with the Compile target whenever 
         /// the project system changes.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ReEvaluate")]
@@ -2808,7 +2808,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Recursevily walks the hierarchy nodes and redraws the state icons
+        /// Recursively walks the hierarchy nodes and redraws the state icons
         /// </summary>
         public override void UpdateSccStateIcons()
         {
@@ -5563,7 +5563,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 selectorData = (VSCOMPONENTSELECTORDATA)Marshal.PtrToStructure(ptr, typeof(VSCOMPONENTSELECTORDATA));
                 if (null == references.AddReferenceFromSelectorData(selectorData))
                 {
-                    //Skip further proccessing since a reference has to be added
+                    //Skip further processing since a reference has to be added
                     pResult[0] = VSADDCOMPRESULT.ADDCOMPRESULT_Failure;
                     return VSConstants.S_OK;
                 }
@@ -6328,7 +6328,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Recusively parses the tree and closes all nodes, including "node".
+        /// Recursively parses the tree and closes all nodes, including "node".
         /// </summary>
         /// <param name="node">The subtree to close.</param>
         private static void CloseAllNodes(HierarchyNode node)
@@ -6341,7 +6341,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             node.Close();
         }
         /// <summary>
-        /// Recusively parses the tree and closes all nodes below "node", but don't close "node".
+        /// Recursively parses the tree and closes all nodes below "node", but don't close "node".
         /// </summary>
         /// <param name="node">The subtree to close.</param>
         private static void CloseAllSubNodes(HierarchyNode node)

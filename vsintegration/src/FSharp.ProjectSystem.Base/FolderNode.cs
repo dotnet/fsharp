@@ -208,7 +208,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Recursevily walks the folder nodes and redraws the state icons
+        /// Recursively walks the folder nodes and redraws the state icons
         /// </summary>
         public override void UpdateSccStateIcons()
         {

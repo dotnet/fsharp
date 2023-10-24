@@ -30,7 +30,7 @@ module CheckStatic4 =
         //    - NGEN of code
         //    - Different CLRs
 
-        // For generic types, it looks like the CLR implements a semantics where subsequent failure reaise an exception
+        // For generic types, it looks like the CLR implements a semantics where subsequent failure raises an exception
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e3TryB" (try B<int>.P2 |> ignore; false  with :? System.InvalidOperationException -> true) true

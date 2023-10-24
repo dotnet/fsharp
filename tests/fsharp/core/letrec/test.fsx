@@ -136,7 +136,7 @@ let rec mnuiSayHello : MenuItem =
                new EventHandler(fun sender e -> Printf.printf "Hello! Text = %s\n" mnuiSayHello.Text), 
                Shortcut.CtrlH)
 
-(* Check that type annotations are proagated outer-to-inner *)
+(* Check that type annotations are propagated outer-to-inner *)
 let testTypeAnnotationForRecursiveBinding () = 
    let rec x = 1
    and _a = form.Menu <- new MainMenu();

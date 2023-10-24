@@ -186,7 +186,7 @@ let haveAttribute attrName thingey =
     else
         ()
 
-/// Asserts a propety's return value
+/// Asserts a property's return value
 let haveType ty (propInfo : PropertyInfo) =
     if propInfo.PropertyType <> ty then
         failwithf 

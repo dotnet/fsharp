@@ -5168,7 +5168,7 @@ end
 !* BUG 1561: (-star-star-) opens a comment but does not close it and other XML Doc issues.
  *--------------------------------------------------------------------------- *)
 
-(* QA note: how to test for XML doc? Programatically? *)
+(* QA note: how to test for XML doc? Programmatically? *)
 module Check1561 = begin
  (** Should be XML Doc *)
  let itemA = () 

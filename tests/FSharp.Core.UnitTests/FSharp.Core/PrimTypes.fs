@@ -592,7 +592,7 @@ type LanguagePrimitivesModule() =
 
     [<Fact>]
     member this.PhysicalEquality() =
-        // revordtype
+        // recordtype
         let ref1 = ref 8
         let ref2 = ref 8
         let resultValue = LanguagePrimitives.PhysicalEquality ref1 ref2

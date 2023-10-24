@@ -188,7 +188,7 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
                 return selectedObjects;
 
             // do the IFilterProperties stuff
-            // here we walk through all the items and apply I filter properites...
+            // here we walk through all the items and apply I filter properties...
             // 1: do the used items
             // 2: do the discarded items.
             // 

@@ -66,7 +66,7 @@ type XmlDocComments() =
         GetQuickInfoAtCursor file
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromXMLDoc``() = 
         let expected = "XML comment"
         let tooltip = this.TestMalFormedXML("(*Marker1*)")
@@ -74,7 +74,7 @@ type XmlDocComments() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromCurrentProject``() = 
         let expected = "'summary'"
         let tooltip = this.TestMalFormedXML("(*Marker2*)")
@@ -82,7 +82,7 @@ type XmlDocComments() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.NoXMLComment.Bug5858``() = 
         let notexpected = "summary"
         let notexpected2 = "param name="
@@ -92,7 +92,7 @@ type XmlDocComments() =
         AssertNotContains(tooltip, notexpected2)   
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.Test() = 
         let fileContent = """
             //local custom type value

@@ -1233,7 +1233,7 @@ let rec stripDebugPoints expr =
     | Expr.DebugPoint (_, innerExpr) -> stripDebugPoints innerExpr
     | expr -> expr
 
-// Strip debug points and remember how to recrete them
+// Strip debug points and remember how to recreate them
 let (|DebugPoints|) expr =
     match stripExpr expr with
     | Expr.DebugPoint (dp, innerExpr) -> innerExpr, (fun e -> Expr.DebugPoint(dp, e))

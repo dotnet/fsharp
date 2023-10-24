@@ -3821,7 +3821,7 @@ type FsiInteractionProcessor
             warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
             istate, Completed None
 
-    /// Most functions return a step status - this decides whether to continue and propogates the
+    /// Most functions return a step status - this decides whether to continue and propagates the
     /// last value produced
     let ProcessStepStatus (istate, cont) lastResult f =
         match cont with

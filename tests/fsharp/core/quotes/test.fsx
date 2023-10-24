@@ -1857,7 +1857,7 @@ module EqualityOnVarDoesntFail =
     
 module RelatedChange3628 =
     // Fix for 3628 translates "do x" into "do (x;())" when x is not unit typed.
-    // This regression checks the quotated form.
+    // This regression checks the quoted form.
 
     open System
     open Microsoft.FSharp.Quotations

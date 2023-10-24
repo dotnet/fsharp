@@ -232,7 +232,7 @@ type RecordTypesTestClass () =
         
         
     [<Fact>]
-    member _.``struct recrods fields can be mutated`` () =
+    member _.``struct records fields can be mutated`` () =
         Check.QuickThrowOnFailure <|
         fun (i1:int) (i2:int) (m1:int) (m2:int) ->
             (i1 <> m1 && i2 <> m2) ==>

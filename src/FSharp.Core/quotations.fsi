@@ -1349,7 +1349,7 @@ type Expr =
     member ToString: full: bool -> string
 
 /// <summary>Type-carrying quoted expressions. Expressions are generated either
-/// by quotations in source text or programatically</summary>
+/// by quotations in source text or programmatically</summary>
 and [<CompiledName("FSharpExpr`1"); Class>] Expr<'T> =
     inherit Expr
     /// <summary>Gets the raw expression associated with this type-carrying expression</summary>

@@ -135,7 +135,7 @@ if not "%DEPLOY%" == "yes" echo Starting %ACTION%
 echo.
 
 rem This check whether we're started with administrator rights
-CALL :checkPrequisites
+CALL :checkPrerequisites
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
@@ -578,7 +578,7 @@ echo.
 rem Return non-zero error code for use-cases where this script is called from other scripts
 EXIT /B 1
 
-:checkPrequisites
+:checkPrerequisites
 rem Whether or not we have administrator rights
 
 SET ISADMIN=yes

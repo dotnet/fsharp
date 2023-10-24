@@ -753,9 +753,9 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
       
         let fileContents = """namespace NS
                            type Re(*MarkerRecord*) = { X : int } """
-        let expectedQuickinfoTypeRecored = "type Re =  { X: int }"
+        let expectedQuickinfoTypeRecord = "type Re =  { X: int }"
         
-        this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecored
+        this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecord
     
     [<Test>]
     member public this.``QuickInfo.LetBindingsInTypes``() = 

@@ -1,5 +1,5 @@
 // #Regression #Conformance #Quotations 
-// Regression test for FSHARP1.0:3999 - Issue with quoations over <- operator inside type constructor
+// Regression test for FSHARP1.0:3999 - Issue with quotations over <- operator inside type constructor
 
 open System
 open Microsoft.FSharp.Quotations

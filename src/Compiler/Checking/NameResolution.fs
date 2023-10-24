@@ -1180,7 +1180,7 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
 ///     4. Add static extension properties.
 ///     5. Add static events.
 ///     6. Add static fields.
-///     7. Add static properies.
+///     7. Add static properties.
 ///     8. Add static methods and combine extension methods of the same group.
 let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)

@@ -208,7 +208,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             //  - we only log user-invoked builds to the Output window
             //  - user-invoked builds always run MSBuild ASYNC
             //  - in an ASYNC build, the BuildCoda uses UIThread.Run() to schedule itself to be run on the UI thread
-            //  - UIThread.Run() protects against re-entrancy and thus always preserves the queuing order of its actions
+            //  - UIThread.Run() protects against reentrancy and thus always preserves the queuing order of its actions
             //  - the pane is good until at least the point when BuildCoda runs and we declare to MSBuild that we are finished with this build
             var pane = this.OutputWindowPane;  // copy to capture in delegate
             UIThread.Run(delegate()
@@ -409,7 +409,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             catch (Exception e)
             {
-                Debug.Assert(false, "Problem logging projectstarted event: " + e.Message + " at " + e.TargetSite);
+                Debug.Assert(false, "Problem logging project started event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
 		}

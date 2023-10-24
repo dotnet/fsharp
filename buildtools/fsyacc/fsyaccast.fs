@@ -134,9 +134,9 @@ let ProcessParserSpecAst (spec: ParserSpec) =
 // Process LALR(1) grammars to tables
 
 type ProductionIndex = int
-type ProdictionDotIndex = int
+type ProductionDotIndex = int
 
-/// Represent (ProductionIndex,ProdictionDotIndex) as one integer 
+/// Represent (ProductionIndex,ProductionDotIndex) as one integer 
 type Item0 = uint32  
 
 let mkItem0 (prodIdx,dotIdx) : Item0 = (uint32 prodIdx <<< 16) ||| uint32 dotIdx

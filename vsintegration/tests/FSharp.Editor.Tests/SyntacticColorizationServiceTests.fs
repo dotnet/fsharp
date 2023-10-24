@@ -1119,7 +1119,7 @@ type SyntacticClassificationServiceTests() =
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
     [<Fact>]
-    member public this.Preprocesso_ExtendedIfGrammar_Basic01() =
+    member public this.Preprocessor_ExtendedIfGrammar_Basic01() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """

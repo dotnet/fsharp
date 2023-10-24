@@ -258,7 +258,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the global propeties used by the msbuild project.
+    /// Defines the global properties used by the msbuild project.
     /// </summary>
     internal enum GlobalProperty
     {

@@ -263,7 +263,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// This is an helper method to convert the VSCOMPONENTSELECTORDATA recieved by the
+        /// This is an helper method to convert the VSCOMPONENTSELECTORDATA received by the
         /// implementer of IVsComponentUser into a ProjectElement that can be used to create
         /// an instance of this class.
         /// This should not be called for project reference or reference to managed assemblies.

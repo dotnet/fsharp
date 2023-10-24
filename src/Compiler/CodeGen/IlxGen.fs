@@ -8249,7 +8249,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
-    // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
+    // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxies
     // Mark internal constructors in internal classes as public.
     let access =
         if
@@ -11836,7 +11836,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
 #endif
         None
 
-// Invoke the set_Foo method for a declaration with a value. Used to create variables with values programatically in fsi.exe.
+// Invoke the set_Foo method for a declaration with a value. Used to create variables with values programmatically in fsi.exe.
 let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
     try
         match StorageForVal v.Range v eenv with
