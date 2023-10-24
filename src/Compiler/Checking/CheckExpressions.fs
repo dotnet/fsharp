@@ -8859,7 +8859,7 @@ and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem dela
             applicableExpr, exprTy
         | _ ->
             let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
-            // Account for a unit mismtach in logical v. compiled arguments
+            // Account for a unit mismatch in logical v. compiled arguments
             let compiledArgExprs =
                 match argTys, traitInfo.GetCompiledArgumentTypes() with
                 | [_], [] -> []

@@ -136,7 +136,7 @@ type public EvilProviderBase(namespaceName,?GetNestedNamespaces,?get_NamespaceNa
            | "TypeWhereFullNameRaisesException" -> TypeEvil.Intercept(okType, s, get_FullName=(fun _ -> doEvil()))
            | "TypeWhereFullNameReturnsNull" -> TypeEvil.Intercept(okType,s, get_FullName=(fun _ -> null))
            | "TypeWhereNamespaceRaisesException" -> TypeEvil.Intercept(okType, s, get_Namespace=(fun _ -> doEvil()))
-           | "TypeWhereNamepsaceReturnsNull" -> TypeEvil.Intercept(okType, s, get_Namespace=(fun _ -> null))
+           | "TypeWhereNamespaceReturnsNull" -> TypeEvil.Intercept(okType, s, get_Namespace=(fun _ -> null))
            | "DeclaringTypeRaisesException" -> TypeEvil.Intercept(okType, s, get_DeclaringType=(fun _ -> doEvil()))
 
            | "TypeWhereGetMethodsRaisesException" -> TypeEvil.Intercept(okType, s, GetMethods=(fun _ -> doEvil()))

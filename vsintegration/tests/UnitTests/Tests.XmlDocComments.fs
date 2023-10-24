@@ -43,15 +43,15 @@ type XmlDocComments() =
             let Subtract x y = x - y
 
             /// <summary>
-            /// Multipy two <see cref="T:System.Int32" /> values.
+            /// Multiply two <see cref="T:System.Int32" /> values.
             /// </summary>
             /// <param name="x">The first value to sum</param>
             /// <param name="x">The second value to sum</param>
-            let Multipy x y = x * y
+            let Multiply x y = x * y
 
             let foo = XML.Doc.Add(*Marker1*)
             let bar = Subtract(*Marker2*) 3 2
-            let baz = Multipy(*Marker3*) 2 3"""
+            let baz = Multiply(*Marker3*) 2 3"""
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project1 = CreateProject(solution, "FSLibrary")

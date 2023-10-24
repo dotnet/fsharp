@@ -400,7 +400,7 @@ type TheTests() =
            "
         String.Format(template, outputType)
         
-    member this.MSBuildProjectMulitplatBoilerplate (outputType : string) : string =
+    member this.MSBuildProjectMultiPlatformBoilerplate (outputType : string) : string =
         let template = @"
   <PropertyGroup>
     <Configuration Condition="" '$(Configuration)' == '' "">Debug</Configuration>

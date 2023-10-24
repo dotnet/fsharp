@@ -118,7 +118,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)""",
             marker = "Test1",
@@ -131,7 +131,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -145,7 +145,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -159,7 +159,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,

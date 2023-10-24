@@ -3899,7 +3899,7 @@ sub kill_compiler_host
 #
 # run_test -- execute a test directory
 #
-# The return value is the return value from the test, modifed (if necessary)
+# The return value is the return value from the test, modified (if necessary)
 # to be within the 0 to 5 required range.
 #
 # Depends on $terse_mode, $found_runpl, $debug, $debug_retval

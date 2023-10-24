@@ -11891,7 +11891,7 @@ namespace ProviderImplementation.ProvidedTypes
             let pdbData = ()
 #endif
 
-            let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
+            let idxForNestedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
                 let enc = tds |> List.map (fun td -> td.Name)
                 GetIdxForTypeDef cenv (TdKey(enc, td.Namespace, td.Name))
 
@@ -11904,18 +11904,18 @@ namespace ProviderImplementation.ProvidedTypes
             // turn idx tbls into token maps 
             let mappings =
              { TypeDefTokenMap = (fun t ->
-                getUncodedToken ILTableNames.TypeDef (idxForNextedTypeDef t))
+                getUncodedToken ILTableNames.TypeDef (idxForNestedTypeDef t))
                FieldDefTokenMap = (fun t fd ->
-                let tidx = idxForNextedTypeDef t
+                let tidx = idxForNestedTypeDef t
                 getUncodedToken ILTableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
                MethodDefTokenMap = (fun t md ->
-                let tidx = idxForNextedTypeDef t
+                let tidx = idxForNestedTypeDef t
                 getUncodedToken ILTableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef tidx md)))
                PropertyTokenMap = (fun t pd ->
-                let tidx = idxForNextedTypeDef t
+                let tidx = idxForNestedTypeDef t
                 getUncodedToken ILTableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)))
                EventTokenMap = (fun t ed ->
-                let tidx = idxForNextedTypeDef t
+                let tidx = idxForNestedTypeDef t
                 getUncodedToken ILTableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, ed.Name)))) }
             // New return the results 
             let data = cenv.data.Close()

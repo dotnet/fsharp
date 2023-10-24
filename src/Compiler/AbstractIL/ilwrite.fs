@@ -3169,7 +3169,7 @@ let generateIL (
           Methods = cenv.pdbinfo.ToArray()
           TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
-    let idxForNextedTypeDef (tdefs: ILTypeDef list, tdef: ILTypeDef) =
+    let idxForNestedTypeDef (tdefs: ILTypeDef list, tdef: ILTypeDef) =
         let enc = tdefs |> List.map (fun tdef -> tdef.Name)
         GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
 
@@ -3182,18 +3182,18 @@ let generateIL (
     // turn idx tbls into token maps
     let mappings =
      { TypeDefTokenMap = (fun t ->
-        getUncodedToken TableNames.TypeDef (idxForNextedTypeDef t))
+        getUncodedToken TableNames.TypeDef (idxForNestedTypeDef t))
        FieldDefTokenMap = (fun t fd ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
        MethodDefTokenMap = (fun t mdef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx mdef)))
        PropertyTokenMap = (fun t pdef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pdef)))
        EventTokenMap = (fun t edef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, edef.Name)))) }
     reportTime "Finalize Module Generation Results"
     // New return the results

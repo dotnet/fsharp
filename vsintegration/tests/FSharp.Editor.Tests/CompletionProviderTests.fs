@@ -1499,10 +1499,10 @@ type A =
             """
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+type NestedRecTy = { B: string; C: AnotherNestedRecTy }
 
 module F =
-    type RecTy = { D: NestdRecTy; E: string option }
+    type RecTy = { D: NestedRecTy; E: string option }
 
 open F
 
@@ -1526,7 +1526,7 @@ let t9 = { t2 with d }
 
 let t10 x = { x with d } 
 
-let t11 = { t2 with NestdRecTy.C. }
+let t11 = { t2 with NestedRecTy.C. }
 
 let t12 x = { x with F.RecTy.d }
 
@@ -1553,7 +1553,7 @@ let t13 x = { x with RecTy.D. }
         // The type of `x` is not known, so show fields of records in scope
         VerifyCompletionList(fileContents, "let t10 x = { x with d", [ "A"; "B"; "C"; "D"; "E" ], [])
 
-        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestdRecTy.C.")
+        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestedRecTy.C.")
 
         VerifyCompletionListExactly(fileContents, "let t12 x = { x with F.RecTy.d", [ "D"; "E" ])
 
@@ -1565,13 +1565,13 @@ let t13 x = { x with RecTy.D. }
             """
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
+type NestedRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
 
-type RecTy = { D: NestdRecTy; E: {| a: string |} }
+type RecTy = { D: NestedRecTy; E: {| a: string |} }
 
 let t1 x = { x with D.C.C.A = 12; E.a = "a" }
 
-let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
+let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
 """
 
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.", [ "B"; "C" ])
@@ -1580,18 +1580,18 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; ", [ "D"; "E" ])
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; E.", [ "a" ])
 
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
 
         VerifyCompletionListExactly(
             fileContents,
-            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
+            "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
             [ "D"; "E" ]
         )
 
         VerifyCompletionListExactly(
             fileContents,
-            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
+            "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
             [ "B"; "C" ]
         )
 

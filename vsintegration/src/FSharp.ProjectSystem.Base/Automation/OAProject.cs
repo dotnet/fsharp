@@ -518,7 +518,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
                         // We need to make some checks before we can call the save method on the project node.
                         // This is mainly because it is now us and not the caller like in  case of SaveAs or Save that should validate the file name.
-                        // The IPersistFileFormat.Save method only does a validation that is necesseray to be performed. Example: in case of Save As the  
+                        // The IPersistFileFormat.Save method only does a validation that is necessary to be performed. Example: in case of Save As the  
                         // file name itself is not validated only the whole path. (thus a file name like file\file is accepted, since as a path is valid)
 
                         // 1. The file name has to be valid. 

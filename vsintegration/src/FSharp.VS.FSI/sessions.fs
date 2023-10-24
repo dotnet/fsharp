@@ -357,7 +357,7 @@ type FsiSession(sourceFile) =
             new CtrlBreakClient(channelName)
         with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
-    /// interrupt timeout in miliseconds
+    /// interrupt timeout in milliseconds
     let interruptTimeoutMS = 1000
 
     // system.runtime.interopservices.runtimeinformation.frameworkdescription

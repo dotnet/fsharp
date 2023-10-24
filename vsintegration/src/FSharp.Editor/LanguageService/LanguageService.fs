@@ -53,7 +53,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
     // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
     //     but we only want to have a single instance of the FSharpChecker regardless if there are multiple instances of IFSharpWorkspaceService.
-    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have mutliple; we still only want a
+    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have multiple; we still only want a
     //     single FSharpChecker instance shared across them.
     static let gate = obj ()
 

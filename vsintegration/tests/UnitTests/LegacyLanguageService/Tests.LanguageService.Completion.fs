@@ -6497,14 +6497,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6529,14 +6529,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6549,7 +6549,7 @@ let rec f l =
                     let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
                 """,
             marker = "(*MarkerType*)",
-            list = ["ObsoleteType";"CompilerMesageType"])
+            list = ["ObsoleteType";"CompilerMessageType"])
 
     [<Test>]
     member this.``Method.DefInDiffNameSpace``() =
@@ -6561,14 +6561,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6594,14 +6594,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6613,7 +6613,7 @@ let rec f l =
                 type x = NS1.MyModule(*MarkerType*)
                 let b = (new NS1.MyModule.TestType())(*MarkerMethod*)""",
             marker = "(*MarkerMethod*)",
-            list = ["ObsoleteMethod";"CompilerMesageMethod";"HiddenMethod"])
+            list = ["ObsoleteMethod";"CompilerMessageMethod";"HiddenMethod"])
 
     [<Test>]
     member this.``ObjInstance.ExtensionMethods.WithDef.Positive``() =

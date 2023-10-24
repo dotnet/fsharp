@@ -2071,7 +2071,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Added `NonStructuralComparison` module containing non-structural comparison operators
 * Support for rational exponents in units of measure
 * Give fsi.exe, fsiAnyCpi.exe nice icons
-* `Microsoft.` optional in namepsace paths from FSharp.Core
+* `Microsoft.` optional in namespace paths from FSharp.Core
 * Support for extension properties in object initializers
 * Pre-support (not yet used) for additional nativeptr intrinsics
 * Simplified, more robust resolution of type references in quotations

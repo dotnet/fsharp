@@ -719,7 +719,7 @@ module AsBeginEndTests =
 check "32o8f43kaO: Cancel a While loop" 
     (let count = ref 0
      let res = ref 0
-     let asyncGroup = new new System.Threading.CancellationTokenSource()
+     let asyncGroup = new System.Threading.CancellationTokenSource()
      Async.Spawn(async { do! async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; incr res) 
                                      while true do
                                          do! Async.Sleep(10) 
@@ -742,7 +742,7 @@ check "32o8f43kaO: Cancel a While loop"
 check "32o8f43ka2: Cancel a For loop" 
     (let count = ref 0
      let res = ref 0
-     let asyncGroup = new new System.Threading.CancellationTokenSource()
+     let asyncGroup = new System.Threading.CancellationTokenSource()
      Async.Spawn(async { do! async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; incr res) 
                                      for x in Seq.initInfinite (fun i -> i) do
                                          do! Async.Sleep(10) 

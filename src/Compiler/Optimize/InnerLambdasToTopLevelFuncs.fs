@@ -290,7 +290,7 @@ module Pass1_DetermineTLRAndArities =
 //      so better not have env(h) in env(f)!!!].
 
 
-/// The subset of ids from a mutal binding that are chosen to be TLR.
+/// The subset of ids from a mutual binding that are chosen to be TLR.
 /// They share a common env.
 /// [Each fclass has an env, the fclass are the handles to envs.]
 type BindingGroupSharingSameReqdItems(bindings: Bindings) =

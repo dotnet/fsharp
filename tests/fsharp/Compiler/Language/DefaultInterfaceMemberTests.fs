@@ -3779,7 +3779,7 @@ let main _ =
         CompilerAssert.ExecutionHasOutput(fsCmpl, "")
 
     [<Test>]
-    let ``C# with mutliple separate interfaces - Runs`` () =
+    let ``C# with multiple separate interfaces - Runs`` () =
         let csharpSource =
             """
 using System;

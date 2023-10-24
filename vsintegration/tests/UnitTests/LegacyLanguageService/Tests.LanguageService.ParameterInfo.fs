@@ -1712,7 +1712,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int";"int"]])
 
     [<Test>]
-    [<Ignore("93188 - No param info shown in the Attribute memthod")>]
+    [<Ignore("93188 - No param info shown in the Attribute method")>]
     member public this.``Regression.Multi.ExplicitAnnotate.Bug93188``() = 
         let fileContents = """
             type LiveAnimalAttribute(a : int, b: string) =
@@ -1938,7 +1938,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]   
     // regression test for bug 4495 : Should alway sort method lists in order of argument count
-    member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case1``() = 
+    member public this.``Regression.MethodSortedByArgumentCount.Bug4495.Case1``() = 
         let fileContents = """
             module ParameterInfo
             
@@ -1947,7 +1947,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type array"])
 
     [<Test>]   
-    member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case2``() = 
+    member public this.``Regression.MethodSortedByArgumentCount.Bug4495.Case2``() = 
         let fileContents = """
             module ParameterInfo
             

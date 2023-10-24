@@ -56,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Possibility for solution listener to update the state on the dangling reference.
-        /// It will be set in OnBeforeUnloadProject then the nopde is invalidated then it is reset to false.
+        /// It will be set in OnBeforeUnloadProject then the node is invalidated then it is reset to false.
         /// </summary>
         private bool isNodeValid = false;
 
