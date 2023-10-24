@@ -569,7 +569,7 @@ type UsingMSBuild()  =
     member public this.``Single.DotNet.ParameterByReference`` () = 
         this.TestSystematicParameterInfo("Int32.TryParse(s,", [ ["s: string"; "result: int byref"]; ["s"; "style"; "provider"; "result"] ] )
         
-    // Test on reference type and value type paramaters (e.g. string & DateTime)
+    // Test on reference type and value type parameters (e.g. string & DateTime)
     [<Test>]
     member public this.``Single.DotNet.RefTypeValueType`` () = 
         this.TestSystematicParameterInfo("loc-3*)Emp(", [ [];
@@ -1771,7 +1771,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     (* Overload list/Adjust method's param for multi-parameterinfo tests ------------------------------ *)
 
     [<Test>]
-    member public this.``Multi.OverloadMethod.OrderedParamters``() = 
+    member public this.``Multi.OverloadMethod.OrderedParameters``() = 
         let fileContents = "new System.DateTime(2000,12,(*Mark*)"
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",3(*The fourth method*),["int";"int";"int"])
 
@@ -1855,7 +1855,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     (* No Param Info Shown for multi-parameterinfo tests ---------------------------------------------- *)
 
     [<Test>]
-    member public this.``ParameterInfo.Multi.NoParamterInfo.InComments``() = 
+    member public this.``ParameterInfo.Multi.NoParameterInfo.InComments``() = 
         let fileContents = "//let _ = System.Object((*Mark*))"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
     
@@ -1865,24 +1865,24 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnFunctionDeclaration``() = 
+    member public this.``Multi.NoParameterInfo.OnFunctionDeclaration``() = 
         let fileContents = "let Foo(x : int, (*Mark*)b : string) = ()"
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.WithinString``() = 
+    member public this.``Multi.NoParameterInfo.WithinString``() = 
         let fileContents = """let s = "new System.DateTime(2000,12(*Mark*)" """
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnProperty``() = 
+    member public this.``Multi.NoParameterInfo.OnProperty``() = 
         let fileContents = """
             let s = "Hello"
             let _ = s.Length(*Mark*)"""
         this.VerifyNoParameterInfoAtStartOfMarker(fileContents,"(*Mark*)")
 
     [<Test>]
-    member public this.``Multi.NoParamterInfo.OnValues``() = 
+    member public this.``Multi.NoParameterInfo.OnValues``() = 
         let fileContents = """
             type Foo = class
                 val private size : int

@@ -8,7 +8,7 @@ type CallbackBravo = delegate of obj * unit * unit -> int
 
 type DelegateUtils<'del when 'del : delegate<unit * unit, int> and 'del :> System.Delegate> =
     static member Invoke (x : 'del) = 
-        // null is the 'sender', the two units are normal parametesr
+        // null is the 'sender', the two units are normal parameters
         x.DynamicInvoke([| null; box (); box () |])
 
 // ---------------------------------------

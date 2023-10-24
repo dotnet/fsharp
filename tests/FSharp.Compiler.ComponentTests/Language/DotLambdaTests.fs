@@ -47,7 +47,7 @@ let lambdaWhichAlwaysReturnsThree = _.3"""
     |> withErrorCodes [3584]
 
 [<Fact>]
-let ``Bug - bigger paranthesized expressions are not part of this feature`` () =
+let ``Bug - bigger parenthesized expressions are not part of this feature`` () =
     Fsx """
 let neverEndingLambda = _.(while true do ())"""
     |> withLangVersion80
@@ -77,7 +77,7 @@ let ``Bug - all of these should be an error`` (code:string) =
     |> withErrorCodes [3584]
 
 [<Fact>]
-let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
+let ``Underscore Dot ToString With Space Before Parenthesis - NonAtomic`` () =    
     Fsx """
 let x = "a" |> _.ToString () """
     |> withLangVersion80

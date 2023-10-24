@@ -5673,7 +5673,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
         public virtual int SccGlyphChanged(int affectedNodes, uint[] itemidAffectedNodes, VsStateIcon[] newGlyphs, uint[] newSccStatus)
         {
-            // if all the paramaters are null adn the count is 0, it means scc wants us to updated everything
+            // if all the parameters are null adn the count is 0, it means scc wants us to updated everything
             if (affectedNodes == 0 && itemidAffectedNodes == null && newGlyphs == null && newSccStatus == null)
             {
                 this.ReDraw(UIHierarchyElement.SccState);

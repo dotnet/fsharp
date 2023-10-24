@@ -192,7 +192,7 @@ type TcPatPhase2Input =
 /// Represents the context flowed left-to-right through pattern checking
 type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
 
-/// Represents the flags passsed to TcPat regarding the binding location
+/// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =
     | TcPatValFlags of
         inlineFlag: ValInline *

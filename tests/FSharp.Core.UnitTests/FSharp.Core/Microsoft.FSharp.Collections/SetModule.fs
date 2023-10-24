@@ -401,7 +401,7 @@ type SetModule() =
         Assert.True (Array.forall ( (=) true ) elements)
 
     [<Fact>]
-    member _.Parition() =
+    member _.Partition() =
         
         // Empty
         let resulta, resultb = Set.partition (fun (x : int) -> Assert.Fail(); false) Set.empty

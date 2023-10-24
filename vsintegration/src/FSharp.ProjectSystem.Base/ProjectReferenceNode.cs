@@ -510,7 +510,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             string fileName = String.Empty;
 
-            // Unfortunately we cannot use the path part of the projectReference string since it is not resolving correctly relative pathes.
+            // Unfortunately we cannot use the path part of the projectReference string since it is not resolving correctly relative paths.
             if (indexOfSeparator != -1)
             {
                 string projectGuid = projectReference.Substring(0, indexOfSeparator);

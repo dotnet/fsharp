@@ -43,7 +43,7 @@ namespace ProviderImplementation.ProvidedTypes
     type ProvidedStaticParameter =
         inherit ParameterInfo
 
-        /// Create a new provided static parameter, for use with DefineStaticParamaeters on a provided type definition.
+        /// Create a new provided static parameter, for use with DefineStaticParameters on a provided type definition.
         new: parameterName: string * parameterType: Type * ?parameterDefaultValue: obj -> ProvidedStaticParameter
 
         /// Add XML documentation information to this provided constructor

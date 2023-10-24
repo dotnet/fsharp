@@ -270,7 +270,7 @@ let LeaderBoardHandler form measure fileName =
 	DisplaySample form (measure,fileName);
 	form
 	
-/// Handler change to input paramters
+/// Handler change to input parameters
 let ChangeHandler measure path =
 	// Check for tracked players file
 	let trackFile = GetLatestFile path "Track-*.csv" in

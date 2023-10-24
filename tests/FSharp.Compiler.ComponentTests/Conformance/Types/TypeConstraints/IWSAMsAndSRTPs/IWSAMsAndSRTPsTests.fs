@@ -833,11 +833,11 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
         Fsx """
-            type IParseable<'T when 'T :> IParseable<'T>> =
+            type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
 
             type IAction<'T when 'T :> IAction<'T>> =
-                inherit IParseable<'T>
+                inherit IParsable<'T>
 
             type SomeAction = A | B with
                 interface IAction<SomeAction> with
@@ -847,7 +847,7 @@ let main _ =
                         | "B" -> B
                         | _ -> failwith "can't parse"
 
-            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse x
 
             if parse<SomeAction> "A" <> A then
                 failwith "failed"
@@ -860,11 +860,11 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``Static abstracts can be inherited through multiple levels in lang version70`` () =
         Fsx """
-            type IParseable<'T when 'T :> IParseable<'T>> =
+            type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
 
             type IAction1<'T when 'T :> IAction1<'T>> =
-                inherit IParseable<'T>
+                inherit IParsable<'T>
 
             type IAction2<'T when 'T :> IAction2<'T>> =
                 inherit IAction1<'T>
@@ -882,7 +882,7 @@ let main _ =
                         | "B" -> B
                         | _ -> failwith "can't parse"
 
-            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse x
             let altParse<'T when 'T :> IAction3<'T>> (x: string) : 'T = 'T.AltParse x
 
             let x: SomeAction = parse "A"

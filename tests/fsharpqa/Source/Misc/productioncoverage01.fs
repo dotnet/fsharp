@@ -14,7 +14,7 @@ let f1< > (x:int) = x
 assert ((f1 42) = 42)
 
 //376 headBindingPattern -> headBindingPattern COLON_COLON headBindingPattern 
-// Note: no parantheses on pattern
+// Note: no parentheses on pattern
 
 let (h::t) = [3]
 assert (h = 3)

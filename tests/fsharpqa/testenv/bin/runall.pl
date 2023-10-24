@@ -536,7 +536,7 @@ sub get_os
 
     # Put os ver in the form that VCTR expects, either
     # NT4 , Win98 , Win2K , WinXP , XPWow , .NetSvr , Win95 , WinME , WinXP.
-    # Ideally this transformation would be peformed using a table, but there is too much variance
+    # Ideally this transformation would be performed using a table, but there is too much variance
     # in what getosver.exe produces, given that it show build numbers, service packs, and such.
     foreach my $o ($host_os, $target_os)
     {

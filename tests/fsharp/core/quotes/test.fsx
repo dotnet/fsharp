@@ -5591,7 +5591,7 @@ module QuotationOfConcreteTraitCalls =
 // Check we can take ReflectedDefinition of things involving multiple implicit witnesses and trait calls
 module QuotationsOfGenericCodeWithMultipleWitnesses =
 
-    // This has three type paramters and two witnesses, one for + and one for -
+    // This has three type parameters and two witnesses, one for + and one for -
     [<ReflectedDefinition>]
     let inline f1 x y z = (x + y) - z
 

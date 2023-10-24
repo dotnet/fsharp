@@ -104,7 +104,7 @@ type Gaussian1D =
     /// The standard constructor.
     new () = 
       { tau = 0.0; pi = 0.0; }
-    /// The parameterised constructor.
+    /// The parameterized constructor.
     new (precisionMean, precision) = 
       { tau = precisionMean; pi = precision; }
     

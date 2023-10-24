@@ -108,7 +108,7 @@ type FSharpSymbol =
 
     /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
     ///
-    /// For FSharpParameter symbols without a name for the paramater, this returns "````"
+    /// For FSharpParameter symbols without a name for the parameter, this returns "````"
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation

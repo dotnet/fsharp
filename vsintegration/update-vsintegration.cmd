@@ -15,7 +15,7 @@
 @rem * Parts of this batch file require administrator permission. If such permissions aren't
 @rem   available, a warning will be issued and relevant parts will not be executed.
 @rem
-@rem * Currently, only one paramter is parsed and combinations are not possible
+@rem * Currently, only one parameter is parsed and combinations are not possible
 @rem
 @rem * Installation of F# FSC compiler and FSI are done in the SHARED SDK directory. Henceforth
 @rem   each installation of Visual Studio 2017 will use the updated FSC.exe and the commandline

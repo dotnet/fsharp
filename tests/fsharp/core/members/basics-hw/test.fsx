@@ -5356,8 +5356,8 @@ module CheckGeneralizationOfMembersInRecursiveGroupsWhichIncludeImplicitConstruc
                  this.Meth1() |> ignore
                  C<'T>.Meth2(this))
         and C2<'T> =
-            | Parition2 of C<'T> 
-            member this.Value =  match this with Parition2 x -> x
+            | Partition2 of C<'T> 
+            member this.Value =  match this with Partition2 x -> x
             member this.Meth1() = 
                  this.Prop1() |> ignore
                  this.Meth1() |> ignore
@@ -5387,8 +5387,8 @@ module CheckGeneralizationOfMembersInRecursiveGroupsWhichIncludeImplicitConstruc
                  this.Meth1() |> ignore
                  C<'T>.Meth2(this))
         and C2<'T> =
-            | Parition2 of C<'T> 
-            member this.Value =  match this with Parition2 x -> x
+            | Partition2 of C<'T> 
+            member this.Value =  match this with Partition2 x -> x
             member this.Meth1() = 
                  this.Prop1() |> ignore
                  this.Meth1() |> ignore

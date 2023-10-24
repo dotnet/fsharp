@@ -110,7 +110,7 @@ open System
     member Shape: ArrayShape
     member ElementType: Type
     member TypeSpec: TypeSpec
-    member ParamaterIndex: UInt16
+    member ParameterIndex: UInt16
     member IsRequired: bool
     member CustomModifier: Type
     member ModifiedType: Type
@@ -146,7 +146,7 @@ open System
     member ElementType: Type when k = Array or K = Ptr or k = Byref
     member TypeSpec: TypeSpec when k = Value or k = Boxed
     member Callsig: Callsig when k = Fptr
-    member ParamaterIndex: UInt16 when k = Tyvar
+    member ParameterIndex: UInt16 when k = Tyvar
     member IsRequired: bool when k = Modified
     member CustomModifier: Type when k = Modified
     member ModifiedType: Type when k = Modified

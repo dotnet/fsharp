@@ -141,7 +141,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
 %token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
 
-%token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
+%token OINTERFACE_MEMBER /* inserted for non-parenthetical use of 'INTERFACE', i.e. not INTERFACE/END */
 %token FIXED
 %token <token> ODUMMY
 
