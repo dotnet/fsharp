@@ -27,6 +27,32 @@ open FSharp.Test.ReflectionHelper
 open Microsoft.Build.Utilities
 open FSharp.Test.ProjectGeneration.ProjectOperations
 open FSharp.Compiler.Symbols
+open Xunit
+open System.Runtime.InteropServices
+
+[<Theory>]
+[<InlineData(":int")>]
+[<InlineData(" :int")>]
+[<InlineData(" : int")>]
+[<InlineData(" :    int")>]
+let ``Refactor changes nothing`` (shouldNotTrigger: string) =
+    task {
+
+        let code =
+            $"""
+            let sum a b {shouldNotTrigger}= a + b
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf "sum"
+
+        let! (_, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+        Assert.AreEqual(code, text.ToString(), "")
+
+        ()
+    }
 
 [<Fact>]
 let ``Refactor changes something`` () =
@@ -44,26 +70,6 @@ let ``Refactor changes something`` () =
         let! (_, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
 
         Assert.AreNotEqual(code, text.ToString(), "")
-
-        ()
-    }
-
-[<Fact>]
-let ``Refactor changes nothing`` () =
-    task {
-
-        let code =
-            """
-            let sum a b :int= a + b
-            """
-
-        use context = TestContext.CreateWithCode code
-
-        let spanStart = code.IndexOf "sum"
-
-        let! (_, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
-
-        Assert.AreEqual(code, text.ToString(), "")
 
         ()
     }
