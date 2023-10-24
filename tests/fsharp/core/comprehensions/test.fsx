@@ -588,7 +588,7 @@ let pickering() =
    The range sequence should agree with the real sequence under it's natural embedding into reals (+).   
    (+) So, UInt32.MaxValue is considered +ve, not -1.
 
-   Rounding error optimisation:
+   Rounding error optimization:
      With floating arithmetic (single/double),
      when (x1-x1)/dx is clearly integral (and fits inside int32 say),
      then can generate from the underlying int range via {x0 + i.dx}.

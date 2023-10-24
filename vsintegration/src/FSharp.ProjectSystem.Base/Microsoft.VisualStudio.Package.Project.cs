@@ -65,7 +65,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string CancelQueryEdit = "CancelQueryEdit";
         public const string CannotAddFileThatIsOpenInEditor = "CannotAddFileThatIsOpenInEditor";
         public const string CannotAddItemToProjectWithWildcards = "CannotAddItemToProjectWithWildcards";
-        public const string CanNotSaveFileNotOpeneInEditor = "CanNotSaveFileNotOpeneInEditor";
+        public const string CanNotSaveFileNotOpenInEditor = "CanNotSaveFileNotOpenInEditor";
         public const string CannotStartLibraries = "CannotStartLibraries";
         public const string cli1 = "cli1";
         public const string Compile = "Compile";

@@ -93,7 +93,7 @@ type TaskReporterTests() =
 
 // One File Tests
     // For the next two, add tasks to the task list more than once to ensure that
-    // hashing is occuring correctly   
+    // hashing is occurring correctly   
     [<Test>]
     member public this.``ErrorList.LanguageServiceErrorsProperlyCoalesced``() =  
         use errorReporter = CreateErrorReporter()

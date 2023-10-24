@@ -81,7 +81,7 @@ module internal VsHierarchy =
         let hr, typename = hier.GetProperty(itemid, int32 __VSHPROPID.VSHPROPID_OwnerKey)
         if Com.Succeeded hr then (typename :?> System.String) else System.String.Empty            
         
-    /// All the children itemids ov the given item
+    /// All the children itemids of the given item
     let children (hier:IVsHierarchy) (itemid:uint32) = 
         seq {
             let hr, child = hier.GetProperty(itemid, int32 __VSHPROPID.VSHPROPID_FirstChild)

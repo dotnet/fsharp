@@ -1753,7 +1753,7 @@ let x = new MyClass2(0)
         let descr = descrFunc()
         // Check whether the description contains the name only once        
         let occurrences = ("  " + descr + "  ").Split([| "WhileLoop" |], System.StringSplitOptions.None).Length - 1
-        // You'll get two occurrances - one for the signature, and one for the doc
+        // You'll get two occurrences - one for the signature, and one for the doc
         AssertEqualWithMessage(2, occurrences, "The entry for 'Expr.Var' is duplicated.")
       
     /// Testing autocomplete after a dot directly following method call

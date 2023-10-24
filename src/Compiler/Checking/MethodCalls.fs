@@ -1687,7 +1687,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         AdjustOutCallerArgs g calledMeth mMethExpr
 
     let adjustedNormalUnnamedArgs, setterValueArgs =
-        // IsIndexParamArraySetter onlye occurs for
+        // IsIndexParamArraySetter only occurs for
         //     expr.[indexes] <- value
         // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
         // Indeed in this case there will be no named/optional/out arguments.

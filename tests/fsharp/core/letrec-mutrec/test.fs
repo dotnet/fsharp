@@ -78,7 +78,7 @@ do if z2.g2.contents.g1 <> 3 then report_failure "ceewieds32w8w"
  * -------------------------------------------------------------------- *)
 
 (* TLR letrec, with only some functions going TLR.
-   Required optimisations off to hit bug.
+   Required optimizations off to hit bug.
    Fix: use SELF-CARRYING env values.
 *)
 

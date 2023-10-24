@@ -66,7 +66,7 @@ module InnerFunctionGenericOnlyByMeasure =
 
     let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
 
-// Another variation on the above test case, where the recursive thing is a type function generic unly by a unit of measure
+// Another variation on the above test case, where the recursive thing is a type function generic only by a unit of measure
 module TopLevelTypeFunctionGenericOnlyByMeasure =
     type C< [<Measure>] 'u> =
        abstract Invoke: float<'u> list -> int

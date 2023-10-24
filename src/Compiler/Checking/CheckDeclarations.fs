@@ -278,7 +278,7 @@ let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
 
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     let item = Item.ModuleOrNamespaces modrefs
-    CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
+    CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)
     env
 
 /// Adjust the TcEnv to account for opening the set of modules or namespaces implied by an `open` declaration
@@ -430,7 +430,7 @@ module TcRecdUnionAndEnumDeclarations =
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
-        let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+        let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let zeroInit = HasFSharpAttribute g g.attrib_DefaultValueAttribute attrsForField
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute attrsForField
         
@@ -527,7 +527,7 @@ module TcRecdUnionAndEnumDeclarations =
                         match idOpt, parent with
                         | Some fieldId, Parent tcref ->
                             let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
-                            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
                             TcNamedFieldDecl cenv env parent false tpenv fld
                         | _ ->
                             Some(TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
@@ -539,7 +539,7 @@ module TcRecdUnionAndEnumDeclarations =
                 rfields, thisTy
 
             | SynUnionCaseKind.FullType (ty, arity) -> 
-                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                 let curriedArgTys, recordTy = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                 if curriedArgTys.Length > 1 then 
@@ -713,7 +713,7 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
 
     checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
-    let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
+    let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
     if not (isAppTy g ty) then
         error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
@@ -1163,7 +1163,7 @@ module MutRecBindingChecking =
                                         [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
                                         Some getIdent.idRange
                                     )
-                                CallNameResolutionSink cenv.tcSink (getIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                                CallNameResolutionSink cenv.tcSink (getIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, envForTycon.eAccessRights)
                         | _ -> ()
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
@@ -1337,7 +1337,7 @@ module MutRecBindingChecking =
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let inheritsExpr, tpenv =
                                 try
-                                   let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
+                                   let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                                    let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
                                    TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
                                 with RecoverableException e ->
@@ -1964,7 +1964,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
 
                   let intfTyR = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
-                      TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.No envinner emptyUnscopedTyparEnv intfTy |> fst
+                      TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner emptyUnscopedTyparEnv intfTy |> fst
 
                   if not (tcref.HasInterface g intfTyR) then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), intfTy.Range))
@@ -2415,7 +2415,7 @@ module TcExceptionDeclarations =
                     let tcref = mkLocalTyconRef exnc
                     let thisTypInst, _ = generalizeTyconRef g tcref
                     let item = Item.RecdField (RecdFieldInfo (thisTypInst, RecdFieldRef (tcref, fieldId.idText)))
-                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
                 | _ -> ()
 
                 TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef)
@@ -2458,7 +2458,7 @@ module TcExceptionDeclarations =
         exnc.SetExceptionInfo repr 
 
         let item = Item.ExnCase(mkLocalTyconRef exnc)
-        CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+        CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
         args'
 
     let private TcExnDefnCore (cenv: cenv) env parent synExnDefnRepr =
@@ -2602,11 +2602,11 @@ module EstablishTypeDefinitionCores =
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
                     for SynField(fieldType = ty; range = m) in flds do 
-                        let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                        let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                         yield (tyR, m)
 
                 | SynUnionCaseKind.FullType (ty, arity) -> 
-                    let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                    let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                     let curriedArgTys, _ = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                     if curriedArgTys.Length > 1 then 
@@ -2620,7 +2620,7 @@ module EstablishTypeDefinitionCores =
               for field in fields do 
                   let (SynField(isStatic = isStatic; fieldType = ty; range = m)) = field
                   if not isStatic then 
-                      let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                      let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                       yield (tyR, m)
 
               match implicitCtorSynPats with
@@ -2639,7 +2639,7 @@ module EstablishTypeDefinitionCores =
 
           | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
               for SynField(fieldType = ty; range = m) in fields do 
-                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                   yield (tyR, m)
 
           | _ ->
@@ -2941,7 +2941,7 @@ module EstablishTypeDefinitionCores =
         | None -> None
         | Some (tc, args, m) -> 
             let ad = envinner.AccessRights
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.UseInType OpenQualified envinner.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
             | Result (_, tcrefBeforeStaticArguments, _) when 
                   tcrefBeforeStaticArguments.IsProvided && 
                   not tcrefBeforeStaticArguments.IsErased -> 
@@ -3169,7 +3169,7 @@ module EstablishTypeDefinitionCores =
                   // This case deals with ordinary type and measure abbreviations 
                   if not hasMeasureableAttr then 
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-                    let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
+                    let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
                     // Give a warning if `AutoOpenAttribute` is being aliased.
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
@@ -3214,7 +3214,7 @@ module EstablishTypeDefinitionCores =
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
                 
-                let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
+                let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
                 if firstPass then 
                     tycon.entity_attribs <- attrs
@@ -3226,7 +3226,7 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
+                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 
@@ -3427,7 +3427,7 @@ module EstablishTypeDefinitionCores =
                 for fspec in fields do
                     if not fspec.IsCompilerGenerated then
                         let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec))
-                        CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
+                        CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, ad)
 
             // Notify the Language Service about constructors in discriminated union declaration
             let writeFakeUnionCtorsToSink (unionCases: UnionCase list) = 
@@ -3436,7 +3436,7 @@ module EstablishTypeDefinitionCores =
                 for unionCase in unionCases do
                     let info = UnionCaseInfo(thisTyInst, mkUnionCaseRef thisTyconRef unionCase.Id.idText)
                     let item = Item.UnionCase(info, false)
-                    CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
+                    CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurrence.Binding, ad)
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
@@ -3480,7 +3480,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureableAttr then 
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-                        let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
+                        let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
                         TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo
                     // If we already computed a representation, e.g. for a generative type definition, then don't change it here.
@@ -3612,7 +3612,7 @@ module EstablishTypeDefinitionCores =
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
                                   primaryConstructorInDelegateCheck(implicitCtorSynPats)
-                                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
+                                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
                                   let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
@@ -3924,7 +3924,7 @@ module EstablishTypeDefinitionCores =
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
                 try
-                    TcTyparConstraints cenv NoNewTypars checkConstraints ItemOccurence.UseInType envForTycon tpenv synTyconConstraints |> ignore
+                    TcTyparConstraints cenv NoNewTypars checkConstraints ItemOccurrence.UseInType envForTycon tpenv synTyconConstraints |> ignore
                 with RecoverableException exn ->
                     errorRecovery exn m
             | _ -> ())
@@ -4111,7 +4111,7 @@ module TcDeclarations =
 
             // This records a name resolution of the type at the location
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
+            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
                |> ignore
 
             mkLocalTyconRef tycon
@@ -4119,7 +4119,7 @@ module TcDeclarations =
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let tcref =
-                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res ->
                     // Update resolved type parameters with the names from the source.
                     let _, tcref, _ = res
@@ -4172,7 +4172,7 @@ module TcDeclarations =
 
             let declaredTypars = TcTyparDecls cenv envForDecls synTypars
             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
-            let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
+            let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
@@ -4897,7 +4897,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             modulNSs |> List.iter (fun moduleEntity ->
                 let modref = mkLocalModuleRef moduleEntity
                 let item = Item.ModuleOrNamespaces [modref]
-                CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights))
+                CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
             let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m envNS modTyRoot else envNS
@@ -5259,7 +5259,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           modulNSs |> List.iter (fun moduleEntity ->
             let modref = mkLocalModuleRef moduleEntity
             let item = Item.ModuleOrNamespaces [modref]
-            CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights))
+            CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
 
           // For 'namespace rec' and 'module rec' we add the thing being defined 
           let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m envNS modTyRoot else envNS

@@ -337,7 +337,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Determines if a node can accept drop opertaion.
+        /// Determines if a node can accept drop operation.
         /// </summary>
         /// <param name="itemId">The id of the node.</param>
         /// <returns>true if the node accepts drag operation.</returns>

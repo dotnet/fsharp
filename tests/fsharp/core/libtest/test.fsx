@@ -5215,7 +5215,7 @@ module Repro2247 = begin
     let r = MyLazy<_>() in    (* Keep this binding, required for repro *)
     r                         (* Warning: Fragile repro *)
 
-  (* With optimisations off, code failed to verify *)
+  (* With optimizations off, code failed to verify *)
 end
 
 

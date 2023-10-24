@@ -363,7 +363,7 @@ module DispatchSlotChecking =
             | [ovd] ->
                 if not ovd.IsCompilerGenerated then
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
-                    CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, AccessorDomain.AccessibleFromSomewhere)
+                    CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurrence.Implemented, AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
                 if not reqdSlot.IsOptional &&
                    // Check that no available prior override implements this dispatch slot

@@ -195,15 +195,15 @@ module CompilationTests = begin
       let arityZeroAlphaBeta = (1,2,(None : 'alpha option),(None : 'beta option)) in
       arityZeroMono,arityZeroAlpha,arityZeroAlphaBeta
 
-    (* free occurance, but at a type instance *)
-    let freeOccuranceAtInstanceTest (u:unit) (b:'beta) =
-      let freeOccuranceTestPolyFun (x:'alpha) = x in 
-      let useAtInt      = freeOccuranceTestPolyFun 3 in
-      let useAtIntList  = freeOccuranceTestPolyFun [3] in
-      let useAtBool     = freeOccuranceTestPolyFun true in
-      let instAtInt     = (freeOccuranceTestPolyFun : int -> int) in
-      let instAtIntList = (freeOccuranceTestPolyFun : int list -> int list) in
-      let instAtBeta    = (freeOccuranceTestPolyFun : 'beta -> 'beta) in
+    (* free occurrence, but at a type instance *)
+    let freeOccurrenceAtInstanceTest (u:unit) (b:'beta) =
+      let freeOccurrenceTestPolyFun (x:'alpha) = x in 
+      let useAtInt      = freeOccurrenceTestPolyFun 3 in
+      let useAtIntList  = freeOccurrenceTestPolyFun [3] in
+      let useAtBool     = freeOccurrenceTestPolyFun true in
+      let instAtInt     = (freeOccurrenceTestPolyFun : int -> int) in
+      let instAtIntList = (freeOccurrenceTestPolyFun : int list -> int list) in
+      let instAtBeta    = (freeOccurrenceTestPolyFun : 'beta -> 'beta) in
       ()
 
 
