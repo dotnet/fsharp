@@ -380,6 +380,7 @@
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsReadOnlyAttribute
        extends [runtime]System.Attribute
 {
+  .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .method public specialname rtspecialname 
           instance void  .ctor() cil managed
   {
