@@ -4754,8 +4754,8 @@ module internal AssemblyReader =
             let subsys = seekReadUInt16 is (peOptionalHeaderPhysLoc + 68)   (* SubSystem Subsystem required to run this image. Shall be either IMAGE_SUBSYSTEM_WINDOWS_CE_GUI (!0x3) or IMAGE_SUBSYSTEM_WINDOWS_GUI (!0x2). QUERY: Why is this 3 on the images ILASM produces??? *)
             let useHighEntropyVA =
                 let n = seekReadUInt16 is (peOptionalHeaderPhysLoc + 70)
-                let highEnthropyVA = 0x20us
-                (n &&& highEnthropyVA) = highEnthropyVA
+                let highEntropyVA = 0x20us
+                (n &&& highEntropyVA) = highEntropyVA
 
              (* x86: 000000e0 *)
              (* x86: 000000f0, x64: 00000100 *)

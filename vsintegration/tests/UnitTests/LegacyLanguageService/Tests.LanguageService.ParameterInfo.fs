@@ -1579,7 +1579,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 |> List.map (fun (_, d, _) -> d)
                 |> List.forall2 (=) expectedParams
             if not ok then
-                printfn "==Parameters dont't match=="
+                printfn "==Parameters don't match=="
                 printfn "Expected parameters %A" expectedParams
                 printfn "Actual parameters %A" actualParams
                 Assert.Fail()

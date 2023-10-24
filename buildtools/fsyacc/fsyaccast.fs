@@ -661,7 +661,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
     //
     // PLAN TO OPTIMIZE THIS;
     //   - Clarify and comment what's going on here
-    //   - verify if we really have to do these enormouos closure computations
+    //   - verify if we really have to do these enormous closure computations
     //   - assess if it's possible to use the symbol we're looking for to help trim the jset
     
     reportTime(); printf "computing lookahead relations..."; stdout.Flush();

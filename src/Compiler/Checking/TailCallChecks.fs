@@ -195,7 +195,7 @@ let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
                             && not isCCall
                             && not hasByrefArg
 
-                        noTailCallBlockers // blockers that will prevent the IL level from emmiting a tail instruction
+                        noTailCallBlockers // blockers that will prevent the IL level from emitting a tail instruction
                     else
                         true
 

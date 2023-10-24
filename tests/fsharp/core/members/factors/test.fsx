@@ -93,7 +93,7 @@ type DistributionOps<'Distribution> =
 // 1D Gaussian
 //***************************************************
 
-/// The 1D Gaussian class for probability distribtion.
+/// The 1D Gaussian class for probability distribution.
 type Gaussian1D =
   class 
     /// The precision mean of the Gaussian

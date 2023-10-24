@@ -61,7 +61,7 @@
   <!--
      The targets below manages Arcade Release/Shipping nuget package manahement.
      This is particularly tricky because we generate fsharp.core and fsharp.compiler.service 
-     nupkgs and embedd both the shipping and release nuget packages inside the final 
+     nupkgs and embed both the shipping and release nuget packages inside the final 
      microsoft.fsharp.compiler.nupkg which we insert into the dotnet sdk
   -->
   <Target Name="PackageReleaseDependentPackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">

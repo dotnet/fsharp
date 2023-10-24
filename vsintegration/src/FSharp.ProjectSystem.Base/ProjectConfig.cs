@@ -484,7 +484,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             set
             {
-                // for an emtpy string, convert to the cwd
+                // for an empty string, convert to the cwd
                 if (value == string.Empty)
                     value = @".\";
                     

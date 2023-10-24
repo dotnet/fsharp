@@ -443,7 +443,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Called by the drag&amp;drop implementation to ask the node
-        /// which is being dragged/droped over which nodes should
+        /// which is being dragged/dropped over which nodes should
         /// process the operation.
         /// This allows for dragging to a node that cannot contain
         /// items to let its parent accept the drop, while a reference

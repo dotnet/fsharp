@@ -179,7 +179,7 @@ let g (t : T) = t.Count()
         checkErrors 0
 
     [<Test>]
-    [<Ignore("GetErrors function doese not work for this case")>]
+    [<Ignore("GetErrors function does not work for this case")>]
     member public this.``LineDirective``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -896,7 +896,7 @@ type staticInInterface =
         Assert.AreEqual(0,warnList.Length)
 
     [<Test>]
-    [<Ignore("GetErrors function doese not work for this case")>]
+    [<Ignore("GetErrors function does not work for this case")>]
     member public this.``Errorlist.WorkwithoutNowarning``() =  
         let fileContent = """
             type Fruit (shelfLife : int) as x =

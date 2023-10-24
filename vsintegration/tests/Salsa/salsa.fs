@@ -227,7 +227,7 @@ module internal Salsa =
         MSBuild.CreateFSharpManifestResourceName(projectFileName,configuration,platform)
 
     module Filenames = 
-        /// Compare two file names to eachother.
+        /// Compare two file names to each other.
         let AreSame f1 f2 = 
             let result = 
                    System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0

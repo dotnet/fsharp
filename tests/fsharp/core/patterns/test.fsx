@@ -910,7 +910,7 @@ module AndrewKennedyFunkyActivePatternsBugRelatedToArityInference =
 
     let (Fun(f)) = (fun x -> x)
 
-module AndrewKennedyRatherEmarrassingSimpleBug1133 = 
+module AndrewKennedyRatherEmbarrassingSimpleBug1133 = 
 
     type a = A | B
     let f = fun A -> 1

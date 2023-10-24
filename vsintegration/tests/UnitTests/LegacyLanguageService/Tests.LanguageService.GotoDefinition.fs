@@ -380,7 +380,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
-    [<Ignore("Need some work to detect the line doesnot exist.")>]
+    [<Ignore("Need some work to detect the line does not exist.")>]
     //This test case is when the TypeProviderDefinitionLocationAttribute Line doesn't exist  for TypeProvider Type
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Type.LineDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(

@@ -1603,7 +1603,7 @@ type Typar =
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core type member constraints.
     member StaticReq: Syntax.TyparStaticReq
 
-    /// Get the XML documetnation for the type parameter
+    /// Get the XML documentation for the type parameter
     member XmlDoc: XmlDoc
 
 /// Represents a constraint on a type parameter or type

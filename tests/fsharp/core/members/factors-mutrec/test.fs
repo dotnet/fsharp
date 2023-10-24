@@ -20,7 +20,7 @@ type DistributionOps<'Distribution> =
     /// The constant function distribution.
     abstract One : 'Distribution
 
-/// The 1D Gaussian class for probability distribtion.
+/// The 1D Gaussian class for probability distribution.
 type Gaussian1D =
     /// The precision mean of the Gaussian
     val tau : float

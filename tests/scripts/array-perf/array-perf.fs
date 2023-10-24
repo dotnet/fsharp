@@ -135,7 +135,7 @@ type ArrayBenchmark () =
     
 
 
-    //When the test runs, it will run once per each each param.
+    //When the test runs, it will run once per each param.
     //This is used to run the test on arrays of size 10, 100, etc
     //You can create a 2nd Params section and the test will run over all permutations
     [<Params (10,100,10000,1000000,10000000)>] 

@@ -9,7 +9,7 @@
 //     https://fsharp.org
 //     https://learn.microsoft.com/dotnet/articles/fsharp/
 //
-// @@@SeeDocumentaton|To see this tutorial in documentation form, see:@@@
+// @@@SeeDocumentation|To see this tutorial in documentation form, see:@@@
 //     https://learn.microsoft.com/dotnet/articles/fsharp/tour
 //
 // @@@LearnMoreAbout|To learn more about applied F# programming, use@@@

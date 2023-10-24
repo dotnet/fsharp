@@ -552,7 +552,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         internal class EnumFORMATETC : IEnumFORMATETC
         {
-                IEnumerable cache; // of DataCacheEntrys.
+                IEnumerable cache; // of DataCacheEntries.
 
                 DATADIR dir;
 

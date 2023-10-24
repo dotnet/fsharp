@@ -4,7 +4,7 @@
 // FSB 3502
 
 
-let (|DivisbleByTwo|_|) x =
+let (|DivisibleByTwo|_|) x =
     if x % 2 = 0 
     then Some()
     else None
@@ -17,9 +17,9 @@ let (|DivisibleByX|_|) x y =
 // Without this fix, you'd have to bind the result of 'DivisibleByX' so you'd write DivisibleByX 3 (), which is lame.
 let divisibleBy x =     
     match x with
-    | DivisbleByTwo & DivisibleByX 3 & DivisibleByX 4 -> [2; 3; 4]
-    | DivisbleByTwo &                  DivisibleByX 4 -> [2;    4]
-    | DivisbleByTwo & DivisibleByX 3                  -> [2; 3;  ]
+    | DivisibleByTwo & DivisibleByX 3 & DivisibleByX 4 -> [2; 3; 4]
+    | DivisibleByTwo &                  DivisibleByX 4 -> [2;    4]
+    | DivisibleByTwo & DivisibleByX 3                  -> [2; 3;  ]
 
     | DivisibleByX 3 & DivisibleByX 4 -> [3; 4]
     |                  DivisibleByX 4 -> [   4]
