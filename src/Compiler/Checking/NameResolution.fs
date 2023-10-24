@@ -568,7 +568,7 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
                 | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                 | _ -> None
         Some rs
-    with e -> // Import of the ILType may fail, if so report the error and skip on
+    with RecoverableException e -> // Import of the ILType may fail, if so report the error and skip on
         errorRecovery e m
         None
 
