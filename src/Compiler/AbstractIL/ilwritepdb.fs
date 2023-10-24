@@ -703,7 +703,7 @@ type PortablePdbGenerator
                     else
                         //=============================================================================================================================================
                         // Sequence-point-record
-                        // Validate these with magic numbers according to the portable pdb spec Sequence point dexcription:
+                        // Validate these with magic numbers according to the portable pdb spec Sequence point description:
                         // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#methoddebuginformation-table-0x31
                         //
                         // So the spec is actually bit iffy!!!!! (More like guidelines really.  )

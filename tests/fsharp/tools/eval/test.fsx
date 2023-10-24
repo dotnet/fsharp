@@ -1886,7 +1886,7 @@ module QuotationTests =
 *)
 
 
-module LargerAutomaticDiferentiationTest_FSharp_1_0_Bug_3498 = 
+module LargerAutomaticDifferentiationTest_FSharp_1_0_Bug_3498 = 
 
     let q = 
         <@ (fun (x1:double) -> 

@@ -30,7 +30,7 @@ type UsingMSBuild()  =
     let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option) =
         Assert.IsTrue(resultMethodGroup.IsNone, "Expected an empty method group")              
         
-    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
+    let AssertMethodGroupDescriptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
         for i = 0 to methods.GetCount() - 1 do
             let description = methods.GetDescription(i)
             if (description.Contains(expectNotToBeThere)) then

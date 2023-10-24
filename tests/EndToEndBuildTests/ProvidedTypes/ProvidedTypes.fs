@@ -12663,7 +12663,7 @@ namespace ProviderImplementation.ProvidedTypes
                       let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
                       writeInt32 os timestamp
                       // Update pdbData with new guid and timestamp.  Portable and embedded PDBs don't need the ModuleID
-                      // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
+                      // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-deterministic Windows native code
                       { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
                     else
                       writeInt32 os timestamp   // date since 1970

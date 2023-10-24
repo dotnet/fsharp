@@ -40,9 +40,9 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.TransparentCompiler}">
                     <StackPanel>
-                        <Label Content="{x:Static local:Strings.TransparentCompiler_Discalimer1}" />
-                        <Label Content="{x:Static local:Strings.TransparentCompiler_Discalimer2}" />
-                        <Label Content="{x:Static local:Strings.TransparentCompiler_Discalimer3}" />
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer1}" />
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer2}" />
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer3}" />
                     <CheckBox x:Name="toggleTransparentCompiler" IsChecked="{Binding UseTransparentCompiler}"
                               Content="{x:Static local:Strings.Use_Transparent_Compiler}"/>
                     <CheckBox x:Name="snapshotReuse" IsChecked="{Binding TransparentCompilerSnapshotReuse}"

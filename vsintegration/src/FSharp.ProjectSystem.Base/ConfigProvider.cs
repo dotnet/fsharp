@@ -680,7 +680,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Proved access to an IDispatchable object being a list of configuration properties
         /// </summary>
         /// <param name="configurationName">Combined Name and Platform for the configuration requested</param>
-        /// <param name="configurationProperties">The IDispatchcable object</param>
+        /// <param name="configurationProperties">The IDispatchable object</param>
         /// <returns>S_OK if successful</returns>
         public virtual int GetAutomationObject(string configurationName, out object configurationProperties)
         {

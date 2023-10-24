@@ -1185,7 +1185,7 @@ module PrintTypes =
             // using 0, 1, 2 as discriminant for return, arguments and generic parameters
             // respectively, in order to easily retrieve each of the types with their
             // expected quality below.
-            let typesWithDiscrimants =
+            let typesWithDiscriminants =
                 [
                     yield 0, retTy 
                     for ty,_ in argInfos do
@@ -1193,14 +1193,14 @@ module PrintTypes =
                     for ty in genParamTys do
                         yield 2, ty
                 ]
-            let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
-            let retTy = typesWithDiscrimants |> List.find (function 0, _ -> true | _ -> false) |> snd
+            let typesWithDiscriminants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscriminants
+            let retTy = typesWithDiscriminants |> List.find (function 0, _ -> true | _ -> false) |> snd
             let argInfos = 
-                typesWithDiscrimants
+                typesWithDiscriminants
                 |> List.choose (function 1,ty -> Some ty | _ -> None)
                 |> List.map2 (fun (_, argInfo) tTy -> tTy, argInfo) argInfos
             let genParamTys = 
-                typesWithDiscrimants
+                typesWithDiscriminants
                 |> List.choose (function 2,ty -> Some ty | _ -> None)
               
             argInfos, retTy, genParamTys, typarsAndCxs

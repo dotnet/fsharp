@@ -24,7 +24,7 @@ module CheckStatic6 =
         check "GenericStaticTest6.cwknecDw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         // NOTE NOTE NOTE: the rest of this test may be flakey under 
         //    - NGEN of code
-        //    - Differnt CLRs
+        //    - Different CLRs
 
         check "GenericStaticTest6.cwknecw021e1TryA" B<int>.P1 1
         check "GenericStaticTest6.cwknecDw021e3TryB" (try B<int>.P2 |> ignore; false  with :? System.InvalidOperationException -> true) true
@@ -38,7 +38,7 @@ module CheckStatic6 =
         check "GenericStaticTest6.cwknecDw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         // NOTE NOTE NOTE: the rest of this test may be flakey under 
         //    - NGEN of code
-        //    - Differnt CLRs
+        //    - Different CLRs
 
 #if OMITTED
         //check "GenericStaticTest6.cwknecDw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true

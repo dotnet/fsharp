@@ -565,9 +565,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool isSameFile = NativeMethods.IsSamePath(newFilePath, this.Url);
 
             // Currently we do not support if the new directory is located outside the project cone
-            string projectCanonicalDirecoryName = new Uri(this.ProjectMgr.ProjectFolder).LocalPath;
-            projectCanonicalDirecoryName = projectCanonicalDirecoryName.TrimEnd(Path.DirectorySeparatorChar);
-            if (!isSamePath && newCanonicalDirectoryName.IndexOf(projectCanonicalDirecoryName, StringComparison.OrdinalIgnoreCase) == -1)
+            string projectCanonicalDirectoryName = new Uri(this.ProjectMgr.ProjectFolder).LocalPath;
+            projectCanonicalDirectoryName = projectCanonicalDirectoryName.TrimEnd(Path.DirectorySeparatorChar);
+            if (!isSamePath && newCanonicalDirectoryName.IndexOf(projectCanonicalDirectoryName, StringComparison.OrdinalIgnoreCase) == -1)
             {
                 errorMessage = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.LinkedItemsAreNotSupported, CultureInfo.CurrentUICulture), Path.GetFileNameWithoutExtension(newFilePath));
                 throw new InvalidOperationException(errorMessage);
@@ -579,7 +579,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 targetContainer = this.Parent;
             }
-            else if (NativeMethods.IsSamePath(newCanonicalDirectoryName, projectCanonicalDirecoryName))
+            else if (NativeMethods.IsSamePath(newCanonicalDirectoryName, projectCanonicalDirectoryName))
             {
                 //the projectnode is the target container
                 targetContainer = this.ProjectMgr;

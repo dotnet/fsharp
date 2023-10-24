@@ -703,7 +703,7 @@ end
 //! Test cases:
 (*  
   [ ] - self-references - allowed and trapped
-  [ ] - direct calls to most derrived base override
+  [ ] - direct calls to most derived base override
   [ ] - calls on "super" object - via self and super vars
 *)
 

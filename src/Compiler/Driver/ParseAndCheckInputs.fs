@@ -794,7 +794,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: Max errors is currently counted separately for each logger. When max errors is reached on one compilation
 /// the given Exiter will be called.
 ///
-/// NOTE: this needs to be improved to commit diagnotics as soon as possible
+/// NOTE: this needs to be improved to commit diagnostics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
 let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =

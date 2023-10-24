@@ -619,7 +619,7 @@ let _ = sprintf "ABCDE"
     |> shouldEqual [||]
 
 [<Test>]
-let ``Single case discreminated union type definition`` () =
+let ``Single case discriminated union type definition`` () =
     let input =
       """
 type DU = Case1

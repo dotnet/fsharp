@@ -28,7 +28,7 @@ module CheckStatic4 =
 
         // NOTE NOTE NOTE: the rest of this test may be flakey under 
         //    - NGEN of code
-        //    - Differnt CLRs
+        //    - Different CLRs
 
         // For generic types, it looks like the CLR implements a semantics where subsequent failure reaise an exception
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true

@@ -531,9 +531,9 @@ type SeqModule() =
         // string Seq
         let strDistinctSeq = seq ["elementDup"; "ele1"; "ele2"; "elementDup"]
        
-        let DistnctStrSeq = Seq.distinct strDistinctSeq
+        let DistinctStrSeq = Seq.distinct strDistinctSeq
         let expectedStrSeq = seq ["elementDup"; "ele1"; "ele2"]
-        VerifySeqsEqual expectedStrSeq DistnctStrSeq
+        VerifySeqsEqual expectedStrSeq DistinctStrSeq
         
         // Empty Seq
         let emptySeq : seq<decimal * unit>         = Seq.empty
@@ -566,9 +566,9 @@ type SeqModule() =
         let funcStrDistinct (s:string) = s.IndexOf("key")
         let strSeq = seq [ "key"; "blank key"; "key dup"; "blank key dup"]
        
-        let DistnctStrSeq = Seq.distinctBy funcStrDistinct strSeq
+        let DistinctStrSeq = Seq.distinctBy funcStrDistinct strSeq
         let expectedStrSeq = seq ["key"; "blank key"]
-        VerifySeqsEqual expectedStrSeq DistnctStrSeq
+        VerifySeqsEqual expectedStrSeq DistinctStrSeq
         
         // Empty Seq
         let emptySeq            : seq<int> = Seq.empty

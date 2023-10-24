@@ -674,7 +674,7 @@ This release also contains the following bug fixes and improvements to the F# co
 * Resolution of an issue where copying of a struct would not occur if it was defined in C# and mutated in a member call ([#7406](https://github.com/dotnet/fsharp/issues/7406))
 * A crypto hash of the portable PDB content created by the compiler is not included in the PE debug directory, with a configurable hash set to SHA-256 by default ([#4259](https://github.com/dotnet/fsharp/issues/4259), [#1223](https://github.com/dotnet/fsharp/issues/1223))
 * A bug where `LeafExpressionConverter` ignored `ValueType` and assumed `System.Tuple` has been fixed ([#6515](https://github.com/dotnet/fsharp/issues/6515)) by [Kevin Malenfant](https://github.com/kevmal)
-* A bug where `List.transpose` discaded data instead of throwing an exception has been resolved ([#6908](https://github.com/dotnet/fsharp/issues/6908)) by [Patrick McDonald](https://github.com/PatrickMcDonald)
+* A bug where `List.transpose` discarded data instead of throwing an exception has been resolved ([#6908](https://github.com/dotnet/fsharp/issues/6908)) by [Patrick McDonald](https://github.com/PatrickMcDonald)
 * A bug where `List.map3` gave a misleading error when used on lists of different lengths has been resolved ([#6897](https://github.com/dotnet/fsharp/issues/6897)) by [reacheight](https://github.com/reacheight)
 
 #### F# tools

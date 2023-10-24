@@ -7917,7 +7917,7 @@ let rec f l =
             marker = "module BasicTest ")
 
     [<Test>]
-    member this.``Verify no completion in hash derictives``() =
+    member this.``Verify no completion in hash directives``() =
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """
                 #r (*Marker*)

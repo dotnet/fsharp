@@ -2253,7 +2253,7 @@ module StillMoreRandomTests =
     let Forall(v,p) = Not(Exists(v,Not(p)))
     let Or (p1,p2) = Not(And(Not(p1),Not(p2)))
 
-    // nice infix notation, also deerived equality and implication
+    // nice infix notation, also derived equality and implication
     let (&&&) p1 p2 = And(p1,p2)
     let (|||) p1 p2 = Or(p1,p2)
     let (===) p1 p2 = (p1 &&& p2) ||| (Not(p1) &&& Not(p2))
