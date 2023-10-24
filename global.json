@@ -15,7 +15,7 @@
     "xcopy-msbuild": "17.2.1"
   },
   "native-tools": {
-    "perl": "5.32.1.1"
+    "perl": "5.38.0.1"
   },
   "msbuild-sdks": {
     "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.22524.5",
