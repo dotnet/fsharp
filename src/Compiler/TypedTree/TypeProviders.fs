@@ -300,7 +300,7 @@ type ProvidedTypeComparer() =
 type ProvidedTypeContext = 
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
-    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * Lazy<ConcurrentDictionary<ProvidedType, obj>>
+    | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * InterruptibleLazy<ConcurrentDictionary<ProvidedType, obj>>
 
     static member Empty = NoEntries
 
@@ -334,9 +334,11 @@ type ProvidedTypeContext =
         match ctxt with 
         | NoEntries -> NoEntries
         | Entries(d1, d2) ->
-            Entries(d1, lazy (let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
-                              for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
-                              dict))
+            Entries(d1, InterruptibleLazy(fun _ ->
+                let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
+                dict
+            ))
 
 [<AllowNullLiteral; Sealed>]
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =

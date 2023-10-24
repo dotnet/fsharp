@@ -337,7 +337,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
+        FSharpOptimizationData: InterruptibleLazy<Optimizer.LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -2049,26 +2049,26 @@ and [<Sealed>] TcImports
                 let ccu = CcuThunk.Create(ccuName, ccuData)
 
                 let optdata =
-                    lazy
-                        (match Map.tryFind ccuName optDatas with
-                         | None -> None
-                         | Some info ->
-                             let data =
-                                 GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), info)
+                    InterruptibleLazy(fun _ ->
+                        match Map.tryFind ccuName optDatas with
+                        | None -> None
+                        | Some info ->
+                            let data =
+                                GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), info)
 
-                             let fixupThunk () =
-                                 data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
+                            let fixupThunk () =
+                                data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
 
-                             // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
-                             tciLock.AcquireLock(fun tcitok ->
-                                 RequireTcImportsLock(tcitok, ccuThunks)
+                            // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
+                            tciLock.AcquireLock(fun tcitok ->
+                                RequireTcImportsLock(tcitok, ccuThunks)
 
-                                 for ccuThunk in data.FixupThunks do
-                                     if ccuThunk.IsUnresolvedReference then
-                                         ccuThunks.Add(ccuThunk, (fun () -> fixupThunk () |> ignore)))
+                                for ccuThunk in data.FixupThunks do
+                                    if ccuThunk.IsUnresolvedReference then
+                                        ccuThunks.Add(ccuThunk, (fun () -> fixupThunk () |> ignore)))
 
-                             Some(fixupThunk ()))
-
+                            Some(fixupThunk ())
+                    )
                 let ccuinfo =
                     {
                         FSharpViewOfMetadata = ccu

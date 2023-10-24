@@ -984,7 +984,7 @@ type internal ILOverridesSpec =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of Lazy<ILMethodBody>
+    | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod>
     | Abstract
     | Native
@@ -1033,7 +1033,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDeclsStored: ILSecurityDeclsStored *
@@ -1049,7 +1049,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDecls: ILSecurityDecls *
@@ -1140,7 +1140,7 @@ type ILMethodDef =
         ?callingConv: ILCallingConv *
         ?parameters: ILParameters *
         ?ret: ILReturn *
-        ?body: Lazy<MethodBody> *
+        ?body: InterruptibleLazy<MethodBody> *
         ?securityDecls: ILSecurityDecls *
         ?isEntryPoint: bool *
         ?genericParams: ILGenericParameterDefs *
@@ -2075,11 +2075,11 @@ val internal mkILMethodBody:
 
 val internal mkMethodBody: bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> MethodBody
 
-val internal methBodyNotAvailable: Lazy<MethodBody>
+val internal methBodyNotAvailable: InterruptibleLazy<MethodBody>
 
-val internal methBodyAbstract: Lazy<MethodBody>
+val internal methBodyAbstract: InterruptibleLazy<MethodBody>
 
-val internal methBodyNative: Lazy<MethodBody>
+val internal methBodyNative: InterruptibleLazy<MethodBody>
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 
@@ -2217,11 +2217,11 @@ val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
 val mkILEvents: ILEventDef list -> ILEventDefs
-val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
+val mkILEventsLazy: InterruptibleLazy<ILEventDef list> -> ILEventDefs
 val emptyILEvents: ILEventDefs
 
 val mkILProperties: ILPropertyDef list -> ILPropertyDefs
-val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
+val mkILPropertiesLazy: InterruptibleLazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
@@ -2230,7 +2230,7 @@ val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
-val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
+val mkILFieldsLazy: InterruptibleLazy<ILFieldDef list> -> ILFieldDefs
 val emptyILFields: ILFieldDefs
 
 val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs

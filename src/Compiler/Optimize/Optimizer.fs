@@ -172,7 +172,7 @@ type ModuleInfo =
     { ValInfos: ValInfos
       ModuleOrNamespaceInfos: NameMap<LazyModuleInfo> }
           
-and LazyModuleInfo = Lazy<ModuleInfo>
+and LazyModuleInfo = InterruptibleLazy<ModuleInfo>
 
 type ImplFileOptimizationInfo = LazyModuleInfo
 
@@ -1393,10 +1393,10 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
 let AbstractOptimizationInfoToEssentials =
 
     let rec abstractModulInfo (ss: ModuleInfo) =
-         { ModuleOrNamespaceInfos = NameMap.map (Lazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
+         { ModuleOrNamespaceInfos = NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
            ValInfos = ss.ValInfos.Filter (fun (v, _) -> v.MustInline) }
 
-    and abstractLazyModulInfo ss = ss |> Lazy.force |> abstractModulInfo |> notlazy
+    and abstractLazyModulInfo ss = ss |> InterruptibleLazy.force |> abstractModulInfo |> notlazy
       
     abstractLazyModulInfo
 
@@ -1459,7 +1459,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
       and abstractModulInfo ss =
-         { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (Lazy.force >> abstractModulInfo >> notlazy) 
+         { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
 
@@ -1496,7 +1496,7 @@ let RemapOptimizationInfo g tmenv =
                (vrefR, vinfo)) } 
 
     and remapLazyModulInfo ss =
-         ss |> Lazy.force |> remapModulInfo |> notlazy
+         ss |> InterruptibleLazy.force |> remapModulInfo |> notlazy
            
     remapLazyModulInfo
 
