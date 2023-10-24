@@ -556,7 +556,7 @@ val MakeInnerEnv:
         TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
-/// given that the accumulator for the module type already exisits.
+/// given that the accumulator for the module type already exists.
 val MakeInnerEnvWithAcc:
     addOpenToNameEnv: bool ->
     env: TcEnv ->

@@ -41,7 +41,7 @@ val (|StopProcessing|_|): exn: exn -> unit option
 
 val StopProcessing<'T> : exn
 
-/// Represents a diagnostic exeption whose text comes via SR.*
+/// Represents a diagnostic exception whose text comes via SR.*
 exception DiagnosticWithText of number: int * message: string * range: range
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
@@ -51,7 +51,7 @@ exception DiagnosticEnabledWithLanguageFeature of
     range: range *
     enabledByLangFeature: bool
 
-/// Creates a diagnostic exeption whose text comes via SR.*
+/// Creates a diagnostic exception whose text comes via SR.*
 val Error: (int * string) * range -> exn
 
 exception InternalError of message: string * range: range

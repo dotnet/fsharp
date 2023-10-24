@@ -792,7 +792,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         childAdded.ItemNode.SetMetadata(ProjectFileConstants.DependentUpon, dependentOf);
                     childAdded.ItemNode.RefreshProperties();
 
-                    // Extensibilty events has rename
+                    // Extensibility events has rename
                     this.ProjectMgr.ExtensibilityEventsHelper.FireItemRenamed(childAdded, Path.GetFileName(originalInclude));
 
                     //Update the new document in the RDT.

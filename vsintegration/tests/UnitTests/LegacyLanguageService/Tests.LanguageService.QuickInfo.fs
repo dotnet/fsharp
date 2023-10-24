@@ -3039,8 +3039,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
 
                             let IsInstanceMethod (controlEventHandler:ControlEventHandler) =
                                 // TC 32	Identifier	Delegate	Own Code	Pattern Match
@@ -3079,8 +3079,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
 
                             let IsInstanceMethod (controlEventHandler:ControlEventHandler) =
                                 // TC 32	Identifier	Delegate	Own Code	Pattern Match
@@ -3142,8 +3142,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
     
                             let MaxTuple x y =
                                 let tuplex = (x,x.ToString() )

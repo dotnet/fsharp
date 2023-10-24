@@ -179,7 +179,7 @@ module TestConsumeCSharpOptionalParameter =
 
 // This tests overloaded variaitons of the methods, where the overloads vary by type but not nullability
 //
-// The CHECK_ERRORS cases are not execpted to compile
+// The CHECK_ERRORS cases are not expected to compile
 module TestConsumeCSharpOptionalParameterOverloads = 
     open System
     open CSharpOptionalParameters

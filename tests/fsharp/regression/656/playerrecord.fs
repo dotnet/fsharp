@@ -57,7 +57,7 @@ type NamedPlayerRecordArray = { mutable name:(string); mutable value:(PlayerReco
 	
 /// Get player table from specified file	
 let GetPlayerTable fileName =
-	CreateEnumrableCSVStream fileName |> Seq.map (fun s -> 
+	CreateEnumerableCSVStream fileName |> Seq.map (fun s -> 
 		{ new PlayerRecord with gamertag = s.[0]; 
 						    and player_id = Convert.ToInt64(s.[1]); 
 						    and mu = Convert.ToDouble(s.[2]); 
@@ -72,7 +72,7 @@ let LoadPlayerTable fileName =
 
 /// Enumerates leader board table from specified file						  
 let EnumerateLeaderboard fileName = 
-	  	CreateEnumrableCSVStream fileName |> Seq.map (fun s -> 
+	  	CreateEnumerableCSVStream fileName |> Seq.map (fun s -> 
 		{ new PlayerRecord with gamertag = System.String.Empty 
 						    and player_id = Convert.ToInt64(s.[0]); 
 						    and mu = Convert.ToDouble(s.[1]); 

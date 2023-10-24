@@ -369,7 +369,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             catch (ArgumentException)
             {
-                // 4951: exeception happens sometimes when ToolBox queries references on worker thread 
+                // 4951: exception happens sometimes when ToolBox queries references on worker thread 
                 // (apparently hitting a race or bad state of referenced project's ConfigurationManager)
                 return null;
             }

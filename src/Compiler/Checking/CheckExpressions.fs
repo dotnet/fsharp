@@ -449,7 +449,7 @@ type CheckedBindingInfo =
        valAttribs: Attribs *
        xmlDoc: XmlDoc *
        tcPatPhase2: (TcPatPhase2Input -> Pattern) *
-       exlicitTyparInfo: ExplicitTyparInfo *
+       explicitTyparInfo: ExplicitTyparInfo *
        nameToPrelimValSchemeMap: NameMap<PrelimVal1> *
        rhsExprChecked: Expr *
        argAndRetAttribs: ArgAndRetAttribs *

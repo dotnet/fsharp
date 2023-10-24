@@ -199,7 +199,7 @@ end
 (*
 module RandomStrangeCodeFromLewis = begin
 
-  // This code is erroneuos since it compares function values.
+  // This code is erroneous since it compares function values.
   let fix_memo f n =
     let memo = Hashtbl.create 100 in
     let rec fix_memo0 f n = f_memo (fix_memo0 f_memo) n and

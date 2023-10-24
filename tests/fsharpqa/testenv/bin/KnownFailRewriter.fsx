@@ -1,6 +1,6 @@
 // Knownfail.lst rewriter.
 // Takes a Knownfail.txt file and rewrites it according to the current configuration
-// Exercise caution when making changes here because you may end up escluding tests without noticing
+// Exercise caution when making changes here because you may end up excluding tests without noticing
 
 // NOTE: Execute as a 32bit process
 

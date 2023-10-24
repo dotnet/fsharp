@@ -947,7 +947,7 @@ val name_of_fdef: FieldDef -> string
  * name.
  * -------------------------------------------------------------------- *)
 
-type FieldDefs (* Abstract type qquivalent to a list of FieldDefs *)
+type FieldDefs (* Abstract type equivalent to a list of FieldDefs *)
 
 val dest_fdefs: FieldDefs -> FieldDef list
 val filter_fdefs: (FieldDef -> bool) -> FieldDefs -> FieldDefs

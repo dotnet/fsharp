@@ -22,7 +22,7 @@ module AmbiguousTypeNameTests =
             type C<'a,'b>() = 
                static member P = 1
 
-        let _ = new M.C() //  give errpr
+        let _ = new M.C() //  give error
         let _ = new M.C<int>() 
         let _ = M.C()     //  give warning
         let _ = M.C<int>()  
@@ -36,7 +36,7 @@ module AmbiguousTypeNameTests =
 
         open M
 
-        let _ = new C() //  give errpr
+        let _ = new C() //  give error
         let _ = new C<int>() 
         let _ = C()     //  give warning
         let _ = C<int>()  
@@ -51,7 +51,7 @@ module AmbiguousTypeNameTests =
         // open again for good luck
         open M
 
-        let _ = new C() //  give errpr
+        let _ = new C() //  give error
         let _ = new C<int>() 
         let _ = C()     //  give warning
         let _ = C<int>()  

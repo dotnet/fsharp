@@ -165,12 +165,12 @@ module Spawn =
 
     let private expectCodeOrRaise expectedCode command arguments (exitCode:int) _ = 
         if expectedCode<>exitCode then 
-            failwith(sprintf "%s %s exitted with code %d. Expected %d" command arguments exitCode expectedCode)
+            failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         ()
 
     let private expectCodeWithStatisticsOrExit expectedCode command arguments (exitCode:int) stats :ProcessResults = 
         if expectedCode<>exitCode then 
-            failwith(sprintf "%s %s exitted with code %d. Expected %d" command arguments exitCode expectedCode)
+            failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         stats
 
     let private returnExitCode _ _ (exitCode:int) _= exitCode
@@ -234,7 +234,7 @@ module Spawn =
         match code with
         | 0 | 1 | 2 | 3 -> () // Success.
         | _ -> 
-            printfn "Robocopy %s %s /mir exitted with code %d. Expected 0, 1, 2 or 3." source destination code
+            printfn "Robocopy %s %s /mir exited with code %d. Expected 0, 1, 2 or 3." source destination code
             exit code
 
     /// Submit a specific set of checked out files to Tfs.

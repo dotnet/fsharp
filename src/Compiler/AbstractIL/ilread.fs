@@ -207,7 +207,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
             match weakMemory.TryGetTarget() with
             | true, m -> m.AsReadOnly()
             | _ ->
-                let block = peReader.GetEntireImage() // it's ok to call this everytime we do GetView as it is cached in the PEReader.
+                let block = peReader.GetEntireImage() // it's ok to call this every time we do GetView as it is cached in the PEReader.
 
                 let m =
                     ByteMemory.FromUnsafePointer(block.Pointer |> NativePtr.toNativeInt, block.Length, this)

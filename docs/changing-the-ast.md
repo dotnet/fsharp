@@ -43,7 +43,7 @@ type SynRationalConst =
     // ...
 ```	
 
-After modifying `SyntaxTree.fsi` and `SyntaxTree.fs`, the compiler will report erros in `pars.fsy`. If not, the `fsy` file wasn't processed by the compilation. In this case, a rebuild of `FSharp.Compiler.Service.fsproj` should help.  
+After modifying `SyntaxTree.fsi` and `SyntaxTree.fs`, the compiler will report errors in `pars.fsy`. If not, the `fsy` file wasn't processed by the compilation. In this case, a rebuild of `FSharp.Compiler.Service.fsproj` should help.  
 `pars.fsy` is the parser specification of F#, a list of rules that describe how to parse F# code. Don't be scared by the size of the file or the unfamiliar content.
 It's easier than it looks.
 The F# compiler uses a parser generator called [fsyacc](https://github.com/fsprojects/FsLexYacc) to generate the parser from the specification in `pars.fsy`.

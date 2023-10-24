@@ -1182,7 +1182,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
     ///
-    /// <example id="exacly-one-1">
+    /// <example id="exactly-one-1">
     /// <code lang="fsharp">
     /// let inputs = ["banana"]
     ///
@@ -1191,7 +1191,7 @@ module Seq =
     /// Evaluates to <c>banana</c>
     /// </example>
     ///
-    /// <example id="exacly-one-2">
+    /// <example id="exactly-one-2">
     /// <code lang="fsharp">
     /// let inputs = ["pear"; "banana"]
     ///
@@ -1200,7 +1200,7 @@ module Seq =
     /// Throws <c>ArgumentException</c>
     /// </example>
     ///
-    /// <example id="exacly-one-3">
+    /// <example id="exactly-one-3">
     /// <code lang="fsharp">
     /// [] |> Seq.exactlyOne
     /// </code>
@@ -1217,7 +1217,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example id="try-exacly-one-1">
+    /// <example id="try-exactly-one-1">
     /// <code lang="fsharp">
     /// let inputs = ["banana"]
     ///
@@ -1226,7 +1226,7 @@ module Seq =
     /// Evaluates to <c>Some banana</c>
     /// </example>
     ///
-    /// <example id="try-exacly-one-2">
+    /// <example id="try-exactly-one-2">
     /// <code lang="fsharp">
     /// let inputs = ["pear"; "banana"]
     ///
@@ -1235,7 +1235,7 @@ module Seq =
     /// Evaluates to <c>None</c>
     /// </example>
     ///
-    /// <example id="try-exacly-one-3">
+    /// <example id="try-exactly-one-3">
     /// <code lang="fsharp">
     /// [] |> Seq.tryExactlyOne
     /// </code>

@@ -145,5 +145,5 @@ let parens_id =
         |> Array.length)
     |> Array.sortByDescending snd
 
-printfn "Top files that have parenthesized atomic expressionsg:\n%A" (Array.truncate 10 parens_id)
+printfn "Top files that have parenthesized atomic expressions:\n%A" (Array.truncate 10 parens_id)
 

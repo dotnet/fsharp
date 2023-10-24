@@ -1570,7 +1570,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// The main entry point for command excection. Gets called from the IVsUIHierarchy and IOleCommandTarget methods.
+        /// The main entry point for command exception. Gets called from the IVsUIHierarchy and IOleCommandTarget methods.
         /// </summary>
         /// <param name="cmdGroup">Unique identifier of the command group</param>
         /// <param name="cmdId">The command to be executed.</param>

@@ -364,7 +364,7 @@ type MailboxProcessorType() =
         |> fun x -> Async.Start(x, cancel.Token)
         System.Threading.Thread.Sleep(5000) // cancellation after 500 pause for 5 seconds 
         if not gotGood || not gotBad then 
-            failwith <| sprintf "Exected both good and bad async's to be cancelled afterMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
+            failwith <| sprintf "Expected both good and bad async's to be cancelled afterMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
 
     [<Fact>]
     member this.StartImmediateStartsOnCurrentThread() =

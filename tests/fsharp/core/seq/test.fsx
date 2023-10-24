@@ -573,7 +573,7 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
     }
 
     //
-    // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence epression tailcalls",
+    // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence expression tailcalls",
     // i.e. by compiling them to a state machine
     let tests() = 
         printfn "starting seqOneUnusedNonCapturing"

@@ -53,7 +53,7 @@ type UsingMSBuild() as this =
         | Some(severity,message) ->
             Assert.Fail(sprintf "Expected no squiggle but got '%A' with message: %s" severity message)
 
-    let VerifyErrorListContainedExpetedStr(expectedStr:string,project : OpenProject) = 
+    let VerifyErrorListContainedExpectedStr(expectedStr:string,project : OpenProject) = 
         let errorList = GetErrors(project)
         let GetErrorMessages(errorList : Error list) =
             [ for i = 0 to errorList.Length - 1 do
@@ -103,7 +103,7 @@ type UsingMSBuild() as this =
     //Verify the error list in fsx file contained the expected string
     member private this.VerifyFSXErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
-        VerifyErrorListContainedExpetedStr(expectedStr,project)    
+        VerifyErrorListContainedExpectedStr(expectedStr,project)    
 
     //Verify no error list in fsx file 
     member private this.VerifyFSXNoErrorList(fileContents : string) =
@@ -228,7 +228,7 @@ type UsingMSBuild() as this =
                                      "open System.Transactions"
                                      ]
         let (project, file) = createSingleFileFsxFromLines code
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         ReplaceFileInMemory file
@@ -259,7 +259,7 @@ type UsingMSBuild() as this =
                                      "printfn \"%d\" x"
                                      ])    
         let fsx = OpenFile(project,"File2.fsx")    
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
         
         ReplaceFileInMemory fsx
                          ["#light"
@@ -299,7 +299,7 @@ type UsingMSBuild() as this =
                           "printfn \"%d\" x"
                           ]
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
     
     [<Test>]
     member public this.``Fsx.HashLoad.Conditionals``() =
@@ -356,7 +356,7 @@ type UsingMSBuild() as this =
                          ]
         SaveFileToDisk(file)
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectCreate, because dependent DLL set changed *))
     
 

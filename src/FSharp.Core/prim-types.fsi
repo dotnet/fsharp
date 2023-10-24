@@ -3524,8 +3524,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="id-example">
         /// <code lang="fsharp">
-        /// id 12     //  Evaulates to 12
-        /// id "abc"  //  Evaulates to "abc"
+        /// id 12     //  Evaluates to 12
+        /// id "abc"  //  Evaluates to "abc"
         /// </code>
         /// </example>
         /// 
@@ -3623,7 +3623,7 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// let l1 = ['a'; 'b'; 'c']
         /// let l2 = ['d'; 'e'; 'f']
-        /// l1 @ l2   //  Evalulates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
+        /// l1 @ l2   //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
         /// </code>
         /// </example>
         /// 

@@ -977,7 +977,7 @@ type FSharpMemberOrFunctionOrValue =
     /// Get the signature text to include this Symbol into an existing signature file.
     member GetValSignatureText: displayContext: FSharpDisplayContext * m: range -> string option
 
-    /// Check if this method has an entrpoint that accepts witness arguments and if so return
+    /// Check if this method has an entrypoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
 

@@ -708,7 +708,7 @@ type PortablePdbGenerator
                         //
                         // So the spec is actually bit iffy!!!!! (More like guidelines really.  )
                         //  It uses code similar to this to validate the values
-                        //    if (result < 0 || result >= ushort.MaxValue)  // be errorfull
+                        //    if (result < 0 || result >= ushort.MaxValue)  // be errorful
                         // Spec Says 0x10000 and value max = 0xFFFF but it can't even be = to maxvalue, and so the range is 0 .. 0xfffe inclusive
                         //=============================================================================================================================================
 

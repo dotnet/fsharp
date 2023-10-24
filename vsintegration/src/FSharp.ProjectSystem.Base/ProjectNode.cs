@@ -4860,14 +4860,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             } 
         }
 
-        internal int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result, bool bTrackChanges, Func<uint> getIdOfExisingItem = null, AddItemContext context = AddItemContext.Unknown)
+        internal int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result, bool bTrackChanges, Func<uint> getIdOfExistingItem = null, AddItemContext context = AddItemContext.Unknown)
         {
             if (files == null || result == null || files.Length == 0 || result.Length == 0)
             {
                 return VSConstants.E_INVALIDARG;
             }
 
-            if (getIdOfExisingItem != null && files.Length != 1)
+            if (getIdOfExistingItem != null && files.Length != 1)
             {
                 // only 1 file can participate in renaming
                 return VSConstants.E_INVALIDARG;
@@ -5056,12 +5056,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
                 else
                 {
-                    if (getIdOfExisingItem != null)
+                    if (getIdOfExistingItem != null)
                     {
                         // this is rename operation
                         //Add new filenode/dependentfilenode
-                        var exisingId = getIdOfExisingItem();
-                        this.AddNewFileNodeToHierarchyCore(n, newFileName, exisingId);
+                        var existingId = getIdOfExistingItem();
+                        this.AddNewFileNodeToHierarchyCore(n, newFileName, existingId);
                     }
                     else
                     {

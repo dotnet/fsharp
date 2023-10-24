@@ -4214,7 +4214,7 @@ sub save_the_log_file {
     my ($retval, $test, $label, $globenv, $locenv, $skipmsg) = @_;
     
     # Runpl.xml requires a 'GroupID' attribute on the TestOutput tags.
-    # The id is incremented by 1 everytime $GROUPSIZE lines are seen.
+    # The id is incremented by 1 every time $GROUPSIZE lines are seen.
     my $lines_seen;
     BEGIN {
     	my $_lines_seen = 0;

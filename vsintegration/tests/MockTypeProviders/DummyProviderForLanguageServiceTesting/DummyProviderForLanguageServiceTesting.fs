@@ -388,7 +388,7 @@ module RegexTypeProvider =
                 // Create an instance of the regular expression. 
                 //
                 // This will fail with System.ArgumentException if the regular expression is invalid. 
-                // The exception will excape the type provider and be reported in client code.
+                // The exception will escape the type provider and be reported in client code.
                 let r = System.Text.RegularExpressions.Regex(pattern)            
 
                 // Declare the typed regex provided type.

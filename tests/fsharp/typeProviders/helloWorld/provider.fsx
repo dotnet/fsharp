@@ -843,7 +843,7 @@ type public Provider(config: TypeProviderConfig) =
                        // For example, see the quotation form of this:
                        //  <@@ match (Choice1Of2 3) with Choice1Of2 x -> true | x -> false @@>
                        //
-                       // Normally this doesn't matter, e.g. for an evaluatior. However, for provided expressions we can't cope 
+                       // Normally this doesn't matter, e.g. for an evaluator. However, for provided expressions we can't cope 
                        // with this case as the F# compiler is not aware of the case-types for the union type.
                        //
                        // let o = 

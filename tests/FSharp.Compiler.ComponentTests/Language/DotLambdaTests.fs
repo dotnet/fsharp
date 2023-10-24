@@ -147,7 +147,7 @@ let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
     |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")] 
 
 [<Fact>]
-let ``DotLambda does allow member based SRTP if labelled explicitely`` () =
+let ``DotLambda does allow member based SRTP if labelled explicitly`` () =
     Fsx "let inline myFunc<'a when 'a:(member WhatANiceProperty: int)> (x: 'a) = x |> _.WhatANiceProperty "
     |> withLangVersion80
     |> typecheck
