@@ -1211,7 +1211,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | Some path when FileSystem.DirectoryExistsShim(path) -> yield path
                         | _ -> ()
             ]
-        with e ->
+        with RecoverableException e ->
             errorRecovery e range0
             []
 
@@ -1408,7 +1408,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         None
                 else
                     Some(m, path)
-            with e ->
+            with RecoverableException e ->
                 errorRecovery e m
                 None
 

@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
+open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -44,6 +45,13 @@ exception ReportedError of exn option with
         match this :> exn with
         | ReportedError (Some exn) -> msg + " Original message: " + exn.Message + ")"
         | _ -> msg
+
+[<return: Struct>]
+let (|RecoverableException|_|) (exn: Exception) =
+    if exn.IsOperationCancelled then
+        ValueNone
+    else
+        ValueSome exn
 
 let rec findOriginalException err =
     match err with
@@ -857,11 +865,13 @@ type StackGuard(maxDepth: int, name: string) =
             if depth % maxDepth = 0 then
                 let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                 let buildPhase = DiagnosticsThreadStatics.BuildPhase
+                let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
+                    use _token = Cancellable.UsingToken ct
                     return f ()
                 }
                 |> Async.RunImmediate
