@@ -2141,6 +2141,12 @@ and typeDefReader ctxtH : ILTypeDefStored =
              | ILTypeDefLayout.Explicit _ -> true
              | _ -> false)
 
+        let canContainExtensionMethods =
+            seq { for i in methodsIdx .. endMethodsIdx -> i }
+            |> Seq.map(fun x -> ctxt.customAttrsReader_MethodDef.GetCustomAttrs(x).AsArray())
+            |> Seq.concat
+            |> Seq.tryFind(fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
+
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
@@ -2164,6 +2170,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             events = events,
             properties = props,
             isKnownToBeAttribute = false,
+            canContainExtensionMethods = canContainExtensionMethods.IsSome,
             customAttrsStored = ctxt.customAttrsReader_TypeDef,
             metadataIndex = idx
         ))

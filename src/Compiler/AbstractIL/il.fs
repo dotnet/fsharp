@@ -2621,6 +2621,7 @@ type ILTypeDef
         events: ILEventDefs,
         properties: ILPropertyDefs,
         isKnownToBeAttribute: bool,
+        canContainExtensionMethods: bool,
         securityDeclsStored: ILSecurityDeclsStored,
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
@@ -2657,6 +2658,7 @@ type ILTypeDef
             events,
             properties,
             isKnownToBeAttribute,
+            false,
             storeILSecurityDecls securityDecls,
             storeILCustomAttrs customAttrs,
             NoMetadataIdx
@@ -2689,6 +2691,8 @@ type ILTypeDef
     member _.Properties = properties
 
     member _.IsKnownToBeAttribute = isKnownToBeAttribute
+
+    member _.CanContainExtensionMethods = canContainExtensionMethods
 
     member _.CustomAttrsStored = customAttrsStored
 

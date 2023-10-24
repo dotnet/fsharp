@@ -868,7 +868,13 @@ type ILAttributes =
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
-type ILAttributesStored
+type ILAttributesStored =
+    /// Computed by ilread.fs based on metadata index
+    | Reader of (int32 -> ILAttribute[])
+    /// Already computed
+    | Given of ILAttributes
+
+    member GetCustomAttrs: metadataIndex: int32 -> ILAttributes
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1500,6 +1506,7 @@ type ILTypeDef =
         events: ILEventDefs *
         properties: ILPropertyDefs *
         isKnownToBeAttribute: bool *
+        canContainExtensionMethods: bool *
         securityDeclsStored: ILSecurityDeclsStored *
         customAttrsStored: ILAttributesStored *
         metadataIndex: int32 ->
@@ -1556,6 +1563,7 @@ type ILTypeDef =
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding
     member IsKnownToBeAttribute: bool
+    member CanContainExtensionMethods: bool
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef
