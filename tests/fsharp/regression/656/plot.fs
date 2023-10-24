@@ -112,7 +112,7 @@ let DrawXAxisUnits (gr:Graphics) (pen:Pen) (transform:Transformation2d) (horiz:R
 			let textSize = MeasureString gr legend in
 			DrawString gr pen (new PointF(x - (textSize.Width / 2.0F), y + 4.0F)) legend
 	in	
-	// Draw horizantal scale	
+	// Draw horizontal scale	
 	if hunit>0.F then
 		let i = ref 0.0F in
 		while (!i <= horiz.max) do DrawHPoint !i; i := !i + hunit done;

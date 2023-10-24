@@ -91,7 +91,7 @@ type FindMemberFlag =
     | PreferOverrides
 
     /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
-    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    /// and discards all when finds first non-virtual member which hides one above it in hierarchy.
     | DiscardOnFirstNonOverride
 
 /// An InfoReader is an object to help us read and cache infos.

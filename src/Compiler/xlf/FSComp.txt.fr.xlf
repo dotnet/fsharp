@@ -7243,7 +7243,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">L'assembly '{0}' a un attribut TypeProviderAssembly comportant la valeur non valide '{1}'. La valeur doit être un nom d'assembly valide</target>
         <note />
       </trans-unit>

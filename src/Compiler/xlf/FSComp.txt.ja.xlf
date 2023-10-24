@@ -7243,7 +7243,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">アセンブリ '{0}' の TypeProviderAssembly 属性に、無効な値 '{1}' が含まれています。この値は有効なアセンブリ名であることが必要です</target>
         <note />
       </trans-unit>

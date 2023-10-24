@@ -775,7 +775,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // Do not call virtual methods after this point since the object is in a deleted state.
 
                     // Remove the item created by the add item. We need to do this otherwise we will have two items.
-                    // Please be aware that we have not removed the ItemNode associated to the removed file node from the hierrachy.
+                    // Please be aware that we have not removed the ItemNode associated to the removed file node from the hierarchy.
                     // What we want to achieve here is to reuse the existing build item. 
                     // We want to link to the newly created node to the existing item node and add the new include.
 

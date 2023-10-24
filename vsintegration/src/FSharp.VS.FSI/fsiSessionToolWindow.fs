@@ -374,7 +374,7 @@ type internal FsiToolWindow() as this =
                 0
         textView.SetSelection(line, endColumn, line, startColumn) |> throwOnFailure0
 
-    /// Hanlde no-op, used to overwrite some standard command with an empty action.
+    /// Handle no-op, used to overwrite some standard command with an empty action.
     let onNoAction (sender:obj) (e:EventArgs) = ()
     
     

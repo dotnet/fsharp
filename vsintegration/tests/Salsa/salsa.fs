@@ -1055,7 +1055,7 @@ module internal Salsa =
                         let linestarts = Array.create (lines.Length+1) 0 // One extra to save the state at the end of the file.
                         VsMocks.setFileText fileName view lines (RecolorizeLines view solution.Vs.GetColorizer lines linestarts) (fun line->linestarts.[line])
                         
-                        // The invisible project does not have a hiearchy.
+                        // The invisible project does not have a hierarchy.
                         if hier <> null then 
                             // Put the file in the hierarchy
                             behaviorHooks.AddFileToHierarchyHook(fileName, hier)

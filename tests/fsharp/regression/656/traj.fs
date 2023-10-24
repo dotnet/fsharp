@@ -217,7 +217,7 @@ let DrawBarGraph (gr:Graphics) (transform:Transformation2d) (brush:#Brush) (valu
 		gr.DrawRectangle(border, tx, ty, bx - tx, by - ty );
 	)
 
-/// Draw bar graph to grahics surface
+/// Draw bar graph to graphics surface
 let DrawLabelledBarGraph (gr:Graphics) (transform:Transformation2d) (pairs:(string * float) array) =
 	let blue = new SolidBrush(Colour.Blue) in
 	let black = new Pen(Colour.Black) in		 	

@@ -313,7 +313,7 @@ type FindMemberFlag =
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots. 
     | PreferOverrides
     /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
-    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    /// and discards all when finds first non-virtual member which hides one above it in hierarchy.
     | DiscardOnFirstNonOverride
 
 /// The input list is sorted from most-derived to least-derived type, so any System.Object methods 

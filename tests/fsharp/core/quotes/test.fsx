@@ -5889,7 +5889,7 @@ module Interpolation =
                              NewArray (Object, Call (None, Box, [Value (1)])),
                              Value (<null>))])"""
 
-module TestQuotationWithIdetnicalStaticInstanceMethods = 
+module TestQuotationWithIdenticalStaticInstanceMethods = 
     type C() =
         static member M(c: int) = 1 + c
         member this.M(c: int) = 2 + c

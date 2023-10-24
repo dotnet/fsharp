@@ -3004,7 +3004,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Recursively find all nodes of type T
         /// </summary>
-        /// <typeparam name="T">The type of hierachy node being serched for</typeparam>
+        /// <typeparam name="T">The type of hierarchy node being serched for</typeparam>
         /// <param name="nodes">A list of nodes of type T</param>
         public void FindNodesOfType<T>(List<T> nodes)
             where T : HierarchyNode

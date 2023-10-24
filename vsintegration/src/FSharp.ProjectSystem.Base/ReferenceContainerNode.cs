@@ -322,7 +322,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }                
             }
 
-            // collect groupled framework references
+            // collect grouped framework references
             if (projectInstanceToSearchExpandedReferences != null)
             {
                 // fetch all 'ReferencePath' items that were resolved from implicitly expanded references (metadata#ResolvedFrom = ImplicitlyExpandTargetFramework)

@@ -7654,7 +7654,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         override __.GetEnumUnderlyingType() =
             if this.IsEnum then
-                txILType ([| |], [| |]) ilGlobals.typ_Int32 // TODO: in theory the assumption of "Int32" is not accurate for all enums, howver in practice .NET only uses enums with backing field Int32
+                txILType ([| |], [| |]) ilGlobals.typ_Int32 // TODO: in theory the assumption of "Int32" is not accurate for all enums, however in practice .NET only uses enums with backing field Int32
             else failwithf "not enum type"
 
         override __.IsArrayImpl() = false

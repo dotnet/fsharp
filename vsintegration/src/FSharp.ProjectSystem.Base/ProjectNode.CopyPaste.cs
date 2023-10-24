@@ -1067,7 +1067,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
 
-            // This will throw invalid cast exception if the hierrachy is not a project.
+            // This will throw invalid cast exception if the hierarchy is not a project.
             IVsProject project = (IVsProject)hierarchy;
 
             string moniker;

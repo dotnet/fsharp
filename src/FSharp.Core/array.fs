@@ -2498,7 +2498,7 @@ module Array =
                         sortChunk left freeWorkers
                         sortChunk right freeWorkers
                     else
-                        // Pivot-based partitions might be inbalanced. Split  free workers for left/right proportional to their size
+                        // Pivot-based partitions might be imbalanced. Split  free workers for left/right proportional to their size
                         let itemsPerWorker = Operators.max ((left.Count + right.Count) / freeWorkers) 1
 
                         let workersForLeftTask =

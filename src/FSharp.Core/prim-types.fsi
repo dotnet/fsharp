@@ -2906,7 +2906,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The result of the comparison.</returns>
         /// 
-        /// <example id="compare-greather-than-example">
+        /// <example id="compare-greater-than-example">
         /// <code lang="fsharp">
         ///  5 &gt; 1               // Evaluates to true
         ///  5 &gt; 5               // Evaluates to false

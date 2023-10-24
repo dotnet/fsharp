@@ -624,7 +624,7 @@ module LanguageServiceExtension =
                     let newHooks = 
                      { new ProjectBehaviorHooks with 
 
-                        // Note: CreateProjectHook will callback MakeHierarcyHook and then InitializeProjectHook
+                        // Note: CreateProjectHook will callback MakeHierarchyHook and then InitializeProjectHook
                         member x.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion: string) =
                             if projInfo.CreateProjectHookIsEnabled then
                                 hooks.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion)

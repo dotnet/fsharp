@@ -1778,7 +1778,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dlg")]
         public virtual VSADDRESULT RunWizard(HierarchyNode parentNode, string itemName, string wizardToRun, IntPtr dlgOwner)
         {
-            Debug.Assert(!String.IsNullOrEmpty(itemName), "The Add item dialog was passing in a null or empty item to be added to the hierrachy.");
+            Debug.Assert(!String.IsNullOrEmpty(itemName), "The Add item dialog was passing in a null or empty item to be added to the hierarchy.");
             Debug.Assert(!String.IsNullOrEmpty(this.ProjectFolder), "The Project Folder is not specified for this project.");
 
             // We just validate for length, since we assume other validation has been performed by the dlgOwner.
@@ -2738,7 +2738,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 // Get the current project hierarchy, project item, and selection container for the current selection
-                // If the selection spans multiple hierachies, hierarchyPtr is Zero
+                // If the selection spans multiple hierarchies, hierarchyPtr is Zero
                 uint itemid;
                 IVsMultiItemSelect multiItemSelect = null;
                 ErrorHandler.ThrowOnFailure(monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect, out selectionContainer));
@@ -2750,7 +2750,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     if (itemid != VSConstants.VSITEMID_SELECTION)
                     {
-                        // This is a single selection. Compare hirarchy with our hierarchy and get node from itemid
+                        // This is a single selection. Compare hierarchy with our hierarchy and get node from itemid
                         if (Utilities.IsSameComObject(this, hierarchy))
                         {
                             HierarchyNode node = this.NodeFromItemId(itemid);

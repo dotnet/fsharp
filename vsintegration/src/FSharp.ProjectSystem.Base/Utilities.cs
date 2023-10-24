@@ -974,7 +974,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
-        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
+        /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>
         /// <returns>true if successfull.</returns>
         public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, Guid projectId, out ConfigCanonicalName configCanonicalName)
         {
@@ -1003,7 +1003,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
-        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
+        /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>
         /// <returns>true if successfull.</returns>
         public static bool TryGetConfigurationAndPlatform(IVsCfg config, out ConfigCanonicalName configCanonicalName)
         {

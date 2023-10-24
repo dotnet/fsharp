@@ -73,7 +73,7 @@ let CreatePlayerCheckBox (toolTip:ToolTip) (player:PlayerRecord) eventHandler =
 	toolTip.SetToolTip(box, tipText); 
 	box
 
-// Create eventHanlder here
+// Create eventHandler here
 let CheckBoxEventHandler (selected:List<string>) f =
 		let eventHandler (sender:obj) (e:EventArgs) = 
 		let checkBox = sender :?> CheckBox in 

@@ -29,9 +29,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Enumerates the nested hierachies present that will participate in the build dependency update.
+        /// Enumerates the nested hierarchies present that will participate in the build dependency update.
         /// </summary>
-        /// <returns>A list of hierrachies.</returns>
+        /// <returns>A list of hierarchies.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Hierachies")]
         IVsHierarchy[] EnumNestedHierachiesForBuildDependency();
     }

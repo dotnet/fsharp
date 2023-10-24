@@ -489,8 +489,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         void Apply() {
-            // use original edit spans to update the selection location so that we get the finest
-            // granied selection update possible.  It should not be done on merged edits.
+            // use original edit spans to update the selection location so that we get the finest-
+            // grained selection update possible.  It should not be done on merged edits.
             ArrayList edits = this.editList;
 
             if (this.view != null) {

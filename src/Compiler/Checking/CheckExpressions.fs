@@ -7662,7 +7662,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
     | Some orig ->
-        // Ideally we should also check for duplicate field IDs in the TcCopyAndUpdateAnonRecdExpr case, but currently the logic is too complex to garante a proper error reporting
+        // Ideally we should also check for duplicate field IDs in the TcCopyAndUpdateAnonRecdExpr case, but currently the logic is too complex to guarantee a proper error reporting
         // So here we error instead errorR to avoid cascading  internal errors
         unsortedFieldIdsAndSynExprsGiven
         |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)

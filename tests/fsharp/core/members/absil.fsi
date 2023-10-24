@@ -596,7 +596,7 @@ type native_type =
   | NativeType_as_any
   | (* COM interop *) NativeType_bstr
   | (* COM interop *) NativeType_iunknown
-  | (* COM interop *) NativeType_idsipatch
+  | (* COM interop *) NativeType_idispatch
   | (* COM interop *) NativeType_interface
   | (* COM interop *) NativeType_error               
   | (* COM interop *) NativeType_safe_array of variant_type * string option 
