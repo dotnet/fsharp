@@ -5713,7 +5713,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">指定偵錯類型: full、portable、embedded、pdbonly。(如果未指定偵錯類型，即預設為 '{0}'，並允許將偵錯工具附加到正在執行的程式，'portable' 為跨平台格式，'embedded' 為輸出檔案內嵌的跨平台格式)。</target>
         <note />
       </trans-unit>

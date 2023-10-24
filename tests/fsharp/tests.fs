@@ -768,7 +768,7 @@ module CoreTests =
     [<Test; Category("signedtest")>]
     let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
-    // Test SHA1 key delayl signed  Attributes
+    // Test SHA1 key delay signed  Attributes
     [<Test; Category("signedtest")>]
     let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 

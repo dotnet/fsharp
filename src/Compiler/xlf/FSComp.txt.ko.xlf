@@ -5713,7 +5713,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">디버깅 형식(full, portable, embedded, pdbonly)을 지정합니다. '{0}'은(는) 디버깅 형식을 지정하지 않은 경우 기본값이며 디버거를 실행 중인 프로그램에 연결할 수 있습니다. 'portable'은 플랫폼 간 형식이고, 'embedded'는 출력 파일에 포함된 플랫폼 간 형식입니다.</target>
         <note />
       </trans-unit>

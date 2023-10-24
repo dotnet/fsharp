@@ -2152,7 +2152,7 @@ let fails = ff.Invoke()
 
 
 
-module RecursiveClassCefinitions = begin
+module RecursiveClassDefinitions = begin
 
   type t1 = 
      class

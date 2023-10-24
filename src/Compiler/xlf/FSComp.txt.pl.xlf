@@ -5713,7 +5713,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Określ typ debugowania: full, portable, pdbonly. Wartość „{0}” jest wartością domyślną, jeśli nie określono typu debugowania, i umożliwia dołączenie debugera do działającego programu. Wartość „portable” określa format międzyplatformowy. Wartość „embedded” określa format międzyplatformowy osadzony w pliku wyjściowym.</target>
         <note />
       </trans-unit>

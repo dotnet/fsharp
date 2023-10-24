@@ -5713,7 +5713,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Укажите тип отладки: full, portable, embedded, pdbonly (если тип отладки не указан, по умолчанию используется тип "{0}", позволяющий подключить отладчик к выполняющейся программе; тип portable представляет собой кроссплатформенный формат; тип embedded — кроссплатформенный формат, встроенный в выходной файл).</target>
         <note />
       </trans-unit>

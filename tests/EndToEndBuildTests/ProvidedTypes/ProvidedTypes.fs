@@ -684,7 +684,7 @@ namespace ProviderImplementation.ProvidedTypes
             | ProvidedTypeSymbolKind.Generic gty  -> gty.MetadataToken
             | ProvidedTypeSymbolKind.FSharpTypeAbbreviation _ -> typeof<obj>.MetadataToken
 
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
         override this.ToString() = this.FullName
 
@@ -1517,8 +1517,8 @@ namespace ProviderImplementation.ProvidedTypes
         override __.GetElementType() = notRequired this "Module" this.Name
         override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = notRequired this "Module" this.Name
         override __.AssemblyQualifiedName = notRequired this "Module" this.Name
-        // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
         // Get the model
         member __.BelongsToTargetModel = isTgt
@@ -7185,7 +7185,7 @@ namespace ProviderImplementation.ProvidedTypes
         override this.MakePointerType() = TypeSymbol(TypeSymbolKind.Pointer, [| this |]) :> Type
         override this.MakeByRefType() = TypeSymbol(TypeSymbolKind.ByRef, [| this |]) :> Type
 
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
         override this.ToString() = this.FullName
 
 
@@ -7702,7 +7702,7 @@ namespace ProviderImplementation.ProvidedTypes
         member __.MakeEventInfo (declTy: Type) md = txILEventDef declTy md
         member __.MakeFieldInfo (declTy: Type) md = txILFieldDef declTy md
         member __.MakeNestedTypeInfo (declTy: Type) md =  asm.TxILTypeDef (Some declTy) md
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
     and TargetModule(location: string) =
         inherit Module()

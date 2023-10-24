@@ -5713,7 +5713,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Zadejte typ ladění: full, portable, embedded, pdbonly. ({0} je výchozí hodnota v případě, že není zadaný žádný typ ladění, a umožňuje připojení ladicího programu ke spuštěnému programu, portable je formát pro různé platformy, embedded je formát pro různé platformy vložený do výstupního souboru).</target>
         <note />
       </trans-unit>

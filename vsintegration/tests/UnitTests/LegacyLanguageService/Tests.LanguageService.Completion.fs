@@ -3089,7 +3089,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain 
 
     [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133``() =  
+    member public this.``Identifier.FuzzyDefined.Bug67133``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           [ "let gDateTime (arr: System.DateTime[]) ="
             "    arr.[0]." ]
@@ -3098,7 +3098,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           []
 
     [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133.Negative``() =        
+    member public this.``Identifier.FuzzyDefined.Bug67133.Negative``() =        
         let code = [ "let gDateTime (arr: DateTime[]) ="  // Note: no 'open System', so DateTime is unknown
                      "    arr.[0]." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -6021,7 +6021,7 @@ let rec f l =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 
@@ -6047,7 +6047,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 

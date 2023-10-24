@@ -774,7 +774,7 @@ type ProvidedTypeSymbol(kind: ProvidedTypeSymbolKind, typeArgs: Type list, typeB
         | ProvidedTypeSymbolKind.Generic gty  -> gty.MetadataToken
         | ProvidedTypeSymbolKind.FSharpTypeAbbreviation _ -> typeof<obj>.MetadataToken
 
-    override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+    override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
     override this.ToString() = this.FullName
 
@@ -1724,8 +1724,8 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
     override __.GetElementType() = notRequired this "Module" this.Name
     override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = notRequired this "Module" this.Name
     override __.AssemblyQualifiedName = notRequired this "Module" this.Name
-    // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
-    override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+    // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
+    override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
     // Get the model
     member __.BelongsToTargetModel = isTgt
@@ -7538,7 +7538,7 @@ namespace ProviderImplementation.ProvidedTypes
         override this.MakePointerType() = TypeSymbol(TypeSymbolKind.Pointer, [| this |], typeBuilder) :> Type
         override this.MakeByRefType() = TypeSymbol(TypeSymbolKind.ByRef, [| this |], typeBuilder) :> Type
 
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
         override this.ToString() = this.FullName
 
 
@@ -7615,7 +7615,7 @@ namespace ProviderImplementation.ProvidedTypes
         override this.Module = notRequired this "txILGenericParam: Module" this.Name: Module 
         override this.GetElementType() = notRequired this "txILGenericParam: GetElementType" this.Name
         override this.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = notRequired this "txILGenericParam: InvokeMember" this.Name
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 
     /// Clones namespaces, type providers, types and members provided by tp, renaming namespace nsp1 into namespace nsp2.
 
@@ -8077,7 +8077,7 @@ namespace ProviderImplementation.ProvidedTypes
         member __.MakeEventInfo (declTy: Type) md = txILEventDef declTy md
         member __.MakeFieldInfo (declTy: Type) md = txILFieldDef declTy md
         member __.MakeNestedTypeInfo (declTy: Type) md =  asm.TxILTypeDef (Some declTy) md
-        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegting implementation of this, and we are self-delegating
+        override this.GetEvents() = this.GetEvents(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static) // Needed because TypeDelegator.cs provides a delegating implementation of this, and we are self-delegating
 #if NETCOREAPP
         // See bug https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues/236
         override __.IsSZArray = false

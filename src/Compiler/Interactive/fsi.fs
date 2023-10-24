@@ -2607,7 +2607,7 @@ type internal FsiDynamicCompiler
     /// Process any delayed assembly additions.
     member _.ProcessDelayedReferences(ctok, istate) =
 
-        // Grab the dealyed assembly reference additions
+        // Grab the delayed assembly reference additions
         let refs = delayedReferences |> Seq.toList
         delayedReferences.Clear()
 

@@ -830,7 +830,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return VSConstants.S_OK;
             }
 
-            //Degenarate case
+            //Degenerate case
             if (celt == 0)
             {
                 if (actual != null && actual.Length != 0)

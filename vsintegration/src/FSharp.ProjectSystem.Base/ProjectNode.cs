@@ -4271,7 +4271,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 IVsQueryEditQuerySave2 queryEditQuerySave = this.GetService(typeof(SVsQueryEditQuerySave)) as IVsQueryEditQuerySave2;
                 if (queryEditQuerySave != null)
-                {   // Project path dependends on server/client project
+                {   // Project path depends on server/client project
                     string path = this.filename;
 
                     tagVSQueryEditFlags qef = tagVSQueryEditFlags.QEF_AllowInMemoryEdits;

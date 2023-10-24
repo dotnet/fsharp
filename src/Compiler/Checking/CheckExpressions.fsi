@@ -939,7 +939,7 @@ module GeneralizationHelpers =
     val ComputeUngeneralizableTypars: env: TcEnv -> Zset<Typar>
 
     /// Given an environment, compute the set of trait solutions which must appear before
-    /// the current location, not after (to prevent use-before definitiosn and
+    /// the current location, not after (to prevent use-before definitions and
     /// forward calls via type inference filling in trait solutions).
     val ComputeUnabstractableTraitSolutions: env: TcEnv -> FreeLocals
 

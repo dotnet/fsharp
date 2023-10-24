@@ -340,12 +340,12 @@ module internal Utils =
         | DebugPoint(_dp, innerExpr) -> collectMembers innerExpr
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
-    let rec printMembersOfDeclatations ds =
+    let rec printMembersOfDeclarations ds =
         seq {
             for d in ds do
             match d with
             | FSharpImplementationFileDeclaration.Entity(_,ds) ->
-                yield! printMembersOfDeclatations ds
+                yield! printMembersOfDeclarations ds
             | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(v,vs,e) ->
                 yield printMemberSignature v
                 yield! collectMembers e |> Seq.map printMemberSignature
