@@ -3743,7 +3743,8 @@ type FsiInteractionProcessor
         | ParsedHashDirective (("reference" | "r"), ParsedHashDirectiveArguments [ path ], m) ->
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
-        | ParsedHashDirective ("i", ParsedHashDirectiveArguments [ path ], m) ->
+        | ParsedHashDirective ("i", ParsedHashDirectiveArguments args, m) ->
+            let path = String.concat "" args
             fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
 
         | ParsedHashDirective ("I", ParsedHashDirectiveArguments [ path ], m) ->
