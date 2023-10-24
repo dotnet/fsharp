@@ -23,10 +23,18 @@ let ``Refactor changes something`` (toRemove: string) =
         use context = TestContext.CreateWithCode code
         let spanStart = code.IndexOf "sum"
 
-        let! (_, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        let! (newDoc, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        Assert.AreNotEqual(code, text.ToString(), "")
-        //Todo: actually test if there is no return type anymore?
+        let! testOutput = newDoc.GetTextAsync(context.CT)
+        testOutput
+        let! symbol = GetSymbol "sum" newDoc context.CT
+
+        let stillExists =
+            symbol
+            |> Option.map (fun symbol -> GetReturnTypeDeclarationLocation symbol)
+            |> Option.isSome
+
+        Assert.IsFalse(stillExists)
 
         ()
     }

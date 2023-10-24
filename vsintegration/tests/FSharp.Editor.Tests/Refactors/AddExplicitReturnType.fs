@@ -47,11 +47,18 @@ let ``Refactor changes nothing`` (shouldNotTrigger: string) =
 
         let spanStart = code.IndexOf "sum"
 
-        let! (_, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+        let! (newDoc, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-        Assert.AreEqual(code, text.ToString(), "")
+        let! testOutput = newDoc.GetTextAsync(context.CT)
+        testOutput
+        let! symbol = GetSymbol "sum" newDoc context.CT
 
-        ()
+        let stillExists =
+            symbol
+            |> Option.map (fun symbol -> GetReturnTypeDeclarationLocation symbol)
+            |> Option.isSome
+
+        Assert.IsTrue(stillExists)
     }
 
 [<Fact>]
@@ -72,20 +79,6 @@ let ``Refactor changes something`` () =
         Assert.AreNotEqual(code, text.ToString(), "")
 
         ()
-    }
-
-let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
-    task {
-        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
-
-        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
-        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
-
-        return
-            match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as v -> Some(v.ReturnParameter.Type.TypeDefinition.CompiledName)
-            | _ -> None
-
     }
 
 [<Fact>]

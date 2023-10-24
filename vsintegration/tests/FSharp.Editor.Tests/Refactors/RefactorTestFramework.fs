@@ -20,6 +20,39 @@ open System.Threading
 open Microsoft.CodeAnalysis.Tags
 open System.Reflection
 open Microsoft.FSharp.Reflection
+open FSharp.Compiler.Symbols
+
+let GetSymbol (symbolName: string) (document: Document) ct =
+    task {
+        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
+
+        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
+        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
+
+        return
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as v -> Some(v)
+            | _ -> None
+
+    }
+
+let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
+    task {
+        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
+
+        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
+        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
+
+        return
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as v -> Some(v.ReturnParameter.Type.TypeDefinition.CompiledName)
+            | _ -> None
+
+    }
+
+let GetReturnTypeDeclarationLocation (symbol: FSharpMemberOrFunctionOrValue) =
+    let range = symbol.ReturnParameter.DeclarationLocation
+    if range.Start = range.End then None else Some(range)
 
 type TestCodeFix = { Message: string; FixedCode: string }
 

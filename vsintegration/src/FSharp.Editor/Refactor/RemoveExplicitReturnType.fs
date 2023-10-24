@@ -18,6 +18,7 @@ open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open CancellableTasks
 open System.Diagnostics
+open Microsoft.CodeAnalysis.Text
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveExplicitReturnType"); Shared>]
 type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
@@ -48,9 +49,9 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
             let rangeOfReturnType = memberFunc.ReturnParameter.DeclarationLocation
 
             let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, rangeOfReturnType)
-            let textChange = TextChange(textSpan, $"")
+            let newSourceText = sourceText.Replace(textSpan, "")
 
-            sourceText.WithChanges(textChange)
+            newSourceText
 
         let codeActionFunc =
             (fun (cancellationToken: CancellationToken) ->
