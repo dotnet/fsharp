@@ -1725,3 +1725,4 @@ featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged
 3579,alwaysUseTypedStringInterpolation,"Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended."
 3580,tcUnexpectedFunTypeInUnionCaseField,"Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -> b into | Case of (a -> b)."
 3582,tcInfoIfFunctionShadowsUnionCase,"This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses."
+3583,unnecessaryParentheses,"Parentheses can be removed."

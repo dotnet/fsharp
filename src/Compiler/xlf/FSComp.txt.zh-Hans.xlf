@@ -1552,6 +1552,11 @@
         <target state="translated">考虑使用 "return!"，而非 "return"。</target>
         <note />
       </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="new">Parentheses can be removed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unsupportedAttribute">
         <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
         <target state="translated">F# 编译器当前不支持此属性。应用它不会达到预期效果。</target>

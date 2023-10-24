@@ -76,11 +76,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
     inherit CodeFixProvider()
 
     static let title = SR.RemoveUnnecessaryParentheses()
-    static let fixableDiagnosticIds = ImmutableArray.Create "IDE0047"
+    static let fixableDiagnosticIds = ImmutableArray.Create "FS3583"
 
-    /// IDE0047: Remove unnecessary parentheses.
-    ///
-    /// https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0047-ide0048
     override _.FixableDiagnosticIds = fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this

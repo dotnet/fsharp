@@ -34,7 +34,7 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
         let title = "Parentheses can be removed."
 
         DiagnosticDescriptor(
-            "IDE0047",
+            "FS3583",
             title,
             title,
             "Style",
