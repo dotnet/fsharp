@@ -36,11 +36,11 @@ my(
     %knownfail,           # keys are labels of tests that should be skipped 
     $local_env_file,      # local environment file name
     @local_env_list,      # array of local environments
-    @local_keepfiles,     # array of pre-existing files to keep
+    @local_keepfiles,     # array of preexisting files to keep
     $ltags,               # tags for local env
     $maxfails,            # maximum number of failing tests (of all kinds) we allow before stopping run
     $maxtests,            # maximum number of tests that will be run (-1 is infinite)
-    $noclobber,           # clobber pre-existing RW files?
+    $noclobber,           # clobber preexisting RW files?
     $noise,               # amount of output requested, 0 to 4
     $nottags,             # kinds of tests/envs not to run
     $target,              # target platform for test run
@@ -3399,7 +3399,7 @@ sub check_maxtests
 }
 
 #
-# check_target -- check whether a test is run for the target plaform
+# check_target -- check whether a test is run for the target platform
 #
 # Returns non-zero if the test should be run, zero otherwise.
 #
@@ -4557,7 +4557,7 @@ sub RunMultiProcess() {
 
     my %test_to_id;       # map a test name to all its indices in @testlist (semicolon separated)
     my $test;
-    my @has_predecessors; # 1 if the test has (unresolved) precessors
+    my @has_predecessors; # 1 if the test has (unresolved) predecessors
     my @has_successors;   # 1 if the others depend upon this test
     my %dependents;       # see read_dependence.
 

@@ -1491,7 +1491,7 @@ module Pow =
                    test "cnod90kmhvreE" (try pown 0M exp; false with :? System.DivideByZeroException -> true);
                );
                
-               // check powerrs of -1
+               // check powers of -1
                test "cnod90kmr" (pown -1.0f exp = (if exp % 2 = 0 then 1.0f else -1.0f));
                test "cnod90kms" (pown -1.0 exp = (if exp % 2 = 0 then 1.0 else -1.0));
                test "cnod90kmt" (pown -1.0M exp = (if exp % 2 = 0 then 1.0M else -1.0M));

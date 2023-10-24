@@ -592,7 +592,7 @@
         <target state="translated">関数型ではありません</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">書式指定子 (精度) が正しくありません</target>
         <note />

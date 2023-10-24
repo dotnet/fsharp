@@ -592,7 +592,7 @@
         <target state="translated">不是函式類型</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">不正確的格式修飾詞 (精確度)</target>
         <note />

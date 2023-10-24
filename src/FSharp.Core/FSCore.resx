@@ -471,7 +471,7 @@
   <data name="printfNotAFunType" xml:space="preserve">
     <value>Not a function type</value>
   </data>
-  <data name="printfPrecisonSpecifierIllegal" xml:space="preserve">
+  <data name="printfPrecisionSpecifierIllegal" xml:space="preserve">
     <value>Bad format specifier (precision)</value>
   </data>
   <data name="printfSpecifierAfterIllegal" xml:space="preserve">

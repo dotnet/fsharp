@@ -57,7 +57,7 @@ considered carefully. While we are open to adding features to these tools specif
 independently.  For these reasons it is generally best that these tools live in their own repository.
 
 The copy of the `fslex` and `fsyacc` source code in `buildtools` is an exact copy and is not tested or documented
-apart from what's been done before in FsLexYacc repo. Adjusting these copies is not allowed and would be wrong from an engineering persepctive,
+apart from what's been done before in FsLexYacc repo. Adjusting these copies is not allowed and would be wrong from an engineering perspective,
 because there's no place to put documentation or tests.
 
 Occasionally we discuss ingesting FsLex and FsYacc into this repository. This often comes up in the hope that by doing so

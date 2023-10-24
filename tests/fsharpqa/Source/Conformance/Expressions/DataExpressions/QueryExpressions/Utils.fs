@@ -222,6 +222,6 @@ let getCustomerList() =
                 let total = o.Element(xname "total") |> decimal
                 select (Order(order, orderDate, total))
             } |> Seq.toArray
-        let c = Customer(get "id", get "name", get "address", get "city", get "region", get "postcalcode", get "country", get "phone", get "fax", orders)
+        let c = Customer(get "id", get "name", get "address", get "city", get "region", get "postalcode", get "country", get "phone", get "fax", orders)
         select c
     } |> Seq.toList

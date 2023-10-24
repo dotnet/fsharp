@@ -1006,7 +1006,7 @@ with
         | EasyOptionInt.Some x -> new Nullable<int>(x)
 end
 
-let getPoistiveInt2() = 
+let getPositiveInt2() = 
     let i = rand.Next(10)
     match i with
     | 0 -> EasyOptionInt.None

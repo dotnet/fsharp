@@ -741,7 +741,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec): CompiledSpec =
         // into the table, taking into account precedences etc. and reporting errors. 
         let addResolvingPrecedence (arr: _[]) kernelIdx termIdx (precNew, actionNew) = 
             // printf "DEBUG: state %d: adding action for %s, precNew = %a, actionNew = %a\n" kernelIdx (termTab.OfIndex termIdx) outputPrec precNew OutputAction actionNew; 
-            // We add in order of precedence - however the precedences may be the same, and we give warnings when rpecedence resolution is based on implicit file orderings 
+            // We add in order of precedence - however the precedences may be the same, and we give warnings when precedence resolution is based on implicit file orderings 
 
             let _, actionSoFar as itemSoFar = arr.[termIdx]
 

@@ -502,7 +502,7 @@ type TheTests() =
         let actual = [| 0u |]
         project.ConfigProvider.GetPlatformNames(uint32 platformNames.Length, platformNames, actual) |> AssertEqual VSConstants.S_OK
         AssertEqualMsg expectedNames platformNames "List of platform names is different"
-        AssertEqualMsg expectedNames.Length (int actual.[0]) "List of platfrom names is ok, but reported lengths disagree"
+        AssertEqualMsg expectedNames.Length (int actual.[0]) "List of platform names is ok, but reported lengths disagree"
 
 
     member internal this.HelperEnsureAtLeastOne projFileBoilerplate expectedConfigs expectedPlatforms =

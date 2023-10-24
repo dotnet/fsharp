@@ -592,7 +592,7 @@
         <target state="translated">N'est pas un type de fonction</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">Spécificateur de format incorrect (précision)</target>
         <note />

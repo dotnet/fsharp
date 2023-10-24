@@ -509,7 +509,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // For any inputs where ':? int' succeeds, ':? string' will fail
     //
     //
-    // This only applies if tgtTy2 is not potetnially related to the sealed type tgtTy1:
+    // This only applies if tgtTy2 is not potentially related to the sealed type tgtTy1:
     //     match x with 
     //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...

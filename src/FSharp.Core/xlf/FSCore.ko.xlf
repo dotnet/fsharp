@@ -592,7 +592,7 @@
         <target state="translated">함수 형식이 아닙니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">잘못된 형식 지정자(전체 자릿수)</target>
         <note />

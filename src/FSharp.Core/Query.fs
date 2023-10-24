@@ -1657,7 +1657,7 @@ module Query =
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
-    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postifx" in-memory transformation
+    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postfix" in-memory transformation
     /// converting the data back to immutable tuples and records.
     let TransInnerWithFinalConsume canElim immutSource =
         let mutSource, sourceConv = TransInnerAndCommit canElim true immutSource

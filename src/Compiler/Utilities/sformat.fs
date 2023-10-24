@@ -18,7 +18,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
 // Breakable block layout implementation.
-// This is a fresh implementation of pre-existing ideas.
+// This is a fresh implementation of preexisting ideas.
 
 open System
 open System.IO

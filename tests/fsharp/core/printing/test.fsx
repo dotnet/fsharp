@@ -998,7 +998,7 @@ let functionWhichTakesMixedLengthCurriedParametersB aaaaaaaaaaaaaaaaaaaaaaaaaaaa
 let f (``parameter with spaces in name``: int) = 1
 ;;
 
-let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
+let functionWhichTakesAParameterPreciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
 ;;
 
 let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1

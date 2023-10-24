@@ -592,7 +592,7 @@
         <target state="translated">不是函数类型</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">错误的格式说明符(精度)</target>
         <note />

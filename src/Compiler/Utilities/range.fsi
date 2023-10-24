@@ -56,7 +56,7 @@ type Position =
     /// The encoding of the position as a 64-bit integer
     member internal Encoding: int64
 
-    /// Check if the position is adjacent to another postition
+    /// Check if the position is adjacent to another position
     member internal IsAdjacentTo: otherPos: Position -> bool
 
     /// Decode a position fro a 64-bit integer

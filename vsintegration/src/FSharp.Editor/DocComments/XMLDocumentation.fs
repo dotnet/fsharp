@@ -294,7 +294,7 @@ module internal XmlDocumentation =
 
         do Events.SolutionEvents.OnAfterCloseSolution.Add(fun _ -> cache.Clear())
 
-        /// Retrieve the pre-existing xml index or None
+        /// Retrieve the preexisting xml index or None
         let GetMemberIndexOfAssembly (assemblyName) =
             match cache.TryGetValue(assemblyName) with
             | true, memberIndex -> Some(memberIndex)

@@ -818,7 +818,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <devremark>The platforms array is never null. It is assured by the callers.</devremark>
         private static int GetPlatforms(uint celt, string[] names, uint[] actual, string[] platforms)
         {
-            Debug.Assert(platforms != null, "The plaforms array should never be null");
+            Debug.Assert(platforms != null, "The platforms array should never be null");
             if (names == null)
             {
                 if (actual == null || actual.Length == 0)

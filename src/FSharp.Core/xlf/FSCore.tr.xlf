@@ -592,7 +592,7 @@
         <target state="translated">Bir işlev türü değil</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">Hatalı biçim belirticisi (duyarlık)</target>
         <note />

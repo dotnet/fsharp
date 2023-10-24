@@ -390,7 +390,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
                         else if
                             // if goto definition is called as we are already at the declaration location of a symbol in
-                            // either a signature or an implementation file then we jump to its respective postion in thethe
+                            // either a signature or an implementation file then we jump to its respective position in thethe
                             lexerSymbol.Range = targetRange
                         then
                             // jump from signature to the corresponding implementation
@@ -516,7 +516,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     member this.FindDefinitionAsync(originDocument: Document, position: int) =
         this.FindDefinitionAtPosition(originDocument, position)
 
-    /// Navigate to the positon of the textSpan in the provided document
+    /// Navigate to the position of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
     member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)

@@ -99,7 +99,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return this.site;
         }
 
-        // Our base language service perferences (from Babel originally)
+        // Our base language service preferences (from Babel originally)
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableCodeSense {
             get { return this.enableCodeSense; }
