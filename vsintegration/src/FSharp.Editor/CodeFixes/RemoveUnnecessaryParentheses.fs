@@ -85,7 +85,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
     override this.GetFixAllProvider() =
         this.RegisterFsharpFixAll(fun diagnostics ->
             // There may be pairs of diagnostics with nested spans
-            // for which it would be valid to apply either but not both.
+            // for which it would be valid to apply either but not both, e.g.,
+            // (x.M(y)).N → (x.M y).N ↮ x.M(y).N
             let builder = ImmutableArray.CreateBuilder diagnostics.Length
 
             let spans =
