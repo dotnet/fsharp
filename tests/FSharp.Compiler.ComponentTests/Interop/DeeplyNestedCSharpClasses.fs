@@ -33,7 +33,7 @@ namespace MyNamespace
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //Note the mistyped functionname we expect a good error message
+let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //Note the mistyped OuterClass we expect a good error message
 """
         FSharp fsharpSource
         |> asExe

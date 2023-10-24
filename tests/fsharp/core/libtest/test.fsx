@@ -3577,7 +3577,7 @@ end
 !* check optimizations 
  *--------------------------------------------------------------------------- *)
 
-module Optimiations = begin
+module Optimizations = begin
 
     let _ = check "opt.oi20c77u" (1 + 1) (2)
     let _ = check "opt.oi20c77i" (-1 + 1) (0)

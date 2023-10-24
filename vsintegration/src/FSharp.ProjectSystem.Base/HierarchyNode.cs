@@ -1294,7 +1294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Factory method for the Document Manager object
         /// </summary>
         /// <returns>null object, since a hierarchy node does not know its kind of document</returns>
-        /// <remarks>Must be overriden by derived node classes if a document manager is needed</remarks>
+        /// <remarks>Must be overridden by derived node classes if a document manager is needed</remarks>
         internal virtual DocumentManager GetDocumentManager()
         {
             return null;
@@ -2202,7 +2202,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the Copy operation to the clipboard
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int CopyToClipboard()
         {
@@ -2211,7 +2211,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the Cut operation to the clipboard
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int CutToClipboard()
         {
@@ -2220,7 +2220,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the paste from Clipboard command.
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int PasteFromClipboard(HierarchyNode targetNode)
         {
@@ -2229,7 +2229,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Determines if the paste command should be allowed.
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual bool AllowPasteCommand()
         {
@@ -2238,7 +2238,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Register/Unregister for Clipboard events for the UiHierarchyWindow (solution explorer)
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         /// <param name="value">true for register, false for unregister</param>
         public virtual void RegisterClipboardNotifications(bool value)

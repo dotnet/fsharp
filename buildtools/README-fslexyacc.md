@@ -15,7 +15,7 @@ That means we have to build up FsLex and FsYacc from scratch, _including_ their 
 We can't pick up the source from "packages" because in a build-from-source scenario we can't even fetch those
 packages - we really have to build from just our source tree and .NET SDK.
 
-Please do _not_ modify the code in these directories except by copying over from an upgraded FsLexYacc pacakge.
+Please do _not_ modify the code in these directories except by copying over from an upgraded FsLexYacc package.
 Without the testing and documentation in the `FsLexYacc` repo, this copied code is just a bunch of untested, undocumented and
 largely generated code checked into our source tree.
 

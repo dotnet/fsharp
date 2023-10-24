@@ -273,7 +273,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return false;
         }
 
-        // Overriden in source.fs, it calls this base implementation
+        // Overridden in source.fs, it calls this base implementation
         public virtual void Dispose()
         {
 #if LANGTRACE
@@ -570,7 +570,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// <summary>Implement this method to provide different comment delimiters.</summary>
         public abstract CommentInfo GetCommentFormat();
 
-        // Overriden in Source.fs, but it calls this base implementation
+        // Overridden in Source.fs, but it calls this base implementation
         public virtual TextSpan CommentSpan(TextSpan span)
         {
             TextSpan result = span;

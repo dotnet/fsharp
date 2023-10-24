@@ -5581,7 +5581,7 @@ namespace Microsoft.FSharp.Core
 
             // Notes on "inline" with range ienumerable generation.
             // "inline" is used to ensure that primitive ops like add,sub etc. are direct calls.
-            // However, it is not used to ensure all explicit lambda arguments can be reduced by the optimiser.
+            // However, it is not used to ensure all explicit lambda arguments can be reduced by the optimizer.
 
             type Mode = 
                 | NotStarted = 0
@@ -5591,7 +5591,7 @@ namespace Microsoft.FSharp.Core
             [<AbstractClass>]
             type BaseRangeEnumerator<'T>() =
                 // Generate enumerator from mutable state "z".
-                // Marked "inline" to ensure argument functions are reduced (by optimiser).
+                // Marked "inline" to ensure argument functions are reduced (by optimizer).
                 let mutable mode = Mode.NotStarted
                 let getCurrent(x:BaseRangeEnumerator<'T>) = 
                     match mode with

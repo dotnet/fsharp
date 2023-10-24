@@ -9,7 +9,7 @@ type OptionBuilderUsingInlineIfLambdaBase() =
 
     member inline _.Delay([<InlineIfLambda>] f : unit -> OptionCode<'T>) : OptionCode<'T> =
         (fun () -> (f())())
-        // Note, not "f()()" - the F# compiler optimzier likes arguments to match lambdas in order to preserve
+        // Note, not "f()()" - the F# compiler optimizer likes arguments to match lambdas in order to preserve
         // argument evaluation order, so for "(f())()" the optimizer reduces one lambda then another, while "f()()" doesn't
 
     member inline _.Combine([<InlineIfLambda>] task1: OptionCode<unit>, [<InlineIfLambda>] task2: OptionCode<'T>) : OptionCode<'T> =

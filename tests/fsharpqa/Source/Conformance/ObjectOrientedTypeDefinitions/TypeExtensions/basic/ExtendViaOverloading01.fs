@@ -15,7 +15,7 @@ let mutable res =
     not ("3".Equals(3,4)) &&  // expect: false  
     "3".Equals(3,3)       &&  // expect: true
     "3".Equals("3")       &&  // expect: true --> calls System.Object.Equals(obj)
-    "3".Equals(2)         &&  // expect: true --> calls extension member overeride on "int"
+    "3".Equals(2)         &&  // expect: true --> calls extension member override on "int"
     "3".Equals(box "3")       // expect: true --> since extension member is uncallable
 
 

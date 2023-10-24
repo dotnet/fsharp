@@ -1674,7 +1674,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             if (outputTimeValue < inputTimeValue)
             {
-                logger.WriteLine("Declaring project NOT up to date, ouput {0} is stale", output);
+                logger.WriteLine("Declaring project NOT up to date, output {0} is stale", output);
                 return false;
             }
 

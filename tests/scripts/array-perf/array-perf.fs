@@ -46,7 +46,7 @@ let inline checkNonNull argName arg =
 
 
 /// Here you can add the functions you want to test against.
-/// Below I use Parrallel.Partition as an example
+/// Below I use Parallel.Partition as an example
 
 
 // Original partition

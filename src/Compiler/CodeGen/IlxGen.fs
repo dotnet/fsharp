@@ -5696,7 +5696,7 @@ and GenFormalSlotsig m cenv eenv slotsig =
     ilTy, ilParams, ilRet
 
 and GenOverridesSpec cenv eenv slotsig m isInstance =
-    let (TSlotSig(nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
+    let (TSlotSig(nameOfOverriddenMethod, _, _, methodTypars, _, _)) = slotsig
 
     let ilOverrideTy, ilOverrideParams, ilOverrideRet =
         GenFormalSlotsig m cenv eenv slotsig
@@ -5713,7 +5713,7 @@ and GenOverridesSpec cenv eenv slotsig m isInstance =
         mkILMethRef (
             ilOverrideTyRef,
             callingConv,
-            nameOfOverridenMethod,
+            nameOfOverriddenMethod,
             List.length (DropErasedTypars methodTypars),
             typesOfILParams ilOverrideParams,
             ilOverrideRet.Type
@@ -5767,13 +5767,13 @@ and GenActualSlotsig
     ilParams, iLRet
 
 and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
-    let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) =
+    let (TSlotSig(nameOfOverriddenMethod, enclTypOfOverriddenMethod, _, _, _, _)) =
         slotsig
 
     if useMethodImpl then
-        qualifiedInterfaceImplementationName cenv.g enclTypOfOverridenMethod nameOfOverridenMethod
+        qualifiedInterfaceImplementationName cenv.g enclTypOfOverriddenMethod nameOfOverriddenMethod
     else
-        nameOfOverridenMethod
+        nameOfOverriddenMethod
 
 and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m isInstance =
     let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m isInstance
@@ -5840,7 +5840,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
     let (TObjExprMethod(slotsig, attribs, methTyparsOfOverridingMethod, methParams, methBodyExpr, m)) =
         tmethod
 
-    let (TSlotSig(nameOfOverridenMethod, _, _, _, _, _)) = slotsig
+    let (TSlotSig(nameOfOverriddenMethod, _, _, _, _, _)) = slotsig
 
     // Check if we're compiling the property as a .NET event
     if CompileAsEvent g attribs then
@@ -5871,7 +5871,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
                  Return)
 
         let ilMethodBody =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverriddenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =
             GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true

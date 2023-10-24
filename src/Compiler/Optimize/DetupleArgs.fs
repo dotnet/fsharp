@@ -41,7 +41,7 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 // A1: If the function called only wants the fields of the tuple.
 // A2: If all call sites allocate a tuple argument,
 //     then can factor that tuple creation into the function,
-//     and hope the optimiser will eliminate it if possible.
+//     and hope the optimizer will eliminate it if possible.
 //     e.g. if only the fields are required.
 //
 // The COLLAPSE transform is based on answer A2...

@@ -21,7 +21,7 @@
                               Content="{x:Static local:Strings.Show_guides}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Outlining}">
-                    <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
+                    <CheckBox x:Name="toggleOutlining" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Inline_Hints}">

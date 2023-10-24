@@ -886,7 +886,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
         // The groups are following:
         //   1 - type (see below).
         //   2 - Path - a dotted path to a symbol.
-        //   3 - parameters, opetional, only for methods and properties.
+        //   3 - parameters, optional, only for methods and properties.
         //   4 - return type, optional, only for methods.
         let docCommentIdRx =
             Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)

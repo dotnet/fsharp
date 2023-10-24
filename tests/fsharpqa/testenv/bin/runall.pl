@@ -2413,7 +2413,7 @@ sub parse_switches
 # get_switches -- build up user preferences
 #
 # The environment variable RUNALL is checked first, so that the values
-# it holds can be overriden on the command line.
+# it holds can be overridden on the command line.
 #
 sub get_switches
 {
@@ -5251,7 +5251,7 @@ sub RunMultiProcess() {
     } continue {
     }
 
-	# Note that we don't get the runpl.log ouput for these because they weren't run by child processes
+	# Note that we don't get the runpl.log output for these because they weren't run by child processes
 	fake_xml_for_skipped_tests(\%skip_msg, \%test_to_id) if ($xml);
 	
     if ($mpdebug) {

@@ -480,7 +480,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
             // MethodImpls contains a list of methods that override.
             // OverrideBy is the method that does the overriding.
-            // Overrides is the method being overriden.
+            // Overrides is the method being overridden.
             (acc, mimpls)
             ||> List.fold (fun acc ilMethImpl ->
                 let overridesName = ilMethImpl.Overrides.MethodRef.Name

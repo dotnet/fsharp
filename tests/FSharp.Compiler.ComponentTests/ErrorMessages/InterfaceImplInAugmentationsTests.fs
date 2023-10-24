@@ -105,8 +105,8 @@ module InnerNonRecursiveModule =
     [<Fact>]
     let ``Type in non-recursive namespace nested in a bigger recursive namespace shows warning``() =
         FSharp """
-namespace rec OuuterRec
-namespace OuuterRec.InnerNonRec
+namespace rec OuterRec
+namespace OuterRec.InnerNonRec
     type MyCustomType<'T> = 
         | Data of string
         interface System.IDisposable
@@ -124,7 +124,7 @@ namespace OuuterRec.InnerNonRec
     [<Fact>]
     let ``Type in non-rec ns show give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
         FSharp """
-namespace rec OuuterRec
+namespace rec OuterRec
     module Stuff = 
         let x = 5
 namespace TotallyDifferentNs.InnerNonRec

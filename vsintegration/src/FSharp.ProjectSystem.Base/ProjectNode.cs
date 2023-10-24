@@ -987,7 +987,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         /// <summary>
-        /// Gets or set the relative path to the folder containing the project ouput. 
+        /// Gets or set the relative path to the folder containing the project output. 
         /// </summary>
         public virtual string OutputBaseRelativePath
         {
@@ -2743,7 +2743,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 IVsMultiItemSelect multiItemSelect = null;
                 ErrorHandler.ThrowOnFailure(monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect, out selectionContainer));
 
-                // We only care if there are one ore more nodes selected in the tree
+                // We only care if there are one or more nodes selected in the tree
                 if (itemid != VSConstants.VSITEMID_NIL && hierarchyPtr != IntPtr.Zero)
                 {
                     IVsHierarchy hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
@@ -3617,9 +3617,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Determines whether an item can be owerwritten in the hierarchy.
+        /// Determines whether an item can be overwritten in the hierarchy.
         /// </summary>
-        /// <param name="originalFileName">The orginal filename.</param>
+        /// <param name="originalFileName">The original filename.</param>
         /// <param name="computedNewFileName">The computed new file name, that will be copied to the project directory or into the folder .</param>
         /// <returns>S_OK for success, or an error message</returns>
         public virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
@@ -3664,7 +3664,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Handle owerwriting of an existing item in the hierarchy.
+        /// Handle overwriting of an existing item in the hierarchy.
         /// </summary>
         /// <param name="existingNode">The node that exists.</param>
         public virtual void OverwriteExistingItem(HierarchyNode existingNode)

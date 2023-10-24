@@ -2299,7 +2299,7 @@ module StillMoreRandomTests =
     let forall3 g = forall1 (fun v1 -> forall1 (fun v2 -> forall1 (fun v3 -> g v1 v2 v3)))
 
     // This is the circuit: it chooses the output based on the input
-    // The circuit looks at input 0, and chooses the ouput to be input 1 or input 2
+    // The circuit looks at input 0, and chooses the output to be input 1 or input 2
     let circuit (inp : Circuit[]) out = 
         Cond inp.[0] (out === inp.[1]) (out === inp.[2])
 
