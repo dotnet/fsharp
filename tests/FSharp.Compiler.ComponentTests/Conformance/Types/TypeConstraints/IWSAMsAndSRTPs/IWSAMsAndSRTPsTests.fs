@@ -922,3 +922,47 @@ let main _ =
         |> withLangVersion70
         |> compile
         |> shouldSucceed
+        
+        
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute2() = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 855, Line 9, Col 22, Line 9, Col 29, "No abstract or interface member was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 855, Line 11, Col 18, Line 11, Col 23, "No abstract or interface member was found that corresponds to this override")
+         ]

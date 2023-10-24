@@ -4457,6 +4457,44 @@ module TcDeclarations =
                 if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
                     let attributeRange = (List.head attributes).Range
                     error(Error(FSComp.SR.tcAugmentationsCannotHaveAttributes(), attributeRange))
+                    
+                let staticAbstractMembers =
+                    tcref.ImmediateInterfaceTypesOfFSharpTycon
+                    |> List.choose(
+                        fun ttype ->
+                            match stripTyEqnsAndMeasureEqns g ttype with
+                            | TType_app(tyconRef = tcref) ->
+                                let staticAbstractMembers =
+                                    tcref.MembersOfFSharpTyconSorted
+                                    |> List.filter(fun x -> not x.IsInstanceMember)
+                                Some staticAbstractMembers
+                            | _ -> None
+                    )
+                    |> List.concat
+                        
+                let implMembers =
+                    members
+                    |> List.choose(
+                        fun synMemberDef ->
+                            match synMemberDef with
+                            | SynMemberDefn.Interface(members= Some(synMemberDefns)) ->
+                                let members = 
+                                    synMemberDefns
+                                    |> List.choose(
+                                        fun synMemberDefn ->
+                                            match synMemberDefn with
+                                            | SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; ident])))) -> Some ident
+                                            | _ -> None
+                                    )
+                                Some members
+                            | _ -> None
+                    )
+                    |> List.concat
+                                  
+                for memberId in implMembers do
+                    if staticAbstractMembers |> List.exists(fun x -> x.Id.idText = memberId.idText)  then
+                        // TODO : Should we reuse FS855 or create a new error with a better message
+                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
 
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 
