@@ -4418,6 +4418,33 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extra_vals_Inherits_Abstractslots @ extraMembers
+            
+    let private CheckStaticAbstractSlots g (tcref: EntityRef) members =
+        let staticMembers =
+            [ for ttype in tcref.ImmediateInterfaceTypesOfFSharpTycon do
+                match stripTyEqnsAndMeasureEqns g ttype with
+                | TType_app(tyconRef = tcref) ->
+                    tcref.MembersOfFSharpTyconSorted
+                    |> List.filter(fun x -> not x.IsInstanceMember)
+                    |> List.map(fun x -> x.DisplayNameCore)
+                | _ -> () ]
+            |> List.concat
+                        
+        let implMembers =
+            [ for synMemberDef in members do
+                match synMemberDef with
+                | SynMemberDefn.Interface(members= Some(synMemberDefns)) ->
+                    [ for synMemberDefn in synMemberDefns do
+                        match synMemberDefn with
+                        | SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; ident])))) -> ident
+                        | _ -> () ]
+                | _ -> ()
+            ]|> List.concat
+            
+        for memberId in implMembers do
+            if staticMembers |> List.exists(fun name -> name = memberId.idText)  then
+                // TODO : Should we reuse FS855 or create a new error with a better message
+                errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
 
     //-------------------------------------------------------------------------
 
@@ -4458,43 +4485,8 @@ module TcDeclarations =
                     let attributeRange = (List.head attributes).Range
                     error(Error(FSComp.SR.tcAugmentationsCannotHaveAttributes(), attributeRange))
                     
-                let staticAbstractMembers =
-                    tcref.ImmediateInterfaceTypesOfFSharpTycon
-                    |> List.choose(
-                        fun ttype ->
-                            match stripTyEqnsAndMeasureEqns g ttype with
-                            | TType_app(tyconRef = tcref) ->
-                                let staticAbstractMembers =
-                                    tcref.MembersOfFSharpTyconSorted
-                                    |> List.filter(fun x -> not x.IsInstanceMember)
-                                Some staticAbstractMembers
-                            | _ -> None
-                    )
-                    |> List.concat
-                        
-                let implMembers =
-                    members
-                    |> List.choose(
-                        fun synMemberDef ->
-                            match synMemberDef with
-                            | SynMemberDefn.Interface(members= Some(synMemberDefns)) ->
-                                let members = 
-                                    synMemberDefns
-                                    |> List.choose(
-                                        fun synMemberDefn ->
-                                            match synMemberDefn with
-                                            | SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; ident])))) -> Some ident
-                                            | _ -> None
-                                    )
-                                Some members
-                            | _ -> None
-                    )
-                    |> List.concat
-                                  
-                for memberId in implMembers do
-                    if staticAbstractMembers |> List.exists(fun x -> x.Id.idText = memberId.idText)  then
-                        // TODO : Should we reuse FS855 or create a new error with a better message
-                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                if not members.IsEmpty then
+                    CheckStaticAbstractSlots g tcref members
 
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 
