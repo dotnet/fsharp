@@ -474,7 +474,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
         UnifyOverallType cenv env m overallTy actualTy
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
@@ -4963,7 +4963,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
     let g = cenv.g
     try
         TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv ty
-    with e ->
+    with RecoverableException e ->
         errorRecovery e ty.Range
 
         let recoveryTy =
@@ -5156,7 +5156,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     // So be careful!
     try
         TcExprNoRecover cenv ty env tpenv synExpr
-    with exn ->
+    with RecoverableException exn ->
         let m = synExpr.Range
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
@@ -5185,7 +5185,7 @@ and TcExprOfUnknownTypeThen (cenv: cenv) env tpenv synExpr delayed =
     let expr, tpenv =
       try
           TcExprThen cenv (MustEqual exprTy) env tpenv false synExpr delayed
-      with exn ->
+      with RecoverableException exn ->
           let m = synExpr.Range
           errorRecovery exn m
           SolveTypeAsError env.DisplayEnv cenv.css m exprTy
@@ -10759,6 +10759,15 @@ and TcNonrecBindingTyparDecls cenv env tpenv bind =
     TcBindingTyparDecls true cenv env tpenv synTyparDecls
 
 and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
+    // Check for unintended shadowing
+    match binding with
+    | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ident]); range = headPatRange)) ->
+        match env.eNameResEnv.ePatItems.TryFind ident.idText with
+        | Some (Item.UnionCase(_, false)) ->
+            warning(Error(FSComp.SR.tcInfoIfFunctionShadowsUnionCase(), headPatRange))
+        | _ -> ()
+    | _ -> ()
+
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
     TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
@@ -10779,6 +10788,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
     let mAttr = synAttr.Range
     let typath, tyid = List.frontAndBack tycon
     let tpenv = emptyUnscopedTyparEnv
+    let ad = env.eAccessRights
 
     // if we're checking an attribute that was applied directly to a getter or a setter, then
     // what we're really checking against is a method, not a property
@@ -10787,13 +10797,12 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
         let try1 n =
             let tyid = mkSynId tyid.idRange n
             let tycon = (typath @ [tyid])
-            let ad = env.eAccessRights
+            
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), None, [], [], None, false, mAttr)) )
-        ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
+            | Result(tinstEnclosing, tcref) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv mAttr tcref tinstEnclosing [])
 
-    let ad = env.eAccessRights
+        ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
     if not (IsTypeAccessible g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
 
@@ -10953,7 +10962,7 @@ and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx sy
 
             attribsAndTargets, didFail || didFail2
 
-        with e ->
+        with RecoverableException e ->
             errorRecovery e synAttrib.Range
             [], false)
 

@@ -1943,6 +1943,9 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
+FSharp.Compiler.Cancellable: System.Threading.CancellationToken get_Token()
+FSharp.Compiler.Cancellable: Void CheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
@@ -10179,6 +10182,7 @@ FSharp.Compiler.Text.ISourceText: Int32 GetLineCount()
 FSharp.Compiler.Text.ISourceText: Int32 Length
 FSharp.Compiler.Text.ISourceText: Int32 get_Length()
 FSharp.Compiler.Text.ISourceText: System.String GetLineString(Int32)
+FSharp.Compiler.Text.ISourceText: System.String GetSubTextFromRange(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.ISourceText: System.String GetSubTextString(Int32, Int32)
 FSharp.Compiler.Text.ISourceText: System.Tuple`2[System.Int32,System.Int32] GetLastCharacterPosition()
 FSharp.Compiler.Text.ISourceText: Void CopyTo(Int32, Char[], Int32, Int32)
