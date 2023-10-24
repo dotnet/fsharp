@@ -1266,8 +1266,8 @@ module FSharpExprConvert =
             let acc = 
                 match dfltOpt, dtreeRetTy with 
                 | Some d, _ -> ConvDecisionTreePrim cenv env dtreeRetTy d 
-                | None, TType.TType_app(tyconRef = _tyconRef; typeInstantiation = _typeInstantiation; flags = _flags)
-                    when _tyconRef.CompiledName = "int" || _tyconRef.CompiledName = "bool" ->
+                | None, TType.TType_app(tyconRef = tyconRef; typeInstantiation = _typeInstantiation; flags = _flags)
+                    when tyconRef.CompiledName = "int" || tyconRef.CompiledName = "bool" ->
                         E.DecisionTreeSuccess(0, [])
                 | None, _ -> wfail( "FSharp.Compiler.Service cannot yet return this kind of pattern match", m)
 
