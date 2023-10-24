@@ -744,7 +744,7 @@ val TcLetrecBinding:
                 UnscopedTyparEnv *
                 Map<Stamp, PreCheckingRecursiveBinding>
 
-/// Get the binding for the implicit safe initialziation check value if it is being used
+/// Get the binding for the implicit safe initialization check value if it is being used
 val TcLetrecComputeCtorSafeThisValBind: cenv: TcFileState -> safeThisValOpt: Val option -> Binding option
 
 /// Check a collection of `let rec` bindings
