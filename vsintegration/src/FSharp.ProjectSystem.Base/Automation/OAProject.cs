@@ -469,7 +469,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                     {
                         // Use the solution service to save the project file. Note that we have to use the service
                         // so that all the shell's elements are aware that we are inside a save operation and
-                        // all the file change listenters registered by the shell are suspended.
+                        // all the file change listeners registered by the shell are suspended.
 
                         // Get the cookie of the project file from the RTD.
                         IVsRunningDocumentTable rdt = this.project.Site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;

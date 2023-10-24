@@ -1197,7 +1197,7 @@ type FSharpAttribute =
     /// Get the range of the name of the attribute
     member Range: range
 
-    /// Indicates if attribute matchies the full name of the given type parameter
+    /// Indicates if attribute matches the full name of the given type parameter
     member IsAttribute<'T> : unit -> bool
 
 /// Represents open declaration in F# code.

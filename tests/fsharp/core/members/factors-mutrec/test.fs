@@ -88,7 +88,7 @@ type IFactorNode =
     abstract VariableNodes : IEnumerable< IVariableNode >
     /// The list of messages from the factor to all its variables.
     abstract Messages : IEnumerable< IDistribution >
-    /// Abstract update (computation) mechansim
+    /// Abstract update (computation) mechanism
     abstract UpdateMessage : int -> float 
 
 

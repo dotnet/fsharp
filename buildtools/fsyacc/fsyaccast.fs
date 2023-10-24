@@ -287,7 +287,7 @@ type ProductionTable(ntTab:NonTerminalTable, termTab:TerminalTable, nonTerminals
         if n >= syms.Length then None else Some syms.[n]
     member prodTab.Productions = productions
 
-/// A mutable table maping kernels to sets of lookahead tokens
+/// A mutable table mapping kernels to sets of lookahead tokens
 type LookaheadTable() = 
     let t = Dictionary<KernelItemIndex,Set<TerminalIndex>>()
     member table.Add(x,y) = 

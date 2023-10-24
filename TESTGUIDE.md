@@ -1,6 +1,6 @@
 # F# Compiler, Core Library and Visual F# Tools Tests
 
-Where this guide mentions the command `build` it means either `build.cmd` in the root folder for Windows, or `build.sh` for Linux/MacOS.
+Where this guide mentions the command `build` it means either `build.cmd` in the root folder for Windows, or `build.sh` for Linux/macOS.
 
 ## In this guide
 
@@ -49,9 +49,9 @@ Some test groups can only be run in `CI` configuration, for that, you need to pa
 
 To run tests, from a command prompt, use variations such as the following, depending on which test suite and build configuration you want.
 
-### Tests that can be run on Linux and MacOS
+### Tests that can be run on Linux and macOS
 
-If you're using Linux or MacOS to develop, the group of tests that are known to succeed are all in `-testCoreClr`. Any other `-testXXX` argument will currently fail. An effort is underway to make testing and running tests easier on all systems.
+If you're using Linux or macOS to develop, the group of tests that are known to succeed are all in `-testCoreClr`. Any other `-testXXX` argument will currently fail. An effort is underway to make testing and running tests easier on all systems.
 
 ### Tests that can only be run in Release mode
 

@@ -100,7 +100,7 @@ let JaroWinklerDistance s1 s2 =
     let p = 0.1
     jaroScore + (l * p * (1.0 - jaroScore))
 
-/// Computes the restricted Damerau-Levenstein edit distance,
+/// Computes the restricted Damerau-Levenshtein edit distance,
 /// also known as the "optimal string alignment" distance.
 ///  - read more at https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 ///  - Implementation taken from http://www.navision-blog.de/2008/11/01/damerau-levenshtein-distance-in-fsharp-part-ii/

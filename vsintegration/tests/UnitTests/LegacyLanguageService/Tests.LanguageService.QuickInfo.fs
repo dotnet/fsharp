@@ -1665,7 +1665,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         AssertContains(tooltip,"Form")
 
     /// In this bug, the EOF token was reached before the parser could close the (, with, and let
-    /// The fix--at the point in time it was fixed--was to modify the parser to send a limitted number
+    /// The fix--at the point in time it was fixed--was to modify the parser to send a limited number
     /// of additional EOF tokens to allow the recovery code to proceed up the change of productions
     /// in the grammar.
     [<Test>]

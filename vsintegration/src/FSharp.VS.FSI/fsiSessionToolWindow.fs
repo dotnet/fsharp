@@ -838,7 +838,7 @@ type internal FsiToolWindow() as this =
             base.GetService(serviceType)
 
     override this.PreProcessMessage msg =
-        // we do not want to process any keyboard commands; all shortcut are prrocessed by standard VS command routing machanism
+        // we do not want to process any keyboard commands; all shortcut are prrocessed by standard VS command routing mechanism
         false
 
     interface IVsUIElementPane with

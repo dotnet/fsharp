@@ -14,12 +14,12 @@ open System
 
     // printfn "check %d = %d = %d"(multiStepInlineIfLambdaBuilder()) (multiStepNoBuilder()) (multiStepOldBuilder())
 
-    // perf "perf (state mechine option)" multiStepInlineIfLambdaBuilder 
+    // perf "perf (state machine option)" multiStepInlineIfLambdaBuilder 
     // perf "perf (no builder option)" multiStepNoBuilder 
     // perf "perf (slow builder option)" multiStepOldBuilder 
 
     // printfn "check %d = %d = %d" (multiStepInlineIfLambdaBuilderV()) (multiStepNoBuilder()) (multiStepOldBuilder())
-    // perf "perf (state mechine voption)" multiStepInlineIfLambdaBuilderV
+    // perf "perf (state machine voption)" multiStepInlineIfLambdaBuilderV
     // perf "perf (no builder voption)" multiStepNoBuilderV
     // perf "perf (slow builder voption)" multiStepOldBuilderV
 

@@ -548,7 +548,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 		/// <summary>
 		/// This method takes a MessageImportance and returns true if messages
-		/// at importance i should be loggeed.  Otherwise return false.
+		/// at importance i should be logged.  Otherwise return false.
 		/// </summary>
         private bool LogAtImportance(MessageImportance importance)
         {

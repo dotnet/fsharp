@@ -30,7 +30,7 @@ let check s x1 x2 =
     else 
         report_failure(s)
 
-(* What kinds of top-leval let patterns are possible? *)
+(* What kinds of top-level let patterns are possible? *)
 
 type r2 = {f1:int;f2:int}
 type ('a,'b) either = This of 'a | That of 'b

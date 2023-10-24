@@ -110,7 +110,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Possiblity to shortcut and set the dangling project reference icon.
-        /// It is ussually manipulated by solution listsneres who handle reference updates.
+        /// It is ussually manipulated by solution listeners who handle reference updates.
         /// </summary>
         public bool IsNodeValid
         {

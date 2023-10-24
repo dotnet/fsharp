@@ -13,7 +13,7 @@ open System.IO
 open System
 
 // The Dev9 MSBuild OM is not very good for re-ordering items.  This class
-// abstracts over some MSBuild-maniupulation intentions.  The implementation
+// abstracts over some MSBuild-manipulation intentions.  The implementation
 // will differ from Dev9 to Dev10.  For Dev9, use reflection to access internal
 // members that make the reordering tasks much easier to implement.
 // (The Dev9 support has since been cut, so this abstraction layer is now a legacy artifact.)

@@ -1241,7 +1241,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ClipBoard")]
         public virtual StringBuilder PrepareSelectedNodesForClipBoard()
         {
-            Debug.Assert(this.ProjectMgr != null, " No project mananager available for this node " + ToString());
+            Debug.Assert(this.ProjectMgr != null, " No project manager available for this node " + ToString());
             Debug.Assert(this.ProjectMgr.ItemsDraggedOrCutOrCopied != null, " The itemsdragged list should have been initialized prior calling this method");
             StringBuilder sb = new StringBuilder();
 

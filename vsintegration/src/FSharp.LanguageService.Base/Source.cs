@@ -2011,7 +2011,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             if (this.displayed && this.textView != null)
             {
                 // Here we can't throw or exit because we need to call Dispose on
-                // the disposable membres.
+                // the disposable members.
                 try
                 {
                     textView.UpdateCompletionStatus(null, 0);

@@ -359,7 +359,7 @@ do let folders = GetSubFolderNames !basePath in
 	combo.SelectionChangeCommitted.AddHandler( new EventHandler(ComboSelectHandler) );
 	folderPanel.Controls.Add( combo )
 
-// Group box for measurment types
+// Group box for measurement types
 let groupMeasure = new GroupBox()
 do groupMeasure |> BlueFlash
 do groupMeasure.Dock <- DockStyle.Top

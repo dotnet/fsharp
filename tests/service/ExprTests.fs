@@ -473,7 +473,7 @@ type ClassWithEventsAndProperties() =
 let c = ClassWithEventsAndProperties()
 let v = c.InstanceProperty
 
-System.Console.WriteLine("777") // do a top-levl action
+System.Console.WriteLine("777") // do a top-level action
 
 let functionWithSubmsumption(x:obj)  =  x :?> string
 //let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubmsumption |> functionWithSubmsumption

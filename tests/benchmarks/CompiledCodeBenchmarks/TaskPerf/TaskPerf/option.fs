@@ -283,12 +283,12 @@ module Examples =
 
     // printfn "check %d = %d = %d"(multiStepStateMachineBuilder()) (multiStepNoBuilder()) (multiStepOldBuilder())
 
-    // perf "perf (state mechine option)" multiStepStateMachineBuilder 
+    // perf "perf (state machine option)" multiStepStateMachineBuilder 
     // perf "perf (no builder option)" multiStepNoBuilder 
     // perf "perf (slow builder option)" multiStepOldBuilder 
 
     // printfn "check %d = %d = %d" (multiStepStateMachineBuilderV()) (multiStepNoBuilder()) (multiStepOldBuilder())
-    // perf "perf (state mechine voption)" multiStepStateMachineBuilderV
+    // perf "perf (state machine voption)" multiStepStateMachineBuilderV
     // perf "perf (no builder voption)" multiStepNoBuilderV
     // perf "perf (slow builder voption)" multiStepOldBuilderV
 

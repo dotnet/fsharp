@@ -845,7 +845,7 @@ val internal ResolveExprLongIdent:
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
 
-/// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
+/// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:
     NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 

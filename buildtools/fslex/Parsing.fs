@@ -431,7 +431,7 @@ module Implementation =
                         // and an EOF token. 
                         if inEofCountDown && eofCountDown < 10 then 
 #if __DEBUG
-                            if Flags.debug then printfn "poppin stack, lokking to shift both 'error' and that token, during end-of-file error recovery" 
+                            if Flags.debug then printfn "poppin stack, looking to shift both 'error' and that token, during end-of-file error recovery" 
 #endif
                             popStackUntilErrorShifted(if haveLookahead then Some(lookaheadToken) else None)
 

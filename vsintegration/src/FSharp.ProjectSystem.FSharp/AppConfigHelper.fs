@@ -333,7 +333,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         //  .Net 4 fsharp.core.dll has the version# 4.3.0.0 for VS2012, 4.3.1 for VS 2013 and 4.4.0.0
                         //
                         // Portable libraries are much different
-                        // There is a systematic scheme for portable libries from VS2013+Oob3.1.2 forward
+                        // There is a systematic scheme for portable libraries from VS2013+Oob3.1.2 forward
                         // It is:  3.Profile.Major.Minor
                         //     Profile is .net framework profile number I.e 7,47,78 and 259
                         //     Major.minor is the matching FSharp language major.minor version
