@@ -227,7 +227,7 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</value>
+Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>

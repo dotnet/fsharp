@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">블록 구조 안내선; 
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">블록 구조 안내선; 
 
 F# 코드에 대한 구조 지침 표시;
 개요;
