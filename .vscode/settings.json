@@ -35,7 +35,6 @@
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
     "omnisharp.autoStart": true,
-    "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "omnisharp.enableRoslynAnalyzers": false,
@@ -52,5 +51,6 @@
             "front_matter_title": ""
         }
     },
-    "editor.inlayHints.enabled": "offUnlessPressed"
+    "editor.inlayHints.enabled": "offUnlessPressed",
+    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln"
 }
