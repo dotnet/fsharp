@@ -1528,7 +1528,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // (fsc.exe does give a warning when this is missing)
             interface IVsProjectSpecificEditorMap with 
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
-                    // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
+                    // Ideally we should at this point initialize a File extension to EditorFactory guid Map e.g.
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
@@ -1542,7 +1542,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     VSConstants.E_NOTIMPL
 
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
-                    // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
+                    // Ideally we should at this point initialize a File extension to EditorFactory guid Map e.g.
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid

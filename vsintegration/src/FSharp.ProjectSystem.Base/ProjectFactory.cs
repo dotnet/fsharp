@@ -79,7 +79,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         protected abstract ProjectNode CreateProject();
 
         /// <summary>
-        /// Rather than directly creating the project, ask VS to initate the process of
+        /// Rather than directly creating the project, ask VS to initiate the process of
         /// creating an aggregated project in case we are flavored. We will be called
         /// on the IVsAggregatableProjectFactory to do the real project creation.
         /// </summary>

@@ -424,7 +424,7 @@ type internal FsiToolWindow() as this =
         if not Session.SessionsProperties.fsiUseNetCore then 
             sessions.Restart(null)
 
-    /// Handle RETURN, unless Intelisense completion is in progress.
+    /// Handle RETURN, unless Intellisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    
         lock textLines (fun () ->
             if not sessions.Alive then

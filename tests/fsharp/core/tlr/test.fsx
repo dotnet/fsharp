@@ -196,7 +196,7 @@ module CompilationTests = begin
       arityZeroMono,arityZeroAlpha,arityZeroAlphaBeta
 
     (* free occurance, but at a type instance *)
-    let freeOccuranceAtInstaceTest (u:unit) (b:'beta) =
+    let freeOccuranceAtInstanceTest (u:unit) (b:'beta) =
       let freeOccuranceTestPolyFun (x:'alpha) = x in 
       let useAtInt      = freeOccuranceTestPolyFun 3 in
       let useAtIntList  = freeOccuranceTestPolyFun [3] in

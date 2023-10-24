@@ -1303,7 +1303,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">È necessario inizializzare le proprietà obbligatorie seguenti:{0}</target>
         <note />
       </trans-unit>

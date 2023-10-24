@@ -255,7 +255,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>An errorcode for failure or S_OK.</returns>
         /// <exception cref="InvalidOperationException">if the file cannot be validated</exception>
         /// <devremark> 
-        /// We are going to throw instaed of showing messageboxes, since this method is called from various places where a dialog box does not make sense.
+        /// We are going to throw instead of showing messageboxes, since this method is called from various places where a dialog box does not make sense.
         /// For example the FileNodeProperties are also calling this method. That should not show directly a messagebox.
         /// Also the automation methods are also calling SetEditLabel
         /// </devremark>

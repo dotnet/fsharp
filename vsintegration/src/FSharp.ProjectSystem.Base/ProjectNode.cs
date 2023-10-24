@@ -245,7 +245,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.buildResult = buildResult;
             this.projectInstance = projectInstance;
-            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successfull build results should have project istances");
+            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successfull build results should have project instances");
         }
         public BuildResult(BuildSubmission submission, ProjectInstance projectInstance) :
                 this(submission.BuildResult.OverallResult == BuildResultCode.Success ? MSBuildResult.Successful : MSBuildResult.Failed, projectInstance)
@@ -4833,7 +4833,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="logicalView"></param>
         /// <param name="result"></param>
         /// <returns>S_OK if it succeeds </returns>
-        /// <remarks>The result array is initalized to failure.</remarks>
+        /// <remarks>The result array is initialized to failure.</remarks>
         public virtual int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result)
         {
             // When Adding an item, pass true to let AddItemWithSpecific know to fire the tracker events.
@@ -5546,7 +5546,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="pResult">Result to be returned to the caller</param>
         public virtual int AddComponent(VSADDCOMPOPERATION dwAddCompOperation, uint cComponents, System.IntPtr[] rgpcsdComponents, System.IntPtr hwndDialog, VSADDCOMPRESULT[] pResult)
         {
-            //initalize the out parameter
+            //initialize the out parameter
             pResult[0] = VSADDCOMPRESULT.ADDCOMPRESULT_Success;
 
             IReferenceContainer references = GetReferenceContainer();

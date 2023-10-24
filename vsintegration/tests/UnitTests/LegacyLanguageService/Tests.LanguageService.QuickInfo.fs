@@ -2034,7 +2034,7 @@ query."
             ) 
               
               
-    /// BUG: intelisense on "self" parameter in implicit ctor classes is wrong
+    /// BUG: intellisense on "self" parameter in implicit ctor classes is wrong
     [<Test>]
     member public this.``Regression.CompListItemInfo.Bug5694``() =
         this.AssertMemberDataTipContainsInOrder

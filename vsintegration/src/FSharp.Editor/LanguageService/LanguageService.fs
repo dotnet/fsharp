@@ -366,7 +366,7 @@ type internal FSharpPackage() as this =
             do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
 
             // FSI-LINKAGE-POINT: sited init
-            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
+            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
 
             // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
             let _fsiPropertyPage =

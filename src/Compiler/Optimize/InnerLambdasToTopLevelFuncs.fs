@@ -1153,7 +1153,7 @@ module Pass4_RewriteAssembly =
             let targets = Array.toList targets
             let dtree, z = TransDecisionTree penv z dtree
             let targets, z = List.mapFold (TransDecisionTreeTarget penv) z targets
-            // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs 
+            // TransDecisionTreeTarget wraps EnterInner/exitInner, so need to collect any top decs 
             let pds,z = ExtractPreDecs z
             MakePreDecs m pds (mkAndSimplifyMatch spBind mExpr m ty dtree targets), z
 

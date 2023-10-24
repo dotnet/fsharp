@@ -47,14 +47,14 @@ let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OuterClass.InerClass.MoreInnerClass.somefunction()   //Note the miss-typed InnerClass name we expect a good error message
+let loss2 = MyNamespace.OuterClass.InnerClass_.MoreInnerClass.somefunction()   //Note the miss-typed InnerClass name we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 45, "The type 'OuterClass' does not define the field, constructor or member 'InerClass'.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 47, "The type 'OuterClass' does not define the field, constructor or member 'InnerClass_'.")
 
     [<Fact>]
     let ``Missing type nested type moreinnerclass generates good message and range`` () =

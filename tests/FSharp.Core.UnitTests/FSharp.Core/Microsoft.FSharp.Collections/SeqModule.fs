@@ -103,11 +103,11 @@ type SeqModule() =
         let integerSeq1:seq<int> = seq [0..4]
         let integerSeq2:seq<int> = seq [5..9]
          
-        let appendIntergerSeq = Seq.append integerSeq1 integerSeq2
+        let appendIntegerSeq = Seq.append integerSeq1 integerSeq2
        
         let expectResultInteger = seq { for i in 0..9 -> i}
         
-        VerifySeqsEqual expectResultInteger appendIntergerSeq
+        VerifySeqsEqual expectResultInteger appendIntegerSeq
         
         
         // String Seq

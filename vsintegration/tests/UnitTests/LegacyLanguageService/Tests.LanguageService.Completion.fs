@@ -5173,7 +5173,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker1*)",
             list = ["PrivateField"; "PrivateMethod"; "PrivateType"])                 
          
-    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitiv         
+    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitive       
     [<Test>]
     member this.``CaseInsensitive``() =
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
@@ -7512,7 +7512,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["AsyncGetResponse";"GetResponseAsync";"ToString"])  
 
-    //Regression Test of 4405:intelisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
+    //Regression Test of 4405:intellisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
     [<Test>]
     member this.``Regression4405.Identifier.ReBound``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(

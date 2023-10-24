@@ -18,7 +18,7 @@ open System
 open System.IO
 open System.Text
 
-// Intialize output and input streams
+// Initialize output and input streams
 let inStream = new StringReader("")
 let outStream = new CompilerOutputStream()
 let errStream = new CompilerOutputStream()

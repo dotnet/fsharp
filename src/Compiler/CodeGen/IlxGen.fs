@@ -805,7 +805,7 @@ and GenTypeArgs cenv m tyenv tyargs = GenTypeArgsAux cenv m tyenv tyargs
 // fields are initialized only in their class constructors (we generate one primary
 // cctor for each file to ensure initialization coherence across the file, regardless
 // of how many modules are in the file). This means F# passes an extra check applied by SQL Server when it
-// verifies stored procedures: SQL Server checks that all 'initionly' static fields are only initialized from
+// verifies stored procedures: SQL Server checks that all 'initonly' static fields are only initialized from
 // their own class constructor.
 //
 // However, mutable static fields must be accessible across compilation units. This means we place them in their "natural" location

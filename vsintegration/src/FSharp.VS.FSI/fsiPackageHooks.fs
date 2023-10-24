@@ -114,7 +114,7 @@ module internal Hooks =
     let mutable private hasBeenInitialized = false
 
     // This should be called from the Package.Initialize() override, to do sited initialisation.
-    let fsiConsoleWindowPackageInitalizeSited (this:Package) (commandService : OleMenuCommandService) =
+    let fsiConsoleWindowPackageInitializeSited (this:Package) (commandService : OleMenuCommandService) =
         if not hasBeenInitialized then
             hasBeenInitialized <- true
             if null <> commandService then

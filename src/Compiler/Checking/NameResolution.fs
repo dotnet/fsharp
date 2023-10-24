@@ -3061,7 +3061,7 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
         success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]))))
 
 /// Resolves the given tycons.
-/// For each tycon, return resolution info that could contain enclosing type instantations.
+/// For each tycon, return resolution info that could contain enclosing type instantiations.
 let ResolveUnqualifiedTyconRefs nenv tcrefs =
     let resInfo = ResolutionInfo.Empty
 

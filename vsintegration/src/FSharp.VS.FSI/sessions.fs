@@ -56,7 +56,7 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
                                                          "timeoutApp: an exception was thrown.\n" +
                                                          "fsi.exe starts the remoting server at the end of it's initialisation sequence.\n" +
                                                          "The initialisation sequence takes an observable time (e.g. 2 seconds).\n" + 
-                                                         "Remoting exceptions are to be expected on interupt/intelisense calls made before that point.\n" +
+                                                         "Remoting exceptions are to be expected on interupt/intellisense calls made before that point.\n" +
                                                          "Context: " + descr + "\n" +
                                                          "Exception: " + e.ToString()) |> ignore
 #endif             
