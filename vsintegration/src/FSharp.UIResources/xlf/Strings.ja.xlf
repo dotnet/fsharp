@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">追加のパフォーマンス テレメトリ (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -14,17 +14,22 @@
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
         <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <target state="translated">診断のソリューション全体を低優先度のバックグラウンド タスクとして分析し続ける (再起動が必要)</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
-        <target state="new">Background analysis</target>
+        <target state="translated">バックグラウンド分析</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Capture_Identifiers_When_Parsing">
+        <source>Capture identifiers while parsing</source>
+        <target state="translated">解析中に識別子をキャプチャする</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">背景シンボル キーを保持する</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -79,12 +84,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">すべてのバックグラウンド中間解像度を保持する (メモリ使用量が増加する)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">すべてのバックグラウンド シンボルの使用を維持する (メモリ使用量が増加する)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -104,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">言語サービスの設定 (詳細)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
@@ -129,7 +134,7 @@
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">追加のパフォーマンス テレメトリを送信する</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">

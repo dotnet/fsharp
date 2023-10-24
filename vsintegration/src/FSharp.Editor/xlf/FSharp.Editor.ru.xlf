@@ -38,21 +38,21 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+        <target state="translated">Руководства по блочной структуре;
+Показать рекомендации по структуре кода F#;
+Структурирование;
+Показать структурные и сворачиваемые узлы кода F#;
+Встроенные подсказки;
+Отображать подсказки встроенного типа (предварительная версия);
+Отображать подсказки типа возвращаемого значения (предварительная версия);
+Отображать подсказки имен встроенных параметров (предварительная версия);
+Динамические буферы;
+Использовать динамические (несохраненные) буферы для проверки</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">Использовать ":" для обозначения типа в объявлении поля</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -268,7 +268,7 @@ Dash underline;</source>
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">Непредвиденный символ "=" в объявлении поля. Требуется ":" или другая лексема.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">
