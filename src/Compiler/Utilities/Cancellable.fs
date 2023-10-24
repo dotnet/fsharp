@@ -31,6 +31,8 @@ type Cancellable =
         | [] -> CancellationToken.None
         | token :: _ -> token
 
+    /// There may be multiple tokens if `UsingToken` is called multiple times, producing scoped structure.
+    /// We're interested in the current, i.e. the most recent, one.
     static member CheckAndThrow() =
         match Cancellable.Tokens with
         | [] -> ()
