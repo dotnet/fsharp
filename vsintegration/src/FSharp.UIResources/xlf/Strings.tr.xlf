@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">Ek performans telemetrisi (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -14,17 +14,22 @@
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
         <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <target state="translated">Düşük öncelikli arka plan görevi olarak tanılama için çözümün tamamını analiz etmeye devam et (yeniden başlatma gerekir)</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
-        <target state="new">Background analysis</target>
+        <target state="translated">Arka plan analizi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Capture_Identifiers_When_Parsing">
+        <source>Capture identifiers while parsing</source>
+        <target state="translated">Ayrıştırma sırasında tanımlayıcıları yakala</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">Arka plan sembol tuşlarını tut</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -79,12 +84,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">Tüm arka plan ara çözünürlüklerini tut (bellek kullanımını artırır)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">Tüm arka plan sembol kullanımlarını tut (bellek kullanımını artırır)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -104,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">Dil hizmeti ayarları (gelişmiş)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
@@ -129,7 +134,7 @@
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">Ek performans telemetrisi gönder</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
