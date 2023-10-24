@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 # This script generates a patch by comparing the contents of the fsharp/fsharp
-# and Microsoft/visualfsharp Github repositories. The resulting patch can be applied,
+# and Microsoft/visualfsharp GitHub repositories. The resulting patch can be applied,
 # if desired, to one of the repositories to synchronize changes in one direction;
 # CAUTION MUST BE TAKEN though, since this script generates the patch in a way that
 # ignores any ordering of commits in the repos -- so it could also end up reverting

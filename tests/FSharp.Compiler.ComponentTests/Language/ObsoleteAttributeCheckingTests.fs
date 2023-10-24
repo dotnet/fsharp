@@ -494,7 +494,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on a module and function and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on a module and function and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -522,7 +522,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on a moudle function and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on a moudle function and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices

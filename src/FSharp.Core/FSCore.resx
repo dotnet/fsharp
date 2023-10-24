@@ -453,7 +453,7 @@
   <data name="printfBadFormatSpecifier" xml:space="preserve">
     <value>Bad format specifier:{0}</value>
   </data>
-  <data name="printfBadIntegerForDynamicFomatter" xml:space="preserve">
+  <data name="printfBadIntegerForDynamicFormatter" xml:space="preserve">
     <value>Bad integer supplied to dynamic formatter</value>
   </data>
   <data name="printfExpectedPrecision" xml:space="preserve">

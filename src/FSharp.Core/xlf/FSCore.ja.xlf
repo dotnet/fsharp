@@ -562,7 +562,7 @@
         <target state="translated">書式指定子が正しくありません: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
         <target state="translated">動的フォーマッタに対して指定された整数が正しくありません</target>
         <note />

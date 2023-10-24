@@ -2227,7 +2227,7 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef: ILTypeDef) =
 //
 // The code in this phase is fragile.
 //
-// THe background is that System.Reflection.Emit implementations can be finnickity about the
+// THe background is that System.Reflection.Emit implementations can be finickity about the
 // order that CreateType calls are made when types refer to each other. Some of these restrictions
 // are not well documented, or are related to historical bugs where the F# emit code worked around the
 // underlying problems. Ideally the SRE implementation would just "work this out as it goes along" but

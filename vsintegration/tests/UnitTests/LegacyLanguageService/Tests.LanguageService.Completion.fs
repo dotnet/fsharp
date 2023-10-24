@@ -249,7 +249,7 @@ type UsingMSBuild() as this  =
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)      
 
-   /////Helper Functios 
+   /////Helper Functions 
         //DotCompList ContainAll At End Of Marker Helper Function
     member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
@@ -6176,7 +6176,7 @@ let rec f l =
             list = [])
 
     [<Test>]
-    member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
+    member this.``VariableIdentifier.MethodsInheritFromBase``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 namespace MyNamespace1
@@ -6774,7 +6774,7 @@ let rec f l =
             list = ["P"; "Q"]) 
 
     [<Test>]
-    member this.``Regression1067.ClassUsingGeniricTypeAsAttribute``() =
+    member this.``Regression1067.ClassUsingGenericTypeAsAttribute``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type GT<'a> =

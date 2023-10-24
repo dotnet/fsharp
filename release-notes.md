@@ -618,7 +618,7 @@ Several F# preview language features have been merged. You can try them out by s
 * It is now possible to [specify the `[<Literal>]` attribute](https://github.com/dotnet/fsharp/issues/7897) in F# signature files
 * A bug where the [`LangVersion` flag was culture-dependent](https://github.com/dotnet/fsharp/issues/7757) has been resolved
 * A bug where [large types and expressions defined in source would lead to a stack overflow](https://github.com/dotnet/fsharp/issues/7673) has been resolved
-* A bug where [arbitrary, nonsense attributes could be defined on F# type extesions](https://github.com/dotnet/fsharp/issues/7394) was resolved
+* A bug where [arbitrary, nonsense attributes could be defined on F# type extensions](https://github.com/dotnet/fsharp/issues/7394) was resolved
 * A bug where [exhaustive matches on SByte and Byte literal values emitted a warning](https://github.com/dotnet/fsharp/issues/6928) was resolved
 * A bug where [invalid type abbreviations with `byref`s and `byref`-like values](https://github.com/dotnet/fsharp/issues/6133) could be defined was resolved
 * A bug where [invalid binary and octal literals would be accepted by the compiler](https://github.com/dotnet/fsharp/issues/5729) was resolved, contributed by [Grzegorz Dziadkiewicz](https://github.com/gdziadkiewicz)
@@ -942,7 +942,7 @@ We made the following enhancements to infrastructure, packaging, and our open so
 * Significant improvements to error messages, particularly to aid with suggestions
 * Performance improvements
 * Interoperability improvements
-* Support for geenerating F# AssemblyInfo from properties for .NET SDK projects
+* Support for generating F# AssemblyInfo from properties for .NET SDK projects
 * `--debug:full` support for F# on .NET Core on Windows
 * `MakeTuple` support for struct tuples
 * Warnings are forwarded when searching for method overloads

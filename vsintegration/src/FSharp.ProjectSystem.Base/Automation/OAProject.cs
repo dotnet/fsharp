@@ -381,7 +381,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project. 
         /// </summary>
         /// <param name="fileName">The file name with which to save the solution, project, or project item. If the file exists, it is overwritten</param>
-        /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
+        /// <exception cref="InvalidOperationException">Is thrown if the save operation fails.</exception>
         /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>        
         public virtual void SaveAs(string fileName)
         {
@@ -392,7 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project
         /// </summary>
         /// <param name="fileName">The file name of the project</param>
-        /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
+        /// <exception cref="InvalidOperationException">Is thrown if the save operation fails.</exception>
         public virtual void Save(string fileName)
         {
             this.DoSave(false, fileName ?? string.Empty);

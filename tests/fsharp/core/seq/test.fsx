@@ -438,7 +438,7 @@ check "fderuy"
             _ -> 
                 match !f1,!f2 with
                 |   true,true -> "ok"
-                |   _ -> "not all finallies run"
+                |   _ -> "not all finallys run"
     result)
     "ok"
                 

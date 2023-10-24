@@ -562,7 +562,7 @@
         <target state="translated">Especificador de formato incorreto:{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
         <target state="translated">Inteiro incorreto fornecido a formatador dinâmico</target>
         <note />

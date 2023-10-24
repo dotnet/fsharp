@@ -51,8 +51,8 @@ type internal HashDirectiveCompletionProvider
             position
         )
 
-    let getFileGlyph (extention: string) =
-        match extention with
+    let getFileGlyph (extension: string) =
+        match extension with
         | ".exe"
         | ".dll" -> Some Glyph.Assembly
         | _ -> None

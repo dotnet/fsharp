@@ -562,7 +562,7 @@
         <target state="translated">Неверный спецификатор формата:{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
         <target state="translated">Динамическому форматтеру передано неверное целое</target>
         <note />

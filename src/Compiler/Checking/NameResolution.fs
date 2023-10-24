@@ -1176,7 +1176,7 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
 /// Rules:
 ///     1. Add nested types - access to their constructors.
 ///     2. Add static parts of type - i.e. C# style extension members, record labels, and union cases.
-///     3. Add static extention methods.
+///     3. Add static extension methods.
 ///     4. Add static extension properties.
 ///     5. Add static events.
 ///     6. Add static fields.
@@ -1189,7 +1189,7 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
     let nenv = AddStaticPartsOfTypeToNameEnv amap m nenv ty
 
     // The order of items matter such as intrinsic members will always be favored over extension members of the same name.
-    // Extension property members will always be favored over extenion methods of the same name.
+    // Extension property members will always be favored over extension methods of the same name.
     let items =
         [| 
             // Extension methods

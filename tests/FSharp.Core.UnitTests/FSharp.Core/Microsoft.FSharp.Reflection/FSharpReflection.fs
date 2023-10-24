@@ -22,7 +22,7 @@ Make sure each method works on:
 * Record
 * Exception
 * Tuple
-* Fuction
+* Function
 * Struct versions of the above
 *)
 
@@ -376,7 +376,7 @@ type FSharpValueTests() =
         let resultFuncInt = resultFuncIntObj :?> (int -> int)
         Assert.AreEqual(resultFuncInt(5), 6)
         
-        // String funcion
+        // String function
         let implementationString (x:obj) = box( unbox<string>(x) + " function")
         let resultFuncStringObj  = FSharpValue.MakeFunction(typeof<string -> string>, implementationString )
         let resultFuncString = resultFuncStringObj :?> (string -> string)

@@ -169,8 +169,8 @@ type SetModule() =
     member _.Filter() =
         
         let emptyComplex = Set.empty : Set<int * List<string * Set<decimal>> * Set<int * string * (char * char * char)>>
-        let fileredEmpty = Set.filter (fun _ -> false) emptyComplex 
-        if (fileredEmpty = emptyComplex) <> true then Assert.Fail()
+        let filteredEmpty = Set.filter (fun _ -> false) emptyComplex 
+        if (filteredEmpty = emptyComplex) <> true then Assert.Fail()
         
         let nullSet = Set.singleton null
         if nullSet.Count <> 1 then Assert.Fail()

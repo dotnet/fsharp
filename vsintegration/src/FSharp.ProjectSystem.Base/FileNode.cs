@@ -865,7 +865,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Tries recovering from a rename failure.
         /// </summary>
         /// <param name="fileThatFailed"> The file that failed to be renamed.</param>
-        /// <param name="originalFileName">The original filenamee</param>
+        /// <param name="originalFileName">The original filename</param>
         public virtual void RecoverFromRenameFailure(string fileThatFailed, string originalFileName)
         {
             // TODO does this do anything useful?  did it ever change in the first place?

@@ -3619,7 +3619,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Determines whether an item can be owerwritten in the hierarchy.
         /// </summary>
-        /// <param name="originalFileName">The orginal filname.</param>
+        /// <param name="originalFileName">The orginal filename.</param>
         /// <param name="computedNewFileName">The computed new file name, that will be copied to the project directory or into the folder .</param>
         /// <returns>S_OK for success, or an error message</returns>
         public virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
@@ -4294,7 +4294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                     1, // 1 file
                                     files, // array of files
                                     flags, // no per file flags
-                                    attributes, // no per file file attributes
+                                    attributes, // no per file attributes
                                     out verdict,
                                     out moreInfo /* ignore additional results */);
 
@@ -4319,7 +4319,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Given a node determines what is the directory that can accept files.
-        /// If the node is a FoldeNode than it is the Url of the Folder.
+        /// If the node is a FolderNode than it is the Url of the Folder.
         /// If the node is a ProjectNode it is the project folder.
         /// Otherwise (such as FileNode subitem) it delegate the resolution to the parent node.
         /// </summary>

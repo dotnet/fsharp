@@ -1444,7 +1444,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              [<System.AttributeUsage(System.AttributeTargets.All, Inherited = false)>]
              type A() = 
                do ()"""
-             "Inherite" "Inherited"  // Get the tooltip at "Inherite" & Verify that it contains the 'Inherited' fild exactly once
+             "Inherite" "Inherited"  // Get the tooltip at "Inherite" & Verify that it contains the 'Inherited' field exactly once
         
     [<Test>]
     member public this.``MethodAndPropTooltip``() = 
@@ -2315,9 +2315,9 @@ query."
         
                                 type System.ConsoleKeyInfo with
                                     /// BCL struct extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
                                     /// BCL struct extension property
-                                    member this.ExtentionProperty with get() = "Foo"        
+                                    member this.ExtensionProperty with get() = "Foo"        
 
                             module OwnCode =
                                 /// fs class
@@ -2337,10 +2337,10 @@ query."
                             module OwnCodeExtensions =
                                 type OwnCode.FSClass with
                                     /// fs class extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
         
                                     /// fs class extension property
-                                    member this.ExtentionProperty with get() = "Foo"
+                                    member this.ExtensionProperty with get() = "Foo"
                                     
                                     /// fs class method extension overload
                                     member this.Method(a:int)  =  ""
@@ -2350,10 +2350,10 @@ query."
         
                                 type OwnCode.FSStruct with
                                     /// fs struct extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
         
                                     /// fs struct extension property
-                                    member this.ExtentionProperty with get() = "Foo"      
+                                    member this.ExtensionProperty with get() = "Foo"      
 
                             module BCLClass = 
                                 open BCLExtensions
@@ -2367,15 +2367,15 @@ query."
                             module BCLStruct = 
                                 open BCLExtensions
                                 let cki = new System.ConsoleKeyInfo()
-                                cki.ExtentionMethod(*Marker21*) |>ignore
-                                cki.ExtentionProperty(*Marker22*) |>ignore
+                                cki.ExtensionMethod(*Marker21*) |>ignore
+                                cki.ExtensionProperty(*Marker22*) |>ignore
     
                             module OwnClass = 
                                 open OwnCode
                                 open OwnCodeExtensions
                                 let rnd = new FSClass()
-                                rnd.ExtentionMethod(*Marker31*) |>ignore
-                                rnd.ExtentionProperty(*Marker32*) |>ignore
+                                rnd.ExtensionMethod(*Marker31*) |>ignore
+                                rnd.ExtensionProperty(*Marker32*) |>ignore
                                 rnd.Method(*Marker33*)("") |>ignore
                                 rnd.Method(*Marker34*)(6) |>ignore
                                 rnd.Prop(*Marker35*)("") |>ignore
@@ -2385,8 +2385,8 @@ query."
                                 open OwnCode
                                 open OwnCodeExtensions
                                 let cki = new FSStruct(100)
-                                cki.ExtentionMethod(*Marker41*) |>ignore
-                                cki.ExtentionProperty(*Marker42*) |>ignore"""
+                                cki.ExtensionMethod(*Marker41*) |>ignore
+                                cki.ExtensionProperty(*Marker42*) |>ignore"""
                                 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker11*)", "property System.Random.DiceValue: int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker11*)", "BCL class Extension property")
@@ -2396,13 +2396,13 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker13*)", "new BCL class Extension method with overload")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker14*)", "member System.Random.Next: a: bool -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker14*)", "existing BCL class Extension method with overload")        
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "member System.ConsoleKeyInfo.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "member System.ConsoleKeyInfo.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "BCL struct extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "System.ConsoleKeyInfo.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "System.ConsoleKeyInfo.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "BCL struct extension property")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "member FSClass.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "member FSClass.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "fs class extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "FSClass.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "FSClass.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "fs class extension property")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker33*)", "member FSClass.Method: a: string -> string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker33*)", "fs class method original")
@@ -2412,9 +2412,9 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker35*)", "fs class property original")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker36*)", "property FSClass.Prop: int -> string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker36*)", "fs class property extension overload")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "member FSStruct.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "member FSStruct.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "fs struct extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "FSStruct.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "FSStruct.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "fs struct extension property")
 
     [<Test>]

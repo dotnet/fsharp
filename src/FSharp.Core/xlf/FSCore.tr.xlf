@@ -562,7 +562,7 @@
         <target state="translated">Hatalı biçim belirticisi: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
         <target state="translated">Dinamik biçimlendiriciye yanlış tamsayı sağlandı</target>
         <note />

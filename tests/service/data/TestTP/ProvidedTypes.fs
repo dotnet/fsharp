@@ -888,7 +888,7 @@ module Misc =
         let mutable hasReflectedDefinition = false
 
         // XML doc text that we only compute once, if any. This must _not_ be forced until the ConstructorArguments
-        // property of the custom attribute is foced.
+        // property of the custom attribute is forced.
         let xmlDocDelayedText =
             lazy
                 (match xmlDocDelayed with None -> assert false; "" | Some f -> f())

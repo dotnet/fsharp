@@ -1,5 +1,5 @@
 /// BenchmarkDotNet Notes:
-/// Docs/Github: https://github.com/PerfDotNet/BenchmarkDotNet#getting-started
+/// Docs/GitHub: https://github.com/PerfDotNet/BenchmarkDotNet#getting-started
 ///
 /// This benchmarking suite will perform JIT warmups, collect system environment data
 /// run multiple trials, and produce convenient reports.  

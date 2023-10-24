@@ -166,7 +166,7 @@ type SomeType = { TheField : string }
 let f x =
     match x with
     | { TheField = "A" } -> true
-    | { TheFiedl = "B" } -> true
+    | { TheField_ = "B" } -> true
     | _ -> false
 """
 

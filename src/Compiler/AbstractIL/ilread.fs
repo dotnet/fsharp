@@ -1585,10 +1585,10 @@ let seekReadTypeSpecRow (ctxt: ILMetadataReader) mdv idx =
 let seekReadImplMapRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.ImplMap idx
     let flags = seekReadUInt16AsInt32Adv mdv &addr
-    let forwrdedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
+    let forwardedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
     let nameIdx = seekReadStringIdx ctxt mdv &addr
     let scopeIdx = seekReadUntaggedIdx TableNames.ModuleRef ctxt mdv &addr
-    (flags, forwrdedIdx, nameIdx, scopeIdx)
+    (flags, forwardedIdx, nameIdx, scopeIdx)
 
 /// Read Table FieldRVA.
 let seekReadFieldRVARow (ctxt: ILMetadataReader) mdv idx =

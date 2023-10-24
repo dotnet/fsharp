@@ -4133,7 +4133,7 @@ sub cleanup_directory
 
 
 #
-# Exctacts root for the specified path
+# Extracts root for the specified path
 #
 sub extract_root()
 {
