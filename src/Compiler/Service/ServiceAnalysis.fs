@@ -1099,18 +1099,18 @@ module UnnecessaryParentheses =
 
             // Parens are never required around suffixed or infixed numeric literals, e.g.,
             //
-            //     (1l).ToStringValueNone
-            //     (1uy).ToStringValueNone
-            //     (0b1).ToStringValueNone
-            //     (1e10).ToStringValueNone
-            //     (1.0).ToStringValueNone
+            //     (1l).ToString()
+            //     (1uy).ToString()
+            //     (0b1).ToString()
+            //     (1e10).ToString()
+            //     (1.0).ToString()
             | SynExpr.Paren (expr = DotSafeNumericLiteral; rightParenRange = Some _; range = range), _ -> ValueSome range
 
             // Parens are required around bare decimal ints or doubles ending
             // in dots when being dotted into, e.g.,
             //
-            //     (1).ToStringValueNone
-            //     (1.).ToStringValueNone
+            //     (1).ToString()
+            //     (1.).ToString()
             | SynExpr.Paren(expr = SynExpr.Const(constant = SynConst.Int32 _ | SynConst.Double _)),
               SyntaxNode.SynExpr (SynExpr.DotGet _) :: _ -> ValueNone
 
