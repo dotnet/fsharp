@@ -82,17 +82,13 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
 
     static member refactor
         (context: CodeRefactoringContext)
-        (memberFunc: FSharpMemberOrFunctionOrValue)
+        (_: FSharpMemberOrFunctionOrValue)
         (parseFileResults: FSharpParseFileResults)
         (symbolUse: FSharpSymbolUse)
         =
         let title = SR.RemoveExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
-            let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
-            inferredType
-            let symbol2 = symbolUse.Symbol
-            symbol2
 
             let newSourceText =
                 RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, symbolUse.Range.Start, false)
