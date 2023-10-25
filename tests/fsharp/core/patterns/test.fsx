@@ -615,7 +615,7 @@ end
 
 module PartialPattern_Examples = begin
 
-     // Partial patterns are signfied by |_| and return 'option'.
+     // Partial patterns are signified by |_| and return 'option'.
      // They are most useful when dealing with repeatedly recurring queries
      // on very "heterogeneous" data sets, i.e. data sets able to represent 
      // a large range of possible entities, but where you're often interested in

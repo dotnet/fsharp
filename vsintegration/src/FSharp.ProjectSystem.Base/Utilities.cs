@@ -919,7 +919,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Canonicalizes a file name, including:
         ///  - determines the full path to the file
         ///  - casts to upper case
-        /// Canonicalizing a file name makes it possible to compare file names using simple simple string comparison.
+        /// Canonicalizing a file name makes it possible to compare file names using simple string comparison.
         /// 
         /// Note: this method does not handle shared drives and UNC drives.
         /// </summary>

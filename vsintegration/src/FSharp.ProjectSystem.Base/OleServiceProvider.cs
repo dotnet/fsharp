@@ -152,7 +152,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="serviceType">The type of the service to add.</param>
         /// <param name="serviceInstance">An instance of the service.</param>
-        /// <param name="shouldDisposeServiceInstance">true if the Dispose of the service provider is allowed to dispose the sevice instance.</param>
+        /// <param name="shouldDisposeServiceInstance">true if the Dispose of the service provider is allowed to dispose the service instance.</param>
         public void AddService(Type serviceType, object serviceInstance, bool shouldDisposeServiceInstance)
         {
             // Create the description of this service. Note that we don't do any validation

@@ -105,7 +105,7 @@ type IResolveDependenciesResult =
     /// The resolution error log (* process stderror *)
     abstract StdError: string[]
 
-    /// The resolution paths - the full paths to selcted resolved dll's.
+    /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     abstract Resolutions: seq<string>
 
@@ -418,7 +418,7 @@ type ReflectionDependencyManagerProvider
                 rid,
                 timeout
             ) : IResolveDependenciesResult =
-            // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
+            // The ResolveDependencies method, has two signatures, the original signature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
             //     (bool * string list * string list)

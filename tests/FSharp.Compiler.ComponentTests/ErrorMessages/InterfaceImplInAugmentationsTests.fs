@@ -122,7 +122,7 @@ namespace OuterRec.InnerNonRec
  
    
     [<Fact>]
-    let ``Type in non-rec ns show give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
+    let ``Type in non-rec ns should give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
         FSharp """
 namespace rec OuterRec
     module Stuff = 

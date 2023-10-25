@@ -446,7 +446,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         public int CompareTo(object obj) {
             // if this overload is used then it assumes a case-sensitive current culture comparison
-            // which allows for case-senstive languages to work
+            // which allows for case-sensitive languages to work
             return CompareTo(obj, StringComparison.CurrentCulture);
         }
 

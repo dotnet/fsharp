@@ -473,7 +473,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             string guidString = this.ItemNode.GetMetadata(ProjectFileConstants.Project);
 
-            // Continue even if project setttings cannot be read.
+            // Continue even if project settings cannot be read.
             try
             {
                 this.referencedProjectGuid = new Guid(guidString);

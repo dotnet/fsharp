@@ -2688,7 +2688,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "type AbAttrName = AbstractClassAttribute")
 
     [<Test>]
-    member public this.``Automation.Regression.TypeInferenceSenarios.Bug2362&3538``() =
+    member public this.``Automation.Regression.TypeInferenceScenarios.Bug2362&3538``() =
         let fileContent ="""module Test.Module1
 
                             open System

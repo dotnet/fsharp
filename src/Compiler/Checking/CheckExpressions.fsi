@@ -413,7 +413,7 @@ val CheckSuperType: cenv: TcFileState -> ty: TType -> m: range -> unit
 val ChooseCanonicalDeclaredTyparsAfterInference:
     g: TcGlobals -> denv: DisplayEnv -> declaredTypars: Typar list -> m: range -> Typar list
 
-/// After inference, view a ValSchem in a canonical way.
+/// After inference, view a ValScheme in a canonical way.
 val ChooseCanonicalValSchemeAfterInference:
     g: TcGlobals -> denv: DisplayEnv -> vscheme: ValScheme -> m: range -> ValScheme
 

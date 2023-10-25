@@ -665,7 +665,7 @@ In addition to the F# 4.7 feature set, this release includes support for the fol
 * Support for [`nameof` expressions](https://github.com/fsharp/fslang-design/blob/master/preview/FS-1003-nameof-operator.md)
 * Support for opening of static classes
 
-You can enable this by seeting `<LangVersion>preview</LangVersion>` in your project file.
+You can enable this by setting `<LangVersion>preview</LangVersion>` in your project file.
 
 This release also contains the following bug fixes and improvements to the F# compiler:
 
@@ -1928,7 +1928,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 0.0.16 -
 
 * Make FSharpEntity.BaseType return an option
-* FsiSesion got a new "EvalScript" method which allows to evaluate .fsx files
+* FsiSession got a new "EvalScript" method which allows to evaluate .fsx files
 
 ### 0.0.15 -
 

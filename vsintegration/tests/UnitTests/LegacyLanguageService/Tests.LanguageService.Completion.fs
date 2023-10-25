@@ -1915,7 +1915,7 @@ let x = new MyClass2(0)
              "open Microsoft.FSharp.Math"
              "let x = Mic"
              "let p7 ="
-             "    let seive limit = "
+             "    let sieve limit = "
              "        let isPrime = Array.create (limit+1) true"
              "        for n in"],
             "let x = Mic",

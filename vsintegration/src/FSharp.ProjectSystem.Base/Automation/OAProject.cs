@@ -530,7 +530,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                                 fullPath = Path.Combine(this.project.ProjectFolder, fileName);
                             }
                         }
-                        // We want to be consistent in the error message and exception we throw. ArgumentException on Path.IsRooted shoud become InvalidOperationException.
+                        // We want to be consistent in the error message and exception we throw. ArgumentException on Path.IsRooted should become InvalidOperationException.
                         catch (ArgumentException)
                         {
                             throw new InvalidOperationException(SR.GetString(SR.ErrorInvalidFileName, CultureInfo.CurrentUICulture));

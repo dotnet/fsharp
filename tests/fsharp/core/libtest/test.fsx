@@ -5220,7 +5220,7 @@ end
 
 
 (*---------------------------------------------------------------------------
-!* BUG 1190, 3569: record and list patterns do not permit trailing seperator
+!* BUG 1190, 3569: record and list patterns do not permit trailing separator
  *--------------------------------------------------------------------------- *)
 
 module Repro_1190 = begin

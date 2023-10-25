@@ -246,7 +246,7 @@ module internal PrintfImpl =
                             let p = parsePrecision s &i2
                             let typeChar = parseTypeChar s &i2
 
-                            // shortcut for the simpliest case
+                            // shortcut for the simplest case
                             // if typeChar is not % or it has star as width\precision - resort to long path
                             if typeChar = '%' && not (w = StarValue || p = StarValue) then 
                                 buf.Append('%') |> ignore

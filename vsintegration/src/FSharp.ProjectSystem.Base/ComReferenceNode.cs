@@ -134,7 +134,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Overloaded constructor for creating a ComReferenceNode from selector data
         /// </summary>
         /// <param name="root">The Project node</param>
-        /// <param name="selectorData">The component selctor data.</param>
+        /// <param name="selectorData">The component selector data.</param>
         internal ComReferenceNode(ProjectNode root, VSCOMPONENTSELECTORDATA selectorData)
             : base(root)
         {

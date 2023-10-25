@@ -1461,7 +1461,7 @@ module Test_Dev10_Bug_917383 =
 
 /// This gave  a peverify error due to bad codegen
 module DevDiv_Bug_918202 = 
-    type sideffect = (unit -> unit) 
+    type sideeffect = (unit -> unit) 
     type 'a refopt = 'a ref option 
     type FwdRev<'x,'xb>(rev) = 
          let rev : 'xb refopt       = rev 

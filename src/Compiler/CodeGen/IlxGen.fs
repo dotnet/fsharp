@@ -7268,7 +7268,7 @@ and IsSequelImmediate sequel =
 /// or 'match'.
 and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
 
-    // What the join point does depends on the contents of the sequel. For example, if the sequal is "return" then
+    // What the join point does depends on the contents of the sequel. For example, if the sequel is "return" then
     // each branch can just return and no true join point is needed.
     match sequel with
     // All of these can be done at the end of each branch - we don't need a real join point

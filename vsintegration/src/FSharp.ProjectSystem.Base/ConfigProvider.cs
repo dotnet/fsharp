@@ -17,7 +17,7 @@ using System.Diagnostics.CodeAnalysis;
 
 /* This file provides a basefunctionallity for IVsCfgProvider2.
    Instead of using the IVsProjectCfgEventsHelper object we have our own little sink and call our own helper methods
-   similiar to the interface. But there is no real benefit in inheriting from the interface in the first place. 
+   similar to the interface. But there is no real benefit in inheriting from the interface in the first place. 
    Using the helper object seems to be:  
     a) undocumented
     b) not really wise in the managed world

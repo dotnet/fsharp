@@ -1237,7 +1237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// It takes the the project reference string of this item and adds it to a stringbuilder. 
         /// </summary>
         /// <returns>A stringbuilder.</returns>
-        /// <devremark>This method has to be public since seleceted nodes will call it.</devremark>
+        /// <devremark>This method has to be public since selected nodes will call it.</devremark>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ClipBoard")]
         public virtual StringBuilder PrepareSelectedNodesForClipBoard()
         {
@@ -1940,7 +1940,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="cmdGroup">A unique identifier of the command group.</param>
         /// <param name="cmd">The command id to query for.</param>
         /// <param name="pCmdText">Pointer to an OLECMDTEXT structure in which to return the name and/or status information of a single command. Can be NULL to indicate that the caller does not require this information. </param>
-        /// <returns>Returns the result of the query on the slected nodes.</returns>
+        /// <returns>Returns the result of the query on the selected nodes.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "p")]
         internal virtual QueryStatusResult QueryStatusSelectionOnNodes(IList<HierarchyNode> selectedNodes, Guid cmdGroup, uint cmd, IntPtr pCmdText)
         {
@@ -3004,7 +3004,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Recursively find all nodes of type T
         /// </summary>
-        /// <typeparam name="T">The type of hierarchy node being serched for</typeparam>
+        /// <typeparam name="T">The type of hierarchy node being searched for</typeparam>
         /// <param name="nodes">A list of nodes of type T</param>
         public void FindNodesOfType<T>(List<T> nodes)
             where T : HierarchyNode
