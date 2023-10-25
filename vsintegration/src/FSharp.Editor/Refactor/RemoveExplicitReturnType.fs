@@ -24,6 +24,46 @@ open Microsoft.CodeAnalysis.Text
 type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
+    static member RangeOfReturnTypeDefinition(input: ParsedInput, symbolUseStart: pos, ?skipLambdas) =
+        let skipLambdas = defaultArg skipLambdas true
+
+        SyntaxTraversal.Traverse(
+            symbolUseStart,
+            input,
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = defaultTraverse expr
+
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    match binding with
+                    | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+                    | SynBinding(expr = SynExpr.DotLambda _) when skipLambdas -> defaultTraverse binding
+                    ////I need the : before the Return Info
+                    //| SynBinding(expr = SynExpr.Typed _)  -> defaultTraverse binding
+
+                    // Dont skip manually type-annotated bindings
+                    | SynBinding(returnInfo = Some (SynBindingReturnInfo (_, r, _, _))) -> Some r
+
+                    // Let binding
+                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    // Member binding
+                    | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
+                                  trivia = { EqualsRange = Some equalsRange }) when ident.idRange.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    | _ -> defaultTraverse binding
+            }
+        )
+
+    static member RangeIncludingColon(range: TextSpan, sourceText: SourceText) =
+
+        let lineUntilType = TextSpan.FromBounds(0, range.Start)
+
+        let colonText = sourceText.GetSubText(lineUntilType).ToString()
+        let newSpan = TextSpan.FromBounds(colonText.LastIndexOf(':'), range.End)
+        newSpan
+
     static member isValidMethodWithoutTypeAnnotation
         (funcOrValue: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse)
@@ -40,18 +80,29 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
         (not funcOrValue.IsValue || not isLambdaIfFunction)
         && returnTypeHintAlreadyPresent
 
-    static member refactor (context: CodeRefactoringContext) (memberFunc: FSharpMemberOrFunctionOrValue) =
+    static member refactor
+        (context: CodeRefactoringContext)
+        (memberFunc: FSharpMemberOrFunctionOrValue)
+        (parseFileResults: FSharpParseFileResults)
+        (symbolUse: FSharpSymbolUse)
+        =
         let title = SR.RemoveExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
             let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
             inferredType
-            let rangeOfReturnType = memberFunc.ReturnParameter.DeclarationLocation
+            let symbol2 = symbolUse.Symbol
+            symbol2
 
-            let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, rangeOfReturnType)
-            let newSourceText = sourceText.Replace(textSpan, "")
+            let newSourceText =
+                RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, symbolUse.Range.Start, false)
+                |> Option.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                |> Option.map (fun textSpan -> RemoveExplicitReturnType.RangeIncludingColon(textSpan, sourceText))
+                |> Option.map (fun textSpan -> sourceText.Replace(textSpan, ""))
 
-            newSourceText
+            match newSourceText with
+            | Some t -> t
+            | None -> sourceText
 
         let codeActionFunc =
             (fun (cancellationToken: CancellationToken) ->
@@ -100,9 +151,10 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
                     | :? FSharpMemberOrFunctionOrValue as v when
                         RemoveExplicitReturnType.isValidMethodWithoutTypeAnnotation v symbolUse parseFileResults
                         ->
-                        Some(v)
+                        Some(v, symbolUse)
                     | _ -> None)
-                |> Option.map (fun (memberFunc) -> RemoveExplicitReturnType.refactor context memberFunc)
+                |> Option.map (fun (memberFunc, symbolUse) ->
+                    RemoveExplicitReturnType.refactor context memberFunc parseFileResults symbolUse)
 
             return res
         }

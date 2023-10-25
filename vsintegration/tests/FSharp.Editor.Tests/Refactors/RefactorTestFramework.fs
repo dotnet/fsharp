@@ -21,6 +21,7 @@ open Microsoft.CodeAnalysis.Tags
 open System.Reflection
 open Microsoft.FSharp.Reflection
 open FSharp.Compiler.Symbols
+open NUnit.Framework
 
 let GetSymbol (symbolName: string) (document: Document) ct =
     task {
@@ -50,9 +51,36 @@ let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
 
     }
 
-let GetReturnTypeDeclarationLocation (symbol: FSharpMemberOrFunctionOrValue) =
-    let range = symbol.ReturnParameter.DeclarationLocation
-    if range.Start = range.End then None else Some(range)
+let TryGetRangeOfExplicitReturnType (symbolName: string) (document: Document) ct =
+    task {
+        let! parseFileResults = document.GetFSharpParseResultsAsync "DoesntMatter" ct
+        let! symbol = GetSymbol symbolName document ct
+
+        let range =
+            symbol
+            |> Option.bind (fun sym ->
+                RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, sym.DeclarationLocation.Start, false))
+
+        return range
+    }
+
+let AssertHasAnyExplicitReturnType (symbolName: string) (document: Document) ct =
+    task {
+        let! range = TryGetRangeOfExplicitReturnType symbolName document ct
+        Assert.IsTrue(range.IsSome)
+    }
+
+let AssertHasNoExplicitReturnType (symbolName: string) (document: Document) ct =
+    task {
+        let! parseFileResults = document.GetFSharpParseResultsAsync "DoesntMatter" ct
+        let! symbol = GetSymbol symbolName document ct
+
+        let range =
+            symbol
+            |> Option.bind (fun sym -> parseFileResults.TryRangeOfReturnTypeHint(sym.DeclarationLocation.Start, false))
+
+        Assert.IsTrue(range.IsSome)
+    }
 
 type TestCodeFix = { Message: string; FixedCode: string }
 

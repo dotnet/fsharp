@@ -12,8 +12,9 @@ open System.Runtime.InteropServices
 [<InlineData(" :int")>]
 [<InlineData(" : int")>]
 [<InlineData(" :    int")>]
-let ``Refactor changes something`` (toRemove: string) =
+let ``Refactor removes explicit return type`` (toRemove: string) =
     task {
+        let symbolName = "sum"
 
         let code =
             $"""
@@ -21,22 +22,12 @@ let ``Refactor changes something`` (toRemove: string) =
             """
 
         use context = TestContext.CreateWithCode code
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
         let! (newDoc, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        text
 
-        let! testOutput = newDoc.GetTextAsync(context.CT)
-        testOutput
-        let! symbol = GetSymbol "sum" newDoc context.CT
-
-        let stillExists =
-            symbol
-            |> Option.map (fun symbol -> GetReturnTypeDeclarationLocation symbol)
-            |> Option.isSome
-
-        Assert.IsFalse(stillExists)
-
-        ()
+        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
     }
 
 [<Fact>]

@@ -51,14 +51,16 @@ let ``Refactor changes nothing`` (shouldNotTrigger: string) =
 
         let! testOutput = newDoc.GetTextAsync(context.CT)
         testOutput
+
+        let! parseFileResults = newDoc.GetFSharpParseResultsAsync "DoesntMatter" context.CT
         let! symbol = GetSymbol "sum" newDoc context.CT
 
-        let stillExists =
+        let range =
             symbol
-            |> Option.map (fun symbol -> GetReturnTypeDeclarationLocation symbol)
-            |> Option.isSome
+            |> Option.bind (fun sym ->
+                RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, sym.DeclarationLocation.Start, false))
 
-        Assert.IsTrue(stillExists)
+        Assert.IsTrue(range.IsSome)
     }
 
 [<Fact>]
