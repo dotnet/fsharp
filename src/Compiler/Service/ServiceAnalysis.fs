@@ -803,7 +803,7 @@ module UnnecessaryParentheses =
                 ValueSome(prec, Right)
             | SynExpr.App (isInfix = true; funcExpr = FuncExpr.SymbolicOperator (SymbolPrec prec)) -> ValueSome(prec, Left)
             | SynExpr.Upcast _ -> ValueSome(Upcast, Left)
-            | SynExpr.Downcast _ -> ValueSome(Upcast, Left)
+            | SynExpr.Downcast _ -> ValueSome(Downcast, Left)
             | SynExpr.TypeTest _ -> ValueSome(TypeTest, Left)
             | _ -> ValueNone
 
