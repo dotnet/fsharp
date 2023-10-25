@@ -1322,7 +1322,9 @@ let _ = (2 + 2) { return 5 }
             let leadingDots = "..."
             let leadingQuestionMarks = "???"
             let trailingChars = "!%&*+-./<>=?@^|~"
-            let circumfixReplacementPattern = $" {leadingDots}{leadingQuestionMarks}$1{trailingChars} "
+
+            let circumfixReplacementPattern =
+                $" {leadingDots}{leadingQuestionMarks}$1{trailingChars} "
 
             let infixOperators = memberData { yield! pairings }
 
@@ -1330,9 +1332,7 @@ let _ = (2 + 2) { return 5 }
                 let circumfix expr =
                     Regex.Replace(expr, affixableOpPattern, circumfixReplacementPattern)
 
-                memberData {
-                    for expr, expected in pairings -> circumfix expr, circumfix expected
-                }
+                memberData { for expr, expected in pairings -> circumfix expr, circumfix expected }
 
             [<Theory; MemberData(nameof infixOperators)>]
             let ``Infix operators`` expr expected = expectFix expr expected
