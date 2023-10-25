@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Reflection
 open System.Threading
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
@@ -22,7 +23,7 @@ let runCancelFirstTime f =
             cts.Cancel()
 
         requestCount <- requestCount + 1
-        cts.Token.ThrowIfCancellationRequested()
+        Cancellable.CheckAndThrow()
 
         f ()
 
