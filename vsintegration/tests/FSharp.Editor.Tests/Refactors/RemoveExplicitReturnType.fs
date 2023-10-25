@@ -4,6 +4,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 open NUnit.Framework
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
+open Microsoft.CodeAnalysis.Text
 open Xunit
 open System.Runtime.InteropServices
 
@@ -24,8 +25,7 @@ let ``Refactor removes explicit return type`` (toRemove: string) =
         use context = TestContext.CreateWithCode code
         let spanStart = code.IndexOf symbolName
 
-        let! (newDoc, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
-        text
+        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
         do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
     }
@@ -33,6 +33,8 @@ let ``Refactor removes explicit return type`` (toRemove: string) =
 [<Fact>]
 let ``Refactor changes nothing`` () =
     task {
+
+        let symbolName = "sum"
 
         let code =
             $"""
@@ -43,16 +45,17 @@ let ``Refactor changes nothing`` () =
 
         let spanStart = code.IndexOf "sum"
 
-        let! (_, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        Assert.AreEqual(code, text.ToString(), "")
-
+        do! AssertCodeHasNotChanged code newDoc context.CT
+        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
         ()
     }
 
 [<Fact>]
 let ``Refactor should not change anything`` () =
     task {
+        let symbolName = "sum"
 
         let code =
             """
@@ -67,9 +70,10 @@ let ``Refactor should not change anything`` () =
 
         let spanStart = code.IndexOf "sum"
 
-        let! (_, text) = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        Assert.AreEqual(code, text.ToString(), "")
+        do! AssertCodeHasNotChanged code newDoc context.CT
+        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
 
         ()
     }

@@ -20,7 +20,9 @@ open System.Threading
 open Microsoft.CodeAnalysis.Tags
 open System.Reflection
 open Microsoft.FSharp.Reflection
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
 open NUnit.Framework
 
 let GetSymbol (symbolName: string) (document: Document) ct =
@@ -64,10 +66,27 @@ let TryGetRangeOfExplicitReturnType (symbolName: string) (document: Document) ct
         return range
     }
 
+let AssertCodeHasNotChanged (code: string) (document: Document) ct =
+    task {
+        let! newText = document.GetTextAsync ct
+        Assert.AreEqual(code, newText.ToString())
+    }
+
 let AssertHasAnyExplicitReturnType (symbolName: string) (document: Document) ct =
     task {
         let! range = TryGetRangeOfExplicitReturnType symbolName document ct
         Assert.IsTrue(range.IsSome)
+    }
+
+let AssertHasSpecificExplicitReturnType (symbolName: string) (expectedTypeName: string) (document: Document) ct =
+    task {
+        let! returnType = GetReturnTypeOfSymbol symbolName document ct
+
+        match returnType with
+        | Some t -> Assert.AreEqual(expectedTypeName, t)
+        | None -> Assert.Fail($"Unexpected type. Expected {expectedTypeName} but was t")
+
+        ()
     }
 
 let AssertHasNoExplicitReturnType (symbolName: string) (document: Document) ct =
@@ -129,7 +148,6 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
                 ()
 
         let newDocument = context.Solution.GetDocument(document.Id)
-        let! changedText = newDocument.GetTextAsync(context.CT)
-        return (newDocument, changedText)
+        return newDocument
     }
     |> CancellableTask.startWithoutCancellation

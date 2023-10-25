@@ -37,6 +37,7 @@ open System.Runtime.InteropServices
 [<InlineData(" :    int")>]
 let ``Refactor changes nothing`` (shouldNotTrigger: string) =
     task {
+        let symbolName = "sum"
 
         let code =
             $"""
@@ -45,48 +46,19 @@ let ``Refactor changes nothing`` (shouldNotTrigger: string) =
 
         use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
-        let! (newDoc, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-        let! testOutput = newDoc.GetTextAsync(context.CT)
-        testOutput
-
-        let! parseFileResults = newDoc.GetFSharpParseResultsAsync "DoesntMatter" context.CT
-        let! symbol = GetSymbol "sum" newDoc context.CT
-
-        let range =
-            symbol
-            |> Option.bind (fun sym ->
-                RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, sym.DeclarationLocation.Start, false))
-
-        Assert.IsTrue(range.IsSome)
-    }
-
-[<Fact>]
-let ``Refactor changes something`` () =
-    task {
-
-        let code =
-            """
-            let sum a b = a + b
-            """
-
-        use context = TestContext.CreateWithCode code
-
-        let spanStart = code.IndexOf "sum"
-
-        let! (_, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
-
-        Assert.AreNotEqual(code, text.ToString(), "")
-
-        ()
+        do! AssertCodeHasNotChanged code newDoc context.CT
     }
 
 [<Fact>]
 let ``Correctly infer int as explicit return type`` () =
     task {
 
+        let symbolName = "sum"
+
         let code =
             """
             let sum a b = a + b
@@ -94,22 +66,17 @@ let ``Correctly infer int as explicit return type`` () =
 
         use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
-        let! (document, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-        let! returnType = GetReturnTypeOfSymbol "sum" document context.CT
-
-        match returnType with
-        | Some t -> Assert.AreEqual("int", t)
-        | None -> failwith "Unexpected symbol"
-
-        ()
+        do! AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
     }
 
 [<Fact>]
 let ``Correctly infer custom type that is declared earlier in file`` () =
     task {
+        let symbolName = "sum"
 
         let code =
             """
@@ -119,15 +86,10 @@ let ``Correctly infer custom type that is declared earlier in file`` () =
 
         use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
-        let! (document, text) = tryRefactor code spanStart context (new AddExplicitReturnType())
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-        let! returnType = GetReturnTypeOfSymbol "sum" document context.CT
+        do! AssertHasSpecificExplicitReturnType symbolName "MyType" newDoc context.CT
 
-        match returnType with
-        | Some t -> Assert.AreEqual("MyType", t)
-        | None -> failwith "Unexpected symbol"
-
-        ()
     }
