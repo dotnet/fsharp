@@ -3847,7 +3847,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 container = referencesFolder;
             }
 
-            // Load the referernces.
+            // Load the references.
             container.LoadReferencesFromBuildProject(buildProject);
         }
         /// <summary>

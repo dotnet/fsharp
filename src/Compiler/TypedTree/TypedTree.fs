@@ -4627,7 +4627,7 @@ type DecisionTreeTest =
 ///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
 ///   -- targetExpr - The expression to evaluate if we branch to the target
 ///   -- debugPoint - The debug point for the target
-///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
+///   -- isStateVarFlags - Indicates which, if any, of the values are represents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
     | TTarget of 

@@ -2211,7 +2211,7 @@ module RecursiveAbstractClassDefinitions = begin
        default t1.M2() = t1.M1(t1.t2)
        default t1.M3(t2:t2) = 
            // Note we can use object expressions within the recursive
-           // definition of the type itself.  This requries real care - the
+           // definition of the type itself.  This requires real care - the
            // exact set of abstract members that still need implementing
            // must have been determined correctly before any expressions are
            // analyzed.

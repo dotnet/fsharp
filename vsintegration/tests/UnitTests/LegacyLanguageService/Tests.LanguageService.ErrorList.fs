@@ -757,7 +757,7 @@ type staticInInterface =
     member public this.``IncompleteExpression``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
-                // Regresson test for FSHARP1.0:1397 - Warning required on expr of function type who result is immediately thrown away
+                // Regression test for FSHARP1.0:1397 - Warning required on expr of function type who result is immediately thrown away
                 module Test
 
                 printfn "%A"

@@ -1545,7 +1545,7 @@ nativeResourceHeaderMalformed,"Resource header beginning at offset %s is malform
 formatDashItem," - %s"
 featureSingleUnderscorePattern,"single underscore pattern"
 featureWildCardInForLoop,"wild card in for loop"
-featureRelaxWhitespace,"whitespace relexation"
+featureRelaxWhitespace,"whitespace relaxation"
 featureNameOf,"nameof"
 featureImplicitYield,"implicit yield"
 featureOpenTypeDeclaration,"open type declaration"

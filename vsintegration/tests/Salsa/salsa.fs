@@ -463,7 +463,7 @@ module internal Salsa =
     // Result of querying the completion list
     and CompletionItem = CompletionItem of name: string * displayText: string * nameInCode: string * (unit -> string) * DeclarationType
 
-    /// Representes the information that is displayed in the navigation bar
+    /// Represents the information that is displayed in the navigation bar
     and NavigationBarResult = 
       { TypesAndModules : DropDownMember[]
         Members : DropDownMember[]

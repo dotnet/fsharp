@@ -1895,7 +1895,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     // To be added when the bugs are fixed...
     [<Test>]
     //[<Ignore("90832 - [ParameterInfo] No Parameter Info shown on string parameter with operator")>]
-    member public this.``Regrssion.ParameterWithOperators.Bug90832``() = 
+    member public this.``Regression.ParameterWithOperators.Bug90832``() = 
         let fileContents = """System.Console.WriteLine("This(*Mark*) is a" + " bug.")"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string"])
 

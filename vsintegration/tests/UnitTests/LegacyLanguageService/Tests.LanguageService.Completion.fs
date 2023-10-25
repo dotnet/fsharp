@@ -239,7 +239,7 @@ type UsingMSBuild() as this  =
         MoveCursorToEndOfMarker(file,marker)
 
         // Now delete the property and leave only dot at the end 
-        //  - user is typing fast so replac the content without background compilation
+        //  - user is typing fast so replace the content without background compilation
         ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc      
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)

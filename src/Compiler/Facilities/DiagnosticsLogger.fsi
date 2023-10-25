@@ -97,7 +97,7 @@ val inline protectAssemblyExplorationNoReraise: dflt1: 'T -> dflt2: 'T -> f: (un
 
 val AttachRange: m: range -> exn: exn -> exn
 
-/// Represnts an early exit from parsing, checking etc, for example because 'maxerrors' has been reached.
+/// Represents an early exit from parsing, checking etc, for example because 'maxerrors' has been reached.
 type Exiter =
     abstract Exit: int -> 'T
 

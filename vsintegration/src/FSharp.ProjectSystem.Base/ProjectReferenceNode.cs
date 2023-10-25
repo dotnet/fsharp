@@ -29,7 +29,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Task projectRefError;
 
         /// <summary>
-        /// The name of the assembly this refernce represents
+        /// The name of the assembly this reference represents
         /// </summary>
         private Guid referencedProjectGuid;
 
@@ -463,7 +463,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the refernce exists. 
+        /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the reference exists. 
         /// </summary>
         internal ProjectReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
@@ -657,7 +657,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whether this node is valid node for painting the refererence icon.
+        /// Defines whether this node is valid node for painting the reference icon.
         /// </summary>
         /// <returns></returns>
         public override bool CanShowDefaultIcon()
@@ -721,7 +721,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns></returns>
         internal override AddReferenceCheckResult CheckIfCanAddReference()
         {
-            // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.
+            // When this method is called this reference has not yet been added to the hierarchy, only instantiated.
             var checkResult = base.CheckIfCanAddReference();
             if (!checkResult.Ok)
                 return checkResult;

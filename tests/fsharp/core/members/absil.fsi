@@ -1251,7 +1251,7 @@ type manifest =
  * an auxiliary module.  The main module will have a manifest.
  *
  * The abbreviation "modul" is used frequently throught the OCaml source
- * code because "module" is a resesrved word in OCaml.
+ * code because "module" is a reserved word in OCaml.
  * -------------------------------------------------------------------- *)
 
 type modul = 

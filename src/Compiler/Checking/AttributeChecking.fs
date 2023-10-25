@@ -232,7 +232,7 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 
 let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
     // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
-    // Specifically, when default constructor is generated for class with any reqired members in them.
+    // Specifically, when default constructor is generated for class with any required members in them.
     // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
     let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
     match TryDecodeILAttribute tref cattrs with

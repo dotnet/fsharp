@@ -213,7 +213,7 @@ module CompilationTests = begin
 
     (* Hit problems in letrec's with value recursions,
        because packing a recursive value into an environment failed,
-       since uses to valrecs are requried to be delayed.
+       since uses to valrecs are required to be delayed.
 
        Solutions?
        (a) skip TLR if fclass has a valrec? (they are not common case)

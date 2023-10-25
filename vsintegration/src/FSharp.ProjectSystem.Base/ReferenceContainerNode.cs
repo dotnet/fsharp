@@ -117,7 +117,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Disable inline editing of Caption of a ReferendeContainerNode
+        /// Disable inline editing of Caption of a ReferenceContainerNode
         /// </summary>
         /// <returns>null</returns>
         public override string GetEditLabel()
@@ -230,7 +230,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whether this node is valid node for painting the refererences icon.
+        /// Defines whether this node is valid node for painting the references icon.
         /// </summary>
         /// <returns></returns>
         public override bool CanShowDefaultIcon()
@@ -588,7 +588,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates an assembly refernce node from a project element.
+        /// Creates an assembly reference node from a project element.
         /// </summary>
         internal virtual AssemblyReferenceNode CreateAssemblyReferenceNode(ProjectElement element, BuildResult buildResult)
         {

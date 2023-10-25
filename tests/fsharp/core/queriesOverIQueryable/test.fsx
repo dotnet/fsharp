@@ -2290,7 +2290,7 @@ module MiscTestsForImplicitExpressionConversion =
 
         module Histogram = 
             let histogram k (input: System.Linq.IQueryable<string>) =
-                // Problem - type annotation requried on input variable 
+                // Problem - type annotation required on input variable 
                 // Problem - upcast required of return result of function (no covariance for functions)
                 let words = input.SelectMany(fun x -> x.Split(' ') :> seq<_>)
                 let groups = words.GroupBy(fun x -> x)

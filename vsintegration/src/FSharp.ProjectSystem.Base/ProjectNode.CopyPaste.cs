@@ -1035,7 +1035,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return true;
         }
         /// <summary>
-        /// Adds an item from a project refererence to target node.
+        /// Adds an item from a project reference to target node.
         /// </summary>
         /// <param name="projectRef"></param>
         /// <param name="targetNode"></param>

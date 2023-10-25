@@ -721,7 +721,7 @@ type ILPropInfo =
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
@@ -819,7 +819,7 @@ type PropInfo =
     /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member IsSetterInitOnly: bool
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list

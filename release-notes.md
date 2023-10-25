@@ -520,7 +520,7 @@ The most notable change for FSharp.Compiler.Service is that it is now built and 
 
 * Support for Witness information [#9510](https://github.com/dotnet/fsharp/pull/95100) in `FSharpExpr` and `FSharpMemberOrFunctionOrValue`
 * Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
-* Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
+* Improvements to the F# syntax tree representation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 * Support for `ToString` in `FSharp.Compiler.SourceCodeServices.StringText` by [Asti](https://github.com/deviousasti)
@@ -1985,7 +1985,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 ### 0.0.4-alpha -
 
 * Added documentation of file system API
-* Reporte errors correctly from ParseAndCheckProject
+* Report errors correctly from ParseAndCheckProject
 
 ### 0.0.3-alpha -
 

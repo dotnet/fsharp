@@ -463,7 +463,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">atenuação de espaço em branco</target>
         <note />
       </trans-unit>

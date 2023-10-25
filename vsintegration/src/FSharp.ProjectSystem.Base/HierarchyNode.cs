@@ -1551,7 +1551,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
-                // There should only be the project node who handles these and should manifest in the same action regardles of selection.
+                // There should only be the project node who handles these and should manifest in the same action regardless of selection.
                 switch ((VsCommands2K)cmdId)
                 {
                     case VsCommands2K.SHOWALLFILES:
