@@ -1317,47 +1317,28 @@ let _ = (2 + 2) { return 5 }
                 |> Seq.choose (fun (pair, (l, r)) -> ParenthesizedInfixOperatorAppPair.expectation (pair (l, r)))
 
             let affixableOpPattern =
-                @" (\*\*|\*|/+|%+|\++|-+|@+|^+|!=|<+|>+|&{3,}|\|{3,}|=+|\|>|<\|) "
-
-            let prefixOpsInExprWith prefix expr =
-                Regex.Replace(expr, affixableOpPattern, $" %s{prefix}$1 ")
-
-            let suffixOpsInExprWith suffix expr =
-                Regex.Replace(expr, affixableOpPattern, $" $1%s{suffix} ")
+                @" (\*\*|\*|/+|%+|\++|-+|@+|\^+|!=|<+|>+|&{3,}|\|{3,}|=+|\|>|<\|) "
 
             let leadingDots = "..."
             let leadingQuestionMarks = "???"
-            let trailingChars = "+^=*/"
+            let trailingChars = "!%&*+-./<>=?@^|~"
+            let circumfixReplacementPattern = $" {leadingDots}{leadingQuestionMarks}$1{trailingChars} "
 
             let infixOperators = memberData { yield! pairings }
 
-            let infixOperatorsWithLeadingDots =
-                memberData {
-                    for expr, expected in pairings -> prefixOpsInExprWith leadingDots expr, prefixOpsInExprWith leadingDots expected
-                }
+            let infixOperatorsWithLeadingAndTrailingChars =
+                let circumfix expr =
+                    Regex.Replace(expr, affixableOpPattern, circumfixReplacementPattern)
 
-            let infixOperatorsWithLeadingQuestionMarks =
                 memberData {
-                    for expr, expected in pairings ->
-                        prefixOpsInExprWith leadingQuestionMarks expr, prefixOpsInExprWith leadingQuestionMarks expected
-                }
-
-            let infixOperatorsWithTrailingChars =
-                memberData {
-                    for expr, expected in pairings -> suffixOpsInExprWith trailingChars expr, suffixOpsInExprWith trailingChars expected
+                    for expr, expected in pairings -> circumfix expr, circumfix expected
                 }
 
             [<Theory; MemberData(nameof infixOperators)>]
             let ``Infix operators`` expr expected = expectFix expr expected
 
-            [<Theory; MemberData(nameof infixOperatorsWithLeadingDots)>]
-            let ``Infix operators with leading dots`` expr expected = expectFix expr expected
-
-            [<Theory; MemberData(nameof infixOperatorsWithLeadingQuestionMarks)>]
-            let ``Infix operators with leading question marks`` expr expected = expectFix expr expected
-
-            [<Theory; MemberData(nameof infixOperatorsWithTrailingChars)>]
-            let ``Infix operators with trailing characters`` expr expected = expectFix expr expected
+            [<Theory; MemberData(nameof infixOperatorsWithLeadingAndTrailingChars)>]
+            let ``Infix operators with leading and trailing chars`` expr expected = expectFix expr expected
 
 module Patterns =
     /// match … with pat -> …
