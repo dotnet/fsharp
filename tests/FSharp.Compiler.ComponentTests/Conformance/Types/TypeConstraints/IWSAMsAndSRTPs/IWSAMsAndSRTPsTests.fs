@@ -923,7 +923,6 @@ let main _ =
         |> compile
         |> shouldSucceed
         
-        
     [<Fact>]
     let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
         Fsx """
@@ -982,3 +981,53 @@ module StaticAbstractBug =
              (Error 855, Line 15, Col 21, Line 15, Col 29, "No abstract or interface member was found that corresponds to this override")
              (Error 855, Line 17, Col 21, Line 17, Col 30, "No abstract or interface member was found that corresponds to this override")
          ]
+
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+        
+    type IOperation2 =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+
+    type FaultyOperation() =
+        interface IOperation with
+            member this.Execute() = 0
+            member _.Execute2() = ()
+            
+        interface IOperation2 with
+            member this.Execute() = 0
+            member this.Execute2() = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
+             (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``IWSAM not supported in object expressions`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+        
+    let objExpr =
+        { new IOperation with
+            member this.Execute() = ()
+            member _.Execute2() = () }
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withWarningCode 3536
+         |> withDiagnosticMessage """'IOperation' is normally used as a type constraint in generic code, e.g. "'T when ISomeInterface<'T>" or "let f (x: #ISomeInterface<_>)". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn "3536"' or '--nowarn:3536'."""
