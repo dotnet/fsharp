@@ -936,7 +936,7 @@ module NameResolutionBug1134 =
     let f x = match x with | A -> 4 | B -> 5 // the 'A' should resolve to the pattern identifier
     let g x = match x with | A2 _ -> 4 | B -> 5 // the 'A' should resolve to the pattern identifier
 
-module CheckNameResoutionRules = 
+module CheckNameResolutionRules = 
 
     module M1a = 
         type t = C of int

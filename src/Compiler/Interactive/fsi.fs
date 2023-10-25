@@ -3251,7 +3251,7 @@ type internal FsiInterruptController
 // - The requesting assembly (that is, the assembly that is returned by the ResolveEventArgs.RequestingAssembly property)
 //   was loaded without context.
 //
-// On the coreclr we add an UnmanagedDll Resoution handler to ensure that native dll's can be searched for,
+// On the coreclr we add an UnmanagedDll Resolution handler to ensure that native dll's can be searched for,
 // the desktop version of the Clr does not support this mechanism.
 //
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.

@@ -698,14 +698,14 @@ type FSharpValueTests() =
         // SingleCaseUnion
         let (singlecaseinfo, _singlevaluearray) = FSharpValue.GetUnionFields(singleCaseUnion1, typeof<SingleCaseDiscUnion>)
         let singleUnionCtor = FSharpValue.PreComputeUnionConstructor(singlecaseinfo)    
-        let resuleSingleCaseUnion = singleUnionCtor([| box 1.0; box 2.0; box 3.0|])
-        Assert.AreEqual(resuleSingleCaseUnion, singleCaseUnion1)
+        let resultSingleCaseUnion = singleUnionCtor([| box 1.0; box 2.0; box 3.0|])
+        Assert.AreEqual(resultSingleCaseUnion, singleCaseUnion1)
         
         // DiscUnion
         let (discunioninfo, _discunionvaluearray) = FSharpValue.GetUnionFields(discUnionCaseB, typeof<DiscUnionType<int>>)
         let discUnionCtor = FSharpValue.PreComputeUnionConstructor(discunioninfo)    
-        let resuleDiscUnionB = discUnionCtor([| box 1; box(Some(discUnionCaseB)) |])
-        Assert.AreEqual(resuleDiscUnionB, discUnionRecCaseB)
+        let resultDiscUnionB = discUnionCtor([| box 1; box(Some(discUnionCaseB)) |])
+        Assert.AreEqual(resultDiscUnionB, discUnionRecCaseB)
 
     [<Fact>]
     member _.PreComputeStructUnionConstructor() =
@@ -713,14 +713,14 @@ type FSharpValueTests() =
         // SingleCaseUnion
         let (singlecaseinfo, _singlevaluearray) = FSharpValue.GetUnionFields(singleCaseStructUnion1, typeof<SingleCaseDiscStructUnion>)
         let singleUnionCtor = FSharpValue.PreComputeUnionConstructor(singlecaseinfo)    
-        let resuleSingleCaseUnion = singleUnionCtor([| box 1.0; box 2.0; box 3.0|])
-        Assert.AreEqual(resuleSingleCaseUnion, singleCaseStructUnion1)
+        let resultSingleCaseUnion = singleUnionCtor([| box 1.0; box 2.0; box 3.0|])
+        Assert.AreEqual(resultSingleCaseUnion, singleCaseStructUnion1)
         
         // DiscUnion
         let (discunioninfo, _discunionvaluearray) = FSharpValue.GetUnionFields(discStructUnionCaseB, typeof<DiscStructUnionType<int>>)
         let discUnionCtor = FSharpValue.PreComputeUnionConstructor(discunioninfo)    
-        let resuleDiscUnionB = discUnionCtor([| box 1|])
-        Assert.AreEqual(resuleDiscUnionB, discStructUnionCaseB)
+        let resultDiscUnionB = discUnionCtor([| box 1|])
+        Assert.AreEqual(resultDiscUnionB, discStructUnionCaseB)
     
     [<Fact>]
     member _.PreComputeUnionConstructorInfo() =

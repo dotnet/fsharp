@@ -299,7 +299,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates a CALPOLESTR from a list of strings 
-        /// It is the responsability of the caller to release this memory.
+        /// It is the responsibility of the caller to release this memory.
         /// </summary>
         /// <param name="strings"></param>
         /// <returns>A CALPOLESTR that was created from the the list of strings.</returns>
@@ -334,7 +334,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates a CADWORD from a list of tagVsSccFilesFlags. Memory is allocated for the elems. 
-        /// It is the responsability of the caller to release this memory.
+        /// It is the responsibility of the caller to release this memory.
         /// </summary>
         /// <param name="flags"></param>
         /// <returns>A CADWORD created from the list of tagVsSccFilesFlags.</returns>
@@ -971,7 +971,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// Retrieves the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
         /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>
@@ -1000,7 +1000,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// Retrieves the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
         /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>

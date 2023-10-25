@@ -1940,7 +1940,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="cmdGroup">A unique identifier of the command group.</param>
         /// <param name="cmd">The command id to query for.</param>
         /// <param name="pCmdText">Pointer to an OLECMDTEXT structure in which to return the name and/or status information of a single command. Can be NULL to indicate that the caller does not require this information. </param>
-        /// <returns>Retuns the result of the query on the slected nodes.</returns>
+        /// <returns>Returns the result of the query on the slected nodes.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "p")]
         internal virtual QueryStatusResult QueryStatusSelectionOnNodes(IList<HierarchyNode> selectedNodes, Guid cmdGroup, uint cmd, IntPtr pCmdText)
         {

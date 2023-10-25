@@ -76,7 +76,7 @@ module TestPrivateInheritance2 =
    type IB = 
       inherit IA 
 
-module TestCurriedMemberRestricitons = 
+module TestCurriedMemberRestrictions = 
     [<AbstractClass>]
     type C() = 
         member x.X0 () () = 1

@@ -3014,7 +3014,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // Create the logger
                 buildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
 
-                // To retrive the verbosity level, the build logger depends on the registry root 
+                // To retrieve the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)
                 ILocalRegistry2 registry = this.GetService(typeof(SLocalRegistry)) as ILocalRegistry2;
                 if (null != registry)

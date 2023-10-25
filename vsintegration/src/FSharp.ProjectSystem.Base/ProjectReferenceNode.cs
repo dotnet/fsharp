@@ -469,7 +469,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             : base(root, element)
         {
             this.referencedProjectRelativePath = this.ItemNode.GetMetadata(ProjectFileConstants.Include);
-            Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectRelativePath), "Could not retrive referenced project path form project file");
+            Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectRelativePath), "Could not retrieve referenced project path form project file");
 
             string guidString = this.ItemNode.GetMetadata(ProjectFileConstants.Project);
 
@@ -483,11 +483,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             finally
             {
-                Debug.Assert(this.referencedProjectGuid != Guid.Empty, "Could not retrive referenced project guidproject file");
+                Debug.Assert(this.referencedProjectGuid != Guid.Empty, "Could not retrieve referenced project guidproject file");
 
                 this.referencedProjectName = this.ItemNode.GetMetadata(ProjectFileConstants.Name);
 
-                Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectName), "Could not retrive referenced project name form project file");
+                Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectName), "Could not retrieve referenced project name form project file");
             }
 
             Uri uri = new Uri(this.ProjectMgr.BaseURI.Uri, this.referencedProjectRelativePath);

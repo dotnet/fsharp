@@ -554,7 +554,7 @@ module QueryExecutionOverIEnumerable =
         (query { yield (1,(2,3)) } |> Seq.toList) 
         [ (1,(2,3)) ]
 
-    // Smoke test for returnng a tuple, size = 7
+    // Smoke test for returning a tuple, size = 7
     checkCommuteSeq "smcnewnc07" 
         (query { yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         [ (1,2,3,4,5,6,7) ]
@@ -586,7 +586,7 @@ module QueryExecutionOverIEnumerable =
         (query { for x in db do yield (1,(2,3)) } |> Seq.toList) 
         (seq { for x in db do yield (1,(2,3)) } |> Seq.toList) 
 
-    // Smoke test for returnng a tuple, size = 7
+    // Smoke test for returning a tuple, size = 7
     checkCommuteSeq "smcnewnc07x" 
         (query { for x in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         (seq { for x in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
@@ -619,7 +619,7 @@ module QueryExecutionOverIEnumerable =
         (query { for x in db do for y in db do yield (1,(2,3)) } |> Seq.toList) 
         (seq { for x in db do for y in db do yield (1,(2,3)) } |> Seq.toList) 
 
-    // Smoke test for returnng a tuple, size = 7, nested for loops
+    // Smoke test for returning a tuple, size = 7, nested for loops
     checkCommuteSeq "smcnewnc07xx" 
         (query { for x in db do for y in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         (seq { for x in db do for y in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 

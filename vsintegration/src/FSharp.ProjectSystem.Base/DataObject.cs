@@ -311,7 +311,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 /// <summary>
-                /// Retrives data from a VS format.
+                /// Retrieves data from a VS format.
                 /// </summary>
                 public static List<string> GetDroppedFiles(ushort format, Microsoft.VisualStudio.OLE.Interop.IDataObject dataObject, out DropDataType ddt)
                 {

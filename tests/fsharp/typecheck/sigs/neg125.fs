@@ -7,7 +7,7 @@ module Neg125
 // This removes ^output as a type selector for the witness, and no longer passes a dummy ^output
 //
 // This means that when both ^witnesses and ^input are known, the overload determining the ^output still can't be determined,
-// and overload resolutiuon failures are reported
+// and overload resolution failures are reported
 module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutOutputTypeSelectAndWithoutPassingDummyArgument = 
     open System
     open System.Numerics

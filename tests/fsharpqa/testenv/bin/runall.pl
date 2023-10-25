@@ -4639,7 +4639,7 @@ sub RunMultiProcess() {
 		    leave ("Runall.pl line " . __LINE__ . ": Assert! pre $pre post $post\n", $STATE_ERROR_EXITVAL) if ($post > $pre);
 		};
 
-		# if we unblocked a test, resest its entry in $has_predecessors and
+		# if we unblocked a test, reset its entry in $has_predecessors and
 		# move it from the waitlist to the readylist (if it is in the waitlist). 
 		if ($dependents{$dep_test_id} =~ /^;*$/) {
 		    my @newly_unblocked = ();

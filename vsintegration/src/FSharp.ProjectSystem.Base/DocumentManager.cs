@@ -209,7 +209,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Get the URL representing the item
             fullPath = this.node.GetMkDocument();
 
-            Debug.Assert(!String.IsNullOrEmpty(fullPath), "Could not retrive the fullpath for the node" + this.Node.ID.ToString(CultureInfo.CurrentCulture));
+            Debug.Assert(!String.IsNullOrEmpty(fullPath), "Could not retrieve the fullpath for the node" + this.Node.ID.ToString(CultureInfo.CurrentCulture));
             return fullPath;
         }
 

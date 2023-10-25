@@ -34,7 +34,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Returns the dirty state of the document.
         /// </summary>
         /// <exception cref="InvalidOperationException">Is thrown if the project is closed or it the service provider attached to the project is invalid.</exception>
-        /// <exception cref="COMException">Is thrown if the dirty state cannot be retrived.</exception>
+        /// <exception cref="COMException">Is thrown if the dirty state cannot be retrieved.</exception>
         public override bool IsDirty
         {
             get

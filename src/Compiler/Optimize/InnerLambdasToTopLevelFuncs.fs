@@ -718,7 +718,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //
        //    let mutable a = 1
        //
-       //    let resutl1 =
+       //    let result1 =
        //        let x = &a  // This is NOT given TLR, because it is byref
        //        x <- 111
        //        let temp = x // This is given a static field TLR, not a method TLR

@@ -248,7 +248,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the list of project guids from the project file.
+        /// Retrieves the list of project guids from the project file.
         /// If you don't want your project to be flavorable, override
         /// to only return your project factory Guid:
         ///      return this.GetType().GUID.ToString("B");

@@ -100,7 +100,7 @@ remove_irrelevant_files "$repo_dir1"
 remove_irrelevant_files "$repo_dir2"
 
 # Use git-diff to compare the two source trees and create a patch.
-# Note, the 'git diff' command reeturns with non-zero exit code if there are any warnings emitted,
+# Note, the 'git diff' command returns with non-zero exit code if there are any warnings emitted,
 # which there will be -- so we can't really check the exit code to see if it succeeded'
 if [ "$include_all_changes" != '1' ]; then
     diff_filter_arg="--diff-filter=ad"

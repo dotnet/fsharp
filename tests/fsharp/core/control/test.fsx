@@ -1432,7 +1432,7 @@ let test3 () =
                 if n < 100 then 
                     do! a (n + 1) }
                     
-    // on low-resouce test VMs, this might not pass on the first try.  Give a few chances.               
+    // on low-resource test VMs, this might not pass on the first try.  Give a few chances.               
     let rec doTest maxAttempts =
         printfn "doTest, maxAttempts %d" maxAttempts
         match maxAttempts with

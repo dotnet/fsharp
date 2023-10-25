@@ -435,7 +435,7 @@ namespace ProviderImplementation.ProvidedTypes
          /// this method should not be used directly when authoring a type provider.
         member ConvertTargetTypeToSource: Type -> Type
 
-         /// Returns a quotation rebuilt with resepct to the types from the target referenced assemblies.  Normally
+         /// Returns a quotation rebuilt with respect to the types from the target referenced assemblies.  Normally
          /// this method should not be used directly when authoring a type provider.
         member ConvertSourceExprToTarget: Expr -> Expr
 

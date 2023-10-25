@@ -61,7 +61,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		}
 		/// <summary>
 		/// When building from within VS, setting this will
-		/// enable the logger to retrive the verbosity from
+		/// enable the logger to retrieve the verbosity from
 		/// the correct registry hive.
 		/// </summary>
 		public string BuildVerbosityRegistryRoot
