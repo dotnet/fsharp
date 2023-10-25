@@ -183,6 +183,27 @@ let _ =
     let ``End of file: let x = (1)`` () =
         TopLevel.expectFix "let x = (1)" "let x = 1"
 
+    let unmatchedParens =
+        memberData {
+            "(", "("
+            ")", ")"
+            "(()", "(()"
+            "())", "())"
+            "(x", "(x"
+            "x)", "x)"
+            "((x)", "(x"
+            "(x))", "x)"
+            "((((x)", "(((x"
+            "(x))))", "x)))"
+            "(x + (y + z)", "(x + y + z"
+            "((x + y) + z", "(x + y + z"
+            "x + (y + z))", "x + y + z)"
+            "(x + y) + z)", "x + y + z)"
+        }
+
+    [<Theory; MemberData(nameof unmatchedParens)>]
+    let ``Unmatched parentheses`` expr expected = expectFix expr expected
+
     let exprs =
         memberData {
             // Paren
