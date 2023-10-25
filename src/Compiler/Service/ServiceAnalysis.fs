@@ -1015,7 +1015,7 @@ module UnnecessaryParentheses =
             // Matches if the given expression is a numeric literal
             // that it is safe to "dot into," e.g., 1l, 0b1, 1e10, 1d, 1.0…
             let (|DotSafeNumericLiteral|_|) =
-                /// 1l, 0b1, 1e10, 1d…
+                /// 1l, 1d, 0b1, 0x1, 0o1, 1e10…
                 let (|TextContainsLetter|_|) (m: range) =
                     let line = getSourceLineStr m.StartLine
                     let span = line.AsSpan(m.StartColumn, m.EndColumn - m.StartColumn)
@@ -1047,7 +1047,7 @@ module UnnecessaryParentheses =
                 | SynExpr.Const (SynConst.Int64 _, _)
                 | SynExpr.Const (SynConst.IntPtr _, _)
                 | SynExpr.Const (SynConst.Decimal _, _)
-                | SynExpr.Const (SynConst.Double _, (TextContainsLetter | TextEndsWithNumber))
+                | SynExpr.Const (SynConst.Double _, (TextEndsWithNumber | TextContainsLetter))
                 | SynExpr.Const (SynConst.Single _, _)
                 | SynExpr.Const (SynConst.Measure _, _)
                 | SynExpr.Const (SynConst.UserNum _, _) -> Some DotSafeNumericLiteral
