@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypesAndModules #Unions 
 // Regression test for FSHARP1.0:4331
-// Either provide F# reflection access to attributes on union cases, or remove the ability in the language to apply thes
+// Either provide F# reflection access to attributes on union cases, or remove the ability in the language to apply this
 
 type X = 
   | [<System.Obsolete("no")>] A

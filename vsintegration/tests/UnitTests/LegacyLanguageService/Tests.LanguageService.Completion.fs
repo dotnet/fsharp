@@ -6824,7 +6824,7 @@ let rec f l =
     member this.``Regression1911.Expression.InMatchStatement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
-                type Thingey = { A : bool; B : int }
+                type Thingy = { A : bool; B : int }
 
                 let test = match (List.head [{A = true; B = 0}; {A = false; B = 1}])(*Marker*)""",
             marker = "(*Marker*)",

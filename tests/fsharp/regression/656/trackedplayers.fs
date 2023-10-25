@@ -53,7 +53,7 @@ let GetMuTrajectory (table:PlayerRecord array) =
 let GetTrueSkillTrajectory 	(table:PlayerRecord array) =
 	table |> Array.map ( fun player -> player.TrueSkill )
 	
-/// Get (Bungie) Level tranjectory from specified table
+/// Get (Bungie) Level trajectory from specified table
 let GetLevelTrajectory (table:PlayerRecord array) = 
 	table |> Array.map ( fun player -> player.Level !k1 !k2 k3  )
 

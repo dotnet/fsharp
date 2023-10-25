@@ -21,7 +21,7 @@ module CheckStatic4 =
         static member P3 = x3
 
     let check4() = 
-        // THis is static initialization in a generic type, and the first access happens here
+        // This is static initialization in a generic type, and the first access happens here
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
 
 
@@ -38,7 +38,7 @@ module CheckStatic4 =
         check "cwknecw021e2TryD" (try B<int>.P3 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e3TryE" (try B<int>.P3 |> ignore; false  with :? System.TypeInitializationException -> true) true
 
-        // THis is static initialization in a generic type, and the first access happens here
+        // This is static initialization in a generic type, and the first access happens here
         check "cwknecw021e1TryA11" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true

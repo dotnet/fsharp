@@ -161,13 +161,13 @@ let useEventHandler eventHandlerType (eventInfo : EventInfo) =
     ()  
     
 /// Verify the object contains a custom attribute with the given name. E.g. "ObsoleteAttribute"
-let haveAttribute attrName thingey =
+let haveAttribute attrName thingy =
     let containsAttrWithName attrList =
         attrList
         |> Array.filter (fun att -> att.GetType().Name = attrName)
         |> Array.length > 0
     let containsAttribute =
-        match box thingey with
+        match box thingy with
         | :? Type as ty 
             -> ty.GetCustomAttributes(false)
                |> containsAttrWithName
@@ -196,13 +196,13 @@ let haveType ty (propInfo : PropertyInfo) =
     ()
 
 /// Verify the object does not contain any custom attributes.
-let doesn'tHaveAttribute attrName thingey =
+let doesn'tHaveAttribute attrName thingy =
     let doesn'tContainsAttrWithName attrList =
         attrList
         |> Array.filter (fun att -> att.GetType().Name = attrName)
         |> Array.length = 0
     let containsAttribute =
-        match box thingey with
+        match box thingy with
         | :? Type as ty 
             -> ty.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName

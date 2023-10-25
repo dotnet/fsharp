@@ -975,7 +975,7 @@ Most items here contributed by community members.
 * Support for Structured Guidelines and code outlining, which is toggleable
 * Support for `EditorBrowsable(EditorBrowsableState.Never)`
 * Code fix for making Record and Discriminated Union case labels upper-case
-* Code fix to make suggestions for an unkown identifier
+* Code fix to make suggestions for an unknown identifier
 * Code fix for prefixing or replacing an unused value with an underscore
 * Code fix to add the `new` keyword to a disposable type
 * Code fix to add an `open` statement at the top for a symbol coming from an unopened namespace or module

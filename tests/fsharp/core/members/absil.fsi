@@ -1250,7 +1250,7 @@ type manifest =
  * One module in the "current" assembly, either a main-module or
  * an auxiliary module.  The main module will have a manifest.
  *
- * The abbreviation "modul" is used frequently throught the OCaml source
+ * The abbreviation "modul" is used frequently throughout the OCaml source
  * code because "module" is a reserved word in OCaml.
  * -------------------------------------------------------------------- *)
 

@@ -867,7 +867,7 @@ module AsyncPrimitives =
 #endif
 
     ///   - Initial cancellation check
-    ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
+    ///   - Call syncCtxt.Post with exception protection. This may fail as it is arbitrary user code
     let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
 

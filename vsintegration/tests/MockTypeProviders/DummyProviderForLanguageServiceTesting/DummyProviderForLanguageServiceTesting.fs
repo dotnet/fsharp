@@ -221,7 +221,7 @@ module TypeProviderThatThrowsErrorsModule =
                 | [|:? int as n|] when n > 0 ->
                     let errors = Seq.init n (sprintf "Error %d" >> Failure)
                     raise (System.AggregateException(errors))
-                | _ -> failwith "nonexpected"
+                | _ -> failwith "unexpected"
             )
         [t]
 

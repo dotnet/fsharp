@@ -33,9 +33,9 @@ module CompilationTests = begin
     let (|>) x f = f x    
 
     (* not TLR - constant - trivial expr *)  
-    let notSinceTrival1 = 1
-    let notSinceTrival2 = 1.2
-    let notSinceTrival3 = true
+    let notSinceTrivial1 = 1
+    let notSinceTrivial2 = 1.2
+    let notSinceTrivial3 = true
 
     (* TLR constants - non-trivial (e.g. allocating) *)
     type ('a,'b) xy = {x:'a;y:'b}    

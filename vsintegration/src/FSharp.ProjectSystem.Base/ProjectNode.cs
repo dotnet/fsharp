@@ -3164,7 +3164,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else 
             {
-                // Ensure that we have traimnling backslash as this is done for the langproj macros too.
+                // Ensure that we have trailing backslash as this is done for the langproj macros too.
                 if (installDir[installDir.Length - 1] != Path.DirectorySeparatorChar)
                 {
                     installDir += Path.DirectorySeparatorChar;

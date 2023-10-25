@@ -8,8 +8,8 @@ module SomeModule =
         | C
 
 module MainModule =
-    let getCount thingey =
-        match thingey with
+    let getCount thingy =
+        match thingy with
         | SomeModule.DU.A x -> x
         | SomeModule.DU.B x -> x.Length
         | SomeModule.DU.C   -> 0

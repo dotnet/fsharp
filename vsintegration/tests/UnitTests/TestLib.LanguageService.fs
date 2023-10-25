@@ -240,7 +240,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// FEATURE(nyi): Preprocessor-like keywords aside from #light\#if\#else\#endif will be colored with PreprocessorKeyword color.
 /// FEATURE(nyi): Intellisense for argument names.
     
-/// PS-FEATURE(nyi): The user may choose to enable mixed-mode debugging by selecting Project Settings\Debug\Enable unamanaged code debugging
+/// PS-FEATURE(nyi): The user may choose to enable mixed-mode debugging by selecting Project Settings\Debug\Enable unmanaged code debugging
 
 /// These are the driver tests. They're parameterized on
 /// various functions that abstract actions over vs.

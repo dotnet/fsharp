@@ -1,7 +1,7 @@
 // #Conformance #PatternMatching #Unions 
 #light
 
-// Test a match statement with just one 'match thingey'
+// Test a match statement with just one 'match thingy'
 type Foo = A | B of string | C of int
 
 let test x = 

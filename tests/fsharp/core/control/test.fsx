@@ -500,7 +500,7 @@ module AwaitEventTests =
                                               Some(fun () ->  ev.Trigger(expectedResult))
                                           else
                                               None
-                                      // The completion must come after the event is triggerd
+                                      // The completion must come after the event is triggered
                                       let! child = 
                                            async { do! Async.Sleep 200;  // THIS TIME MUST BE LONG ENOUGH FOR THE EVENT HANDLER TO WIRE UP
                                                    complete(expectedResult)   }

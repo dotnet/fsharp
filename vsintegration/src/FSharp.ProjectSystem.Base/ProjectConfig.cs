@@ -1065,7 +1065,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             property = GetConfigurationProperty("EnableUnmanagedDebugging", false);
             if (property != null && string.Compare(property, "true", StringComparison.OrdinalIgnoreCase) == 0)
             {
-                //Set the unmanged debugger
+                //Set the unmanaged debugger
                 //TODO change to vsconstant when it is available in VsConstants. It should be guidCOMPlusNativeEng
                 info.clsidCustom = new Guid("{92EF0900-2251-11D2-B72E-0000F87572EF}");
             }

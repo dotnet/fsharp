@@ -81,7 +81,7 @@ let AddGraph (form:Form) rangeFun drawFun pinUp =
     let OnPaint() = 
     	let vertRange, horizRange = rangeFun() in
     	vlabel := vertRange.name; hlabel := horizRange.name;
-		// Create tranformation
+		// Create transformation
 		let width = (float32 (panel.Size.Width)) in let height = (float32 panel.Size.Height) in
 		let source = new RectangleF(horizRange.min, vertRange.min, horizRange.distance, vertRange.distance) in
 		let dest = new RectangleF(margin.Width - (!panX * width), height - margin.Height - (!panY*height), 

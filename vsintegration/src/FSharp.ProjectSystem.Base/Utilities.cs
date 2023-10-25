@@ -462,7 +462,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Verifies that two objects represent the same instance of a COM object.
-        /// This essentially compares the IUnkown pointers of the 2 objects.
+        /// This essentially compares the IUnknown pointers of the 2 objects.
         /// This is needed in scenario where aggregation is involved.
         /// </summary>
         /// <param name="obj1">Can be an object, interface or IntPtr</param>

@@ -742,7 +742,7 @@ module Test72594 =
     let effect (i:int) = ()
     let foo () = ()
     let foo1 () =         
-        let i = 1 // prevent uncurring of foo1
+        let i = 1 // prevent uncurrying of foo1
         fun () -> ()    
     let foo2 () () = ()
 

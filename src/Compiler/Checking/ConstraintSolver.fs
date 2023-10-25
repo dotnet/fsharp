@@ -2087,9 +2087,9 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
                 if HaveSameHeadType g ty1Parent ty2Parent then
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
 
-    | TyparConstraint.IsEnum (unerlyingTy1, _),
-      TyparConstraint.IsEnum (unerlyingTy2, m2) ->
-        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace unerlyingTy1 unerlyingTy2
+    | TyparConstraint.IsEnum (underlyingTy1, _),
+      TyparConstraint.IsEnum (underlyingTy2, m2) ->
+        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlyingTy1 underlyingTy2
             
     | TyparConstraint.IsDelegate (argsTy1, retTy1, _),
       TyparConstraint.IsDelegate (argsTy2, retTy2, m2) ->

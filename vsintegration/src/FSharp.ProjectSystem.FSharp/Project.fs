@@ -1844,7 +1844,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let currentMoniker = this.Node.GetTargetFrameworkMoniker()
                 let currentFrameworkName = new System.Runtime.Versioning.FrameworkName(currentMoniker)
                 let newMoniker = new System.Runtime.Versioning.FrameworkName(currentFrameworkName.Identifier, version, currentFrameworkName.Profile)                                                
-                let fullName = // TODO: 5571 tarcks replacing this with newMoniker.FullName
+                let fullName = // TODO: 5571 tracks replacing this with newMoniker.FullName
                     let s = sprintf "%s,Version=v%s" currentFrameworkName.Identifier (version.ToString(2))
                     if String.IsNullOrEmpty(newMoniker.Profile) then s
                     else s + (sprintf ",Profile=%s" newMoniker.Profile)                

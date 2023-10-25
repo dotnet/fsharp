@@ -8,6 +8,6 @@
 type Foo() =
     class
         [<DefaultValue>]
-        static val thingey : int
+        static val thingy : int
     end
 

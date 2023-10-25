@@ -39,7 +39,7 @@ type internal NotedSourceConstruct =
     /// This does include "expr; cexpr" sequentials where the "expr" is interpreted as an implicit yield + Combine call
     | Combine
 
-    /// Notes that a range is related to an implied "Delay"m "Quote" or "Run" at the entry to a computation expression. THis doesn't
+    /// Notes that a range is related to an implied "Delay"m "Quote" or "Run" at the entry to a computation expression. This doesn't
     /// apply to the "Delay" calls added for try/with, try/finally, while or for constructs.
     | DelayOrQuoteOrRun
 

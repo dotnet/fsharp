@@ -3250,7 +3250,7 @@ module GenericFunctions =
     printfn "c.Result = %d" c.Result
     test "vrewiorvw09d" (c.Result = 14)
 
-#if MONO // bug repro1 (uncomfirmed)
+#if MONO // bug repro1 (unconfirmed)
 #else
 module GenericFunctionInGenericClass =
     type C<'a>() = 

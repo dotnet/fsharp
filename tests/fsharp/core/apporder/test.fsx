@@ -1020,7 +1020,7 @@ type RecordWithDifferentTypes =
       D : RecordWithInts }
 
 
-module RecordInitialisationWithDifferentTxpes = 
+module RecordInitialisationWithDifferentTypes = 
 
     let expected =  
         { A = 1

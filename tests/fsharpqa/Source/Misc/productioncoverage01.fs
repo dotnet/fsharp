@@ -40,11 +40,11 @@ let ($) a b = a + b
 let v = 3 $ 4
 
 // 496      declExpr -> declExpr QMARK_QMARK declExpr 
-//let nullThingey = "foo" ?? null
-//assert (nullThingey = "foo")
+//let nullThingy = "foo" ?? null
+//assert (nullThingy = "foo")
 
-//let nullThingey2 = null ?? "bar"
-//assert (nullThingey2 = "bar")
+//let nullThingy2 = null ?? "bar"
+//assert (nullThingy2 = "bar")
 
 //717 topAppType -> attributes appType 
 //715 topAppType -> attributes appType COLON appType 

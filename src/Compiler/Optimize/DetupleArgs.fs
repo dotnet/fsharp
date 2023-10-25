@@ -721,7 +721,7 @@ type penv =
       ccu: CcuThunk
       g: TcGlobals }
 
-let hasTransfrom penv f = Zmap.tryFind f penv.transforms
+let hasTransform penv f = Zmap.tryFind f penv.transforms
 
 //-------------------------------------------------------------------------
 // pass - app fixup - collapseArgs
@@ -828,7 +828,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
     | Expr.Val(vref, _, vm) ->
         let f = vref.Deref
 
-        match hasTransfrom penv f with
+        match hasTransform penv f with
         | Some trans ->
             // fix it
             let callPattern = trans.transformCallPattern
@@ -882,7 +882,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
     let g = penv.g
     let m = fOrig.Range
 
-    match hasTransfrom penv fOrig with
+    match hasTransform penv fOrig with
     | None ->
         // fOrig no transform
         bind

@@ -1634,7 +1634,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         /// <summary>
-        /// Matching tripples are used to highlight in bold a completed statement.  For example
+        /// Matching triples are used to highlight in bold a completed statement.  For example
         /// when you type the closing brace on a foreach statement VS highlights in bold the statement
         /// that was closed.  The first two source contexts are the beginning and ending of the statement that
         /// opens the block (for example, the span of the "foreach(...){" and the third source context
