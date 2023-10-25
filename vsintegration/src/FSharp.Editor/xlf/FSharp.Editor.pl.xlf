@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Przewodniki po strukturze bloku;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Przewodniki po strukturze bloku;
 Pokaż przewodniki po strukturze dla kodu języka F#;
 Tworzenie konspektu;
 Pokaż konspekt i węzły z możliwością zwijania dla kodu języka F#;

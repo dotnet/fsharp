@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">ブロック構造ガイド;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">ブロック構造ガイド;
 F# コードの構造ガイドラインを表示する;
 アウトラインを表示する;
 アウトラインと折りたたみ可能なノードを F# コードに表示する;

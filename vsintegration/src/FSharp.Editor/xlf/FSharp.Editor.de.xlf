@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Führungslinien für Blockstruktur;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Führungslinien für Blockstruktur;
 Strukturrichtlinien für F#-Code anzeigen;
 Gliederung;
 Gliederungs- und reduzierbare Knoten für F#-Code anzeigen;

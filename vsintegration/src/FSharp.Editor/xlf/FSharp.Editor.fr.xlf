@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Guides de structure de bloc ;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guides de structure de bloc ;
 Afficher les directives de structure pour le code F# ;
 Décrire ;
 Afficher les nœuds de plan et réductibles pour le code F# ;
