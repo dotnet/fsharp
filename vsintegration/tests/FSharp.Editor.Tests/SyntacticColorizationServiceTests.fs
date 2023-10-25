@@ -1090,7 +1090,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
-    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with with InactiveCode color.
+    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with the InactiveCode color.
     [<Theory>]
     [<InlineData("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]

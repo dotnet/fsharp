@@ -298,7 +298,7 @@ let rec occursCheck g un ty =
 //------------------------------------------------------------------------- 
 
 /// Some additional solutions are forced prior to generalization (permitWeakResolution=true).  These are, roughly speaking, rules
-/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. THe constraint here
+/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. The constraint here
 /// involves two type parameters - one for the left, and one for the right.  The left is already known to be Double.
 /// In this situation (and in the absence of other evidence prior to generalization), constraint solving forces an assumption that 
 /// the right is also Double - this is "weak" because there is only weak evidence for it.

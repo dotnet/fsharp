@@ -226,7 +226,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Checks if a reference is already added. The method parses all references and compares the the FinalItemSpec and the Guid.
+        /// Checks if a reference is already added. The method parses all references and compares the FinalItemSpec and the Guid.
         /// </summary>
         /// <returns>true if the assembly has already been added.</returns>
         public override bool IsAlreadyAdded(out ReferenceNode existingNode)
@@ -337,7 +337,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Verify that the TypeLib is registered and set the the installed file path of the com reference.
+        /// Verify that the TypeLib is registered and set the installed file path of the com reference.
         /// </summary>
         /// <returns></returns>
         private void SetInstalledFilePath()

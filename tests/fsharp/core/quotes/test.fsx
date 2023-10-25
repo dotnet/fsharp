@@ -2156,7 +2156,7 @@ module IndexedPropertySetTest =
             | PropertySet (inst, pi, l, es) ->
                 match inst with
                 | Some(e) ->
-                    Expr.PropertySet(e, pi, es, l) // swaping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
+                    Expr.PropertySet(e, pi, es, l) // swapping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
                 | _ -> failwith ""
             | _ -> failwith ""   
 

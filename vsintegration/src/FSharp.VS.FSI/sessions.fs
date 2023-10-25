@@ -260,7 +260,7 @@ let fsiStartInfo channelName sourceFile =
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
         // For best debug experience, need optimizations OFF and debug info ON
-        // tack these on the the end, they will override whatever comes earlier
+        // tack these on the end, they will override whatever comes earlier
         |> addBoolOption SessionsProperties.fsiDebugMode "optimize" false
         |> addBoolOption SessionsProperties.fsiDebugMode "debug" true
         |> addStringOption SessionsProperties.fsiPreview "langversion" "preview"

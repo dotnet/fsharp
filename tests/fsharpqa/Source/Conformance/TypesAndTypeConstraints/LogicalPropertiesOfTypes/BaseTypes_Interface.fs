@@ -18,7 +18,7 @@ if baseTypeName<InterfaceType> <> null then exit 1
 type AClass() =
     interface InterfaceType
     
-// Note how an interface has '.ToString()' despite not being derived from Syste.Object
+// Note how an interface has '.ToString()' despite not being derived from System.Object
 let anInterface = (new AClass() :> InterfaceType)
 if anInterface.ToString().EndsWith("AClass") = false then exit 1
 

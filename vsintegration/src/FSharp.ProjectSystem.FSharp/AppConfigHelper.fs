@@ -346,7 +346,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // Each desktop fsharp.core.dll is also a superset of the portable libraries that shipped with it.
                         // 
                         // The table below represents the appropriate redirections
-                        // If the target version is between TagetMin and TargetMax inclusive then the redirects list contains the appropriate redirects
+                        // If the target version is between TargetMin and TargetMax inclusive then the redirects list contains the appropriate redirects
                         //
                         //TargetMin,  targetMax,    redirects
                         "2.3.0.0",    "2.3.0.0",    ["2.0.0.0";    "2.3.0.0"]

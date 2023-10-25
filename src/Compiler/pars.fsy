@@ -405,7 +405,7 @@ interactiveTerminator:
 /* It is important to make this as large as possible given the chunk of input */
 /* text. More or less identical to 'moduleDefns' but where SEMICOLON_SEMICOLON is */
 /* not part of the grammar of topSeps and HASH interactions are not part of */
-/* the swalloed blob, since things like #use must be processed separately. */
+/* the swallowed blob, since things like #use must be processed separately. */
 /* REVIEW: limiting the input chunks until the next # directive can lead to */
 /* discrepencies between whole-file type checking in FSI and FSC. */
 

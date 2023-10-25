@@ -58,7 +58,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         void AddBuildDependency(IVsBuildDependency dependency);
 
         /// <summary>
-        /// Removes the builddependency from teh container.
+        /// Removes the builddependency from the container.
         /// </summary>
         /// <param name="dependency">The dependency to add</param>
         void RemoveBuildDependency(IVsBuildDependency dependency);

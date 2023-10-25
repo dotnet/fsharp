@@ -119,7 +119,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="canonicalName">The canonicalName name.</param>
         /// <param name="configName">The name of the configuration.</param>
         /// <param name="platformName">The name of the platform.</param>
-        /// <returns>true if successfull.</returns>
+        /// <returns>true if successful.</returns>
         internal static bool TrySplitConfigurationCanonicalName(string canonicalName, out string configName, out string platformName)
         {
             // TODO rationalize this code with callers and ProjectNode.OnHandleConfigurationRelatedGlobalProperties, ProjectNode.TellMSBuildCurrentSolutionConfiguration, etc

@@ -660,7 +660,7 @@ type FSharpGenericParameterMemberConstraint =
     /// Get the name of the method required by the constraint
     member MemberName: string
 
-    /// Indicates if the the method required by the constraint must be static
+    /// Indicates if the method required by the constraint must be static
     member MemberIsStatic: bool
 
     /// Get the argument types of the method required by the constraint

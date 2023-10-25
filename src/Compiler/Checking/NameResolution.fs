@@ -1019,7 +1019,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
 //-------------------------------------------------------------------------
 
 /// Qualified lookups of type names where the number of generic arguments is known
-/// from context, e.g. Module.Type<args>.  The full names suh as ``List`1`` can
+/// from context, e.g. Module.Type<args>.  The full names such as ``List`1`` can
 /// be used to qualify access if needed
 let LookupTypeNameInEntityHaveArity nm (typeNameResInfo: TypeNameResolutionStaticArgsInfo) (mty: ModuleOrNamespaceType) =
     let attempt1 = mty.TypesByMangledName.TryFind (typeNameResInfo.MangledNameForType nm)

@@ -558,7 +558,7 @@ type ILMethInfo =
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
         x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)

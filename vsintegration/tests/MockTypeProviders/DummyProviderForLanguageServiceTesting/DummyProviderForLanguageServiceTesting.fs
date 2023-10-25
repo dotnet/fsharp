@@ -47,7 +47,7 @@ module internal TPModule =
     let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
 
     // Make an instantiation of the parametric type
-    // THe instantiated type has a static property that evaluates to the param passed
+    // The instantiated type has a static property that evaluates to the param passed
     let instantiateParametricType (typeName:string) (args:System.Object[]) =
         match args with
         [| :? string as value; :? int as ignoredvalue; |] -> 

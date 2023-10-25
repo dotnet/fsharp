@@ -2189,7 +2189,7 @@ module DerivedPatterns =
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: int) -> (x, x) @&gt;</c>, which is the implementation of the
     /// method <c>f</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
@@ -2220,7 +2220,7 @@ module DerivedPatterns =
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) () -> x @&gt;</c>, which is the implementation of the
     /// property <c>Identity</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
@@ -2251,7 +2251,7 @@ module DerivedPatterns =
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) (v: int) -> () @&gt;</c>, which is the implementation of the
     /// setter for the property <c>Count</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]

@@ -174,7 +174,7 @@ type TaskReporterTests() =
         AssertEqual (errorReporter.TaskListProvider.Count()) 2
         ()
         
-    /// Ensure that text line markers are only created when a task is output to the the task list
+    /// Ensure that text line markers are only created when a task is output to the task list
     [<Test>]
     member public this.``ErrorList.TextLineMarkersCreatedOnce``() =  
         use errorReporter = CreateErrorReporter()

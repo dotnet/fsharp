@@ -278,7 +278,7 @@ type ILMethInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member GetParamNamesAndTypes: amap: ImportMap * m: range * minst: TType list -> ParamNameAndType list
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 

@@ -473,6 +473,6 @@ module InterfacesOfMeasureAnnotatedTypes =
     [<MeasureAnnotatedAbbreviation>]
     type Prim<[<Measure>] 'm> = Prim
 
-    // Check that Prim<'m> does not suppor interfaces in any way derived from IComparable and IEquatable
+    // Check that Prim<'m> does not support interfaces in any way derived from IComparable and IEquatable
     let f2 (x: Prim<'m>) = (x :> IDerivedComparable<Prim<'m>>)
     let f4 (x: Prim<'m>) = (x :> IDerivedEquatable<Prim<'m>>)

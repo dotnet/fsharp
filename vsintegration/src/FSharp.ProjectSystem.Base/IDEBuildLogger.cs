@@ -32,7 +32,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         // TODO: Remove these constants when we have a version that supports getting the verbosity using automation.
         private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
-        // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
+        // TODO: Re-enable this constants when we have a version that supports getting the verbosity using automation.
 
 		private int currentIndent;
 		private IVsOutputWindowPane outputWindowPane;

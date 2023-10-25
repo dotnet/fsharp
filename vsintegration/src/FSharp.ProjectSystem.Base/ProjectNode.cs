@@ -245,7 +245,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.buildResult = buildResult;
             this.projectInstance = projectInstance;
-            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successfull build results should have project instances");
+            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successful build results should have project instances");
         }
         public BuildResult(BuildSubmission submission, ProjectInstance projectInstance) :
                 this(submission.BuildResult.OverallResult == BuildResultCode.Success ? MSBuildResult.Successful : MSBuildResult.Failed, projectInstance)
@@ -1971,7 +1971,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // Compute the file name
                     // We try to solve two problems here. When input comes from a wizzard in case of zipped based projects 
                     // the parameters are different.
-                    // In that case the filename has the new filename in a temporay path.
+                    // In that case the filename has the new filename in a temporary path.
 
                     // First get the extension from the template.
                     // Then get the filename from the name.
@@ -3701,7 +3701,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whther the current mode of the project is in a supress command mode.
+        /// Defines whther the current mode of the project is in a suppress command mode.
         /// </summary>
         /// <returns></returns>
         public virtual bool IsCurrentStateASuppressCommandsMode()
@@ -3916,7 +3916,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     continue;
 
                 // If the item is already contained do nothing.
-                // TODO: possibly report in the error list that the the item is already contained in the project file similar to Language projects.
+                // TODO: possibly report in the error list that the item is already contained in the project file similar to Language projects.
                 if (items.ContainsKey(MSBuildItem.GetEvaluatedInclude(item).ToUpperInvariant()))
                     continue;
 
@@ -3971,7 +3971,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // If (eventArgs.Hierarchy == NULL) then we received this event because the solution configuration
             // was changed.
-            // If it is not null we got the event because a project in teh configuration manager has changed its active configuration.
+            // If it is not null we got the event because a project in the configuration manager has changed its active configuration.
             // We care only about our project in the default implementation.
             if (eventArgs.Hierarchy == null || !Utilities.IsSameComObject(eventArgs.Hierarchy, this))
             {

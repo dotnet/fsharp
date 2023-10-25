@@ -1844,7 +1844,7 @@ module TestConstrainedItemProperty = begin
 end
 
 
-module ExplicitSyntacCtor = begin
+module ExplicitSyntaxCtor = begin
 
     type C =
        class

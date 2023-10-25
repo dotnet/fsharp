@@ -877,7 +877,7 @@ type public Provider(config: TypeProviderConfig) =
                              else Quotations.Expr.Call(e,tagMeth,[])
                         | _ -> failwith "unreachable: unexpected result from PreComputeUnionTagMemberInfo"
                     let tagNumber = uc.Tag
-                    // Translate to a call the the F# library equality routine
+                    // Translate to a call the F# library equality routine
                     trans <@@ (%%(tagExpr) : int) = tagNumber @@>
 
                 // Handle the generic cases

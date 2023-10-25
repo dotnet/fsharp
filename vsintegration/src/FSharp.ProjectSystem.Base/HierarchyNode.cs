@@ -1234,7 +1234,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Prepares a selected node for clipboard. 
-        /// It takes the the project reference string of this item and adds it to a stringbuilder. 
+        /// It takes the project reference string of this item and adds it to a stringbuilder. 
         /// </summary>
         /// <returns>A stringbuilder.</returns>
         /// <devremark>This method has to be public since selected nodes will call it.</devremark>

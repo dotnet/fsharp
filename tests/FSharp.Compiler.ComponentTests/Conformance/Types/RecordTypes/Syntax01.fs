@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records 
 #light
 
-// Verify sytanx associated with defining and creating records
+// Verify syntax associated with defining and creating records
 
 // Same line
 type Rec1 = { A1 : int; B1 : string }

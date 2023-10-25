@@ -122,7 +122,7 @@ module OverloadSamples =
     type 'a GenericVector 
       with
         // Nb. For an operator associated with a generic type 
-        // the the type parameters involved in the operator's definition must be the same 
+        // the type parameters involved in the operator's definition must be the same 
         // as the type parameters of the enclosing class.
         static member (+) ((x : 'a GenericVector),(y : 'a GenericVector)) = add x y
       end

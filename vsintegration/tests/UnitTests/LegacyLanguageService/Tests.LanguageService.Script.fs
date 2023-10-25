@@ -919,7 +919,7 @@ type UsingMSBuild() as this =
     //
     //      %program files%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0
     //
-    // because this is where the the .XML files are.
+    // because this is where the .XML files are.
     //
     // When executing scripts, however, we need to _not_ resolve from these directories because
     // they may be metadata-only assemblies.

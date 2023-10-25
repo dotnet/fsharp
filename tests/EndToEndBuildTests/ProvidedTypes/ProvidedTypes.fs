@@ -8747,7 +8747,7 @@ namespace ProviderImplementation.ProvidedTypes
             | ShapeVarUnchecked v ->
                 Expr.Var (convVarToTgt v)
             | ShapeLambdaUnchecked _ as d ->
-                failwithf "It's not possible to use construct %O when cross targetting to a different FSharp.Core. Make sure you're not calling a function with signature A->(B->C) instead of A->B->C (using |> causes this)." d
+                failwithf "It's not possible to use construct %O when cross targeting to a different FSharp.Core. Make sure you're not calling a function with signature A->(B->C) instead of A->B->C (using |> causes this)." d
             | ShapeCombinationUnchecked (o, exprs) ->
                 RebuildShapeCombinationUnchecked (o, List.map convExprToTgt exprs)
 
@@ -10077,7 +10077,7 @@ namespace ProviderImplementation.ProvidedTypes
         // -------------------------------------------------------------------- 
         // ILMethodRef --> ILMethodDef.  
         // 
-        // Only successfuly converts ILMethodRef's referring to 
+        // Only successfully converts ILMethodRef's referring to 
         // methods in the module being emitted.
         // -------------------------------------------------------------------- 
 
