@@ -941,8 +941,8 @@ module UnnecessaryParentheses =
 
         /// If the given expression is a parenthesized expression and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
-        let rec unnecessaryParentheses (getSourceLineStr: int -> string) memo expr path =
-            let unnecessaryParentheses = unnecessaryParentheses getSourceLineStr memo
+        let rec unnecessaryParentheses (getSourceLineStr: int -> string) expr path =
+            let unnecessaryParentheses = unnecessaryParentheses getSourceLineStr
 
             // Indicates whether the parentheses with the given range
             // enclose an expression whose indentation would be invalid
@@ -1157,17 +1157,17 @@ module UnnecessaryParentheses =
             // Ordinary nested expressions.
             | SynExpr.Paren (expr = inner; leftParenRange = leftParenRange; rightParenRange = Some _ as rightParenRange; range = range),
               SyntaxNode.SynExpr outer :: outerPath when not (containsSensitiveIndentation range) ->
-                let dangling =
-                    memo (function
-                        | Dangling.Problematic subExpr ->
-                            let parenzedSubExpr = SynExpr.Paren(subExpr, leftParenRange, rightParenRange, range)
+                let dangling expr =
+                    match expr with
+                    | Dangling.Problematic subExpr ->
+                        let parenzedSubExpr = SynExpr.Paren(subExpr, leftParenRange, rightParenRange, range)
 
-                            match outer with
-                            | SynExpr.Tuple (exprs = exprs) -> not (obj.ReferenceEquals(subExpr, List.last exprs))
-                            | InfixApp (_, Left) -> true
-                            | _ -> unnecessaryParentheses parenzedSubExpr outerPath |> ValueOption.isNone
+                        match outer with
+                        | SynExpr.Tuple (exprs = exprs) -> not (obj.ReferenceEquals(subExpr, List.last exprs))
+                        | InfixApp (_, Left) -> true
+                        | _ -> unnecessaryParentheses parenzedSubExpr outerPath |> ValueOption.isNone
 
-                        | _ -> false)
+                    | _ -> false
 
                 let problematic (exprRange: range) (delimiterRange: range) =
                     exprRange.EndLine = delimiterRange.EndLine
@@ -1463,23 +1463,10 @@ module UnnecessaryParentheses =
         async {
             let ranges = HashSet Range.comparer
 
-            // The check for dangling exprs is exponential
-            // in the worst case unless we memoize.
-            let memo =
-                let d = Dictionary<obj, bool>()
-
-                fun dangling expr ->
-                    match d.TryGetValue expr with
-                    | true, dangling -> dangling
-                    | false, _ ->
-                        let dangling = dangling expr
-                        d.Add(expr, dangling)
-                        dangling
-
             let visitor =
                 { new SyntaxVisitorBase<unit>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) =
-                        SynExpr.unnecessaryParentheses getSourceLineStr memo expr path
+                        SynExpr.unnecessaryParentheses getSourceLineStr expr path
                         |> ValueOption.iter (ranges.Add >> ignore)
 
                         defaultTraverse expr
