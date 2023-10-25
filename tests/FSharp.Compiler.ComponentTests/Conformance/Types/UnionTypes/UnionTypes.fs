@@ -259,7 +259,7 @@ module UnionTypes =
         |> withDiagnostics [
             (Error 3174, Line 10, Col 18, Line 10, Col 20, "The union case 'Case1' does not have a field named 'V3'.")
             (Error 3174, Line 14, Col 9, Line 14, Col 11, "The union case 'Case1' does not have a field named 'V3'.")
-            (Warning 26, Line 15, Col 3, Line 15, Col 10, "This rule will never be matched")
+            (Warning 26, Line 15, Col 3, Line 15, Col 4, "This rule will never be matched")
             (Error 3174, Line 17, Col 12, Line 17, Col 14, "The union case 'Case1' does not have a field named 'V4'.")
             (Error 3174, Line 19, Col 25, Line 19, Col 26, "The union case 'Some' does not have a field named 'a'.")
         ]
@@ -595,7 +595,9 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 58, Line 9, Col 1, Line 9, Col 2, "Possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 9, Col 1, Line 9, Col 2, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
+            (Error 547, Line 8, Col 24, Line 8, Col 33, "A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.")
+            (Error 10, Line 9, Col 1, Line 9, Col 2, "Unexpected symbol '|' in implementation file")
         ]
 
     //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
@@ -607,4 +609,3 @@ module UnionTypes =
         |> withDiagnostics [
             (Warning 42, Line 11, Col 12, Line 11, Col 24, "This construct is deprecated: it is only for use in the F# library")
         ]
-

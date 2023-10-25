@@ -38,7 +38,7 @@ module HintTestFramework =
     let getHints (document: Document) hintKinds =
         let task =
             cancellableTask {
-                let! ct = CancellableTask.getCurrentCancellationToken ()
+                let! ct = CancellableTask.getCancellationToken ()
 
                 let getTooltip hint =
                     async {

@@ -3,36 +3,32 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddNewKeyword); Shared>]
 type internal AddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
     static let title = SR.AddNewKeyword()
+
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0760"
 
-    member this.GetChanges(_document: Document, diagnostics: ImmutableArray<Diagnostic>, _ct: CancellationToken) =
-        backgroundTask {
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let changes =
-                diagnostics
-                |> Seq.map (fun d -> TextChange(TextSpan(d.Location.SourceSpan.Start, 0), "new "))
+    override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
-            return changes
-        }
-
-    override this.RegisterCodeFixesAsync ctx : Task =
-        backgroundTask {
-            let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
-            ctx.RegisterFsharpFix(CodeFix.AddNewKeyword, title, changes)
-        }
-
-    override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.AddNewKeyword this.GetChanges
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            CancellableTask.singleton (
+                ValueSome
+                    {
+                        Name = CodeFix.AddNewKeyword
+                        Message = title
+                        Changes = [ TextChange(TextSpan(context.Span.Start, 0), "new ") ]
+                    }
+            )

@@ -79,6 +79,7 @@ type Exception with
 
     member exn.DiagnosticRange =
         match exn with
+        | ArgumentsInSigAndImplMismatch (_, implArg) -> Some implArg.idRange
         | ErrorFromAddingConstraint (_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange exn -> exn.DiagnosticRange
@@ -131,6 +132,7 @@ type Exception with
         | DiagnosticEnabledWithLanguageFeature (_, _, m, _)
         | SyntaxError (_, m)
         | InternalError (_, m)
+        | InternalException (_, _, m)
         | InterfaceNotRevealed (_, _, m)
         | WrappedError (_, m)
         | PatternMatchCompilation.MatchIncomplete (_, _, m)
@@ -156,7 +158,7 @@ type Exception with
         | IndeterminateType m
         | TyconBadArgs (_, _, _, m) -> Some m
 
-        | FieldNotContained (_, _, _, arf, _, _) -> Some arf.Range
+        | FieldNotContained (_, _, _, _, arf, _, _) -> Some arf.Range
         | ValueNotContained (_, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained (_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained (_, _, aexnc, _, _) -> Some aexnc.Range
@@ -318,6 +320,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
+        | ArgumentsInSigAndImplMismatch _ -> 3218
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -377,18 +380,20 @@ type PhasedDiagnostic with
         | 1182 -> false // chkUnusedValue - off by default
         | 3180 -> false // abImplicitHeapAllocation - off by default
         | 3186 -> false // pickleMissingDefinition - off by default
-        | 3366 -> false //tcIndexNotationDeprecated - currently off by default
+        | 3366 -> false // tcIndexNotationDeprecated - currently off by default
         | 3517 -> false // optFailedToInlineSuggestedValue - off by default
         | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
         | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
+        | 3560 -> false // tcCopyAndUpdateRecordChangesAllFields - off by default
+        | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
             | _ ->
-                (severity = FSharpDiagnosticSeverity.Info)
+                (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational
@@ -598,6 +603,7 @@ module OldStyleMessages =
     let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
     let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
     let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+    let ArgumentsInSigAndImplMismatchE () = Message("ArgumentsInSigAndImplMismatch", "%s%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1188,6 +1194,7 @@ type Exception with
                 | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
                 | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
                 | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WHILE_BANG -> SR.GetString("Parser.TOKEN.WHILE.BANG")
                 | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
                 | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
                 | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")
@@ -1568,7 +1575,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+        | FieldNotContained (denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(
@@ -1671,6 +1678,7 @@ type Exception with
             OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
+        | InternalException (_, s, _)
         | InvalidArgument s
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG
@@ -1866,6 +1874,9 @@ type Exception with
 
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
+        | ArgumentsInSigAndImplMismatch (sigArg, implArg) ->
+            os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
+
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
 
@@ -1999,7 +2010,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
             // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
             | DiagnosticStyle.Default ->
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
-                let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
+                let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
                 (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
             // We may also want to change Test to be 1-based
@@ -2007,7 +2018,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace("/", "\\")
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
@@ -2015,7 +2026,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
 
                 let m =
-                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                    withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                 sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
@@ -2031,7 +2042,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                     let file = file.Replace("/", "\\")
 
                     let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+                        withStartEnd (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1)) m
 
                     sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                 else

@@ -9,8 +9,6 @@ open CodeFixTestFramework
 
 let private codeFix = ConvertCSharpLambdaToFSharpLambdaCodeFixProvider()
 
-let private diagnostic = 0039 // Something is not defined
-
 [<Fact>]
 let ``Fixes FS0039 for lambdas`` () =
     let code =
@@ -28,7 +26,7 @@ let incAll = List.map (fun n -> n + 1)
 """
             }
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
 
@@ -41,6 +39,6 @@ let f = g
 
     let expected = None
 
-    let actual = codeFix |> tryFix code diagnostic
+    let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)

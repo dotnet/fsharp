@@ -335,7 +335,7 @@ type BoundModel private (
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
                     use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|Activity.Tags.fileName, fileName|]
                     let sResolutions = sink.GetResolutions()
-                    let builder = ItemKeyStoreBuilder()
+                    let builder = ItemKeyStoreBuilder(tcGlobals)
                     let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
                                                         member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
                                                         member _.GetHashCode o = o.GetHashCode() })
@@ -391,7 +391,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async.AwaitNodeCode |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -1069,7 +1069,7 @@ type IncrementalBuilderState with
                         HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
-                        Notified = false
+                        Notified = true
                         SyntaxTree = syntaxTree
                         BoundModel = model
                     }
@@ -1642,7 +1642,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }

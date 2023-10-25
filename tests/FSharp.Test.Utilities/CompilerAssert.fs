@@ -133,6 +133,7 @@ type TestCompilation =
 type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
+    | CSharp11 = 11
     | Preview = 99
 
 [<AbstractClass; Sealed>]
@@ -143,6 +144,7 @@ type CompilationUtil private () =
             match lv with
                 | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
                 | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+                | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
                 | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
                 | _ -> LanguageVersion.Default
 
@@ -289,7 +291,7 @@ module rec CompilerAssertHelpers =
         member x.ExecuteTestCase assemblyPath (deps: string[]) =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
-                |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
+                |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
                 |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
@@ -403,18 +405,31 @@ module rec CompilerAssertHelpers =
         | _ ->
             disposeList.Dispose()
             reraise()
-
+    
     let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
+        let errorMessage (error: FSharpDiagnostic) =
+            let errN, range, message = error.ErrorNumber, error.Range, error.Message
+            let errorType =
+                match error.Severity with
+                | FSharpDiagnosticSeverity.Error -> $"Error {errN}"
+                | FSharpDiagnosticSeverity.Warning-> $"Warning {errN}"
+                | FSharpDiagnosticSeverity.Hidden-> $"Hidden {errN}"
+                | FSharpDiagnosticSeverity.Info -> $"Information {errN}"
+            $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
+        
         let errors =
             errors
             |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning && error.Severity <> FSharpDiagnosticSeverity.Info else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
+        let errorsAsStr = errors |> Array.map errorMessage |> String.concat ";\n" |> sprintf "[%s]"
+        let errors =
+            errors
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
-
+        
         let checkEqual k a b =
            if a <> b then
-               Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+               Assert.AreEqual(a, b, sprintf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}")
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -578,7 +593,7 @@ module rec CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net7.0",
+        "tfm": "net8.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "7.0"

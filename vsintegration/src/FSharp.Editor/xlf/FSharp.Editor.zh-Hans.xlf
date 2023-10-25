@@ -38,16 +38,21 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+        <target state="translated">块结构指南;
+显示 F# 代码的结构指南;
+大纲;
+显示 F# 代码的大纲和可折叠节点;
+内联提示;
+显示内联类型提示(预览);
+显示返回类型提示(预览);
+显示内联参数名称提示(预览);
+实时缓冲区;
+使用实时(未保存)缓冲区进行检查</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">对字段声明中的类型使用 ":"</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -259,6 +264,11 @@ Dash underline;</source>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">删除未使用的 open 声明</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">字段声明中出现意外的符号 "="。应为 ":" 或其他标记。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

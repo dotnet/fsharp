@@ -128,7 +128,6 @@ module TypeAbbreviations =
         |> shouldFail
         |> withDiagnostics [
             (Error 10, Line 8, Col 1, Line 8, Col 5, "Incomplete structured construct at or before this point in type definition")
-            (Error 547, Line 6, Col 6, Line 6, Col 15, "A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.")
         ]
 
     //SOURCE=E_IncorrectRightSide_Keyword.fsx SCFLAGS="--test:ErrorRanges"                                      # E_IncorrectRightSide_Keyword.fsx

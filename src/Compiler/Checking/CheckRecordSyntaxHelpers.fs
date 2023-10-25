@@ -33,16 +33,17 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
         | x :: [] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, aFlds, m))), (_, Some (SynExpr.Record (recordFields = bFlds))) ->
+            | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, fields1, m))), (_, Some (SynExpr.Record (recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, aFlds @ bFlds, m)))
+                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
 
-                groupIfNested (reducedRecd :: res) ys
-            | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, aFlds, m, trivia))), (_, Some (SynExpr.AnonRecd (recordFields = bFlds))) ->
+                groupIfNested res (reducedRecd :: ys)
+            | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, fields1, m, trivia))),
+              (_, Some (SynExpr.AnonRecd (recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, aFlds @ bFlds, m, trivia)))
+                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
 
-                groupIfNested (reducedRecd :: res) ys
+                groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
 
     fields
@@ -55,8 +56,8 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
 
 /// Expands a long identifier into nested copy-and-update expressions.
 ///
-/// `{ x with A.B = 0 }` becomes `{ x with A = { x.A with B = 0 } }`
-let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIdent) exprBeingAssigned withExpr =
+/// `{ x with A.B = 0; A.C = "" }` becomes `{ x with A = { x.A with B = 0 }; A = { x.A with C = "" } }`
+let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid: LongIdent) exprBeingAssigned withExpr =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
             let rec buildLid res (id: Ident) =
@@ -78,14 +79,14 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
                 | [ _ ] -> [ origSepRng ]
                 | _ :: t ->
                     origSepRng
-                    :: List.map (fun (s: Ident, e: Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
+                    :: List.map (fun (s: Ident, e: Ident) -> withStartEnd s.idRange.End e.idRange.Start s.idRange) t
 
             let lid = buildLid [] id lidwd |> List.rev
 
             (lid, List.pairwise lid |> calcLidSeparatorRanges origSepRng)
 
         let totalRange (origId: Ident) (id: Ident) =
-            mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
+            withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
         let rangeOfBlockSeperator (id: Ident) =
             let idEnd = id.idRange.End
@@ -94,7 +95,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
             let blockSeperatorStartPos = mkPos idEnd.Line blockSeperatorStartCol
             let blockSeporatorEndPos = mkPos idEnd.Line blockSeperatorEndCol
 
-            mkRange id.idRange.FileName blockSeperatorStartPos blockSeporatorEndPos
+            withStartEnd blockSeperatorStartPos blockSeporatorEndPos id.idRange
 
         match withExpr with
         | SynExpr.Ident origId, (sepRange, _) ->
@@ -102,31 +103,33 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
             Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None))
         | _ -> None
 
-    let rec synExprRecd copyInfo (id: Ident) fields exprBeingAssigned =
-        match fields with
+    let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
+        match innerFields with
         | [] -> failwith "unreachable"
-        | (fieldId, anonInfo) :: rest ->
+        | (fieldId: Ident, item) :: rest ->
+            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, [], ItemOccurence.Use, env.AccessRights)
+
+            let fieldId = ident (fieldId.idText, fieldId.idRange.MakeSynthetic())
+
             let nestedField =
                 if rest.IsEmpty then
                     exprBeingAssigned
                 else
                     synExprRecd copyInfo fieldId rest exprBeingAssigned
 
-            let m = id.idRange.MakeSynthetic()
-
-            match anonInfo with
-            | Some {
-                       AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                   } ->
+            match item with
+            | Item.AnonRecdField(anonInfo = {
+                                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
+                                            }) ->
                 let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
-                SynExpr.AnonRecd(isStruct, copyInfo id, fields, m, { OpeningBraceRange = range0 })
+                SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
                         SynExprRecordField((LongIdentWithDots([ fieldId ], []), true), None, Some nestedField, None)
                     ]
 
-                SynExpr.Record(None, copyInfo id, fields, m)
+                SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange)
 
     let access, fields =
         ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
@@ -134,7 +137,12 @@ let TransformAstForNestedUpdates (cenv: TcFileState) env overallTy (lid: LongIde
     match access, fields with
     | _, [] -> failwith "unreachable"
     | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
-    | accessIds, (fieldId, _) :: rest ->
+    | accessIds, (outerFieldId, item) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
-        (accessIds, fieldId), Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) fieldId rest exprBeingAssigned)
+        CallNameResolutionSink cenv.tcSink (outerFieldId.idRange, env.NameEnv, item, [], ItemOccurence.Use, env.AccessRights)
+
+        let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
+
+        (accessIds, outerFieldId),
+        Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)

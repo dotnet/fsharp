@@ -16,7 +16,8 @@ type R = { F1: int; F2: string }
 let updateOk r = { r with F1 = 1 }
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
+    |> withOptions ["--warnon:FS3560"]
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -45,8 +46,7 @@ type R = { F1: int; F2: string }
 
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
-    |> withLangVersionPreview
-    |> withOptions ["--nowarn:3560"]
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -85,7 +85,8 @@ let t2 (x: RecTy) (a: AnotherNestedRecTy) = { x with D.C.c = { a with A = 3 } }
 //                                                           vvvvvvvvvvvvvvvvvvvvvvv
 let t3 (x: RecTy) (a: AnotherNestedRecTy) = { x with D.C.c = { a with A = 3; B = 4 } }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
+    |> withOptions ["--warnon:FS3560"]
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
