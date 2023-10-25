@@ -50,7 +50,7 @@ type Solution with
 
     /// Try to find the document corresponding to the provided filepath within this solution
     member self.TryGetDocumentFromPath filePath =
-        // It's crucial to normalize file path here (specificaly, remove relative parts),
+        // It's crucial to normalize file path here (specifically, remove relative parts),
         // otherwise Roslyn does not find documents.
         self.GetDocumentIdsWithFilePath(Path.GetFullPath filePath)
         |> ImmutableArray.tryHeadV

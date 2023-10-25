@@ -193,7 +193,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Everybody can go here.
             if (!this.isDisposed)
             {
-                // Synchronize calls to the Dispose simulteniously.
+                // Synchronize calls to the Dispose simultaneously.
                 lock (Mutex)
                 {
                     if (!this.isDisposed)

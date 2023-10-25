@@ -21,7 +21,7 @@ if x <> 100 then failwith "Failed: 2"
 
 // function which takes one arg of unit
 // returning a function taking and returning an int
-let somefuntion (arg : unit) : int -> int =
+let somefunction_ (arg : unit) : int -> int =
     let nestedfunction1 x y z =
         let nestedfunction2 x y =
             let nestedfunction3 x y z =
@@ -32,5 +32,5 @@ let somefuntion (arg : unit) : int -> int =
     let curriedNF3_2 = curriedNF3 20
     curriedNF3_2
 
-if (somefuntion ()) 30 <> 60 then failwith "Failed: 3"
+if (somefunction_ ()) 30 <> 60 then failwith "Failed: 3"
 

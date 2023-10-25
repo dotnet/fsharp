@@ -175,7 +175,7 @@ module IntTests =
         ix7_NO <- 3
         res
 
-module StringtTests =
+module StringTests =
 
     let test1() =
         let mutable sx1 = "1"

@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     abstract Success: bool
 
     /// The resolution output log

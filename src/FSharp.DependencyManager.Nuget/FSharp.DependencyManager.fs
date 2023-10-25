@@ -253,7 +253,7 @@ module FSharpDependencyManager =
 type ResolveDependenciesResult
     (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
-    /// Succeded?
+    /// Succeeded?
     member _.Success = success
 
     /// The resolution output log

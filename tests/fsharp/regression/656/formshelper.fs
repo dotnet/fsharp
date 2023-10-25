@@ -152,7 +152,7 @@ type FormDockLocation =
 				| Some (form,_,_,_) -> Some(form)
 				| None -> None
 					
-		/// Set child - there can be only one with a sepcified name
+		/// Set child - there can be only one with a specified name
 		member instance.SetChild (child:Form) name x y = 		
 			child.DesktopLocation <- new Point(instance.parent.DesktopLocation.X + x, instance.parent.DesktopLocation.Y + y);		
 			// Remove any forms with same label

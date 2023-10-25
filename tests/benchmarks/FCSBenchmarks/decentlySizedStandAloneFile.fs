@@ -8,7 +8,7 @@
   original algorithm which only parsed languages which use expression-only grammar.
 
   The parsers is "impure" in the sense that is uses a ref-cell for storing the
-  input in the T<_, _, _> record class, this is soley for performance reasons
+  input in the T<_, _, _> record class, this is solely for performance reasons
   as it's to expensive to create a new record object for every consumed token.
   Certain functions also throw exceptions, which generally also is considered impure.
 

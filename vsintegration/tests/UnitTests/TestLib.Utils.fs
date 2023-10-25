@@ -244,7 +244,7 @@ module Spawn =
         // Submit the changes
         match SpawnToTextLines "tf_.exe" "submit %s /comment:\"%s\" /noprompt" files comment with
         | 0,_ -> 
-            printfn "Submited files: %s" files
+            printfn "Submitted files: %s" files
         | 1,_ ->  
             printfn "No changes detected in files: %s" files
         | errorCode,lines ->

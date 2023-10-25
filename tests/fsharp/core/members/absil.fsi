@@ -669,7 +669,7 @@ val typ_of_local: local -> Type
 
 type CILMethodBody = 
     { ilZeroInit: bool;
-      ilMaxStack: Int32; (* strictly speakin should be a UInt16 *)
+      ilMaxStack: Int32; (* strictly speaking should be a UInt16 *)
       ilNoInlining: bool;
       ilLocals: local list;
       ilCode: Code;

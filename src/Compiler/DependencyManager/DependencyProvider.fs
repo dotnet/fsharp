@@ -96,7 +96,7 @@ type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     abstract Success: bool
 
     /// The resolution output log
@@ -323,7 +323,7 @@ type ReflectionDependencyManagerProvider
 
     static member MakeResultFromObject(result: obj) =
         { new IResolveDependenciesResult with
-            /// Succeded?
+            /// Succeeded?
             member _.Success =
                 match getInstanceProperty<bool> (result.GetType()) "Success" with
                 | None -> false
@@ -370,7 +370,7 @@ type ReflectionDependencyManagerProvider
             roots: seq<string>
         ) =
         { new IResolveDependenciesResult with
-            /// Succeded?
+            /// Succeeded?
             member _.Success = success
 
             /// The resolution output log

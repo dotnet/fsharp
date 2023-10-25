@@ -276,7 +276,7 @@ namespace ProviderImplementation.ProvidedTypes
     //
     //   - However, these quotation values are a bit fragile. Using existing FSharp.Core.Quotations.Patterns
     //     active patterns on these quotation nodes will generally work correctly. But using ExprShape.RebuildShapeCombination
-    //     on these new nodes will not succed, nor will operations that build new quotations such as Expr.Call.
+    //     on these new nodes will not succeed, nor will operations that build new quotations such as Expr.Call.
     //     Instead, use the replacement provided in this module.
     //
     //   - Likewise, some operations in these quotation values like "expr.Type" may be a bit fragile, possibly returning non cross-targeted types in

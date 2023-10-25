@@ -14,7 +14,7 @@ type SequentialPoint = struct
     val Y : int
 end   
 
-// Define the same point structre but using an explicit layout
+// Define the same point structure but using an explicit layout
 [<StructLayout(LayoutKind.Explicit)>]
 type ExplicitPoint = struct
     // Randomize elements, the end result is:

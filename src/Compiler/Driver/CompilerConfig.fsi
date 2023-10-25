@@ -872,7 +872,7 @@ type TcConfig =
 
     member CoreLibraryDllReference: unit -> AssemblyReference
 
-    /// Allow forking and subsuequent modification of the TcConfig via a new TcConfigBuilder
+    /// Allow forking and subsequent modification of the TcConfig via a new TcConfigBuilder
     member CloneToBuilder: unit -> TcConfigBuilder
 
     /// Indicates if the compilation will result in F# signature data resource in the generated binary

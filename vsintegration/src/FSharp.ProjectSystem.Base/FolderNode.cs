@@ -160,7 +160,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override string GetMkDocument()
         {
-            Debug.Assert(this.Url != null, "No url sepcified for this node");
+            Debug.Assert(this.Url != null, "No url specified for this node");
 
             return this.Url;
         }

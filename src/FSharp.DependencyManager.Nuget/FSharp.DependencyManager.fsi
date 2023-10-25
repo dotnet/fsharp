@@ -15,7 +15,7 @@ module internal FSharpDependencyManager =
 [<Class>]
 type ResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     member Success: bool
 
     /// The resolution output log

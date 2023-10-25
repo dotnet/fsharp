@@ -75,12 +75,12 @@ let loss2 = MyNamespace.OuterClass.InnerClass.MoareInnerClass.somefunction()   /
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OuterClass.InnerClass.MoreInnerClass.somefunctoion()   //Note the mistyped somefunction we expect a good error message
+let loss2 = MyNamespace.OuterClass.InnerClass.MoreInnerClass.somefunction_()   //Note the mistyped somefunction we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define the field, constructor or member 'somefunctoion'. Maybe you want one of the following:
+        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define the field, constructor or member 'somefunction_'. Maybe you want one of the following:
    somefunction"""))

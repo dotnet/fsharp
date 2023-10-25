@@ -84,7 +84,7 @@ module internal Utils =
     let getTempFilePathChangeExt tmp ext =
         Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
 
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // This behaves slightly differently on Mono versions, 'null' is printed sometimes, 'None' other times
     // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
     // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
     let filterHack l =
@@ -475,8 +475,8 @@ let v = c.InstanceProperty
 
 System.Console.WriteLine("777") // do a top-level action
 
-let functionWithSubmsumption(x:obj)  =  x :?> string
-//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubmsumption |> functionWithSubmsumption
+let functionWithSubsumption(x:obj)  =  x :?> string
+//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubsumption |> functionWithSubsumption
 
 type MultiArgMethods(c:int,d:int) =
    member x.Method(a:int, b : int) = 1
@@ -799,7 +799,7 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
@@ -940,7 +940,7 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";

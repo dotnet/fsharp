@@ -16,7 +16,7 @@ type SequentialPoint =
         Y : int
     }
 
-// Define the same point structre but using an explicit layout
+// Define the same point structure but using an explicit layout
 [<Struct>]
 [<StructLayout(LayoutKind.Explicit)>]
 type ExplicitPoint =

@@ -929,7 +929,7 @@ We made the following enhancements to infrastructure, packaging, and our open so
 * Struct record support with the `[<Struct>]` attribute
 * Struct Discriminated Union support with the `[<Struct>]` attribute
 * `Result<'TSuccess, 'TFailure>` type, with supporting functions in FSharp.Core
-* Support for the `fixed` keyword to pin a pointer-tyle local to the stack
+* Support for the `fixed` keyword to pin a pointer-style local to the stack
 * Underscores in numeric literals
 * Caller Info Attribute Argument support
 * `namespace rec` and `module rec` to support mutually referential types and functions within the same file

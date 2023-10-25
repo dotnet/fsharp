@@ -81,7 +81,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// For use by F# tooling only. Specfies if the project is dirty.
+        /// For use by F# tooling only. Specifies if the project is dirty.
         /// </summary>
         public virtual bool IsDirty
         {
@@ -503,7 +503,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                         // Get the IVsHierarchy for the project.
                         IVsHierarchy prjHierarchy = project.InteropSafeIVsHierarchy;
 
-                        // Now get the soulution.
+                        // Now get the solution.
                         IVsSolution solution = this.project.Site.GetService(typeof(SVsSolution)) as IVsSolution;
                         // Verify that we have both solution and hierarchy.
                         if ((null == prjHierarchy) || (null == solution))

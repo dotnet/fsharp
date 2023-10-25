@@ -3804,7 +3804,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                         let x = 42")
 
     [<Test>]
-    member public this.``Identifer.InMatchStatemente.Bug72595``() =        
+    member public this.``Identifer.InMatchStatement.Bug72595``() =        
         // in this bug, "match blah with let" caused the lexfilter to go awry, which made things hopeless for the parser, yielding no parse tree and thus no intellisense
         AssertAutoCompleteContains 
             [ @"
@@ -4118,7 +4118,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain
                                           
     [<Test>]
-    member public this.``IncompleteStatemen.If_C``() =        
+    member public this.``IncompleteStatement.If_C``() =        
         AssertAutoCompleteContains 
           [  
             "let x = \"1\""
@@ -6253,7 +6253,7 @@ let rec f l =
             list = ["Obsolete"])
 
     [<Test>]
-    member this.``ImportStatment.System.ImportDirectly``() = 
+    member this.``ImportStatement.System.ImportDirectly``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)
@@ -6262,7 +6262,7 @@ let rec f l =
             list = ["Collections"])
 
     [<Test>]
-    member this.``ImportStatment.System.ImportAsIdentifier``() = 
+    member this.``ImportStatement.System.ImportAsIdentifier``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)

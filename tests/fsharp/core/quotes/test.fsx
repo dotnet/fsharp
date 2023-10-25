@@ -570,7 +570,7 @@ module TypedTest = begin
 end
 
 (*
-module SubstiutionTest = begin
+module SubstitutionTest = begin
   let tm = (<@ (fun x y -> x + y + y) @>)
   // TEST INVALID - this match fails because a variable is escaping.
   let Some(x,y,y') = Template <@. (fun x y -> _ + _ + _) .@> tm

@@ -84,7 +84,7 @@ module KindB1 =
     // Access code may not be generic except through existing member constraints
 
 
-    // To speciy a struct representation use this:
+    // To specify a struct representation use this:
     let data3 = struct {| X = 1 |}
 
     // Types can be written with the same syntax

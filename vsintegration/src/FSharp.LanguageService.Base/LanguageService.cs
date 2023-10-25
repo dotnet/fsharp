@@ -34,7 +34,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 {
     internal enum BackgroundRequestReason
     {
-        MemberSelect, // ".", also triggered by some some other tokens like ".."
+        MemberSelect, // ".", also triggered by some other tokens like ".."
         MemberSelectAndHighlightBraces, // unused? No F# tokens have both MatchBraces and MemberSelect
         MatchBracesAndMethodTip, // close-paren
         MatchBraces, // moving cursor etc.

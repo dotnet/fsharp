@@ -105,7 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Returns an instance of the automation object for ReferenceContainerNode
         /// </summary>
-        /// <returns>An instance of the Automation.OAReferenceFolderItem type if succeeeded</returns>
+        /// <returns>An instance of the Automation.OAReferenceFolderItem type if succeeded</returns>
         public override object GetAutomationObject()
         {
             if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)

@@ -199,7 +199,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             foreach (var platform in platforms)
             {
-                // If we have any property groups to clone, and we do not have sourec for this platform, skip
+                // If we have any property groups to clone, and we do not have source for this platform, skip
                 if (configToClone.Count > 0 && !configToClone.ContainsKey(platform)) continue;
                 var newCanonicalName = new ConfigCanonicalName(name, platform);
 
@@ -311,7 +311,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             foreach (var configName in configNames)
             {
-                // If we have any property groups to clone, and we do not have sourec for this config, skip
+                // If we have any property groups to clone, and we do not have source for this config, skip
                 if (configToClone.Count > 0 && !configToClone.ContainsKey(configName)) continue;
                 var newCanonicalName = new ConfigCanonicalName(configName, platformName);
 

@@ -490,7 +490,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates an object derived from NodeProperties that will be used to expose properties
-        /// spacific for this object to the property browser.
+        /// specific for this object to the property browser.
         /// </summary>
         /// <returns></returns>
         public virtual NodeProperties CreatePropertiesObject()
@@ -865,7 +865,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="propid">property id for the guid property requested</param>
         /// <param name="guid">the requested guid</param>
-        /// <returns>S_OK if succeded</returns>
+        /// <returns>S_OK if succeeded</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "propid")]
         public virtual int GetGuidProperty(int propid, out Guid guid)
         {

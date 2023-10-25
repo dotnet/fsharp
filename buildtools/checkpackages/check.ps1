@@ -9,7 +9,7 @@ if ($LASTEXITCODE -eq 0)
 {
     $package = Get-Content -Path .\Version.txt
     Write-Error "
-        Package restore succeded for '${package}', expected to fail.
+        Package restore succeeded for '${package}', expected to fail.
         This usually means that the package has been already published.
         Please, bump the version to fix this failure." -ErrorAction Stop
 } else {
