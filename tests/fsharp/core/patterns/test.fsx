@@ -1122,7 +1122,7 @@ module StructUnionMultiCaseLibDefns =
         | Some : Value:'T -> StructOption<'T>
 
     /// <summary>Helper types for active patterns with 2 choices.</summary>
-    //[<UnqualfiedLabels(false)>]
+    //[<UnqualifiedLabels(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpStructChoice`2")>]
     [<RequireQualifiedAccess>]

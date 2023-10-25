@@ -1969,7 +1969,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
                     // Compute the file name
-                    // We try to solve two problems here. When input comes from a wizzard in case of zipped based projects 
+                    // We try to solve two problems here. When input comes from a wizard in case of zipped based projects 
                     // the parameters are different.
                     // In that case the filename has the new filename in a temporary path.
 
@@ -1980,7 +1980,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     string tempName = String.Empty;
 
-                    // We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizzard calls us) GetFileNameWithoutExtension will suppress "c".
+                    // We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizard calls us) GetFileNameWithoutExtension will suppress "c".
                     // We are going to check if the parameter "name" is extension based and the extension is the same as the one from the "filename" parameter.
                     string tempExtension = Path.GetExtension(name);
                     if (!String.IsNullOrEmpty(tempExtension))
@@ -3701,7 +3701,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whther the current mode of the project is in a suppress command mode.
+        /// Defines whether the current mode of the project is in a suppress command mode.
         /// </summary>
         /// <returns></returns>
         public virtual bool IsCurrentStateASuppressCommandsMode()

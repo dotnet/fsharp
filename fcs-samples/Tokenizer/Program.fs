@@ -18,7 +18,7 @@ let tokenizeLines (lines:string[]) =
 
 let tokenizedLines = 
   tokenizeLines
-    [| "// Sets the hello wrold variable"
+    [| "// Sets the hello world variable"
        "let hello = \"Hello world\" " |]
 
 for lineNo, lineToks in tokenizedLines do

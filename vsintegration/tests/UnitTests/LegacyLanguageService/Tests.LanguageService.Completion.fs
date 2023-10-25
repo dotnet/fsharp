@@ -39,7 +39,7 @@ type UsingMSBuild() as this  =
         file
 
     let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =        
-        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint valdiation etc. 
+        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint validation etc. 
         // This might be before the before the background builder is ready to process the foreground typecheck.
         // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
         let file = createFile code fileKind refs otherFlags
@@ -4769,7 +4769,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
     [<Test>]
-    member public this.``Editor.WhitoutContext.Bug986``() =     
+    member public this.``Editor.WithoutContext.Bug986``() =     
         let code = ["(*mark*)"]
         let (_,_, file) = this.CreateSingleFileProject(code)
 
@@ -6711,7 +6711,7 @@ let rec f l =
             marker = "(*MarkerModule*)")
 
     [<Test>]
-    member this.``Identifier.WithouDef``() = 
+    member this.``Identifier.WithoutDef``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """ abcd(*MarkerUndefinedIdentifier*)  """,
             marker = "(*MarkerUndefinedIdentifier*)") 
@@ -6884,7 +6884,7 @@ let rec f l =
             marker = "(*MarkerParam*)")
 
     [<Test>]
-    member this.``Identifier.AsFunctionName.UsingfunKeyword``() =
+    member this.``Identifier.AsFunctionName.UsingFunKeyword``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """fun f4(*MarkerFunctionDeclaration*)  x -> x+1""",
             marker = "(*MarkerFunctionDeclaration*)")

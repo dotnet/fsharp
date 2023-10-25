@@ -1300,7 +1300,7 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
         if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
             tab
         else
-            // Union cases for unqualfied
+            // Union cases for unqualified
             AddUnionCases2 bulkAddMode tab ucrefs
 
     let ePatItems =

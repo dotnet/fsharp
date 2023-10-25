@@ -1168,7 +1168,7 @@ module PrintTypes =
         (nameL |> addColonL) ^^ tauL
 
     /// layouts the elements of an unresolved overloaded method call:
-    /// argInfos: unammed and named arguments
+    /// argInfos: unnamed and named arguments
     /// retTy: return type
     /// genParamTy: generic parameter types
     let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =

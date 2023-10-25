@@ -1400,7 +1400,7 @@ val mk_mspec_to_mdef: Type * MethodDef * Instantiation -> MethodSpec
 val mk_CallSig: Callconv * List<Type> * Type -> CallSig
 
 (* -------------------------------------------------------------------- 
- * Make generalized verions of possibly-generic Types,
+ * Make generalized versions of possibly-generic Types,
  * e.g. Given the TypeDef for List, return the type "List<T>".
  * -------------------------------------------------------------------- *)
 

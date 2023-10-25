@@ -302,7 +302,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n
@@ -324,7 +324,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n

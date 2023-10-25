@@ -129,7 +129,7 @@ module TestLibrary =
         int output 
 
 
-    //two work arounds to the problem
+    //two workarounds to the problem
     let test7 num =  
         let convert (i : int) =  //with the type specified here, this doesn't crash
             unit.convert(i)

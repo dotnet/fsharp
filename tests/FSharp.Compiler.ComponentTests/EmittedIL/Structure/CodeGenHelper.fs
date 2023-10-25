@@ -180,7 +180,7 @@ let haveAttribute attrName thingy =
         | :? EventInfo as ei
             -> ei.GetCustomAttributes(false)
                |> containsAttrWithName
-        | _ -> failwith "Error: Unsuported primitive type, unable to get custom attributes."
+        | _ -> failwith "Error: Unsupported primitive type, unable to get custom attributes."
     if not containsAttribute then
         failwithf "Error: Unable to locate attribute %s." attrName
     else
@@ -215,7 +215,7 @@ let doesn'tHaveAttribute attrName thingy =
         | :? EventInfo as ei
             -> ei.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName
-        | _ -> failwith "Error: Unsuported primitive type, unable to get custom attributes."
+        | _ -> failwith "Error: Unsupported primitive type, unable to get custom attributes."
     if containsAttribute then
         failwithf "Error: Able to locate attribute %s, didn't expect to find." attrName
     else

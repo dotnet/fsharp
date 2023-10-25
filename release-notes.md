@@ -907,7 +907,7 @@ There is now an experimental CodeLens implementation, contributed by [Victor Pet
 
 We made the following enhancements to infrastructure, packaging, and our open source contribution experience:
 
-* The F# compiler distributed with Visual Studio no longer installs as a singleton in the F# Compiler SDK location. It is now fully side-by-side with Visual Studio, meaning that side-by-side installations of Visual Studio wil finally have truly side-by-side F# tooling and language experiences.
+* The F# compiler distributed with Visual Studio no longer installs as a singleton in the F# Compiler SDK location. It is now fully side-by-side with Visual Studio, meaning that side-by-side installations of Visual Studio will finally have truly side-by-side F# tooling and language experiences.
 * The FSharp.Core NuGet package is now signed.
 * ETW logging has been added to the F# tools and compiler.
 * The very large `control.fs`/`control.fsi` files in FSharp.Core have been split into `async.fs`/`async.fsi`, `event.fs`/`event.fsi`, `eventmodule.fs`/`eventmodule.fsi`, `mailbox.fs`/`mailbox.fsi`, and `observable.fs`/`observable.fsi`.

@@ -278,7 +278,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             elif option <> "--" then
                 // is it an abbreviated or MSFT-style option?
                 // if so, strip the first character and move on with your life
-                // Wierdly a -- option can't have only a 1 character name
+                // Weirdly a -- option can't have only a 1 character name
                 if option.Length = 2 || isSlashOpt option then
                     option[1..]
                 elif option.Length >= 3 && option[2] = ':' then
@@ -1215,7 +1215,7 @@ let noFrameworkFlag isFsc tcConfigB =
         tagNone,
         OptionUnit(fun () ->
             // When the compilation is not fsi do nothing.
-            // It is just not a usefull option when running fsi on the coreclr or the desktop framework really.
+            // It is just not a useful option when running fsi on the coreclr or the desktop framework really.
             if isFsc then
                 tcConfigB.implicitlyReferenceDotNetAssemblies <- false
                 tcConfigB.implicitlyResolveAssemblies <- false),

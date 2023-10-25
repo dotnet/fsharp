@@ -5312,7 +5312,7 @@ and GenILCall
     cenv
     cgbuf
     eenv
-    (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef: ILMethodRef, enclArgTys, methArgTys, argExprs, returnTys, m)
+    (virt, value_, newobj, valUseFlags, isDllImport, ilMethRef: ILMethodRef, enclArgTys, methArgTys, argExprs, returnTys, m)
     sequel
     =
     let hasByrefArg = ilMethRef.ArgTypes |> List.exists IsILTypeByref
@@ -5332,10 +5332,10 @@ and GenILCall
         | PossibleConstrainedCall ty -> Some ty
         | _ -> None
 
-    let boxity = (if valu then AsValue else AsObject)
+    let boxity = (if value_ then AsValue else AsObject)
     let mustGenerateUnitAfterCall = isNil returnTys
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
-    let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
+    let hasStructObjArg = value_ && ilMethRef.CallingConv.IsInstance
 
     let tail =
         CanTailcall(

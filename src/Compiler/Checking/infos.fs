@@ -1024,7 +1024,7 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
         | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef

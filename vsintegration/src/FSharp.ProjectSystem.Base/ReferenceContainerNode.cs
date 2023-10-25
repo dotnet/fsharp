@@ -358,7 +358,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     var first = grouping.First();
                     var groupedFiles = grouping.Select(x => x.file).ToArray();
 
-                    var versonText = string.Format(
+                    var versionText = string.Format(
                         "{0}.{1}.{2}.{3}",
                         version.Major,
                         version.Minor,
@@ -366,7 +366,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         version.Revision != -1 ? version.Revision : 0
                         );
 
-                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versonText, groupedFiles);
+                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versionText, groupedFiles);
                     AddChild(node);
                 }
             }

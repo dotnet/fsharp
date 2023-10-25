@@ -471,7 +471,7 @@ let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
         Implication.Fails
 
 /// Work out what a failing null test implies about a type test (against tgtTy2) for the same
-/// input balue. The answer is "nothing" but it's included for symmetry.
+/// input value. The answer is "nothing" but it's included for symmetry.
 let computeWhatFailingNullTestImpliesAboutTypeTest _g _tgtTy2 =
     Implication.Nothing
 

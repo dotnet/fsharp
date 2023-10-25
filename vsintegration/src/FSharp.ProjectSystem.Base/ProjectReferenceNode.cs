@@ -110,7 +110,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Possibility to shortcut and set the dangling project reference icon.
-        /// It is ussually manipulated by solution listeners who handle reference updates.
+        /// It is usually manipulated by solution listeners who handle reference updates.
         /// </summary>
         public bool IsNodeValid
         {
@@ -395,7 +395,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return null;
             }
 
-            // Ususally the output path is relative to the project path, but it is possible
+            // Usually the output path is relative to the project path, but it is possible
             // to set it as an absolute path. If it is not absolute, then evaluate its value
             // based on the project directory.
             if (!System.IO.Path.IsPathRooted(outputPath))

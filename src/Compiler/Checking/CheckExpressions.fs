@@ -1236,7 +1236,7 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
 
 let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
     if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
-        // Check, wheter this method has external init, emit an error diagnostic in this case.
+        // Check, whether this method has external init, emit an error diagnostic in this case.
         if minfo.HasExternalInit then
             errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
 

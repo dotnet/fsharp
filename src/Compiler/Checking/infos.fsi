@@ -438,7 +438,7 @@ type MethInfo =
     /// Receiver must be a struct type.
     member IsReadOnly: bool
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member HasExternalInit: bool
 
     /// Indicates if the enclosing type for the method is a value type.

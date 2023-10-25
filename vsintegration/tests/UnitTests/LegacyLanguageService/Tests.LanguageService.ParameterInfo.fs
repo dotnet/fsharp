@@ -1989,7 +1989,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
-    // wroks fine In nested queries
+    // works fine In nested queries
     member public this.``Query.InNestedQuery``() = 
         let fileContents = """
         let tuples = [ (1, 8, 9); (56, 45, 3)] 

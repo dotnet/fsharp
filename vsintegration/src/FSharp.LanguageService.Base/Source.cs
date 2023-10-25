@@ -1127,7 +1127,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// Trim whitespace from the beginning and ending of the given span.
         public void TrimSpan(ref TextSpan span)
         {
-            // Scan forwards past whitepsace.
+            // Scan forwards past whitespace.
             int length;
             NativeMethods.ThrowOnFailure(this.textLines.GetLengthOfLine(span.iStartLine, out length));
 
@@ -1152,7 +1152,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     break;
                 }
             }
-            // Scan backwards past whitepsace.
+            // Scan backwards past whitespace.
             NativeMethods.ThrowOnFailure(this.textLines.GetLengthOfLine(span.iEndLine, out length));
 
             while (span.iStartLine < span.iEndLine || (span.iStartLine == span.iEndLine && span.iStartIndex < span.iEndIndex))
