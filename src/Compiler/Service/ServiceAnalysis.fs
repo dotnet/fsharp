@@ -458,6 +458,9 @@ module UnnecessaryParentheses =
 
     /// Represents an expression's precedence.
     type Precedence =
+        /// yield, yield!, return, return!
+        | Low
+
         /// <-
         | Set
 
@@ -618,6 +621,10 @@ module UnnecessaryParentheses =
             | _, ColonEquals -> -1
 
             | Set, Set -> 0
+            | Set, _ -> 1
+            | _, Set -> -1
+
+            | Low, Low -> 0
 
     /// Associativity/association.
     type Assoc =
@@ -633,6 +640,7 @@ module UnnecessaryParentheses =
     module Assoc =
         let ofPrecedence precedence =
             match precedence with
+            | Low -> Non
             | Set -> Non
             | ColonEquals -> Right
             | Comma -> Non
@@ -812,6 +820,8 @@ module UnnecessaryParentheses =
         [<return: Struct>]
         let (|OuterBinaryExpr|_|) inner outer : struct (Precedence * Assoc) voption =
             match outer with
+            | SynExpr.YieldOrReturn _
+            | SynExpr.YieldOrReturnFrom _ -> ValueSome(Low, Right)
             | SynExpr.Tuple(exprs = SynExpr.Paren(expr = Is inner) :: _) -> ValueSome(Comma, Left)
             | SynExpr.Tuple _ -> ValueSome(Comma, Right)
             | InfixApp (Cons, side) -> ValueSome(Cons, side)
@@ -875,6 +885,8 @@ module UnnecessaryParentheses =
                     | SynExpr.IfThenElse(elseExpr = Some expr)
                     | SynExpr.IfThenElse (ifExpr = expr)
                     | SynExpr.Sequential (expr2 = expr)
+                    | SynExpr.YieldOrReturn (expr = expr)
+                    | SynExpr.YieldOrReturnFrom (expr = expr)
                     | SynExpr.Set (rhsExpr = expr)
                     | SynExpr.DotSet (rhsExpr = expr)
                     | SynExpr.DotNamedIndexedPropertySet (rhsExpr = expr)
@@ -947,7 +959,7 @@ module UnnecessaryParentheses =
             // Indicates whether the parentheses with the given range
             // enclose an expression whose indentation would be invalid
             // in context if it were not surrounded by parentheses.
-            let containsSensitiveIndentation (parenRange: range) =
+            let containsSensitiveIndentation outerOffsides (parenRange: range) =
                 let startLine = parenRange.StartLine
                 let endLine = parenRange.EndLine
 
@@ -963,7 +975,8 @@ module UnnecessaryParentheses =
                                 let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
 
                                 if i >= 0 then
-                                    loop (ValueSome(i + startCol)) (lineNo + 1) 0
+                                    let newOffsides = i + startCol
+                                    newOffsides <= outerOffsides || loop (ValueSome newOffsides) (lineNo + 1) 0
                                 else
                                     loop offsides (lineNo + 1) 0
 
@@ -974,8 +987,8 @@ module UnnecessaryParentheses =
                                     let slice = line.AsSpan(i, min (offsidesCol - i) (line.Length - i))
                                     let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|0$.?".AsSpan())
 
-                                    i + (if j >= 0 && slice[j] = ' ' then j else 0) < offsidesCol - 1
-                                    || loop offsides (lineNo + 1) 0
+                                    let lo = i + (if j >= 0 && slice[j] = ' ' then j else 0)
+                                    lo < offsidesCol - 1 || lo <= outerOffsides || loop offsides (lineNo + 1) 0
                                 else
                                     loop offsides (lineNo + 1) 0
                         else
@@ -1057,9 +1070,7 @@ module UnnecessaryParentheses =
             // Check for nested matches, e.g.,
             //
             //     match … with … -> (…, match … with … -> … | … -> …) | … -> …
-            | SynExpr.Paren _,
-              (SyntaxNode.SynMatchClause _ | SyntaxNode.SynExpr (SynExpr.YieldOrReturn _ | SynExpr.YieldOrReturnFrom _)) :: path ->
-                unnecessaryParentheses expr path
+            | SynExpr.Paren _, SyntaxNode.SynMatchClause _ :: path -> unnecessaryParentheses expr path
 
             // We always need parens for trait calls, e.g.,
             //
@@ -1071,8 +1082,9 @@ module UnnecessaryParentheses =
             //
             //     let x = (x
             //           + y)
-            | SynExpr.Paren (rightParenRange = Some _; range = parenRange), SyntaxNode.SynBinding _ :: _ when
-                containsSensitiveIndentation parenRange
+            | SynExpr.Paren (rightParenRange = Some _; range = parenRange),
+              SyntaxNode.SynBinding (SynBinding(trivia = { LeadingKeyword = leadingKeyword })) :: _ when
+                containsSensitiveIndentation leadingKeyword.Range.StartColumn parenRange
                 ->
                 ValueNone
 
@@ -1124,8 +1136,12 @@ module UnnecessaryParentheses =
             //
             //     x.M(y).N z
             //     x.M(y).[z]
+            //     (f x)[z]
+            //     (f(x))[z]
             //     x.M(y)[z]
             | SynExpr.Paren _, SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.DotGet _ | SynExpr.DotIndexedGet _) :: _
+            | SynExpr.Paren(expr = SynExpr.App _),
+              SyntaxNode.SynExpr (SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _
             | SynExpr.Paren _,
               SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _ ->
                 ValueNone
@@ -1156,7 +1172,7 @@ module UnnecessaryParentheses =
 
             // Ordinary nested expressions.
             | SynExpr.Paren (expr = inner; leftParenRange = leftParenRange; rightParenRange = Some _ as rightParenRange; range = range),
-              SyntaxNode.SynExpr outer :: outerPath when not (containsSensitiveIndentation range) ->
+              SyntaxNode.SynExpr outer :: outerPath when not (containsSensitiveIndentation outer.Range.StartColumn range) ->
                 let dangling expr =
                     match expr with
                     | Dangling.Problematic subExpr ->
@@ -1223,7 +1239,14 @@ module UnnecessaryParentheses =
                                    | Sub -> true
                                    | _ -> false
 
-                        | c -> c > 0
+                        | c ->
+                            if c > 0 then
+                                match outerPrecedence, side, innerPrecedence with
+                                // (f(x)).M
+                                | Dot, Left, Apply when inner.Range.IsAdjacentTo outer.Range -> false
+                                | _ -> true
+                            else
+                                false
 
                     if ambiguous || dangling inner then
                         ValueNone
@@ -1297,8 +1320,6 @@ module UnnecessaryParentheses =
                 | SynExpr.Sequential _, _
                 | SynExpr.Do _, _
                 | SynExpr.DoBang _, _
-                | SynExpr.YieldOrReturn _, _
-                | SynExpr.YieldOrReturnFrom _, _
                 | SynExpr.IfThenElse _, _
                 | SynExpr.TryWith _, _
                 | SynExpr.TryFinally _, _

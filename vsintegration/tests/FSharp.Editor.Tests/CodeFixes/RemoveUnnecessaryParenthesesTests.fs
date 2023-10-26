@@ -281,6 +281,37 @@ let _ =
 
             // ComputationExpression
             "seq { (3) }", "seq { 3 }"
+            "async { return (3) }", "async { return 3 }"
+
+            "
+            async {
+                return (
+                1
+                )
+            }
+            ",
+            "
+            async {
+                return (
+                1
+                )
+            }
+            "
+
+            "
+            async {
+                return (
+                 1
+                )
+            }
+            ",
+            "
+            async {
+                return 
+                 1
+                
+            }
+            "
 
             // Lambda
             "fun _ -> (3)", "fun _ -> 3"
@@ -865,6 +896,9 @@ let _ =
                 // ArrayOrListComputed
                 "id ([x..y])", "id [x..y]"
                 "id ([|x..y|])", "id [|x..y|]"
+                """(id("x"))[0]""", """(id "x")[0]"""
+                """(id "x")[0]""", """(id "x")[0]"""
+                """id ("x")[0]""", """id ("x")[0]"""
 
                 // ComputationExpr
                 "id (seq { x })", "id (seq { x })"
@@ -919,6 +953,7 @@ let _ =
                 "id <| (fun x -> x)", "id <| fun x -> x"
                 "id <| (fun x -> x) |> id", "id <| (fun x -> x) |> id"
                 "id <| (id <| fun x -> x) |> id", "id <| (id <| fun x -> x) |> id"
+                "id <| (id <| id <| id <| fun x -> x) |> id", "id <| (id <| id <| id <| fun x -> x) |> id"
                 "(id <| fun x -> x) |> id", "(id <| fun x -> x) |> id"
                 """(printfn ""; fun x -> x) |> id""", """(printfn ""; fun x -> x) |> id"""
 
@@ -1014,6 +1049,10 @@ let _ =
                 "(-1).ToString()", "(-1).ToString()"
                 "(-x).ToString()", "(-x).ToString()"
                 "(~~~x).ToString()", "(~~~x).ToString()"
+                "id (3L.ToString())", "id (3L.ToString())"
+                """id ("x").Length""", """id "x".Length"""
+                """(id("x")).Length""", """(id "x").Length"""
+                """(id "x").Length""", """(id "x").Length"""
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
@@ -1030,6 +1069,9 @@ let _ =
 
                 // DotIndexedGet
                 "id ([x].[y])", "id [x].[y]"
+                """id ("x").[0]""", """id "x".[0]"""
+                """(id("x")).[0]""", """(id "x").[0]"""
+                """(id "x").[0]""", """(id "x").[0]"""
 
                 // DotIndexedSet
                 "id ([|x|].[y] <- z)", "id ([|x|].[y] <- z)"
@@ -1162,6 +1204,9 @@ let builder = Builder ()
 let (+) _ _ = builder
 let _ = (2 + 2) { return 5 }
 "
+
+                "let inline f ([<InlineIfLambda>] g) x = g x", "let inline f ([<InlineIfLambda>] g) x = g x"
+                "type T = static member M ([<InlineIfLambda] f) = f ()", "type T = static member M ([<InlineIfLambda] f) = f ()"
             }
 
         [<Theory; MemberData(nameof moreComplexApps)>]

@@ -137,7 +137,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         // "(……)…"
                         //    ↑ ↑
                         match s[s.Length - 2], sourceText[min context.Span.End (sourceText.Length - 1)] with
-                        | _, (')' | ']' | '}' | '.' | ';') -> None
+                        | _, (')' | ']' | '[' | '}' | '.' | ';') -> None
                         | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
                         | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
                         | _ -> None
