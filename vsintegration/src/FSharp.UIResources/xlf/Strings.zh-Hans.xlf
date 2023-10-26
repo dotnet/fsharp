@@ -22,11 +22,6 @@
         <target state="translated">后台分析</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="translated">分析时捕获标识符</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
         <target state="translated">保留背景符号键</target>
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">使用实时(未保存)缓冲区进行检查(需要重新启动)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="needs-review-translation">使用实时(未保存)缓冲区进行检查(需要重新启动)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -113,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">实时缓冲区(实验性)</target>
+        <source>Live Buffers</source>
+        <target state="needs-review-translation">实时缓冲区(实验性)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
