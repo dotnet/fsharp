@@ -1,12 +1,12 @@
 {
   "sdk": {
-    "version": "8.0.100-rc.1.23463.5",
+    "version": "8.0.100-rc.2.23502.2",
     "allowPrerelease": true
   },
   "tools": {
-    "dotnet": "8.0.100-rc.1.23463.5",
+    "dotnet": "8.0.100-rc.2.23502.2",
     "vs": {
-      "version": "17.6",
+      "version": "17.7",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
