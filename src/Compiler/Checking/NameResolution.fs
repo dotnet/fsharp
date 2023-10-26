@@ -2076,6 +2076,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let remove m =
         capturedNameResolutions.RemoveAll(fun cnr -> equals cnr.Range m) |> ignore
         capturedMethodGroupResolutions.RemoveAll(fun cnr -> equals cnr.Range m) |> ignore
+        capturedModulesAndNamespaces.RemoveWhere(fst >> equals m) |> ignore
 
     let formatStringCheckContext =
         lazy
@@ -2278,7 +2279,7 @@ type ResolutionInfo =
                     Item.ModuleOrNamespaces [eref]
                 else
                     Item.Types(eref.DisplayName, [FreshenTycon ncenv m eref])
-            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occ, ad))
+            CallNameResolutionSinkReplacing sink (m, nenv, item, emptyTyparInst, occ, ad))
         warnings typarChecker
 
     static member Empty =
@@ -2365,7 +2366,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
-let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl notifySink =
+let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl (notifySink: bool) =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
@@ -2432,8 +2433,8 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
             modrefs
             |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
-                    if notifySink then
-                        notifyNameResolution modref id.idRange
+                    //if notifySink then
+                    notifyNameResolution modref id.idRange
                     look 1 modref rest
                 else
                     raze (namespaceOrModuleNotFound.Force()))
