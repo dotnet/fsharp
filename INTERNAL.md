@@ -4,7 +4,7 @@ Note that usually only the most recent link in each section is interesting.  Old
 
 ## PR Build Definition
 
-The PR build definition can be found [here](https://dev.azure.com/dnceng/public/_build?definitionId=496) or by
+The PR build definition can be found [here](https://dev.azure.com/dnceng/internal/_build?definitionId=499&_a=summary) or by
 navigating through an existing PR.
 
 There is also a duplicate scouting PR build that is identical to the normal PR build _except_ that it uses a different Windows
