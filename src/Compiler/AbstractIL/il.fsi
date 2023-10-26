@@ -7,6 +7,7 @@ module rec FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
+open Internal.Utilities.Library
 
 /// Represents the target primary assembly
 [<RequireQualifiedAccess>]
@@ -1179,8 +1180,9 @@ type ILMethodDef =
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by
 /// name and arity.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILMethodDefs =
+    inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>
 
     interface IEnumerable<ILMethodDef>
 
@@ -1458,8 +1460,10 @@ type ILTypeDefKind =
     | Delegate
 
 /// Tables of named type definitions.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
+    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>
+
     interface IEnumerable<ILTypeDef>
 
     member internal AsArray: unit -> ILTypeDef[]

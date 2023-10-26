@@ -22,11 +22,6 @@
         <target state="translated">Arka plan analizi</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="translated">Ayrıştırma sırasında tanımlayıcıları yakala</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
         <target state="translated">Arka plan sembol tuşlarını tut</target>
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Denetim için canlı (kaydedilmemiş) arabellekler kullanın (yeniden başlatma gerekir)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="needs-review-translation">Denetim için canlı (kaydedilmemiş) arabellekler kullanın (yeniden başlatma gerekir)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -113,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">Canlı Arabellekler (deneysel)</target>
+        <source>Live Buffers</source>
+        <target state="needs-review-translation">Canlı Arabellekler (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
