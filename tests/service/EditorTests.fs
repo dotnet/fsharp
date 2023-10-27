@@ -1582,7 +1582,6 @@ let _ = Threading.Buzz = null
           ("Threading", (5, 14, 5, 23))
           ("Tasks", (5, 24, 5, 29))
           ("val op_Equality", (6, 23, 6, 24))
-          ("Threading", (6, 8, 6, 17))
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
