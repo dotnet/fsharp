@@ -28,6 +28,8 @@ exception WrappedError of exn * range
 /// when a lazy thunk is re-evaluated.
 exception ReportedError of exn option
 
+val (|RecoverableException|_|): exn: Exception -> Exception voption
+
 val findOriginalException: err: exn -> exn
 
 type Suggestions = (string -> unit) -> unit

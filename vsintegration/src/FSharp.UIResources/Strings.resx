@@ -250,10 +250,10 @@
     <value>Keep background symbol keys</value>
   </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
-    <value>Use live (unsaved) buffers for checking (restart required)</value>
+    <value>Use live (unsaved) buffers for analysis (restart required)</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
-    <value>Live Buffers (experimental)</value>
+    <value>Live Buffers</value>
   </data>
   <data name="AdditionalTelemetry" xml:space="preserve">
     <value>Additional performance telemetry (experimental)</value>
