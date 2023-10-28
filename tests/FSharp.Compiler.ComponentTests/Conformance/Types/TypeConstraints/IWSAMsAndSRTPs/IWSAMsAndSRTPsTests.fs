@@ -831,3 +831,30 @@ let main _ =
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
+
+    [<FactForNETCOREAPP>]
+    let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
+        Fsx """
+            type IParseable<'T when 'T :> IParseable<'T>> =
+                static abstract member Parse : string -> 'T
+
+            type IAction<'T when 'T :> IAction<'T>> =
+                inherit IParseable<'T>
+
+            type SomeAction = A | B with
+                interface IAction<SomeAction> with
+                    static member Parse (s: string) : SomeAction =
+                        match s with
+                        | "A" -> A
+                        | "B" -> B
+                        | _ -> failwith "can't parse"
+
+            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+
+            if parse<SomeAction> "A" <> A then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
