@@ -799,6 +799,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] AsList()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] FindByName(System.String)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] TryFindInstanceByNameAndCallingSignature(System.String, ILCallingSignature)
+FSharp.Compiler.AbstractIL.IL+ILMethodDefs: System.Collections.Generic.IDictionary`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef]] CreateDictionary(ILMethodDef[])
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -1619,6 +1620,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefs: System.Collections.Generic.IDictionary`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String],FSharp.Compiler.AbstractIL.IL+ILPreTypeDef] CreateDictionary(ILPreTypeDef[])
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 BeforeField
 FSharp.Compiler.AbstractIL.IL+ILTypeInit+Tags: Int32 OnAny
 FSharp.Compiler.AbstractIL.IL+ILTypeInit: Boolean Equals(ILTypeInit)
@@ -1943,6 +1945,9 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
+FSharp.Compiler.Cancellable: System.Threading.CancellationToken get_Token()
+FSharp.Compiler.Cancellable: Void CheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
@@ -11708,3 +11713,7 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
+Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
+Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
+Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T[]])
