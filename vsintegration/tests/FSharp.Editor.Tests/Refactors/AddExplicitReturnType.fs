@@ -35,7 +35,7 @@ open System.Runtime.InteropServices
 [<InlineData(" :int")>]
 [<InlineData(" : int")>]
 [<InlineData(" :    int")>]
-let ``Refactor changes nothing`` (shouldNotTrigger: string) =
+let ``Refactor should not trigger`` (shouldNotTrigger: string) =
     task {
         let symbolName = "sum"
 
@@ -48,9 +48,9 @@ let ``Refactor changes nothing`` (shouldNotTrigger: string) =
 
         let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+        let! actions = tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
 
-        do! AssertCodeHasNotChanged code newDoc context.CT
+        do Assert.Empty(actions)
     }
 
 [<Fact>]

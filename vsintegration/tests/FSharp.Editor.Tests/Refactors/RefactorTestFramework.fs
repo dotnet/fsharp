@@ -151,3 +151,23 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
         return newDocument
     }
     |> CancellableTask.startWithoutCancellation
+
+let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
+    cancellableTask {
+        let refactoringActions = new List<CodeAction>()
+        let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
+
+        context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
+
+        let document = RoslynTestHelpers.GetSingleDocument context.Solution
+
+        let mutable workspace = context.Solution.Workspace
+
+        let refactoringContext =
+            CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
+
+        do! refactorProvider.ComputeRefactoringsAsync refactoringContext
+
+        return refactoringActions
+    }
+    |> CancellableTask.startWithoutCancellation

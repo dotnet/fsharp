@@ -31,7 +31,7 @@ let ``Refactor removes explicit return type`` (toRemove: string) =
     }
 
 [<Fact>]
-let ``Refactor changes nothing`` () =
+let ``Refactor should not be suggested if theres nothing to remove`` () =
     task {
 
         let symbolName = "sum"
@@ -43,17 +43,16 @@ let ``Refactor changes nothing`` () =
 
         use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
-        do! AssertCodeHasNotChanged code newDoc context.CT
-        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
+        do Assert.Empty(actions)
         ()
     }
 
 [<Fact>]
-let ``Refactor should not change anything`` () =
+let ``Refactor should not be suggested if it changes the meaning`` () =
     task {
         let symbolName = "sum"
 
@@ -68,12 +67,11 @@ let ``Refactor should not change anything`` () =
 
         use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf "sum"
+        let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
-        do! AssertCodeHasNotChanged code newDoc context.CT
-        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
+        do Assert.Empty(actions)
 
         ()
     }
