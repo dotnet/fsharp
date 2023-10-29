@@ -19,6 +19,7 @@ open Microsoft.CodeAnalysis.CodeActions
 open CancellableTasks
 open System.Diagnostics
 open Microsoft.CodeAnalysis.Text
+open InternalOptionBuilder
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveExplicitReturnType"); Shared>]
 type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
@@ -65,9 +66,9 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
         newSpan
 
     static member isValidMethodWithoutTypeAnnotation
-        (funcOrValue: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse)
         (parseFileResults: FSharpParseFileResults)
+        (funcOrValue: FSharpMemberOrFunctionOrValue)
         =
         let returnTypeHintAlreadyPresent =
             parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
@@ -77,8 +78,13 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
             funcOrValue.IsFunction
             && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
 
-        (not funcOrValue.IsValue || not isLambdaIfFunction)
-        && returnTypeHintAlreadyPresent
+        let res =
+            (not funcOrValue.IsValue || not isLambdaIfFunction)
+            && returnTypeHintAlreadyPresent
+
+        match res with
+        | true -> Some funcOrValue
+        | false -> None
 
     static member refactor
         (context: CodeRefactoringContext)
@@ -114,6 +120,11 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
 
         do context.RegisterRefactoring(codeAction)
 
+    static member ofFSharpMemberOrFunctionOrValue(symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpMemberOrFunctionOrValue as v -> Some v
+        | _ -> None
+
     override _.ComputeRefactoringsAsync context =
         backgroundTask {
             let document = context.Document
@@ -134,23 +145,26 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
                 |> CancellableTask.start ct
 
             let res =
-                lexerSymbol
-                |> Option.bind (fun lexer ->
-                    checkFileResults.GetSymbolUseAtLocation(
-                        fcsTextLineNumber,
-                        lexer.Ident.idRange.EndColumn,
-                        textLine.ToString(),
-                        lexer.FullIsland
-                    ))
-                |> Option.bind (fun symbolUse ->
-                    match symbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as v when
-                        RemoveExplicitReturnType.isValidMethodWithoutTypeAnnotation v symbolUse parseFileResults
-                        ->
-                        Some(v, symbolUse)
-                    | _ -> None)
-                |> Option.map (fun (memberFunc, symbolUse) ->
-                    RemoveExplicitReturnType.refactor context memberFunc parseFileResults symbolUse)
+                internalOption {
+                    let! lexerSymbol = lexerSymbol
+
+                    let! symbolUse =
+                        checkFileResults.GetSymbolUseAtLocation(
+                            fcsTextLineNumber,
+                            lexerSymbol.Ident.idRange.EndColumn,
+                            textLine.ToString(),
+                            lexerSymbol.FullIsland
+                        )
+
+                    let! memberFunc =
+                        symbolUse.Symbol |> RemoveExplicitReturnType.ofFSharpMemberOrFunctionOrValue
+                        |>! RemoveExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
+
+                    let res =
+                        RemoveExplicitReturnType.refactor context memberFunc parseFileResults symbolUse
+
+                    return res
+                }
 
             return res
         }
