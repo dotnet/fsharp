@@ -373,6 +373,7 @@ let main _ =
     let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withWarningCode 3536
