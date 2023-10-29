@@ -2,10 +2,7 @@
 
 module FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests
 
-open System
 open FSharp.Compiler.Text
-open FSharp.Editor.Tests.Helpers
-open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -13,150 +10,26 @@ open Xunit
 open CodeFixTestFramework
 
 [<AutoOpen>]
-module private Aux =
-    /// Indicates that a code fix was expected but was not generated.
-    exception MissingCodeFixException of message: string * exn: Xunit.Sdk.XunitException
+module private TopLevel =
+    let private fixer = FSharpRemoveUnnecessaryParenthesesCodeFixProvider()
+    let private fixAllProvider = fixer.RegisterFsharpFixAll()
 
-    /// Indicates that a code fix was not expected but was generated nonetheless.
-    exception UnexpectedCodeFixException of message: string * exn: Xunit.Sdk.XunitException
+    let private tryFix (code: string) =
+        cancellableTask {
+            let document = Document.create Auto code
+            let sourceText = SourceText.From code
 
-    /// Indicates that the offered code fix was incorrect.
-    exception WrongCodeFixException of message: string * exn: exn
+            let! diagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+            let context = CodeFixContext.tryCreate fixer.CanFix document diagnostics
 
-    let tryFix code (fix: 'T when 'T :> IFSharpCodeFixProvider and 'T :> CodeFixProvider) =
-        task {
-            let doc = RoslynTestHelpers.GetFsDocument code
-
-            let! diagnostics =
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(doc, DiagnosticsType.Syntax)
-                |> CancellableTask.startWithoutCancellation
-
-            let parenDiagnostics =
-                diagnostics
-                |> Seq.filter (fun diagnostic -> fix.FixableDiagnosticIds.Contains diagnostic.Id)
-                |> Seq.truncate 1
-                |> Seq.toImmutableArray
-
-            let! codeFix =
-                match Seq.tryHead parenDiagnostics with
-                | None -> System.Threading.Tasks.Task.FromResult ValueNone
-                | Some diagnostic ->
-                    let ctx =
-                        CodeFixContext(
-                            doc,
-                            diagnostic.Location.SourceSpan,
-                            parenDiagnostics,
-                            mockAction,
-                            System.Threading.CancellationToken.None
-                        )
-
-                    fix.GetCodeFixIfAppliesAsync ctx |> CancellableTask.startWithoutCancellation
-
-            return
-                codeFix
-                |> ValueOption.map (fun codeFix ->
-                    let sourceText = SourceText.From code
-                    let fixedCode = string (sourceText.WithChanges codeFix.Changes)
-
-                    {
-                        Message = codeFix.Message
-                        FixedCode = fixedCode
-                    })
+            return!
+                context
+                |> ValueOption.either (fixer :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync (CancellableTask.singleton ValueNone)
+                |> CancellableTask.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
         }
+        |> CancellableTask.startWithoutCancellation
 
-    let shouldEqual expected actual =
-        let split (s: string) =
-            s.Split([| Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
-
-        let expected = split expected
-        let actual = split actual
-
-        try
-            Assert.All(Array.zip expected actual, (fun (expected, actual) -> Assert.Equal(expected, actual)))
-        with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
-            raise all.Failures[0]
-
-    [<AutoOpen>]
-    module TopLevel =
-        let codeFixProvider = FSharpRemoveUnnecessaryParenthesesCodeFixProvider()
-
-        /// <summary>
-        /// Expects no code fix to be applied to the given code.
-        /// </summary>
-        /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests.Aux.UnexpectedCodeFixException">
-        /// Thrown if a code fix is applied.
-        /// </exception>
-        let expectNoFix code =
-            task {
-                match! codeFixProvider |> tryFix code with
-                | ValueNone -> ()
-                | ValueSome actual ->
-                    let expected =
-                        string
-                            {
-                                Message = "Remove unnecessary parentheses"
-                                FixedCode = code
-                            }
-
-                    let e = Assert.ThrowsAny(fun () -> shouldEqual expected (string actual))
-                    raise (UnexpectedCodeFixException("Did not expect a code fix but got one anyway.", e))
-            }
-
-        /// <summary>
-        /// Expects the given code to be fixed (or not, if <paramref name="code"/> = <paramref name="fixedCode"/>) as specified.
-        /// </summary>
-        /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests.Aux.MissingCodeFixException">
-        /// Thrown if a code fix is not applied when expected.
-        /// </exception>
-        /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests.Aux.UnexpectedCodeFixException">
-        /// Thrown if a code fix is applied when not expected.
-        /// </exception>
-        /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests.Aux.WrongCodeFixException">
-        /// Thrown if the applied code fix is wrong.
-        /// </exception>
-        let expectFix code fixedCode =
-            if code = fixedCode then
-                expectNoFix code
-            else
-                task {
-                    let expected =
-                        string
-                            {
-                                Message = "Remove unnecessary parentheses"
-                                FixedCode = fixedCode
-                            }
-
-                    let! actual = codeFixProvider |> tryFix code
-
-                    let actual =
-                        actual
-                        |> ValueOption.map string
-                        |> ValueOption.defaultWith (fun () ->
-                            let e = Assert.ThrowsAny(fun () -> shouldEqual fixedCode code)
-                            raise (MissingCodeFixException("Expected a code fix but did not get one.", e)))
-
-                    try
-                        shouldEqual expected actual
-                    with e ->
-                        raise (WrongCodeFixException("The applied code fix did not match the expected fix.", e))
-                }
-
-    [<Sealed>]
-    type MemberDataBuilder private () =
-        static member val Instance = MemberDataBuilder()
-        member _.Combine(xs, ys) = Seq.append xs ys
-        member _.Delay f = f ()
-        member _.Zero() = Seq.empty
-        member _.Yield(x, y) = Seq.singleton [| box x; box y |]
-
-        member _.YieldFrom pairs =
-            seq { for x, y in pairs -> [| box x; box y |] }
-
-        member _.For(xs, f) = xs |> Seq.collect f
-        member _.Run objArrays = objArrays
-
-    /// Builds an obj array seq for use with the [<MemberData(…)>] attribute.
-    let memberData = MemberDataBuilder.Instance
+    let expectFix = expectFix tryFix
 
 module Expressions =
     /// let f x y z = expr
@@ -1413,20 +1286,6 @@ match Unchecked.defaultof<_> with
 "
 
         expectFix code expected
-
-    /// match … with pat -> …
-    let expectNoFix pat =
-        expectNoFix
-            $"
-let (|A|_|) _ = None
-let (|B|_|) _ = None
-let (|C|_|) _ = None
-let (|D|_|) _ = None
-let (|P|_|) _ _ = None
-match Unchecked.defaultof<_> with
-| %s{pat} -> ()
-| _ -> ()
-"
 
     let nestedPatterns =
         memberData {
