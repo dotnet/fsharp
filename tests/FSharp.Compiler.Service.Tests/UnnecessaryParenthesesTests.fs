@@ -33,7 +33,6 @@ let ``Results returned when there are unnecessary parentheses`` src =
     task {
         let ast = getParseResults src
         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses (fun _ -> src) ast
-        Assert.IsNotEmpty unnecessaryParentheses
         Assert.AreEqual(1, Seq.length unnecessaryParentheses, $"Expected one range but got: %A{unnecessaryParentheses}.")
     }
 
@@ -49,6 +48,5 @@ let ``Results returned for nested, potentually mutually-exclusive, unnecessary p
     task {
         let ast = getParseResults src
         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses (fun _ -> src) ast
-        Assert.IsNotEmpty unnecessaryParentheses
         Assert.AreEqual(2, Seq.length unnecessaryParentheses, $"Expected two ranges but got: %A{unnecessaryParentheses}.")
     }
