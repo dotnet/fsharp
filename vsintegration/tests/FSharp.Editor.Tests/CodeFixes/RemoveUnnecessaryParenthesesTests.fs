@@ -511,6 +511,7 @@ let _ =
             // DotIndexedGet
             "[(0)][0]", "[0][0]"
             "[0][(0)]", "[0][0]"
+            "([0])[0]", "[0][0]"
 
             // DotIndexedSet
             "[|(0)|][0] <- 0", "[|0|][0] <- 0"
@@ -753,6 +754,8 @@ let _ =
                 // ArrayOrList
                 "id ([])", "id []"
                 "id ([||])", "id [||]"
+                "(id([0]))[0]", "(id [0])[0]"
+                "(id [0])[0]", "(id [0])[0]"
 
                 // Record
                 "id ({ A = x })", "id { A = x }"
@@ -858,6 +861,10 @@ let _ =
                 "~~~(-1)", "~~~ -1"
                 "~~~(-x)", "~~~(-x)"
                 "~~~(-(1))", "~~~(-1)"
+                "id ~~~(-(x))", "id ~~~(-x)"
+                "id ~~~(-x)", "id ~~~(-x)" // We could actually remove here, but probably best not to.
+                "id (-(-x))", "id -(-x)"
+                "id -(-x)", "id -(-x)"
 
                 "
                 let f x y = 0
@@ -926,6 +933,7 @@ let _ =
                 """id ("x").Length""", """id "x".Length"""
                 """(id("x")).Length""", """(id "x").Length"""
                 """(id "x").Length""", """(id "x").Length"""
+                """(3L.ToString("x")).Length""", """(3L.ToString "x").Length"""
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
