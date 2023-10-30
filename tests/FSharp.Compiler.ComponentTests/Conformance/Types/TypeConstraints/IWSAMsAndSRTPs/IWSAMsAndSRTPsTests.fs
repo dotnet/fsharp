@@ -897,3 +897,28 @@ let main _ =
         |> withLangVersion70
         |> compile
         |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Static abstracts from BCL can be inherited through multiple levels in lang version70`` () =
+        Fsx """
+            open System
+            open System.Globalization
+
+            type Person = Person with
+                interface ISpanParsable<Person> with
+                    static member Parse(_x: string, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: string, _provider: IFormatProvider, _result: byref<Person>) = true
+
+                    static member Parse(_x: ReadOnlySpan<char>, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: ReadOnlySpan<char>, _provider: IFormatProvider, _result: byref<Person>) = true
+
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse (x, CultureInfo.InvariantCulture)
+
+            let x: Person = parse "Something"
+            if x <> Person then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
