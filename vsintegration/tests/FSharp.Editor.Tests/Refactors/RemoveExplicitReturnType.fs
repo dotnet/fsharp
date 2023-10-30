@@ -48,7 +48,6 @@ let ``Refactor should not be suggested if theres nothing to remove`` () =
         let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
         do Assert.Empty(actions)
-        ()
     }
 
 [<Fact>]
@@ -72,6 +71,4 @@ let ``Refactor should not be suggested if it changes the meaning`` () =
         let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
         do Assert.Empty(actions)
-
-        ()
     }
