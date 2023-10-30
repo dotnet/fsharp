@@ -456,7 +456,14 @@ module UnusedDeclarations =
 module UnnecessaryParentheses =
     open System
 
-    /// Represents an expression's precedence.
+    /// Represents an expression's precedence, or,
+    /// for a few few types of expression whose exact
+    /// kind can be significant, the expression's exact kind.
+    ///
+    /// Use Precedence.sameKind to determine whether two expressions
+    /// have the same kind. Use Precedence.compare to compare two
+    /// expressions' precedence. Avoid using relational operators or the
+    /// built-in compare function on this type.
     type Precedence =
         /// yield, yield!, return, return!
         | Low
@@ -552,8 +559,12 @@ module UnnecessaryParentheses =
         | Dot
 
     module Precedence =
+        /// Returns true only if the two expressions are of the
+        /// exact same kind. E.g., Add = Add and Sub = Sub,
+        /// but Add <> Sub, even though their precedence compares equally.
         let sameKind prec1 prec2 = prec1 = prec2
 
+        /// Compares two expressions' precedence.
         let compare prec1 prec2 =
             match prec1, prec2 with
             | Dot, Dot -> 0
