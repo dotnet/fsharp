@@ -829,8 +829,7 @@ module UnnecessaryParentheses =
             | SynExpr.Lazy _
             | SynExpr.InferredUpcast _
             | SynExpr.InferredDowncast _ -> ValueSome(Apply, Non)
-            | PrefixApp High -> ValueSome(High, Non)
-            | PrefixApp prec -> ValueSome(prec, Left)
+            | PrefixApp prec -> ValueSome(prec, Non)
             | InfixApp (prec, side) -> ValueSome(prec, side)
             | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
             | SynExpr.App(funcExpr = SynExpr.Paren(expr = SynExpr.App _)) -> ValueSome(Apply, Left)
@@ -1239,14 +1238,7 @@ module UnnecessaryParentheses =
                                    | Sub -> true
                                    | _ -> false
 
-                        | c ->
-                            if c > 0 then
-                                match outerPrecedence, side, innerPrecedence with
-                                // (f(x)).M
-                                | Dot, Left, Apply when inner.Range.IsAdjacentTo outer.Range -> false
-                                | _ -> true
-                            else
-                                false
+                        | c -> c > 0
 
                     if ambiguous || dangling inner then
                         ValueNone
