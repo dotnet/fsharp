@@ -1085,9 +1085,6 @@ let builder = Builder ()
 let (+) _ _ = builder
 let _ = (2 + 2) { return 5 }
 "
-
-                "let inline f ([<InlineIfLambda>] g) x = g x", "let inline f ([<InlineIfLambda>] g) x = g x"
-                "type T = static member M ([<InlineIfLambda] f) = f ()", "type T = static member M ([<InlineIfLambda] f) = f ()"
             }
 
         [<Theory; MemberData(nameof moreComplexApps)>]
@@ -1267,6 +1264,19 @@ let _ = (2 + 2) { return 5 }
             let ``Infix operators with leading and trailing chars`` expr expected = expectFix expr expected
 
 module Patterns =
+    let attributedPatterns =
+        memberData {
+            "let inline f ([<InlineIfLambda>] g) = g ()", "let inline f ([<InlineIfLambda>] g) = g ()"
+            "let inline f ([<InlineIfLambda()>] g) = g ()", "let inline f ([<InlineIfLambda()>] g) = g ()" // Not currently removing parens in attributes, but we could.
+            "let inline f ([<InlineIfLambda>] (g)) = g ()", "let inline f ([<InlineIfLambda>] g) = g ()"
+            "type T = member inline _.M([<InlineIfLambda>] g) = g ()", "type T = member inline _.M([<InlineIfLambda>] g) = g ()"
+            "type T = member inline _.M([<InlineIfLambda()>] g) = g ()", "type T = member inline _.M([<InlineIfLambda()>] g) = g ()" // Not currently removing parens in attributes, but we could.
+            "type T = member inline _.M([<InlineIfLambda>] (g)) = g ()", "type T = member inline _.M([<InlineIfLambda>] g) = g ()"
+        }
+
+    [<Theory; MemberData(nameof attributedPatterns)>]
+    let ``Attributed patterns`` original expected = expectFix original expected
+
     /// match … with pat -> …
     let expectFix pat expected =
         let code =
