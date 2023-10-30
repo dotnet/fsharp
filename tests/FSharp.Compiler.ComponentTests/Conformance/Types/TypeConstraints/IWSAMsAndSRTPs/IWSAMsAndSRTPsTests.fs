@@ -972,13 +972,18 @@ module StaticAbstractBug =
         member _.Other(value) = value + 1
         member this.Property = 0
         member this.Property2 = 0
-        member this.Property3 set value = ()
+        member this.Property3 = 0
+        member this.Property3 with set value = ()
         """
          |> withOptions [ "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
+            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 15, Col 21, Line 15, Col 29, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 17, Col 21, Line 17, Col 30, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 18, Col 21, Line 18, Col 30, "No abstract or interface member was found that corresponds to this override")
          ]
 
     [<Fact>]

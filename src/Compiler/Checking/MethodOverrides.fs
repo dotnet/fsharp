@@ -62,9 +62,21 @@ type OverrideInfo =
 
     member x.IsCompilerGenerated = let (Override(isCompilerGenerated=b)) = x in b
     
-    member x.IsInstance =
-        x.BoundingTyconRef.MembersOfFSharpTyconSorted
-        |> List.exists (fun y -> y.LogicalName = x.LogicalName && y.IsInstanceMember)
+type OverrideInfoKind =
+    | OverrideInfo of overrideInfo: OverrideInfo list
+    | OverrideInfoWithValRef of (ValRef option * OverrideInfo) list
+    
+    member x.OverrideInfoValRef =
+        match x with
+        | OverrideInfo(overrideInfo) -> [ for ovd in overrideInfo -> (None, ovd) ]
+        | OverrideInfoWithValRef(overrideInfo) -> overrideInfo
+        
+    member x.OverrideInfos =
+        match x with
+        | OverrideInfo ovd -> ovd
+        | OverrideInfoWithValRef ovd -> ovd |> List.map snd
+        
+    
 
 type RequiredSlot = 
     | RequiredSlot of methodInfo: MethInfo * isOptional: bool
@@ -325,7 +337,7 @@ module DispatchSlotChecking =
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
-                                          overrides: OverrideInfo list) = 
+                                          overrides: OverrideInfoKind) =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -340,7 +352,7 @@ module DispatchSlotChecking =
 
         // Index the availPriorOverrides and overrides by name
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
-        let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
+        let overridesKeyed = overrides.OverrideInfoValRef |> NameMultiMap.initBy (fun (_, ov) -> ov.LogicalName)
         
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
@@ -354,15 +366,18 @@ module DispatchSlotChecking =
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
-                |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)
+                |> List.filter (fun (_, x) -> OverrideImplementsDispatchSlot g amap m dispatchSlot x)
 
             match maybeResolvedSlot with
-            | [ovd] ->
+            | [(valRef, ovd)] ->
                 if not ovd.IsCompilerGenerated then
-                    let hasSameName =  IsNameMatch dispatchSlot ovd
-                    let hasSameSig = IsSigExactMatch g amap m dispatchSlot ovd && ovd.IsInstance = dispatchSlot.IsInstance
-                    if  hasSameName && not hasSameSig then
-                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), ovd.Range))
+                    match valRef with
+                    | Some valRef ->
+                        let hasSameName =  IsNameMatch dispatchSlot ovd
+                        let hasSameSig = IsSigExactMatch g amap m dispatchSlot ovd && valRef.IsInstanceMember = dispatchSlot.IsInstance
+                        if  hasSameName && not hasSameSig then
+                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), ovd.Range))
+                    | _ -> ()
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
@@ -383,10 +398,10 @@ module DispatchSlotChecking =
                     let noimpl() = 
                         missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
                     
-                    match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
+                    match overrides.OverrideInfos |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
                         let possibleOverrides =
-                            overrides
+                            overrides.OverrideInfos
                             |> List.filter (fun overrideBy -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
 
                         match possibleOverrides with 
@@ -820,8 +835,9 @@ module DispatchSlotChecking =
                 // We don't give missing method errors for abstract classes 
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
-                    let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd 
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let overrides = allImmediateMembersThatMightImplementDispatchSlots
+                    let overrides =  overrides |> List.map (fun (overrideBy, overrideByInfo) -> Some overrideBy, overrideByInfo)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, OverrideInfoKind.OverrideInfoWithValRef(overrides))
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 
