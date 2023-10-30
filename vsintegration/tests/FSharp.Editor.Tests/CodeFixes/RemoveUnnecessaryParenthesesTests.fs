@@ -295,13 +295,13 @@ let _ =
             "
 
             "
-            let x = (2
-                    +2)
+            let x = (x
+                    +y)
             in x
             ",
             "
-            let x =  2
-                    +2
+            let x =  x
+                    +y
             in x
             "
 
