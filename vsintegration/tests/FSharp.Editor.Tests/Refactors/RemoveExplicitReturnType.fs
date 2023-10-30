@@ -51,7 +51,7 @@ let ``Refactor should not be suggested if theres nothing to remove`` () =
     }
 
 [<Fact>]
-let ``Refactor should not be suggested if it changes the meaning`` () =
+let ``Refactor should not be suggested if it changes the return type`` () =
     task {
         let symbolName = "sum"
 
@@ -71,4 +71,28 @@ let ``Refactor should not be suggested if it changes the meaning`` () =
         let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
         do Assert.Empty(actions)
+    }
+
+[<Fact>]
+let ``Refactor should be suggested if it does not changes the return type`` () =
+    task {
+        let symbolName = "sum"
+
+        let code =
+            """
+            
+            type B = { X:int }
+            type A = { X:int }
+            
+            let f (i: int) : A = { X = i }
+            let sum a b = a + b
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf symbolName
+
+        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
+
+        do Assert.NotEmpty(actions)
     }

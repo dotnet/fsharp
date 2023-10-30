@@ -71,8 +71,8 @@ type internal RemoveExplicitReturnType [<ImportingConstructor>] () =
         (funcOrValue: FSharpMemberOrFunctionOrValue)
         =
         let returnTypeHintAlreadyPresent =
-            parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
-            |> Option.isNone
+            RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, symbolUse.Range.Start, false)
+            |> Option.isSome
 
         let isLambdaIfFunction =
             funcOrValue.IsFunction
