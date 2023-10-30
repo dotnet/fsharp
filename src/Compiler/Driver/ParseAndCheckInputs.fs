@@ -874,6 +874,11 @@ let ProcessMetaCommandsFromInput
             errorR (HashReferenceNotAllowedInNonScript m)
 
         match args with
+        | paths when directive = Directive.Include ->
+            let p = paths |> String.concat ""
+
+            hashReferenceF state (m, p, directive)
+
         | [ path ] ->
             let p = if String.IsNullOrWhiteSpace(path) then "" else path
 
