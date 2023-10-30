@@ -4419,33 +4419,6 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extra_vals_Inherits_Abstractslots @ extraMembers
             
-    let private CheckStaticAbstractSlots g (tcref: EntityRef) members =
-        let staticMembers =
-            [ for ttype in tcref.ImmediateInterfaceTypesOfFSharpTycon do
-                match stripTyEqnsAndMeasureEqns g ttype with
-                | TType_app(tyconRef = tcref) ->
-                    tcref.MembersOfFSharpTyconSorted
-                    |> List.filter(fun x -> not x.IsInstanceMember)
-                    |> List.map(fun x -> x.DisplayNameCore)
-                | _ -> () ]
-            |> List.concat
-                        
-        let implMembers =
-            [ for synMemberDef in members do
-                match synMemberDef with
-                | SynMemberDefn.Interface(members= Some(synMemberDefns)) ->
-                    [ for synMemberDefn in synMemberDefns do
-                        match synMemberDefn with
-                        | SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; ident])))) -> ident
-                        | _ -> () ]
-                | _ -> ()
-            ]|> List.concat
-            
-        for memberId in implMembers do
-            if staticMembers |> List.exists(fun name -> name = memberId.idText)  then
-                // TODO : Should we reuse FS855 or create a new error with a better message
-                errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
-
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -4484,9 +4457,6 @@ module TcDeclarations =
                 if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
                     let attributeRange = (List.head attributes).Range
                     error(Error(FSComp.SR.tcAugmentationsCannotHaveAttributes(), attributeRange))
-                    
-                if not members.IsEmpty then
-                    CheckStaticAbstractSlots g tcref members
 
                 MutRecDefnsPhase2DataForTycon(tyconOpt, innerParent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, tyDeclRange, newslotsOK, fixupFinalAttrs))
 

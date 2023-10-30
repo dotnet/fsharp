@@ -61,6 +61,10 @@ type OverrideInfo =
     member x.ReturnType = let (Override(returnType=b)) = x in b
 
     member x.IsCompilerGenerated = let (Override(isCompilerGenerated=b)) = x in b
+    
+    member x.IsInstance =
+        x.BoundingTyconRef.MembersOfFSharpTyconSorted
+        |> List.exists (fun y -> y.LogicalName = x.LogicalName && y.IsInstanceMember)
 
 type RequiredSlot = 
     | RequiredSlot of methodInfo: MethInfo * isOptional: bool
@@ -353,8 +357,12 @@ module DispatchSlotChecking =
                 |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)
 
             match maybeResolvedSlot with
-            | [ovd] -> 
-                if not ovd.IsCompilerGenerated then 
+            | [ovd] ->
+                if not ovd.IsCompilerGenerated then
+                    let hasSameName =  IsNameMatch dispatchSlot ovd
+                    let hasSameSig = IsSigExactMatch g amap m dispatchSlot ovd && ovd.IsInstance = dispatchSlot.IsInstance
+                    if  hasSameName && not hasSameSig then
+                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), ovd.Range))
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, AccessorDomain.AccessibleFromSomewhere)
             | [] -> 

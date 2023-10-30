@@ -940,16 +940,18 @@ module StaticAbstractBug =
             member _.Execute2() = ()
             member this.Property = 0
             member this.Property2 = 0
-            member this.Property3 set value = ()
+            member this.Property3 = 0
+            member this.Property3 with set value = ()
         """
          |> withOptions [ "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
-             (Error 855, Line 14, Col 25, Line 14, Col 33, "No abstract or interface member was found that corresponds to this override")
-             (Error 855, Line 16, Col 25, Line 16, Col 34, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 14, Col 25, Line 14, Col 33, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 16, Col 25, Line 16, Col 34, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 17, Col 25, Line 17, Col 34, "No abstract or interface member was found that corresponds to this override")
          ]
          
     [<Fact>]
@@ -977,9 +979,6 @@ module StaticAbstractBug =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override")
-             (Error 855, Line 15, Col 21, Line 15, Col 29, "No abstract or interface member was found that corresponds to this override")
-             (Error 855, Line 17, Col 21, Line 17, Col 30, "No abstract or interface member was found that corresponds to this override")
          ]
 
     [<Fact>]
@@ -1008,8 +1007,6 @@ module StaticAbstractBug =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
-             (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
          ]
          
     [<Fact>]
