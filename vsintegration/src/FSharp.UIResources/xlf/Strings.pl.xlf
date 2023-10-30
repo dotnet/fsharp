@@ -22,11 +22,6 @@
         <target state="translated">Analiza w tle</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="translated">Przechwytywanie identyfikatorów podczas analizowania</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
         <target state="translated">Zachowaj klawisze symboli tła</target>
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Użyj aktywnych (niezapisanych) buforów do sprawdzania (wymagane ponowne uruchomienie)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="needs-review-translation">Użyj aktywnych (niezapisanych) buforów do sprawdzania (wymagane ponowne uruchomienie)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -113,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">Aktywne bufory (eksperymentalne)</target>
+        <source>Live Buffers</source>
+        <target state="needs-review-translation">Aktywne bufory (eksperymentalne)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
