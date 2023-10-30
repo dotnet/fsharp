@@ -345,9 +345,9 @@ let f4 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 193,   Line 6,  Col 9,  Line 6,  Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
-            (Error 193,   Line 12, Col 13, Line 12, Col 16, "Type constraint mismatch. The type \n    'string'    \nis not compatible with type\n    'int'    \n")
+            (Error 1,   Line 6,  Col 9,  Line 6,  Col 16, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+            (Error 1,   Line 12, Col 13, Line 12, Col 16, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
             (Error 193,   Line 21, Col 9,  Line 21, Col 24, "Type constraint mismatch. The type \n    'int list'    \nis not compatible with type\n    'string seq'    \n")
-            (Error 193,   Line 28, Col 9,  Line 28, Col 12, "Type constraint mismatch. The type \n    'float'    \nis not compatible with type\n    'int64'    \n")
+            (Error 1,   Line 28, Col 9,  Line 28, Col 12, "This expression was expected to have type\n    'int64'    \nbut here has type\n    'float'    ")
         ]
 

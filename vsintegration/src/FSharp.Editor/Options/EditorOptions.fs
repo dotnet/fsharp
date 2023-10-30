@@ -88,7 +88,6 @@ type LanguageServicePerformanceOptions =
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
-        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
@@ -103,7 +102,6 @@ type LanguageServicePerformanceOptions =
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
-            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]
@@ -114,7 +112,7 @@ type AdvancedOptions =
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
-        IsLiveBuffersEnabled: bool
+        IsUseLiveBuffersEnabled: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
     }
@@ -126,7 +124,7 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
-            IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
         }

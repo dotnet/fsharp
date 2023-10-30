@@ -106,15 +106,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Capture identifiers while parsing.
-        /// </summary>
-        public static string Capture_Identifiers_When_Parsing {
-            get {
-                return ResourceManager.GetString("Capture_Identifiers_When_Parsing", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
@@ -187,7 +178,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for analysis (restart required).
         /// </summary>
         public static string Enable_Live_Buffers {
             get {
@@ -340,7 +331,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Live Buffers (experimental).
+        ///   Looks up a localized string similar to Live Buffers.
         /// </summary>
         public static string LiveBuffers {
             get {

@@ -21,7 +21,7 @@ namespace N
             else (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -50,7 +50,7 @@ namespace N
             | _ -> (fact (n - 1) (mul n acc)) + 23
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -81,7 +81,7 @@ namespace N
                 r + 23
         """
         |> FSharp
-        |> withLangVersionPreview        
+        |> withLangVersion80        
         |> compile
         |> shouldFail
         |> withResults [
@@ -115,7 +115,7 @@ namespace N
         r |> ignore
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -150,7 +150,7 @@ namespace N
             bar (x - 1)         // OK: tail-recursive call.
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -179,7 +179,7 @@ namespace N
                 member this.InnerCMeth x = this.InnerCMeth x + 23
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -216,7 +216,7 @@ namespace N
         c.M1()
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -239,7 +239,7 @@ namespace N
                 this.M1()     // ok
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -262,7 +262,7 @@ namespace N
                 this.M1() + 2    // should warn
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -310,7 +310,7 @@ namespace N
         fact 100000 1 |> ignore
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -330,7 +330,7 @@ namespace N
         }
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -357,7 +357,7 @@ namespace N
         }
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -387,7 +387,7 @@ namespace N
         let a: seq<int> = f 10
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -408,7 +408,7 @@ namespace N
         let a: Async<int> = f 10
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -426,7 +426,7 @@ namespace N
         }
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -463,7 +463,7 @@ namespace N
         M.M2.m2func()
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -483,7 +483,7 @@ namespace N
             let m2func() = 2 + M1.m1func()
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -515,7 +515,7 @@ namespace N
         let run() = let mutable x = 0 in foo(&x)
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -567,7 +567,7 @@ namespace N
             }
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         
@@ -626,7 +626,7 @@ namespace N
                 CheckDefnInModule cenv env mspec
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -680,7 +680,7 @@ namespace N
             else 28
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -720,7 +720,7 @@ namespace N
                 foldBackOpt f m a
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -754,7 +754,7 @@ namespace N
                  loop xs
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -775,7 +775,7 @@ namespace N
                 head :: tail
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -802,7 +802,7 @@ namespace N
             | x :: xs -> (x + 1) :: addOne xs
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -829,7 +829,7 @@ namespace N
             | x :: xs -> addOne xs ((x + 1) :: acc)
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -851,7 +851,7 @@ namespace N
             | Node (l, r) -> System.Math.Max(findMax l, findMax r)
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -884,6 +884,37 @@ namespace N
               Message =
                 "The member or function 'findMax' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for non tail-rec traversal with List.collect`` () =
+        """
+namespace N
+
+    module M =
+    
+        type Tree =
+        | Leaf of int
+        | Node of Tree list
+
+        [<TailCall>]
+        let rec loop tree =
+            match tree with
+            | Leaf n -> [ n ]
+            | Node branches -> branches |> List.collect loop
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 14
+                        StartColumn = 57
+                        EndLine = 14
+                        EndColumn = 61 }
+              Message =
+                "The member or function 'loop' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda`` () =
@@ -908,7 +939,7 @@ namespace N
                 )
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -935,7 +966,7 @@ namespace N
                     |> finalContinuation)
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -967,7 +998,7 @@ namespace N
             | _ -> failwith "Nodes with lists longer than 2 are not supported"
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -1004,7 +1035,7 @@ namespace N
                 Continuation.sequence continuations finalContinuation
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -1042,6 +1073,6 @@ module M =
                 }
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed

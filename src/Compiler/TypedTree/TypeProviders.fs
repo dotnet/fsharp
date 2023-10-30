@@ -1174,7 +1174,7 @@ let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespac
         match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
         | Tainted.Null -> None
         | Tainted.NonNull ty -> Some ty
-    with e -> 
+    with RecoverableException e -> 
         errorRecovery e m
         None
 
