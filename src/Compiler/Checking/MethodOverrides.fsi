@@ -81,9 +81,9 @@ exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option 
 type OverrideInfoKind =
     | OverrideInfo of overrideInfo: OverrideInfo list
     | OverrideInfoWithValRef of (ValRef option * OverrideInfo) list
-    
+
     member OverrideInfoValRef: (ValRef option * OverrideInfo) list
-    
+
     member OverrideInfos: OverrideInfo list
 
 module DispatchSlotChecking =
