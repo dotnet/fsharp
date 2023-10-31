@@ -191,7 +191,7 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     |> shouldFail
     |> withDiagnostics [ 
         Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope." 
-        Error 3583, Line 3, Col 77, Line 3, Col 80, "The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'." ]
+        Error 3583, Line 3, Col 77, Line 3, Col 80, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'" ]
         
 [<Fact>]
 let ``Anonymous unary function shorthand with conflicting wild argument`` () =

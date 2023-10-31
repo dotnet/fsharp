@@ -1113,8 +1113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
-        <source>The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</source>
-        <target state="new">The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</target>
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
