@@ -32,7 +32,8 @@ type OverrideInfo =
         argTypes: TType list list *
         returnType: TType option *
         isFakeEventProperty: bool *
-        isCompilerGenerated: bool
+        isCompilerGenerated: bool *
+        isInstance: bool
 
     member ArgTypes: TType list list
 
@@ -41,6 +42,8 @@ type OverrideInfo =
     member CanImplement: OverrideCanImplement
 
     member IsCompilerGenerated: bool
+
+    member IsInstance: bool
 
     member IsFakeEventProperty: bool
 
@@ -78,14 +81,6 @@ exception TypeIsImplicitlyAbstract of range
 
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * ImportMap * range
 
-type OverrideInfoKind =
-    | OverrideInfo of overrideInfo: OverrideInfo list
-    | OverrideInfoWithValRef of (ValRef option * OverrideInfo) list
-
-    member OverrideInfoValRef: (ValRef option * OverrideInfo) list
-
-    member OverrideInfos: OverrideInfo list
-
 module DispatchSlotChecking =
     /// Format the signature of an override as a string as part of an error message
     val FormatOverride: denv: DisplayEnv -> d: OverrideInfo -> string
@@ -121,7 +116,7 @@ module DispatchSlotChecking =
         reqdTy: TType *
         dispatchSlots: RequiredSlot list *
         availPriorOverrides: OverrideInfo list *
-        overrides: OverrideInfoKind ->
+        overrides: OverrideInfo list ->
             bool
 
     /// Check all implementations implement some dispatch slot.

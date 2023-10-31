@@ -948,10 +948,44 @@ module StaticAbstractBug =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 14, Col 25, Line 14, Col 33, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 16, Col 25, Line 16, Col 34, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 17, Col 25, Line 17, Col 34, "No abstract or interface member was found that corresponds to this override")
+            (Error 17, Line 12, Col 22, Line 12, Col 29, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 14, Col 25, Line 14, Col 33, "The member 'get_Property: unit -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 16, Col 25, Line 16, Col 34, "The member 'get_Property3: unit -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 17, Col 25, Line 17, Col 34, "The member 'set_Property3: int -> unit' does not have the correct type to override the corresponding abstract method.")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        static abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute() = false
+            member this.Property = 0
+            member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 358, Line 10, Col 19, Line 10, Col 29, "The override for 'Execute: unit -> unit' was ambiguous")
+            (Error 358, Line 10, Col 19, Line 10, Col 29, "The override for 'get_Property: unit -> int' was ambiguous")
+            (Error 3213, Line 11, Col 22, Line 11, Col 29, "The member 'Execute: unit -> unit' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Execute: unit -> bool
+   Execute: unit -> unit.");
+            (Error 3213, Line 14, Col 25, Line 14, Col 33, "The member 'get_Property: unit -> bool' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   get_Property: unit -> int
+   get_Property: unit -> int.")
          ]
          
     [<Fact>]
@@ -980,10 +1014,47 @@ module StaticAbstractBug =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 15, Col 21, Line 15, Col 29, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 17, Col 21, Line 17, Col 30, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 18, Col 21, Line 18, Col 30, "No abstract or interface member was found that corresponds to this override")
+            (Error 17, Line 14, Col 18, Line 14, Col 23, "The member 'Other: int -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 15, Col 21, Line 15, Col 29, "The member 'get_Property: unit -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 17, Col 21, Line 17, Col 30, "The member 'get_Property3: unit -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 18, Col 21, Line 18, Col 30, "The member 'set_Property3: int -> unit' does not have the correct type to override the corresponding abstract method.")
+         ]
+
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+       abstract Other : int -> bool
+       static abstract member Property: int
+       abstract member Property: bool
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        member _.Other(value) = value = 1
+        member this.Property = 0
+        member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 358, Line 12, Col 17, Line 12, Col 28, "The override for 'Other: int -> int' was ambiguous")
+            (Error 358, Line 12, Col 17, Line 12, Col 28, "The override for 'get_Property: unit -> int' was ambiguous")
+            (Error 3213, Line 14, Col 18, Line 14, Col 23, "The member 'Other: int -> int' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Other: int -> bool
+   Other: int -> int.")
+            (Error 3213, Line 16, Col 21, Line 16, Col 29, "The member 'get_Property: unit -> int' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   get_Property: unit -> bool
+   get_Property: unit -> int.")
          ]
 
     [<Fact>]
@@ -1012,12 +1083,12 @@ module StaticAbstractBug =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
-            (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
+            (Error 17, Line 17, Col 25, Line 17, Col 32, "The member 'Execute: unit -> int' does not have the correct type to override the corresponding abstract method.")
+            (Error 17, Line 13, Col 25, Line 13, Col 32, "The member 'Execute: unit -> int' does not have the correct type to override the corresponding abstract method.")
          ]
          
     [<Fact>]
-    let ``IWSAM not supported in object expressions`` () =
+    let ``Produce an error when one leaves out keyword "static" when implementing IWSAM in an object expression`` () =
         Fsx """
 module StaticAbstractBug =
     type IOperation =
@@ -1026,12 +1097,15 @@ module StaticAbstractBug =
         
     let objExpr =
         { new IOperation with
-            member this.Execute() = ()
+            member Execute() = ()
             member _.Execute2() = () }
         """
-         |> withOptions [ "--nowarn:3535" ]
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> typecheck
          |> shouldFail
-         |> withWarningCode 3536
-         |> withDiagnosticMessage """'IOperation' is normally used as a type constraint in generic code, e.g. "'T when ISomeInterface<'T>" or "let f (x: #ISomeInterface<_>)". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn "3536"' or '--nowarn:3536'."""
+         |> withDiagnostics [
+            (Error 673, Line 9, Col 20, Line 9, Col 27, "This instance member needs a parameter to represent the object being invoked. Make the member static or use the notation 'member x.Member(args) = ...'.")
+            (Error 17, Line 9, Col 20, Line 9, Col 27, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method.")
+            (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
+         ]
