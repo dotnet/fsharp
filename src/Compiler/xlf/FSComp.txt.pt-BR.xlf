@@ -1112,6 +1112,11 @@
         <target state="translated">Essa expressão de registro copiar e atualizar altera todos os campos do tipo de registro '{0}'. Considere usar a sintaxe de construção de registro em vez disso.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</source>
+        <target state="new">The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">A sintaxe 'expr1[expr2]' é usada para indexação. Considere adicionar uma anotação de tipo para habilitar a indexação ou, se chamar uma função, adicione um espaço, por exemplo, 'expr1 [expr2]'.</target>

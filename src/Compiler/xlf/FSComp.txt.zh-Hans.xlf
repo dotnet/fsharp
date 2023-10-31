@@ -1112,6 +1112,11 @@
         <target state="translated">此复制和更新记录表达式更改记录类型“{0}”的所有字段。请考虑改用记录构造语法。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</source>
+        <target state="new">The underscore dot lambda shorthand syntax is not supported for this expression. It is only supported for atomic expressions following the implied _ argument , e.g. 'let f = _.Length'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">语法“expr1[expr2]”用于索引。考虑添加类型批注来启用索引，或者在调用函数添加空格，例如“expr1 [expr2]”。</target>
