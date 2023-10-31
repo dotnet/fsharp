@@ -9212,7 +9212,13 @@ and GenMethodForBinding
                             if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
                                 mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
                             else // We want to get potential fixups and hidebysig for abstract statics:
-                                let flagFixups = [ fixupStaticAbstractSlotFlags ]
+                                let flagFixups =
+                                    [
+                                        fixupStaticAbstractSlotFlags
+                                        match ComputeMethodImplNameFixupForMemberBinding cenv v with
+                                        | Some nm -> renameMethodDef nm
+                                        | None -> ()
+                                    ]
 
                                 let mdef =
                                     mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
