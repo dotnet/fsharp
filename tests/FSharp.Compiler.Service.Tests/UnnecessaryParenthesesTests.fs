@@ -44,7 +44,7 @@ let nestedUnneededParens =
     ]
 
 [<Theory; TestCaseSource(nameof nestedUnneededParens)>]
-let ``Results returned for nested, potentually mutually-exclusive, unnecessary parentheses`` src =
+let ``Results returned for nested, potentially mutually-exclusive, unnecessary parentheses`` src =
     task {
         let ast = getParseResults src
         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses (fun _ -> src) ast
