@@ -243,6 +243,42 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         Assert.Equal(1, errors.Length)
         Assert.True(errors.[0].ToString().EndsWith(error))
 
+    [<Fact>]
+    member _.``#i with a relative path``() =
+        let tmpPath = Path.GetTempPath()
+#if NETSTANDARD
+        let td = Directory.CreateTempSubdirectory()
+#else
+        let td = Path.Combine [| tmpPath; Guid.NewGuid().ToString() |] |> Directory.CreateDirectory
+#endif
+        let prevDir = Environment.CurrentDirectory
+        Environment.CurrentDirectory <- tmpPath
+        try
+            let code = $"#i \"nuget:\" __SOURCE_DIRECTORY__ \"\"\"{Path.DirectorySeparatorChar}{td.Name}\"\"\""
+            use script = new FSharpScript()
+            let result, errors = script.Eval(code)
+            Assert.Empty(errors)
+        finally
+            Environment.CurrentDirectory <- prevDir
+            Directory.Delete td.FullName
+
+    [<Fact>]
+    member _.``#i with relative path to a non-existing directory``() =
+        let guid = Guid.NewGuid().ToString()
+        let code = $"""#i "nuget:" __SOURCE_DIRECTORY__ "{Path.DirectorySeparatorChar}{guid}" """
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(1, errors.Length)
+        Assert.Matches(".*The source directory .* not found", errors[0].ToString())
+
+    [<Fact>]
+    member _.``#i with a https uri``() =
+        let code = @"#i ""nuget: https://api.nuget.org/v3/index.json"""
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.Empty(errors)
+
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
     [<Fact>]

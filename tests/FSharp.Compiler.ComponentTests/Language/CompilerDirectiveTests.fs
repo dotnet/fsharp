@@ -24,6 +24,14 @@ module ``Test Compiler Directives`` =
             |> shouldFail
             |> withSingleDiagnostic (Warning 213, Line 2, Col 1, Line 2, Col 10, "'' is not a valid assembly name")
 
+    [<Fact>]
+    let ``#i works with __SOURCE_DIRECTORY__ and string literals`` () =
+        Fsx """
+#i "nuget:" __SOURCE_DIRECTORY__
+        """
+        |> compile
+        |> shouldSucceed
+
 module ``Test compiler directives in FSI`` =
     [<Fact>]
     let ``r# "" is invalid`` () =
@@ -33,3 +41,11 @@ module ``Test compiler directives in FSI`` =
             |> eval
             |> shouldFail
             |> withSingleDiagnostic (Error 2301, Line 2, Col 1, Line 2, Col 6, "'' is not a valid assembly name")
+
+    [<Fact>]
+    let ``#i works with __SOURCE_DIRECTORY__ and string literals`` () =
+        Fsx """
+#i "nuget:" __SOURCE_DIRECTORY__
+        """
+        |> eval
+        |> shouldSucceed
