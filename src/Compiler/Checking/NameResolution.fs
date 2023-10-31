@@ -2618,7 +2618,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
                 // fold the available extension members into the overload resolution
                 let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
-                
+
                 // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
@@ -4057,7 +4057,7 @@ let (|NonOverridable|_|) namedItem =
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
 let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeAppliedArgExpr =
-    let inline resolveExpr findFlag =
+    let resolveExpr findFlag =
         let resInfo, item, rest =
             match lid with
             | id :: rest ->

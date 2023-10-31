@@ -186,8 +186,6 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
-
-                // F# preview next
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
             ]
 

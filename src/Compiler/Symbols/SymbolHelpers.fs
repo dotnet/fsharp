@@ -408,8 +408,6 @@ module internal SymbolHelpers =
 
               //| _ -> false
 
-        
-                
           member x.Equals(item1, item2) = 
             // This may explore assemblies that are not in the reference set.
             // In this case just bail out and assume items are not equal
