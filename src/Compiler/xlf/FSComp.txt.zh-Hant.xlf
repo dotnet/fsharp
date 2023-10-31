@@ -6153,8 +6153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">縮排可能不正確: 這個語彙基元於內容的位置 {0} 處開始越位。請嘗試進一步縮排這個語彙基元，或使用標準的格式設定慣例。</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="needs-review-translation">縮排可能不正確: 這個語彙基元於內容的位置 {0} 處開始越位。請嘗試進一步縮排這個語彙基元，或使用標準的格式設定慣例。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">

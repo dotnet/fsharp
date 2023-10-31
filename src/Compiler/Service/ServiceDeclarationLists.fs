@@ -1139,10 +1139,10 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             |> RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
                 // RFC-1137
-                // we do not solely group by item name but also add Kind, 
-                // due to not desiring to merge Property and Method bearing same name
-                // (from type extension or extension methods).
-                x.Kind,
+                // we do not solely group by item name but also add a discriminator 
+                // derived from Kind, due to not desiring to merge Property and 
+                // extension Method bearing same name.
+                (match x.Kind with | CompletionItemKind.Method(isExtension=true) -> Some x.Kind | _ -> None),
                 match x.Unresolved with
                 | Some u -> 
                     match u.Namespace with
