@@ -252,8 +252,7 @@ module EditorOptionsExtensions =
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
 
-        member this.IsFsharpRemoveParensEnabled =
-            this.EditorOptions.CodeFixes.RemoveParens
+        member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors
