@@ -31,6 +31,8 @@
 
                         <CheckBox x:Name="suggestNamesForErrors" IsChecked="{Binding SuggestNamesForErrors}"
                                   Content="{x:Static local:Strings.Suggest_names_for_errors_code_fix}"/>
+                        <CheckBox x:Name="removeParens" IsChecked="{Binding RemoveParens}"
+                                  Content="{x:Static local:Strings.Remove_parens_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

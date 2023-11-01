@@ -385,6 +385,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove unnecessary parentheses (experimental, might affect typing performance).
+        /// </summary>
+        public static string Remove_parens_code_fix {
+            get {
+                return ResourceManager.GetString("Remove_parens_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Send additional performance telemetry.
         /// </summary>
         public static string Send_Additional_Telemetry {
