@@ -2142,24 +2142,21 @@ type ILMethodDef
 type MethodDefMap = Map<string, ILMethodDef list>
 
 [<Sealed>]
-type ILMethodDefs(f: unit -> ILMethodDef[]) =
+type ILMethodDefs(f) =
+    inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>(f)
 
-    let mutable array = InlineDelayInit<_>(f)
+    override this.CreateDictionary(arr) =
+        let t = Dictionary(arr.Length)
 
-    let mutable dict =
-        InlineDelayInit<_>(fun () ->
-            let arr = array.Value
-            let t = Dictionary<_, _>()
+        for i = arr.Length - 1 downto 0 do
+            let y = arr[i]
+            let key = y.Name
 
-            for i = arr.Length - 1 downto 0 do
-                let y = arr[i]
-                let key = y.Name
+            match t.TryGetValue key with
+            | true, m -> t[key] <- y :: m
+            | _ -> t[key] <- [ y ]
 
-                match t.TryGetValue key with
-                | true, m -> t[key] <- y :: m
-                | _ -> t[key] <- [ y ]
-
-            t)
+        t
 
     interface IEnumerable with
         member x.GetEnumerator() =
@@ -2167,14 +2164,13 @@ type ILMethodDefs(f: unit -> ILMethodDef[]) =
 
     interface IEnumerable<ILMethodDef> with
         member x.GetEnumerator() =
-            (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
+            (x.GetArray() :> IEnumerable<ILMethodDef>).GetEnumerator()
 
-    member x.AsArray() = array.Value
-
-    member x.AsList() = array.Value |> Array.toList
+    member x.AsArray() = x.GetArray()
+    member x.AsList() = x.GetArray() |> Array.toList
 
     member x.FindByName nm =
-        match dict.Value.TryGetValue nm with
+        match x.GetDictionary().TryGetValue nm with
         | true, m -> m
         | _ -> []
 
@@ -2830,25 +2826,22 @@ type ILTypeDef
     override x.ToString() = "type " + x.Name
 
 and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
+    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>(f)
 
-    let mutable array = InlineDelayInit<_>(f)
+    override this.CreateDictionary(arr) =
+        let t = Dictionary(arr.Length, HashIdentity.Structural)
 
-    let mutable dict =
-        InlineDelayInit<_>(fun () ->
-            let arr = array.Value
-            let t = Dictionary<_, _>(HashIdentity.Structural)
+        for pre in arr do
+            let key = pre.Namespace, pre.Name
+            t[key] <- pre
 
-            for pre in arr do
-                let key = pre.Namespace, pre.Name
-                t[key] <- pre
+        ReadOnlyDictionary t
 
-            ReadOnlyDictionary t)
+    member x.AsArray() =
+        [| for pre in x.GetArray() -> pre.GetTypeDef() |]
 
-    member _.AsArray() =
-        [| for pre in array.Value -> pre.GetTypeDef() |]
-
-    member _.AsList() =
-        [ for pre in array.Value -> pre.GetTypeDef() ]
+    member x.AsList() =
+        [ for pre in x.GetArray() -> pre.GetTypeDef() ]
 
     interface IEnumerable with
         member x.GetEnumerator() =
@@ -2856,17 +2849,17 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
     interface IEnumerable<ILTypeDef> with
         member x.GetEnumerator() =
-            (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
+            (seq { for pre in x.GetArray() -> pre.GetTypeDef() }).GetEnumerator()
 
-    member _.AsArrayOfPreTypeDefs() = array.Value
+    member x.AsArrayOfPreTypeDefs() = x.GetArray()
 
-    member _.FindByName nm =
+    member x.FindByName nm =
         let ns, n = splitILTypeName nm
-        dict.Value[ (ns, n) ].GetTypeDef()
+        x.GetDictionary().[(ns, n)].GetTypeDef()
 
-    member _.ExistsByName nm =
+    member x.ExistsByName nm =
         let ns, n = splitILTypeName nm
-        dict.Value.ContainsKey((ns, n))
+        x.GetDictionary().ContainsKey((ns, n))
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Namespace: string list
@@ -2876,6 +2869,7 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
     let mutable store: ILTypeDef = Unchecked.defaultof<_>
+    let mutable storage = storage
 
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
@@ -2884,12 +2878,24 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
         member x.GetTypeDef() =
             match box store with
             | null ->
-                match storage with
-                | ILTypeDefStored.Given td ->
-                    store <- td
-                    td
-                | ILTypeDefStored.Computed f -> LazyInitializer.EnsureInitialized<ILTypeDef>(&store, Func<_>(fun () -> f ()))
-                | ILTypeDefStored.Reader f -> LazyInitializer.EnsureInitialized<ILTypeDef>(&store, Func<_>(fun () -> f metadataIndex))
+                let syncObj = storage
+                Monitor.Enter(syncObj)
+
+                try
+                    match box store with
+                    | null ->
+                        let value =
+                            match storage with
+                            | ILTypeDefStored.Given td -> td
+                            | ILTypeDefStored.Computed f -> f ()
+                            | ILTypeDefStored.Reader f -> f metadataIndex
+
+                        store <- value
+                        storage <- Unchecked.defaultof<_>
+                        value
+                    | _ -> store
+                finally
+                    Monitor.Exit(syncObj)
             | _ -> store
 
 and ILTypeDefStored =
