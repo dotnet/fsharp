@@ -882,6 +882,12 @@
   <data name="OverrideDoesntOverride4" xml:space="preserve">
     <value>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</value>
   </data>
+  <data name="OverrideShouldBeStatic" xml:space="preserve">
+    <value> Static member is expected.</value>
+  </data>
+  <data name="OverrideShouldBeInstance" xml:space="preserve">
+    <value> Non-static member is expected.</value>
+  </data>
   <data name="UnionCaseWrongArguments" xml:space="preserve">
     <value>This constructor is applied to {0} argument(s) but expects {1}</value>
   </data>

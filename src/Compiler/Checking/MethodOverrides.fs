@@ -618,7 +618,8 @@ module DispatchSlotChecking =
                 if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
                     errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
             | dispatchSlots -> 
-                match dispatchSlots |> List.filter (fun dispatchSlot -> 
+                match dispatchSlots |> List.filter (fun dispatchSlot ->
+                              (dispatchSlot.IsInstance = overrideBy.IsInstance) &&
                               isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
                 | h1 :: h2 :: _ -> 
@@ -946,7 +947,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
             NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
         | ty, None -> 
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes findFlag bindm ty
-    let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
+    let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot && minfo.IsInstance = memberFlags.IsInstance)
     let valReprSynArities = SynInfo.AritiesOfArgs valSynData
 
     // We only return everything if it's empty or if it's a non-instance member.
@@ -971,4 +972,3 @@ let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberNam
         
     let dispatchSlots = pinfos |> List.filter (fun pinfo -> pinfo.IsVirtualProperty)
     dispatchSlots
-
