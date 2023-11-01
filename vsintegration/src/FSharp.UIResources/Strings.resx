@@ -285,4 +285,7 @@
   <data name="Background_analysis" xml:space="preserve">
     <value>Background analysis</value>
   </data>
+  <data name="Remove_parens_code_fix" xml:space="preserve">
+    <value>Remove unnecessary parentheses (experimental, might affect typing performance)</value>
+  </data>
 </root>

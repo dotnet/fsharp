@@ -16,7 +16,13 @@ module private TopLevel =
 
     let private tryFix (code: string) =
         cancellableTask {
-            let document = Document.create Auto code
+            let mode =
+                WithSettings
+                    { CodeFixesOptions.Default with
+                        RemoveParens = true
+                    }
+
+            let document = Document.create mode code
             let sourceText = SourceText.From code
 
             let! diagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
