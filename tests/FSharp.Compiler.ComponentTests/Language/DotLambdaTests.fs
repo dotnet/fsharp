@@ -26,7 +26,7 @@ let lambdaWhichAlwaysReturnsThree = _.3"""
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withErrorCodes [3583]
+    |> withErrorCodes [3584]
 
 [<Fact>]
 let ``Bug - bigger paranthesized expressions are not part of this feature`` () =
@@ -35,7 +35,7 @@ let neverEndingLambda = _.(while true do ())"""
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withErrorCodes [3583]
+    |> withErrorCodes [3584]
 
 [<Theory>]
 [<InlineData("_.3")>]
@@ -57,7 +57,7 @@ let ``Bug - all of these should be an error`` (code:string) =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withErrorCodes [3583]
+    |> withErrorCodes [3584]
 
 [<Fact>]
 let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
@@ -191,7 +191,7 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     |> shouldFail
     |> withDiagnostics [ 
         Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope." 
-        Error 3583, Line 3, Col 77, Line 3, Col 80, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'." ]
+        Error 3584, Line 3, Col 77, Line 3, Col 80, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'." ]
         
 [<Fact>]
 let ``Anonymous unary function shorthand with conflicting wild argument`` () =
