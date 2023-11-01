@@ -1557,6 +1557,11 @@
         <target state="translated">'return'이 아니라 'return!'를 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="new">Parentheses can be removed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unsupportedAttribute">
         <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
         <target state="translated">이 특성은 현재 F# 컴파일러에서 지원되지 않습니다. 이 특성을 적용해도 의도한 효과를 얻을 수 없습니다.</target>
