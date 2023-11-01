@@ -10,16 +10,56 @@ open System.Runtime.InteropServices
 
 [<Theory>]
 [<InlineData(":int")>]
-[<InlineData(" :int")>]
-[<InlineData(" : int")>]
-[<InlineData(" :    int")>]
-let ``Refactor removes explicit return type`` (toRemove: string) =
+[<InlineData(":System.float")>]
+let ``Removes explicit return type`` (toRemove: string) =
     task {
         let symbolName = "sum"
 
         let code =
             $"""
             let sum a b {toRemove}= a + b
+            """
+
+        use context = TestContext.CreateWithCode code
+        let spanStart = code.IndexOf symbolName
+
+        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+
+        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
+    }
+
+[<Theory>]
+[<InlineData(" :int")>]
+[<InlineData(" : int")>]
+[<InlineData(" :    int")>]
+let ``Empty Space doesnt matter`` (toRemove: string) =
+    task {
+        let symbolName = "sum"
+
+        let code =
+            $"""
+            let sum a b {toRemove}= a + b
+            """
+
+        use context = TestContext.CreateWithCode code
+        let spanStart = code.IndexOf symbolName
+
+        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+
+        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
+    }
+
+[<Theory>]
+[<InlineData("(a:int) (b:int) :int")>]
+[<InlineData("(a:System.float) (b:int) :System.float")>]
+let ``Different Formatting`` (functionHeader: string) =
+    task {
+        let symbolName = "sum"
+
+        let code =
+            $"""
+            let sum {functionHeader}=
+                a + b
             """
 
         use context = TestContext.CreateWithCode code

@@ -27,7 +27,9 @@ open NUnit.Framework
 
 let GetSymbol (symbolName: string) (document: Document) ct =
     task {
-        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
+        let! (_, checkFileResults) =
+            document.GetFSharpParseAndCheckResultsAsync symbolName
+            |> CancellableTask.start ct
 
         let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
         let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
@@ -41,7 +43,9 @@ let GetSymbol (symbolName: string) (document: Document) ct =
 
 let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
     task {
-        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "test" |> CancellableTask.start ct
+        let! (_, checkFileResults) =
+            document.GetFSharpParseAndCheckResultsAsync symbolName
+            |> CancellableTask.start ct
 
         let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
         let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
@@ -55,7 +59,7 @@ let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
 
 let TryGetRangeOfExplicitReturnType (symbolName: string) (document: Document) ct =
     task {
-        let! parseFileResults = document.GetFSharpParseResultsAsync "DoesntMatter" ct
+        let! parseFileResults = document.GetFSharpParseResultsAsync symbolName ct
         let! symbol = GetSymbol symbolName document ct
 
         let range =
@@ -91,7 +95,7 @@ let AssertHasSpecificExplicitReturnType (symbolName: string) (expectedTypeName: 
 
 let AssertHasNoExplicitReturnType (symbolName: string) (document: Document) ct =
     task {
-        let! parseFileResults = document.GetFSharpParseResultsAsync "DoesntMatter" ct
+        let! parseFileResults = document.GetFSharpParseResultsAsync symbolName ct
         let! symbol = GetSymbol symbolName document ct
 
         let range =

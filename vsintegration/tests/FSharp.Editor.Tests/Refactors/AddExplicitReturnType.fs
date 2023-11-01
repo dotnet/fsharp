@@ -73,6 +73,91 @@ let ``Correctly infer int as explicit return type`` () =
         do! AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
     }
 
+[<Theory>]
+[<InlineData("(a:float) (b:int)", "float")>]
+[<InlineData("a:int b:int", "int")>]
+let ``Infer explicit return type`` (functionHeader: string) (returnType: string) =
+    task {
+
+        let symbolName = "sum"
+
+        let code =
+            $"""
+            let sum {functionHeader}= a + b
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf(symbolName)
+
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+        do Assert.NotNull(code)
+        do! AssertHasSpecificExplicitReturnType symbolName returnType newDoc context.CT
+    }
+
+[<Fact>]
+let ``Infer on rec method`` () =
+    task {
+
+        let symbolName = "fib"
+
+        let code =
+            $"""
+            let rec fib n =
+            if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf symbolName
+
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+        do! AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    }
+
+[<Fact>]
+let ``Infer with function parameter method`` () =
+    task {
+
+        let symbolName = "apply1"
+
+        let code =
+            $"""
+            let apply1 (transform: int -> int) y = transform y
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf symbolName
+
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+        do! AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    }
+
+[<Fact>]
+let ``Infer on member function`` () =
+    task {
+
+        let symbolName = "SomeMethod"
+
+        let code =
+            $"""
+            type SomeType(factor0: int) =
+            let factor = factor0
+            member this.SomeMethod(a, b, c) = (a + b + c) * factor
+            """
+
+        use context = TestContext.CreateWithCode code
+
+        let spanStart = code.IndexOf symbolName
+
+        let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+        do! AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    }
+
 [<Fact>]
 let ``Correctly infer custom type that is declared earlier in file`` () =
     task {
