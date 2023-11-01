@@ -1574,7 +1574,7 @@ let _ = Threading.Buzz = null
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual
-        // note: these "System" symbol uses are not duplications because each of them corresponds to different namespaces
+        // note: these "System" and "Threading" symbol uses are not duplications because each of them corresponds to different namespaces
         [|("System", (2, 5, 2, 11))
           ("Threading", (2, 12, 2, 21))
           ("System", (3, 5, 3, 11))
