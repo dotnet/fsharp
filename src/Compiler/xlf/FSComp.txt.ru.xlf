@@ -1252,6 +1252,11 @@
         <target state="translated">Для использования методов с "NoEagerConstraintApplicationAttribute" требуется /langversion:6.0 или более поздняя версия</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">Это выражение поддерживает индексирование, например, "expr. [index]". Для синтаксиса "expr[index]" требуется /langversion:preview. См. https://aka.ms/fsharp-index-notation.</target>
