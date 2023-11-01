@@ -81,6 +81,19 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
             (Error 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
             (Error 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
+        ]
+        
+    // SOURCE=E_AttributeTargets01.fs					# E_AttributeTargets01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets01.fs"|])>]
+    let ``E_AttributeTargets01_fs preview lang`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
+            (Error 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
+            (Error 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
             (Error 842, Line 18, Col 7, Line 18, Col 8, "This attribute is not valid for use on this language element")
             (Error 842, Line 38, Col 3, Line 38, Col 13, "This attribute is not valid for use on this language element")
         ]

@@ -6820,7 +6820,7 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
 
     let CheckedBindingInfo(inlineFlag, bindingAttribs, _, _, ExplicitTyparInfo(_, declaredTypars, _), nameToPrelimValSchemeMap, rhsExpr, _, _, m, _, _, _, _), tpenv =
         let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv bind
-        TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind None
+        TcNormalizedBinding ObjectExpressionOverrideBinding cenv env tpenv bindingTy None NoSafeInitInfo ([], explicitTyparInfo) bind
 
     // 4c. generalize the binding - only relevant when implementing a generic virtual method
 
@@ -10458,7 +10458,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
-and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind (attrTgt: AttributeTargets option)  =
+and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind  =
 
     let g = cenv.g
 
@@ -10488,9 +10488,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let envinner = {envinner with eCallerMemberName = callerName }
 
         let attrTgt =
-            match attrTgt with
-            | Some v -> v
-            | None -> declKind.AllowedAttribTargets memberFlagsOpt
+            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnLetValues) then
+                match pat, rhsExpr with
+                | SynPat.Named _ , SynExpr.Lambda _ -> declKind.AllowedAttribTargets memberFlagsOpt
+                | SynPat.Named _, _ -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | _ -> declKind.AllowedAttribTargets memberFlagsOpt
+            else
+                declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
@@ -10770,20 +10774,10 @@ and TcNonRecursiveBinding (declKind: DeclKind) cenv env tpenv ty binding =
             warning(Error(FSComp.SR.tcInfoIfFunctionShadowsUnionCase(), headPatRange))
         | _ -> ()
     | _ -> ()
-
-    let attrTgt =
-        match binding with
-        | SynBinding(headPat = pat; expr= rhsExpr) ->
-            match pat with
-            | SynPat.Named _ | SynPat.As _ ->
-                match rhsExpr with
-                | SynExpr.Lambda _ -> None
-                | _ -> Some(AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue)
-            | _ -> None
         
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
-    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding attrTgt
+    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
 
 //-------------------------------------------------------------------------
 // TcAttribute*
@@ -11825,7 +11819,7 @@ and TcLetrecBinding
     let envRec = MakeInnerEnvForMember envRec vspec
 
     let checkedBind, tpenv =
-        TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, explicitTyparInfo) rbind.SyntacticBinding None
+        TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, explicitTyparInfo) rbind.SyntacticBinding
 
     (try UnifyTypes cenv envRec vspec.Range (allDeclaredTypars +-> tau) vspec.Type
      with e -> error (Recursion(envRec.DisplayEnv, vspec.Id, tau, vspec.Type, vspec.Range)))
