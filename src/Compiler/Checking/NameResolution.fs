@@ -2364,6 +2364,11 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 // Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
 let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl notifySink =
     if first && id.idText = MangledGlobalName then
@@ -2432,7 +2437,7 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
             modrefs
             |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
-                    if notifySink then
+                    if notifySink = ShouldNotifySink.Yes then
                         notifyNameResolution modref id.idRange
                     look 1 modref rest
                 else
@@ -3068,7 +3073,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl false
+                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl ShouldNotifySink.No
                      (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -3259,7 +3264,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
                         Item.Types (id.idText, [ mkAppTy tcref [] ])
                     | _ ->
-                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false true with
+                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false ShouldNotifySink.Yes with
                         | Result ((_, mref, _) :: _) ->
                             let res = ResolutionInfo.Empty.AddEntity (id.idRange, mref)
                             ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
@@ -3272,7 +3277,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         // Long identifiers in patterns
         else
             let moduleSearch ad () =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false true
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
 
             let tyconSearch ad =
@@ -3495,12 +3500,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         NoResultsOrUsefulErrors
 
             let modulSearch =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false true
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
                 |?> List.concat
 
             let modulSearchFailed() =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false true
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
                 |?> List.concat
 
@@ -3711,7 +3716,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | id2 :: rest2 ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false true
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false ShouldNotifySink.Yes
                     (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let resInfo, item, rest =
@@ -3824,7 +3829,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false true (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
                     fieldId, Item.RecdField rfinfo, restAfterField)
