@@ -63,6 +63,7 @@ type CodeFixesOptions =
         UnusedOpens: bool
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
+        RemoveParens: bool
     }
 
     static member Default =
@@ -73,6 +74,7 @@ type CodeFixesOptions =
             UnusedOpens = true
             UnusedDeclarations = true
             SuggestNamesForErrors = true
+            RemoveParens = false
         }
 
 [<CLIMutable>]
@@ -249,6 +251,9 @@ module EditorOptionsExtensions =
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFsharpRemoveParensEnabled =
+            this.EditorOptions.CodeFixes.RemoveParens
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors

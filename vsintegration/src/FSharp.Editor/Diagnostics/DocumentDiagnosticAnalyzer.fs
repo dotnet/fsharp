@@ -109,9 +109,10 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     errors.Add(diagnostic) |> ignore
 
             let! unnecessaryParentheses =
-                match diagnosticType with
-                | DiagnosticsType.Semantic -> CancellableTask.singleton ImmutableArray.Empty
-                | DiagnosticsType.Syntax -> UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
+                match diagnosticType with                
+                | DiagnosticsType.Syntax when document.Project.IsFsharpRemoveParensEnabled  -> 
+                    UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
+                | _ -> CancellableTask.singleton ImmutableArray.Empty
 
             if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty
