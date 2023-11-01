@@ -262,6 +262,11 @@
         <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnLetValues">
+        <source>Enforce AttributeTargets on let values</source>
+        <target state="new">Enforce AttributeTargets on let values</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">비가상 멤버 재정의에 대한 오류 발생</target>

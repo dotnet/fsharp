@@ -262,6 +262,11 @@
         <target state="translated">noktasız float32 sabit değeri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnLetValues">
+        <source>Enforce AttributeTargets on let values</source>
+        <target state="new">Enforce AttributeTargets on let values</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Sanal olmayan üyelerde geçersiz kılmalar için hatalar oluştur</target>

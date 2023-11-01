@@ -69,6 +69,7 @@ type LanguageFeature =
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    | EnforceAttributeTargetsOnLetValues
 
 /// LanguageVersion management
 type LanguageVersion =

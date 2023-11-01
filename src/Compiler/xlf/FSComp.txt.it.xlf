@@ -262,6 +262,11 @@
         <target state="translated">valore letterale float32 senza punti</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEnforceAttributeTargetsOnLetValues">
+        <source>Enforce AttributeTargets on let values</source>
+        <target state="new">Enforce AttributeTargets on let values</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
         <target state="translated">Genera errori per gli override dei membri non virtuali</target>
