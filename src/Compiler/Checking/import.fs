@@ -512,9 +512,11 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
-        lazy 
+        InterruptibleLazy(fun _ ->
             let cpath = cpath.NestedCompPath nm ModuleOrType
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
+        )
+
     // Add the type itself. 
     Construct.NewILTycon 
         (Some cpath) 
@@ -541,9 +543,9 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
+                let modty = InterruptibleLazy(fun _ -> ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
                 Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
-            (fun (n, info: Lazy<_>) -> 
+            (fun (n, info: InterruptibleLazy<_>) -> 
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
@@ -574,19 +576,21 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
         []
     else
         let ns, n = splitILTypeName exportedType.Name
-        let info = 
-            lazy (match 
+        let info =
+            InterruptibleLazy (fun _ ->
+                match 
                     (try 
                         let modul = auxModLoader exportedType.ScopeRef
                         let ptd = mkILPreTypeDefComputed (ns, n, (fun () -> modul.TypeDefs.FindByName exportedType.Name))
                         Some ptd
                      with :? KeyNotFoundException -> None)
-                    with 
-                  | None -> 
-                     error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
-                  | Some preTypeDef -> 
-                     scoref, preTypeDef)
-              
+                with 
+                | None -> 
+                    error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name), m))
+                | Some preTypeDef -> 
+                    scoref, preTypeDef
+            )
+
         [ ImportILTypeDefList amap m (CompPath(scoref, [])) [] [(ns, (n, info))]  ]
 
 /// Import the "exported types" table for multi-module assemblies. 

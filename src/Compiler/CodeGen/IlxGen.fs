@@ -1160,7 +1160,7 @@ and IlxGenEnv =
         imports: ILDebugImports option
 
         /// All values in scope
-        valsInScope: ValMap<Lazy<ValStorage>>
+        valsInScope: ValMap<InterruptibleLazy<ValStorage>>
 
         /// All witnesses in scope and their mapping to storage for the witness value.
         witnessesInScope: TraitWitnessInfoHashMap<ValStorage>
@@ -1614,7 +1614,7 @@ let rec AddStorageForNonLocalModuleOrNamespaceRef cenv g cloc acc (modref: Modul
 
     let acc =
         (acc, modul.ModuleOrNamespaceType.AllValsAndMembers)
-        ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalVal cenv g cloc modref v)) acc)
+        ||> Seq.fold (fun acc v -> AddStorageForVal g (v, InterruptibleLazy(fun _ -> ComputeStorageForNonLocalVal cenv g cloc modref v)) acc)
 
     acc
 
@@ -1638,7 +1638,8 @@ let AddStorageForExternalCcu cenv g eenv (ccu: CcuThunk) =
             let eref = ERefNonLocalPreResolved ccu.Contents (mkNonLocalEntityRef ccu [||])
 
             (eenv, ccu.Contents.ModuleOrNamespaceType.AllValsAndMembers)
-            ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalVal cenv g cloc eref v)) acc)
+            ||> Seq.fold (fun acc v ->
+                AddStorageForVal g (v, InterruptibleLazy(fun _ -> ComputeStorageForNonLocalVal cenv g cloc eref v)) acc)
 
         eenv
 
@@ -3082,7 +3083,9 @@ and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
         // Once this is lazily-evaluated later, it should not put things in queue. They would not be picked up by anyone.
         let newArgs = change3rdOutOf7 args { eenv with delayCodeGen = false }
 
-        let lazyMethodBody = lazy (CodeGenMethodForExpr cenv mgbuf newArgs)
+        let lazyMethodBody =
+            InterruptibleLazy(fun _ -> CodeGenMethodForExpr cenv mgbuf newArgs)
+
         cenv.delayedGenMethods.Enqueue(fun () -> lazyMethodBody.Force() |> ignore)
         lazyMethodBody
     else
@@ -5861,7 +5864,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
                 GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                 ilParamsOfOverridingMethod,
                 ilReturnOfOverridingMethod,
-                MethodBody.IL(lazy ilMethodBody)
+                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
             )
         // fixup attributes to generate a method impl
         let mdef = if useMethodImpl then fixupMethodImplFlags mdef else mdef
@@ -6410,7 +6413,7 @@ and GenSequenceExpr
             ILMemberAccess.Public,
             [],
             mkILReturn ilCloEnumeratorTy,
-            MethodBody.IL(lazy mbody)
+            MethodBody.IL(InterruptibleLazy.FromValue mbody)
         )
         |> AddNonUserCompilerGeneratedAttribs g
 
@@ -6418,7 +6421,13 @@ and GenSequenceExpr
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
-        mkILNonGenericVirtualInstanceMethod ("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod (
+            "Close",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn ILType.Void,
+            MethodBody.IL(InterruptibleLazy.FromValue ilCode)
+        )
 
     let checkCloseMethod =
         let ilCode =
@@ -6429,7 +6438,7 @@ and GenSequenceExpr
             ILMemberAccess.Public,
             [],
             mkILReturn g.ilg.typ_Bool,
-            MethodBody.IL(lazy ilCode)
+            MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
 
     let generateNextMethod =
@@ -6441,7 +6450,10 @@ and GenSequenceExpr
         let ilReturn = mkILReturn g.ilg.typ_Int32
 
         let ilCode =
-            MethodBody.IL(lazy (CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "GenerateNext", eenvinner, 2, None, generateNextExpr, Return)))
+            MethodBody.IL(
+                InterruptibleLazy(fun _ ->
+                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "GenerateNext", eenvinner, 2, None, generateNextExpr, Return))
+            )
 
         mkILNonGenericVirtualInstanceMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
@@ -6454,7 +6466,7 @@ and GenSequenceExpr
             ILMemberAccess.Public,
             [],
             mkILReturn ilCloSeqElemTy,
-            MethodBody.IL(lazy ilCode)
+            MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
         |> AddNonUserCompilerGeneratedAttribs g
 
@@ -6656,7 +6668,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
                 ilDirectGenericParams,
                 ilDirectWitnessParams,
                 mkILReturn ilCloFormalReturnTy,
-                MethodBody.IL(lazy ilCloBody)
+                MethodBody.IL(InterruptibleLazy.FromValue ilCloBody)
             )
         ]
 
@@ -7072,7 +7084,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod (slotsig, _attribs
                 ILMemberAccess.Assembly,
                 ilDelegeeParams,
                 ilDelegeeRet,
-                MethodBody.IL(lazy ilMethodBody)
+                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
             )
 
     let delegeeCtorMeth =
@@ -10208,7 +10220,9 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                         seqpt
                     ))
 
-                let cctorMethDef = mkILClassCtor (MethodBody.IL(lazy topCode))
+                let cctorMethDef =
+                    mkILClassCtor (MethodBody.IL(InterruptibleLazy.FromValue topCode))
+
                 mgbuf.AddMethodDef(initClassTy.TypeRef, cctorMethDef)
 
         // Final file, implicit entry point. We generate no .cctor.
@@ -10230,7 +10244,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
                         ILMemberAccess.Public,
                         [],
                         mkILReturn ILType.Void,
-                        MethodBody.IL(lazy topCode)
+                        MethodBody.IL(InterruptibleLazy.FromValue topCode)
                     )
 
                 mdef.With(isEntryPoint = true, customAttrs = ilAttrs)
@@ -10241,7 +10255,9 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     | None ->
         if doesSomething then
             // Add the cctor
-            let cctorMethDef = mkILClassCtor (MethodBody.IL(lazy topCode))
+            let cctorMethDef =
+                mkILClassCtor (MethodBody.IL(InterruptibleLazy.FromValue topCode))
+
             mgbuf.AddMethodDef(initClassTy.TypeRef, cctorMethDef)
 
     // Commit the directed initializations
@@ -10459,8 +10475,8 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
     [
         if not g.useReflectionFreeCodeGen then
             match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
-            | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
-              Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
+            | Some (InterruptibleLazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
+              Some (InterruptibleLazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                 // The type returned by the 'sprintf' call
                 let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
 
@@ -10943,11 +10959,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             yield ilMethodDef.WithSpecialName
 
                     if generateDebugDisplayAttribute then
-                        let (|Lazy|) (x: Lazy<_>) = x.Force()
-
                         match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
-                        | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
-                          Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
+                        | Some (InterruptibleLazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
+                          Some (InterruptibleLazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                             // The type returned by the 'sprintf' call
                             let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
                             // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
