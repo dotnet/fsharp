@@ -38,7 +38,7 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
+Use live (unsaved) buffers for analysis</source>
         <target state="new">Block Structure Guides;
 Show structure guidelines for F# code;
 Outlining;
@@ -49,7 +49,7 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);
 Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
@@ -216,6 +216,11 @@ Sottolineatura a trattini;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Rimuovi 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

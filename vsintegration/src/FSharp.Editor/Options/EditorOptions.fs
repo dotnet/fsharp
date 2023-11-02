@@ -63,6 +63,7 @@ type CodeFixesOptions =
         UnusedOpens: bool
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
+        RemoveParens: bool
     }
 
     static member Default =
@@ -73,6 +74,7 @@ type CodeFixesOptions =
             UnusedOpens = true
             UnusedDeclarations = true
             SuggestNamesForErrors = true
+            RemoveParens = false
         }
 
 [<CLIMutable>]
@@ -114,7 +116,7 @@ type AdvancedOptions =
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
-        IsLiveBuffersEnabled: bool
+        IsUseLiveBuffersEnabled: bool
         UseTransparentCompiler: bool
         SendAdditionalTelemetry: bool
         SolutionBackgroundAnalysis: bool
@@ -127,8 +129,8 @@ type AdvancedOptions =
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
-            IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
             UseTransparentCompiler = false
+            IsUseLiveBuffersEnabled = true
             SendAdditionalTelemetry = true
             SolutionBackgroundAnalysis = false
         }
@@ -253,6 +255,8 @@ module EditorOptionsExtensions =
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors

@@ -70,6 +70,7 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
@@ -130,7 +131,7 @@
     <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
     <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
     <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
-    <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\ImplementInterface.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFixes\MissingReference.fs" />
@@ -138,6 +139,7 @@
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
     <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryParentheses.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />

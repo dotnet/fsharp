@@ -114,7 +114,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableParallelReferenceResolution =
                                 editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
+                            let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 

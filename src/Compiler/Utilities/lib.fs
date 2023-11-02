@@ -383,7 +383,7 @@ type Dumper(x:obj) =
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
-    | Lazy of Lazy<'T>
+    | Lazy of InterruptibleLazy<'T>
 
     member this.Value: 'T =
         match this with

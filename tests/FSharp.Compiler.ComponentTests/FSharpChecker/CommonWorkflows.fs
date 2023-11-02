@@ -165,4 +165,4 @@ let GetAllUsesOfAllSymbols() =
     traceProvider.ForceFlush() |> ignore
     traceProvider.Dispose()
 
-    Assert.Equal(80, result.Length)
+    Assert.Equal(79, result.Length)

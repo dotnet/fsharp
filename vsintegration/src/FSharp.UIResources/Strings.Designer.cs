@@ -178,7 +178,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for analysis (restart required).
         /// </summary>
         public static string Enable_Live_Buffers {
             get {
@@ -331,7 +331,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Live Buffers (experimental).
+        ///   Looks up a localized string similar to Live Buffers.
         /// </summary>
         public static string LiveBuffers {
             get {
@@ -381,6 +381,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Project_Performance {
             get {
                 return ResourceManager.GetString("Project_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove unnecessary parentheses (experimental, might affect typing performance).
+        /// </summary>
+        public static string Remove_parens_code_fix {
+            get {
+                return ResourceManager.GetString("Remove_parens_code_fix", resourceCulture);
             }
         }
         

@@ -1402,7 +1402,12 @@ type internal BackgroundCompiler
 
         lock gate (fun () ->
             options
-            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)))
+            |> Seq.iter (fun options ->
+                incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)
+
+                parseCacheLock.AcquireLock(fun ltok ->
+                    for sourceFile in options.SourceFiles do
+                        checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options)))))
 
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, userOpName) =
         use _ =

@@ -608,6 +608,104 @@ extends [runtime]System.Object
   }"""]
 
     [<Test>]
+    let ``Cli events are emitted even for CliEvent members which are not last in a file`` () = 
+        FSharp """
+module LibraryWithTwoClassesAndTwoEvents
+open System
+
+let event = new DelegateEvent<EventHandler<EventArgs>>()
+type MyClass() =
+    [<CLIEvent>]
+    member this.EventFromFirstType = event.Publish
+
+let event2 = new DelegateEvent<EventHandler<EventArgs>>()
+type MyClass2() =
+    [<CLIEvent>]
+    member this.EventFromSecondType = event2.Publish
+"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class auto ansi serializable nested public MyClass 
+        extends [runtime]System.Object
+{
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+.method public specialname rtspecialname 
+        instance void  .ctor() cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  add_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  remove_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.event class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> EventFromFirstType
+{
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CLIEventAttribute::.ctor() = ( 01 00 00 00 ) 
+    .addon instance void LibraryWithTwoClassesAndTwoEvents/MyClass::add_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+    .removeon instance void LibraryWithTwoClassesAndTwoEvents/MyClass::remove_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+} 
+} 
+    
+.class auto ansi serializable nested public MyClass2
+        extends [runtime]System.Object
+{
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+.method public specialname rtspecialname 
+        instance void  .ctor() cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  add_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  remove_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.event class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> EventFromSecondType
+{
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CLIEventAttribute::.ctor() = ( 01 00 00 00 ) 
+    .addon instance void LibraryWithTwoClassesAndTwoEvents/MyClass2::add_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+    .removeon instance void LibraryWithTwoClassesAndTwoEvents/MyClass2::remove_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+""" ]
+
+    [<Test>]
     let ``Properties are emitted for CliMutable records`` () = 
         FSharp """
 namespace ReferenceAssembly

@@ -501,7 +501,7 @@ let private p_lazy_impl p v st =
     st.os.FixupInt32 fixupPos7 ovalsIdx2
 
 let p_lazy p x st =
-    p_lazy_impl p (Lazy.force x) st
+    p_lazy_impl p (InterruptibleLazy.force x) st
 
 let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
@@ -604,7 +604,7 @@ let u_lazy u st =
     res
 #else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
-    Lazy.CreateFromValue(u st)
+    InterruptibleLazy.FromValue(u st)
 #endif
 
 
