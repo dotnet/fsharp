@@ -1104,6 +1104,7 @@ module StaticAbstractBug =
         static member Property3 = 0
         static member Property3 with set value = ()
         """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> typecheck
          |> shouldFail
@@ -1129,6 +1130,7 @@ module StaticAbstractBug =
             static member Property = 0
             static member Property = false
         """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> typecheck
          |> shouldFail
