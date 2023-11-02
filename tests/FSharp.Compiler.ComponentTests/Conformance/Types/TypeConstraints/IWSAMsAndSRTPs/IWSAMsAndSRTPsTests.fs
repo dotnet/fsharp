@@ -923,7 +923,7 @@ let main _ =
         |> compile
         |> shouldSucceed
         
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
         Fsx """
 module StaticAbstractBug =
@@ -1083,7 +1083,7 @@ module StaticAbstractBug =
             (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
          ]
          
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Produces errors when includes keyword "static" when implementing a non generic interface in a type`` () =
         Fsx """
 module StaticAbstractBug =
@@ -1113,7 +1113,7 @@ module StaticAbstractBug =
              (Error 3855, Line 14, Col 23, Line 14, Col 28, "No static abstract member was found that corresponds to this override")
          ]
          
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Produces errors when includes keyword "static" when implementing an interface in a type`` () =
         Fsx """
 module StaticAbstractBug =
