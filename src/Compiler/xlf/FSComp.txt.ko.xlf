@@ -8273,8 +8273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">예외를 생성할 수 있는 코드 블록을 지정하는 데 사용됩니다. with 또는 finally와 함께 사용됩니다.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">예외를 생성할 수 있는 코드 블록을 지정하는 데 사용됩니다. with 또는 finally와 함께 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

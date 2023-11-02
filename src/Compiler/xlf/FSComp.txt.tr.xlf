@@ -8273,8 +8273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Özel durum oluşturabilen bir kod bloğunu tanıtmak için kullanılır. with veya finally ile birlikte kullanılır.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">Özel durum oluşturabilen bir kod bloğunu tanıtmak için kullanılır. with veya finally ile birlikte kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

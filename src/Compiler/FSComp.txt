@@ -1462,7 +1462,7 @@ keywordDescriptionStatic,"Used to indicate a method or property that can be call
 keywordDescriptionStruct,"Used to declare a structure type. Also used in generic parameter constraints."
 keywordDescriptionThen,"Used in conditional expressions. Also used to perform side effects after object construction."
 keywordDescriptionTo,"Used in for loops to indicate a range."
-keywordDescriptionTry,"Used to introduce a block of code that might generate an exception. Used together with with or finally."
+keywordDescriptionTry,"Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'."
 keywordDescriptionType,"Used to declare a class, record, structure, discriminated union, enumeration type, unit of measure, or type abbreviation."
 keywordDescriptionTypeTest,"Used to check if an object is of the given type in a pattern or binding."
 keywordDescriptionUpcast,"Used to convert to a type that is higher in the inheritance chain."
