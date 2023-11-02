@@ -947,9 +947,8 @@ module StaticAbstractBug =
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withDiagnostics [
-             (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
-         ]
+         |> withSingleDiagnostic (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
+         
          
     [<Fact>]
     let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` () =
@@ -972,12 +971,11 @@ module StaticAbstractBug =
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withDiagnostics [
+         |> withSingleDiagnostic
              (Error 1, Line 11, Col 34, Line 11, Col 36, "This expression was expected to have type
     'bool'    
 but here has type
     'unit'    ")
-         ]
          
     [<Fact>]
     let ``Produce an error for interface with static abstract member that is implemented as instance member`` () =
@@ -1004,9 +1002,7 @@ module StaticAbstractBug =
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withDiagnostics [
-             (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override")
-         ]
+         |> withSingleDiagnostic (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override")
 
     [<Fact>]
     let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` () =
@@ -1032,9 +1028,7 @@ module StaticAbstractBug =
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withDiagnostics [
-             (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
-         ]
+         |> withSingleDiagnostic (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
 
     [<Fact>]
     let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` () =
@@ -1087,4 +1081,62 @@ module StaticAbstractBug =
             (Error 673, Line 9, Col 20, Line 9, Col 27, "This instance member needs a parameter to represent the object being invoked. Make the member static or use the notation 'member x.Member(args) = ...'.")
             (Error 17, Line 9, Col 20, Line 9, Col 27, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
             (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
+         ]
+         
+    [<Fact>]
+    let ``Produces errors when includes keyword "static" when implementing a non generic interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       abstract Other : int -> int
+       abstract member Property: int
+       abstract member Property2: int
+       abstract Property3 : int with get, set
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        static member DoIt() = ""
+        static member Other(value) = value + 1
+        static member Property = 0
+        static member Property2 = 0
+        static member Property3 = 0
+        static member Property3 with set value = ()
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3855, Line 13, Col 23, Line 13, Col 27, "No static abstract member was found that corresponds to this override");
+             (Error 3855, Line 14, Col 23, Line 14, Col 28, "No static abstract member was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produces errors when includes keyword "static" when implementing an interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            static member Execute() = ()
+            static member Execute() = false
+            static member Property = 0
+            static member Property = false
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3855, Line 11, Col 27, Line 11, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 3855, Line 12, Col 27, Line 12, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 1, Line 14, Col 38, Line 14, Col 43, "This expression was expected to have type
+    'int'    
+but here has type
+    'bool'    ")
          ]
