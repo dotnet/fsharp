@@ -1622,7 +1622,13 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let mutable mty = Unchecked.defaultof<_>
 
     let entity =
-        Construct.NewModuleOrNamespace (Some compPath) vis (Ident(moduleName, m)) XmlDoc.Empty [] (MaybeLazy.Lazy(lazy mty))
+        Construct.NewModuleOrNamespace
+            (Some compPath)
+            vis
+            (Ident(moduleName, m))
+            XmlDoc.Empty
+            []
+            (MaybeLazy.Lazy(InterruptibleLazy(fun _ -> mty)))
 
     let v =
         Construct.NewVal(

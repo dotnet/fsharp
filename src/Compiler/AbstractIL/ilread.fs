@@ -1129,7 +1129,7 @@ type ILMetadataReader =
         mdfile: BinaryFile
         pectxtCaptured: PEReader option // only set when reading full PE including code etc. for static linking
         entryPointToken: TableName * int
-        dataEndPoints: Lazy<int32 list>
+        dataEndPoints: InterruptibleLazy<int32 list>
         fileName: string
         getNumRows: TableName -> int
         userStringsStreamPhysicalLoc: int32
@@ -1794,7 +1794,7 @@ let readNativeResources (pectxt: PEReader) =
     ]
 
 let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
-    lazy
+    InterruptibleLazy(fun _ ->
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
 
@@ -1854,14 +1854,14 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
                                    [ ("managed vtable_fixups", pectxt.vtableFixupsAddr) ])
                               @ methodRVAs)))
             |> List.distinct
-            |> List.sort
+            |> List.sort)
 
 let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
     if rva = 0x0 then
         failwith "rva is zero"
 
     let start = pectxt.anyV2P (nm, rva)
-    let endPoints = (Lazy.force ctxt.dataEndPoints)
+    let endPoints = ctxt.dataEndPoints.Value
 
     let rec look l =
         match l with
@@ -2452,14 +2452,14 @@ and seekReadField ctxt mdv (numTypars, hasLayout) (idx: int) =
 
 and seekReadFields (ctxt: ILMetadataReader) (numTypars, hasLayout) fidx1 fidx2 =
     mkILFieldsLazy (
-        lazy
+        InterruptibleLazy(fun _ ->
             let mdv = ctxt.mdfile.GetView()
 
             [
                 if fidx1 > 0 then
                     for i = fidx1 to fidx2 - 1 do
                         yield seekReadField ctxt mdv (numTypars, hasLayout) i
-            ]
+            ])
     )
 
 and seekReadMethods (ctxt: ILMetadataReader) numTypars midx1 midx2 =
@@ -3092,7 +3092,7 @@ and seekReadEvent ctxt mdv numTypars idx =
 (* REVIEW: can substantially reduce numbers of EventMap and PropertyMap reads by first checking if the whole table mdv sorted according to ILTypeDef tokens and then doing a binary chop *)
 and seekReadEvents (ctxt: ILMetadataReader) numTypars tidx =
     mkILEventsLazy (
-        lazy
+        InterruptibleLazy(fun _ ->
             let mdv = ctxt.mdfile.GetView()
 
             match
@@ -3118,7 +3118,7 @@ and seekReadEvents (ctxt: ILMetadataReader) numTypars tidx =
                     if beginEventIdx > 0 then
                         for i in beginEventIdx .. endEventIdx - 1 do
                             yield seekReadEvent ctxt mdv numTypars i
-                ]
+                ])
     )
 
 and seekReadProperty ctxt mdv numTypars idx =
@@ -3159,7 +3159,7 @@ and seekReadProperty ctxt mdv numTypars idx =
 
 and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
     mkILPropertiesLazy (
-        lazy
+        InterruptibleLazy(fun _ ->
             let mdv = ctxt.mdfile.GetView()
 
             match
@@ -3185,7 +3185,7 @@ and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
                     if beginPropIdx > 0 then
                         for i in beginPropIdx .. endPropIdx - 1 do
                             yield seekReadProperty ctxt mdv numTypars i
-                ]
+                ])
     )
 
 and customAttrsReader ctxtH tag : ILAttributesStored =
@@ -3279,7 +3279,7 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
     | _ -> ILFieldInit.Null
 
 and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
-    lazy
+    InterruptibleLazy(fun _ ->
         MethodBody.PInvoke(
             lazy
                 let mdv = ctxt.mdfile.GetView()
@@ -3367,7 +3367,7 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
                          | Some nm2 -> nm2)
                     Where = seekReadModuleRef ctxt mdv scopeIdx
                 }
-        )
+        ))
 
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start =
     let labelsOfRawOffsets = Dictionary<_, _>(sz / 2)
@@ -3661,7 +3661,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start =
     instrs, rawToLabel, lab2pc
 
 and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline, aggressiveinline, numTypars) rva =
-    lazy
+    InterruptibleLazy(fun _ ->
         let pev = pectxt.pefile.GetView()
         let baseRVA = pectxt.anyV2P ("method rva", rva)
         // ": reading body of method "+nm+" at rva "+string rva+", phys "+string baseRVA
@@ -3678,7 +3678,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline,
         else
 
             MethodBody.IL(
-                lazy
+                InterruptibleLazy(fun _ ->
                     let pev = pectxt.pefile.GetView()
                     let mdv = ctxt.mdfile.GetView()
 
@@ -3852,8 +3852,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline,
                             Code = code
                             DebugRange = None
                             DebugImports = None
-                        }
-            )
+                        })
+            ))
 
 and int32AsILVariantType (ctxt: ILMetadataReader) (n: int32) =
     if List.memAssoc n (Lazy.force ILVariantTypeRevMap) then
