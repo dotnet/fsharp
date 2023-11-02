@@ -7,13 +7,31 @@ open System.Threading
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+[<Class>]
+type InterruptibleLazy<'T> =
+    new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
+
+    member IsValueCreated: bool
+
+    member Value: 'T
+    member Force: unit -> 'T
+
+    static member FromValue: value: 'T -> InterruptibleLazy<'T>
+
+module InterruptibleLazy =
+    val force: InterruptibleLazy<'T> -> 'T
+
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     val (>>>&): x: int32 -> n: int32 -> int32
 
-    val notlazy: v: 'a -> Lazy<'a>
+    val notlazy: v: 'a -> InterruptibleLazy<'a>
+
+    val (|InterruptibleLazy|): l: InterruptibleLazy<'T> -> 'T
+
+    val (|RecoverableException|_|): exn: Exception -> Exception voption
 
     val inline isNil: l: 'a list -> bool
 

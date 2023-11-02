@@ -11,13 +11,62 @@ open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
+[<Class>]
+type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
+    let syncObj = obj ()
+    let mutable valueFactory = valueFactory
+    let mutable value = value
+
+    new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
+
+    member this.IsValueCreated =
+        match box valueFactory with
+        | null -> true
+        | _ -> false
+
+    member this.Value =
+        match box valueFactory with
+        | null -> value
+        | _ ->
+
+            Monitor.Enter(syncObj)
+
+            try
+                match box valueFactory with
+                | null -> ()
+                | _ ->
+
+                    value <- valueFactory ()
+                    valueFactory <- Unchecked.defaultof<_>
+            finally
+                Monitor.Exit(syncObj)
+
+            value
+
+    member this.Force() = this.Value
+
+    static member FromValue(value) =
+        InterruptibleLazy(value, Unchecked.defaultof<_>)
+
+module InterruptibleLazy =
+    let force (x: InterruptibleLazy<'T>) = x.Value
+
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
-    let notlazy v = Lazy<_>.CreateFromValue v
+    let notlazy v = InterruptibleLazy.FromValue v
+
+    let (|InterruptibleLazy|) (l: InterruptibleLazy<_>) = l.Force()
+
+    [<return: Struct>]
+    let (|RecoverableException|_|) (exn: Exception) =
+        if exn :? OperationCanceledException then
+            ValueNone
+        else
+            ValueSome exn
 
     let inline isNil l = List.isEmpty l
 
@@ -1024,7 +1073,7 @@ type LazyWithContext<'T, 'Ctxt> =
                 x.value <- res
                 x.funcOrException <- null
                 res
-            with exn ->
+            with RecoverableException exn ->
                 x.funcOrException <- box (LazyWithContextFailure(exn))
                 reraise ()
         | _ -> failwith "unreachable"
