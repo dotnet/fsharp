@@ -47,7 +47,7 @@ let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
             document.GetFSharpParseAndCheckResultsAsync symbolName
             |> CancellableTask.start ct
 
-        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
+        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct |> List.ofSeq
         let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
 
         return

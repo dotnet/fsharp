@@ -75,6 +75,7 @@
     <Compile Include="Refactors\RefactorTestFramework.fs" />
     <Compile Include="Refactors\AddExplicitReturnType.fs" />
     <Compile Include="Refactors\RemoveExplicitReturnType.fs" />
+    <Compile Include="Refactors\AsyncBugReproduction.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

@@ -91,7 +91,7 @@ let ``Infer explicit return type`` (functionHeader: string) (returnType: string)
         let spanStart = code.IndexOf(symbolName)
 
         let! newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
-        do Assert.NotNull(code)
+
         do! AssertHasSpecificExplicitReturnType symbolName returnType newDoc context.CT
     }
 
