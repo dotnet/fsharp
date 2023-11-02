@@ -64,8 +64,7 @@ let TryGetRangeOfExplicitReturnType (symbolName: string) (document: Document) ct
 
         let range =
             symbol
-            |> Option.bind (fun sym ->
-                RemoveExplicitReturnType.RangeOfReturnTypeDefinition(parseFileResults.ParseTree, sym.DeclarationLocation.Start, false))
+            |> Option.bind (fun sym -> parseFileResults.RangeOfReturnTypeDefinition(sym.DeclarationLocation.Start, false))
 
         return range
     }

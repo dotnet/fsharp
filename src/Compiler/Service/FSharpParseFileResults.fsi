@@ -95,6 +95,8 @@ type public FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
+    member RangeOfReturnTypeDefinition: symbolUseStart: pos * ?skipLambdas: bool -> range option
+
     internal new:
         diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] ->
             FSharpParseFileResults
