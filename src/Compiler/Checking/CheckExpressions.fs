@@ -9366,6 +9366,15 @@ and TcMethodApplicationThen
     // Nb. args is always of List.length <= 1 except for indexed setters, when it is 2
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
 
+    // c.atomicLeftMethExpr[idx] as application gives a warning
+    match args, atomicFlag with
+    | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
+        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mWholeExpr))
+        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mWholeExpr))
+    | _ -> ()
+
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
     let exprTy = if isNil delayed then overallTy else MustEqual (NewInferenceType g)
