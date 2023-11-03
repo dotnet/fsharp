@@ -14,7 +14,9 @@ namespace N
 
         let f (a: int list) = a
         
-        let g () = f[1]
+        let g () = f [1] // should not warn
+        
+        let h () = f[1] // should warn
         """
         |> FSharp
         |> withLangVersion70
@@ -22,9 +24,9 @@ namespace N
         |> shouldFail
         |> withResults [
             { Error = Information 3365
-              Range = { StartLine = 8
+              Range = { StartLine = 10
                         StartColumn = 20
-                        EndLine = 8
+                        EndLine = 10
                         EndColumn = 24 }
               Message =
                "The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'." }
@@ -42,7 +44,8 @@ namespace N
 
         let g () =
             let c = C()
-            c.MyFunc[42]
+            let _ = c.MyFunc [23]   // should not warn
+            c.MyFunc[42]    // should warn
         """
         |> FSharp
         |> withLangVersion70
@@ -50,9 +53,9 @@ namespace N
         |> shouldFail
         |> withResults [
             { Error = Information 3365
-              Range = { StartLine = 11
+              Range = { StartLine = 12
                         StartColumn = 13
-                        EndLine = 11
+                        EndLine = 12
                         EndColumn = 25 }
               Message =
                "The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'." }
