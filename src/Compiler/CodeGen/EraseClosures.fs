@@ -13,8 +13,6 @@ open FSharp.Compiler.Syntax.PrettyNaming
 // by compiling down to code pointers, classes etc.
 // --------------------------------------------------------------------
 
-let notlazy v = Lazy.CreateFromValue v
-
 let rec stripUpTo n test dest x =
     if n = 0 then
         ([], x)
@@ -425,7 +423,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
         let nowCloRef = IlxClosureRef(nowTypeRef, clo.cloStructure, nowFields)
         let nowCloSpec = mkILFormalCloRef td.GenericParams nowCloRef clo.cloUseStaticField
         let nowMethods = List.map (convMethodDef (Some nowCloSpec)) (td.Methods.AsList())
-        let ilCloCode = Lazy.force clo.cloCode
+        let ilCloCode = clo.cloCode.Value
         let cloDebugRange = ilCloCode.DebugRange
         let cloImports = ilCloCode.DebugImports
 
@@ -433,7 +431,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
         // Adjust all the argument and environment accesses
         let rewriteCodeToAccessArgsFromEnv laterCloSpec (argToFreeVarMap: (int * IlxClosureFreeVar) list) =
-            let il = Lazy.force clo.cloCode
+            let il = clo.cloCode.Value
             let numLocals = il.Locals.Length
 
             let rewriteInstrToAccessArgsFromEnv instr =
@@ -546,8 +544,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 // CASE 1b. Build a type application.
                 let boxReturnTy = Some nowReturnTy (* box prior to all I_ret *)
 
-                let convil =
-                    convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)
+                let convil = convILMethodBody (Some nowCloSpec, boxReturnTy) clo.cloCode.Value
 
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
@@ -684,7 +681,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowEnvParentClass = typ_Func cenv (typesOfILParams nowParams) nowReturnTy
 
                 let cloTypeDef =
-                    let convil = convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
+                    let convil = convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
 
                     let nowApplyMethDef =
                         mkILNonGenericVirtualInstanceMethod (
@@ -739,7 +736,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             let cloCodeR =
                 match td.Extends with
                 | None -> (mkILNonGenericEmptyCtor (cenv.ilg.typ_Object, None, cloImports)).MethodBody
-                | Some _ -> convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
+                | Some _ -> convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
 
             let ctorMethodDef =
                 let flds = (mkILCloFldSpecs cenv nowFields)

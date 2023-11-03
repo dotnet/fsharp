@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
+open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -857,11 +858,13 @@ type StackGuard(maxDepth: int, name: string) =
             if depth % maxDepth = 0 then
                 let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                 let buildPhase = DiagnosticsThreadStatics.BuildPhase
+                let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
+                    use _token = Cancellable.UsingToken ct
                     return f ()
                 }
                 |> Async.RunImmediate

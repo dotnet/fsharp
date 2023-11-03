@@ -167,7 +167,7 @@ type IlxClosureInfo =
     {
         cloStructure: IlxClosureLambdas
         cloFreeVars: IlxClosureFreeVar[]
-        cloCode: Lazy<ILMethodBody>
+        cloCode: InterruptibleLazy<ILMethodBody>
         cloUseStaticField: bool
     }
 

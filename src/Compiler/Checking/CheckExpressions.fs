@@ -474,7 +474,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
         UnifyOverallType cenv env m overallTy actualTy
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
@@ -4963,7 +4963,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
     let g = cenv.g
     try
         TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv ty
-    with e ->
+    with RecoverableException e ->
         errorRecovery e ty.Range
 
         let recoveryTy =
@@ -5156,7 +5156,7 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     // So be careful!
     try
         TcExprNoRecover cenv ty env tpenv synExpr
-    with exn ->
+    with RecoverableException exn ->
         let m = synExpr.Range
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
@@ -5185,7 +5185,7 @@ and TcExprOfUnknownTypeThen (cenv: cenv) env tpenv synExpr delayed =
     let expr, tpenv =
       try
           TcExprThen cenv (MustEqual exprTy) env tpenv false synExpr delayed
-      with exn ->
+      with RecoverableException exn ->
           let m = synExpr.Range
           errorRecovery exn m
           SolveTypeAsError env.DisplayEnv cenv.css m exprTy
@@ -7334,7 +7334,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         let expr =
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false ShouldNotifySink.Yes with
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
@@ -8121,7 +8121,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) ->
                         true // resolved to a module or namespace, done with checks
                     | _ ->
@@ -10962,7 +10962,7 @@ and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx sy
 
             attribsAndTargets, didFail || didFail2
 
-        with e ->
+        with RecoverableException e ->
             errorRecovery e synAttrib.Range
             [], false)
 

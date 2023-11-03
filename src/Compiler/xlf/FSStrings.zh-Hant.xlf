@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
+        <target state="translated">特徵標記 '{0}' 和實作 '{1}' 中的引數名稱不相符。將會使用特徵標記檔案中的引數名稱。這可能會在偵錯或分析時造成問題。</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">關鍵字 'while!'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

@@ -18,6 +18,47 @@ printfn "%s" x"""
     |> typecheck
     |> shouldSucceed
 
+
+[<Fact>]
+let ``Bug - constant lambdas are not part of this feature`` () =
+    Fsx """
+let lambdaWhichAlwaysReturnsThree = _.3"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withErrorCodes [3584]
+
+[<Fact>]
+let ``Bug - bigger paranthesized expressions are not part of this feature`` () =
+    Fsx """
+let neverEndingLambda = _.(while true do ())"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withErrorCodes [3584]
+
+[<Theory>]
+[<InlineData("_.3")>]
+[<InlineData("_.1e-04")>]
+[<InlineData("_.\"🙃\"")>]
+[<InlineData("_.[||]")>]
+[<InlineData("_.{||}")>]
+[<InlineData("_.typeof<int>")>]
+[<InlineData("_.null")>]
+[<InlineData("_.__SOURCE_DIRECTORY__")>]
+[<InlineData("_.(<@ 1 @>)")>]
+[<InlineData("_.(nameof nameof)")>]
+[<InlineData("_.struct (1, 2, 3)")>]
+[<InlineData("_.{ new System.IDisposable with member _.Dispose () = () }")>]
+[<InlineData("_.(while true do ())")>]
+[<InlineData("_.(let x = 3 in x + x)")>]
+let ``Bug - all of these should be an error`` (code:string) =
+    Fsx $"""let _ = {code}"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withErrorCodes [3584]
+
 [<Fact>]
 let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
     Fsx """
@@ -148,7 +189,9 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
+    |> withDiagnostics [ 
+        Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope." 
+        Error 3584, Line 3, Col 77, Line 3, Col 80, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'." ]
         
 [<Fact>]
 let ``Anonymous unary function shorthand with conflicting wild argument`` () =
