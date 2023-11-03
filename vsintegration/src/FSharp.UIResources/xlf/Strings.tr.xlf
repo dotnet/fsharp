@@ -127,6 +127,11 @@
         <target state="translated">Karakter olarak tercih edilen açıklama genişliği</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Ek performans telemetrisi gönder</target>
