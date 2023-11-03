@@ -3950,6 +3950,16 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     else
         None
 
+/// c.atomicLeftMethExpr[idx] and atomicLeftExpr[idx] as applications give warnings
+let checkHighPrecedenceFunctionApplicationToList (g: TcGlobals) args atomicFlag exprRange =
+    match args, atomicFlag with
+    | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
+        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
+        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), exprRange))
+    | _ -> ()
+
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed =
@@ -8202,13 +8212,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
         // atomicLeftExpr[idx] unifying as application gives a warning 
         if not isSugar then
-            match synArg, atomicFlag with
-            | (SynExpr.ArrayOrList (false, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
-                if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
-                elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
-            | _ -> ()
+            checkHighPrecedenceFunctionApplicationToList g [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
         | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
@@ -9367,13 +9371,7 @@ and TcMethodApplicationThen
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
 
     // c.atomicLeftMethExpr[idx] as application gives a warning
-    match args, atomicFlag with
-    | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
-        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mWholeExpr))
-        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mWholeExpr))
-    | _ -> ()
+    checkHighPrecedenceFunctionApplicationToList g args atomicFlag mWholeExpr
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
