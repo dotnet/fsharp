@@ -3,6 +3,7 @@
 module FSharp.Compiler.AbstractIL.IL
 
 open FSharp.Compiler.IO
+open Internal.Utilities.Library
 
 #nowarn "49"
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
@@ -29,16 +30,14 @@ let _ =
     if logging then
         dprintn "* warning: Il.logging is on"
 
-let notlazy v = Lazy<_>.CreateFromValue v
-
 /// A little ugly, but the idea is that if a data structure does not
 /// contain lazy values then we don't add laziness. So if the thing to map
 /// is already evaluated then immediately apply the function.
-let lazyMap f (x: Lazy<_>) =
+let lazyMap f (x: InterruptibleLazy<_>) =
     if x.IsValueCreated then
         notlazy (f (x.Force()))
     else
-        lazy (f (x.Force()))
+        InterruptibleLazy(fun _ -> f (x.Force()))
 
 [<RequireQualifiedAccess>]
 type PrimaryAssembly =
@@ -165,7 +164,7 @@ let splitTypeNameRight nm =
 // --------------------------------------------------------------------
 
 /// This is used to store event, property and field maps.
-type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality>(keyf: 'Data -> 'Key, lazyItems: Lazy<'Data list>) =
+type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality>(keyf: 'Data -> 'Key, lazyItems: InterruptibleLazy<'Data list>) =
 
     let quickMap =
         lazyItems
@@ -1822,7 +1821,7 @@ type ILMethodVirtualInfo =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of Lazy<ILMethodBody>
+    | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod> (* platform invoke to native *)
     | Abstract
     | Native
@@ -1903,7 +1902,7 @@ type ILMethodDef
         callingConv: ILCallingConv,
         parameters: ILParameters,
         ret: ILReturn,
-        body: Lazy<MethodBody>,
+        body: InterruptibleLazy<MethodBody>,
         isEntryPoint: bool,
         genericParams: ILGenericParameterDefs,
         securityDeclsStored: ILSecurityDeclsStored,
@@ -1962,7 +1961,7 @@ type ILMethodDef
             ?callingConv: ILCallingConv,
             ?parameters: ILParameters,
             ?ret: ILReturn,
-            ?body: Lazy<MethodBody>,
+            ?body: InterruptibleLazy<MethodBody>,
             ?securityDecls: ILSecurityDecls,
             ?isEntryPoint: bool,
             ?genericParams: ILGenericParameterDefs,
@@ -2468,7 +2467,7 @@ type ILMethodImplDef =
 
 // Index table by name and arity.
 type ILMethodImplDefs =
-    | ILMethodImpls of Lazy<MethodImplsMap>
+    | ILMethodImpls of InterruptibleLazy<MethodImplsMap>
 
     member x.AsList() =
         let (ILMethodImpls ltab) = x in Map.foldBack (fun _x y r -> y @ r) (ltab.Force()) []
@@ -2919,7 +2918,7 @@ type ILNestedExportedType =
     override x.ToString() = "exported type " + x.Name
 
 and ILNestedExportedTypes =
-    | ILNestedExportedTypes of Lazy<Map<string, ILNestedExportedType>>
+    | ILNestedExportedTypes of InterruptibleLazy<Map<string, ILNestedExportedType>>
 
     member x.AsList() =
         let (ILNestedExportedTypes ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
@@ -2943,7 +2942,7 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
     override x.ToString() = "exported type " + x.Name
 
 and ILExportedTypesAndForwarders =
-    | ILExportedTypesAndForwarders of Lazy<Map<string, ILExportedTypeOrForwarder>>
+    | ILExportedTypesAndForwarders of InterruptibleLazy<Map<string, ILExportedTypeOrForwarder>>
 
     member x.AsList() =
         let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
@@ -3784,7 +3783,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
 
 let mkMethodBody (zeroinit, locals, maxstack, code, tag, imports) =
     let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag, imports)
-    MethodBody.IL(lazy ilCode)
+    MethodBody.IL(InterruptibleLazy.FromValue ilCode)
 
 // --------------------------------------------------------------------
 // Make a constructor
@@ -4098,7 +4097,7 @@ let mkILExportedTypes l =
     ILExportedTypesAndForwarders(notlazy (List.foldBack addExportedTypeToTable l Map.empty))
 
 let mkILExportedTypesLazy (l: Lazy<_>) =
-    ILExportedTypesAndForwarders(lazy (List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
+    ILExportedTypesAndForwarders(InterruptibleLazy(fun _ -> List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
 
 let addNestedExportedTypeToTable (y: ILNestedExportedType) tab = Map.add y.Name y tab
 
@@ -4116,7 +4115,7 @@ let mkILNestedExportedTypes l =
     ILNestedExportedTypes(notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
 
 let mkILNestedExportedTypesLazy (l: Lazy<_>) =
-    ILNestedExportedTypes(lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
+    ILNestedExportedTypes(InterruptibleLazy(fun _ -> List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
 
 let mkILResources l = ILResources l
 let emptyILResources = ILResources []
@@ -4130,7 +4129,7 @@ let mkILMethodImpls l =
     ILMethodImpls(notlazy (List.foldBack addMethodImplToTable l Map.empty))
 
 let mkILMethodImplsLazy l =
-    ILMethodImpls(lazy (List.foldBack addMethodImplToTable (Lazy.force l) Map.empty))
+    ILMethodImpls(InterruptibleLazy(fun _ -> List.foldBack addMethodImplToTable (Lazy.force l) Map.empty))
 
 let emptyILMethodImpls = mkILMethodImpls []
 

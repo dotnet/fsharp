@@ -794,7 +794,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.Reflection.MethodImplAttribute
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILMethodDef: Void .ctor(System.String, System.Reflection.MethodAttributes, System.Reflection.MethodImplAttributes, ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILParameter], ILReturn, System.Lazy`1[FSharp.Compiler.AbstractIL.IL+MethodBody], Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], ILSecurityDecls, ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Void .ctor(System.String, System.Reflection.MethodAttributes, System.Reflection.MethodImplAttributes, ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILParameter], ILReturn, Internal.Utilities.Library.InterruptibleLazy`1[FSharp.Compiler.AbstractIL.IL+MethodBody], Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], ILSecurityDecls, ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] AsList()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] FindByName(System.String)
@@ -1699,8 +1699,8 @@ FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Major()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Minor()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: UInt16 get_Revision()
 FSharp.Compiler.AbstractIL.IL+ILVersionInfo: Void .ctor(UInt16, UInt16, UInt16, UInt16)
-FSharp.Compiler.AbstractIL.IL+MethodBody+IL: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] Item
-FSharp.Compiler.AbstractIL.IL+MethodBody+IL: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] get_Item()
+FSharp.Compiler.AbstractIL.IL+MethodBody+IL: Internal.Utilities.Library.InterruptibleLazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] Item
+FSharp.Compiler.AbstractIL.IL+MethodBody+IL: Internal.Utilities.Library.InterruptibleLazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody] get_Item()
 FSharp.Compiler.AbstractIL.IL+MethodBody+PInvoke: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod] Item
 FSharp.Compiler.AbstractIL.IL+MethodBody+PInvoke: System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod] get_Item()
 FSharp.Compiler.AbstractIL.IL+MethodBody+Tags: Int32 Abstract
@@ -1730,7 +1730,7 @@ FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+MethodBody: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody Abstract
 FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody Native
-FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NewIL(System.Lazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody])
+FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NewIL(Internal.Utilities.Library.InterruptibleLazy`1[FSharp.Compiler.AbstractIL.IL+ILMethodBody])
 FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NewPInvoke(System.Lazy`1[FSharp.Compiler.AbstractIL.IL+PInvokeMethod])
 FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody NotAvailable
 FSharp.Compiler.AbstractIL.IL+MethodBody: MethodBody get_Abstract()
@@ -1842,12 +1842,12 @@ FSharp.Compiler.AbstractIL.IL: ILAttributesStored storeILCustomAttrs(ILAttribute
 FSharp.Compiler.AbstractIL.IL: ILEventDefs emptyILEvents
 FSharp.Compiler.AbstractIL.IL: ILEventDefs get_emptyILEvents()
 FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEvents(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef])
-FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEventsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef]])
+FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEventsLazy(Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef]])
 FSharp.Compiler.AbstractIL.IL: ILExportedTypesAndForwarders mkILExportedTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILExportedTypeOrForwarder])
 FSharp.Compiler.AbstractIL.IL: ILFieldDefs emptyILFields
 FSharp.Compiler.AbstractIL.IL: ILFieldDefs get_emptyILFields()
 FSharp.Compiler.AbstractIL.IL: ILFieldDefs mkILFields(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILFieldDef])
-FSharp.Compiler.AbstractIL.IL: ILFieldDefs mkILFieldsLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILFieldDef]])
+FSharp.Compiler.AbstractIL.IL: ILFieldDefs mkILFieldsLazy(Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILFieldDef]])
 FSharp.Compiler.AbstractIL.IL: ILMethodDefs emptyILMethods
 FSharp.Compiler.AbstractIL.IL: ILMethodDefs get_emptyILMethods()
 FSharp.Compiler.AbstractIL.IL: ILMethodDefs mkILMethods(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef])
@@ -1862,7 +1862,7 @@ FSharp.Compiler.AbstractIL.IL: ILNestedExportedTypes mkILNestedExportedTypes(Mic
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs emptyILProperties
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs get_emptyILProperties()
 FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILProperties(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef])
-FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILPropertiesLazy(System.Lazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef]])
+FSharp.Compiler.AbstractIL.IL: ILPropertyDefs mkILPropertiesLazy(Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDef]])
 FSharp.Compiler.AbstractIL.IL: ILResources emptyILResources
 FSharp.Compiler.AbstractIL.IL: ILResources get_emptyILResources()
 FSharp.Compiler.AbstractIL.IL: ILReturn mkILReturn(ILType)
@@ -11718,3 +11718,11 @@ Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Co
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T[]])
+Internal.Utilities.Library.InterruptibleLazy: T force[T](Internal.Utilities.Library.InterruptibleLazy`1[T])
+Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean IsValueCreated
+Internal.Utilities.Library.InterruptibleLazy`1[T]: Boolean get_IsValueCreated()
+Internal.Utilities.Library.InterruptibleLazy`1[T]: Internal.Utilities.Library.InterruptibleLazy`1[T] FromValue(T)
+Internal.Utilities.Library.InterruptibleLazy`1[T]: T Force()
+Internal.Utilities.Library.InterruptibleLazy`1[T]: T Value
+Internal.Utilities.Library.InterruptibleLazy`1[T]: T get_Value()
+Internal.Utilities.Library.InterruptibleLazy`1[T]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
