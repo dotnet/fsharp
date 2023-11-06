@@ -41,12 +41,13 @@ module ``Byref interop verification tests`` =
         module Foo
         open System
 
+
         [<EntryPoint>]
         let main _ =
             let mutable bt: int = 42
             let ros = ReadOnlySpan<int>(&bt)
 
-            if ros.Length <> 0 && ros[0] <> 42 then
+            if ros.Length <> 1 || ros[0] <> 42 then
                 failwith "Unexpected result"
             0
         """
