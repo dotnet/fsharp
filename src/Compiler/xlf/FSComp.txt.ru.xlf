@@ -82,6 +82,11 @@
         <target state="translated">Если тип использует оба атрибута [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Реализация интерфейсов не допускается.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">Использование ":=" из библиотеки F# является нерекомендуемым. См. https://aka.ms/fsharp-refcell-ops. Например, замените "cell := expr" на "cell.Value &lt;- expr".</target>
@@ -480,6 +485,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Взаимодействие между универсальным ограничением "unmanaged" C# и F#(создание дополнительного modreq)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="new">Indexed properties getter and setter must have the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">

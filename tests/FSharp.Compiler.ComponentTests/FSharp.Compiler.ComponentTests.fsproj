@@ -167,6 +167,7 @@
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
+    <Compile Include="ErrorMessages\IndexingSyntax.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
