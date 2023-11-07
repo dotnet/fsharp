@@ -211,11 +211,6 @@ Tečkované podtržení;
 Přerušované podtržení;</target>
         <note />
       </trans-unit>
-      <trans-unit id="RemoveExplicitReturnTypeAnnotation">
-        <source>Remove explicit return type annotation</source>
-        <target state="new">Remove explicit return type annotation</target>
-        <note />
-      </trans-unit>
       <trans-unit id="RemoveReturn">
         <source>Remove 'return'</source>
         <target state="translated">Odebrat return</target>

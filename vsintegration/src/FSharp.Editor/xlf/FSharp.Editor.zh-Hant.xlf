@@ -211,11 +211,6 @@ Dash underline;</source>
 虛線底線；</target>
         <note />
       </trans-unit>
-      <trans-unit id="RemoveExplicitReturnTypeAnnotation">
-        <source>Remove explicit return type annotation</source>
-        <target state="new">Remove explicit return type annotation</target>
-        <note />
-      </trans-unit>
       <trans-unit id="RemoveReturn">
         <source>Remove 'return'</source>
         <target state="translated">移除 'return'</target>

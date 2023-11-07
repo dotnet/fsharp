@@ -355,9 +355,6 @@ Use live (unsaved) buffers for analysis</value>
   <data name="AddExplicitReturnTypeAnnotation" xml:space="preserve">
     <value>Add explicit return type annotation</value>
   </data>
-  <data name="RemoveExplicitReturnTypeAnnotation" xml:space="preserve">
-    <value>Remove explicit return type annotation</value>
-  </data>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
   </data>
