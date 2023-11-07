@@ -217,6 +217,11 @@ F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 
         <target state="translated">'return!' 제거</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">사용되지 않는 바인딩 제거</target>

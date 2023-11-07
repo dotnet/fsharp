@@ -202,7 +202,7 @@ let b =
 [<AbstractClass>]
 type C(a : int) = 
     new(a : string) = C(int a)
-    new(b) = match b with Some _ -> C(1) | _ -> C("")
+    new b = match b with Some _ -> C 1 | _ -> C ""
             """
         )
 
@@ -213,7 +213,7 @@ type C(a : int) =
 [<AbstractClass>]
 type C(a : int) = 
     new(a : string) = new C(int a)
-    new(b) = match b with Some _ -> new C(1) | _ -> new C("")
+    new b = match b with Some _ -> new C 1 | _ -> new C ""
             """
         )
 
@@ -223,7 +223,7 @@ type C(a : int) =
             """
 [<AbstractClass>]
 type O(o : int) = 
-    new() = O(1)
+    new() = O 1
             """
         )
 
@@ -243,7 +243,7 @@ type O(o : int) =
             """
 [<AbstractClass>]
 type O(o : int) = 
-    new() = new O(1) then printfn "A"
+    new() = new O 1 then printfn "A"
             """
         )
 

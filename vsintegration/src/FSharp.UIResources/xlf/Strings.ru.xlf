@@ -127,6 +127,11 @@
         <target state="translated">Предпочитаемая ширина описания в символах</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="new">Remove unnecessary parentheses (experimental, might affect typing performance)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Отправить дополнительные диагностические данные о производительности</target>

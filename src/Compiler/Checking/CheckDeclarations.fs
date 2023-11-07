@@ -363,7 +363,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -639,7 +639,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true ShouldNotifySink.Yes with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -1531,7 +1531,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
 
         let mvvs = ForceRaise resolved
 
@@ -4738,7 +4738,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23

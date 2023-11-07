@@ -82,6 +82,11 @@
         <target state="translated">Se un tipo usa entrambi gli attributi [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa che è statico. Non è consentita l'implementazione di interfacce.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">L'uso di ':=' dalla libreria F # è deprecato. Vedere https://aka.ms/fsharp-refcell-ops. Ad esempio, modificare 'cell:= expr' in 'cell.Value &lt;- expr'.</target>
@@ -485,6 +490,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilità tra il vincolo generico non gestito di C# e di F# (crea un modreq aggiuntivo)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="new">Indexed properties getter and setter must have the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -1117,6 +1127,11 @@
         <target state="translated">Questa espressione di record di copia e aggiornamento modifica tutti i campi del tipo di record '{0}'. Provare a usare la sintassi di costruzione dei record.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">La sintassi 'expr1[expr2]' viene usata per l'indicizzazione. Provare ad aggiungere un'annotazione di tipo per abilitare l'indicizzazione oppure se la chiamata a una funzione aggiunge uno spazio, ad esempio 'expr1 [expr2]'.</target>
@@ -1555,6 +1570,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Provare a usare 'return!' invece di 'return'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="new">Parentheses can be removed.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">

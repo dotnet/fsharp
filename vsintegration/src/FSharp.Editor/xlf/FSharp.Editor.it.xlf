@@ -216,6 +216,11 @@ Sottolineatura a trattini;</target>
         <target state="translated">Rimuovi 'return!'</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">Rimuovi il binding inutilizzato</target>

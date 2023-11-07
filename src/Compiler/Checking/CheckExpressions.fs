@@ -3957,6 +3957,16 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     else
         None
 
+/// c.atomicLeftMethExpr[idx] and atomicLeftExpr[idx] as applications give warnings
+let checkHighPrecedenceFunctionApplicationToList (g: TcGlobals) args atomicFlag exprRange =
+    match args, atomicFlag with
+    | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
+        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
+        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), exprRange))
+    | _ -> ()
+
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed =
@@ -7341,7 +7351,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         let expr =
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false ShouldNotifySink.Yes with
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
@@ -8128,7 +8138,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) ->
                         true // resolved to a module or namespace, done with checks
                     | _ ->
@@ -8209,13 +8219,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
         // atomicLeftExpr[idx] unifying as application gives a warning 
         if not isSugar then
-            match synArg, atomicFlag with
-            | (SynExpr.ArrayOrList (false, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
-                if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
-                elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
-            | _ -> ()
+            checkHighPrecedenceFunctionApplicationToList g [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
         | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
@@ -9374,6 +9378,9 @@ and TcMethodApplicationThen
 
     // Nb. args is always of List.length <= 1 except for indexed setters, when it is 2
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
+
+    // c.atomicLeftMethExpr[idx] as application gives a warning
+    checkHighPrecedenceFunctionApplicationToList g args atomicFlag mWholeExpr
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.

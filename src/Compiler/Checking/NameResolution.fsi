@@ -598,6 +598,12 @@ type AfterResolution =
         (MethInfo * PropInfo option * TyparInstantiation -> unit) *
         (unit -> unit)
 
+/// Indicates whether we want to report found items to the name resolution sink
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
@@ -684,6 +690,7 @@ val internal ResolveLongIdentAsModuleOrNamespace:
     id: Ident ->
     rest: Ident list ->
     isOpenDecl: bool ->
+    notifySink: ShouldNotifySink ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
 /// Resolve a long identifier to an object constructor.

@@ -57,25 +57,4 @@ let f() =
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Fixes FS1182 - class identifiers`` () =
-    let code =
-        """
-type T() as this = class end
-"""
-
-    let expected =
-        Some
-            {
-                Message = "Prefix 'this' with underscore"
-                FixedCode =
-                    """
-type T() as _this = class end
-"""
-            }
-
-    let actual = codeFix |> tryFix code (WithOption "--warnon:1182")
-
-    Assert.Equal(expected, actual)
-
 // TODO: add tests for scenarios with signature files
