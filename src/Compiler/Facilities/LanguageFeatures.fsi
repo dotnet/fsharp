@@ -70,6 +70,7 @@ type LanguageFeature =
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
     | EnforceAttributeTargetsOnLetValues
+    | WarningIndexedPropertiesGetSetSameType
 
 /// LanguageVersion management
 type LanguageVersion =
