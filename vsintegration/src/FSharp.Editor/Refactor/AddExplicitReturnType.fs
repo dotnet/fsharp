@@ -119,10 +119,9 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
                         symbolUse.Symbol |> AddExplicitReturnType.ofFSharpMemberOrFunctionOrValue
                         |>! AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
-                    let res =
-                        AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults)
+                    do AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults)
 
-                    return res
+                    return ()
                 }
 
             return res

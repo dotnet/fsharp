@@ -67,27 +67,36 @@ let ``Correctly infer int as explicit return type`` () =
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-    AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    let expectedCode =
+        $"""
+        let sum a b :int= a + b
+        """
 
-[<Theory>]
-[<InlineData("(a:float) (b:int)", "float")>]
-[<InlineData("a:int b:int", "int")>]
-let ``Infer explicit return type`` (functionHeader: string) (returnType: string) =
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
+let ``Handle Parantheses on the arguments`` () =
     let symbolName = "sum"
 
     let code =
-        $"""
-        let sum {functionHeader}= a + b
+        """
+        let sum (a:float) (b:float) = a + b
         """
 
     use context = TestContext.CreateWithCode code
 
-    let spanStart = code.IndexOf(symbolName)
+    let spanStart = code.IndexOf symbolName
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
-    let text = newDoc.GetTextAsync() |> GetTaskResult
 
-    AssertHasSpecificExplicitReturnType symbolName returnType newDoc context.CT
+    let expectedCode =
+        """
+        let sum (a:float) (b:float) :float= a + b
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Infer on rec method`` () =
@@ -105,7 +114,14 @@ let ``Infer on rec method`` () =
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-    AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    let expectedCode =
+        $"""
+        let rec fib n :int=
+        if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Infer with function parameter method`` () =
@@ -122,7 +138,13 @@ let ``Infer with function parameter method`` () =
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-    AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    let expectedCode =
+        $"""
+        let apply1 (transform: int -> int) y :int= transform y
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Infer on member function`` () =
@@ -141,7 +163,15 @@ let ``Infer on member function`` () =
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-    AssertHasSpecificExplicitReturnType symbolName "int" newDoc context.CT
+    let expectedCode =
+        $"""
+        type SomeType(factor0: int) =
+        let factor = factor0
+        member this.SomeMethod(a, b, c) :int= (a + b + c) * factor
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
 let ``Correctly infer custom type that is declared earlier in file`` () =
@@ -159,4 +189,11 @@ let ``Correctly infer custom type that is declared earlier in file`` () =
 
     let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
 
-    AssertHasSpecificExplicitReturnType symbolName "MyType" newDoc context.CT
+    let expectedCode =
+        """
+        type MyType = { Value: int }
+        let sum a b :MyType= {Value=a+b}
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())

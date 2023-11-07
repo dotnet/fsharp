@@ -122,35 +122,33 @@ let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
-    cancellableTask {
-        let refactoringActions = new List<CodeAction>()
-        let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
+    let refactoringActions = new List<CodeAction>()
+    let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
 
-        context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
+    context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
-        let document = RoslynTestHelpers.GetSingleDocument context.Solution
+    let document = RoslynTestHelpers.GetSingleDocument context.Solution
 
-        let mutable workspace = context.Solution.Workspace
+    let mutable workspace = context.Solution.Workspace
 
-        let refactoringContext =
-            CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
+    let refactoringContext =
+        CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
 
-        do! refactorProvider.ComputeRefactoringsAsync refactoringContext
+    let task = refactorProvider.ComputeRefactoringsAsync refactoringContext
+    do task.GetAwaiter().GetResult()
 
-        for action in refactoringActions do
-            let! operations = action.GetOperationsAsync context.CT
+    for action in refactoringActions do
+        let operationsTask = action.GetOperationsAsync context.CT
+        let operations = operationsTask |> GetTaskResult
 
-            for operation in operations do
-                let codeChangeOperation = operation :?> ApplyChangesOperation
-                codeChangeOperation.Apply(workspace, context.CT)
-                context.Solution <- codeChangeOperation.ChangedSolution
-                ()
+        for operation in operations do
+            let codeChangeOperation = operation :?> ApplyChangesOperation
+            codeChangeOperation.Apply(workspace, context.CT)
+            context.Solution <- codeChangeOperation.ChangedSolution
+            ()
 
-        let newDocument = context.Solution.GetDocument(document.Id)
-        return newDocument
-    }
-    |> CancellableTask.startWithoutCancellation
-    |> fun task -> task.Result
+    let newDocument = context.Solution.GetDocument(document.Id)
+    newDocument
 
 let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     cancellableTask {
