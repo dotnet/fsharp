@@ -12,127 +12,117 @@ open System.Runtime.InteropServices
 [<InlineData(":int")>]
 [<InlineData(":System.float")>]
 let ``Removes explicit return type`` (toRemove: string) =
-    task {
-        let symbolName = "sum"
+    let symbolName = "sum"
 
-        let code =
-            $"""
-            let sum a b {toRemove}= a + b
-            """
+    let code =
+        $"""
+        let sum a b {toRemove}= a + b
+        """
 
-        use context = TestContext.CreateWithCode code
-        let spanStart = code.IndexOf symbolName
+    use context = TestContext.CreateWithCode code
+    let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
-    }
+    AssertHasNoExplicitReturnType symbolName newDoc context.CT |> GetTaskResult
 
 [<Theory>]
 [<InlineData(" :int")>]
 [<InlineData(" : int")>]
 [<InlineData(" :    int")>]
 let ``Empty Space doesnt matter`` (toRemove: string) =
-    task {
-        let symbolName = "sum"
+    let symbolName = "sum"
 
-        let code =
-            $"""
-            let sum a b {toRemove}= a + b
-            """
+    let code =
+        $"""
+        let sum a b {toRemove}= a + b
+        """
 
-        use context = TestContext.CreateWithCode code
-        let spanStart = code.IndexOf symbolName
+    use context = TestContext.CreateWithCode code
+    let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
-    }
+    AssertHasNoExplicitReturnType symbolName newDoc context.CT |> GetTaskResult
 
 [<Theory>]
 [<InlineData("(a:int) (b:int) :int")>]
 [<InlineData("(a:System.float) (b:int) :System.float")>]
 let ``Different Formatting`` (functionHeader: string) =
-    task {
-        let symbolName = "sum"
+    let symbolName = "sum"
 
-        let code =
-            $"""
-            let sum {functionHeader}=
-                a + b
-            """
+    let code =
+        $"""
+        let sum {functionHeader}=
+            a + b
+        """
 
-        use context = TestContext.CreateWithCode code
-        let spanStart = code.IndexOf symbolName
+    use context = TestContext.CreateWithCode code
+    let spanStart = code.IndexOf symbolName
 
-        let! newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
+    let newDoc = tryRefactor code spanStart context (new RemoveExplicitReturnType())
 
-        do! AssertHasNoExplicitReturnType symbolName newDoc context.CT
-    }
+    AssertHasNoExplicitReturnType symbolName newDoc context.CT |> GetTaskResult
 
 [<Fact>]
 let ``Refactor should not be suggested if theres nothing to remove`` () =
-    task {
+    let symbolName = "sum"
 
-        let symbolName = "sum"
+    let code =
+        $"""
+        let sum a b = a + b
+        """
 
-        let code =
-            $"""
-            let sum a b = a + b
-            """
+    use context = TestContext.CreateWithCode code
 
-        use context = TestContext.CreateWithCode code
+    let spanStart = code.IndexOf symbolName
 
-        let spanStart = code.IndexOf symbolName
+    let actions =
+        tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
-        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
-
-        do Assert.Empty(actions)
-    }
+    Assert.Empty(actions)
 
 [<Fact>]
 let ``Refactor should not be suggested if it changes the return type`` () =
-    task {
-        let symbolName = "sum"
+    let symbolName = "sum"
 
-        let code =
-            """
-            type A = { X:int }
-            type B = { X:int }
+    let code =
+        """
+        type A = { X:int }
+        type B = { X:int }
             
-            let f (i: int) : A = { X = i }
-            let sum a b = a + b
-            """
+        let f (i: int) : A = { X = i }
+        let sum a b = a + b
+        """
 
-        use context = TestContext.CreateWithCode code
+    use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf symbolName
+    let spanStart = code.IndexOf symbolName
 
-        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
+    let actions =
+        tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
-        do Assert.Empty(actions)
-    }
+    Assert.Empty(actions)
 
 [<Fact>]
 let ``Refactor should be suggested if it does not changes the return type`` () =
-    task {
-        let symbolName = "sum"
+    let symbolName = "sum"
 
-        let code =
-            """
+    let code =
+        """
             
-            type B = { X:int }
-            type A = { X:int }
+        type B = { X:int }
+        type A = { X:int }
             
-            let f (i: int) : A = { X = i }
-            let sum a b = a + b
-            """
+        let f (i: int) : A = { X = i }
+        let sum a b = a + b
+        """
 
-        use context = TestContext.CreateWithCode code
+    use context = TestContext.CreateWithCode code
 
-        let spanStart = code.IndexOf symbolName
+    let spanStart = code.IndexOf symbolName
 
-        let! actions = tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
+    let actions =
+        tryGetRefactoringActions code spanStart context (new RemoveExplicitReturnType())
 
-        do Assert.NotEmpty(actions)
-    }
+    Assert.NotEmpty(actions)

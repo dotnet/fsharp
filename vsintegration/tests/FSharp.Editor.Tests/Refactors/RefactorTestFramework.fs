@@ -25,11 +25,11 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open NUnit.Framework
 
+let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
+
 let GetSymbol (symbolName: string) (document: Document) ct =
     task {
-        let! (_, checkFileResults) =
-            document.GetFSharpParseAndCheckResultsAsync symbolName
-            |> CancellableTask.start ct
+        let! (_, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync "" |> CancellableTask.start ct
 
         let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct
         let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
@@ -42,20 +42,17 @@ let GetSymbol (symbolName: string) (document: Document) ct =
     }
 
 let GetReturnTypeOfSymbol (symbolName: string) (document: Document) ct =
-    task {
-        let! (_, checkFileResults) =
-            document.GetFSharpParseAndCheckResultsAsync symbolName
-            |> CancellableTask.start ct
+    let (_, checkFileResults) =
+        document.GetFSharpParseAndCheckResultsAsync ""
+        |> CancellableTask.start ct
+        |> GetTaskResult
 
-        let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct |> List.ofSeq
-        let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
+    let symbols = checkFileResults.GetAllUsesOfAllSymbolsInFile ct |> List.ofSeq
+    let symbolUse = symbols |> Seq.find (fun s -> s.Symbol.DisplayName = symbolName)
 
-        return
-            match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as v -> Some(v.ReturnParameter.Type.TypeDefinition.CompiledName)
-            | _ -> None
-
-    }
+    match symbolUse.Symbol with
+    | :? FSharpMemberOrFunctionOrValue as v -> Some(v.ReturnParameter.Type.TypeDefinition.CompiledName)
+    | _ -> None
 
 let TryGetRangeOfExplicitReturnType (symbolName: string) (document: Document) ct =
     task {
@@ -82,15 +79,14 @@ let AssertHasAnyExplicitReturnType (symbolName: string) (document: Document) ct 
     }
 
 let AssertHasSpecificExplicitReturnType (symbolName: string) (expectedTypeName: string) (document: Document) ct =
-    task {
-        let! returnType = GetReturnTypeOfSymbol symbolName document ct
 
-        match returnType with
-        | Some t -> Assert.AreEqual(expectedTypeName, t)
-        | None -> Assert.Fail($"Unexpected type. Expected {expectedTypeName} but was t")
+    let returnType = GetReturnTypeOfSymbol symbolName document ct
 
-        ()
-    }
+    match returnType with
+    | Some t -> Assert.AreEqual(expectedTypeName, t)
+    | None -> Assert.Fail($"Unexpected type. Expected {expectedTypeName} but was t")
+
+    ()
 
 let AssertHasNoExplicitReturnType (symbolName: string) (document: Document) ct =
     task {
@@ -154,6 +150,7 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
         return newDocument
     }
     |> CancellableTask.startWithoutCancellation
+    |> fun task -> task.Result
 
 let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     cancellableTask {
@@ -174,3 +171,4 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
         return refactoringActions
     }
     |> CancellableTask.startWithoutCancellation
+    |> fun task -> task.Result
