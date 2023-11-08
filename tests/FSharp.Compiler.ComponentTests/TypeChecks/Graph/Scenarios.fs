@@ -772,4 +772,32 @@ type DiGraph = obj
 """
                     (set [| 0 |])
             ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+                    
+                sourceFile
+                    "Program"
+                    """
+printfn "Hello"
+"""
+                    Set.empty
+            ]
     ]

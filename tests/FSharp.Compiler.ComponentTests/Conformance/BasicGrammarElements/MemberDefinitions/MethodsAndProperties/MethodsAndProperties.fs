@@ -26,7 +26,7 @@ module MemberDefinitions_MethodsAndProperties =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
-
+   
     // SOURCE=E_AbstractAndConcereteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcereteProp.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcereteProp.fs"|])>]
     let ``E_AbstractAndConcereteProp_fs`` compilation =
@@ -573,4 +573,98 @@ type I =
             (Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             (Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
+    let ``IndexedPropertiesSameType_fs`` compilation =
+        compilation
+        |> withLangVersion70
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Indexed1PropertiesSameType preview``() =
+        Fsx """
+type MyIndexerClass() =
+    member x.Indexer1
+        with get (index: int): string = ""
+        and set (index: int) (value: float) = ()
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
+        
+    [<Fact>]
+    let ``Indexed2PropertiesSameType_fs preview``() =
+        Fsx """
+type MyIndexerClass() =
+    member x.Indexer2
+        with get (index) = 1
+        and set (index) (value: float) = ()
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
+    
+    [<Fact>]
+    let ``Indexed3PropertiesSameType_fs preview``() =
+        Fsx """
+type MyIndexerClass() =
+    member x.Indexer3
+        with get index = 1
+    member x.Indexer3
+        with set index (value: float) = ()
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer3' has getter of type 'int' but setter of type 'float'.")
+    
+    [<Fact>]
+    let ``Indexed4PropertiesSameType_fs preview``() =
+        Fsx """
+type MyIndexerClass() =
+    member x.Indexer4
+        with get (index: int, index2: int): float = 0.0
+        and set (index1: int, index2: int) (value: string) = ()
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
+        
+    [<Fact>]
+    let ``Indexed5PropertiesSameType_fs preview``() =
+        Fsx """
+type MyIndexerClass() =
+    member x.Indexer5
+        with get (index, index2) = 0.0
+        and set (index1, index2) value = ()
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
+            
+    [<Fact>]
+    let ``GenericIndexerPropertiesSameType_fs preview``() =
+        Fsx """
+type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
+    let mutable m_lastArgs  = Unchecked.defaultof<'indexerArgs>
+    let mutable m_lastInput = Unchecked.defaultof<'indexerInput>
 
+    member this.LastArgs  = m_lastArgs
+    member this.LastInput = m_lastInput
+
+    member this.Item with get (args : 'indexerArgs) = 
+                                                m_lastArgs <- args;
+                                                Unchecked.defaultof<'indexerOutput>
+                     and  set (args : 'indexerArgs) (input : 'indexerInput) = 
+                                                m_lastArgs  <- args
+                                                m_lastInput <- input
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3581, Line 9, Col 27, Line 9, Col 30, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")
