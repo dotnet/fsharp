@@ -1167,7 +1167,7 @@ module UnnecessaryParentheses =
             | SynExpr.Paren (expr = AtomicExprAfterType; range = range), SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ ->
                 ValueSome range
 
-            // Parens are otherwise required in inherit T(x), etc. (see atomicExprAfterType in pars.fsy).
+            // Parens are otherwise required in inherit T(x), etc.
             | SynExpr.Paren _, SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ -> ValueNone
 
             // We can't remove parens when they're required for fluent calls:

@@ -128,7 +128,7 @@ let _ =
             "new exn(null)", "new exn null"
             "new exn (null)", "new exn null"
             "new ResizeArray<int>(3)", "new ResizeArray<int> 3"
-            "let x = 3 in new ResizeArray<int>(x)", "let x = 3 in new ResizeArray<int>(x)" // Unless the rules for ctor args in `new` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
+            "let x = 3 in new ResizeArray<int>(x)", "let x = 3 in new ResizeArray<int>(x)"
             "ResizeArray<int>([3])", "ResizeArray<int> [3]"
             "new ResizeArray<int>([3])", "new ResizeArray<int>([3])"
             "ResizeArray<int>([|3|])", "ResizeArray<int> [|3|]"
@@ -1107,7 +1107,6 @@ let _ = (2 + 2) { return 5 }
                     inherit exn $"{message}"
                 """
 
-                // Unless the rules for ctor args in `inherit` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
                 "
                 type E (message : string) =
                     inherit exn (message)
@@ -1130,7 +1129,6 @@ let _ = (2 + 2) { return 5 }
                     new (str1, str2) = { inherit exn $"{str1}"; Message2 = str2 }
                 """
 
-                // Unless the rules for ctor args in `inherit` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
                 "
                 type E =
                     inherit exn
