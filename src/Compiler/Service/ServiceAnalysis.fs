@@ -704,8 +704,8 @@ module UnnecessaryParentheses =
             | SynExpr.AnonRecd _
             | SynExpr.InterpolatedString _
             | SynExpr.Null _
-            | SynExpr.ArrayOrList _
-            | SynExpr.ArrayOrListComputed _ -> ValueSome AtomicExprAfterType
+            | SynExpr.ArrayOrList (isArray = true)
+            | SynExpr.ArrayOrListComputed (isArray = true) -> ValueSome AtomicExprAfterType
             | _ -> ValueNone
 
         /// Matches if the given expression represents a high-precedence

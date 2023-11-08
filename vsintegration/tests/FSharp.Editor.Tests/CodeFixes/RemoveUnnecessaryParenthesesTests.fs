@@ -129,6 +129,10 @@ let _ =
             "new exn (null)", "new exn null"
             "new ResizeArray<int>(3)", "new ResizeArray<int> 3"
             "let x = 3 in new ResizeArray<int>(x)", "let x = 3 in new ResizeArray<int>(x)" // Unless the rules for ctor args in `new` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
+            "ResizeArray<int>([3])", "ResizeArray<int> [3]"
+            "new ResizeArray<int>([3])", "new ResizeArray<int>([3])"
+            "ResizeArray<int>([|3|])", "ResizeArray<int> [|3|]"
+            "new ResizeArray<int>([|3|])", "new ResizeArray<int> [|3|]"
 
             // ObjExpr
             "{ new System.IDisposable with member _.Dispose () = (ignore 3) }",
