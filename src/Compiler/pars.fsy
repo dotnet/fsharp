@@ -4885,6 +4885,14 @@ atomicExpr:
         let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
         SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }
 
+  | UNDERSCORE DOT atomicExpr EOF %prec dot_lambda
+      { let mUnderscore  = rhs parseState 1
+        let mDot  = rhs parseState 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (unionRanges mUnderscore  mDot )
+        let expr, hpa = $3
+        let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
+        SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }
+
   | UNDERSCORE DOT appExpr recover %prec dot_lambda
       { let mUnderscore  = rhs parseState 1
         let mDot  = rhs parseState 2
