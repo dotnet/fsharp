@@ -1164,12 +1164,11 @@ module UnnecessaryParentheses =
             //     inherit T(null)
             //     inherit T("")
             //     …
-            | SynExpr.Paren(expr = AtomicExprAfterType; range = range), SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ ->
+            | SynExpr.Paren (expr = AtomicExprAfterType; range = range), SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ ->
                 ValueSome range
 
             // Parens are otherwise required in inherit T(x), etc. (see atomicExprAfterType in pars.fsy).
-            | SynExpr.Paren _, SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ ->
-                ValueNone
+            | SynExpr.Paren _, SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ -> ValueNone
 
             // We can't remove parens when they're required for fluent calls:
             //
@@ -1318,8 +1317,8 @@ module UnnecessaryParentheses =
                 | SynExpr.New _, _ -> ValueNone
 
                 // { inherit T(expr); … }
-                | SynExpr.Record (baseInfo = Some (_, SynExpr.Paren (expr = Is inner), _, _, _)), AtomicExprAfterType -> ValueSome range
-                | SynExpr.Record (baseInfo = Some (_, SynExpr.Paren (expr = Is inner), _, _, _)), _ -> ValueNone
+                | SynExpr.Record(baseInfo = Some (_, SynExpr.Paren(expr = Is inner), _, _, _)), AtomicExprAfterType -> ValueSome range
+                | SynExpr.Record(baseInfo = Some (_, SynExpr.Paren(expr = Is inner), _, _, _)), _ -> ValueNone
 
                 | _, SynExpr.Paren _
                 | _, SynExpr.Quote _
