@@ -127,6 +127,8 @@ let _ =
             // New
             "new exn(null)", "new exn null"
             "new exn (null)", "new exn null"
+            "new ResizeArray<int>(3)", "new ResizeArray<int> 3"
+            "let x = 3 in new ResizeArray<int>(x)", "let x = 3 in new ResizeArray<int>(x)" // Unless the rules for ctor args in `new` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
 
             // ObjExpr
             "{ new System.IDisposable with member _.Dispose () = (ignore 3) }",
@@ -1091,6 +1093,52 @@ let builder = Builder ()
 let (+) _ _ = builder
 let _ = (2 + 2) { return 5 }
 "
+
+                """
+                type E (message : string) =
+                    inherit exn ($"{message}")
+                """,
+                """
+                type E (message : string) =
+                    inherit exn $"{message}"
+                """
+
+                // Unless the rules for ctor args in `inherit` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
+                "
+                type E (message : string) =
+                    inherit exn (message)
+                ",
+                "
+                type E (message : string) =
+                    inherit exn (message)
+                "
+
+                """
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn ($"{str1}"); Message2 = str2 }
+                """,
+                """
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn $"{str1}"; Message2 = str2 }
+                """
+
+                // Unless the rules for ctor args in `inherit` exprs are ever relaxed (e.g., atomicExprAfterType → argExpr in pars.fsy).
+                "
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn (str1); Message2 = str2 }
+                ",
+                "
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn (str1); Message2 = str2 }
+                "
             }
 
         [<Theory; MemberData(nameof moreComplexApps)>]
