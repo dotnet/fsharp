@@ -24,5 +24,3 @@ ImplFile
           (1,0--1,17), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
-
-(1,5)-(1,6) parse error  _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.
