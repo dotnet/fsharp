@@ -1103,6 +1103,14 @@ module UnnecessaryParentheses =
             //     let inline f x = (^a : (static member Parse : string -> ^a) x)
             | SynExpr.Paren(expr = SynExpr.TraitCall _), _ -> ValueNone
 
+            // Don't touch library-only stuff:
+            //
+            //     (# "ldlen.multi 2 0" array : int #)
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyILAssembly _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyStaticOptimization _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyUnionCaseFieldGet _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyUnionCaseFieldSet _), _ -> ValueNone
+
             // Parens are required around the body expresion of a binding
             // if the parenthesized expression would be invalid without its parentheses, e.g.,
             //
