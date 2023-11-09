@@ -724,6 +724,9 @@ in x
             """
             $"{3 + LanguagePrimitives.GenericZero<int> :N0}"
             """
+
+            // LibraryOnlyILAssembly
+            """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
         }
 
     [<Theory; MemberData(nameof exprs)>]
