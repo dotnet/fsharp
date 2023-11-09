@@ -365,6 +365,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %left pat_app
 %left pat_args
 %left PREFIX_OP
+%right dot_lambda
 %left DOT QMARK
 %left HIGH_PRECEDENCE_BRACK_APP
 %left HIGH_PRECEDENCE_PAREN_APP
@@ -4876,7 +4877,7 @@ argExpr:
         arg }
 
 atomicExpr:
-  | UNDERSCORE DOT atomicExpr
+  | UNDERSCORE DOT atomicExpr %prec dot_lambda
       { let mUnderscore  = rhs parseState 1
         let mDot  = rhs parseState 2
         parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (unionRanges mUnderscore  mDot )
