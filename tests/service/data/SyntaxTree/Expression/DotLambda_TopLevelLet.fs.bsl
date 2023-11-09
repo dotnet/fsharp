@@ -1,9 +1,9 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/TopLevelLet.fs", false, QualifiedNameOfFile TopLevelLet,
-      [], [],
+     ("/root/Expression/DotLambda_TopLevelLet.fs", false,
+      QualifiedNameOfFile DotLambda_TopLevelLet, [], [],
       [SynModuleOrNamespace
-         ([TopLevelLet], false, AnonModule,
+         ([DotLambda_TopLevelLet], false, AnonModule,
           [Let
              (false,
               [SynBinding

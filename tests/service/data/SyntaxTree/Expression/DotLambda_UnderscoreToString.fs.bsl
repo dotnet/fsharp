@@ -1,9 +1,9 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/UnderscoreToString.fs", false,
-      QualifiedNameOfFile UnderscoreToString, [], [],
+     ("/root/Expression/DotLambda_UnderscoreToString.fs", false,
+      QualifiedNameOfFile DotLambda_UnderscoreToString, [], [],
       [SynModuleOrNamespace
-         ([UnderscoreToString], false, AnonModule,
+         ([DotLambda_UnderscoreToString], false, AnonModule,
           [Expr
              (DotLambda
                 (App

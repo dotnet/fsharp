@@ -1,9 +1,9 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/WithNonTupledFunctionCall.fs", false,
-      QualifiedNameOfFile WithNonTupledFunctionCall, [], [],
+     ("/root/Expression/DotLambda_WithNonTupledFunctionCall.fs", false,
+      QualifiedNameOfFile DotLambda_WithNonTupledFunctionCall, [], [],
       [SynModuleOrNamespace
-         ([WithNonTupledFunctionCall], false, AnonModule,
+         ([DotLambda_WithNonTupledFunctionCall], false, AnonModule,
           [Let
              (false,
               [SynBinding

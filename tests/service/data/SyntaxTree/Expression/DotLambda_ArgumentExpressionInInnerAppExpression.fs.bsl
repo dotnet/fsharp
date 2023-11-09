@@ -1,9 +1,11 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/ArgumentExpressionInInnerAppExpression.fs", false,
-      QualifiedNameOfFile ArgumentExpressionInInnerAppExpression, [], [],
+     ("/root/Expression/DotLambda_ArgumentExpressionInInnerAppExpression.fs",
+      false,
+      QualifiedNameOfFile DotLambda_ArgumentExpressionInInnerAppExpression, [],
+      [],
       [SynModuleOrNamespace
-         ([ArgumentExpressionInInnerAppExpression], false, AnonModule,
+         ([DotLambda_ArgumentExpressionInInnerAppExpression], false, AnonModule,
           [Let
              (false,
               [SynBinding

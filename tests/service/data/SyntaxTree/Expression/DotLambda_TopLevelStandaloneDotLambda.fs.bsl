@@ -1,9 +1,9 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/TopLevelStandaloneDotLambda.fs", false,
-      QualifiedNameOfFile TopLevelStandaloneDotLambda, [], [],
+     ("/root/Expression/DotLambda_TopLevelStandaloneDotLambda.fs", false,
+      QualifiedNameOfFile DotLambda_TopLevelStandaloneDotLambda, [], [],
       [SynModuleOrNamespace
-         ([TopLevelStandaloneDotLambda], false, AnonModule,
+         ([DotLambda_TopLevelStandaloneDotLambda], false, AnonModule,
           [Expr
              (App
                 (NonAtomic, false,
