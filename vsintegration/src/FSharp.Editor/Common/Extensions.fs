@@ -584,10 +584,7 @@ type ReadOnlySpanExtensions =
         let mutable found = false
 
         while not found && i < span.Length do
-            if span[i] <> value then
-                found <- true
-            else
-                i <- i + 1
+            if span[i] <> value then found <- true else i <- i + 1
 
         if found then i else -1
 
