@@ -18,6 +18,24 @@ printfn "%s" x"""
     |> typecheck
     |> shouldSucceed
 
+[<Fact>]
+let ``Argument expression in inner app expression`` () =
+    Fsx """
+let x =  List.map _.ToString() [1; 2; 3]"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Argument to a function expression - should fail`` () =
+    Fsx """
+type Person = { DrawFromBox : int -> string }
+let x : Person -> string = _.DrawFromBox 123"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withErrorCodes [3584]
+
 
 [<Fact>]
 let ``Bug - constant lambdas are not part of this feature`` () =
@@ -67,9 +85,12 @@ let x = "a" |> _.ToString () """
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-            (Error 10, Line 2, Col 1, Line 2, Col 30, "Incomplete structured construct at or before this point in expression")
-            (Error 3571, Line 2, Col 16, Line 2, Col 17, " _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.")]
-
+        Error 3584, Line 2, Col 16, Line 2, Col 26, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'."
+        Error 1, Line 2, Col 16, Line 2, Col 29, """Type mismatch. Expecting a
+    'string -> 'a'    
+but given a
+    'unit -> string'    
+The type 'string' does not match the type 'unit'""" ]
 
 [<Fact>]
 let ``Underscore Dot Curried Function With Arguments - NonAtomic`` () =
@@ -80,9 +101,10 @@ let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [
-            (Error 10, Line 4, Col 1, Line 4, Col 51, "Incomplete structured construct at or before this point in expression")
-            (Error 3571, Line 4, Col 36, Line 4, Col 37, " _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.")]
+    |> withDiagnostics [ 
+            Error 3584, Line 4, Col 36, Line 4, Col 45, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'."
+            Error 72, Line 4, Col 36, Line 4, Col 45, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."
+            ]
 
 [<Fact>]
 let ``Underscore Dot Length on string`` () =         

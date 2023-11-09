@@ -1715,7 +1715,6 @@ featureStaticLetInRecordsDusEmptyTypes,"Allow static let bindings in union, reco
 3568,parsMissingKeyword,"Missing keyword '%s'"
 3569,chkNotTailRecursive,"The member or function '%s' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way."
 3570,tcAmbiguousDiscardDotLambda,"The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope."
-3571,parsUnderScoreDotLambdaNonAtomic," _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses."
 featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only function"
 3572,parsConstraintIntersectionSyntaxUsedWithNonFlexibleType,"Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable & #ISomeInterface'."
 3573,tcStaticBindingInExtrinsicAugmentation,"Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."
