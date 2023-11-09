@@ -104,6 +104,23 @@ let _ =
             "struct (1, (1))", "struct (1, 1)"
             "(fun x -> x), y", "(fun x -> x), y"
 
+            "
+            let _ =
+                1,
+                (true
+                 || false
+                 || true),
+                1
+            ",
+            "
+            let _ =
+                1,
+                (true
+                 || false
+                 || true),
+                1
+            "
+
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
             "{| A = (1); B = 2 |}", "{| A = 1; B = 2 |}"
