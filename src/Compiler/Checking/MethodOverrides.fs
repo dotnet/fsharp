@@ -962,7 +962,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers) = 
+let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, memberFlags: SynMemberFlags) = 
     let pinfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 
@@ -970,5 +970,5 @@ let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberNam
         | ty, None -> 
             GetIntrinsicPropInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
         
-    let dispatchSlots = pinfos |> List.filter (fun pinfo -> pinfo.IsVirtualProperty)
+    let dispatchSlots = pinfos |> List.filter (fun pinfo -> pinfo.IsVirtualProperty && (not pinfo.IsStatic) = memberFlags.IsInstance)
     dispatchSlots

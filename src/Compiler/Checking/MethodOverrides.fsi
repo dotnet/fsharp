@@ -170,5 +170,6 @@ val GetAbstractPropInfosForSynPropertyDecl:
     ad: AccessorDomain *
     memberName: Ident *
     bindm: range *
-    typToSearchForAbstractMembers: (TType * SlotImplSet option) ->
+    typToSearchForAbstractMembers: (TType * SlotImplSet option) *
+    memberFlags: SynMemberFlags ->
         PropInfo list

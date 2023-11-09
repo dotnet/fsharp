@@ -1267,6 +1267,11 @@
         <target state="new">No static abstract member was found that corresponds to this override</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="new">No static abstract property was found that corresponds to this override</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">Bu ifade dizin oluşturmayı destekler, örn. “expr.[index]”. Söz dizimi “expr.[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>

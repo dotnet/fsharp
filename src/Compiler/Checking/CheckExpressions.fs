@@ -11304,7 +11304,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
         | SynMemberKind.PropertyGet
         | SynMemberKind.PropertySet as k ->
-           let dispatchSlots = GetAbstractPropInfosForSynPropertyDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers)
+           let dispatchSlots = GetAbstractPropInfosForSynPropertyDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, memberFlags)
 
            // Only consider those abstract slots where the get/set flags match the value we're defining
            let dispatchSlots =
@@ -11317,7 +11317,11 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
            let uniqueAbstractPropSigs =
                match dispatchSlots with
                | [] when not (CompileAsEvent g attribs) ->
-                   errorR(Error(FSComp.SR.tcNoPropertyFoundForOverride(), memberId.idRange))
+                   let instanceExpected = memberFlags.IsInstance
+                   if instanceExpected then
+                        errorR(Error(FSComp.SR.tcNoPropertyFoundForOverride(), memberId.idRange))
+                   else
+                        errorR (Error(FSComp.SR.tcNoStaticPropertyFoundForOverride (), memberId.idRange))
                    []
                | [uniqueAbstractProp] -> [uniqueAbstractProp]
                | _ ->
