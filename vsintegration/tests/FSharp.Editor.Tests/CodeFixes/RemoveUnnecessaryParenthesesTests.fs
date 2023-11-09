@@ -115,9 +115,9 @@ let _ =
             "
             let _ =
                 1,
-                (true
-                 || false
-                 || true),
+                true
+                || false
+                || true,
                 1
             "
 
@@ -245,9 +245,9 @@ let _ =
                  | _ -> 3)
             ",
             "
-            3 >  match x with
-                 | 1
-                 | _ -> 3
+            3 > match x with
+                | 1
+                | _ -> 3
             "
 
             // Do
@@ -274,8 +274,8 @@ let _ =
             in x
             """,
             """
-            let x =  printfn $"{y}"
-                     2
+            let x = printfn $"{y}"
+                    2
             in x
             """
 
@@ -291,13 +291,39 @@ let _ =
             "
 
             "
+            let x =
+             (2
+            + 2)
+            in x
+            ",
+            "
+            let x =
+              2
+            + 2
+            in x
+            "
+
+            "
+            let x = (
+              2
+            + 2)
+            in x
+            ",
+            "
+            let x = 
+              2
+            + 2
+            in x
+            "
+
+            "
             let x = (2
                      +             2)
             in x
             ",
             "
-            let x =  2
-                     +             2
+            let x = 2
+                    +             2
             in x
             "
 
@@ -307,8 +333,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   +             2
+            let x = 2
+                  +             2
             in x
             "
 
@@ -318,8 +344,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   + 2
+            let x = 2
+                  + 2
             in x
             "
 
@@ -329,8 +355,8 @@ let _ =
             in x
             ",
             "
-            let x =  x
-                    +y
+            let x = x
+                   +y
             in x
             "
 
@@ -340,8 +366,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                     +2
+            let x = 2
+                    +2
             in x
             "
 
@@ -351,9 +377,22 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                 <<< 2
+            let x = 2
+                <<< 2
             in x
+            "
+
+            "
+let (<<<<<<<<) = (<<<)
+let x = (2
+<<<<<<<< 2)
+in x
+            ",
+            "
+let (<<<<<<<<) = (<<<)
+let x = 2
+<<<<<<<< 2
+in x
             "
 
             "
@@ -533,8 +572,8 @@ let _ =
             """,
             """
             let mutable x = 3
-            x <-  3
-              <<< 3
+            x <- 3
+             <<< 3
             """
 
             // DotIndexedGet
