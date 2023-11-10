@@ -922,3 +922,244 @@ let main _ =
         |> withLangVersion70
         |> compile
         |> shouldSucceed
+        
+    [<FactForNETCOREAPP>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+        static abstract member Property: int
+        abstract member Property2: int
+        static abstract Property3 : int with get, set
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute2() = ()
+            member this.Property = 0
+            member this.Property2 = 0
+            member this.Property3 = 0
+            member this.Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
+             (Error 859, Line 14, Col 25, Line 14, Col 33, "No abstract property was found that corresponds to this override")
+             (Error 859, Line 16, Col 25, Line 16, Col 34, "No abstract property was found that corresponds to this override")
+             (Error 859, Line 17, Col 25, Line 17, Col 34, "No abstract property was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        static abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute() = false
+            member this.Property = 0
+            member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 1, Line 11, Col 34, Line 11, Col 36, "This expression was expected to have type
+    'bool'    
+but here has type
+    'unit'    ")
+            (Error 1, Line 14, Col 36, Line 14, Col 41, "This expression was expected to have type
+    'int'    
+but here has type
+    'bool'    ")
+            ]
+         
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+       static abstract member Property: int
+       abstract member Property2: int
+       static abstract Property3 : int with get, set
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        member this.Property = 0
+        member this.Property2 = 0
+        member this.Property3 = 0
+        member this.Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override");   
+            (Error 859, Line 15, Col 21, Line 15, Col 29, "No abstract property was found that corresponds to this override");  
+            (Error 859, Line 17, Col 21, Line 17, Col 30, "No abstract property was found that corresponds to this override");  
+            (Error 859, Line 18, Col 21, Line 18, Col 30, "No abstract property was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+       abstract Other : int -> bool
+       static abstract member Property: int
+       abstract member Property: bool
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        member _.Other(value) = value = 1
+        member this.Property = 0
+        member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
+            (Error 1, Line 16, Col 32, Line 16, Col 33, "This expression was expected to have type
+    'bool'    
+but here has type
+    'int'    ")
+         ]
+
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+        
+    type IOperation2 =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+
+    type FaultyOperation() =
+        interface IOperation with
+            member this.Execute() = 0
+            member _.Execute2() = ()
+            
+        interface IOperation2 with
+            member this.Execute() = 0
+            member this.Execute2() = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" when implementing IWSAM in an object expression`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+        
+    let objExpr =
+        { new IOperation with
+            member _.Execute() = ()
+            member _.Execute2() = () }
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 17, Line 9, Col 22, Line 9, Col 29, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
+            (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       abstract Other : int -> int
+       abstract member Property: int
+       abstract member Property2: int
+       abstract Property3 : int with get, set
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        static member DoIt() = ""
+        static member Other(value) = value + 1
+        static member Property = 0
+        static member Property2 = 0
+        static member Property3 = 0
+        static member Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3855, Line 13, Col 23, Line 13, Col 27, "No static abstract member was found that corresponds to this override")
+            (Error 3855, Line 14, Col 23, Line 14, Col 28, "No static abstract member was found that corresponds to this override")
+            (Error 3859, Line 15, Col 23, Line 15, Col 31, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 16, Col 23, Line 16, Col 32, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 17, Col 23, Line 17, Col 32, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 18, Col 23, Line 18, Col 32, "No static abstract property was found that corresponds to this override")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing an interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            static member Execute() = ()
+            static member Execute() = false
+            static member Property = 0
+            static member Property = false
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3855, Line 11, Col 27, Line 11, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 3855, Line 12, Col 27, Line 12, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 3859, Line 13, Col 27, Line 13, Col 35, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 14, Col 27, Line 14, Col 35, "No static abstract property was found that corresponds to this override")
+         ]
