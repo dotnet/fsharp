@@ -89,11 +89,10 @@ module private Patterns =
                     let line = sourceText.Lines[ lineNo ].ToString().AsSpan()
                     let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.? ".AsSpan())
 
-                    if i >= 0 && i <> offsides then
+                    if i < offsides then
                         false
                     else
-                        let lo = if line[i] = ' ' then i else 0
-                        lo <= offsides || loop (lineNo - 1)
+                        i = offsides || loop (lineNo - 1)
                 else
                     false
 
