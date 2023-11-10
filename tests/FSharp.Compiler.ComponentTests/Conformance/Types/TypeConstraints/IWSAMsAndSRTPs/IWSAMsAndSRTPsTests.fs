@@ -1101,6 +1101,28 @@ module StaticAbstractBug =
             (Error 17, Line 9, Col 22, Line 9, Col 29, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
             (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
          ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Produce an error when one leaves keyword "static" when implementing IWSAM in an object expression`` () =
+        Fsx """
+type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+
+let _ =
+    { new IOperation with
+        static member Execute() = ()
+        member _.Execute2() = ()
+    }
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 17, Line 8, Col 23, Line 8, Col 30, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
+            (Error 783, Line 7, Col 11, Line 7, Col 21, "At least one override did not correctly implement its corresponding abstract member")
+         ]
          
     [<FactForNETCOREAPP>]
     let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
