@@ -1010,7 +1010,7 @@ module MutRecBindingChecking =
                                 let apparentEnclosingType =  generalizedTyconRef g parentRef
                                 let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
                                 let propertyName =
-                                    if vGet.Id.idText.StartsWith("get_", StringComparison.InvariantCulture) then
+                                    if vGet.Id.idText.StartsWith("get_", StringComparison.Ordinal) then
                                         vGet.Id.idText.Replace("get_", "")
                                     else
                                         vGet.Id.idText
