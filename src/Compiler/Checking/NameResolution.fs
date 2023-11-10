@@ -2642,8 +2642,19 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
         
                             let ignoreProperty (p: PropInfo) =
                                 // do not hide properties if:
-                                // * is indexed property
-                                // * is function type
+                                // * is indexed property e.g.:
+                                // ```fsharp
+                                // member x.Prop with 
+                                //     get (indexPiece1:int,indexPiece2: string) = ...
+                                //     and set (indexPiece1:int,indexPiece2: string) value = ... 
+                                // ```
+                                // which is called like this: obj.Prop(1,"a") or obj.Prop(1,"a") <- someValue
+                                // * is function type e.g.:
+                                // ```fsharp
+                                // member x.Prop with
+                                //    get () = fun a -> printfn $"{a}"
+                                // ```
+                                // which is called like this: obj.Prop 123
                                 if p.IsIndexer then
                                     true
                                 else
