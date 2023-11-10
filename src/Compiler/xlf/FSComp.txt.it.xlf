@@ -122,6 +122,11 @@
         <target state="translated">Il membro o la funzione "{0}" ha l'attributo "TailCallAttribute", ma non è in uso in modo ricorsivo finale.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Static members are not allowed in object expressions.</source>
+        <target state="new">Static members are not allowed in object expressions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">L'attributo 'AssemblyKeyNameAttribute' è deprecato. In alternativa, usare 'AssemblyKeyFileAttribute'.</target>

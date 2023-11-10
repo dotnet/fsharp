@@ -6804,10 +6804,16 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
         let rec lookPat p =
             match p, memberFlagsOpt with
             | SynPat.FromParseError(pat, _), _ -> lookPat pat
-            | SynPat.Named (SynIdent(id,_), _, _, _), _ ->
+            | SynPat.Named (SynIdent(id,_), _, _, _), None ->
                 let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
                 let logicalMethId = id
                 let memberFlags = OverrideMemberFlags SynMemberKind.Member
+                bindingRhs, logicalMethId, memberFlags
+                
+            | SynPat.Named (SynIdent(id,_), _, _, _), Some memberFlags ->
+                CheckMemberFlags None NewSlotsOK OverridesOK memberFlags mBinding
+                let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
+                let logicalMethId = id
                 bindingRhs, logicalMethId, memberFlags
 
             | SynPat.InstanceMember(thisId, memberId, _, _, _), Some memberFlags ->
@@ -7014,7 +7020,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
+            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
 
         // 3. create the specs of overrides
         let allTypeImpls =
@@ -7022,9 +7028,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
               let overrides' =
                   [ for overrideMeth in overrides do
                         let overrideInfo, (_, thisVal, methodVars, bindingAttribs, bindingBody) = overrideMeth
-                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _, _)) = overrideInfo
+                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _, isInstance)) = overrideInfo
 
-                        if not isFakeEventProperty then
+                        if not isFakeEventProperty && isInstance then
                             let searchForOverride =
                                 dispatchSlotsKeyed
                                 |> NameMultiMap.find id.idText
@@ -11245,7 +11251,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      if instanceExpected then
                         errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                      else
-                        errorR (Error(FSComp.SR.tcNoStaticMemberFoundForOverride (), memberId.idRange))
+                        errorR(Error(FSComp.SR.tcNoStaticMemberFoundForOverride (), memberId.idRange))
                      []
 
                  | slot :: _ as slots ->

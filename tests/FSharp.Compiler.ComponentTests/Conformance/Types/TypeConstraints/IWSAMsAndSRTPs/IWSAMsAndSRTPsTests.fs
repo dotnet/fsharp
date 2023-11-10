@@ -1120,8 +1120,55 @@ let _ =
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-            (Error 17, Line 8, Col 23, Line 8, Col 30, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
-            (Error 783, Line 7, Col 11, Line 7, Col 21, "At least one override did not correctly implement its corresponding abstract member")
+             (Error 3860, Line 8, Col 23, Line 8, Col 30, "Static members are not allowed in object expressions.")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produce an error when one leaves keyword "static" when implementing multiple IWSAM in an object expression`` () =
+        Fsx """
+type IOperation =
+        static abstract member Execute: unit -> unit
+        static abstract member Execute2: unit -> unit
+
+let _ =
+    { new IOperation with
+        static member Execute() = ()
+        static member Execute2() = ()
+    }
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3860, Line 8, Col 23, Line 8, Col 30, "Static members are not allowed in object expressions.");
+            (Error 3860, Line 9, Col 23, Line 9, Col 31, "Static members are not allowed in object expressions.")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produce an error when one leaves keyword "static" when implementing static and not static members in an object expression`` () =
+        Fsx """
+type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute1: unit -> unit
+        static abstract member Execute2: unit -> unit
+        abstract member Execute3: bool
+        
+let _ =
+    { new IOperation with
+        static member Execute() = ()
+        member this.Execute1() = ()
+        static member Execute2() = ()
+        member this.Execute3 = true
+    }
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3860, Line 10, Col 23, Line 10, Col 30, "Static members are not allowed in object expressions.");
+            (Error 3860, Line 12, Col 23, Line 12, Col 31, "Static members are not allowed in object expressions.");
          ]
          
     [<FactForNETCOREAPP>]
