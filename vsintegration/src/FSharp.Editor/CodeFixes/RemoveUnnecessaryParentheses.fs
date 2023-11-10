@@ -79,24 +79,22 @@ module private Patterns =
             let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
             line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0
 
-        let precedingLineHasSameOffsides (span: TextSpan) (sourceText: SourceText) =
+        let followingLineMovesOffsidesRightward (span: TextSpan) (sourceText: SourceText) =
             let startLinePosition = sourceText.Lines.GetLinePosition span.Start
             let startLine = startLinePosition.Line
+            let endLinePosition = sourceText.Lines.GetLinePosition span.End
+            let endLine = endLinePosition.Line
             let offsides = startLinePosition.Character
 
             let rec loop lineNo =
-                if lineNo >= 0 then
+                if lineNo <= endLine then
                     let line = sourceText.Lines[ lineNo ].ToString().AsSpan()
-                    let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.? ".AsSpan())
-
-                    if i < offsides then
-                        false
-                    else
-                        i = offsides || loop (lineNo - 1)
+                    let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.?) ".AsSpan())
+                    i > offsides || loop (lineNo + 1)
                 else
                     false
 
-            loop (startLine - 1)
+            loop (startLine + 1)
 
         [<return: Struct>]
         let (|ContainsSensitiveIndentation|_|) span sourceText =
@@ -107,8 +105,8 @@ module private Patterns =
             toPat (hasPrecedingConstructOnSameLine span) sourceText
 
         [<return: Struct>]
-        let (|PrecedingLineHasSameOffsides|_|) span sourceText =
-            toPat (precedingLineHasSameOffsides span) sourceText
+        let (|FollowingLineMovesOffsidesRightward|_|) span sourceText =
+            toPat (followingLineMovesOffsidesRightward span) sourceText
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
@@ -194,8 +192,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | ShouldPutSpaceBefore & ShouldPutSpaceAfter, _ -> " " + txt[1 .. txt.Length - 2] + " "
                         | ShouldPutSpaceBefore, _ -> " " + txt[1 .. txt.Length - 2]
                         | ShouldPutSpaceAfter, _ -> txt[1 .. txt.Length - 2] + " "
-                        | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span & HasPrecedingConstructOnSameLine context.Span
-                        | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span & PrecedingLineHasSameOffsides context.Span ->
+                        | NewOffsidesOnFirstLine,
+                          ContainsSensitiveIndentation context.Span & (HasPrecedingConstructOnSameLine context.Span | FollowingLineMovesOffsidesRightward context.Span) ->
                             txt[ 1 .. txt.Length - 2 ].Replace("\n ", "\n")
                         | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span -> " " + txt[1 .. txt.Length - 2]
                         | _ -> txt[1 .. txt.Length - 2]

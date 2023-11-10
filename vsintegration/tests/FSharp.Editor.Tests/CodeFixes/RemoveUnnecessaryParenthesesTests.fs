@@ -298,8 +298,8 @@ let _ =
             ",
             "
             let x =
-              2
-            + 2
+             2
+           + 2
             in x
             "
 
@@ -317,10 +317,10 @@ let _ =
             let x =
      
 
-              2
-     
+             2
+    
 
-            + 2
+           + 2
             in x
             "
 
@@ -461,8 +461,8 @@ in x
                 )
 
             let y =
-                 2
-               + 2
+                2
+              + 2
 
             in x + y
             "
@@ -488,9 +488,9 @@ in x
             ",
             "
             x <
-                 2
-               + 3
-                
+                2
+              + 3
+               
             "
 
             // LetOrUse
@@ -748,6 +748,22 @@ in x
 
             // LibraryOnlyILAssembly
             """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
+
+            // Miscellaneous
+            "
+            (match x with
+             | 1 -> ()
+             | _ -> ())
+
+            y
+            ",
+            "
+            match x with
+            | 1 -> ()
+            | _ -> ()
+
+            y
+            "
         }
 
     [<Theory; MemberData(nameof exprs)>]
