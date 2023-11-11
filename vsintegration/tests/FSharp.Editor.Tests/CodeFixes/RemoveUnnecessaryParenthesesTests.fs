@@ -127,6 +127,12 @@ let _ =
             // New
             "new exn(null)", "new exn null"
             "new exn (null)", "new exn null"
+            "new ResizeArray<int>(3)", "new ResizeArray<int> 3"
+            "let x = 3 in new ResizeArray<int>(x)", "let x = 3 in new ResizeArray<int>(x)"
+            "ResizeArray<int>([3])", "ResizeArray<int> [3]"
+            "new ResizeArray<int>([3])", "new ResizeArray<int>([3])"
+            "ResizeArray<int>([|3|])", "ResizeArray<int> [|3|]"
+            "new ResizeArray<int>([|3|])", "new ResizeArray<int> [|3|]"
 
             // ObjExpr
             "{ new System.IDisposable with member _.Dispose () = (ignore 3) }",
@@ -662,6 +668,9 @@ let _ =
             """
             $"{3 + LanguagePrimitives.GenericZero<int> :N0}"
             """
+
+            // LibraryOnlyILAssembly
+            """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
         }
 
     [<Theory; MemberData(nameof exprs)>]
@@ -1091,6 +1100,50 @@ let builder = Builder ()
 let (+) _ _ = builder
 let _ = (2 + 2) { return 5 }
 "
+
+                """
+                type E (message : string) =
+                    inherit exn ($"{message}")
+                """,
+                """
+                type E (message : string) =
+                    inherit exn $"{message}"
+                """
+
+                "
+                type E (message : string) =
+                    inherit exn (message)
+                ",
+                "
+                type E (message : string) =
+                    inherit exn (message)
+                "
+
+                """
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn ($"{str1}"); Message2 = str2 }
+                """,
+                """
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn $"{str1}"; Message2 = str2 }
+                """
+
+                "
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn (str1); Message2 = str2 }
+                ",
+                "
+                type E =
+                    inherit exn
+                    val Message2 : string
+                    new (str1, str2) = { inherit exn (str1); Message2 = str2 }
+                "
             }
 
         [<Theory; MemberData(nameof moreComplexApps)>]

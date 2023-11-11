@@ -692,6 +692,22 @@ module UnnecessaryParentheses =
     module SynExpr =
         open FSharp.Compiler.SyntaxTrivia
 
+        /// See atomicExprAfterType in pars.fsy.
+        [<return: Struct>]
+        let (|AtomicExprAfterType|_|) expr =
+            match expr with
+            | SynExpr.Paren _
+            | SynExpr.Quote _
+            | SynExpr.Const _
+            | SynExpr.Tuple(isStruct = true)
+            | SynExpr.Record _
+            | SynExpr.AnonRecd _
+            | SynExpr.InterpolatedString _
+            | SynExpr.Null _
+            | SynExpr.ArrayOrList(isArray = true)
+            | SynExpr.ArrayOrListComputed(isArray = true) -> ValueSome AtomicExprAfterType
+            | _ -> ValueNone
+
         /// Matches if the given expression represents a high-precedence
         /// function application, e.g.,
         ///
@@ -1087,6 +1103,14 @@ module UnnecessaryParentheses =
             //     let inline f x = (^a : (static member Parse : string -> ^a) x)
             | SynExpr.Paren(expr = SynExpr.TraitCall _), _ -> ValueNone
 
+            // Don't touch library-only stuff:
+            //
+            //     (# "ldlen.multi 2 0" array : int #)
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyILAssembly _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyStaticOptimization _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyUnionCaseFieldGet _), _
+            | SynExpr.Paren(expr = SynExpr.LibraryOnlyUnionCaseFieldSet _), _ -> ValueNone
+
             // Parens are required around the body expresion of a binding
             // if the parenthesized expression would be invalid without its parentheses, e.g.,
             //
@@ -1141,6 +1165,18 @@ module UnnecessaryParentheses =
             //     join … on (… = …)
             | SynExpr.Paren(expr = SynExpr.App _), SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.JoinIn _) :: _ ->
                 ValueNone
+
+            // Parens are not required around a few anointed expressions after inherit:
+            //
+            //     inherit T(3)
+            //     inherit T(null)
+            //     inherit T("")
+            //     …
+            | SynExpr.Paren (expr = AtomicExprAfterType; range = range), SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ ->
+                ValueSome range
+
+            // Parens are otherwise required in inherit T(x), etc.
+            | SynExpr.Paren _, SyntaxNode.SynMemberDefn (SynMemberDefn.ImplicitInherit _) :: _ -> ValueNone
 
             // We can't remove parens when they're required for fluent calls:
             //
@@ -1283,6 +1319,14 @@ module UnnecessaryParentheses =
                 | SynExpr.Downcast _, SynExpr.Typed _
                 | SynExpr.AddressOf _, SynExpr.Typed _
                 | SynExpr.JoinIn _, SynExpr.Typed _ -> ValueNone
+
+                // new T(expr)
+                | SynExpr.New _, AtomicExprAfterType -> ValueSome range
+                | SynExpr.New _, _ -> ValueNone
+
+                // { inherit T(expr); … }
+                | SynExpr.Record(baseInfo = Some (_, SynExpr.Paren(expr = Is inner), _, _, _)), AtomicExprAfterType -> ValueSome range
+                | SynExpr.Record(baseInfo = Some (_, SynExpr.Paren(expr = Is inner), _, _, _)), _ -> ValueNone
 
                 | _, SynExpr.Paren _
                 | _, SynExpr.Quote _
