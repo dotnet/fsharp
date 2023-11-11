@@ -14,11 +14,11 @@ type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
-    member private _.getDiagnostics (fileContents: string, ?additionalFlags) =
+    member private _.getDiagnostics(fileContents: string, ?additionalFlags) =
         let task =
             cancellableTask {
                 let document =
-                    RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions=additionalFlags)
+                    RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
                     |> RoslynTestHelpers.GetSingleDocument
 
                 let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)

@@ -283,15 +283,19 @@ type RoslynTestHelpers private () =
         let projFilePath = "C:\\test.fsproj"
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [ docInfo ]
         let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
-        
+
         let options =
             let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-            match extraFSharpProjectOtherOptions with
-            | None | Some [||] -> options
-            | Some otherOptions -> { options  with OtherOptions = Array.concat [|options.OtherOptions; otherOptions|] }
 
-        options
-        |> RoslynTestHelpers.SetProjectOptions projId solution
+            match extraFSharpProjectOtherOptions with
+            | None
+            | Some [||] -> options
+            | Some otherOptions ->
+                { options with
+                    OtherOptions = Array.concat [| options.OtherOptions; otherOptions |]
+                }
+
+        options |> RoslynTestHelpers.SetProjectOptions projId solution
 
         if editorOptions.IsSome then
             RoslynTestHelpers.SetEditorOptions solution editorOptions.Value
@@ -356,7 +360,8 @@ type RoslynTestHelpers private () =
                     |> Array.append customProjectOptions
             }
 
-        let solution = RoslynTestHelpers.CreateSolution(code, options, ?editorOptions=customEditorOptions)
+        let solution =
+            RoslynTestHelpers.CreateSolution(code, options, ?editorOptions = customEditorOptions)
 
         solution |> RoslynTestHelpers.GetSingleDocument
 
