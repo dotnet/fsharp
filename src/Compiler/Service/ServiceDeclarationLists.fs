@@ -1139,12 +1139,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
             |> RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
-              match x.Unresolved with
-              | Some u -> 
-                  match u.Namespace with
-                  | [||] -> u.DisplayName
-                  | ns -> (ns |> String.concat ".") + "." + u.DisplayName
-              | None -> x.Item.DisplayName)
+                match x.Unresolved with
+                | Some u -> 
+                    match u.Namespace with
+                    | [||] -> u.DisplayName
+                    | ns -> (ns |> String.concat ".") + "." + u.DisplayName
+                | None -> x.Item.DisplayName)
             |> List.map (
                 let textInDeclList item =
                     match item.Unresolved with
