@@ -927,11 +927,6 @@
         <target state="translated">Bu üye erişimi belirsiz. Lütfen nesne oluşturma etrafında parantez kullanın, örneğin '(yeni SomeType (args)).MemberName’</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="translated"> _. lambda işlevleri için kısaltma, yalnızca atomik ifadelerle kullanılabilir. Bu, parantez içine alınmadıkça boşluk içermeyen ifadeler anlamına gelir.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Koşullu ifadenin 'else if' veya 'elif' dalında beklenmeyen giriş sonu. 'elif &lt;expr&gt; then &lt;expr&gt;' veya 'else if &lt;expr&gt; then &lt;expr&gt;' bekleniyordu.</target>

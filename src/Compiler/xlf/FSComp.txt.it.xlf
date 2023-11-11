@@ -927,11 +927,6 @@
         <target state="translated">L'accesso ai membri è ambiguo. Utilizzare le parentesi intorno alla creazione oggetto, ad esempio “(New SomeType (args)). MemberName”</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="translated"> la sintassi abbreviata _.per le funzioni lambda può essere usata solo con espressioni atomiche. Ciò significa espressioni senza spazi vuoti a meno che non siano racchiuse tra parentesi.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fine dell'input imprevista nel ramo 'else if' o 'elif' dell'espressione condizionale. È previsto 'elif &lt;expr&gt; then &lt;expr&gt;' o 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
