@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
 open FSharp.Compiler.CheckBasics
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -19,3 +18,9 @@ val TransformAstForNestedUpdates<'a> :
     exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * (range * 'a) ->
         (Ident list * Ident) * SynExpr option
+
+val BindOriginalRecdExpr:
+    withExpr: SynExpr * BlockSeparator ->
+        mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) ->
+        tcExpr: (SynExpr -> Expr * UnscopedTyparEnv) ->
+            Expr * UnscopedTyparEnv

@@ -426,7 +426,7 @@ let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
     ]
 
 [<Fact>]
-let ``Nested copy-and-update works when the starting expression is not a simple value``() =
+let ``Nested copy-and-update works when the starting expression is not a simple identifier``() =
     FSharp """
 module CopyAndUpdateTests
 
@@ -444,7 +444,7 @@ ignore { Module.item with Foo.Foo = 3 }
     |> shouldSucceed
 
 [<Fact>]
-let ``Nested, anonymous copy-and-update works when the starting expression is not a simple value``() =
+let ``Nested, anonymous copy-and-update works when the starting expression is not a simple identifier``() =
     FSharp """
 module CopyAndUpdateTests
 
@@ -461,7 +461,7 @@ ignore {| Module.item with Foo.Foo = 3 |}
     |> shouldSucceed
 
 [<Fact>]
-let ``Nested copy-and-update evalues the starting expression once``() =
+let ``Nested copy-and-update evaluates the original expression once``() =
     FSharp """
 module CopyAndUpdateTests
 
