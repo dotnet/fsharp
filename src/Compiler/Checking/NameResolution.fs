@@ -568,7 +568,7 @@ let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
                 | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                 | _ -> None
         Some rs
-    with e -> // Import of the ILType may fail, if so report the error and skip on
+    with RecoverableException e -> // Import of the ILType may fail, if so report the error and skip on
         errorRecovery e m
         None
 
@@ -2364,14 +2364,19 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 // Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
-let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl notifySink =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIdentAsModuleOrNamespace sink amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIdentAsModuleOrNamespace sink amap m false FullyQualified nenv ad id2 rest2 isOpenDecl notifySink
     else
         let notFoundAux (id: Ident) depth error (tcrefs: TyconRef seq) =
             let suggestNames (addToBuffer: string -> unit) =
@@ -2432,7 +2437,8 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
             modrefs
             |> List.map (fun modref ->
                 if IsEntityAccessible amap m ad modref then
-                    notifyNameResolution modref id.idRange
+                    if notifySink = ShouldNotifySink.Yes then
+                        notifyNameResolution modref id.idRange
                     look 1 modref rest
                 else
                     raze (namespaceOrModuleNotFound.Force()))
@@ -2440,8 +2446,8 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m firs
         | _ -> raze (namespaceOrModuleNotFound.Force())
 
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
-let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
-    match ResolveLongIdentAsModuleOrNamespace sink amap m true fullyQualified nenv ad id [] isOpenDecl with
+let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl notifySink f =
+    match ResolveLongIdentAsModuleOrNamespace sink amap m true fullyQualified nenv ad id [] isOpenDecl notifySink with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
@@ -2618,7 +2624,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
                 // fold the available extension members into the overload resolution
                 let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
-                
+
                 // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                 // since later on this logic is used when giving preference to intrinsic definitions
                 match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
@@ -2636,8 +2642,19 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
         
                             let ignoreProperty (p: PropInfo) =
                                 // do not hide properties if:
-                                // * is indexed property
-                                // * is function type
+                                // * is indexed property e.g.:
+                                // ```fsharp
+                                // member x.Prop with 
+                                //     get (indexPiece1:int,indexPiece2: string) = ...
+                                //     and set (indexPiece1:int,indexPiece2: string) value = ... 
+                                // ```
+                                // which is called like this: obj.Prop(1,"a") or obj.Prop(1,"a") <- someValue
+                                // * is function type e.g.:
+                                // ```fsharp
+                                // member x.Prop with
+                                //    get () = fun a -> printfn $"{a}"
+                                // ```
+                                // which is called like this: obj.Prop 123
                                 if p.IsIndexer then
                                     true
                                 else
@@ -3107,7 +3124,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
+                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl ShouldNotifySink.No
                      (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -3298,7 +3315,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
                         Item.Types (id.idText, [ mkAppTy tcref [] ])
                     | _ ->
-                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false with
+                        match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false ShouldNotifySink.Yes with
                         | Result ((_, mref, _) :: _) ->
                             let res = ResolutionInfo.Empty.AddEntity (id.idRange, mref)
                             ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
@@ -3311,7 +3328,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         // Long identifiers in patterns
         else
             let moduleSearch ad () =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
 
             let tyconSearch ad =
@@ -3534,12 +3551,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         NoResultsOrUsefulErrors
 
             let modulSearch =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
                 |?> List.concat
 
             let modulSearchFailed() =
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false ShouldNotifySink.Yes
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
                 |?> List.concat
 
@@ -3750,7 +3767,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | id2 :: rest2 ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false ShouldNotifySink.Yes
                     (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let resInfo, item, rest =
@@ -3863,7 +3880,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | modOrNsId :: rest ->
-                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false ShouldNotifySink.Yes (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
                     fieldId, Item.RecdField rfinfo, restAfterField)
@@ -4057,7 +4074,7 @@ let (|NonOverridable|_|) namedItem =
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
 let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly maybeAppliedArgExpr =
-    let inline resolveExpr findFlag =
+    let resolveExpr findFlag =
         let resInfo, item, rest =
             match lid with
             | id :: rest ->

@@ -831,3 +831,94 @@ let main _ =
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
+
+    [<FactForNETCOREAPP>]
+    let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
+        Fsx """
+            type IParseable<'T when 'T :> IParseable<'T>> =
+                static abstract member Parse : string -> 'T
+
+            type IAction<'T when 'T :> IAction<'T>> =
+                inherit IParseable<'T>
+
+            type SomeAction = A | B with
+                interface IAction<SomeAction> with
+                    static member Parse (s: string) : SomeAction =
+                        match s with
+                        | "A" -> A
+                        | "B" -> B
+                        | _ -> failwith "can't parse"
+
+            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+
+            if parse<SomeAction> "A" <> A then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Static abstracts can be inherited through multiple levels in lang version70`` () =
+        Fsx """
+            type IParseable<'T when 'T :> IParseable<'T>> =
+                static abstract member Parse : string -> 'T
+
+            type IAction1<'T when 'T :> IAction1<'T>> =
+                inherit IParseable<'T>
+
+            type IAction2<'T when 'T :> IAction2<'T>> =
+                inherit IAction1<'T>
+                static abstract member AltParse : string -> 'T
+
+            type IAction3<'T when 'T :> IAction3<'T>> =
+                inherit IAction2<'T>
+
+            type SomeAction = A | B with
+                interface IAction3<SomeAction> with
+                    static member AltParse (s: string) : SomeAction = A
+                    static member Parse (s: string) : SomeAction =
+                        match s with
+                        | "A" -> A
+                        | "B" -> B
+                        | _ -> failwith "can't parse"
+
+            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let altParse<'T when 'T :> IAction3<'T>> (x: string) : 'T = 'T.AltParse x
+
+            let x: SomeAction = parse "A"
+            let y: SomeAction = altParse "A"
+
+            if x <> A || y <> A then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Static abstracts from BCL can be inherited through multiple levels in lang version70`` () =
+        Fsx """
+            open System
+            open System.Globalization
+
+            type Person = Person with
+                interface ISpanParsable<Person> with
+                    static member Parse(_x: string, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: string, _provider: IFormatProvider, _result: byref<Person>) = true
+
+                    static member Parse(_x: ReadOnlySpan<char>, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: ReadOnlySpan<char>, _provider: IFormatProvider, _result: byref<Person>) = true
+
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse (x, CultureInfo.InvariantCulture)
+
+            let x: Person = parse "Something"
+            if x <> Person then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed

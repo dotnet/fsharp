@@ -297,9 +297,15 @@ module SyntaxTraversal =
                 ignore debugObj
                 None
 
-    /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
-    ///
-    let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
+    /// <summary>
+    /// Traverse an implementation file until <paramref name="pick"/> returns <c>Some value</c>.
+    /// </summary>
+    let traverseUntil
+        (pick: pos -> range -> obj -> (range * (unit -> 'T option)) list -> 'T option)
+        (pos: pos)
+        (visitor: SyntaxVisitorBase<'T>)
+        (parseTree: ParsedInput)
+        : 'T option =
         let pick x = pick pos x
 
         let rec traverseSynModuleDecl origPath (decl: SynModuleDecl) =
@@ -575,10 +581,17 @@ module SyntaxTraversal =
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
 
-                | SynExpr.Lambda (args = SynSimplePats.SimplePats (pats = pats); body = synExpr) ->
-                    match traverseSynSimplePats path pats with
-                    | None -> traverseSynExpr synExpr
-                    | x -> x
+                | SynExpr.Lambda (parsedData = parsedData) ->
+                    [
+                        match parsedData with
+                        | Some (pats, body) ->
+                            for pat in pats do
+                                yield dive pat pat.Range traversePat
+
+                            yield dive body body.Range traverseSynExpr
+                        | None -> ()
+                    ]
+                    |> pick expr
 
                 | SynExpr.MatchLambda (matchClauses = synMatchClauseList) ->
                     synMatchClauseList
@@ -719,6 +732,7 @@ module SyntaxTraversal =
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (elementPats = ps)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
+                | SynPat.Record (fieldPats = fieldPats) -> fieldPats |> List.tryPick (fun (_, _, p) -> traversePat path p)
                 | SynPat.Attrib (p, attributes, m) ->
                     match traversePat path p with
                     | None -> attributeApplicationDives path attributes |> pick m attributes
@@ -731,6 +745,7 @@ module SyntaxTraversal =
                     match traversePat path p with
                     | None -> traverseSynType path ty
                     | x -> x
+                | SynPat.QuoteExpr (expr, _) -> traverseSynExpr path expr
                 | _ -> None
 
             visitor.VisitPat(origPath, defaultTraverse, pat)
@@ -1077,3 +1092,21 @@ module SyntaxTraversal =
             l
             |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespaceSig []))
             |> pick fileRange l
+
+    let traverseAll (visitor: SyntaxVisitorBase<'T>) (parseTree: ParsedInput) : unit =
+        let pick _ _ _ diveResults =
+            let rec loop =
+                function
+                | [] -> None
+                | (_, project) :: rest ->
+                    ignore (project ())
+                    loop rest
+
+            loop diveResults
+
+        ignore<'T option> (traverseUntil pick parseTree.Range.End visitor parseTree)
+
+    /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
+    ///
+    let Traverse (pos: pos, parseTree, visitor: SyntaxVisitorBase<'T>) =
+        traverseUntil pick pos visitor parseTree

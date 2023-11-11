@@ -80,6 +80,7 @@ type LanguageFeature =
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
     | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -186,9 +187,8 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
-
-                // F# preview next
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
+                LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -326,6 +326,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
+        | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
