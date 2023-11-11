@@ -1202,7 +1202,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                                 let rec createSublists list =
                                     match list with
                                     | [] -> []
-                                    | _::tail -> list :: createSublists tail
+                                    | _ :: tail -> list :: createSublists tail
+                                    
+                                // we use createSublists here so the `items` sent down the
+                                // pipeline have their first element being the actual
+                                // item, in order for the glyph to be the correct one
+                                // notice how the later stage uses `GlyphOfItem(denv,items.Head)`
                                 for items in createSublists toSplit do
                                     let item = items.Head
                                     textInDeclList item, textInCode item, items
