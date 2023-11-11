@@ -837,9 +837,9 @@ type PropInfo =
 
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
     /// <code lang="fsharp">
-    /// member x.Prop with 
+    /// member x.Prop with
     ///     get (indexPiece1:int,indexPiece2: string) = ...
-    ///     and set (indexPiece1:int,indexPiece2: string) value = ... 
+    ///     and set (indexPiece1:int,indexPiece2: string) value = ...
     /// </code>
     member IsIndexer: bool
 
