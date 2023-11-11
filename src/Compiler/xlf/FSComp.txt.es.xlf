@@ -927,11 +927,6 @@
         <target state="translated">Este acceso de miembro es ambiguo. Use paréntesis alrededor de la creación del objeto, por ejemplo, '(nuevo AlgúnTipo(args)).NombreMiembro'</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="translated"> _. la sintaxis abreviada para las funciones lambda solo se puede usar con expresiones atómicas. Esto significa expresiones sin espacios en blanco a menos que se incluyan entre paréntesis.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fin de entrada inesperado en la rama "else if" o "elif" de una expresión condicional. Se espera "elif &lt;expr&gt; then &lt;expr&gt;" o "else if &lt;expr&gt; then &lt;expr&gt;".</target>

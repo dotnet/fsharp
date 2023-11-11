@@ -1,9 +1,9 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/UnderscoreToString.fs", false,
-      QualifiedNameOfFile UnderscoreToString, [], [],
+     ("/root/Expression/DotLambda_UnderscoreToString.fs", false,
+      QualifiedNameOfFile DotLambda_UnderscoreToString, [], [],
       [SynModuleOrNamespace
-         ([UnderscoreToString], false, AnonModule,
+         ([DotLambda_UnderscoreToString], false, AnonModule,
           [Expr
              (DotLambda
                 (App
@@ -14,5 +14,3 @@ ImplFile
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
-
-(1,0)-(1,1) parse error  _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.
