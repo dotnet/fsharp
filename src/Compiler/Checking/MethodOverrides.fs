@@ -402,8 +402,10 @@ module DispatchSlotChecking =
                                 |> not
                             
                             let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
-
-                            if (not isObjExpr && not isInstance) then
+                            
+                            // Object expressions can only implement instance members
+                            let isObjExprWithInstanceMembers = (isObjExpr && isInstance)
+                            if isObjExprWithInstanceMembers || isInstance then
                                 if moreThanOnePossibleDispatchSlot then
                                     noimpl()
 
