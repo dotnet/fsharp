@@ -7,6 +7,7 @@ module rec FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
+open Internal.Utilities.Library
 
 /// Represents the target primary assembly
 [<RequireQualifiedAccess>]
@@ -983,7 +984,7 @@ type internal ILOverridesSpec =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of Lazy<ILMethodBody>
+    | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod>
     | Abstract
     | Native
@@ -1032,7 +1033,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDeclsStored: ILSecurityDeclsStored *
@@ -1048,7 +1049,7 @@ type ILMethodDef =
         callingConv: ILCallingConv *
         parameters: ILParameters *
         ret: ILReturn *
-        body: Lazy<MethodBody> *
+        body: InterruptibleLazy<MethodBody> *
         isEntryPoint: bool *
         genericParams: ILGenericParameterDefs *
         securityDecls: ILSecurityDecls *
@@ -1139,7 +1140,7 @@ type ILMethodDef =
         ?callingConv: ILCallingConv *
         ?parameters: ILParameters *
         ?ret: ILReturn *
-        ?body: Lazy<MethodBody> *
+        ?body: InterruptibleLazy<MethodBody> *
         ?securityDecls: ILSecurityDecls *
         ?isEntryPoint: bool *
         ?genericParams: ILGenericParameterDefs *
@@ -1179,8 +1180,9 @@ type ILMethodDef =
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by
 /// name and arity.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILMethodDefs =
+    inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>
 
     interface IEnumerable<ILMethodDef>
 
@@ -1458,8 +1460,10 @@ type ILTypeDefKind =
     | Delegate
 
 /// Tables of named type definitions.
-[<NoEquality; NoComparison; Sealed>]
+[<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
+    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>
+
     interface IEnumerable<ILTypeDef>
 
     member internal AsArray: unit -> ILTypeDef[]
@@ -2071,11 +2075,11 @@ val internal mkILMethodBody:
 
 val internal mkMethodBody: bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> MethodBody
 
-val internal methBodyNotAvailable: Lazy<MethodBody>
+val internal methBodyNotAvailable: InterruptibleLazy<MethodBody>
 
-val internal methBodyAbstract: Lazy<MethodBody>
+val internal methBodyAbstract: InterruptibleLazy<MethodBody>
 
-val internal methBodyNative: Lazy<MethodBody>
+val internal methBodyNative: InterruptibleLazy<MethodBody>
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 
@@ -2213,11 +2217,11 @@ val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
 val mkILEvents: ILEventDef list -> ILEventDefs
-val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
+val mkILEventsLazy: InterruptibleLazy<ILEventDef list> -> ILEventDefs
 val emptyILEvents: ILEventDefs
 
 val mkILProperties: ILPropertyDef list -> ILPropertyDefs
-val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
+val mkILPropertiesLazy: InterruptibleLazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
@@ -2226,7 +2230,7 @@ val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
-val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
+val mkILFieldsLazy: InterruptibleLazy<ILFieldDef list> -> ILFieldDefs
 val emptyILFields: ILFieldDefs
 
 val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs

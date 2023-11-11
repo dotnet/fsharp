@@ -106,6 +106,8 @@
     <Compile Include="Utilities\TaggedCollections.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
+    <Compile Include="Utilities\Cancellable.fsi" />
+    <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
     <Compile Include="Utilities\FileSystem.fs" />
     <Compile Include="Utilities\ildiag.fsi" />
@@ -154,6 +156,8 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
+    <Compile Include="Utilities\ReadOnlySpan.fsi" />
+    <Compile Include="Utilities\ReadOnlySpan.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>

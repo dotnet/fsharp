@@ -94,11 +94,13 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
             let getSource filename =
                 async {
+                    let! ct = Async.CancellationToken
+
                     match workspace.CurrentSolution.TryGetDocumentFromPath filename with
-                    | Some document ->
-                        let! text = document.GetTextAsync() |> Async.AwaitTask
+                    | ValueSome document ->
+                        let! text = document.GetTextAsync(ct) |> Async.AwaitTask
                         return Some(text.ToFSharpSourceText())
-                    | None -> return None
+                    | ValueNone -> return None
                 }
 
             lock gate (fun () ->
@@ -112,7 +114,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableParallelReferenceResolution =
                                 editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
+                            let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 

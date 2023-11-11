@@ -1,3 +1,3 @@
-// #Diagnostics 
+// #Diagnostics
 module M
-type C() = 
+type C() =
