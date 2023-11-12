@@ -533,6 +533,8 @@ module OldStyleMessages =
     let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
     let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
     let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
+    let OverrideShouldBeStatic () = Message("OverrideShouldBeStatic", "")
+    let OverrideShouldBeInstance () = Message("OverrideShouldBeInstance", "")
     let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
     let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
     let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
@@ -1547,6 +1549,14 @@ type Exception with
 
                     if sig1 <> sig2 then
                         os.AppendString(OverrideDoesntOverride3E().Format sig2)
+
+                    // If implementation and required slot doesn't have same "instance-ness", then tell user that.
+                    if impl.IsInstance <> minfoVirt.IsInstance then
+                        // Requried slot is instance, meaning implementation is static, tell user that we expect instance.
+                        if minfoVirt.IsInstance then
+                            os.AppendString(OverrideShouldBeStatic().Format)
+                        else
+                            os.AppendString(OverrideShouldBeInstance().Format)
 
         | UnionCaseWrongArguments (_, n1, n2, _) -> os.AppendString(UnionCaseWrongArgumentsE().Format n2 n1)
 
