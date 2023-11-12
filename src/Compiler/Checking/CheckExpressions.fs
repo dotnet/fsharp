@@ -5308,6 +5308,10 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     // f(x)  // hpa=true
     // f[x]  // hpa=true
     | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+        match func with
+        | SynExpr.DotLambda _ -> errorR(Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression(), func.Range))
+        | _ -> ()
+
         TcNonControlFlowExpr env <| fun env ->
        
         CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
