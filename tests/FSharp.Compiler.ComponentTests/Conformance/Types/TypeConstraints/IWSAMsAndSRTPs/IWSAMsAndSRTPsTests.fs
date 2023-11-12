@@ -1172,7 +1172,7 @@ let _ =
          ]
          
     [<FactForNETCOREAPP>]
-    let ``Produces an error when implementing only instance members from from a IWSAM in an object expression`` () =
+    let ``Produces an error when implementing only instance members from IWSAM in an object expression`` () =
         Fsx """
 type ILogger =
     abstract member Log: string -> unit
@@ -1193,6 +1193,50 @@ consoleLogger.Log("Hello World")
          |> withDiagnostics [
              (Error 366, Line 7, Col 5, Line 10, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
          ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produces an error when implementing only instance members from IWSAM(Interface attribute) in an object expression`` () =
+        Fsx """
+[<Interface>]
+type ILogger =
+    abstract member Log: string -> unit
+    static abstract member Execute: string -> unit
+        
+let consoleLogger =
+    { new ILogger with
+        member this.Log(message: string) =
+            printfn "%s" message
+    }
+    
+consoleLogger.Log("Hello World")
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 366, Line 8, Col 5, Line 11, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing only instance members from a type(Interface attribute) in an object expression`` () =
+        Fsx """
+[<Interface>]
+type ILogger =
+    abstract member Log: string -> unit
+    static member Execute x = x
+        
+let consoleLogger =
+    { new ILogger with
+        member this.Log(message: string) =
+            printf "%A" message
+    }
+    
+consoleLogger.Log("Hello World")
+        """
+         |> withLangVersion80
+         |> compile
+         |> shouldSucceed
 
     [<FactForNETCOREAPP>]
     let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
