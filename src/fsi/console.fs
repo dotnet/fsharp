@@ -5,6 +5,7 @@ namespace FSharp.Compiler.Interactive
 open System
 open System.Text
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open FSharp.Compiler.DiagnosticsLogger
 
 type internal Style =
@@ -242,6 +243,8 @@ type internal Anchor =
 type internal ReadLineConsole() =
     let history = new History()
 
+    static let supportsBufferHeightChange = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+
     let mutable complete: (string option * string -> seq<string>) =
         fun (_s1, _s2) -> Seq.empty
 
@@ -347,7 +350,11 @@ type internal ReadLineConsole() =
 
             if Console.CursorLeft + charSize > Utils.bufferWidth () then
                 if Console.CursorTop + 1 = Console.BufferHeight then
-                    Console.BufferHeight <- Console.BufferHeight + 1
+                    if supportsBufferHeightChange then
+                        Console.BufferHeight <- Console.BufferHeight + 1
+                    else
+                        Console.WriteLine()
+                        anchor <- { anchor with top = (anchor).top - 1 }
 
                 Cursor.Move(0)
 
