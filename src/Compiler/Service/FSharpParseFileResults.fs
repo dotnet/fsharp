@@ -1063,35 +1063,3 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member scope.ValidateBreakpointLocation pos =
         // This does not need to be run on the background thread
         scope.ValidateBreakpointLocationImpl pos
-
-    member _.RangeOfReturnTypeDefinition(symbolUseStart: pos, ?skipLambdas) =
-        let skipLambdas = defaultArg skipLambdas true
-
-        SyntaxTraversal.Traverse(
-            symbolUseStart,
-            input,
-            { new SyntaxVisitorBase<_>() with
-                member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = defaultTraverse expr
-
-                override _.VisitBinding(_path, defaultTraverse, binding) =
-                    match binding with
-                    | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
-                    | SynBinding(expr = SynExpr.DotLambda _) when skipLambdas -> defaultTraverse binding
-                    ////I need the : before the Return Info
-                    //| SynBinding(expr = SynExpr.Typed _)  -> defaultTraverse binding
-
-                    // Dont skip manually type-annotated bindings
-                    | SynBinding(returnInfo = Some (SynBindingReturnInfo (_, r, _, _))) -> Some r
-
-                    // Let binding
-                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUseStart ->
-                        Some equalsRange.StartRange
-
-                    // Member binding
-                    | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
-                                  trivia = { EqualsRange = Some equalsRange }) when ident.idRange.Start = symbolUseStart ->
-                        Some equalsRange.StartRange
-
-                    | _ -> defaultTraverse binding
-            }
-        )
