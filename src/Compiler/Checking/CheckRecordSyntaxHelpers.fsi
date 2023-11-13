@@ -20,7 +20,4 @@ val TransformAstForNestedUpdates<'a> :
         (Ident list * Ident) * SynExpr option
 
 val BindOriginalRecdExpr:
-    withExpr: SynExpr * BlockSeparator ->
-        mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) ->
-        tcExpr: (SynExpr -> Expr * UnscopedTyparEnv) ->
-            Expr * UnscopedTyparEnv
+    withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr

@@ -152,7 +152,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
-let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr (tcExpr: SynExpr -> Expr * UnscopedTyparEnv) =
+let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
     let originalExpr, blockSep = withExpr
     let mOrigExprSynth = originalExpr.Range.MakeSynthetic()
     let id = mkSynId mOrigExprSynth "bind@"
@@ -175,4 +175,3 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr (tcExpr
              SynBindingTrivia.Zero)
 
     SynExpr.LetOrUse(false, false, [ binding ], mkRecdExpr (Some withExpr), mOrigExprSynth, SynExprLetOrUseTrivia.Zero)
-    |> tcExpr
