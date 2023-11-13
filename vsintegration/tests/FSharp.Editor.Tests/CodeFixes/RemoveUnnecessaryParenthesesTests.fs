@@ -1728,6 +1728,7 @@ match Unchecked.defaultof<_> with
                 "(A as B) as C", "A as B as C"
                 "(A as B), C", "(A as B), C"
                 "(A, B) :: C", "(A, B) :: C"
+                "(struct (A, B)) :: C", "struct (A, B) :: C"
             }
 
         [<Theory; MemberData(nameof infixPatterns)>]

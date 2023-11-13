@@ -1520,7 +1520,7 @@ module UnnecessaryParentheses =
                 // (x :: xs) :: ys
                 // (x, xs) :: ys
                 | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.ListCons _
-                | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.Tuple _ -> ValueNone
+                | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.Tuple(isStruct = false) -> ValueNone
 
                 // A as (B | C)
                 // A as (B & C)
