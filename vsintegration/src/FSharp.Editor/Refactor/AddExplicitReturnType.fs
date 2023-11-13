@@ -18,8 +18,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
 open CancellableTasks
-open System.Diagnostics
-open InternalOptionBuilder
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitReturnType"); Shared>]
 type internal AddExplicitReturnType [<ImportingConstructor>] () =
@@ -103,27 +101,31 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
 
             let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
 
-            let res =
-                internalOption {
-                    let! lexerSymbol = lexerSymbol
+            let symbolUseOpt =
+                lexerSymbol
+                |> Option.bind (fun lexer ->
+                    checkFileResults.GetSymbolUseAtLocation(
+                        fcsTextLineNumber,
+                        lexer.Ident.idRange.EndColumn,
+                        textLine.ToString(),
+                        lexer.FullIsland
+                    ))
 
-                    let! symbolUse =
-                        checkFileResults.GetSymbolUseAtLocation(
-                            fcsTextLineNumber,
-                            lexerSymbol.Ident.idRange.EndColumn,
-                            textLine.ToString(),
-                            lexerSymbol.FullIsland
-                        )
+            let memberFuncOpt =
+                symbolUseOpt
+                |> Option.bind (fun sym -> sym.Symbol |> AddExplicitReturnType.ofFSharpMemberOrFunctionOrValue)
 
-                    let! memberFunc =
-                        symbolUse.Symbol |> AddExplicitReturnType.ofFSharpMemberOrFunctionOrValue
-                        |>! AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
+            match (symbolUseOpt, memberFuncOpt) with
+            | (Some symbolUse, Some memberFunc) ->
+                let isValidMethod =
+                    memberFunc
+                    |> AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
-                    do AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults)
+                match isValidMethod with
+                | Some memberFunc -> do AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults)
+                | None -> ()
+            | _ -> ()
 
-                    return ()
-                }
-
-            return res
+            return ()
         }
         |> CancellableTask.startAsTask ct
