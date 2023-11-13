@@ -22,6 +22,16 @@
         <target state="translated">소문자로 구분된 공용 구조체 케이스는 RequireQualifiedAccess 특성을 사용하는 경우에만 허용됩니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="new"> Non-static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="new"> Static member is expected.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">기호 '..^'</target>

@@ -451,13 +451,13 @@ module CancellableTasks =
 
         /// <summary>
         /// Builds a cancellableTask using computation expression syntax.
-        /// Default behaviour when binding (v)options is to return a cacnelled task.
+        /// Default behaviour when binding (v)options is to return a cancelled task.
         /// </summary>
         let foregroundCancellableTask = CancellableTaskBuilder(false)
 
         /// <summary>
         /// Builds a cancellableTask using computation expression syntax which switches to execute on a background thread if not already doing so.
-        /// Default behaviour when binding (v)options is to return a cacnelled task.
+        /// Default behaviour when binding (v)options is to return a cancelled task.
         /// </summary>
         let cancellableTask = CancellableTaskBuilder(true)
 
@@ -1096,17 +1096,18 @@ module CancellableTasks =
         let inline whenAll (tasks: CancellableTask<'a> seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield start ct task })
+                let tasks = seq { for task in tasks do yield start ct task }
+                return! Task.WhenAll (tasks)
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield startTask ct task })
+                let tasks = seq { for task in tasks do yield startTask ct task }
+                return! Task.WhenAll (tasks)
             }
 
-        let inline ignore (ctask: CancellableTask<_>) =
-            ctask |> toUnit
+        let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
     /// <exclude />
     [<AutoOpen>]

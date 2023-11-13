@@ -305,7 +305,7 @@ let morphILMethodBody fMethBody (x: MethodBody) =
     match x with
     | MethodBody.IL il ->
         let ilCode = fMethBody il.Value // Eager
-        MethodBody.IL(lazy ilCode)
+        MethodBody.IL(InterruptibleLazy.FromValue ilCode)
     | x -> x
 
 let ospec_ty2ty f (OverridesSpec (mref, ty)) = OverridesSpec(mref_ty2ty f mref, f ty)

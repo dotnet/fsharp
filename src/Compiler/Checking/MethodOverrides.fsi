@@ -32,7 +32,8 @@ type OverrideInfo =
         argTypes: TType list list *
         returnType: TType option *
         isFakeEventProperty: bool *
-        isCompilerGenerated: bool
+        isCompilerGenerated: bool *
+        isInstance: bool
 
     member ArgTypes: TType list list
 
@@ -41,6 +42,8 @@ type OverrideInfo =
     member CanImplement: OverrideCanImplement
 
     member IsCompilerGenerated: bool
+
+    member IsInstance: bool
 
     member IsFakeEventProperty: bool
 
@@ -167,5 +170,6 @@ val GetAbstractPropInfosForSynPropertyDecl:
     ad: AccessorDomain *
     memberName: Ident *
     bindm: range *
-    typToSearchForAbstractMembers: (TType * SlotImplSet option) ->
+    typToSearchForAbstractMembers: (TType * SlotImplSet option) *
+    memberFlags: SynMemberFlags ->
         PropInfo list

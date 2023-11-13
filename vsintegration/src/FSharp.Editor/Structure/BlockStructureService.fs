@@ -115,12 +115,15 @@ module internal BlockStructure =
         | Scope.While
         | Scope.For -> false
 
+    [<Literal>]
+    let ellipsis = "..."
+
     let createBlockSpans isBlockStructureEnabled (sourceText: SourceText) (parsedInput: ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
 
         Structure.getOutliningRanges linetext parsedInput
         |> Seq.distinctBy (fun x -> x.Range.StartLine)
-        |> Seq.choose (fun scopeRange ->
+        |> Seq.chooseV (fun scopeRange ->
             // the range of text to collapse
             let textSpan =
                 RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
@@ -128,13 +131,13 @@ module internal BlockStructure =
             let hintSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
 
             match textSpan, hintSpan with
-            | Some textSpan, Some hintSpan ->
+            | ValueSome textSpan, ValueSome hintSpan ->
                 let line = sourceText.Lines.GetLineFromPosition textSpan.Start
 
                 let bannerText =
-                    match Option.ofNullable (line.Span.Intersection textSpan) with
-                    | Some span -> sourceText.GetSubText(span).ToString() + "..."
-                    | None -> "..."
+                    match ValueOption.ofNullable (line.Span.Intersection textSpan) with
+                    | ValueSome span -> sourceText.GetSubText(span).ToString() + ellipsis
+                    | ValueNone -> ellipsis
 
                 let blockType =
                     if isBlockStructureEnabled then
@@ -142,8 +145,10 @@ module internal BlockStructure =
                     else
                         FSharpBlockTypes.Nonstructural
 
-                Some(FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
-            | _, _ -> None)
+                ValueSome(
+                    FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope)
+                )
+            | _, _ -> ValueNone)
 
 open BlockStructure
 open CancellableTasks
