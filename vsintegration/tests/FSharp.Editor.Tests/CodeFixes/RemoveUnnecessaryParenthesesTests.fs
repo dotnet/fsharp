@@ -156,6 +156,9 @@ let _ =
             "for x in [] do (ignore 3)", "for x in [] do ignore 3"
 
             // ArrayOrListComputed
+            "[1; 2; (if x then 3 else 4); 5]", "[1; 2; (if x then 3 else 4); 5]"
+            "[|1; 2; (if x then 3 else 4); 5|]", "[|1; 2; (if x then 3 else 4); 5|]"
+
             // IndexRange
             "[(1)..10]", "[1..10]"
             "[1..(10)]", "[1..10]"

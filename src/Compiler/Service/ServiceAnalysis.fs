@@ -1319,6 +1319,8 @@ module UnnecessaryParentheses =
                     ->
                     ValueNone
 
+                | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner)), Dangling.Problematic _ -> ValueNone
+
                 | SynExpr.Paren _, SynExpr.Typed _
                 | SynExpr.Quote _, SynExpr.Typed _
                 | SynExpr.AnonRecd _, SynExpr.Typed _
