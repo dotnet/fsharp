@@ -2005,5 +2005,5 @@ Ops.(
 Ops.()
 """
 
-        VerifyCompletionList(fileContents, "Ops.Foo.(", [], ["|>>";"(|>>)"])
-        VerifyCompletionList(fileContents, "Ops.(", [], ["|>>";"(|>>)"])
+        VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
+        VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])
