@@ -18,7 +18,7 @@ ImplFile
                  DotLambda
                    (ArbitraryAfterError ("dotLambda1", (1,7--1,7)), (1,5--1,7),
                     { UnderscoreRange = (1,5--1,6)
-                      DotRange = Some (1,6--1,7) }), (1,0--1,7)), (1,0--1,7))],
+                      DotRange = (1,6--1,7) }), (1,0--1,7)), (1,0--1,7))],
           PreXmlDocEmpty, [], None, (1,0--1,7), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))
