@@ -8548,8 +8548,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">Der Paket-Manager-Schlüssel "{0}" wurde nicht in "{1}" registriert. Zurzeit registriert: {2}. Weitere Informationen zu Erweiterungen finden Sie unter: https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Der Paket-Manager-Schlüssel "{0}" wurde nicht in "{1}" registriert. Zurzeit registriert: {2}. Weitere Informationen zu Erweiterungen finden Sie unter: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

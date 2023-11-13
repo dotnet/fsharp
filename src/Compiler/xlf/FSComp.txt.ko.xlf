@@ -8548,8 +8548,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">패키지 관리자 키 '{0}'이(가) {1}에서 등록되지 않았습니다. 현재 등록: {2}. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">패키지 관리자 키 '{0}'이(가) {1}에서 등록되지 않았습니다. 현재 등록: {2}. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
