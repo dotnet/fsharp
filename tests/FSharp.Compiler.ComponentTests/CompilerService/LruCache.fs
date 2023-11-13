@@ -3,8 +3,6 @@ open Internal.Utilities.Collections
 
 open Xunit
 open System
-open System.Threading
-open System.Runtime.CompilerServices
 
 [<Fact>]
 let ``Adding an item to the cache should make it retrievable``() =
@@ -112,6 +110,30 @@ let ``When a new version is added other versions don't get weakened when they're
     let expected = [
         CacheEvent.Weakened, ("[no label]", 1, 2)
         CacheEvent.Weakened, ("[no label]", 1, 3)
+    ]
+
+    Assert.Equal<list<_>>(expected, eventLog |> Seq.toList)
+
+[<Fact>]
+let ``Looking up a weakened item will strengthen it`` () =
+    let eventLog = ResizeArray()
+
+    let cache = new LruCache<_, int, _>(keepStrongly = 2, keepWeakly = 2, event = (fun e v -> eventLog.Add(e, v)))
+
+    cache.Set(1, 1, "one1")
+    cache.Set(1, 2, "one2")
+    cache.Set(1, 3, "one3")
+    cache.Set(1, 4, "one4")
+
+    let result = cache.TryGet(1, 2)
+    Assert.Equal("one2", result.Value)
+
+    let expected = [
+        CacheEvent.Weakened, ("[no label]", 1, 1)
+        CacheEvent.Weakened, ("[no label]", 1, 2)
+        CacheEvent.Weakened, ("[no label]", 1, 3)
+        CacheEvent.Evicted, ("[no label]", 1, 1)
+        CacheEvent.Strengthened, ("[no label]", 1, 2)
     ]
 
     Assert.Equal<list<_>>(expected, eventLog |> Seq.toList)

@@ -156,6 +156,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable failed = 0
     let mutable evicted = 0
     let mutable collected = 0
+    let mutable strengthened = 0
 
     let failures = ResizeArray()
     let mutable avgDurationMs = 0.0
@@ -179,7 +180,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         Interlocked.Increment &collected |> ignore
                         event.Trigger(JobEvent.Collected, k))
                 | CacheEvent.Weakened -> (fun k -> event.Trigger(JobEvent.Weakened, k))
-                | CacheEvent.Strengthened -> (fun k -> event.Trigger(JobEvent.Strengthened, k)))
+                | CacheEvent.Strengthened ->
+                    (fun k ->
+                        Interlocked.Increment &strengthened |> ignore
+                        event.Trigger(JobEvent.Strengthened, k)))
         )
 
     let requestCounts = Dictionary<KeyData<_, _>, int>()
@@ -477,6 +481,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 if failed > 0 then $"| failed: {failed} " else ""
                 if evicted > 0 then $"| evicted: {evicted} " else ""
                 if collected > 0 then $"| collected: {collected} " else ""
+                if strengthened > 0 then
+                    $"| strengthened: {strengthened} "
+                else
+                    ""
             |]
             |> String.concat ""
 
