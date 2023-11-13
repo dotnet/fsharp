@@ -69,6 +69,7 @@ type LanguageFeature =
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    | WarningIndexedPropertiesGetSetSameType
 
 /// LanguageVersion management
 type LanguageVersion =

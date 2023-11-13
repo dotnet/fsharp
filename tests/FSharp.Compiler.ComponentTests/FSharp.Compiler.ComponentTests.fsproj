@@ -167,6 +167,7 @@
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
+    <Compile Include="ErrorMessages\IndexingSyntax.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
@@ -225,6 +226,7 @@
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
     <Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
+    <Compile Include="Interop\ByrefTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />

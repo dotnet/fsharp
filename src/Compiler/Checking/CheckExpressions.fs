@@ -3950,6 +3950,16 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     else
         None
 
+/// c.atomicLeftMethExpr[idx] and atomicLeftExpr[idx] as applications give warnings
+let checkHighPrecedenceFunctionApplicationToList (g: TcGlobals) args atomicFlag exprRange =
+    match args, atomicFlag with
+    | ([SynExpr.ArrayOrList (false, _, _)] | [SynExpr.ArrayOrListComputed (false, _, _)]), ExprAtomicFlag.Atomic ->
+        if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), exprRange))
+        elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+            informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), exprRange))
+    | _ -> ()
+
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed =
@@ -5298,6 +5308,10 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     // f(x)  // hpa=true
     // f[x]  // hpa=true
     | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+        match func with
+        | SynExpr.DotLambda _ -> errorR(Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression(), func.Range))
+        | _ -> ()
+
         TcNonControlFlowExpr env <| fun env ->
        
         CheckForAdjacentListExpression cenv synExpr hpa isInfix delayed arg
@@ -7012,7 +7026,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
               let overrides' =
                   [ for overrideMeth in overrides do
                         let overrideInfo, (_, thisVal, methodVars, bindingAttribs, bindingBody) = overrideMeth
-                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _)) = overrideInfo
+                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _, _)) = overrideInfo
 
                         if not isFakeEventProperty then
                             let searchForOverride =
@@ -8202,13 +8216,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
         // atomicLeftExpr[idx] unifying as application gives a warning 
         if not isSugar then
-            match synArg, atomicFlag with
-            | (SynExpr.ArrayOrList (false, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
-                if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
-                elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
-            | _ -> ()
+            checkHighPrecedenceFunctionApplicationToList g [synArg] atomicFlag mExprAndArg
 
         match leftExpr with
         | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
@@ -9365,6 +9373,9 @@ and TcMethodApplicationThen
 
     // Nb. args is always of List.length <= 1 except for indexed setters, when it is 2
     let mWholeExpr = (m, args) ||> List.fold (fun m arg -> unionRanges m arg.Range)
+
+    // c.atomicLeftMethExpr[idx] as application gives a warning
+    checkHighPrecedenceFunctionApplicationToList g args atomicFlag mWholeExpr
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
@@ -11234,7 +11245,11 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
              let uniqueAbstractMethSigs =
                  match dispatchSlots with
                  | [] ->
-                     errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                     let instanceExpected = memberFlags.IsInstance
+                     if instanceExpected then
+                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                     else
+                        errorR (Error(FSComp.SR.tcNoStaticMemberFoundForOverride (), memberId.idRange))
                      []
 
                  | slot :: _ as slots ->
@@ -11293,7 +11308,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
         | SynMemberKind.PropertyGet
         | SynMemberKind.PropertySet as k ->
-           let dispatchSlots = GetAbstractPropInfosForSynPropertyDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers)
+           let dispatchSlots = GetAbstractPropInfosForSynPropertyDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, memberFlags)
 
            // Only consider those abstract slots where the get/set flags match the value we're defining
            let dispatchSlots =
@@ -11306,7 +11321,11 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
            let uniqueAbstractPropSigs =
                match dispatchSlots with
                | [] when not (CompileAsEvent g attribs) ->
-                   errorR(Error(FSComp.SR.tcNoPropertyFoundForOverride(), memberId.idRange))
+                   let instanceExpected = memberFlags.IsInstance
+                   if instanceExpected then
+                        errorR(Error(FSComp.SR.tcNoPropertyFoundForOverride(), memberId.idRange))
+                   else
+                        errorR (Error(FSComp.SR.tcNoStaticPropertyFoundForOverride (), memberId.idRange))
                    []
                | [uniqueAbstractProp] -> [uniqueAbstractProp]
                | _ ->
