@@ -40,7 +40,7 @@ let ``Refactor should not trigger`` (shouldNotTrigger: string) =
 
     let code =
         $"""
-            let sum a b {shouldNotTrigger}= a + b
+let sum a b {shouldNotTrigger}= a + b
             """
 
     use context = TestContext.CreateWithCode code
@@ -58,7 +58,7 @@ let ``Correctly infer int as explicit return type`` () =
 
     let code =
         """
-        let sum a b = a + b
+let sum a b = a + b
         """
 
     use context = TestContext.CreateWithCode code
@@ -69,7 +69,7 @@ let ``Correctly infer int as explicit return type`` () =
 
     let expectedCode =
         $"""
-        let sum a b :int= a + b
+let sum a b :int= a + b
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -81,7 +81,7 @@ let ``Handle Parantheses on the arguments`` () =
 
     let code =
         """
-        let sum (a:float) (b:float) = a + b
+let sum (a:float) (b:float) = a + b
         """
 
     use context = TestContext.CreateWithCode code
@@ -92,7 +92,7 @@ let ``Handle Parantheses on the arguments`` () =
 
     let expectedCode =
         """
-        let sum (a:float) (b:float) :float= a + b
+let sum (a:float) (b:float) :float= a + b
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -104,8 +104,9 @@ let ``Infer on rec method`` () =
 
     let code =
         $"""
-        let rec fib n =
-        if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+let rec fib n =
+    if n < 2 then 1
+    else fib (n - 1) + fib (n - 2)
         """
 
     use context = TestContext.CreateWithCode code
@@ -116,8 +117,9 @@ let ``Infer on rec method`` () =
 
     let expectedCode =
         $"""
-        let rec fib n :int=
-        if n < 2 then 1 else fib (n - 1) + fib (n - 2)
+let rec fib n :int=
+    if n < 2 then 1
+    else fib (n - 1) + fib (n - 2)
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -129,7 +131,7 @@ let ``Infer with function parameter method`` () =
 
     let code =
         $"""
-        let apply1 (transform: int -> int) y = transform y
+let apply1 (transform: int -> int) y = transform y
         """
 
     use context = TestContext.CreateWithCode code
@@ -140,7 +142,7 @@ let ``Infer with function parameter method`` () =
 
     let expectedCode =
         $"""
-        let apply1 (transform: int -> int) y :int= transform y
+let apply1 (transform: int -> int) y :int= transform y
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -152,9 +154,9 @@ let ``Infer on member function`` () =
 
     let code =
         $"""
-        type SomeType(factor0: int) =
-        let factor = factor0
-        member this.SomeMethod(a, b, c) = (a + b + c) * factor
+type SomeType(factor0: int) =
+    let factor = factor0
+    member this.SomeMethod(a, b, c) = (a + b + c) * factor
         """
 
     use context = TestContext.CreateWithCode code
@@ -165,9 +167,9 @@ let ``Infer on member function`` () =
 
     let expectedCode =
         $"""
-        type SomeType(factor0: int) =
-        let factor = factor0
-        member this.SomeMethod(a, b, c) :int= (a + b + c) * factor
+type SomeType(factor0: int) =
+    let factor = factor0
+    member this.SomeMethod(a, b, c) :int= (a + b + c) * factor
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -179,8 +181,8 @@ let ``Correctly infer custom type that is declared earlier in file`` () =
 
     let code =
         """
-        type MyType = { Value: int }
-        let sum a b = {Value=a+b}
+type MyType = { Value: int }
+let sum a b = {Value=a+b}
         """
 
     use context = TestContext.CreateWithCode code
@@ -191,8 +193,8 @@ let ``Correctly infer custom type that is declared earlier in file`` () =
 
     let expectedCode =
         """
-        type MyType = { Value: int }
-        let sum a b :MyType= {Value=a+b}
+type MyType = { Value: int }
+let sum a b :MyType= {Value=a+b}
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
