@@ -173,9 +173,7 @@ let c = ( _ :> obj) """
     |> withDiagnostics [
         Error 10, Line 2, Col 20, Line 2, Col 21, "Unexpected symbol ')' in expression. Expected '.' or other token."
         Error 10, Line 3, Col 13, Line 3, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
-        Error 583, Line 3, Col 9, Line 3, Col 10, "Unmatched '('"
-        Error 10, Line 4, Col 13, Line 4, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
-        Error 583, Line 4, Col 9, Line 4, Col 10, "Unmatched '('"]
+        Error 10, Line 4, Col 13, Line 4, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."]
         
 [<Fact>]
 let ``ToString with F# 7`` () =
