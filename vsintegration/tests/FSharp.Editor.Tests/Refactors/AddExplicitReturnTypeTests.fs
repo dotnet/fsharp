@@ -1,4 +1,4 @@
-﻿module FSharp.Editor.Tests.Refactors.AddExplicitReturnType
+﻿module FSharp.Editor.Tests.Refactors.AddExplicitReturnTypeTests
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
