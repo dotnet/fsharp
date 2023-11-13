@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Przewodniki po strukturze bloku;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Przewodniki po strukturze bloku;
 Pokaż przewodniki po strukturze dla kodu języka F#;
 Tworzenie konspektu;
 Pokaż konspekt i węzły z możliwością zwijania dla kodu języka F#;
@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Opcje wydajności projektów i buforowania języka F#;
+        <target state="needs-review-translation">Opcje wydajności projektów i buforowania języka F#;
 Włącz odwołania między projektami w pamięci;
 Enable_partial_type_checking;
 Opcje wydajności funkcji IntelliSense;
@@ -214,6 +214,11 @@ Podkreślenie kreską;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Usuń element „return!”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

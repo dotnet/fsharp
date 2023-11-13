@@ -3077,7 +3077,7 @@ type GenericParameterStyle =
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
-      openTopPathsSorted: Lazy<string list list>
+      openTopPathsSorted: InterruptibleLazy<string list list>
       openTopPathsRaw: string list list
       shortTypeNames: bool
       suppressNestedTypes: bool
@@ -3107,7 +3107,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths paths = 
         { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = (InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
              openTopPathsRaw = paths 
         }
 
@@ -10249,7 +10249,7 @@ let CombineCcuContentFragments l =
             let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
             { data1 with 
                 entity_attribs = entity1.Attribs @ entity2.Attribs
-                entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                entity_modul_type = MaybeLazy.Lazy (InterruptibleLazy(fun _ -> CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                 entity_opt_data = 
                 match data1.entity_opt_data with
                 | Some optData -> Some { optData with entity_xmldoc = xml }
