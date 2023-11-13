@@ -1,17 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
-namespace Microsoft.VisualStudio.FSharp.Editor
-
-open System
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
-
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Compiler.Syntax
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text

@@ -3,24 +3,16 @@
 open System
 open System.Collections.Immutable
 open System.Collections.Generic
-open System.Text.RegularExpressions
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-open FSharp.Compiler.Diagnostics
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
-open System.Collections.Generic
 open System.Threading
-open Microsoft.CodeAnalysis.Tags
-open System.Reflection
-open Microsoft.FSharp.Reflection
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open NUnit.Framework
