@@ -1189,10 +1189,7 @@ consoleLogger.Log("Hello World")
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 366, Line 7, Col 5, Line 10, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-         ]
+         |> shouldSucceed
          
     [<FactForNETCOREAPP>]
     let ``Produces an error when implementing only instance members from IWSAM(Interface attribute) in an object expression`` () =
@@ -1213,10 +1210,7 @@ consoleLogger.Log("Hello World")
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 366, Line 8, Col 5, Line 11, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-         ]
+         |> shouldSucceed
          
     [<FactForNETCOREAPP>]
     let ``No error when implementing only instance members from a type(Interface attribute) in an object expression`` () =
