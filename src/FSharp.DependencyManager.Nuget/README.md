@@ -16,9 +16,9 @@ The same goes for the tooling hosting [F# Compiler Service](https://fsharp.githu
 
 The initial [RFC](https://github.com/fsharp/fslang-design/blob/main/tooling/FST-1027-fsi-references.md) for this feature overviews how it is designed.
 
-More about F# Interactive References
+**More about F# Interactive References**
 
-The current implementation follows pattern that can be deducted by refering to [implementation in DependencyProvider.fs](https://github.com/dotnet/fsharp/blob/b9687a58cee795a94eb88cf84e309767cc25f6cb/src/Compiler/DependencyManager/DependencyProvider.fs#L145-L322); due to the system working without having a staticically linked dependency, it uses a late binding approach leveraging runtime reflection to identify if an extension conforms to patterns understood by the specifics of the compiler implementation.
+The current implementation follows pattern that can be deducted by referring to [implementation in DependencyProvider.fs](https://github.com/dotnet/fsharp/blob/b9687a58cee795a94eb88cf84e309767cc25f6cb/src/Compiler/DependencyManager/DependencyProvider.fs#L145-L322); due to the system working without having a statically linked dependency, it uses a late binding approach leveraging runtime reflection to identify if an extension conforms to patterns understood by the specifics of the compiler implementation.
 
 # `#r "nuget:"` [nuget](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.DependencyManager.Nuget)
 
@@ -56,5 +56,5 @@ X,Y
 for r in MyCsv.GetSample().Rows do
   printfn "%i = %s" r.X r.Y
 ```
-[^1]: [Referencing packages in F# Interactive](https://learn.microsoft.com/en-us/dotnet/fsharp/tools/fsharp-interactive/#referencing-packages-in-f-interactive)
-[^2]: [F# Interactive options](https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/fsharp-interactive-options)
+[^1]: [Referencing packages in F# Interactive](https://learn.microsoft.com/dotnet/fsharp/tools/fsharp-interactive/#referencing-packages-in-f-interactive)
+[^2]: [F# Interactive options](https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options)
