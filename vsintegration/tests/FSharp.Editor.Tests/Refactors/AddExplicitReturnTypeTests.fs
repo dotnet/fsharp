@@ -2,7 +2,7 @@
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
-open NUnit.Framework
+open System.Linq
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
 [<Theory>]
@@ -169,6 +169,39 @@ let sum a b = {Value=a+b}
     let expectedCode =
         """
 type MyType = { Value: int }
+let sum a b :MyType= {Value=a+b}
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
+let ``Correctly infer custom type that is declared earlier in project`` () =
+    let symbolName = "sum"
+
+    let myModule =
+        """
+module MyModule
+type MyType = { Value: int }
+        """
+
+    let code =
+        """
+open MyModule
+
+let sum a b = {Value=a+b}
+        """
+
+    use context = TestContext.CreateWithCodeAndDependency code myModule
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        """
+open MyModule
+
 let sum a b :MyType= {Value=a+b}
         """
 

@@ -1,6 +1,7 @@
 ﻿module FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
 open System
+open System.Linq
 open System.Collections.Immutable
 open System.Collections.Generic
 
@@ -35,16 +36,25 @@ type TestContext(Solution: Solution, CT) =
         let ct = CancellationToken false
         new TestContext(solution, ct)
 
+    static member CreateWithCodeAndDependency (code: string) (codeForPreviousFile: string) =
+        let mutable solution = RoslynTestHelpers.CreateSolution(codeForPreviousFile)
+
+        let firstProject = solution.Projects.First()
+        solution <- solution.AddDocument(DocumentId.CreateNewId(firstProject.Id), "test2.fs", code, filePath = "C:\\test2.fs")
+
+        let ct = CancellationToken false
+        new TestContext(solution, ct)
+
 let mockAction =
     Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     let refactoringActions = new List<CodeAction>()
-    let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
+    let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
 
     context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
-    let document = RoslynTestHelpers.GetSingleDocument context.Solution
+    let document = RoslynTestHelpers.GetLastDocument context.Solution
 
     let mutable workspace = context.Solution.Workspace
 
@@ -70,11 +80,11 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
 let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     cancellableTask {
         let refactoringActions = new List<CodeAction>()
-        let existingDocument = RoslynTestHelpers.GetSingleDocument context.Solution
+        let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
 
         context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
-        let document = RoslynTestHelpers.GetSingleDocument context.Solution
+        let document = RoslynTestHelpers.GetLastDocument context.Solution
 
         let mutable workspace = context.Solution.Workspace
 
