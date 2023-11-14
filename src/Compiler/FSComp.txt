@@ -1730,3 +1730,4 @@ featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged
 3584,tcDotLambdaAtNotSupportedExpression,"Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'."
 3855,tcNoStaticMemberFoundForOverride,"No static abstract member was found that corresponds to this override"
 3859,tcNoStaticPropertyFoundForOverride,"No static abstract property was found that corresponds to this override"
+3860,chkStaticMembersOnObjectExpressions,"Static members are not allowed in object expressions."
