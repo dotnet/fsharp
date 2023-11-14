@@ -105,6 +105,23 @@ let _ =
             "(fun x -> x), y", "(fun x -> x), y"
             "3, (null: string)", "3, (null: string)"
 
+            "
+            let _ =
+                1,
+                (true
+                 || false
+                 || true),
+                1
+            ",
+            "
+            let _ =
+                1,
+                true
+                || false
+                || true,
+                1
+            "
+
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
             "{| A = (1); B = 2 |}", "{| A = 1; B = 2 |}"
@@ -243,9 +260,9 @@ let _ =
                  | _ -> 3)
             ",
             "
-            3 >  match x with
-                 | 1
-                 | _ -> 3
+            3 > match x with
+                | 1
+                | _ -> 3
             "
 
             // Do
@@ -272,8 +289,8 @@ let _ =
             in x
             """,
             """
-            let x =  printfn $"{y}"
-                     2
+            let x = printfn $"{y}"
+                    2
             in x
             """
 
@@ -289,13 +306,60 @@ let _ =
             "
 
             "
+            let x =
+             (2
+            + 2)
+            in x
+            ",
+            "
+            let x =
+             2
+           + 2
+            in x
+            "
+
+            "
+            let x =
+     
+
+             (2
+     
+
+            + 2)
+            in x
+            ",
+            "
+            let x =
+     
+
+             2
+    
+
+           + 2
+            in x
+            "
+
+            "
+            let x = (
+              2
+            + 2)
+            in x
+            ",
+            "
+            let x = 
+              2
+            + 2
+            in x
+            "
+
+            "
             let x = (2
                      +             2)
             in x
             ",
             "
-            let x =  2
-                     +             2
+            let x = 2
+                    +             2
             in x
             "
 
@@ -305,8 +369,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   +             2
+            let x = 2
+                  +             2
             in x
             "
 
@@ -316,8 +380,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   + 2
+            let x = 2
+                  + 2
             in x
             "
 
@@ -327,8 +391,8 @@ let _ =
             in x
             ",
             "
-            let x =  x
-                    +y
+            let x = x
+                   +y
             in x
             "
 
@@ -338,8 +402,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                     +2
+            let x = 2
+                    +2
             in x
             "
 
@@ -349,9 +413,22 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                 <<< 2
+            let x = 2
+                <<< 2
             in x
+            "
+
+            "
+let (<<<<<<<<) = (<<<)
+let x = (2
+<<<<<<<< 2)
+in x
+            ",
+            "
+let (<<<<<<<<) = (<<<)
+let x = 2
+<<<<<<<< 2
+in x
             "
 
             "
@@ -399,8 +476,8 @@ let _ =
                 )
 
             let y =
-                 2
-               + 2
+                2
+              + 2
 
             in x + y
             "
@@ -426,9 +503,9 @@ let _ =
             ",
             "
             x <
-                 2
-               + 3
-                
+                2
+              + 3
+               
             "
 
             // LetOrUse
@@ -547,8 +624,8 @@ let _ =
             """,
             """
             let mutable x = 3
-            x <-  3
-              <<< 3
+            x <- 3
+             <<< 3
             """
 
             // DotIndexedGet
@@ -702,6 +779,22 @@ let _ =
 
             // LibraryOnlyILAssembly
             """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
+
+            // Miscellaneous
+            "
+            (match x with
+             | 1 -> ()
+             | _ -> ())
+
+            y
+            ",
+            "
+            match x with
+            | 1 -> ()
+            | _ -> ()
+
+            y
+            "
         }
 
     [<Theory; MemberData(nameof exprs)>]
