@@ -188,7 +188,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
             with _ ->
                 Unchecked.defaultof<'T>
 
-    override _.FindLanguageServices(filter) = Seq.empty
+    override _.FindLanguageServices(_filter) = Seq.empty
 
     override _.GetLanguageServices(languageName) =
         match languageName with
@@ -275,7 +275,7 @@ type RoslynTestHelpers private () =
     static member SetEditorOptions (solution: Solution) options =
         solution.Workspace.Services.GetService<EditorOptions>().With(options)
 
-    static member CreateSolution(source, ?options: FSharpProjectOptions, ?editorOptions) =
+    static member CreateSolution(source, ?options: FSharpProjectOptions, ?extraFSharpProjectOtherOptions: string array, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
@@ -284,9 +284,18 @@ type RoslynTestHelpers private () =
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [ docInfo ]
         let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
 
-        options
-        |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        |> RoslynTestHelpers.SetProjectOptions projId solution
+        let options =
+            let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
+
+            match extraFSharpProjectOtherOptions with
+            | None
+            | Some [||] -> options
+            | Some otherOptions ->
+                { options with
+                    OtherOptions = Array.concat [| options.OtherOptions; otherOptions |]
+                }
+
+        options |> RoslynTestHelpers.SetProjectOptions projId solution
 
         if editorOptions.IsSome then
             RoslynTestHelpers.SetEditorOptions solution editorOptions.Value
@@ -352,9 +361,7 @@ type RoslynTestHelpers private () =
             }
 
         let solution =
-            match customEditorOptions with
-            | Some o -> RoslynTestHelpers.CreateSolution(code, options, o)
-            | None -> RoslynTestHelpers.CreateSolution(code, options)
+            RoslynTestHelpers.CreateSolution(code, options, ?editorOptions = customEditorOptions)
 
         solution |> RoslynTestHelpers.GetSingleDocument
 
