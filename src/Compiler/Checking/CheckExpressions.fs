@@ -5643,11 +5643,17 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
-    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, _) ->
-        TcNonControlFlowExpr env <| fun env ->
-        TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
-            TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
-        )
+    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, trivia) ->
+        match withExprOpt with
+        | None
+        | Some(SynExpr.Ident _, _) ->
+            TcNonControlFlowExpr env <| fun env ->
+            TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+                TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
+            )
+        | Some withExpr ->
+            BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.AnonRecd (isStruct, withExpr, unsortedFieldExprs, mWholeExpr, trivia))
+            |> TcExpr cenv overallTy env tpenv
 
     | SynExpr.ArrayOrList (isArray, args, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -5673,8 +5679,14 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->
-        TcNonControlFlowExpr env <| fun env ->
-        TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
+        match withExprOpt with
+        | None
+        | Some(SynExpr.Ident _, _) ->
+            TcNonControlFlowExpr env <| fun env ->
+            TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
+        | Some withExpr ->
+            BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr))
+            |> TcExpr cenv overallTy env tpenv
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
         TcExprWhileLoop cenv overallTy env tpenv (spWhile, synGuardExpr, synBodyExpr, m)
@@ -6813,6 +6825,12 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
                 let logicalMethId = id
                 let memberFlags = OverrideMemberFlags SynMemberKind.Member
                 bindingRhs, logicalMethId, memberFlags
+                
+            | SynPat.Named (SynIdent(id,_), _, _, _), Some memberFlags ->
+                CheckMemberFlags None NewSlotsOK OverridesOK memberFlags mBinding
+                let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
+                let logicalMethId = id
+                bindingRhs, logicalMethId, memberFlags
 
             | SynPat.InstanceMember(thisId, memberId, _, _, _), Some memberFlags ->
                 CheckMemberFlags None NewSlotsOK OverridesOK memberFlags mBinding
@@ -7018,7 +7036,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
+            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
 
         // 3. create the specs of overrides
         let allTypeImpls =
@@ -7026,9 +7044,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
               let overrides' =
                   [ for overrideMeth in overrides do
                         let overrideInfo, (_, thisVal, methodVars, bindingAttribs, bindingBody) = overrideMeth
-                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _, _)) = overrideInfo
+                        let (Override(_, _, id, mtps, _, _, _, isFakeEventProperty, _, isInstance)) = overrideInfo
 
-                        if not isFakeEventProperty then
+                        if not isFakeEventProperty && isInstance then
                             let searchForOverride =
                                 dispatchSlotsKeyed
                                 |> NameMultiMap.find id.idText
@@ -11249,7 +11267,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                      if instanceExpected then
                         errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                      else
-                        errorR (Error(FSComp.SR.tcNoStaticMemberFoundForOverride (), memberId.idRange))
+                        errorR(Error(FSComp.SR.tcNoStaticMemberFoundForOverride (), memberId.idRange))
                      []
 
                  | slot :: _ as slots ->

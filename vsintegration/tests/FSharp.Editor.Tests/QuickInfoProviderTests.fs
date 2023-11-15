@@ -85,7 +85,7 @@ module QuickInfoProviderTests =
             | QuickInfo _ -> QuickInfo(desc, docs)
             | _ -> Desc desc
 
-        | ToolTipElement.CompositionError (error) -> Error
+        | ToolTipElement.CompositionError _ -> Error
 
     let executeQuickInfoTest (programText: string) testCases =
         let document =
