@@ -1130,7 +1130,10 @@ type ProjectWorkflowBuilder
                 [ for p, f in ctx.Project.GetAllFiles() do
                     let options = p.GetProjectOptions checker
                     for fileName in [getFilePath p f; if f.SignatureFile <> No then getSignatureFilePath p f] do
-                        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true) ]
+                        async {
+                            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot ctx.Project)
+                            return! checker.FindBackgroundReferencesInFile(fileName, snapshot, symbolUse.Symbol)
+                        } ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults
