@@ -138,7 +138,7 @@ let mkTestFileAndOptions source additionalArgs =
     FileSystem.OpenFileForWriteShim(fileName).Write(fileSource1)
 
     let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = [| fileName |] }
     fileName, options
 
 let parseAndCheckFile fileName source options =
@@ -160,7 +160,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
             let projName = Path.ChangeExtension(fname, ".fsproj")
             let args = mkProjectCommandLineArgsForScript (dllName, [file])
             printfn "file = %A, args = %A" file args
-            checker.GetProjectOptionsFromCommandLineArgs (projName, args)
+            { checker.GetProjectOptionsFromCommandLineArgs (projName, args) with SourceFiles = [| file |] }
 
         finally
             if Directory.Exists(path) then

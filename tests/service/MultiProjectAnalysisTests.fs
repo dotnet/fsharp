@@ -68,9 +68,9 @@ type U =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 
@@ -96,9 +96,9 @@ let x =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 // A project referencing two sub-projects
@@ -121,11 +121,12 @@ let u = Case1 3
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
+            SourceFiles = fileNames
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project1A.dllName, Project1A.options);
                                     FSharpReferencedProject.FSharpReference(Project1B.dllName, Project1B.options); |] }
@@ -293,9 +294,9 @@ let p = C.Print()
                 let baseName = tryCreateTemporaryFileName ()
                 let dllName = Path.ChangeExtension(baseName, ".dll")
                 let projFileName = Path.ChangeExtension(baseName, ".fsproj")
-                let fileNames = [fileName1 ]
+                let fileNames = [|fileName1|]
                 let args = mkProjectCommandLineArgs (dllName, fileNames)
-                let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+                let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
                 yield { ModuleName = moduleName; FileName=fileName1; Options = options; DllName=dllName } ]
 
     let jointProject =
@@ -314,10 +315,10 @@ let p = ("""
              + String.concat ",\r\n         " [ for p in projects -> p.ModuleName  + ".v" ] +  ")"
         FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
 
-        let fileNames = [fileName]
+        let fileNames = [|fileName|]
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         let options =
-            let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+            let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
             { options with
                 OtherOptions = Array.append options.OtherOptions [| for p in  projects -> ("-r:" + p.DllName) |]
                 ReferencedProjects = [| for p in projects -> FSharpReferencedProject.FSharpReference(p.DllName, p.Options); |] }
@@ -412,11 +413,11 @@ let x = "F#"
 
     let cleanFileName a = if a = fileName1 then "Project1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
 
     let getOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
-        checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 module internal MultiProjectDirty2 =
 
@@ -437,11 +438,11 @@ let z = Project1.x
 
     let cleanFileName a = if a = fileName1 then "Project2" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
 
     let getOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
-        let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
@@ -633,9 +634,9 @@ type C() =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 //Project2A.fileSource1
 // A project referencing Project2A
@@ -652,10 +653,10 @@ let v = Project2A.C().InternalMember // access an internal symbol
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
@@ -676,10 +677,10 @@ let v = Project2A.C().InternalMember // access an internal symbol
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
@@ -748,9 +749,9 @@ let (|DivisibleBy|_|) by n =
 
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 
 // A project referencing a sub-project
@@ -773,11 +774,12 @@ let fizzBuzz = function
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
 
-    let fileNames = [fileName1]
+    let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
+            SourceFiles = fileNames
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"

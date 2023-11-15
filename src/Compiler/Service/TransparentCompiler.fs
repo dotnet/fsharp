@@ -769,7 +769,18 @@ type internal TransparentCompiler
                         fileSnapshots.TryFind fileName
                         |> Option.defaultWith (fun () ->
                             // TODO: does this commonly happen?
-                            failwith "Let's find out..."
+
+                            // It can happen when source files are inferred from command line options and are not part of FSharpProjectOptions.SourceFiles - which we use to create the Snapshot
+
+                            let snapshotFileSummary =
+                                match projectSnapshot.SourceFiles with
+                                | [] -> "The project snapshot has no source files."
+                                | files ->
+                                    "The project snapshot contains the following files:\n"
+                                    + (files |> Seq.map (fun x -> x.FileName |> shortPath) |> String.concat "\n")
+
+                            failwith
+                                $"Trying to check a file ({shortPath fileName}) which is not part of the project snapshot. {snapshotFileSummary}"
 
                             {
                                 FileName = fileName
@@ -1263,6 +1274,7 @@ type internal TransparentCompiler
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
         let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
+
         caches.TcLastFile.Get(
             projectSnapshot.FileKey fileName,
             async {
@@ -1290,7 +1302,7 @@ type internal TransparentCompiler
 
                 return lastResult, tcInfo
             }
-    )
+        )
 
     let getParseResult (projectSnapshot: FSharpProjectSnapshot) creationDiags file =
         async {
