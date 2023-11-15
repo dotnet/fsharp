@@ -14,11 +14,11 @@ type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
-    let getDiagnostics (fileContents: string) =
+    member private _.getDiagnostics(fileContents: string, ?additionalFlags) =
         let task =
             cancellableTask {
                 let document =
-                    RoslynTestHelpers.CreateSolution(fileContents)
+                    RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
                     |> RoslynTestHelpers.GetSingleDocument
 
                 let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
@@ -30,14 +30,14 @@ type DocumentDiagnosticAnalyzerTests() =
         task.Result
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
-        let errors = getDiagnostics fileContents
+        let errors = this.getDiagnostics (fileContents, ?additionalFlags = additionalFlags)
 
         if not errors.IsEmpty then
             failwith $"There should be no errors generated: {errors}"
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
@@ -68,7 +68,7 @@ type DocumentDiagnosticAnalyzerTests() =
             expectedSeverity: DiagnosticSeverity
         ) =
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
@@ -99,7 +99,7 @@ type DocumentDiagnosticAnalyzerTests() =
         ) =
         // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
@@ -133,7 +133,7 @@ type DocumentDiagnosticAnalyzerTests() =
             ?expectedMessage: string
         ) =
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 

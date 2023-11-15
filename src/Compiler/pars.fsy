@@ -4885,6 +4885,28 @@ atomicExpr:
         let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
         SynExpr.DotLambda(expr, unionRanges mUnderscore  expr.Range, trivia), false }
         
+
+  | UNDERSCORE DOT recover %prec dot_lambda
+      { let mUnderscore = rhs parseState 1
+        let mDot = rhs parseState 2
+        let mWhole = unionRanges mUnderscore mDot
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand mWhole
+
+        let mExpr = mDot.EndRange
+        if not $3 then reportParseErrorAt mDot (FSComp.SR.parsUnexpectedEndOfFileExpression())
+
+        let expr = arbExpr ("dotLambda1", mExpr)
+        let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = mUnderscore ; DotRange = mDot  }
+        SynExpr.DotLambda(expr, mWhole, trivia), false }
+
+  | UNDERSCORE recover %prec dot_lambda
+      { let mUnderscore = rhs parseState 1
+
+        if not $2 then reportParseErrorAt mUnderscore (FSComp.SR.parsUnexpectedEndOfFileExpression())
+
+        let expr = SynExpr.Ident(Ident("_", mUnderscore))
+        SynExpr.FromParseError(expr, mUnderscore), false }
+
   | atomicExpr HIGH_PRECEDENCE_BRACK_APP atomicExpr
       { let arg1, _ = $1
         let arg2, hpa = $3

@@ -15,61 +15,98 @@ open CancellableTasks
 module private Patterns =
     let inline toPat f x = if f x then ValueSome() else ValueNone
 
-    [<return: Struct>]
-    let inline (|LetterOrDigit|_|) c = toPat Char.IsLetterOrDigit c
+    [<AutoOpen>]
+    module Char =
+        [<return: Struct>]
+        let inline (|LetterOrDigit|_|) c = toPat Char.IsLetterOrDigit c
 
-    [<return: Struct>]
-    let inline (|Punctuation|_|) c = toPat Char.IsPunctuation c
+        [<return: Struct>]
+        let inline (|Punctuation|_|) c = toPat Char.IsPunctuation c
 
-    [<return: Struct>]
-    let inline (|Symbol|_|) c = toPat Char.IsSymbol c
+        [<return: Struct>]
+        let inline (|Symbol|_|) c = toPat Char.IsSymbol c
 
-module private SourceText =
-    /// Returns true if the given span contains an expression
-    /// whose indentation would be made invalid if the open paren
-    /// were removed (because the offside line would be shifted), e.g.,
-    ///
-    ///     // Valid.
-    ///     (let x = 2
-    ///      x)
-    ///
-    ///     // Invalid.
-    ///    ←let x = 2
-    ///      x◌
-    ///
-    ///     // Valid.
-    ///     ◌let x = 2
-    ///      x◌
-    let containsSensitiveIndentation (span: TextSpan) (sourceText: SourceText) =
-        let startLinePosition = sourceText.Lines.GetLinePosition span.Start
-        let endLinePosition = sourceText.Lines.GetLinePosition span.End
-        let startLine = startLinePosition.Line
-        let startCol = startLinePosition.Character
-        let endLine = endLinePosition.Line
+    [<AutoOpen>]
+    module SourceText =
+        /// Returns true if the given span contains an expression
+        /// whose indentation would be made invalid if the open paren
+        /// were removed (because the offside line would be shifted), e.g.,
+        ///
+        ///     // Valid.
+        ///     (let x = 2
+        ///      x)
+        ///
+        ///     // Invalid.
+        ///    ←let x = 2
+        ///      x◌
+        ///
+        ///     // Valid.
+        ///     ◌let x = 2
+        ///      x◌
+        let containsSensitiveIndentation (span: TextSpan) (sourceText: SourceText) =
+            let startLinePosition = sourceText.Lines.GetLinePosition span.Start
+            let endLinePosition = sourceText.Lines.GetLinePosition span.End
+            let startLine = startLinePosition.Line
+            let startCol = startLinePosition.Character
+            let endLine = endLinePosition.Line
 
-        if startLine = endLine then
-            false
-        else
-            let rec loop offsides lineNo startCol =
+            if startLine = endLine then
+                false
+            else
+                let rec loop offsides lineNo startCol =
+                    if lineNo <= endLine then
+                        let line = sourceText.Lines[ lineNo ].ToString()
+
+                        match offsides with
+                        | ValueNone ->
+                            let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
+
+                            if i >= 0 then
+                                loop (ValueSome(i + startCol)) (lineNo + 1) 0
+                            else
+                                loop offsides (lineNo + 1) 0
+
+                        | ValueSome offsidesCol ->
+                            let i = line.AsSpan(0, min offsidesCol line.Length).IndexOfAnyExcept(' ', ')')
+                            i <= offsidesCol || loop offsides (lineNo + 1) 0
+                    else
+                        false
+
+                loop ValueNone startLine startCol
+
+        let hasPrecedingConstructOnSameLine (span: TextSpan) (sourceText: SourceText) =
+            let linePosition = sourceText.Lines.GetLinePosition span.Start
+            let line = (sourceText.Lines.GetLineFromPosition span.Start).ToString()
+            line.AsSpan(0, linePosition.Character).LastIndexOfAnyExcept(' ', '(') >= 0
+
+        let followingLineMovesOffsidesRightward (span: TextSpan) (sourceText: SourceText) =
+            let startLinePosition = sourceText.Lines.GetLinePosition span.Start
+            let startLine = startLinePosition.Line
+            let endLinePosition = sourceText.Lines.GetLinePosition span.End
+            let endLine = endLinePosition.Line
+            let offsides = startLinePosition.Character
+
+            let rec loop lineNo =
                 if lineNo <= endLine then
-                    let line = sourceText.Lines[ lineNo ].ToString()
-
-                    match offsides with
-                    | ValueNone ->
-                        let i = line.AsSpan(startCol).IndexOfAnyExcept(' ', ')')
-
-                        if i >= 0 then
-                            loop (ValueSome(i + startCol)) (lineNo + 1) 0
-                        else
-                            loop offsides (lineNo + 1) 0
-
-                    | ValueSome offsidesCol ->
-                        let i = line.AsSpan(0, min offsidesCol line.Length).IndexOfAnyExcept(' ', ')')
-                        i <= offsidesCol || loop offsides (lineNo + 1) 0
+                    let line = sourceText.Lines[ lineNo ].ToString().AsSpan()
+                    let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.?) ".AsSpan())
+                    i > offsides || loop (lineNo + 1)
                 else
                     false
 
-            loop ValueNone startLine startCol
+            loop (startLine + 1)
+
+        [<return: Struct>]
+        let (|ContainsSensitiveIndentation|_|) span sourceText =
+            toPat (containsSensitiveIndentation span) sourceText
+
+        [<return: Struct>]
+        let (|HasPrecedingConstructOnSameLine|_|) span sourceText =
+            toPat (hasPrecedingConstructOnSameLine span) sourceText
+
+        [<return: Struct>]
+        let (|FollowingLineMovesOffsidesRightward|_|) span sourceText =
+            toPat (followingLineMovesOffsidesRightward span) sourceText
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnnecessaryParentheses); Shared; Sealed>]
 type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConstructor>] () =
@@ -130,7 +167,6 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | _, LetterOrDigit, '(' -> None
                         | _, (LetterOrDigit | '`'), _ -> Some ShouldPutSpaceBefore
                         | _, (Punctuation | Symbol), (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
-                        | _ when SourceText.containsSensitiveIndentation context.Span sourceText -> Some ShouldPutSpaceBefore
                         | _ -> None
 
                     let (|ShouldPutSpaceAfter|_|) (s: string) =
@@ -142,11 +178,24 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
                         | _ -> None
 
+                    let (|NewOffsidesOnFirstLine|_|) (s: string) =
+                        let s = s.AsSpan 1 // (…
+                        let newline = s.IndexOfAny('\n', '\r')
+
+                        if newline < 0 || s.Slice(0, newline).IndexOfAnyExcept(@"\r\n ".AsSpan()) >= 0 then
+                            Some NewOffsidesOnFirstLine
+                        else
+                            None
+
                     let newText =
-                        match txt with
-                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter -> " " + txt[1 .. txt.Length - 2] + " "
-                        | ShouldPutSpaceBefore -> " " + txt[1 .. txt.Length - 2]
-                        | ShouldPutSpaceAfter -> txt[1 .. txt.Length - 2] + " "
+                        match txt, sourceText with
+                        | ShouldPutSpaceBefore & ShouldPutSpaceAfter, _ -> " " + txt[1 .. txt.Length - 2] + " "
+                        | ShouldPutSpaceBefore, _ -> " " + txt[1 .. txt.Length - 2]
+                        | ShouldPutSpaceAfter, _ -> txt[1 .. txt.Length - 2] + " "
+                        | NewOffsidesOnFirstLine,
+                          ContainsSensitiveIndentation context.Span & (HasPrecedingConstructOnSameLine context.Span | FollowingLineMovesOffsidesRightward context.Span) ->
+                            txt[ 1 .. txt.Length - 2 ].Replace("\n ", "\n")
+                        | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span -> " " + txt[1 .. txt.Length - 2]
                         | _ -> txt[1 .. txt.Length - 2]
 
                     return
