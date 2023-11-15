@@ -18,11 +18,9 @@ open FSharp.Compiler.Text
 
 let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
 
-type TestCodeFix = { Message: string; FixedCode: string }
-
-type TestContext(Solution: Solution, CT) =
-    let mutable _solution = Solution
-    member this.CT = CT
+type TestContext(Solution: Solution, CancellationToken) =
+    let mutable _solution = Solution 
+    member this.CT = CancellationToken
 
     member this.Solution
         with set value = _solution <- value
