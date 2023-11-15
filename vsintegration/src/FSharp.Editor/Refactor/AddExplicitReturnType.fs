@@ -54,7 +54,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let textChange =
                 rangeOfReturnType
                 |> Option.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                |> Option.map (fun textSpan -> TextChange(textSpan, $":{inferredType}"))
+                |> Option.map (fun textSpan -> TextChange(textSpan, $": {inferredType}"))
 
             match textChange with
             | Some textChange -> sourceText.WithChanges(textChange)
