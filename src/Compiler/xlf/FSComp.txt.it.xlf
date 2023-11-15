@@ -122,6 +122,11 @@
         <target state="translated">Il membro o la funzione "{0}" ha l'attributo "TailCallAttribute", ma non è in uso in modo ricorsivo finale.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Static members are not allowed in object expressions.</source>
+        <target state="new">Static members are not allowed in object expressions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">L'attributo 'AssemblyKeyNameAttribute' è deprecato. In alternativa, usare 'AssemblyKeyFileAttribute'.</target>
@@ -927,11 +932,6 @@
         <target state="translated">L'accesso ai membri è ambiguo. Utilizzare le parentesi intorno alla creazione oggetto, ad esempio “(New SomeType (args)). MemberName”</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="translated"> la sintassi abbreviata _.per le funzioni lambda può essere usata solo con espressioni atomiche. Ciò significa espressioni senza spazi vuoti a meno che non siano racchiuse tra parentesi.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fine dell'input imprevista nel ramo 'else if' o 'elif' dell'espressione condizionale. È previsto 'elif &lt;expr&gt; then &lt;expr&gt;' o 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
@@ -1265,6 +1265,16 @@
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">L'utilizzo di metodi con 'NoEagerConstraintApplicationAttribute' richiede /langversion: 6.0 o versione successiva</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="new">No static abstract property was found that corresponds to this override</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">

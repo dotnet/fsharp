@@ -78,10 +78,12 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
 
     interface ITaggedTextCollector with
         member _.Add taggedText =
-            // TODO: bail out early if line limit is already hit
-            match taggedText.Tag with
-            | TextTag.Text -> reportTextLines taggedText.Text
-            | _ -> addTaggedTextEntry taggedText
+            match lineLimit with
+            | Some lineLimit when lineLimit < count -> ()
+            | _ ->
+                match taggedText.Tag with
+                | TextTag.Text -> reportTextLines taggedText.Text
+                | _ -> addTaggedTextEntry taggedText
 
         member _.IsEmpty = isEmpty
         member _.EndsWithLineBreak = isEmpty || endsWithLineBreak
