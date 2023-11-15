@@ -470,10 +470,16 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         let avgDuration = avgDurationMs |> sprintf "| Avg: %.0f ms"
 
+        let hitRatio =
+            if started > 0 then
+                $" (%.0f{float hits / (float (started + hits)) * 100.0} %%)"
+            else
+                ""
+
         let stats =
             [|
                 if errors > 0 then $"| errors: {errors} " else ""
-                if hits > 0 then $"| hits: {hits} " else ""
+                $"| hits: {hits}{hitRatio} "
                 if started > 0 then $"| started: {started} " else ""
                 if completed > 0 then $"| completed: {completed} " else ""
                 if canceled > 0 then $"| canceled: {canceled} " else ""

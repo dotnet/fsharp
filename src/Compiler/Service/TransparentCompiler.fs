@@ -281,7 +281,7 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val BootstrapInfo = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfo")
 
-    // member val TcLastFile = AsyncMemoize(name = "TcLastFile")
+    member val TcLastFile = AsyncMemoize(sf, 2 * sf, name = "TcLastFile")
 
     member val TcIntermediate = AsyncMemoize(20 * sf, 20 * sf, name = "TcIntermediate")
 
@@ -1262,35 +1262,35 @@ type internal TransparentCompiler
 
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
-        //let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
-        //caches.TcLastFile.Get(
-        //    projectSnapshot.FileKey fileName,
-        async {
-            let file = projectSnapshot.SourceFiles |> List.last
+        let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
+        caches.TcLastFile.Get(
+            projectSnapshot.FileKey fileName,
+            async {
+                let file = projectSnapshot.SourceFiles |> List.last
 
-            use _ =
-                Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
+                use _ =
+                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
 
-            let! parsedInputs =
-                projectSnapshot.SourceFiles
-                |> Seq.map (ComputeParseFile projectSnapshot.ProjectSnapshot)
-                |> Async.Parallel
+                let! parsedInputs =
+                    projectSnapshot.SourceFiles
+                    |> Seq.map (ComputeParseFile projectSnapshot.ProjectSnapshot)
+                    |> Async.Parallel
 
-            let! graph, dependencyFiles =
-                ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p14)
-            //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
+                let! graph, dependencyFiles =
+                    ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot (parsedInputs |> Array.map p14)
+                //ComputeDependencyGraphForProject priorSnapshot (parsedInputs |> Array.map p13)
 
-            let! results, tcInfo =
-                processTypeCheckingGraph
-                    graph
-                    (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles false)
-                    bootstrapInfo.InitialTcInfo
+                let! results, tcInfo =
+                    processTypeCheckingGraph
+                        graph
+                        (processGraphNode projectSnapshot bootstrapInfo parsedInputs dependencyFiles false)
+                        bootstrapInfo.InitialTcInfo
 
-            let lastResult = results |> List.head |> snd
+                let lastResult = results |> List.head |> snd
 
-            return lastResult, tcInfo
-        }
-    //)
+                return lastResult, tcInfo
+            }
+    )
 
     let getParseResult (projectSnapshot: FSharpProjectSnapshot) creationDiags file =
         async {
@@ -1591,6 +1591,10 @@ type internal TransparentCompiler
                     let tcDiagnostics = tcInfo.TcDiagnostics
                     let tcDependencyFiles = tcInfo.tcDependencyFiles
 
+                    let symbolEnv =
+                        SymbolEnv(bootstrapInfo.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, bootstrapInfo.TcImports)
+                        |> Some
+
                     let tcDiagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
@@ -1599,7 +1603,7 @@ type internal TransparentCompiler
                             tcDiagnostics,
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
-                            None
+                            symbolEnv
                         )
 
                     let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
