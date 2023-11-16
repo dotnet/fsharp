@@ -83,7 +83,7 @@ jobs:
         readonly paths=(
             "src/FSharp.Core|${_fsharp_core_release_notes_path}"
             "src/Compiler|${_fsharp_compiler_release_notes_path}"
-            "src/Compiler/Facilities/LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
+            "LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
             "vsintegration/src|${_fsharp_vs_release_notes_path}"
         )
 
