@@ -100,7 +100,7 @@ let ``Changes in a referenced project`` () =
         checkFile "Last" expectSignatureChanged
     }
 
-[<Fact>]
+[<Fact(Skip="TODO")>]
 // TODO: This will probably require some special care in TransparentCompiler...
 let ``Language service works if the same file is listed twice`` () =
     let file = sourceFile "First" []

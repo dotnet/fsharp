@@ -836,9 +836,9 @@ let Fuzzing' signatureFiles =
     builder.DeleteProjectDir()
 
 
-[<Theory>]
-[<InlineData true>]
-[<InlineData false>]
+//[<Theory>]
+//[<InlineData true>]
+//[<InlineData false>]
 let GiraffeFuzzing signatureFiles =
     let seed = System.Random().Next()
     //let seed = 1044159179

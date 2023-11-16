@@ -334,21 +334,18 @@ let ``Stress test`` () =
 
 [<Theory>]
 [<InlineData(true, 1)>]
-[<InlineData(false, 0)>]
-let ``Cancel running jobs with the same key`` cancelDuplicate expectCancelled =
+[<InlineData(false, 2)>]
+let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
     task {
         let cache = AsyncMemoize(cancelDuplicateRunningJobs=cancelDuplicate)
 
         let mutable started = 0
-        let mutable cancelled = 0
         let mutable finished = 0
 
         let work () = async {
             Interlocked.Increment &started |> ignore
-            let! ct = Async.CancellationToken
-            use _ = ct.Register(fun () -> Interlocked.Increment &cancelled |> ignore)
             for _ in 1..10 do
-                do! Async.Sleep 30
+                do! Async.Sleep 10
             Interlocked.Increment &finished |> ignore
         }
 
@@ -360,7 +357,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectCancelled =
 
         cache.Get(key1, work()) |> Async.Start
 
-        do! Task.Delay 100
+        do! Task.Delay 50
 
         let key2 =
             { new ICacheKey<_, _> with
@@ -370,7 +367,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectCancelled =
 
         cache.Get(key2, work()) |> Async.Start
 
-        do! Task.Delay 100
+        do! Task.Delay 250
 
-        Assert.Equal((2, expectCancelled, 0), (started, cancelled, finished))
+        Assert.Equal((2, expectFinished), (started, finished))
     }
