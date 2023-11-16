@@ -110,7 +110,7 @@ jobs:
                     echo "          Found $release_notes in modified files"
                     echo "              Checking for pull request URL in $release_notes"
 
-                    _pr_link_occurences=`grep -c "${PR_URL} || true" $release_notes`
+                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || true`
 
                     echo "              Found $_pr_link_occurences occurences of $PR_URL in $release_notes"
 
