@@ -36,9 +36,10 @@ jobs:
       run: |
         set -e
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        FSHARP_REPO_URL="https://github.com/dotnet/fsharp"
         PR_AUTHOR="${{ github.event.pull_request.user.login }}"
         PR_NUMBER=${{ github.event.number }}
-        PR_URL="https://github.com/dotnet/fsharp/pull/${PR_NUMBER}"
+        PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
         # Parse version from eng/Versions.props
         # For FSarp.Core:
         # <FSMajorVersion>8</FSMajorVersion>
@@ -116,23 +117,23 @@ jobs:
 
                     if [[ ${_pr_link_occurences} = 1 ]]; then
                         echo "                  Found pull request URL in $release_notes once"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`$release_notes\\\` |"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` |"
                         RELEASE_NOTES_FOUND+=$'\n'
                     elif [[ ${_pr_link_occurences} -gt 1 ]]; then
                         echo "                  Found pull request URL in $release_notes, but with more than one PR URL"
                         DESCRIPTION="**More than one current pull request URL (${PR_URL}) found in release notes**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` []() | ${DESCRIPTION} |"
                         RELEASE_NOTES_NOT_FOUND+=$'\n'
                     else
                         echo "                  Did not find pull request URL in $release_notes"
                         DESCRIPTION="**No current pull request URL (${PR_URL}) found**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` | ${DESCRIPTION} |"
                         RELEASE_NOTES_NOT_FOUND+=$'\n'
                     fi
                 else
                     echo "          Did not find $release_notes in modified files"
-                    DESCRIPTION="**No release notes found**"
-                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
+                    DESCRIPTION="**No release notes found or release notes format is not correct**"
+                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` | ${DESCRIPTION} |"
                     RELEASE_NOTES_NOT_FOUND+=$'\n'
                 fi
             else
@@ -145,7 +146,6 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$"@${PR_AUTHOR},"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No release notes found for the following paths.**"
@@ -163,6 +163,9 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- More inlines for Result module - https://github.com/dotnet/fsharp/pull/16106\\\`"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- Miscellaneous fixes to parens analysis - https://github.com/dotnet/fsharp/pull/16262\\\`"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+='| Change path      | Release notes path | Description |'
