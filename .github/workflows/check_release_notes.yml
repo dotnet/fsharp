@@ -36,6 +36,7 @@ jobs:
       run: |
         set -e
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        PR_AUTHOR="${{ github.event.pull_request.user.login }}"
         PR_NUMBER=${{ github.event.number }}
         PR_URL="https://github.com/dotnet/fsharp/pull/${PR_NUMBER}"
         # Parse version from eng/Versions.props
@@ -140,6 +141,10 @@ jobs:
         done
 
         if [[ $RELEASE_NOTES_NOT_FOUND != "" ]]; then
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"@${PR_AUTHOR},"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!CAUTION]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No release notes found for the following paths.**"
