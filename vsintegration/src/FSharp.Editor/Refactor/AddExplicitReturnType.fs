@@ -80,8 +80,6 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         | _ -> None
 
     override _.ComputeRefactoringsAsync context =
-        let ct = context.CancellationToken
-
         cancellableTask {
             let document = context.Document
             let position = context.Span.Start
@@ -93,7 +91,8 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let! lexerSymbol =
                 document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddExplicitReturnType))
 
-            let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
+            let! (parseFileResults, checkFileResults) = 
+                document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
 
             let symbolUseOpt =
                 lexerSymbol
@@ -121,5 +120,4 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             | _ -> ()
 
             return ()
-        }
-        |> CancellableTask.startAsTask ct
+        } |> CancellableTask.startAsTaskWithoutCancellation
