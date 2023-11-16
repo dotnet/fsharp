@@ -158,7 +158,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
             let fname = Path.Combine(path, Path.GetFileName(file))
             let dllName = Path.ChangeExtension(fname, ".dll")
             let projName = Path.ChangeExtension(fname, ".fsproj")
-            let args = mkProjectCommandLineArgsForScript (dllName, [file])
+            let args = mkProjectCommandLineArgsForScript (dllName, [])
             printfn "file = %A, args = %A" file args
             checker.GetProjectOptionsFromCommandLineArgs (projName, args)
 
