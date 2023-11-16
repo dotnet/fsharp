@@ -206,7 +206,7 @@ module List =
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
-    /// <summary>Divides the input list into lists (chunks) with at a positive number of at most <c>chunkSize</c> elements.
+    /// <summary>Divides the input list into lists (chunks) of size at most <c>chunkSize</c>.
     /// Returns a new list containing the generated lists (chunks) as its elements.
     /// 
     /// Returns an empty list when the input list is empty.</summary>
