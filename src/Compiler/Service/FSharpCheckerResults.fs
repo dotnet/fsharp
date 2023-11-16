@@ -638,41 +638,36 @@ type FSharpProjectSnapshot with
             return snapshotAccumulator[options]
         }
 
-    static member FromOptions(options: FSharpProjectOptions) =
+    static member GetFileSnapshotFromDisk _ fileName =
         async {
-            let getFileSnapshot _ fileName =
-                async {
-                    let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
-                    let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
-
-                    return
-                        {
-                            FileName = fileName
-                            Version = timeStamp.Ticks.ToString()
-                            GetSource = fun () -> Task.FromResult(SourceText.ofString contents)
-                        }
-                }
-
-            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
-        }
-
-    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
-        async {
-            let! snapshot = FSharpProjectSnapshot.FromOptions options
+            let timeStamp = FileSystem.GetLastWriteTimeShim(fileName)
+            let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
 
             return
-                { snapshot with
-                    SourceFiles =
-                        snapshot.SourceFiles
-                        |> List.map (function
-                            | f when f.FileName = fileName ->
-                                { f with
-                                    GetSource = fun () -> Task.FromResult sourceText
-                                    Version = $"{fileVersion}{sourceText.GetHashCode().ToString()}"
-                                }
-                            | f -> f)
+                {
+                    FileName = fileName
+                    Version = timeStamp.Ticks.ToString()
+                    GetSource = fun () -> Task.FromResult(SourceText.ofString contents)
                 }
         }
+
+    static member FromOptions(options: FSharpProjectOptions) =
+        FSharpProjectSnapshot.FromOptions(options, FSharpProjectSnapshot.GetFileSnapshotFromDisk)
+
+    static member FromOptions(options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText) =
+
+        let getFileSnapshot _ fName =
+            if fName = fileName then
+                async.Return
+                    {
+                        FileName = fileName
+                        GetSource = fun () -> Task.FromResult sourceText
+                        Version = $"{fileVersion}{sourceText.GetHashCode().ToString()}"
+                    }
+            else
+                FSharpProjectSnapshot.GetFileSnapshotFromDisk () fName
+
+        FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =

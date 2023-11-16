@@ -160,7 +160,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
             let projName = Path.ChangeExtension(fname, ".fsproj")
             let args = mkProjectCommandLineArgsForScript (dllName, [file])
             printfn "file = %A, args = %A" file args
-            { checker.GetProjectOptionsFromCommandLineArgs (projName, args) with SourceFiles = [| file |] }
+            checker.GetProjectOptionsFromCommandLineArgs (projName, args)
 
         finally
             if Directory.Exists(path) then
@@ -171,7 +171,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     //printfn "projectOptions = %A" projectOptions
 #endif
 
-    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
+    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions; SourceFiles = [|file|] }
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediate
 
     // if parseResult.Errors.Length > 0 then
