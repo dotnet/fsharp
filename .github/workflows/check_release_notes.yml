@@ -119,7 +119,7 @@ jobs:
 
                     echo "              Found $_pr_link_occurences occurences of $PR_URL in $release_notes"
 
-                    if [[ ${_pr_link_occurences} = 1 ]]; then
+                    if [[ ${_pr_link_occurences} -eq 1 ]]; then
                         echo "                  Found pull request URL in $release_notes once"
                         RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` |"
                         RELEASE_NOTES_FOUND+=$'\n'
