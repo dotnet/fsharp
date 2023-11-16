@@ -126,7 +126,7 @@
     <Compile Include="Utilities\QueueList.fs" />
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
-    <Compile Include="utilities\LruCache.fs" />
+    <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
     <Compile Include="Utilities\ImmutableArray.fs" />
     <Compile Include="Utilities\rational.fsi" />
