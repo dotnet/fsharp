@@ -693,6 +693,25 @@ type X() =
 
         Assert.False (Array.isEmpty checkResults.Diagnostics)
 
+    [<Test>]
+    let ``Property symbol on interface implementation`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Z
+
+type I =
+    abstract P: int with get, set
+
+type T() =
+    interface I with
+        member val P = 1 with get, set
+"""
+
+        let _propertySymbolUse, mProp =
+            checkResults.GetSymbolUsesAtLocation(9, 20, "        member val P = 1 with get, set", ["P"])
+            |> List.pick pickPropertySymbol
+
+        assertRange (9, 19) (9, 20) mProp
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
