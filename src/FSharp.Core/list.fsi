@@ -339,7 +339,7 @@ module List =
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
-    /// <summary>Returns a new list that contains the elements of each the lists in order.</summary>
+    /// <summary>Returns a new list that contains the elements of each of the lists in order.</summary>
     ///
     /// <param name="lists">The input sequence of lists.</param>
     ///
