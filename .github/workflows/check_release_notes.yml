@@ -85,7 +85,6 @@ jobs:
             "src/Compiler|${_fsharp_compiler_release_notes_path}"
             "src/Compiler/Facilities/LanguageFeatures.fsi|${_fsharp_language_release_notes_path}"
             "vsintegration/src|${_fsharp_vs_release_notes_path}"
-            ".github|NONEXISTING_NOTES_FOR_TESTING.md"
         )
 
         # Check all changed paths
@@ -111,7 +110,7 @@ jobs:
                     echo "          Found $release_notes in modified files"
                     echo "              Checking for pull request URL in $release_notes"
 
-                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || true`
+                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || (true && echo 0)`
 
                     echo "              Found $_pr_link_occurences occurences of $PR_URL in $release_notes"
 
