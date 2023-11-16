@@ -36,7 +36,7 @@ jobs:
       run: |
         set -e
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-
+        PR_URL="https://github.com/dotnet/fsharp/pull/${PR_NUMBER}"
         # Parse version from eng/Versions.props
         # For FSarp.Core:
         # <FSMajorVersion>8</FSMajorVersion>
@@ -92,6 +92,7 @@ jobs:
         RELEASE_NOTES_CHANGES_SUMMARY=""
         RELEASE_NOTES_NOT_FOUND=""
 
+
         _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
 
         for fields in ${paths[@]}
@@ -105,8 +106,22 @@ jobs:
                 echo "Checking if release notes modified in: $release_notes"
                 if [[ "${_modified_paths[@]}" =~ "${release_notes}" ]]; then
                     echo "Found $release_notes in modified files"
-                    RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`$release_notes\\\` |"
-                    RELEASE_NOTES_FOUND+=$'\n'
+                    echo "Checking for pull request URL in $release_notes"
+                    _pr_link_occurences=`grep -c "${PR_URL}" $release_notes`
+                    if [[ ${_pr_link_occurences} = 1 ]]; then
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`$release_notes\\\` |"
+                        RELEASE_NOTES_FOUND+=$'\n'
+                    elif [[ ${_pr_link_occurences} -gt 1 ]]; then
+                        echo "Found pull request URL in $release_notes, but with more than one PR URL"
+                        DESCRIPTION="**More than one current pull request URL (${PR_URL}) found in release notes**"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+=$'\n'
+                    else
+                        echo "Did not find pull request URL in $release_notes"
+                        DESCRIPTION="**No current pull request URL (${PR_URL}) found**"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+=$'\n'
+                    fi
                 else
                     echo "Did not find $release_notes in modified files"
                     DESCRIPTION="**No release notes found**"
