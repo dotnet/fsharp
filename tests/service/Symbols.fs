@@ -661,6 +661,38 @@ ignore (Foo().Name)
         Assert.True usages.[0].IsFromDefinition
         Assert.True usages.[1].IsFromUse
 
+    [<Test>]
+    let ``Property symbol is present after critical error`` () =
+        let _, checkResults = getParseAndCheckResults """
+module X
+
+let _ = UnresolvedName
+
+type X() =
+    member val Y = 1 with get, set
+"""
+
+        let _propertySymbolUse, _ =
+            checkResults.GetSymbolUsesAtLocation(7, 16, "    member val Y = 1 with get, set", ["Y"])
+            |> List.pick pickPropertySymbol
+
+        Assert.False (Array.isEmpty checkResults.Diagnostics)
+
+    [<Test>]
+    let ``Property symbol is present after critical error in property`` () =
+        let _, checkResults = getParseAndCheckResults """
+module Z
+
+type X() =
+    member val Y = UnresolvedName with get, set
+"""
+
+        let _propertySymbolUse, _ =
+            checkResults.GetSymbolUsesAtLocation(5, 16, "    member val Y = UnresolvedName with get, set", ["Y"])
+            |> List.pick pickPropertySymbol
+
+        Assert.False (Array.isEmpty checkResults.Diagnostics)
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
