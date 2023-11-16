@@ -1463,7 +1463,7 @@ type internal TransparentCompiler
                 let results = results |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
                 // Finish the checking
-                let (_tcEnvAtEndOfLastFile, topAttrs, _mimpls, _), tcState =
+                let (_tcEnvAtEndOfLastFile, topAttrs, checkedImplFiles, _), tcState =
                     CheckMultipleInputsFinish(results, finalInfo.tcState)
 
                 let tcState, _, ccuContents = CheckClosedInputSetFinish([], tcState)
@@ -1539,7 +1539,7 @@ type internal TransparentCompiler
                         errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
 
-                return finalInfo, ilAssemRef, assemblyDataResult
+                return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles
             }
         )
 
@@ -1571,7 +1571,7 @@ type internal TransparentCompiler
 
                         let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                        let! _, _, assemblyDataResult = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                        let! _, _, assemblyDataResult, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
                         Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                         return assemblyDataResult
@@ -1590,7 +1590,7 @@ type internal TransparentCompiler
 
                     let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                    let! tcInfo, ilAssemRef, assemblyDataResult = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                    let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles = ComputeProjectExtras bootstrapInfo snapshotWithSources
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
@@ -1635,7 +1635,7 @@ type internal TransparentCompiler
                          getAssemblyData,
                          ilAssemRef,
                          tcEnvAtEnd.AccessRights,
-                         None,
+                         Some checkedImplFiles,
                          Array.ofList tcDependencyFiles,
                          projectSnapshot.ToOptions())
 
