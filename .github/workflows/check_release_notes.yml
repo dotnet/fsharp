@@ -121,18 +121,18 @@ jobs:
                     elif [[ ${_pr_link_occurences} -gt 1 ]]; then
                         echo "                  Found pull request URL in $release_notes, but with more than one PR URL"
                         DESCRIPTION="**More than one current pull request URL (${PR_URL}) found in release notes**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` []() | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | ${FSHARP_REPO_URL}/$release_notes | ${DESCRIPTION} |"
                         RELEASE_NOTES_NOT_FOUND+=$'\n'
                     else
                         echo "                  Did not find pull request URL in $release_notes"
                         DESCRIPTION="**No current pull request URL (${PR_URL}) found**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` | ${DESCRIPTION} |"
+                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | ${FSHARP_REPO_URL}/$release_notes | ${DESCRIPTION} |"
                         RELEASE_NOTES_NOT_FOUND+=$'\n'
                     fi
                 else
                     echo "          Did not find $release_notes in modified files"
                     DESCRIPTION="**No release notes found or release notes format is not correct**"
-                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`${FSHARP_REPO_URL}/$release_notes\\\` | ${DESCRIPTION} |"
+                    RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | ${FSHARP_REPO_URL}/$release_notes | ${DESCRIPTION} |"
                     RELEASE_NOTES_NOT_FOUND+=$'\n'
                 fi
             else
