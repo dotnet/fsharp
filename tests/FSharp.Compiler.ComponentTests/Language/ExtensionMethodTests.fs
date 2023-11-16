@@ -115,6 +115,43 @@ namespace Consumer
         csharp |> compile |> shouldSucceed
         
     [<Fact>]
+    let ``F# CSharpStyleExtensionMethod consumed in F#`` () =
+        let producer =
+            FSharp
+                """
+namespace Producer
+
+open System.Runtime.CompilerServices
+
+type WidgetBuilder<'msg, 'marker>() = class end
+
+type IMarkerOne = interface end
+
+// Commenting out [<Extension>] breaks
+//[<Extension>]
+type WidgetBuilderExtensions =
+    [<Extension>]
+    static member inline one(this: WidgetBuilder<'msg, #IMarkerOne>) = this
+"""
+            |> withLangVersion80
+            |> withName "FSLibProducer"
+
+        let fsharp2 =
+            FSharp
+                """
+namespace Consumer
+
+open Producer
+
+module FSLibConsumer =   
+    let x = WidgetBuilder<int, IMarkerOne>().one()
+"""
+            |> withName "FSLibConsumer"
+            |> withReferences [ producer ]
+
+        fsharp2 |> compile |> shouldSucceed
+        
+    [<Fact>]
     let ``F# lang version 7 CSharpStyleExtensionMethod consumed in C#`` () =
         let fsharp =
             FSharp
