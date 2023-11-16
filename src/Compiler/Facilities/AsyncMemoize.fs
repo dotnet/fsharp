@@ -478,13 +478,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         let stats =
             [|
-                if errors > 0 then $"| errors: {errors} " else ""
+                if errors + failed > 0 then
+                    " [!] "
+                if errors > 0 then $"| ERRORS: {errors} " else ""
+                if failed > 0 then $"| FAILED: {failed} " else ""
                 $"| hits: {hits}{hitRatio} "
                 if started > 0 then $"| started: {started} " else ""
                 if completed > 0 then $"| completed: {completed} " else ""
                 if canceled > 0 then $"| canceled: {canceled} " else ""
                 if restarted > 0 then $"| restarted: {restarted} " else ""
-                if failed > 0 then $"| failed: {failed} " else ""
                 if evicted > 0 then $"| evicted: {evicted} " else ""
                 if collected > 0 then $"| collected: {collected} " else ""
                 if strengthened > 0 then
@@ -494,4 +496,23 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |]
             |> String.concat ""
 
-        $"{name}{locked}{running} {cache.DebuggerDisplay} {stats}{avgDuration}"
+        $"{locked}{running} {cache.DebuggerDisplay} {stats}{avgDuration}"
+
+[<DebuggerDisplay("{DebuggerDisplay}")>]
+type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
+    (
+        ?keepStrongly,
+        ?keepWeakly,
+        ?name: string,
+        ?cancelDuplicateRunningJobs: bool
+    ) =
+
+    do ignore (keepStrongly, keepWeakly, name, cancelDuplicateRunningJobs)
+
+    let mutable requests = 0
+
+    member _.Get(_key: ICacheKey<_, _>, computation) =
+        Interlocked.Increment &requests |> ignore
+        computation
+
+    member _.DebuggerDisplay = $"(disabled) requests: {requests}"

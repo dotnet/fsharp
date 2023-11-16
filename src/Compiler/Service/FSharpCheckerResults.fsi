@@ -195,7 +195,7 @@ and internal FSharpProjectSnapshotDebugVersion =
       IsIncompleteTypeCheckEnvironment: bool
       UseScriptResolutionRules: bool }
 
-and internal  FSharpProjectSnapshotVersion = string
+and internal FSharpProjectSnapshotVersion = string
 
 and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
     internal

@@ -261,8 +261,6 @@ module private TypeCheckingGraphProcessing =
 
 type internal CompilerCaches(sizeFactor: int) =
 
-    // member val Source = AsyncMemoize(keepStrongly = 1000, keepWeakly = 2000, name = "Source")
-
     let sf = sizeFactor
 
     member _.SizeFactor = sf
@@ -271,7 +269,7 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ParseAndCheckFileInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFileInProject")
 
-    member val ParseAndCheckAllFilesInProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckFullProject")
+    member val ParseAndCheckAllFilesInProject = AsyncMemoizeDisabled(sf, 2 * sf, name = "ParseAndCheckFullProject")
 
     member val ParseAndCheckProject = AsyncMemoize(sf, 2 * sf, name = "ParseAndCheckProject")
 
@@ -281,13 +279,13 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val BootstrapInfo = AsyncMemoize(sf, 2 * sf, name = "BootstrapInfo")
 
-    member val TcLastFile = AsyncMemoize(sf, 2 * sf, name = "TcLastFile")
+    member val TcLastFile = AsyncMemoizeDisabled(sf, 2 * sf, name = "TcLastFile")
 
     member val TcIntermediate = AsyncMemoize(20 * sf, 20 * sf, name = "TcIntermediate")
 
     member val DependencyGraph = AsyncMemoize(sf, 2 * sf, name = "DependencyGraph")
 
-    member val ProjectExtras = AsyncMemoize(sf, 2 * sf, name = "ProjectExtras")
+    member val ProjectExtras = AsyncMemoizeDisabled(sf, 2 * sf, name = "ProjectExtras")
 
     member val AssemblyData = AsyncMemoize(sf, 2 * sf, name = "AssemblyData")
 

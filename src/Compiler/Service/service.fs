@@ -172,7 +172,7 @@ type FSharpChecker
             )
             :> IBackgroundCompiler
 
-    static let globalInstance = lazy FSharpChecker.Create(useTransparentCompiler=false)
+    static let globalInstance = lazy FSharpChecker.Create()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.braceMatchCache. Most recently used cache for brace matching. Accessed on the
     // background UI thread, not on the compiler thread.
