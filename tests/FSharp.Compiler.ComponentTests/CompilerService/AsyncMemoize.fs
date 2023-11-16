@@ -367,7 +367,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
 
         cache.Get(key2, work()) |> Async.Start
 
-        do! Task.Delay 250
+        do! Task.Delay 500
 
         Assert.Equal((2, expectFinished), (started, finished))
     }

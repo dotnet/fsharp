@@ -69,6 +69,18 @@
     <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
   </ItemGroup>
 
+    <ItemGroup>
+
+	    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+	    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
+	    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
+	    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+	    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+	    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+	    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+
+    </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" />

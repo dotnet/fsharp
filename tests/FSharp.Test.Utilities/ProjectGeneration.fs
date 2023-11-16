@@ -13,7 +13,7 @@
 /// To model changes to "private" code in a file we change the body of a second function which
 /// no one calls.
 ///
-module internal FSharp.Test.ProjectGeneration
+module FSharp.Test.ProjectGeneration
 
 open System
 open System.Collections.Concurrent
@@ -543,7 +543,7 @@ module ProjectOperations =
             |> renderSourceFile project
         |> SourceText.ofString
 
-    let getFileSnapshot (project: SyntheticProject) _options (path: string) =
+    let internal getFileSnapshot (project: SyntheticProject) _options (path: string) =
         async {
             let project, filePath =
                 if path.EndsWith(".fsi") then
@@ -716,7 +716,7 @@ module ProjectOperations =
 
 module Helpers =
 
-    let getSymbolUse fileName (source: string) (symbolName: string) snapshot (checker: FSharpChecker) =
+    let internal getSymbolUse fileName (source: string) (symbolName: string) snapshot (checker: FSharpChecker) =
         async {
             let lines = source.Split '\n' |> Seq.skip 1 // module definition
             let lineNumber, fullLine, colAtEndOfNames =
@@ -741,7 +741,7 @@ module Helpers =
                 failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
-    let singleFileChecker source =
+    let internal singleFileChecker source =
 
         let fileName = "test.fs"
 
