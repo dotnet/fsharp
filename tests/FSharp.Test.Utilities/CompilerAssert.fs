@@ -258,7 +258,8 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true)
+    // TODO: check both TransparentCompiler and IncrementalBuilder, somehow
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=true)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|

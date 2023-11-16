@@ -329,6 +329,12 @@ type internal TransparentCompiler
     // if the cached incremental builder can be used for the project.
     let dependencyProviderForScripts = new DependencyProvider()
 
+    // Legacy events, they're used in tests... eventually they should go away
+    let beforeFileChecked = Event<string * FSharpProjectOptions>()
+    let fileParsed = Event<string * FSharpProjectOptions>()
+    let fileChecked = Event<string * FSharpProjectOptions>()
+    let projectChecked = Event<FSharpProjectOptions>()
+
     // use this to process not-yet-implemented tasks
     let backgroundCompiler =
         BackgroundCompiler(
@@ -934,6 +940,8 @@ type internal TransparentCompiler
                 let input =
                     ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
 
+                fileParsed.Trigger(fileName, Unchecked.defaultof<_>)
+
                 return input, diagnosticsLogger.GetDiagnostics(), sourceText, tcConfig
             }
         )
@@ -1091,6 +1099,8 @@ type internal TransparentCompiler
                             "version", "-" // key.GetVersion()
                         |]
 
+                beforeFileChecked.Trigger(fileName, Unchecked.defaultof<_>)
+
                 let tcConfig = bootstrapInfo.TcConfig
                 let tcGlobals = bootstrapInfo.TcGlobals
                 let tcImports = bootstrapInfo.TcImports
@@ -1142,6 +1152,8 @@ type internal TransparentCompiler
 
                     let newErrors =
                         Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+
+                    fileChecked.Trigger(fileName, Unchecked.defaultof<_>)
 
                     return
                         {
@@ -1785,9 +1797,6 @@ type internal TransparentCompiler
 
     interface IBackgroundCompiler with
 
-        member this.BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions> =
-            backgroundCompiler.BeforeBackgroundFileCheck
-
         member this.CheckFileInProject
             (
                 parseResults: FSharpParseFileResults,
@@ -1843,11 +1852,13 @@ type internal TransparentCompiler
 
         member _.DownsizeCaches() : unit = backgroundCompiler.DownsizeCaches()
 
-        member _.FileChecked: IEvent<string * FSharpProjectOptions> =
-            backgroundCompiler.FileChecked
+        member _.BeforeBackgroundFileCheck = beforeFileChecked.Publish
 
-        member _.FileParsed: IEvent<string * FSharpProjectOptions> =
-            backgroundCompiler.FileParsed
+        member _.FileParsed = fileParsed.Publish
+
+        member _.FileChecked = fileChecked.Publish
+
+        member _.ProjectChecked = projectChecked.Publish
 
         member this.FindReferencesInFile
             (
@@ -2042,9 +2053,6 @@ type internal TransparentCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults> =
             backgroundCompiler.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
-
-        member this.ProjectChecked: IEvent<FSharpProjectOptions> =
-            backgroundCompiler.ProjectChecked
 
         member this.TryGetRecentCheckResultsForFile
             (
