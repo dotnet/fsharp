@@ -12,10 +12,11 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
+    <!-- These have to be in sync with latest release branch -->
     <!-- F# Version components -->
     <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>100</FSBuildVersion>
+    <FSBuildVersion>200</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -55,8 +56,9 @@
     <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
+    <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>8</VSMinorVersion>
+    <VSMinorVersion>9</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
