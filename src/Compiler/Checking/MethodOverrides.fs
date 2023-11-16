@@ -380,7 +380,7 @@ module DispatchSlotChecking =
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() =
-                        if (isObjExpr && dispatchSlot.IsInstance) || dispatchSlot.IsInstance then
+                        if dispatchSlot.IsInstance then
                             missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
