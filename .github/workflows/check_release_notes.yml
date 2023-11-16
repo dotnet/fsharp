@@ -127,13 +127,13 @@ jobs:
                         RELEASE_NOTES_NOT_FOUND+=$'\n'
                     fi
                 else
-                    echo "Did not find $release_notes in modified files"
+                    echo "          Did not find $release_notes in modified files"
                     DESCRIPTION="**No release notes found**"
                     RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | \\\`$release_notes\\\` | ${DESCRIPTION} |"
                     RELEASE_NOTES_NOT_FOUND+=$'\n'
                 fi
             else
-                echo "Nothing found, no release notes required"
+                echo "      Nothing found, no release notes required"
             fi
 
         done
