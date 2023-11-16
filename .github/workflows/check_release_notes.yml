@@ -36,6 +36,7 @@ jobs:
       run: |
         set -e
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        PR_NUMBER=${{ github.event.number }}
         PR_URL="https://github.com/dotnet/fsharp/pull/${PR_NUMBER}"
         # Parse version from eng/Versions.props
         # For FSarp.Core:
