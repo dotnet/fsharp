@@ -46,7 +46,7 @@ type DelayedILModuleReader =
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 [<NoComparison; CustomEquality>]
-type FSharpFileSnapshot =
+type internal FSharpFileSnapshot =
     { FileName: string
       Version: string
       GetSource: unit -> Task<ISourceText> }
@@ -55,7 +55,7 @@ type FSharpFileSnapshot =
 
     interface ICacheKey<string, string>
 
-type FSharpFileSnapshotWithSource =
+type internal FSharpFileSnapshotWithSource =
     { FileName: string
       SourceHash: string
       Source: ISourceText
@@ -63,13 +63,13 @@ type FSharpFileSnapshotWithSource =
       IsExe: bool }
 
 /// Referenced assembly on disk. Includes last modified time so we know we need to rebuild when it changes.
-type ReferenceOnDisk =
+type internal ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
-type ProjectSnapshotKey = string * string
+type internal ProjectSnapshotKey = string * string
 
 [<NoComparison>]
-type FSharpProjectSnapshot =
+type internal FSharpProjectSnapshot =
     {
         // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
         ProjectFileName: string
@@ -161,7 +161,7 @@ type FSharpProjectSnapshot =
 
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotVersion>
 
-and FSharpProjectSnapshotWithSources =
+and internal FSharpProjectSnapshotWithSources =
     { ProjectSnapshot: FSharpProjectSnapshot
       SourceFiles: FSharpFileSnapshotWithSource list }
 
@@ -180,13 +180,13 @@ and FSharpProjectSnapshotWithSources =
     member internal Key: ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
     interface ICacheKey<ProjectSnapshotKey, FSharpProjectSnapshotWithSourcesVersion>
 
-and FSharpProjectSnapshotWithSourcesDebugVersion =
+and internal FSharpProjectSnapshotWithSourcesDebugVersion =
     { ProjectSnapshotVersion: FSharpProjectSnapshotDebugVersion
       SourceVersions: string list }
 
-and FSharpProjectSnapshotWithSourcesVersion = string
+and internal FSharpProjectSnapshotWithSourcesVersion = string
 
-and FSharpProjectSnapshotDebugVersion =
+and internal FSharpProjectSnapshotDebugVersion =
     { ProjectFileName: string
       SourceFiles: (string * string) list
       ReferencesOnDisk: ReferenceOnDisk list
@@ -195,9 +195,9 @@ and FSharpProjectSnapshotDebugVersion =
       IsIncompleteTypeCheckEnvironment: bool
       UseScriptResolutionRules: bool }
 
-and FSharpProjectSnapshotVersion = string
+and internal  FSharpProjectSnapshotVersion = string
 
-and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
+and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
     internal
     | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
     //| PEReference of projectOutputFile: string * version: string * delayedReader: DelayedILModuleReader

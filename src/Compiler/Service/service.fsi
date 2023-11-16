@@ -60,11 +60,10 @@ type public FSharpChecker =
         ?captureIdentifiersWhenParsing: bool *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache: bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler: bool ->
+        [<Experimental "Reserved for internal use. Will be removed in the future">] ?useTransparentCompiler: bool ->
             FSharpChecker
 
-    [<Experimental "This parameter is experimental and likely to be removed in the future.">]
-    member UsesTransparentCompiler: bool
+    member internal UsesTransparentCompiler: bool
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -106,7 +105,7 @@ type public FSharpChecker =
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string ->
             Async<FSharpParseFileResults>
 
-    member ParseFile:
+    member internal ParseFile:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
@@ -202,7 +201,7 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
-    member ParseAndCheckFileInProject:
+    member internal ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
@@ -216,7 +215,7 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseAndCheckProject: options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults>
 
-    member ParseAndCheckProject:
+    member internal ParseAndCheckProject:
         projectSnapshot: FSharpProjectSnapshot * ?userOpName: string -> Async<FSharpCheckProjectResults>
 
     /// <summary>
@@ -339,7 +338,7 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<range seq>
 
-    member FindBackgroundReferencesInFile:
+    member internal FindBackgroundReferencesInFile:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * ?userOpName: string ->
             Async<range seq>
 
@@ -363,7 +362,7 @@ type public FSharpChecker =
     /// <param name="fileName">The file name for the file.</param>
     /// <param name="snapshot">The project snapshot for which we want to get the semantic classification.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundSemanticClassificationForFile:
+    member internal GetBackgroundSemanticClassificationForFile:
         fileName: string * snapshot: FSharpProjectSnapshot * ?userOpName: string ->
             Async<SemanticClassificationView option>
 

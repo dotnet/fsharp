@@ -10,7 +10,7 @@ open System.Threading.Tasks
 open FSharp.Compiler.Diagnostics
 
 [<AutoOpen>]
-module Utils =
+module internal Utils =
 
     /// Return file name with one directory above it
     let shortPath path =
@@ -34,7 +34,7 @@ type internal MemoizeReply<'TValue> =
     | New of CancellationToken
     | Existing of Task<'TValue>
 
-type MemoizeRequest<'TValue> =
+type internal MemoizeRequest<'TValue> =
     | GetOrCompute of Async<'TValue> * CancellationToken
     | Sync
 
@@ -114,7 +114,7 @@ module internal Md5Hasher =
 
     let addDateTime (dt: System.DateTime) (s: string) = dt.Ticks.ToString() |> addString <| s
 
-type AsyncLock() =
+type internal AsyncLock() =
 
     let semaphore = new SemaphoreSlim(1, 1)
 

@@ -13,7 +13,7 @@
 /// To model changes to "private" code in a file we change the body of a second function which
 /// no one calls.
 ///
-module FSharp.Test.ProjectGeneration
+module internal FSharp.Test.ProjectGeneration
 
 open System
 open System.Collections.Concurrent

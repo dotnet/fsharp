@@ -1,4 +1,4 @@
-namespace Internal.Utilities.TaskAgent
+module internal Internal.Utilities.TaskAgent
 
 open System.Threading
 open System.Threading.Tasks
