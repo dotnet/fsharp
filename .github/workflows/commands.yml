@@ -79,7 +79,7 @@ jobs:
     - name: Process fantomas command
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf
-      run: dotnet build src\Compiler /t:UpdateXlf
+      run: dotnet build src/Compiler /t:UpdateXlf
     - name: Commit and push changes
       if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
       run: |

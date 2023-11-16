@@ -32,7 +32,7 @@ type BraceMatchingServiceTests() =
             |> Async.RunImmediateExceptOnUI
         with
         | None -> ()
-        | Some (left, right) -> failwith $"Found match for brace '{marker}'"
+        | Some _ -> failwith $"Found match for brace '{marker}'"
 
     member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)

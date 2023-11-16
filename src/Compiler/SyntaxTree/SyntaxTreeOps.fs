@@ -97,7 +97,9 @@ let rec pushUnaryArg expr arg =
     | SynExpr.DotGet (synExpr, rangeOfDot, synLongIdent, range) -> SynExpr.DotGet(pushUnaryArg synExpr arg, rangeOfDot, synLongIdent, range)
     | SynExpr.DotIndexedGet (objectExpr, indexArgs, dotRange, range) ->
         SynExpr.DotIndexedGet(pushUnaryArg objectExpr arg, indexArgs, dotRange, range)
-    | _ -> expr
+    | _ ->
+        errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
+        expr
 
 let (|SynSingleIdent|_|) x =
     match x with

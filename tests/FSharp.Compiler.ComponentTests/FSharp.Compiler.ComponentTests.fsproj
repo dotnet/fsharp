@@ -29,7 +29,7 @@
   <ItemGroup>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
-    </Compile>  
+    </Compile>
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -112,7 +112,7 @@
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\Types\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\Types\StructTypes\StructTypes.fs" />
-    <Compile Include="Conformance\Types\StructTypes\StructActivePatterns.fs" />	  
+    <Compile Include="Conformance\Types\StructTypes\StructActivePatterns.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
@@ -167,6 +167,7 @@
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
+    <Compile Include="ErrorMessages\IndexingSyntax.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
@@ -175,7 +176,7 @@
     <Compile Include="ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
     <Compile Include="ErrorMessages\InvalidLiteralTests.fs" />
-    <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />    
+    <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />
     <Compile Include="ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="ErrorMessages\ModuleTests.fs" />
@@ -191,7 +192,7 @@
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
-    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
+    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
@@ -225,6 +226,7 @@
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
     <Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
+    <Compile Include="Interop\ByrefTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
@@ -323,5 +325,5 @@
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
-	
+
 </Project>

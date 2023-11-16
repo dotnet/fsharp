@@ -1172,6 +1172,11 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
+                            
+                        | INFIX_COMPARE_OP ">:" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
+                            pool.Return tokenTup
                         // NOTE: this is "<@"
                         | LQUOTE ("<@ @>", false) ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))

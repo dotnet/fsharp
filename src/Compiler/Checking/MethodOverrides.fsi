@@ -32,7 +32,8 @@ type OverrideInfo =
         argTypes: TType list list *
         returnType: TType option *
         isFakeEventProperty: bool *
-        isCompilerGenerated: bool
+        isCompilerGenerated: bool *
+        isInstance: bool
 
     member ArgTypes: TType list list
 
@@ -41,6 +42,8 @@ type OverrideInfo =
     member CanImplement: OverrideCanImplement
 
     member IsCompilerGenerated: bool
+
+    member IsInstance: bool
 
     member IsFakeEventProperty: bool
 
@@ -110,6 +113,7 @@ module DispatchSlotChecking =
         nenv: NameResolutionEnv *
         sink: TcResultsSink *
         isOverallTyAbstract: bool *
+        isObjExpr: bool *
         reqdTy: TType *
         dispatchSlots: RequiredSlot list *
         availPriorOverrides: OverrideInfo list *
@@ -167,5 +171,6 @@ val GetAbstractPropInfosForSynPropertyDecl:
     ad: AccessorDomain *
     memberName: Ident *
     bindm: range *
-    typToSearchForAbstractMembers: (TType * SlotImplSet option) ->
+    typToSearchForAbstractMembers: (TType * SlotImplSet option) *
+    memberFlags: SynMemberFlags ->
         PropInfo list

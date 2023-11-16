@@ -1622,7 +1622,13 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let mutable mty = Unchecked.defaultof<_>
 
     let entity =
-        Construct.NewModuleOrNamespace (Some compPath) vis (Ident(moduleName, m)) XmlDoc.Empty [] (MaybeLazy.Lazy(lazy mty))
+        Construct.NewModuleOrNamespace
+            (Some compPath)
+            vis
+            (Ident(moduleName, m))
+            XmlDoc.Empty
+            []
+            (MaybeLazy.Lazy(InterruptibleLazy(fun _ -> mty)))
 
     let v =
         Construct.NewVal(
@@ -1837,7 +1843,7 @@ type internal FsiDynamicCompiler
         let opts =
             {
                 ilg = tcGlobals.ilg
-                outfile = multiAssemblyName + ".dll"
+                outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
                 pdbfile = Some(Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
@@ -3306,8 +3312,8 @@ type internal MagicAssemblyResolution() =
                 | None ->
                     // Check dynamic assemblies by simple name
                     match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
-                    | Some asm -> asm
-                    | None ->
+                    | Some asm when not (tcConfigB.fsiMultiAssemblyEmit) -> asm
+                    | _ ->
 
                         // Otherwise continue
                         let assemblyReferenceTextDll = (simpleAssemName + ".dll")

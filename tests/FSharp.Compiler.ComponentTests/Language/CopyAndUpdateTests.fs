@@ -424,3 +424,61 @@ let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
         (Error 1129, Line 13, Col 57, Line 13, Col 58, "The record type '{| a: int |}' does not contain a label 'b'.")
         (Error 1129, Line 14, Col 53, Line 14, Col 54, "The record type '{| a: int; b: NestdRecTy |}' does not contain a label 'c'.")
     ]
+
+[<Fact>]
+let ``Nested copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; }
+
+[<AutoOpen>]
+module Module =
+    type Record2 = { Foo: Record1; G: string }
+    let item: Record2 = Unchecked.defaultof<Record2>
+
+ignore { Module.item with Foo.Foo = 3 }
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested, anonymous copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; }
+
+[<AutoOpen>]
+module Module =
+    let item = {| Foo = Unchecked.defaultof<Record1> |}
+
+ignore {| Module.item with Foo.Foo = 3 |}
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update evaluates the original expression once``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; Baz: string }
+type Record2 = { Foo: Record1; A: int; B: int }
+
+let f () =
+    printf "once"
+    { A = 1; B = 2; Foo = { Foo = 99; Bar = 98; Baz = "a" } }
+
+let actual = { f () with Foo.Foo = 3; Foo.Baz = "b"; A = -1 }
+
+let expected = { A = -1; B = 2; Foo = { Foo = 3; Bar = 98; Baz = "b" } }
+
+if actual <> expected then
+    failwith "actual does not equal expected"
+    """
+    |> withLangVersion80
+    |> compileExeAndRun
+    |> verifyOutput "once"

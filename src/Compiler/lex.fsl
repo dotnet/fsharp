@@ -112,6 +112,10 @@ let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
         deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames(":")) lexbuf.LexemeRange
     if lexbuf.LexemeContains '$' then
         deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
+        
+let checkExprGreaterColonOp (lexbuf:UnicodeLexing.Lexbuf) =
+    if lexbuf.LexemeContains '$' then
+        deprecatedWithError (FSComp.SR.lexCharNotAllowedInOperatorNames("$")) lexbuf.LexemeRange
 
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
@@ -935,7 +939,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "-" { MINUS }
 
- | "~" { RESERVED }
+ | "~"
+     { errorR (Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       RESERVED }
 
  | ignored_op_char* '*' '*'                    op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
 
@@ -945,7 +951,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ignored_op_char* ('@'|'^')                  op_char* { checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) }
 
- | ignored_op_char* ('=' | "!=" | '<' | '>' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
+ | ignored_op_char* ('=' | "!=" | '<' | '$')  op_char* { checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
+ 
+ | ignored_op_char* ('>')  op_char* { checkExprGreaterColonOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) }
 
  | ignored_op_char* ('&')                      op_char* { checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) }
 

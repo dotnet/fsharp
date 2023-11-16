@@ -1482,10 +1482,11 @@ let ``Test project 5 all symbols`` () =
     let allUsesOfAllSymbols =
         wholeProjectResults.GetAllUsesOfAllSymbols()
 
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.Range, attribsOfSymbolUse su)
+        |> Seq.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.Range, attribsOfSymbolUse su)
+        |> Set
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("symbol Even", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
+      (Set [("symbol Even", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
             ("symbol Odd", "Odd", "file1", ((4, 11), (4, 14)), ["defn"]);
             ("val input", "input", "file1", ((4, 17), (4, 22)), ["defn"]);
             ("val op_Equality", "Microsoft.FSharp.Core.Operators.(=)", "file1",
@@ -1539,7 +1540,7 @@ let ``Test project 5 all symbols`` () =
             ("val str", "str", "file1", ((22, 38), (22, 41)), []);
             ("val parseNumeric", "ActivePatterns.parseNumeric", "file1",
              ((19, 4), (19, 16)), ["defn"]);
-            ("ActivePatterns", "ActivePatterns", "file1", ((1, 7), (1, 21)), ["defn"])|]
+            ("ActivePatterns", "ActivePatterns", "file1", ((1, 7), (1, 21)), ["defn"])])
 
 [<Test>]
 let ``Test complete active patterns' exact ranges from uses of symbols`` () =
@@ -2764,11 +2765,12 @@ let ``Test Project17 all symbols`` () =
     let allUsesOfAllSymbols =
         wholeProjectResults.GetAllUsesOfAllSymbols()
 
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project17.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Seq.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project17.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Set
 
     allUsesOfAllSymbols
-      |> shouldEqual
-          [|("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
+      |> shouldEqual (Set
+           [("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((4, 25), (4, 36)), [], ["namespace"]);
             ("FSharp", "FSharp", "file1", ((4, 18), (4, 24)), [], ["namespace"]);
             ("FSharpList`1", "List", "file1", ((4, 8), (4, 41)), [], ["union"]);
@@ -2808,7 +2810,7 @@ let ``Test Project17 all symbols`` () =
             ("property HelpLink", "HelpLink", "file1", ((10, 31), (10, 41)), [],
              ["slot"; "member"; "prop"]);
             ("val f3", "f3", "file1", ((10, 4), (10, 6)), ["defn"], ["val"]);
-            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
+            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])])
 
 
 //-----------------------------------------------------------------------------------------
@@ -2906,10 +2908,11 @@ let ``Test Project19 all symbols`` () =
     let allUsesOfAllSymbols =
         wholeProjectResults.GetAllUsesOfAllSymbols()
 
-        |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project19.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Seq.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project19.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
+        |> Set
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("field EnumCase1", "EnumCase1", "file1", ((4, 14), (4, 23)), ["defn"],
+      (Set [("field EnumCase1", "EnumCase1", "file1", ((4, 14), (4, 23)), ["defn"],
              ["field"; "static"; "1"]);
             ("field EnumCase2", "EnumCase2", "file1", ((4, 30), (4, 39)), ["defn"],
              ["field"; "static"; "2"]);
@@ -2935,7 +2938,7 @@ let ``Test Project19 all symbols`` () =
             ("field Monday", "Monday", "file1", ((10, 8), (10, 31)), [],
              ["field"; "static"; "1"]);
             ("val s", "s", "file1", ((10, 4), (10, 5)), ["defn"], ["val"]);
-            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
+            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])])
 
 
 

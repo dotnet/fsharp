@@ -178,7 +178,6 @@ module MutRecShapes =
 
    let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
-
 /// Indicates a declaration is contained in the given module 
 let ModuleOrNamespaceContainerInfo modref =
     ContainerInfo(Parent modref, Some(MemberOrValContainerInfo(modref, None, None, NoSafeInitInfo, [])))
@@ -260,7 +259,7 @@ let BuildRootModuleContents (isModule: bool) enclosingNamespacePath (cpath: Comp
         ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace isModule id cpath.ParentCompPath moduleContents))
         |> snd
 
-/// Try to take the "FSINNN" prefix off a namespace path
+/// Try to take the "FSI_NNN" prefix off a namespace path
 let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) = 
     match enclosingNamespacePath with 
     | p :: rest when
@@ -364,7 +363,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -640,7 +639,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true ShouldNotifySink.Yes with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -1191,7 +1190,7 @@ module MutRecBindingChecking =
                             let inheritsExpr, tpenv =
                                 try 
                                    TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
-                                with e ->
+                                with RecoverableException e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
@@ -1532,7 +1531,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
 
         let mvvs = ForceRaise resolved
 
@@ -1928,7 +1927,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
       
       MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv mBinds scopem mutRecNSInfo envMutRec binds
 
-    with exn -> errorRecovery exn scopem; [], envMutRec
+    with RecoverableException exn -> errorRecovery exn scopem; [], envMutRec
 
 //-------------------------------------------------------------------------
 // Build augmentation declarations
@@ -3051,7 +3050,7 @@ module EstablishTypeDefinitionCores =
                 if not inSig then 
                     cenv.amap.assemblyLoader.RecordGeneratedTypeRoot (ProviderGeneratedType(ilOrigRootTypeRef, ilTgtRootTyRef, nested))
 
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn rhsType.Range 
 #endif
 
@@ -3146,7 +3145,7 @@ module EstablishTypeDefinitionCores =
 
             | _ -> ()
         
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn m
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
@@ -3258,7 +3257,7 @@ module EstablishTypeDefinitionCores =
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
               
-           with exn -> errorRecovery exn m))
+           with RecoverableException exn -> errorRecovery exn m))
 
     /// Establish the fields, dispatch slots and union cases of a type
     let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
@@ -3644,7 +3643,7 @@ module EstablishTypeDefinitionCores =
             | _ -> ()         
                    
             (baseValOpt, safeInitInfo)
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn m 
             None, NoSafeInitInfo
 
@@ -3865,7 +3864,7 @@ module EstablishTypeDefinitionCores =
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
                 try
                     TcTyparConstraints cenv NoNewTypars checkConstraints ItemOccurence.UseInType envForTycon tpenv synTyconConstraints |> ignore
-                with exn ->
+                with RecoverableException exn ->
                     errorRecovery exn m
             | _ -> ())
 
@@ -4070,6 +4069,10 @@ module TcDeclarations =
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
 
+        let isDelegateOrEnum = 
+            tcref.Deref.IsFSharpDelegateTycon ||
+            tcref.Deref.IsFSharpEnumTycon
+
         let reqTypars = tcref.Typars m
 
         // Member definitions are intrinsic (added directly to the type) if:
@@ -4105,7 +4108,7 @@ module TcDeclarations =
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, reqTypars
             else 
-                if isInSameModuleOrNamespace && isInterfaceOrDelegateOrEnum then 
+                if isInSameModuleOrNamespace && isDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
@@ -4415,7 +4418,7 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extra_vals_Inherits_Abstractslots @ extraMembers
-
+            
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -4735,7 +4738,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -4815,7 +4818,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
             return env
             
-    with exn -> 
+    with RecoverableException exn -> 
         errorRecovery exn endm 
         return env
   }
@@ -5183,7 +5186,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return 
               (defns, [], topAttrs), env, envAtEnd
 
-    with exn -> 
+    with RecoverableException exn -> 
         errorRecovery exn synDecl.Range 
         return ([], [], []), env, env
  }
@@ -5405,7 +5408,7 @@ let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
         try 
             AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible)
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn scopem 
             [], env) 
 
@@ -5456,7 +5459,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
             if not tp.IsSolved then 
                 if (tp.StaticReq <> TyparStaticReq.None) then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
 
 let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
@@ -5476,7 +5479,7 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
                 | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, false, v, tp, v.Range))
                 | _ -> ()
           mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> check v.ModuleOrNamespaceType) 
-      try check implFileTypePriorToSig with e -> errorRecovery e m
+      try check implFileTypePriorToSig with RecoverableException e -> errorRecovery e m
 
 
 let SolveInternalUnknowns g (cenv: cenv) denvAtEnd moduleContents extraAttribs =
@@ -5514,7 +5517,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
             if not (SignatureConformance.Checker(g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModuleRef implFileSpecPriorToSig) sigFileType) then
                 // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
                 raise (ReportedError None)
-        with exn ->
+        with RecoverableException exn ->
             errorRecovery exn m
             
         (sigFileType, moduleContents)
@@ -5592,7 +5595,7 @@ let CheckOneImplFile
           for check in cenv.css.GetPostInferenceChecksPreDefaults() do
             try  
                 check()
-            with exn -> 
+            with RecoverableException exn -> 
                 errorRecovery exn m
 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
@@ -5606,7 +5609,7 @@ let CheckOneImplFile
                 implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                     FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd, tycon))
 
-            with exn ->
+            with RecoverableException exn ->
                 errorRecovery exn m)
 
         // Check the value restriction. Only checked if there is no signature.
@@ -5627,7 +5630,7 @@ let CheckOneImplFile
              for check in cenv.css.GetPostInferenceChecksFinal() do
                 try  
                     check()
-                with exn -> 
+                with RecoverableException exn -> 
                     errorRecovery exn m)
 
         // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
@@ -5646,7 +5649,7 @@ let CheckOneImplFile
                         implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                         isInternalTestSpanStackReferring)
 
-                with exn -> 
+                with RecoverableException exn -> 
                     errorRecovery exn m
                     false, StampMap.Empty)
 
@@ -5708,7 +5711,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
-        with exn -> errorRecovery exn sigFile.QualifiedName.Range
+        with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
 
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
     
