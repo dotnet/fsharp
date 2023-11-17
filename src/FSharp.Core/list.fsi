@@ -243,7 +243,7 @@ module List =
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
 
-    /// <summary>For each element of the list, apply the given function. Concatenates all the results and return the combined list.</summary>
+    /// <summary>For each element of the list, applies the given function. Concatenates all the results and returns the combined list.</summary>
     ///
     /// <param name="mapping">The function to transform each input element into a sublist to be concatenated.</param>
     /// <param name="list">The input list.</param>
