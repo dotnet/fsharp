@@ -1140,3 +1140,48 @@ module StaticAbstractBug =
             (Error 3859, Line 13, Col 27, Line 13, Col 35, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 14, Col 27, Line 14, Col 35, "No static abstract property was found that corresponds to this override")
          ]
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members by using class types`` () =
+        Fsx """
+type IPrintable =
+    abstract member Print: unit -> unit
+    static abstract member Log: string -> string
+
+type SomeClass1(x: int, y: float) =
+    member this.GetPrint() = (this :> IPrintable).Print()
+    
+    interface IPrintable with
+        member this.Print() = printfn $"%d{x} %f{y}"
+        static member Log(s: string) = s
+        
+let someClass = SomeClass1(1, 2.0) :> IPrintable
+let someClass1 = SomeClass1(1, 2.0)
+
+someClass.Print()
+someClass1.GetPrint()
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members and IWSAM by using class types`` () =
+        Fsx """
+[<Interface>]
+type IPrintable =
+    static abstract member Log: string -> string
+    static member Say(s: string) = s
+
+type SomeClass1() =    
+    interface IPrintable with
+        static member Log(s: string) = s
+        
+let someClass1 = SomeClass1()
+let execute = IPrintable.Say("hello")
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
