@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module ObjectExpressionsTests =
 
     [<Fact>]
-    let ``Object expression ca not implement unnamed interface`` () =
+    let ``Object expression cannot implement unnamed interface`` () =
         Fsx """
 type IFirst =
     abstract member MyMember: unit -> int
