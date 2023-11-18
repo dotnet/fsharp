@@ -1424,6 +1424,7 @@ module UnnecessaryParentheses =
             | _ -> ValueNone
 
     module SynPat =
+        /// Matches if any pattern in the given list is a SynPat.Typed.
         [<return: Struct>]
         let (|AnyTyped|_|) pats =
             if
@@ -1435,6 +1436,21 @@ module UnnecessaryParentheses =
                 ValueSome AnyTyped
             else
                 ValueNone
+
+        /// Matches if the given pattern is atomic.
+        [<return: Struct>]
+        let (|Atomic|_|) pat =
+            match pat with
+            | SynPat.Named _
+            | SynPat.Wild _
+            | SynPat.Paren _
+            | SynPat.Tuple(isStruct = true)
+            | SynPat.Record _
+            | SynPat.ArrayOrList _
+            | SynPat.Const _
+            | SynPat.LongIdent(argPats = SynArgPats.Pats [])
+            | SynPat.Null _ -> ValueSome Atomic
+            | _ -> ValueNone
 
         /// If the given pattern is a parenthesized pattern and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
@@ -1477,10 +1493,13 @@ module UnnecessaryParentheses =
             //     let! () = …
             //     and! () = …
             //     use! () = …
+            //     fun () -> …
+            //     function () -> …
             //     match … with () -> …
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynBinding _ :: _
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.ForEach _) :: _
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+            | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.Lambda _) :: _
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynMatchClause _ :: _ -> ValueNone
 
             // (()) is required when overriding a generic member
@@ -1516,8 +1535,7 @@ module UnnecessaryParentheses =
             | SynPat.Paren (_, range), SyntaxNode.SynExpr (SynExpr.ForEach _) :: _
             | SynPat.Paren (_, range), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
             | SynPat.Paren (_, range), SyntaxNode.SynMatchClause _ :: _
-            | SynPat.Paren (_, range),
-              SyntaxNode.SynExpr (SynExpr.Lambda(args = SynSimplePats.SimplePats(pats = [ SynSimplePat.Id _ ]))) :: _ -> ValueSome range
+            | SynPat.Paren (Atomic, range), SyntaxNode.SynExpr (SynExpr.Lambda(parsedData = Some _)) :: _ -> ValueSome range
 
             // Nested patterns.
             | SynPat.Paren (inner, range), SyntaxNode.SynPat outer :: _ ->
