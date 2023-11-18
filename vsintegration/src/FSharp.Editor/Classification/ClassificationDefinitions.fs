@@ -134,7 +134,7 @@ module internal ClassificationDefinitions =
 
         let setColors _ =
 
-            setIsDarkBackground()
+            setIsDarkBackground ()
 
             let fontAndColorStorage =
                 serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
@@ -164,9 +164,10 @@ module internal ClassificationDefinitions =
                         let oldProps = formatMap.GetTextProperties(ict)
 
                         let newProps =
-                            if isDarkBackground
-                            then oldProps.SetForeground item.DarkThemeColor
-                            else oldProps.SetForeground item.LightThemeColor
+                            if isDarkBackground then
+                                oldProps.SetForeground item.DarkThemeColor
+                            else
+                                oldProps.SetForeground item.LightThemeColor
 
                         formatMap.SetTextProperties(ict, newProps)
 
