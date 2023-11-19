@@ -1716,9 +1716,9 @@ type TraitConstraintInfo =
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
-    
+
     member WithSupportTypes: TTypes -> TraitConstraintInfo
-    
+
     member WithMemberName: string -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
