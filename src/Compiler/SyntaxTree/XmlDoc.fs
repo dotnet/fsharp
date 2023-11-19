@@ -76,7 +76,6 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             match paramNamesOpt with
             | None -> ()
             | Some paramNames ->
-                let paramsSet = paramNames |> Set.ofList
 
                 for p in xml.Descendants(XName.op_Implicit "param") do
                     match p.Attribute(XName.op_Implicit "name") with
@@ -84,7 +83,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     | attr ->
                         let nm = attr.Value
 
-                        if not (paramsSet |> Set.contains nm) then
+                        if not (paramNames |> List.contains nm) then
                             warning (Error(FSComp.SR.xmlDocInvalidParameterName (nm), doc.Range))
 
                 let paramsWithDocs =
@@ -96,10 +95,9 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     ]
 
                 if paramsWithDocs.Length > 0 then
-                    let docsSet = paramsWithDocs |> Set.ofList
 
                     for p in paramNames do
-                        if not (docsSet |> Set.contains p) then
+                        if not (paramsWithDocs |> List.contains p) then
                             warning (Error(FSComp.SR.xmlDocMissingParameter (p), doc.Range))
 
                 let duplicates = paramsWithDocs |> List.duplicates
@@ -113,7 +111,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     | attr ->
                         let nm = attr.Value
 
-                        if not (paramsSet |> Set.contains nm) then
+                        if not (paramNames |> List.contains nm) then
                             warning (Error(FSComp.SR.xmlDocInvalidParameterName (nm), doc.Range))
 
         with e ->
