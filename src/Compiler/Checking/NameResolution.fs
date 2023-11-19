@@ -2942,7 +2942,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
         match item with
         | Item.Value v ->
             let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref v
-            not( isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf))
+            if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then false
+            else true
         | _ -> true
 
     if first && id.idText = MangledGlobalName then

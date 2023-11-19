@@ -3353,9 +3353,10 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         not (Zset.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
-             // Not inlining lambda near, size too big:
-          (not (size > cenv.settings.lambdaInlineThreshold + args.Length) 
-            ))) ->
+          if size <= cenv.settings.lambdaInlineThreshold + args.Length then true
+          // Not inlining lambda near, size too big:
+          else false
+            )) ->
             
         let isBaseCall = not (List.isEmpty args) &&
                               match args[0] with

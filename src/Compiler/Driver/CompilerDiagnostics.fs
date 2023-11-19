@@ -1339,7 +1339,8 @@ type Exception with
                             prods
                             |> List.map (
                                 Parser.prodIdxToNonTerminal
-                                >> function
+                                >> fun nonTerminal ->
+                                    match nonTerminal with
                                     | NONTERM_Category_Type -> Parser.NONTERM_typ
                                     | NONTERM_Category_Expr -> Parser.NONTERM_declExpr
                                     | NONTERM_Category_Pattern -> Parser.NONTERM_atomicPattern
@@ -1348,7 +1349,7 @@ type Exception with
                                     | NONTERM_Category_ImplementationFile -> Parser.NONTERM_implementationFile
                                     | NONTERM_Category_Definition -> Parser.NONTERM_moduleDefn
                                     | NONTERM_Category_Interaction -> Parser.NONTERM_interaction
-                                    | nonTerminal -> nonTerminal
+                                    | nt -> nt
                             )
                             |> Set.ofList
                             |> Set.toList

@@ -913,12 +913,20 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
             match a with
             | None -> true
             | Some a ->
-                // obvious case
-                p.IsAssignableFrom a
-                || p.IsGenericType
-                   && a.IsGenericType
-                   // non obvious due to contravariance: Action<T> where T: IFoo accepts Action<FooImpl> (for FooImpl: IFoo)
-                   && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition())
+                if
+                    // obvious case
+                    p.IsAssignableFrom a
+                then
+                    true
+                elif
+                    p.IsGenericType
+                    && a.IsGenericType
+                    // non obvious due to contravariance: Action<T> where T: IFoo accepts Action<FooImpl> (for FooImpl: IFoo)
+                    && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition())
+                then
+                    true
+                else
+                    false
 
         let satisfiesAllParameters (args: Type option array) (ps: Type array) =
             if Array.length args <> Array.length ps then
