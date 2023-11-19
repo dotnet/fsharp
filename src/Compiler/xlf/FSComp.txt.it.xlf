@@ -182,6 +182,16 @@
         <target state="translated">L'argomento '{0}' non corrisponde</target>
         <note />
       </trans-unit>
+      <trans-unit id="csTypeDoesNotSupportOperatorW">
+        <source>The type '{0}' does not support the operator '{1}' as required by '{2}'</source>
+        <target state="new">The type '{0}' does not support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypesDoNotSupportOperatorW">
+        <source>None of the types '{0}' support the operator '{1}' as required by '{2}'</source>
+        <target state="new">None of the types '{0}' support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="translated">I vincoli 'unmanaged' e 'not struct' sono incoerenti</target>

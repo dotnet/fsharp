@@ -182,6 +182,16 @@
         <target state="translated">参数 "{0}" 不匹配</target>
         <note />
       </trans-unit>
+      <trans-unit id="csTypeDoesNotSupportOperatorW">
+        <source>The type '{0}' does not support the operator '{1}' as required by '{2}'</source>
+        <target state="new">The type '{0}' does not support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypesDoNotSupportOperatorW">
+        <source>None of the types '{0}' support the operator '{1}' as required by '{2}'</source>
+        <target state="new">None of the types '{0}' support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="translated">约束 "unmanaged" 和 "not struct" 不一致</target>
