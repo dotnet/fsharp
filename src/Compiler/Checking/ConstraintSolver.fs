@@ -1754,12 +1754,14 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                              if List.isSingleton supportTys then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ ->
+                             let isSameOp s =  // Temporary hack for issue83 fix. Use LogicalName??
+                                s = nm || s = nm.ToLower() || nm.Length > 4 && nm[1..3] = "et_" && s = nm[4..]
                              match supportTys, source.Value with
-                                | [_], Some s when s <> nm ->
-                                    FSComp.SR.csTypeDoesNotSupportOperatorW(tyString, nm, s)
+                                | [_], Some s when not (isSameOp s)  ->
+                                    FSComp.SR.csTypeDoesNotSupportOperatorW(tyString, opName, s)
                                 | [_], _ -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                                | _, Some s when s <> nm ->
-                                    FSComp.SR.csTypesDoNotSupportOperatorW(tyString, nm, s)
+                                | _, Some s when not (isSameOp s) ->
+                                    FSComp.SR.csTypesDoNotSupportOperatorW(tyString, opName, s)
                                 | _, _ -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       return! ErrorD(ConstraintSolverError(err, m, m2))
 
