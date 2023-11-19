@@ -1079,6 +1079,8 @@ type internal TypeCheckInfo
 
     /// Gets all field identifiers of a union case that can be referred to in a pattern.
     let GetUnionCaseFields caseIdRange alreadyReferencedFields =
+        let alreadyReferencesSet = alreadyReferencedFields |> Set.ofList
+
         sResolutions.CapturedNameResolutions
         |> ResizeArray.tryPick (fun r ->
             match r.Item with
@@ -1086,7 +1088,7 @@ type internal TypeCheckInfo
                 uci.UnionCase.RecdFields
                 |> List.indexed
                 |> List.choose (fun (index, field) ->
-                    if List.contains field.LogicalName alreadyReferencedFields then
+                    if Set.contains field.LogicalName alreadyReferencesSet then
                         None
                     else
                         Item.UnionCaseField(uci, index)

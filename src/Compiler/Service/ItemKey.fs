@@ -271,7 +271,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         debug.WriteEntityRef eref
         writeString ItemKeyTags.entityRef
         writeString eref.CompiledName
-        eref.CompilationPath.MangledPath |> List.iter (fun str -> writeString str)
+        eref.CompilationPath.MangledPath |> List.iter writeString
 
     let rec writeILType (ilTy: ILType) =
         debug.WriteILType ilTy
@@ -312,7 +312,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeChar '>'
 
         | ILType.FunctionPointer mref ->
-            mref.ArgTypes |> List.iter (fun x -> writeILType x)
+            mref.ArgTypes |> List.iter writeILType
             writeILType mref.ReturnType
 
     let rec writeType isStandalone (ty: TType) =

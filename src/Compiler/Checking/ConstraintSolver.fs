@@ -1066,7 +1066,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
             if not (ccuEq anonInfo1.Assembly anonInfo2.Assembly) then
                 do! ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(anonInfo1.Assembly.AssemblyName, anonInfo2.Assembly.AssemblyName), csenv.m,m2))
                 
-            if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
+            if anonInfo1.SortedNames <> anonInfo2.SortedNames then 
                 let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
                     let first = Set first
                     let second = Set second

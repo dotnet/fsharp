@@ -98,8 +98,7 @@ module Cancellable =
                     | ValueOrCancelled.Cancelled ce -> ccont ce)
         }
 
-    let token () =
-        Cancellable(fun ct -> ValueOrCancelled.Value ct)
+    let token () = Cancellable(ValueOrCancelled.Value)
 
 type CancellableBuilder() =
 

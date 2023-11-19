@@ -154,13 +154,7 @@ module internal PervasiveAutoOpens =
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
 
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken
-            )
+            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
             task.Result
 
@@ -278,7 +272,7 @@ module Array =
         let rec loop p l n =
             (n < Array.length l)
             && (if p l[n] then
-                    forallFrom (fun x -> not (p x)) l (n + 1)
+                    forallFrom (p >> not) l (n + 1)
                 else
                     loop p l (n + 1))
 
@@ -628,7 +622,7 @@ module List =
         xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
 
     let existsSquared f xss =
-        xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+        xss |> List.exists (fun xs -> xs |> List.exists f)
 
     let mapiFoldSquared f z xss =
         mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))

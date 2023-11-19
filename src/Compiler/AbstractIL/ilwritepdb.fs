@@ -324,7 +324,7 @@ let sortMethods info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (fun x -> builder.Add x)
+    tableRowCounts |> Seq.iter (builder.Add)
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =

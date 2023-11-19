@@ -177,7 +177,7 @@ module internal ParameterLocationsImpl =
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
         // dig into multiple parens
-        | SynExprParen (SynExprParen (_, _, _, _) as synExpr, _, _, _parenRange) ->
+        | SynExprParen (SynExprParen _ as synExpr, _, _, _parenRange) ->
             let r, _cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
             r, None
 

@@ -40,14 +40,13 @@ let _ =
 
 let noStableFileHeuristic =
     try
-        (Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null)
+        not (isNull (Environment.GetEnvironmentVariable "FSharp_NoStableFileHeuristic"))
     with _ ->
         false
 
 let alwaysMemoryMapFSC =
     try
-        (Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler")
-         <> null)
+        not (isNull (Environment.GetEnvironmentVariable "FSharp_AlwaysMemoryMapCommandLineCompiler"))
     with _ ->
         false
 
@@ -639,9 +638,9 @@ let instrs () =
                  | Some ty -> I_callconstraint(true, tl, ty, mspec, y)
                  | None -> I_callvirt(tl, mspec, y))
          ))
-        i_leave_s, I_unconditional_i8_instr(noPrefixes (fun x -> I_leave x))
+        i_leave_s, I_unconditional_i8_instr(noPrefixes I_leave)
         i_br_s, I_unconditional_i8_instr(noPrefixes I_br)
-        i_leave, I_unconditional_i32_instr(noPrefixes (fun x -> I_leave x))
+        i_leave, I_unconditional_i32_instr(noPrefixes I_leave)
         i_br, I_unconditional_i32_instr(noPrefixes I_br)
         i_brtrue_s, I_conditional_i8_instr(noPrefixes (fun x -> I_brcmp(BI_brtrue, x)))
         i_brfalse_s, I_conditional_i8_instr(noPrefixes (fun x -> I_brcmp(BI_brfalse, x)))
@@ -2826,7 +2825,7 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
         seekReadIndexedRow (
             ctxt.getNumRows TableNames.TypeDef,
             (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
-            (fun r -> r),
+            id,
             (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
                 if endMethodsIdx <= idx then 1
                 elif methodsIdx <= idx && idx < endMethodsIdx then 0
@@ -2874,7 +2873,7 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
         seekReadIndexedRow (
             ctxt.getNumRows TableNames.TypeDef,
             (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
-            (fun r -> r),
+            id,
             (fun (_, ((_, _, _, _, fieldsIdx, _), (endFieldsIdx, _))) ->
                 if endFieldsIdx <= idx then 1
                 elif fieldsIdx <= idx && idx < endFieldsIdx then 0

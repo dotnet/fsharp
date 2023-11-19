@@ -380,7 +380,7 @@ module LowPriority =
             (task: ^TaskLike)
             : TaskCode<'T, 'T> =
 
-            this.Bind(task, (fun v -> this.Return v))
+            this.Bind(task, this.Return)
 
         member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable>
             (
@@ -446,7 +446,7 @@ module HighPriority =
             )
 
         member inline this.ReturnFrom(task: Task<'T>) : TaskCode<'T, 'T> =
-            this.Bind(task, (fun v -> this.Return v))
+            this.Bind(task, this.Return)
 
 module MediumPriority =
     open HighPriority

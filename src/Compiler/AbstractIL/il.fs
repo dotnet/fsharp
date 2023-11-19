@@ -5118,7 +5118,7 @@ let decodeILAttribData (ca: ILAttribute) =
                 ILAttribElem.Char(char (int32 n)), sigptr
             | ILType.Value tspec when tspec.Name = "System.Boolean" ->
                 let n, sigptr = sigptr_get_byte bytes sigptr
-                ILAttribElem.Bool(not (n = 0)), sigptr
+                ILAttribElem.Bool(n <> 0), sigptr
             | ILType.Boxed tspec when tspec.Name = "System.String" ->
                 let n, sigptr = sigptr_get_serstring_possibly_null bytes sigptr
                 ILAttribElem.String n, sigptr

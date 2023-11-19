@@ -414,18 +414,19 @@ type ILMultiInMemoryAssemblyEmitEnv
 
     /// Map the given ILTypeRef to the appropriate assembly fragment
     member _.MapTypeRef(tref: ILTypeRef) =
-        if tref.Scope.IsLocalRef && typeMap.ContainsKey(tref) then
-            typeMap[tref] |> snd
+        if tref.Scope.IsLocalRef then
+            match typeMap.TryGetValue tref with
+            | true, tmap -> tmap |> snd
+            | false, _ -> tref
         else
             tref
 
     /// Map an ILTypeRef built from reflection over loaded assembly fragments back to an ILTypeRef suitable
     /// to use on the F# compiler logic.
     member _.ReverseMapTypeRef(tref: ILTypeRef) =
-        if reverseTypeMap.ContainsKey(tref) then
-            reverseTypeMap[tref]
-        else
-            tref
+        match reverseTypeMap.TryGetValue tref with
+        | true, revtype -> revtype
+        | false, _ -> tref
 
     /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
     member _.LookupTypeRef(tref: ILTypeRef) = convTypeRef tref
@@ -599,7 +600,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
             try
                 let itemLs =
                     unfoldL // the function to layout each object in the unfold
-                        (fun obj -> ienv.GetLayout obj)
+                        ienv.GetLayout
                         // the function to call at each step of the unfold
                         (fun () -> if it.MoveNext() then Some((it.Key, it.Value), ()) else None)
                         ()
@@ -1545,7 +1546,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
         else
             fullName.Substring(0, index)
 
-    let isTop = reflectionTy.DeclaringType = null
+    let isTop = isNull reflectionTy.DeclaringType
 
     if isTop then
         ILTypeRef.Create(scoref, [], fullName)
@@ -1570,7 +1571,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
             if
                 ctors.Length = 1
-                && ctors[ 0 ].GetCustomAttribute<CompilerGeneratedAttribute>() <> null
+                && (not (isNull (ctors[ 0 ].GetCustomAttribute<CompilerGeneratedAttribute>())))
                 && not ctors[0].IsPublic
                 && IsCompilerGeneratedName reflectionTy.Name
             then
@@ -1595,8 +1596,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
     let genericArgs =
         reflectionTy.GenericTypeArguments
-        |> Seq.map ConvReflectionTypeToILType
-        |> Seq.map List.head
+        |> Seq.map (ConvReflectionTypeToILType >> List.head)
         |> List.ofSeq
 
     let boxity =

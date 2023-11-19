@@ -357,9 +357,9 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 
     match moduleNamesDict.TryGetValue qualNameOfFile.Text with
     | true, paths ->
-        if paths.ContainsKey path then
-            paths[path], moduleNamesDict
-        else
+        match paths.TryGetValue path with
+        | true, pathV -> pathV, moduleNamesDict
+        | false, _ ->
             let count = paths.Count + 1
             let id = qualNameOfFile.Id
 
@@ -1673,7 +1673,7 @@ module private TypeCheckingGraphProcessing =
 
             let resultsToAdd =
                 transitiveDeps
-                |> Array.filter (fun dep -> itemsPresent.Contains dep.Info.Item = false)
+                |> Array.filter (fun dep -> not (itemsPresent.Contains dep.Info.Item))
                 |> Array.distinctBy (fun dep -> dep.Info.Item)
                 |> Array.sortWith (fun a b ->
                     // We preserve the order in which items are folded to the state.

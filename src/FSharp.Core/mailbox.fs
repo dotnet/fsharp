@@ -91,7 +91,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     lock syncRoot (fun () ->
                         if arrivals.Count = 0 then
                             // OK, no arrival so deschedule
-                            savedCont <- Some(fun res -> ctxt.QueueContinuationWithTrampoline res)
+                            savedCont <- Some(ctxt.QueueContinuationWithTrampoline)
                             true
                         else
                             false)

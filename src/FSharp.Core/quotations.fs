@@ -1976,7 +1976,7 @@ module Patterns =
                 E(CombTerm(a tyargs (ValueSome args.Length), args)))
         | 1 ->
             let x = u_VarRef st
-            (fun env -> E(VarTerm(x env)))
+            (x >> VarTerm >> E)
         | 2 ->
             let a = u_VarDecl st
             let b = u_Expr st

@@ -197,8 +197,7 @@ module TcResolutionsExtensions =
                             sResolutions.CapturedNameResolutions.ToArray()
                             |> Array.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
                             |> Array.groupBy (fun cnr -> cnr.Range)
-                            |> Array.map (fun (_, cnrs) -> takeCustomBuilder cnrs)
-                            |> Array.concat
+                            |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
                         | None -> sResolutions.CapturedNameResolutions.ToArray()
 
                     let duplicates = HashSet<range>(comparer)

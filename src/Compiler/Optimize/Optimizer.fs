@@ -2477,7 +2477,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     and optimizeArgs args accArgs =
         (args, accArgs)
-        ||> List.foldBack (fun arg accArgs -> optimizeArg arg accArgs)
+        ||> List.foldBack (optimizeArg)
 
     let args = optimizeArgs args []
 
@@ -3353,10 +3353,9 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         not (Zset.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
-          (if size > cenv.settings.lambdaInlineThreshold + args.Length then
-             // Not inlining lambda near, size too big
-             false
-           else true))) ->
+             // Not inlining lambda near, size too big:
+          (not (size > cenv.settings.lambdaInlineThreshold + args.Length) 
+            ))) ->
             
         let isBaseCall = not (List.isEmpty args) &&
                               match args[0] with
@@ -4381,14 +4380,14 @@ let rec u_ExprInfo st =
     let rec loop st =
         let tag = u_byte st
         match tag with
-        | 0 -> u_tup2 u_const u_ty st |> (fun (c, ty) -> ConstValue(c, ty))
+        | 0 -> u_tup2 u_const u_ty st |> ConstValue
         | 1 -> UnknownValue
-        | 2 -> u_tup2 u_vref loop st |> (fun (a, b) -> ValValue (a, b))
-        | 3 -> u_array loop st |> (fun a -> TupleValue a)
-        | 4 -> u_tup2 u_ucref (u_array loop) st |> (fun (a, b) -> UnionCaseValue (a, b))
+        | 2 -> u_tup2 u_vref loop st |> ValValue
+        | 3 -> u_array loop st |> TupleValue
+        | 4 -> u_tup2 u_ucref (u_array loop) st |> UnionCaseValue
         | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
-        | 6 -> u_tup2 u_int u_expr st |> (fun (a, b) -> ConstExprValue (a, b))
-        | 7 -> u_tup2 u_tcref (u_array loop) st |> (fun (a, b) -> RecdValue (a, b))
+        | 6 -> u_tup2 u_int u_expr st |> ConstExprValue
+        | 7 -> u_tup2 u_tcref (u_array loop) st |> RecdValue
         | _ -> failwith "loop"
     // calc size of unpicked ExprValueInfo
     MakeSizedValueInfo (loop st)

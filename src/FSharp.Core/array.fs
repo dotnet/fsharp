@@ -247,7 +247,7 @@ module Array =
     let countByRefType (projection: 'T -> 'Key) (array: 'T[]) =
         countByImpl
             RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (projection >> RuntimeHelpers.StructBox)
             (fun sb -> sb.Value)
             array
 
@@ -577,7 +577,7 @@ module Array =
     let groupByRefType (keyf: 'T -> 'Key) (array: 'T[]) =
         groupByImpl
             RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
+            (keyf >> RuntimeHelpers.StructBox)
             (fun sb -> sb.Value)
             array
 
@@ -2300,7 +2300,7 @@ module Array =
         let groupByRefTypeParallel (keyf: 'T -> 'Key) (array: 'T[]) =
             groupByImplParallel
                 RuntimeHelpers.StructBox<'Key>.Comparer
-                (fun t -> RuntimeHelpers.StructBox(keyf t))
+                (keyf >> RuntimeHelpers.StructBox)
                 (fun sb -> sb.Value)
                 array
 
@@ -2454,11 +2454,10 @@ module Array =
                 array[i] <- array[j]
                 array[j] <- tmp
 
-            let pivotIdx =
-                pickPivot (fun i j -> cmp array[i] array[j]) (fun i j -> swap i j) orig
+            let pivotIdx = pickPivot (fun i j -> cmp array[i] array[j]) swap orig
 
             let pivotItem = array[pivotIdx]
-            partitionIntoTwo (fun idx -> cmp array[idx] pivotItem) (fun i j -> swap i j) orig
+            partitionIntoTwo (fun idx -> cmp array[idx] pivotItem) swap orig
 
         let partitionIntoTwoUsingKeys (keys: 'A[]) (orig: ArraySegment<'T>) : ArraySegment<'T> * ArraySegment<'T> =
             let array = orig.Array
@@ -2472,11 +2471,10 @@ module Array =
                 array.[i] <- array.[j]
                 array.[j] <- tmp
 
-            let pivotIdx =
-                pickPivot (fun i j -> compare keys[i] keys[j]) (fun i j -> swap i j) orig
+            let pivotIdx = pickPivot (fun i j -> compare keys[i] keys[j]) swap orig
 
             let pivotKey = keys[pivotIdx]
-            partitionIntoTwo (fun idx -> compare keys[idx] pivotKey) (fun i j -> swap i j) orig
+            partitionIntoTwo (fun idx -> compare keys[idx] pivotKey) swap orig
 
         let inline sortInPlaceHelper
             (array: 'T[])

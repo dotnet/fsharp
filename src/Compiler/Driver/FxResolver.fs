@@ -936,7 +936,7 @@ type internal FxResolver
                                     if useFsiAuxLib then
                                         getFsiLibraryImplementationReference ()
                                 ]
-                                |> List.filter (fun f -> systemAssemblies.Contains(Path.GetFileNameWithoutExtension(f)))
+                                |> List.filter (Path.GetFileNameWithoutExtension >> systemAssemblies.Contains)
 
                             sdkReferences, false
                         with e ->

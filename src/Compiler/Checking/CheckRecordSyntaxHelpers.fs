@@ -33,7 +33,7 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
     let rec groupIfNested res xs =
         match xs with
         | [] -> res
-        | x :: [] -> x :: res
+        | [ x ] -> x :: res
         | x :: y :: ys ->
             match x, y with
             | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, fields1, m))), (_, Some (SynExpr.Record (recordFields = fields2))) ->

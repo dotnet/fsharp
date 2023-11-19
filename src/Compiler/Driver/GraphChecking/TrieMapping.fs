@@ -85,10 +85,10 @@ let rec mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : Tri
     let nextChildren =
         (accumulatorTrie.Children, currentTrie.Children)
         ||> Seq.fold (fun accChildren (KeyValue (k, v)) ->
-            if not (accChildren.ContainsKey k) then
-                accChildren.Add(k, v)
-            else
-                let accNode = accChildren[k]
+            match accChildren.TryGetValue k with
+            | false, _ -> accChildren.Add(k, v)
+            | true, kVal ->
+                let accNode = kVal
                 accChildren.SetItem(k, mergeTrieNodes accNode v))
 
     {

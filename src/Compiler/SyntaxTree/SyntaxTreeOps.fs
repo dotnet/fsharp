@@ -69,7 +69,7 @@ let rec pushUnaryArg expr arg =
         SynExpr.App(
             ExprAtomicFlag.Atomic,
             infix,
-            SynExpr.LongIdent(false, SynLongIdent(arg :: ident :: [], [ ident.idRange ], [ None ]), None, ident.idRange),
+            SynExpr.LongIdent(false, SynLongIdent(arg :: [ ident ], [ ident.idRange ], [ None ]), None, ident.idRange),
             x1,
             m1
         )
@@ -91,7 +91,7 @@ let rec pushUnaryArg expr arg =
         SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnaryArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
     | SynExpr.App (ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1) ->
         SynExpr.App(ExprAtomicFlag.Atomic, infix, pushUnaryArg innerExpr arg, x1, m1)
-    | SynExpr.Ident ident -> SynExpr.LongIdent(false, SynLongIdent(arg :: ident :: [], [ ident.idRange ], [ None ]), None, ident.idRange)
+    | SynExpr.Ident ident -> SynExpr.LongIdent(false, SynLongIdent(arg :: [ ident ], [ ident.idRange ], [ None ]), None, ident.idRange)
     | SynExpr.LongIdent (isOptional, SynLongIdent (id, dotRanges, trivia), altNameRefCell, range) ->
         SynExpr.LongIdent(isOptional, SynLongIdent(arg :: id, dotRanges, trivia), altNameRefCell, range)
     | SynExpr.DotGet (synExpr, rangeOfDot, synLongIdent, range) -> SynExpr.DotGet(pushUnaryArg synExpr arg, rangeOfDot, synLongIdent, range)
@@ -523,7 +523,7 @@ let mkAttributeList attrs range : SynAttributeList list =
     [ { Attributes = attrs; Range = range } ]
 
 let ConcatAttributesLists (attrsLists: SynAttributeList list) =
-    attrsLists |> List.map (fun x -> x.Attributes) |> List.concat
+    attrsLists |> List.collect (fun x -> x.Attributes)
 
 let (|Attributes|) synAttributes = ConcatAttributesLists synAttributes
 

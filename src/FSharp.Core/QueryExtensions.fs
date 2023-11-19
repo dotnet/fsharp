@@ -47,12 +47,12 @@ module internal Adapters =
             && not (FSharpType.GetRecordFields t |> Array.forall (fun f -> f.CanWrite)))
 
     let MemberInitializationHelperMeth =
-        methodhandleof (fun x -> LeafExpressionConverter.MemberInitializationHelper x)
+        methodhandleof (LeafExpressionConverter.MemberInitializationHelper)
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let NewAnonymousObjectHelperMeth =
-        methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x)
+        methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper)
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -78,7 +78,7 @@ module internal Adapters =
             | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
                 propSetList (p :: acc) xs
             // skip unit values
-            | (Patterns.Value (v, _)) :: xs when v = null -> propSetList acc xs
+            | (Patterns.Value (v, _)) :: xs when isNull v -> propSetList acc xs
             // detect "v"
             | [ Patterns.Var var ] when var = varArg -> Some acc
             | _ -> None
@@ -256,8 +256,7 @@ module internal Adapters =
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
-        let mhandle =
-            (methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x))
+        let mhandle = (methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper))
 
         let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 

@@ -365,7 +365,7 @@ module Layout =
         match layouts with
         | [] -> emptyL
         | [ x ] -> x
-        | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
+        | x :: ys -> List.fold (@@) x ys
 
     let optionL selector value =
         match value with
@@ -767,7 +767,7 @@ module Display =
 
             | Leaf (_, obj, _) -> addText z obj.Text
 
-            | Node (l, r, Broken indent) when not (opts.PrintWidth = 0) ->
+            | Node (l, r, Broken indent) when opts.PrintWidth <> 0 ->
                 let z = addL z pos l
                 let z = newLine z (pos + indent)
                 let z = addL z (pos + indent) r
@@ -1464,7 +1464,7 @@ module Display =
             | RecordValue items -> recordValueL depthLim (Array.toList items)
 
             | UnionCaseValue (constr, recd) when // x is List<T>. Note: "null" is never a valid list value.
-                x <> null && isListType (x.GetType())
+                (not (isNull x)) && isListType (x.GetType())
                 ->
                 listValueL depthLim constr recd
 

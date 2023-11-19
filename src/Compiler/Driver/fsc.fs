@@ -304,7 +304,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     (* step - get dll references *)
     let dllFiles, sourceFiles =
         inputFiles
-        |> List.map (fun p -> FileSystemUtils.trimQuotes p)
+        |> List.map FileSystemUtils.trimQuotes
         |> List.partition FileSystemUtils.isDll
 
     match dllFiles with

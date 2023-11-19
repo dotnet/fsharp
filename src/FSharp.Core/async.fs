@@ -717,7 +717,7 @@ module AsyncPrimitives =
     ///   - Apply `catchFunction' to argument with exception protection (see TryWith)
     ///   - Hijack check before invoking the resulting computation or exception continuation
     let inline CreateTryWithAsync catchFunction computation =
-        MakeAsync(fun ctxt -> TryWith ctxt computation (fun exn -> Some(catchFunction exn)))
+        MakeAsync(fun ctxt -> TryWith ctxt computation (catchFunction >> Some))
 
     /// Call the finallyFunction if the computation results in a cancellation, and then continue with cancellation.
     /// If the finally function gives an exception then continue with cancellation regardless.
@@ -1199,7 +1199,7 @@ module AsyncPrimitives =
 
         QueueAsync
             cancellationToken
-            (fun r -> tcs.SetResult r |> fake)
+            (tcs.SetResult >> fake)
             (fun edi -> tcs.SetException edi.SourceException |> fake)
             (fun _ -> tcs.SetCanceled() |> fake)
             computation
@@ -1495,7 +1495,7 @@ type Async =
             // Turn the success or exception into data
             let newCtxt =
                 ctxt.WithContinuations(
-                    cont = (fun res -> ctxt.cont (Choice1Of2 res)),
+                    cont = (Choice1Of2 >> ctxt.cont),
                     econt = (fun edi -> ctxt.cont (Choice2Of2(edi.GetAssociatedSourceException())))
                 )
 
@@ -1616,9 +1616,9 @@ type Async =
                                 // on success, record the result
                                 (fun res -> recordSuccess i res)
                                 // on exception...
-                                (fun edi -> recordFailure (Choice1Of2 edi))
+                                (Choice1Of2 >> recordFailure)
                                 // on cancellation...
-                                (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                (Choice2Of2 >> recordFailure)
                                 p
                             |> unfake)
                     | Some maxDegreeOfParallelism ->
@@ -1779,8 +1779,8 @@ type Async =
 
         Async.StartWithContinuations(
             computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
+            (ts.SetResult),
+            (ts.SetException),
             (fun _ -> ts.SetCanceled()),
             cancellationToken
         )

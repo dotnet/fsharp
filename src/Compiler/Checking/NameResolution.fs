@@ -2942,8 +2942,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
         match item with
         | Item.Value v ->
             let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref v
-            if isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf) then false
-            else true
+            not( isNameOfOperator && not (ncenv.g.langVersion.SupportsFeature LanguageFeature.NameOf))
         | _ -> true
 
     if first && id.idText = MangledGlobalName then
@@ -4287,8 +4286,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not (MethInfoIsUnseen g m ty minfo) &&
             not minfo.IsConstructor &&
             not minfo.IsClassConstructor &&
-            not (minfo.LogicalName = ".cctor") &&
-            not (minfo.LogicalName = ".ctor") &&
+            (minfo.LogicalName <> ".cctor") &&
+            (minfo.LogicalName <> ".ctor") &&
             isApplicableMeth minfo ty &&
             not (suppressedMethNames.Contains minfo.LogicalName)
 
@@ -4351,7 +4350,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
 #endif
 
                     minfos
@@ -4986,8 +4985,8 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                     not (MethInfoIsUnseen g m ty minfo) &&
                     not minfo.IsConstructor &&
                     not minfo.IsClassConstructor &&
-                    not (minfo.LogicalName = ".cctor") &&
-                    not (minfo.LogicalName = ".ctor") &&
+                    (minfo.LogicalName <> ".cctor") &&
+                    (minfo.LogicalName <> ".ctor") &&
                     not (suppressedMethNames.Contains minfo.LogicalName)
                 result
 
@@ -5044,7 +5043,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal m)))
+                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
         #endif
 
                         minfos
