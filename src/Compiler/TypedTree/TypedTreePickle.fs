@@ -1437,7 +1437,7 @@ let p_trait_sln sln st =
          p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, _, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
@@ -1477,7 +1477,7 @@ let u_trait_sln st =
 
 let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
+    TTrait (a, b, c, d, e, ref None, ref f)
 
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st

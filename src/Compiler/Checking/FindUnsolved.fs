@@ -167,7 +167,7 @@ and accOp cenv env (op, tyargs, args, m) =
     | _ ->    ()
 
 /// Walk a trait call, collecting type variables
-and accTraitInfo cenv env (mFallback : range) (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+and accTraitInfo cenv env (mFallback : range) (TTrait(tys=tys; objAndArgTys=argTys; returnTyOpt=retTy)) =
     argTys |> accTypeInst cenv env mFallback
     retTy |> Option.iter (accTy cenv env mFallback)
     tys |> List.iter (accTy cenv env mFallback)
