@@ -93,6 +93,7 @@ jobs:
         RELEASE_NOTES_FOUND=""
         RELEASE_NOTES_CHANGES_SUMMARY=""
         RELEASE_NOTES_NOT_FOUND=""
+        PULL_REQUEST_FOUND=false
 
 
         _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
@@ -121,18 +122,14 @@ jobs:
 
                     if [[ ${_pr_link_occurences} -eq 1 ]]; then
                         echo "                  Found pull request URL in $release_notes once"
-                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`[$release_notes](${FSHARP_REPO_URL}/$release_notes)\\\` |"
+                        RELEASE_NOTES_FOUND+="> | \\\`$path\\\` | \\\`[$release_notes](${FSHARP_REPO_URL}/$release_notes)\\\` | |"
                         RELEASE_NOTES_FOUND+=$'\n'
-                    elif [[ ${_pr_link_occurences} -gt 1 ]]; then
-                        echo "                  Found pull request URL in $release_notes, but with more than one PR URL"
-                        DESCRIPTION="**More than one current pull request URL (${PR_URL}) found in release notes**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
-                        RELEASE_NOTES_NOT_FOUND+=$'\n'
-                    else
+                        PULL_REQUEST_FOUND=true
+                    elif [[ ${_pr_link_occurences} -eq 0 ]]; then
                         echo "                  Did not find pull request URL in $release_notes"
                         DESCRIPTION="**No current pull request URL (${PR_URL}) found**"
-                        RELEASE_NOTES_NOT_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
-                        RELEASE_NOTES_NOT_FOUND+=$'\n'
+                        RELEASE_NOTES_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
+                        RELEASE_NOTES_FOUND+=$'\n'
                     fi
                 else
                     echo "          Did not find $release_notes in modified files"
@@ -188,9 +185,15 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> :white_check_mark: Found changes and release notes in following paths:"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+='> | Change path      | Release notes path |'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+='> | ---------------- | ------------------ |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!WARNING]"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No PR link found in the release notes, please consider adding it.**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+='> | Change path      | Release notes path | Description |'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+='> | ---------------- | ------------------ | ----------- |'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+="${RELEASE_NOTES_FOUND}"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
