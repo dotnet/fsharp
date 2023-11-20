@@ -5763,3 +5763,18 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
     assemblyNames |> should contain "Dapper.dll"
+
+module internal EmptyProject =
+    let base2 = tryCreateTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+
+    let fileNames = []
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+[<Test>]
+let ``Empty source list produces error FS0207`` () =
+    let results = checker.ParseAndCheckProject(EmptyProject.options) |> Async.RunImmediate
+    results.Diagnostics.Length |> shouldEqual 1
+    results.Diagnostics[0].ErrorNumber |> shouldEqual 207
