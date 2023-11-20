@@ -44,6 +44,8 @@ jobs:
         PR_NUMBER=${{ github.event.number }}
         PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
 
+        echo "PR Tags: "${{ github.event.pull_request.labels }}"
+
         OPT_OUT_RELEASE_NOTES=${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
 
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
