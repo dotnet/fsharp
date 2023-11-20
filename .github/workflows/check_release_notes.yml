@@ -1,7 +1,7 @@
 name: Check release notes
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     branches:
         - 'main'
         - 'release/*'
@@ -32,6 +32,7 @@ jobs:
         ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
         fetch-depth: 0
     - name: Check for release notes changes
+      if: ${{ !contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
       id: release_notes_changes
       run: |
         set -e
@@ -40,6 +41,11 @@ jobs:
         PR_AUTHOR="${{ github.event.pull_request.user.login }}"
         PR_NUMBER=${{ github.event.number }}
         PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
+
+        OPT_OUT_RELEASE_NOTES=${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
+
+        echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
+
         # Parse version from eng/Versions.props
         # For FSarp.Core:
         # <FSMajorVersion>8</FSMajorVersion>
@@ -127,7 +133,7 @@ jobs:
                         PULL_REQUEST_FOUND=true
                     elif [[ ${_pr_link_occurences} -eq 0 ]]; then
                         echo "                  Did not find pull request URL in $release_notes"
-                        DESCRIPTION="**No current pull request URL (${PR_URL}) found**"
+                        DESCRIPTION="**No current pull request URL (${PR_URL}) found, please consider adding it**"
                         RELEASE_NOTES_FOUND+="| \\\`$path\\\` | [$release_notes](${FSHARP_REPO_URL}/$release_notes) | ${DESCRIPTION} |"
                         RELEASE_NOTES_FOUND+=$'\n'
                     fi
@@ -188,14 +194,15 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> [!WARNING]"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No PR link found in the release notes, please consider adding it.**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$"> **No PR link found in some release notes, please consider adding it.**"
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+='> | Change path      | Release notes path | Description |'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+='> | ---------------- | ------------------ | ----------- |'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
-            RELEASE_NOTES_MESSAGE_DETAILS+="${RELEASE_NOTES_FOUND}"
+            RELEASE_NOTES_MESSAGE_DETAILS+="> ${RELEASE_NOTES_FOUND}"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
         fi
 
@@ -209,11 +216,24 @@ jobs:
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 
-        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
-        echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
+        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT"
+
+        if [[ $OPT_OUT_RELEASE_NOTES = true ]]; then
+            echo "> [!WARNING]" >>$GITHUB_OUTPUT
+            echo "> **Author opted out of release notes, check is disabled for this pull request.**" >>$GITHUB_OUTPUT
+            echo "> cc @dotnet/fsharp-team-msft" >>$GITHUB_OUTPUT
+            echo ""
+            echo "<details>" >>$GITHUB_OUTPUT
+            echo "<sumamry>See summary about missing notes.</summary>" >>$GITHUB_OUTPUT
+            echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
+            echo "</details>" >>$GITHUB_OUTPUT
+        else
+            echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
+        fi
+
         echo "$EOF" >>$GITHUB_OUTPUT
 
-        if [[ $RELEASE_NOTES_NOT_FOUND != "" ]]; then
+        if [[ $RELEASE_NOTES_NOT_FOUND != "" && ${OPT_OUT_RELEASE_NOTES} != true ]]; then
             exit 1
         fi
     # Did bot already commented the PR?
