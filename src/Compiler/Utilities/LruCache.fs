@@ -137,6 +137,8 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                 // weaken all other versions (unless they're required to be kept)
                 let versionsToWeaken = versionDict.Keys |> Seq.filter ((<>) version) |> Seq.toList
 
+                let mutable anythingWeakened = false
+
                 for otherVersion in versionsToWeaken do
                     let node = versionDict[otherVersion]
 
@@ -146,8 +148,11 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                         node.Value <- key, otherVersion, label, Weak(WeakReference<_> value)
                         weakList.AddFirst node
                         event CacheEvent.Weakened (label, key, otherVersion)
-                        cutWeakListIfTooLong ()
+                        anythingWeakened <- true
                     | _ -> ()
+
+                if anythingWeakened then
+                    cutWeakListIfTooLong ()
 
         | false, _ ->
             let node = pushValueToTop key version label value
