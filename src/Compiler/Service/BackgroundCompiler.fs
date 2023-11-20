@@ -168,17 +168,17 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
-type ParseCacheLockToken() =
+type internal ParseCacheLockToken() =
     interface LockToken
 
-type ScriptClosureCacheToken() =
+type internal ScriptClosureCacheToken() =
     interface LockToken
 
 type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
 type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * DateTime
 
 [<AutoOpen>]
-module EnvMisc =
+module internal EnvMisc =
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
     let parseFileCacheSize = GetEnvInteger "FCS_ParseFileCacheSize" 2
     let checkFileInProjectCacheSize = GetEnvInteger "FCS_CheckFileInProjectCacheSize" 10
