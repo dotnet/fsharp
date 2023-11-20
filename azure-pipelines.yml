@@ -281,7 +281,9 @@ stages:
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
-        # NOTE: This CI check should only run on the release branches.
+        # NOTE: The check now runs on all branches (not just release),
+        #       because we want to catch cases when version is desynched and we didn't update it.
+        #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
           # condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
           pool:
