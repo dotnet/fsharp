@@ -1536,6 +1536,9 @@ module Patterns =
             | IsInst _ -> NonAtomic
 
         let fmt (sb: StringBuilder) pat =
+            let spaceIfGt (sb: StringBuilder) =
+                if sb.Chars(sb.Length - 1) = '>' then sb.Append ' ' else sb
+
             let rec loop (sb: StringBuilder) (cont: StringBuilder -> StringBuilder) =
                 function
                 | Const c -> cont (sb.Append c)
@@ -1554,14 +1557,8 @@ module Patterns =
                 | Tuple pats -> separateBy ", " sb cont pats
                 | StructTuple pats -> separateBy ", " (sb.Append "struct (") (cont << fun sb -> sb.Append ')') pats
                 | Paren pat -> loop (sb.Append '(') (cont << fun sb -> sb.Append ')') pat
-                | List pats -> separateBy "; " (sb.Append '[') (cont << fun sb -> sb.Append ']') pats
-                | Array pats ->
-                    separateBy
-                        "; "
-                        (sb.Append "[|")
-                        (cont
-                         << fun sb -> (if sb.Chars(sb.Length - 1) = '>' then sb.Append ' ' else sb).Append "|]")
-                        pats
+                | List pats -> separateBy "; " (sb.Append '[') (cont << fun sb -> (spaceIfGt sb).Append ']') pats
+                | Array pats -> separateBy "; " (sb.Append "[|") (cont << fun sb -> (spaceIfGt sb).Append "|]") pats
                 | Record fields -> fmtFields (sb.Append "{ ") (cont << fun (sb: StringBuilder) -> sb.Append " }") fields
                 | Null -> cont (sb.Append "null")
                 | OptionalVal pat -> loop (sb.Append '?') cont pat

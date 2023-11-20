@@ -161,7 +161,8 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | _, _, ('\n' | '\r') -> None
                         | '[', '|', (Punctuation | LetterOrDigit) -> None
                         | _, ('(' | '[' | '{'), _ -> None
-                        | _, '>', _ -> Some ShouldPutSpaceBefore
+                        | _, '>', _
+                        | _, '[', '<'
                         | ' ', '=', _ -> Some ShouldPutSpaceBefore
                         | _, '=', ('(' | '[' | '{') -> None
                         | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
@@ -174,7 +175,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         // "(……)…"
                         //    ↑ ↑
                         match s[s.Length - 2], sourceText[min context.Span.End (sourceText.Length - 1)] with
-                        | '>', '|' -> Some ShouldPutSpaceAfter
+                        | '>', ('|' | ']') -> Some ShouldPutSpaceAfter
                         | _, (')' | ']' | '[' | '}' | '.' | ';' | ',' | '|') -> None
                         | (Punctuation | Symbol), (Punctuation | Symbol | LetterOrDigit) -> Some ShouldPutSpaceAfter
                         | LetterOrDigit, LetterOrDigit -> Some ShouldPutSpaceAfter
