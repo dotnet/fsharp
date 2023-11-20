@@ -223,6 +223,8 @@ jobs:
         echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
 
         if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
+            echo "<!-- DO_NOT_REMOVE: release_notes_check -->" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
             echo "## :warning: Release notes required, but author opted out" >>$GITHUB_OUTPUT
             echo "" >>$GITHUB_OUTPUT
             echo "" >>$GITHUB_OUTPUT
