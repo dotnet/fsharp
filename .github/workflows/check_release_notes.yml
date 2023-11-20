@@ -170,6 +170,9 @@ jobs:
             RELEASE_NOTES_MESSAGE_DETAILS+=$"> \\\`- Miscellaneous fixes to parens analysis - https://github.com/dotnet/fsharp/pull/16262\\\`"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'**If you believe that release notes are not necessary for this PR, please add "NO_RELEASE_NOTES" label to the pull request.**'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
+            RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
             RELEASE_NOTES_MESSAGE_DETAILS+=$'\n'
