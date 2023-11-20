@@ -387,6 +387,7 @@ type PhasedDiagnostic with
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
+        | 3560 -> false // tcCopyAndUpdateRecordChangesAllFields - off by default
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | _ ->
