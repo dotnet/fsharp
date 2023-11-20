@@ -160,9 +160,9 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         match sourceText[max (context.Span.Start - 2) 0], sourceText[max (context.Span.Start - 1) 0], s[1] with
                         | _, _, ('\n' | '\r') -> None
                         | '[', '|', (Punctuation | LetterOrDigit) -> None
+                        | _, '[', '<' -> Some ShouldPutSpaceBefore
                         | _, ('(' | '[' | '{'), _ -> None
-                        | _, '>', _
-                        | _, '[', '<'
+                        | _, '>', _ -> Some ShouldPutSpaceBefore
                         | ' ', '=', _ -> Some ShouldPutSpaceBefore
                         | _, '=', ('(' | '[' | '{') -> None
                         | _, '=', (Punctuation | Symbol) -> Some ShouldPutSpaceBefore
