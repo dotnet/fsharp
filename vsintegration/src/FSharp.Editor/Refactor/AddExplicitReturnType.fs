@@ -30,7 +30,9 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             && parseFileResults.IsBindingALambdaAtPosition symbolUse.Range.Start
 
         let res =
-            (not funcOrValue.IsValue || not isLambdaIfFunction)
+            funcOrValue.CompiledName = funcOrValue.DisplayName
+            && not funcOrValue.IsValue
+            && (not funcOrValue.IsValue || not isLambdaIfFunction)
             && not (funcOrValue.ReturnParameter.Type.IsUnresolved)
             && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
             && not typeAnnotationRange.IsNone

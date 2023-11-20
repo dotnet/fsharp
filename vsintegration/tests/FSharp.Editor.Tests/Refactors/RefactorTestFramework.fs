@@ -83,9 +83,6 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
         context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
         let document = RoslynTestHelpers.GetLastDocument context.Solution
-
-        let mutable workspace = context.Solution.Workspace
-
         let refactoringContext =
             CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
 

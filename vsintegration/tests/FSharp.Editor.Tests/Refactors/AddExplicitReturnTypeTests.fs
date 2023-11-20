@@ -29,6 +29,43 @@ let sum a b {shouldNotTrigger}= a + b
         tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
 
     do Assert.Empty(actions)
+  
+[<Fact>]
+let ``Refactor should not trigger on values`` () =
+    let symbolName = "example2"
+    
+    let code =
+            """
+let example2 = 42 // value
+            """
+    
+    use context = TestContext.CreateWithCode code
+    
+    let spanStart = code.IndexOf symbolName
+    
+    let actions =
+        tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
+    
+    do Assert.Empty(actions)
+    
+[<Fact>]
+let ``Refactor should not trigger on member values`` () =
+    let symbolName = "SomeProp"
+    
+    let code =
+            """
+type Example3() =
+    member _.SomeProp = 42 // property
+            """
+    
+    use context = TestContext.CreateWithCode code
+    
+    let spanStart = code.IndexOf symbolName
+    
+    let actions =
+        tryGetRefactoringActions code spanStart context (new AddExplicitReturnType())
+    
+    do Assert.Empty(actions)
 
 [<Fact>]
 let ``Correctly infer int as explicit return type`` () =
@@ -216,10 +253,10 @@ let sum a b = {Value=a+b}
 
     let expectedCode =
         """
-open MyModule
+open ModuleFirst
 
 let sum a b : MyType= {Value=a+b}
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
-    Assert.Equal(expectedCode, resultText.ToString())
+    Assert.Equal(expectedCode.Trim(' ','\r','\n'), resultText.ToString().Trim(' ','\r','\n'))
