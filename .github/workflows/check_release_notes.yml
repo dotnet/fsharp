@@ -32,7 +32,6 @@ jobs:
         ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
         fetch-depth: 0
     - name: Check for release notes changes
-      if: ${{ !contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
       id: release_notes_changes
       run: |
         set -e
