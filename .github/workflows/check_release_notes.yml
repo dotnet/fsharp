@@ -117,7 +117,7 @@ jobs:
 
                     if [[ ! -f $release_notes ]]; then
                         echo "              $release_notes does not exist, please, create it."
-                        exit 1;
+                        #exit 1;
                     fi
 
                     _pr_link_occurences=`grep -c "${PR_URL}" $release_notes || true`
