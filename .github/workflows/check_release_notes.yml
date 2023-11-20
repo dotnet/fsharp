@@ -105,7 +105,7 @@ jobs:
         RELEASE_NOTES_NOT_FOUND=""
         PULL_REQUEST_FOUND=true
 
-        gh repo set-default dotnet/fsharp
+        gh repo set-default
 
         _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
 
