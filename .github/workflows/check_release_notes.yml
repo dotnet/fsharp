@@ -212,8 +212,7 @@ jobs:
 
         if [[ $RELEASE_NOTES_MESSAGE_DETAILS == "" ]]; then
             RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
-        elif [[ $OPT_OUT_RELEASE_NOTES = true ]]; then
-            RELEASE_NOTES_MESSAGE+=$'## :warning: Release notes required, but author opted out\n\n'
+        elif [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
         else
             RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
@@ -221,15 +220,18 @@ jobs:
 
         echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
 
-        if [[ $OPT_OUT_RELEASE_NOTES = true ]]; then
+        if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
+            echo "## :warning: Release notes required, but author opted out" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
+            echo "" >>$GITHUB_OUTPUT
             echo "> [!WARNING]" >>$GITHUB_OUTPUT
             echo "> **Author opted out of release notes, check is disabled for this pull request.**" >>$GITHUB_OUTPUT
             echo "> cc @dotnet/fsharp-team-msft" >>$GITHUB_OUTPUT
-            echo ""
+            echo "" >>$GITHUB_OUTPUT
             echo "<details>" >>$GITHUB_OUTPUT
-            echo ""
+            echo "" >>$GITHUB_OUTPUT
             echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
-            echo ""
+            echo "" >>$GITHUB_OUTPUT
             echo "</details>" >>$GITHUB_OUTPUT
         else
             echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
