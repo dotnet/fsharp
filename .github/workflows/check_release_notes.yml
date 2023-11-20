@@ -215,7 +215,6 @@ jobs:
 
         if [[ $RELEASE_NOTES_MESSAGE_DETAILS == "" ]]; then
             RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
-        elif [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
         else
             RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
