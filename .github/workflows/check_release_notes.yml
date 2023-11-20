@@ -149,8 +149,9 @@ jobs:
             else
                 echo "      Nothing found, no release notes required"
             fi
-
         done
+
+        echo "Done checking for release notes changes"
 
         if [[ $RELEASE_NOTES_NOT_FOUND != "" ]]; then
             RELEASE_NOTES_MESSAGE_DETAILS+=$"@${PR_AUTHOR},"
