@@ -230,7 +230,7 @@ jobs:
             echo "" >>$GITHUB_OUTPUT
             echo "> [!WARNING]" >>$GITHUB_OUTPUT
             echo "> **Author opted out of release notes, check is disabled for this pull request.**" >>$GITHUB_OUTPUT
-            echo "> cc @<dotnet/fsharp-team-msft>" >>$GITHUB_OUTPUT
+            echo "> cc @dotnet/fsharp-team-msft" >>$GITHUB_OUTPUT
         else
             echo "${RELEASE_NOTES_MESSAGE}" >>$GITHUB_OUTPUT
         fi
