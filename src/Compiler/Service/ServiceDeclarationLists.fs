@@ -1146,6 +1146,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 | None -> x.Item.DisplayName)
 
             |> List.map (fun (_, items) -> 
+                failwith "checking which tests get broken"
                 let item = items.Head
                 let textInDeclList = 
                     match item.Unresolved with
