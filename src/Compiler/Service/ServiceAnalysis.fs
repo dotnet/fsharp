@@ -1479,7 +1479,7 @@ module UnnecessaryParentheses =
             | SynPat.Const _
             | SynPat.LongIdent(argPats = SynArgPats.Pats [])
             | SynPat.Null _
-            | SynPat.QuoteExpr _-> ValueSome Atomic
+            | SynPat.QuoteExpr _ -> ValueSome Atomic
             | _ -> ValueNone
 
         /// If the given pattern is a parenthesized pattern and the parentheses
