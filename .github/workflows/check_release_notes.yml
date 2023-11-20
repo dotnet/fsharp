@@ -39,11 +39,10 @@ jobs:
       run: |
         set -e
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-        FSHARP_REPO_URL="https://github.com/dotnet/fsharp"
+        FSHARP_REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
         PR_AUTHOR="${{ github.event.pull_request.user.login }}"
         PR_NUMBER=${{ github.event.number }}
         PR_URL="${FSHARP_REPO_URL}/pull/${PR_NUMBER}"
-        REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}
 
         echo "PR Tags: ${{ toJson(github.event.pull_request.labels) }}"
 
@@ -106,7 +105,7 @@ jobs:
         RELEASE_NOTES_NOT_FOUND=""
         PULL_REQUEST_FOUND=true
 
-        gh repo set-default ${REPO_NAME}
+        gh repo set-default ${GITHUB_REPOSITORY}
 
         _modified_paths=`gh pr view ${PR_NUMBER} --json files --jq '.files.[].path'`
 
