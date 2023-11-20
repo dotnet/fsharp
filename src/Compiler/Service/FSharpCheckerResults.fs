@@ -310,6 +310,7 @@ type FSharpProjectSnapshot =
     member this.GetMd5Version() =
         Md5Hasher.empty
         |> Md5Hasher.addString this.ProjectFileName
+        |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.FileName))
         |> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
         |> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
         |> Md5Hasher.addStrings this.OtherOptions
