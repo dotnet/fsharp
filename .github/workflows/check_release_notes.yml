@@ -210,12 +210,13 @@ jobs:
         fi
 
         RELEASE_NOTES_MESSAGE+=$'<!-- DO_NOT_REMOVE: release_notes_check -->\n'
-        RELEASE_NOTES_MESSAGE+=$'## Release notes check\n\n'
 
         if [[ $RELEASE_NOTES_MESSAGE_DETAILS == "" ]]; then
-            RELEASE_NOTES_MESSAGE+=$'### :white_check_mark: No release notes required.'
+            RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
+        elif [[ $OPT_OUT_RELEASE_NOTES = true ]]; then
+            RELEASE_NOTES_MESSAGE+=$'## :warning: Release notes required, but author opted out\n\n'
         else
-            RELEASE_NOTES_MESSAGE+=$'### Release notes required.\n\n'
+            RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 
