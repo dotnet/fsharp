@@ -216,7 +216,7 @@ jobs:
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 
-        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT"
+        echo "release-notes-check-message<<$EOF" >>$GITHUB_OUTPUT
 
         if [[ $OPT_OUT_RELEASE_NOTES = true ]]; then
             echo "> [!WARNING]" >>$GITHUB_OUTPUT
