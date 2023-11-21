@@ -1,0 +1,30 @@
+name: Check release notes
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches:
+        - 'main'
+        - 'release/*'
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  check_release_notes:
+    permissions:
+       issues: write
+       pull-requests: write
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get github ref
+      uses: actions/github-script@v3
+      id: get-pr
+      with:
+        script: |
+          const result = await github.pulls.get({
+            pull_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          return { "pr_number": context.issue.number, "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
