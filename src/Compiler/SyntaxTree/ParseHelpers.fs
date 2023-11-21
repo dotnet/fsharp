@@ -616,7 +616,7 @@ let mkSynMemberDefnGetSet
                     // should be unreachable, cover just in case
                     raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
 
-            let valSynData = SynValData(Some(memFlags), valSynInfo, None, None)
+            let valSynData = SynValData(Some(memFlags), valSynInfo, None)
 
             // Fold together the information from the first lambda pattern and the get/set binding
             // This uses the 'this' variable from the first and the patterns for the get/set binding,

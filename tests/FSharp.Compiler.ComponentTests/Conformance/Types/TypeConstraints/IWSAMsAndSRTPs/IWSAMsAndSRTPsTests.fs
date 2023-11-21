@@ -114,7 +114,6 @@ let main _ =
         |> withLangVersion60
         |> signaturesShouldContain "val g0: x: obj -> obj"
 
-
     [<Theory>]
     [<InlineData("let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() = (^T : (static member StaticProperty: int) ())")>]
     [<InlineData("let inline f_StaticProperty<'T when 'T : (static member get_StaticProperty: unit -> int) >() = (^T : (static member get_StaticProperty: unit -> int) ())")>]
@@ -1079,164 +1078,6 @@ module StaticAbstractBug =
             (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
          ]
-         
-    [<Fact>]
-    let ``Produce an error when one leaves out keyword "static" when implementing IWSAM in an object expression`` () =
-        Fsx """
-module StaticAbstractBug =
-    type IOperation =
-        static abstract member Execute: unit -> unit
-        abstract member Execute2: unit -> unit
-        
-    let objExpr =
-        { new IOperation with
-            member _.Execute() = ()
-            member _.Execute2() = () }
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-            (Error 17, Line 9, Col 22, Line 9, Col 29, "The member 'Execute: unit -> unit' does not have the correct type to override the corresponding abstract method. Non-static member is expected.")
-            (Error 783, Line 8, Col 15, Line 8, Col 25, "At least one override did not correctly implement its corresponding abstract member")
-         ]
-        
-    [<FactForNETCOREAPP>]
-    let ``Produce an error when one leaves keyword "static" when implementing IWSAM in an object expression`` () =
-        Fsx """
-type IOperation =
-        static abstract member Execute: unit -> unit
-        abstract member Execute2: unit -> unit
-
-let _ =
-    { new IOperation with
-        static member Execute() = ()
-        member _.Execute2() = ()
-    }
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 3860, Line 8, Col 23, Line 8, Col 30, "Static members are not allowed in object expressions.")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``Produce an error when one leaves keyword "static" when implementing multiple IWSAM in an object expression`` () =
-        Fsx """
-type IOperation =
-        static abstract member Execute: unit -> unit
-        static abstract member Execute2: unit -> unit
-
-let _ =
-    { new IOperation with
-        static member Execute() = ()
-        static member Execute2() = ()
-    }
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-            (Error 3860, Line 8, Col 23, Line 8, Col 30, "Static members are not allowed in object expressions.");
-            (Error 3860, Line 9, Col 23, Line 9, Col 31, "Static members are not allowed in object expressions.")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``Produce an error when one leaves keyword "static" when implementing static and not static members in an object expression`` () =
-        Fsx """
-type IOperation =
-        static abstract member Execute: unit -> unit
-        abstract member Execute1: unit -> unit
-        static abstract member Execute2: unit -> unit
-        abstract member Execute3: bool
-        
-let _ =
-    { new IOperation with
-        static member Execute() = ()
-        member this.Execute1() = ()
-        static member Execute2() = ()
-        member this.Execute3 = true
-    }
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-            (Error 3860, Line 10, Col 23, Line 10, Col 30, "Static members are not allowed in object expressions.");
-            (Error 3860, Line 12, Col 23, Line 12, Col 31, "Static members are not allowed in object expressions.");
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``Produces an error when implementing only instance members from IWSAM in an object expression`` () =
-        Fsx """
-type ILogger =
-    abstract member Log: string -> unit
-    static abstract member Execute: string -> unit
-        
-let consoleLogger =
-    { new ILogger with
-        member this.Log(message: string) =
-            printfn "%s" message
-    }
-    
-consoleLogger.Log("Hello World")
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 366, Line 7, Col 5, Line 10, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``Produces an error when implementing only instance members from IWSAM(Interface attribute) in an object expression`` () =
-        Fsx """
-[<Interface>]
-type ILogger =
-    abstract member Log: string -> unit
-    static abstract member Execute: string -> unit
-        
-let consoleLogger =
-    { new ILogger with
-        member this.Log(message: string) =
-            printfn "%s" message
-    }
-    
-consoleLogger.Log("Hello World")
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 366, Line 8, Col 5, Line 11, Col 6, "No implementation was given for 'static abstract ILogger.Execute: string -> unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``No error when implementing only instance members from a type(Interface attribute) in an object expression`` () =
-        Fsx """
-[<Interface>]
-type ILogger =
-    abstract member Log: string -> unit
-    static member Execute x = x
-        
-let consoleLogger =
-    { new ILogger with
-        member this.Log(message: string) =
-            printf "%A" message
-    }
-    
-consoleLogger.Log("Hello World")
-        """
-         |> withLangVersion80
-         |> compile
-         |> shouldSucceed
 
     [<FactForNETCOREAPP>]
     let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
@@ -1299,3 +1140,48 @@ module StaticAbstractBug =
             (Error 3859, Line 13, Col 27, Line 13, Col 35, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 14, Col 27, Line 14, Col 35, "No static abstract property was found that corresponds to this override")
          ]
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members by using class types`` () =
+        Fsx """
+type IPrintable =
+    abstract member Print: unit -> unit
+    static abstract member Log: string -> string
+
+type SomeClass1(x: int, y: float) =
+    member this.GetPrint() = (this :> IPrintable).Print()
+    
+    interface IPrintable with
+        member this.Print() = printfn $"%d{x} %f{y}"
+        static member Log(s: string) = s
+        
+let someClass = SomeClass1(1, 2.0) :> IPrintable
+let someClass1 = SomeClass1(1, 2.0)
+
+someClass.Print()
+someClass1.GetPrint()
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members and IWSAM by using class types`` () =
+        Fsx """
+[<Interface>]
+type IPrintable =
+    static abstract member Log: string -> string
+    static member Say(s: string) = s
+
+type SomeClass1() =    
+    interface IPrintable with
+        static member Log(s: string) = s
+        
+let someClass1 = SomeClass1()
+let execute = IPrintable.Say("hello")
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed

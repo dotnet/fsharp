@@ -663,7 +663,7 @@ module SynInfo =
 
     let private emptySynValInfo = SynValInfo([], unnamedRetVal)
 
-    let emptySynValData = SynValData(None, emptySynValInfo, None, None)
+    let emptySynValData = SynValData(None, emptySynValInfo, None)
 
     let emptySynArgInfo = SynArgInfo([], false, None)
 
@@ -693,7 +693,7 @@ module SynInfo =
                 @ (if explicitArgsAreSimple then infosForLambdaArgs else [])
 
             let infosForArgs = AdjustArgsForUnitElimination infosForArgs
-            SynValData(None, SynValInfo(infosForArgs, retInfo), None, None)
+            SynValData(None, SynValInfo(infosForArgs, retInfo), None)
 
         | Some memFlags ->
             let infosForObjArgs = if memFlags.IsInstance then [ selfMetadata ] else []
@@ -702,7 +702,7 @@ module SynInfo =
             let infosForArgs = AdjustArgsForUnitElimination infosForArgs
 
             let argInfos = infosForObjArgs @ infosForArgs
-            SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None, None)
+            SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None)
 
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
@@ -726,13 +726,6 @@ let mkSynBinding
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
-
-let updatePropertyIdentInSynBinding
-    propertyIdent
-    (SynBinding (vis, kind, ii, im, attr, xmlDoc, SynValData (memberFlags, valInfo, thisIdOpt, _), p, ri, e, m, dp, t))
-    =
-    let valData = SynValData(memberFlags, valInfo, thisIdOpt, Some propertyIdent)
-    SynBinding(vis, kind, ii, im, attr, xmlDoc, valData, p, ri, e, m, dp, t)
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
@@ -1001,25 +994,17 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
     memberDefns
     |> List.collect (fun md ->
         match md with
-        | SynMemberDefn.GetSetMember (Some (SynBinding(headPat = SynPat.LongIdent (longDotId = lid)) as getBinding),
+        | SynMemberDefn.GetSetMember (Some (SynBinding _ as getBinding),
                                       Some (SynBinding _ as setBinding),
                                       m,
                                       {
                                           GetKeyword = Some mGet
                                           SetKeyword = Some mSet
                                       }) ->
-            let lastIdent = List.last lid.LongIdent
-
             if Position.posLt mGet.Start mSet.Start then
-                [
-                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent getBinding, m)
-                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent setBinding, m)
-                ]
+                [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
             else
-                [
-                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent setBinding, m)
-                    SynMemberDefn.Member(updatePropertyIdentInSynBinding lastIdent getBinding, m)
-                ]
+                [ SynMemberDefn.Member(setBinding, m); SynMemberDefn.Member(getBinding, m) ]
         | SynMemberDefn.GetSetMember (Some binding, None, m, _)
         | SynMemberDefn.GetSetMember (None, Some binding, m, _) -> [ SynMemberDefn.Member(binding, m) ]
         | SynMemberDefn.Interface (interfaceType, withKeyword, members, m) ->

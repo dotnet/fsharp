@@ -10,9 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (a, None), false, None, (1,4--1,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (a, None), false, None, (1,4--1,5)), None,
                   Typed
                     (Paren
                        (InferredUpcast
@@ -29,9 +28,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (b, None), false, None, (2,4--2,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (b, None), false, None, (2,4--2,5)), None,
                   Typed
                     (Paren
                        (Upcast
@@ -49,9 +47,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (c, None), false, None, (3,4--3,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (c, None), false, None, (3,4--3,5)), None,
                   Paren
                     (Upcast
                        (FromParseError (Ident _, (3,10--3,11)),

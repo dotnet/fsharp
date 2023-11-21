@@ -27,8 +27,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = PropertyGet },
                                   SynValInfo
-                                    ([[]], SynArgInfo ([], false, None)), None,
-                                  None),
+                                    ([[]], SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent ([ReadWrite2], [], [None]),
                                   Some get, None,
@@ -72,7 +71,7 @@ ImplFile
                                       MemberKind = PropertySet },
                                   SynValInfo
                                     ([[SynArgInfo ([], false, Some x)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent ([ReadWrite2], [], [None]),
                                   Some set, None,
