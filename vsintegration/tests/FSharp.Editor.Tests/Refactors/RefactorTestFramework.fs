@@ -7,7 +7,6 @@ open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open FSharp.Editor.Tests.Helpers
