@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
-        <source>Static members are not allowed in object expressions.</source>
-        <target state="new">Static members are not allowed in object expressions.</target>
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
