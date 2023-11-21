@@ -548,6 +548,9 @@ module Range =
 
     let mkFirstLineOfFile (file: string) =
         try
+            if not(FileSystem.FileExistsShim file) then
+                mkRange file (mkPos 1 0) (mkPos 1 80)
+            else
             let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
 
             let nonWhiteLine =
