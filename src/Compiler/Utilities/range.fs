@@ -548,22 +548,22 @@ module Range =
 
     let mkFirstLineOfFile (file: string) =
         try
-            if not(FileSystem.FileExistsShim file) then
+            if not (FileSystem.FileExistsShim file) then
                 mkRange file (mkPos 1 0) (mkPos 1 80)
             else
-            let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
+                let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
 
-            let nonWhiteLine =
-                lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrWhiteSpace s))
+                let nonWhiteLine =
+                    lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrWhiteSpace s))
 
-            match nonWhiteLine with
-            | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
-            | None ->
-
-                let nonEmptyLine = lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrEmpty s))
-
-                match nonEmptyLine with
+                match nonWhiteLine with
                 | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
-                | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
+                | None ->
+
+                    let nonEmptyLine = lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrEmpty s))
+
+                    match nonEmptyLine with
+                    | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
+                    | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
