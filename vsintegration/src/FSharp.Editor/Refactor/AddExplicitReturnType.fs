@@ -37,30 +37,22 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
             && not typeAnnotationRange.IsNone
 
-        match res with
-        | true -> Some funcOrValue
-        | false -> None
+        match (res,typeAnnotationRange) with
+        | (true,Some tr) -> Some (funcOrValue,tr)
+        | (_,_) -> None
 
     static member refactor
         (context: CodeRefactoringContext)
-        (symbolUse: FSharpSymbolUse, memberFunc: FSharpMemberOrFunctionOrValue, parseFileResults: FSharpParseFileResults)
+        (memberFunc: FSharpMemberOrFunctionOrValue,typeRange:Range)
         =
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
             let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
 
-            let rangeOfReturnType =
-                parseFileResults.TryRangeOfReturnTypeHint(symbolUse.Range.Start, false)
-
-            let textChange =
-                rangeOfReturnType
-                |> Option.map (fun range -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                |> Option.map (fun textSpan -> TextChange(textSpan, $": {inferredType}"))
-
-            match textChange with
-            | Some textChange -> sourceText.WithChanges(textChange)
-            | None -> sourceText
+            let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
+            let textChange = TextChange(textSpan, $": {inferredType}")
+            sourceText.WithChanges(textChange)
 
         let codeActionFunc: CancellationToken -> Task<Document> =
             fun (cancellationToken: CancellationToken) ->
@@ -117,7 +109,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
                     |> AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
                 match isValidMethod with
-                | Some memberFunc -> do AddExplicitReturnType.refactor context (symbolUse, memberFunc, parseFileResults)
+                | Some (memberFunc,typeRange) -> do AddExplicitReturnType.refactor context (memberFunc,typeRange)
                 | None -> ()
             | _ -> ()
 
