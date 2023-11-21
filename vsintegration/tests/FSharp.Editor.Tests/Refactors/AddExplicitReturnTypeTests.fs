@@ -2,7 +2,6 @@
 
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
-open System.Linq
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 open FSharp.Test.ProjectGeneration
 open FSharp.Editor.Tests.Helpers
