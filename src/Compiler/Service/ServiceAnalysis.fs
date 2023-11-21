@@ -1542,11 +1542,19 @@ module UnnecessaryParentheses =
             //         new (x) = …
             //         new (x, y) = …
             | SynPat.Paren (Atomic, range),
-              SyntaxNode.SynPat (SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = Last (SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats [ arg ]))))))) :: _ ->
-                if obj.ReferenceEquals(pat, arg) then
+              SyntaxNode.SynPat (SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel (members = members))) :: _ ->
+                let lastNew =
+                    (ValueNone, members)
+                    ||> List.fold (fun lastNew ``member`` ->
+                        match ``member`` with
+                        | SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ])))) ->
+                            ValueSome ``member``
+                        | _ -> lastNew)
+
+                match lastNew with
+                | ValueSome (SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats [ Is pat ])))) ->
                     ValueSome range
-                else
-                    ValueNone
+                | _ -> ValueNone
 
             // Parens are otherwise never needed in these cases:
             //

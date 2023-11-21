@@ -2030,25 +2030,29 @@ module Patterns =
             type T (x, y) =
                 new (x, y, z) = T (x, y)
                 new (x) = T (x, 3)
+                member _.Z = x + y
             ",
             "
             type T (x, y) =
                 new (x, y, z) = T (x, y)
                 new x = T (x, 3)
+                member _.Z = x + y
             "
 
             // See https://github.com/dotnet/fsharp/issues/16257.
             "
             let f (x: string) = int x
             type T (x, y) =
-                new (x) = T (f x, y)
+                new (x) = T (f x, 3)
                 new x = T (id x, 3)
+                member _.Z = x + y
             ",
             "
             let f (x: string) = int x
             type T (x, y) =
-                new (x) = T (f x, y)
+                new (x) = T (f x, 3)
                 new x = T (id x, 3)
+                member _.Z = x + y
             "
 
             // See https://github.com/dotnet/fsharp/issues/16257.
@@ -2056,11 +2060,13 @@ module Patterns =
             type T (x, y) =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
+                member _.Z = x + y
             ",
             "
             type T (x, y) =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
+                member _.Z = x + y
             "
         }
 
