@@ -122,6 +122,11 @@
         <target state="translated">멤버 또는 함수 '{0}'에 'TailCallAttribute' 특성이 있지만 비상 재귀적인 방식으로 사용되고 있지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticMembersDirectlyOnInterfaces">
+        <source>Interfaces cannot access static abstract members directly.</source>
+        <target state="new">Interfaces cannot access static abstract members directly.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>

@@ -9800,6 +9800,9 @@ and TcMethodApplication
         | accessibleMeths -> accessibleMeths
 
     let candidates = candidateMethsAndProps |> List.map fst
+    for candidate in candidates do
+         if isInterfaceTyconRef candidate.DeclaringTyconRef && candidate.IsAbstract && not candidate.IsInstance then
+            errorR(Error(FSComp.SR.chkStaticMembersDirectlyOnInterfaces(), mItem))
 
     // Step 0. Split the syntactic arguments (if any) into named and unnamed parameters
     let curriedCallerArgsOpt, unnamedDelayedCallerArgExprOpt, exprTy =

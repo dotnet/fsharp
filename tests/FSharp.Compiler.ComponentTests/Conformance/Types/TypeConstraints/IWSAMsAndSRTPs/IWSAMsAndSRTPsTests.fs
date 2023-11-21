@@ -1207,7 +1207,8 @@ let x = IPrintable.Log("hello")
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             
+            (Error 3861, Line 6, Col 37, Line 6, Col 51, "Interfaces cannot access static abstract members directly.");
+            (Error 3861, Line 13, Col 9, Line 13, Col 23, "Interfaces cannot access static abstract members directly.")
          ]
          
     [<FactForNETCOREAPP>]
@@ -1222,5 +1223,5 @@ IAdditionOperators.op_Addition (3, 6)
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             
+             (Error 3861, Line 4, Col 1, Line 4, Col 31, "Interfaces cannot access static abstract members directly.")
          ]
