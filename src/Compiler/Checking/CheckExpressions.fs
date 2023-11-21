@@ -3115,15 +3115,17 @@ let BuildRecdFieldSet g m objExpr (rfinfo: RecdFieldInfo) argExpr =
 // Helpers dealing with named and optional args at callsites
 //-------------------------------------------------------------------------
 
+[<return: Struct>]
 let (|BinOpExpr|_|) expr =
     match expr with
-    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent opId, a, _), b, _) -> Some (opId, a, b)
-    | _ -> None
+    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent opId, a, _), b, _) -> ValueSome (opId, a, b)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SimpleEqualsExpr|_|) expr =
     match expr with
-    | BinOpExpr(opId, a, b) when opId.idText = opNameEquals -> Some (a, b)
-    | _ -> None
+    | BinOpExpr(opId, a, b) when opId.idText = opNameEquals -> ValueSome (a, b)
+    | _ -> ValueNone
 
 /// Detect a named argument at a callsite
 let TryGetNamedArg expr =

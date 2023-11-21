@@ -740,19 +740,22 @@ let ChooseInvestigationPointLeftToRight frontiers =
 // This is an initial attempt to remove extra typetests/castclass for simple list pattern matching "match x with h :: t -> ... | [] -> ..."
 // The problem with this technique is that it creates extra locals which inhibit the process of converting pattern matches into linear let bindings.
 
+[<return: Struct>]
 let (|ListConsDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_ColonColon" -> ValueSome tinst
+     | _ -> ValueNone
 
+[<return: Struct>]
 let (|ListEmptyDiscrim|_|) g = function
      | (DecisionTreeTest.UnionCase (ucref, tinst))
                 (* check we can use a simple 'isinst' instruction *)
-                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> Some tinst
-     | _ -> None
+                when tyconRefEq g ucref.TyconRef g.list_tcr_canon & ucref.CaseName = "op_Nil" -> ValueSome tinst
+     | _ -> ValueNone
 #endif
 
+[<return: Struct>]
 let (|ConstNeedsDefaultCase|_|) c =
     match c with
     | Const.Decimal _
@@ -767,8 +770,8 @@ let (|ConstNeedsDefaultCase|_|) c =
     | Const.UInt64 _
     | Const.IntPtr _
     | Const.UIntPtr _
-    | Const.Char _ -> Some ()
-    | _ -> None
+    | Const.Char _ -> ValueSome ()
+    | _ -> ValueNone
 
 /// Build a dtree, equivalent to: TDSwitch("expr", edges, default, m)
 ///
