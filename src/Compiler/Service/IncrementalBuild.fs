@@ -585,7 +585,7 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTi
 module Utilities =
     let TryFindFSharpStringAttribute tcGlobals attribSpec attribs =
         match TryFindFSharpAttribute tcGlobals attribSpec attribs with
-        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
+        | ValueSome (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
         | _ -> None
 
 /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.

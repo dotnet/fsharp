@@ -2158,6 +2158,7 @@ type internal FsiDynamicCompiler
     let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
         let tryGetEntryPoint (TBind (var = value)) =
             TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
+            |> ValueOption.toOption
             |> Option.map (fun attrib -> value.DisplayName, attrib)
 
         let rec findEntryPointInContents =

@@ -2131,7 +2131,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             let hasDefaultAugmentation =
                 tcref.IsUnionTycon &&
                 match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-                | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+                | ValueSome(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
                 | _ -> true (* not hiddenRepr *)
 
             let kind = (if v.IsMember then "member" else "value")

@@ -449,4 +449,37 @@ module ListParallel =
         |> ArrayParallel.map f
         |> Array.toList
 
-   
+[<RequireQualifiedAccess>]
+module Array =
+    let inline tryPickV ([<InlineIfLambda>] chooser) (array: _[]) =
+        if isNull array then
+            raise (new ArgumentNullException(nameof(array)))
+        let rec loop i =
+            if i >= array.Length then
+                ValueNone
+            else
+                match chooser array.[i] with
+                | ValueNone -> loop (i + 1)
+                | res -> res
+
+        loop 0
+
+[<RequireQualifiedAccess>]
+module List =
+    let rec tryFindV predicate list =
+        match list with
+        | [] -> ValueNone
+        | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
+
+    let rec tryPickV chooser list =
+        match list with
+        | [] -> ValueNone
+        | h :: t ->
+            match chooser h with
+            | ValueNone -> tryPickV chooser t
+            | r -> r
+
+[<RequireQualifiedAccess>]
+module ValueOption =
+    let inline defaultArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
+    let inline toOption arg = match arg with ValueNone -> None | ValueSome v -> Some v

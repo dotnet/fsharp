@@ -1232,10 +1232,10 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
                 errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
 
 let private HasMethodImplNoInliningAttribute g attrs = 
-            match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-            // NO_INLINING = 8
-            | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
-            | _ -> false
+    match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
+    // NO_INLINING = 8
+    | ValueSome (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
+    | _ -> false
 
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
@@ -2947,8 +2947,8 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
         | Some defines ->
 
         match TryFindMethInfoStringAttribute g m g.attrib_ConditionalAttribute minfo with
-        | None -> false
-        | Some d -> not (List.contains d defines)
+        | ValueNone -> false
+        | ValueSome d -> not (List.contains d defines)
 
     if shouldEraseCall then
         // Methods marked with 'Conditional' must return 'unit'
@@ -10852,25 +10852,25 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 let tref = g.attrib_AttributeUsageAttribute.TypeRef
 
                 match TryDecodeILAttribute tref tdef.CustomAttrs with
-                | Some ([ILAttribElem.Int32 validOn ], named) ->
+                | ValueSome ([ILAttribElem.Int32 validOn ], named) ->
                     let inherited =
                         match List.tryPick (function "Inherited", _, _, ILAttribElem.Bool res -> Some res | _ -> None) named with
                         | None -> inheritedDefault
                         | Some x -> x
                     (validOn, inherited)
-                | Some ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
+                | ValueSome ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
                     (validOn, inherited)
                 | _ ->
                     (validOnDefault, inheritedDefault)
             else
                 match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn ], _, _, _, _)) ->
+                | ValueSome(Attrib(_, _, [ AttribInt32Arg validOn ], _, _, _, _)) ->
                     (validOn, inheritedDefault)
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn
-                                      AttribBoolArg(_allowMultiple)
-                                      AttribBoolArg inherited], _, _, _, _)) ->
+                | ValueSome(Attrib(_, _, [ AttribInt32Arg validOn
+                                           AttribBoolArg(_allowMultiple)
+                                           AttribBoolArg inherited], _, _, _, _)) ->
                     (validOn, inherited)
-                | Some _ ->
+                | ValueSome _ ->
                     warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
                     (validOnDefault, inheritedDefault)
                 | _ ->

@@ -2709,8 +2709,8 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet && not e1info.HasEffect ->
         match TryFindFSharpAttribute g g.attrib_CLIMutableAttribute rtcref.Attribs with
-        | Some _ -> None
-        | None ->
+        | ValueSome _ -> None
+        | ValueNone ->
             let n = r.Index
             if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range", m))
             Some finfos[n]

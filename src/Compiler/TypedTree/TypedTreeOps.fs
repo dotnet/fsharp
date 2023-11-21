@@ -3408,13 +3408,13 @@ let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) =
 let HasILAttribute tref (attrs: ILAttributes) = 
     attrs.AsArray() |> Array.exists (isILAttrib tref) 
 
-let TryDecodeILAttribute tref (attrs: ILAttributes) = 
-    attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
+let TryDecodeILAttribute tref (attrs: ILAttributes) =
+    attrs.AsArray() |> Array.tryPickV (fun x -> if isILAttrib tref x then ValueSome(decodeILAttribData x) else ValueNone)
 
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
-let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttribute g tref attrs = List.tryFindV (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
@@ -3431,8 +3431,8 @@ let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ ], _, _, _, _)) -> Some dflt
-    | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
+    | ValueSome(Attrib(_, _, [ ], _, _, _, _)) -> Some dflt
+    | ValueSome(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> Some b
     | _ -> None
 
 let TryFindFSharpBoolAttribute g nm attrs = TryFindFSharpBoolAttributeWithDefault true g nm attrs
@@ -3440,12 +3440,12 @@ let TryFindFSharpBoolAttributeAssumeFalse g nm attrs = TryFindFSharpBoolAttribut
 
 let TryFindFSharpInt32Attribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
+    | ValueSome(Attrib(_, _, [ AttribInt32Arg b ], _, _, _, _)) -> Some b
     | _ -> None
     
 let TryFindFSharpStringAttribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
+    | ValueSome(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
     | _ -> None
     
 let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
@@ -3472,11 +3472,11 @@ let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
         match TryDecodeILAttribute atref tdef.CustomAttrs with 
-        | Some attr -> f1 attr
+        | ValueSome attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         match TryFindFSharpAttribute g args tcref.Attribs with 
-        | Some attr -> f2 attr
+        | ValueSome attr -> f2 attr
         | _ -> None
 
 let TryFindTyconRefBoolAttribute g m attribSpec tcref =
@@ -3746,21 +3746,25 @@ type ValRef with
         | Some membInfo -> membInfo.MemberFlags.IsDispatchSlot 
         | None -> false
 
+[<return: Struct>]
 let (|UnopExpr|_|) _g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, _, [arg1], _) -> Some (vref, arg1)
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, _, [arg1], _) -> ValueSome (vref, arg1)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|BinopExpr|_|) _g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, _, [arg1;arg2], _) -> Some (vref, arg1, arg2)
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, _, [arg1;arg2], _) -> ValueSome (vref, arg1, arg2)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SpecificUnopExpr|_|) g vrefReqd expr = 
     match expr with 
-    | UnopExpr g (vref, arg1) when valRefEq g vref vrefReqd -> Some arg1
-    | _ -> None
+    | UnopExpr g (vref, arg1) when valRefEq g vref vrefReqd -> ValueSome arg1
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SignedConstExpr|_|) expr =
     match expr with
     | Expr.Const (Const.Int32 _, _, _)
@@ -3768,9 +3772,10 @@ let (|SignedConstExpr|_|) expr =
     | Expr.Const (Const.Int16 _, _, _)
     | Expr.Const (Const.Int64 _, _, _)
     | Expr.Const (Const.Single _, _, _)
-    | Expr.Const (Const.Double _, _, _) -> Some ()
-    | _ -> None
+    | Expr.Const (Const.Double _, _, _) -> ValueSome ()
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|IntegerConstExpr|_|) expr =
     match expr with
     | Expr.Const (Const.Int32 _, _, _)
@@ -3780,37 +3785,42 @@ let (|IntegerConstExpr|_|) expr =
     | Expr.Const (Const.Byte _, _, _)
     | Expr.Const (Const.UInt16 _, _, _)
     | Expr.Const (Const.UInt32 _, _, _)
-    | Expr.Const (Const.UInt64 _, _, _) -> Some ()
-    | _ -> None
+    | Expr.Const (Const.UInt64 _, _, _) -> ValueSome ()
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|FloatConstExpr|_|) expr =
     match expr with
     | Expr.Const (Const.Single _, _, _)
-    | Expr.Const (Const.Double _, _, _) -> Some ()
-    | _ -> None
+    | Expr.Const (Const.Double _, _, _) -> ValueSome ()
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SpecificBinopExpr|_|) g vrefReqd expr = 
     match expr with 
-    | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> Some (arg1, arg2)
-    | _ -> None
+    | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> ValueSome (arg1, arg2)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|EnumExpr|_|) g expr = 
     match (|SpecificUnopExpr|_|) g g.enum_vref expr with
-    | None -> (|SpecificUnopExpr|_|) g g.enumOfValue_vref expr
+    | ValueNone -> (|SpecificUnopExpr|_|) g g.enumOfValue_vref expr
     | x -> x
 
+[<return: Struct>]
 let (|BitwiseOrExpr|_|) g expr = (|SpecificBinopExpr|_|) g g.bitwise_or_vref expr
 
+[<return: Struct>]
 let (|AttribBitwiseOrExpr|_|) g expr = 
     match expr with 
-    | BitwiseOrExpr g (arg1, arg2) -> Some(arg1, arg2)
+    | BitwiseOrExpr g (arg1, arg2) -> ValueSome(arg1, arg2)
     // Special workaround, only used when compiling FSharp.Core.dll. Uses of 'a ||| b' occur before the '|||' bitwise or operator
     // is defined. These get through type checking because enums implicitly support the '|||' operator through
     // the automatic resolution of undefined operators (see tc.fs, Item.ImplicitOp). This then compiles as an 
     // application of a lambda to two arguments. We recognize this pattern here
     | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingFSharpCore -> 
-        Some(arg1, arg2)
-    | _ -> None
+        ValueSome(arg1, arg2)
+    | _ -> ValueNone
 
 let isUncheckedDefaultOfValRef g vref = 
     valRefEq g vref g.unchecked_defaultof_vref 
@@ -3837,35 +3847,41 @@ let isTypeDefOfValRef g vref =
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
     || (g.compilingFSharpCore && vref.LogicalName = "typedefof") 
 
+[<return: Struct>]
 let (|UncheckedDefaultOfExpr|_|) g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isUncheckedDefaultOfValRef g vref -> Some ty
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isUncheckedDefaultOfValRef g vref -> ValueSome ty
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|TypeOfExpr|_|) g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeOfValRef g vref -> Some ty
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeOfValRef g vref -> ValueSome ty
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SizeOfExpr|_|) g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isSizeOfValRef g vref -> Some ty
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isSizeOfValRef g vref -> ValueSome ty
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|TypeDefOfExpr|_|) g expr = 
     match expr with 
-    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeDefOfValRef g vref -> Some ty
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, [ty], [], _) when isTypeDefOfValRef g vref -> ValueSome ty
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|NameOfExpr|_|) g expr = 
     match expr with 
-    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> Some ty
-    | _ -> None
+    | Expr.App(Expr.Val(vref,_,_),_,[ty],[],_) when isNameOfValRef g vref  -> ValueSome ty
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqExpr|_|) g expr = 
     match expr with 
-    | Expr.App(Expr.Val(vref,_,_),_,_,_,_) when valRefEq g vref g.seq_vref -> Some()
-    | _ -> None
+    | Expr.App(Expr.Val(vref,_,_),_,_,_,_) when valRefEq g vref g.seq_vref -> ValueSome()
+    | _ -> ValueNone
 
 //--------------------------------------------------------------------------
 // DEBUG layout

@@ -324,7 +324,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, false, true -> CallerMemberName
         | false, true, true -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
-            | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+            | ValueSome(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
@@ -1171,8 +1171,8 @@ type MethInfo =
                  let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute attrs
                  let reflArgInfo =
                      match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
-                     | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
-                     | Some _ -> ReflectedArgInfo.Quote false
+                     | ValueSome ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
+                     | ValueSome _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
                  let isOutArg = (p.IsOut && not p.IsIn)
                  let isInArg = (p.IsIn && not p.IsOut)

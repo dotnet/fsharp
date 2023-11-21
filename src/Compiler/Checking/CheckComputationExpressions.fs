@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CheckComputationExpressions
 
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
@@ -37,21 +38,23 @@ let TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: Tc
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
 
 /// Ignores an attribute
-let IgnoreAttribute _ = None
+let inline IgnoreAttribute _ = ValueNone
 
+[<return: Struct>]
 let (|ExprAsPat|_|) (f: SynExpr) =    
     match f with 
-    | SingleIdent v1 | SynExprParen(SingleIdent v1, _, _, _) -> Some (mkSynPatVar None v1)
+    | SingleIdent v1 | SynExprParen(SingleIdent v1, _, _, _) -> ValueSome (mkSynPatVar None v1)
     | SynExprParen(SynExpr.Tuple (false, elems, commas, _), _, _, _) -> 
         let elems = elems |> List.map (|SingleIdent|_|) 
         if elems |> List.forall (fun x -> x.IsSome) then 
-            Some (SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), commas, f.Range))
+            ValueSome (SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), commas, f.Range))
         else
-            None
-    | _ -> None
+            ValueNone
+    | _ -> ValueNone
 
 // For join clauses that join on nullable, we syntactically insert the creation of nullable values on the appropriate side of the condition, 
 // then pull the syntax apart again
+[<return: Struct>]
 let (|JoinRelation|_|) cenv env (expr: SynExpr) = 
     let m = expr.Range
     let ad = env.eAccessRights
@@ -63,23 +66,23 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
         | _ -> false
 
     match expr with 
-    | BinOpExpr(opId, a, b) when isOpName opNameEquals cenv.g.equals_operator_vref opId.idText -> Some (a, b)
+    | BinOpExpr(opId, a, b) when isOpName opNameEquals cenv.g.equals_operator_vref opId.idText -> ValueSome (a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameEqualsNullable cenv.g.equals_nullable_operator_vref opId.idText -> 
 
         let a = SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet a.Range [MangledGlobalName;"System"] "Nullable", a, a.Range)
-        Some (a, b)
+        ValueSome (a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameNullableEquals cenv.g.nullable_equals_operator_vref opId.idText -> 
 
         let b = SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet b.Range [MangledGlobalName;"System"] "Nullable", b, b.Range)
-        Some (a, b)
+        ValueSome (a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameNullableEqualsNullable cenv.g.nullable_equals_nullable_operator_vref opId.idText -> 
 
-        Some (a, b)
+        ValueSome (a, b)
 
-    | _ -> None
+    | _ -> ValueNone
 
 let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
     let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()
@@ -162,6 +165,7 @@ let YieldFree (cenv: cenv) expr =
 /// of semicolon separated values". For example [1;2;3].
 /// 'acceptDeprecated' is true for the '[ ... ]' case, where we allow the syntax '[ if g then t else e ]' but ask it to be parenthesized
 ///
+[<return: Struct>]
 let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr = 
 
     let IsSimpleSemicolonSequenceElement expr = 
@@ -189,12 +193,12 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
             if IsSimpleSemicolonSequenceElement e1 then 
                 TryGetSimpleSemicolonSequenceOfComprehension e2 (e1 :: acc)
             else
-                None 
+                ValueNone 
         | _ -> 
             if IsSimpleSemicolonSequenceElement expr then 
-                Some(List.rev (expr :: acc))
+                ValueSome(List.rev (expr :: acc))
             else 
-                None 
+                ValueNone 
 
     TryGetSimpleSemicolonSequenceOfComprehension cexpr []
 
@@ -273,30 +277,30 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let nameSearch = 
                     TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                         IgnoreAttribute // We do not respect this attribute for IL methods
-                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> ValueSome msg | _ -> ValueNone)
                         IgnoreAttribute // We do not respect this attribute for provided methods
 
                 match nameSearch with
-                | None -> None
-                | Some nm ->
+                | ValueNone -> None
+                | ValueSome nm ->
                     let joinConditionWord =
                         TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
-                            (function Attrib(_, _, _, ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s), _, _, _) -> Some s | _ -> None)
+                            (function Attrib(_, _, _, ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s), _, _, _) -> ValueSome s | _ -> ValueNone)
                             IgnoreAttribute // We do not respect this attribute for provided methods
 
                     let flagSearch (propName: string) = 
                         TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
-                            (function Attrib(_, _, _, ExtractAttribNamedArg propName (AttribBoolArg b), _, _, _) -> Some b | _ -> None)
+                            (function Attrib(_, _, _, ExtractAttribNamedArg propName (AttribBoolArg b), _, _, _) -> ValueSome b | _ -> ValueNone)
                             IgnoreAttribute // We do not respect this attribute for provided methods
 
-                    let maintainsVarSpaceUsingBind = defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
-                    let maintainsVarSpace = defaultArg (flagSearch "MaintainsVariableSpace") false
-                    let allowInto = defaultArg (flagSearch "AllowIntoPattern") false
-                    let isLikeZip = defaultArg (flagSearch "IsLikeZip") false
-                    let isLikeJoin = defaultArg (flagSearch "IsLikeJoin") false
-                    let isLikeGroupJoin = defaultArg (flagSearch "IsLikeGroupJoin") false
+                    let maintainsVarSpaceUsingBind = ValueOption.defaultArg (flagSearch "MaintainsVariableSpaceUsingBind") false
+                    let maintainsVarSpace = ValueOption.defaultArg (flagSearch "MaintainsVariableSpace") false
+                    let allowInto = ValueOption.defaultArg (flagSearch "AllowIntoPattern") false
+                    let isLikeZip = ValueOption.defaultArg (flagSearch "IsLikeZip") false
+                    let isLikeJoin = ValueOption.defaultArg (flagSearch "IsLikeJoin") false
+                    let isLikeGroupJoin = ValueOption.defaultArg (flagSearch "IsLikeGroupJoin") false
 
                     Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
@@ -399,8 +403,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         match tryGetDataForCustomOperation nm with 
         | Some opDatas ->
             opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, joinConditionWord, _methInfo) -> joinConditionWord)
-             |> function None -> "on" | Some v -> v
-        | _ -> "on"  
+             |> function ValueNone -> "on" | ValueSome v -> v
+        | _ -> "on"
 
     let customOperationAllowsInto (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 

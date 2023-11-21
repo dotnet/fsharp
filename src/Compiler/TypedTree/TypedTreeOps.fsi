@@ -2233,7 +2233,7 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Analyze attribute sets
 //-------------------------------------------------------------------------
 
-val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) voption
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
@@ -2247,7 +2247,7 @@ val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
 
 val HasFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
 
-val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
+val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib voption
 
 val TryFindFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
 
@@ -2491,19 +2491,19 @@ type EntityRef with
 
     member HasMember: TcGlobals -> string -> TType list -> bool
 
-val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
+val (|AttribBitwiseOrExpr|_|): TcGlobals -> Expr -> (Expr * Expr) voption
 
-val (|EnumExpr|_|): TcGlobals -> Expr -> Expr option
+val (|EnumExpr|_|): TcGlobals -> Expr -> Expr voption
 
-val (|TypeOfExpr|_|): TcGlobals -> Expr -> TType option
+val (|TypeOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-val (|TypeDefOfExpr|_|): TcGlobals -> Expr -> TType option
+val (|TypeDefOfExpr|_|): TcGlobals -> Expr -> TType voption
 
 val isNameOfValRef: TcGlobals -> ValRef -> bool
 
-val (|NameOfExpr|_|): TcGlobals -> Expr -> TType option
+val (|NameOfExpr|_|): TcGlobals -> Expr -> TType voption
 
-val (|SeqExpr|_|): TcGlobals -> Expr -> unit option
+val (|SeqExpr|_|): TcGlobals -> Expr -> unit voption
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
 

@@ -43,24 +43,24 @@ val TryBindMethInfoAttribute:
     m: range ->
     BuiltinAttribInfo ->
     minfo: MethInfo ->
-    f1: (ILAttribElem list * ILAttributeNamedArg list -> 'a option) ->
-    f2: (Attrib -> 'a option) ->
+    f1: (ILAttribElem list * ILAttributeNamedArg list -> 'a voption) ->
+    f2: (Attrib -> 'a voption) ->
     f3: _ ->
-        'a option
+        'a voption
 #else
 val TryBindMethInfoAttribute:
     g: TcGlobals ->
     m: range ->
     BuiltinAttribInfo ->
     minfo: MethInfo ->
-    f1: (ILAttribElem list * ILAttributeNamedArg list -> 'a option) ->
-    f2: (Attrib -> 'a option) ->
-    f3: (obj option list * (string * obj option) list -> 'a option) ->
-        'a option
+    f1: (ILAttribElem list * ILAttributeNamedArg list -> 'a voption) ->
+    f2: (Attrib -> 'a voption) ->
+    f3: (obj option list * (string * obj option) list -> 'a voption) ->
+        'a voption
 #endif
 
 val TryFindMethInfoStringAttribute:
-    g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> string option
+    g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> string voption
 
 val MethInfoHasAttribute: g: TcGlobals -> m: range -> attribSpec: BuiltinAttribInfo -> minfo: MethInfo -> bool
 

@@ -291,3 +291,17 @@ module ListParallel =
     val map: ('T -> 'U) -> 'T list -> 'U list
 
 //val inline mapi: (int -> 'T -> 'U) -> 'T list -> 'U list
+
+[<RequireQualifiedAccess>]
+module Array =
+    val inline tryPickV: ('T -> 'U voption) -> 'T[] -> 'U voption
+
+[<RequireQualifiedAccess>]
+module List =
+    val tryFindV: ('T -> bool) -> 'T list -> 'T voption
+    val tryPickV: ('T -> 'U voption) -> 'T list -> 'U voption
+
+[<RequireQualifiedAccess>]
+module ValueOption =
+    val inline defaultArg: 'T voption -> 'T -> 'T
+    val inline toOption: 'T voption -> 'T option
