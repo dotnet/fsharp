@@ -2387,7 +2387,7 @@ module TcExceptionDeclarations =
           match reprIdOpt with 
           | Some longId ->
               let resolution =
-                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId 
+                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId None
                   |> ForceRaise
               match resolution with
               | _, Item.ExnCase exnc, [] -> 

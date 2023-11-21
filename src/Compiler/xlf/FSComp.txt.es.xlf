@@ -407,6 +407,11 @@
         <target state="translated">administración de paquetes</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
         <source>prefer String.GetPinnableReference in fixed bindings</source>
         <target state="translated">preferir String.GetPinnableReference en enlaces fijos</target>
