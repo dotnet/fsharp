@@ -715,7 +715,6 @@ type T() =
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
-        let _allSymbolsAtLocation = checkResults.GetSymbolUsesAtLocation(lineNumber, column, line, [ identifier ])
         let symbolUseOpt = checkResults.GetSymbolUseAtLocation(lineNumber, column, line, [ identifier ])
         match symbolUseOpt with
         | None -> Assert.Fail "Expected symbol"

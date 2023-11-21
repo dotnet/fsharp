@@ -4,10 +4,8 @@
 /// is complete.
 module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
-open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
