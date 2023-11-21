@@ -7033,6 +7033,10 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 2. check usage conditions
         overridesAndVirts |> List.iter (fun (m, implTy, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
+            let hasStaticMembers = dispatchSlots |> List.exists (fun reqdSlot -> not reqdSlot.MethodInfo.IsInstance)
+
+            if hasStaticMembers then
+                errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), mObjTy))
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
