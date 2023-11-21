@@ -18,7 +18,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None, None), Const (Unit, (3,4--3,9)), None,
+                                None), Const (Unit, (3,4--3,9)), None,
                              Const (Unit, (3,7--3,9)), (3,4--3,9), NoneAtDo,
                              { LeadingKeyword = Do (3,4--3,6)
                                InlineKeyword = None

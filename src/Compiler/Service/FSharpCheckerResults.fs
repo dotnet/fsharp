@@ -1968,12 +1968,31 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some (items, denv, _, m) ->
-                        ToolTipText(
-                            items
-                            |> List.map (fun x ->
-                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
-                        ))
+                        match items with
+                        | [ { Kind = CompletionItemKind.Property } as prop
+                            { Kind = CompletionItemKind.Field }
+                            { Kind = CompletionItemKind.Field } ] ->
+                            let symbol = FSharpSymbol.Create(cenv, prop.Item)
+
+                            let tt =
+                                FormatStructuredDescriptionOfItem
+                                    false
+                                    infoReader
+                                    tcAccessRights
+                                    m
+                                    denv
+                                    prop.ItemWithInst
+                                    (Some symbol)
+                                    width
+
+                            ToolTipText([ tt ])
+                        | _ ->
+                            ToolTipText(
+                                items
+                                |> List.map (fun x ->
+                                    let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                    FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
+                            ))
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     ToolTipText [ ToolTipElement.CompositionError err ])
