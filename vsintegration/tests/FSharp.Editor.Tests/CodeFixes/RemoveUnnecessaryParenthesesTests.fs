@@ -1340,8 +1340,8 @@ let _ = (2 + 2) { return 5 }
 
                 override this.ToString() =
                     match this with
-                    | OuterLeft (l, r) -> $"x {l} (y {r} z)"
-                    | OuterRight (l, r) -> $"(x {l} y) {r} z"
+                    | OuterLeft(l, r) -> $"x {l} (y {r} z)"
+                    | OuterRight(l, r) -> $"(x {l} y) {r} z"
 
             module ParenthesizedInfixOperatorAppPair =
                 /// Reduces the operator strings to simpler, more easily identifiable forms.
@@ -1359,8 +1359,8 @@ let _ = (2 + 2) { return 5 }
                         | c, _ -> $"{c}op"
 
                     function
-                    | OuterLeft (l, r) -> OuterLeft(simplify l, simplify r)
-                    | OuterRight (l, r) -> OuterRight(simplify l, simplify r)
+                    | OuterLeft(l, r) -> OuterLeft(simplify l, simplify r)
+                    | OuterRight(l, r) -> OuterRight(simplify l, simplify r)
 
                 /// Indicates that the pairing is syntactically invalid
                 /// (for unoverloadable operators like :?, :>, :?>)
@@ -1376,63 +1376,63 @@ let _ = (2 + 2) { return 5 }
 
                     let fix =
                         match pair with
-                        | OuterLeft (l, r)
-                        | OuterRight (l, r) -> $"x {l} y {r} z"
+                        | OuterLeft(l, r)
+                        | OuterRight(l, r) -> $"x {l} y {r} z"
 
                     Some(expr, fix)
 
                 let expectation pair =
                     match simplify pair with
-                    | OuterLeft ((":?" | ":>" | ":?>"), _) -> invalidPairing
-                    | OuterLeft (_, "**op") -> fixable pair
-                    | OuterLeft ("**op", _) -> unfixable pair
-                    | OuterLeft ("*op", "*op") -> fixable pair
-                    | OuterLeft (("%op" | "/op" | "*op"), ("%op" | "/op" | "*op")) -> unfixable pair
-                    | OuterLeft (_, ("%op" | "/op" | "*op")) -> fixable pair
-                    | OuterLeft (("%op" | "/op" | "*op"), _) -> unfixable pair
-                    | OuterLeft ("+op", "+op") -> fixable pair
-                    | OuterLeft (("-op" | "+op"), ("-op" | "+op")) -> unfixable pair
-                    | OuterLeft (_, ("-op" | "+op")) -> fixable pair
-                    | OuterLeft (("-op" | "+op"), _) -> unfixable pair
-                    | OuterLeft (_, ":?") -> fixable pair
-                    | OuterLeft (_, "::") -> fixable pair
-                    | OuterLeft ("::", _) -> unfixable pair
-                    | OuterLeft (_, ("^op" | "@op")) -> fixable pair
-                    | OuterLeft (("^op" | "@op"), _) -> unfixable pair
-                    | OuterLeft (l & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
-                                 r & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) ->
+                    | OuterLeft((":?" | ":>" | ":?>"), _) -> invalidPairing
+                    | OuterLeft(_, "**op") -> fixable pair
+                    | OuterLeft("**op", _) -> unfixable pair
+                    | OuterLeft("*op", "*op") -> fixable pair
+                    | OuterLeft(("%op" | "/op" | "*op"), ("%op" | "/op" | "*op")) -> unfixable pair
+                    | OuterLeft(_, ("%op" | "/op" | "*op")) -> fixable pair
+                    | OuterLeft(("%op" | "/op" | "*op"), _) -> unfixable pair
+                    | OuterLeft("+op", "+op") -> fixable pair
+                    | OuterLeft(("-op" | "+op"), ("-op" | "+op")) -> unfixable pair
+                    | OuterLeft(_, ("-op" | "+op")) -> fixable pair
+                    | OuterLeft(("-op" | "+op"), _) -> unfixable pair
+                    | OuterLeft(_, ":?") -> fixable pair
+                    | OuterLeft(_, "::") -> fixable pair
+                    | OuterLeft("::", _) -> unfixable pair
+                    | OuterLeft(_, ("^op" | "@op")) -> fixable pair
+                    | OuterLeft(("^op" | "@op"), _) -> unfixable pair
+                    | OuterLeft(l & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
+                                r & ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) ->
                         if l = r then fixable pair else unfixable pair
-                    | OuterLeft (_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
-                    | OuterLeft (("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
-                    | OuterLeft (_, (":>" | ":?>")) -> fixable pair
-                    | OuterLeft (_, ("&" | "&&")) -> fixable pair
-                    | OuterLeft (("&" | "&&"), _) -> unfixable pair
-                    | OuterLeft (_, ("||" | "or")) -> fixable pair
-                    | OuterLeft (("||" | "or"), _) -> unfixable pair
-                    | OuterLeft (":=", ":=") -> fixable pair
+                    | OuterLeft(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
+                    | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
+                    | OuterLeft(_, (":>" | ":?>")) -> fixable pair
+                    | OuterLeft(_, ("&" | "&&")) -> fixable pair
+                    | OuterLeft(("&" | "&&"), _) -> unfixable pair
+                    | OuterLeft(_, ("||" | "or")) -> fixable pair
+                    | OuterLeft(("||" | "or"), _) -> unfixable pair
+                    | OuterLeft(":=", ":=") -> fixable pair
 
-                    | OuterRight ((":?" | ":>" | ":?>"), _) -> invalidPairing
-                    | OuterRight (_, "**op") -> unfixable pair
-                    | OuterRight ("**op", _) -> fixable pair
-                    | OuterRight (("%op" | "/op" | "*op"), _) -> fixable pair
-                    | OuterRight (_, ("%op" | "/op" | "*op")) -> unfixable pair
-                    | OuterRight (("-op" | "+op"), _) -> fixable pair
-                    | OuterRight (_, ("-op" | "+op")) -> unfixable pair
-                    | OuterRight (_, ":?") -> unfixable pair
-                    | OuterRight ("::", "::") -> unfixable pair
-                    | OuterRight ("::", _) -> fixable pair
-                    | OuterRight (_, "::") -> unfixable pair
-                    | OuterRight (("^op" | "@op"), ("^op" | "@op")) -> unfixable pair
-                    | OuterRight (("^op" | "@op"), _) -> fixable pair
-                    | OuterRight (_, ("^op" | "@op")) -> unfixable pair
-                    | OuterRight (("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> fixable pair
-                    | OuterRight (_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
-                    | OuterRight (_, (":>" | ":?>")) -> unfixable pair
-                    | OuterRight (("&" | "&&"), _) -> fixable pair
-                    | OuterRight (_, ("&" | "&&")) -> unfixable pair
-                    | OuterRight (("||" | "or"), _) -> fixable pair
-                    | OuterRight (_, ("||" | "or")) -> unfixable pair
-                    | OuterRight (":=", ":=") -> unfixable pair
+                    | OuterRight((":?" | ":>" | ":?>"), _) -> invalidPairing
+                    | OuterRight(_, "**op") -> unfixable pair
+                    | OuterRight("**op", _) -> fixable pair
+                    | OuterRight(("%op" | "/op" | "*op"), _) -> fixable pair
+                    | OuterRight(_, ("%op" | "/op" | "*op")) -> unfixable pair
+                    | OuterRight(("-op" | "+op"), _) -> fixable pair
+                    | OuterRight(_, ("-op" | "+op")) -> unfixable pair
+                    | OuterRight(_, ":?") -> unfixable pair
+                    | OuterRight("::", "::") -> unfixable pair
+                    | OuterRight("::", _) -> fixable pair
+                    | OuterRight(_, "::") -> unfixable pair
+                    | OuterRight(("^op" | "@op"), ("^op" | "@op")) -> unfixable pair
+                    | OuterRight(("^op" | "@op"), _) -> fixable pair
+                    | OuterRight(_, ("^op" | "@op")) -> unfixable pair
+                    | OuterRight(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> fixable pair
+                    | OuterRight(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
+                    | OuterRight(_, (":>" | ":?>")) -> unfixable pair
+                    | OuterRight(("&" | "&&"), _) -> fixable pair
+                    | OuterRight(_, ("&" | "&&")) -> unfixable pair
+                    | OuterRight(("||" | "or"), _) -> fixable pair
+                    | OuterRight(_, ("||" | "or")) -> unfixable pair
+                    | OuterRight(":=", ":=") -> unfixable pair
 
                     | _ -> unfixable pair
 

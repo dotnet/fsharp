@@ -67,7 +67,7 @@ module FSharpDiagnostics =
     /// Generates F# diagnostics using the given document according to the given mode.
     let generate mode (document: Document) =
         match mode with
-        | Manual (squiggly, diagnostic) ->
+        | Manual(squiggly, diagnostic) ->
             cancellableTask {
                 let! sourceText = document.GetTextAsync()
                 let spanStart = sourceText.ToString().IndexOf squiggly

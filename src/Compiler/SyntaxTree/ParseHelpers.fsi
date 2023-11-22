@@ -178,7 +178,14 @@ val mkSynMemberDefnGetSet:
     parseState: IParseState ->
     opt_inline: range option ->
     mWith: range ->
-    classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements:
+        (range option *
+        SynAttributeList list *
+        (SynPat * range) *
+        (range option * SynReturnInfo) option *
+        range option *
+        SynExpr *
+        range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->

@@ -104,13 +104,13 @@ module LayoutRender =
             match layout with
             | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
             (* pos is tab level *)
-            | Leaf (_, text, _) -> k (rr.AddText z text, i + text.Text.Length)
-            | Node (l, r, Broken indent) ->
+            | Leaf(_, text, _) -> k (rr.AddText z text, i + text.Text.Length)
+            | Node(l, r, Broken indent) ->
                 addL z pos i l
                 <| fun (z, _i) ->
                     let z, i = rr.AddBreak z (pos + indent), (pos + indent)
                     addL z (pos + indent) i r k
-            | Node (l, r, _) ->
+            | Node(l, r, _) ->
                 let jm = Layout.JuxtapositionMiddle(l, r)
 
                 addL z pos i l
@@ -118,7 +118,7 @@ module LayoutRender =
                     let z, i = if jm then z, i else rr.AddText z TaggedText.space, i + 1
                     let pos = i
                     addL z pos i r k
-            | Attr (tag, attrs, l) ->
+            | Attr(tag, attrs, l) ->
                 let z = rr.AddTag z (tag, attrs, true)
 
                 addL z pos i l

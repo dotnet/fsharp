@@ -55,7 +55,7 @@ module private Patterns =
             else
                 let rec loop offsides lineNo startCol =
                     if lineNo <= endLine then
-                        let line = sourceText.Lines[ lineNo ].ToString()
+                        let line = sourceText.Lines[lineNo].ToString()
 
                         match offsides with
                         | ValueNone ->
@@ -88,7 +88,7 @@ module private Patterns =
 
             let rec loop lineNo =
                 if lineNo <= endLine then
-                    let line = sourceText.Lines[ lineNo ].ToString().AsSpan()
+                    let line = sourceText.Lines[lineNo].ToString().AsSpan()
                     let i = line.IndexOfAnyExcept("*/%-+:^@><=!|0$.?) ".AsSpan())
                     i > offsides || loop (lineNo + 1)
                 else
@@ -197,7 +197,7 @@ type internal FSharpRemoveUnnecessaryParenthesesCodeFixProvider [<ImportingConst
                         | ShouldPutSpaceAfter, _ -> txt[1 .. txt.Length - 2] + " "
                         | NewOffsidesOnFirstLine,
                           ContainsSensitiveIndentation context.Span & (HasPrecedingConstructOnSameLine context.Span | FollowingLineMovesOffsidesRightward context.Span) ->
-                            txt[ 1 .. txt.Length - 2 ].Replace("\n ", "\n")
+                            txt[1 .. txt.Length - 2].Replace("\n ", "\n")
                         | NewOffsidesOnFirstLine, ContainsSensitiveIndentation context.Span -> " " + txt[1 .. txt.Length - 2]
                         | _ -> txt[1 .. txt.Length - 2]
 
