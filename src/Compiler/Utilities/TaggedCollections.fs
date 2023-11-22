@@ -382,12 +382,12 @@ module SetTree =
 
     let minimumElement s =
         match minimumElementOpt s with
-        | Some (k) -> k
+        | Some(k) -> k
         | None -> failwith "minimumElement"
 
     let maximumElement s =
         match maximumElementOpt s with
-        | Some (k) -> k
+        | Some(k) -> k
         | None -> failwith "maximumElement"
 
     //--------------------------------------------------------------------------
@@ -615,9 +615,9 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
 
     member s.ForAll predicate = SetTree.forall predicate tree
 
-    static member (-)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Difference (a, b)
+    static member (-)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Difference(a, b)
 
-    static member (+)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Union (a, b)
+    static member (+)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Union(a, b)
 
     static member Intersection(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) : Set<'T, 'ComparerTag> =
         if SetTree.isEmpty b.Tree then
@@ -1256,7 +1256,7 @@ type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(c
         let combineHash x y = (x <<< 1) + y + 631
         let mutable res = 0
 
-        for KeyValue (x, y) in this do
+        for KeyValue(x, y) in this do
             res <- combineHash res (Unchecked.hash x)
             res <- combineHash res (Unchecked.hash y)
 

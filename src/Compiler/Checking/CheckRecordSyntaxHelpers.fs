@@ -36,13 +36,12 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
         | x :: [] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, fields1, m))), (_, Some (SynExpr.Record (recordFields = fields2))) ->
+            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
                 let reducedRecd =
                     (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
 
                 groupIfNested res (reducedRecd :: ys)
-            | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, fields1, m, trivia))),
-              (_, Some (SynExpr.AnonRecd (recordFields = fields2))) ->
+            | (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
                 let reducedRecd =
                     (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
 
@@ -121,9 +120,10 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                     synExprRecd copyInfo fieldId rest exprBeingAssigned
 
             match item with
-            | Item.AnonRecdField(anonInfo = {
-                                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                                            }) ->
+            | Item.AnonRecdField(
+                anonInfo = {
+                               AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
+                           }) ->
                 let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
                 SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->

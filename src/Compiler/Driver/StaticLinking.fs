@@ -60,7 +60,7 @@ type TypeForwarding(tcImports: TcImports) =
             match ccuThunksQualifiedName.TryGetValue(scope.QualifiedName) with
             | true, ccu ->
                 match typename with
-                | Some (parts, name) ->
+                | Some(parts, name) ->
                     let forwarded = ccu.TryForward(parts, name)
 
                     let result =
@@ -75,7 +75,7 @@ type TypeForwarding(tcImports: TcImports) =
                 match ccuThunksSimpleName.TryGetValue(scope.Name) with
                 | true, ccu ->
                     match typename with
-                    | Some (parts, name) ->
+                    | Some(parts, name) ->
                         let forwarded = ccu.TryForward(parts, name)
 
                         let result =
@@ -318,7 +318,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                     let ccu =
                         match tcImports.FindCcuFromAssemblyRef(ctok, rangeStartup, ilAssemRef) with
                         | ResolvedCcu ccu -> Some ccu
-                        | UnresolvedCcu (_ccuName) -> None
+                        | UnresolvedCcu(_ccuName) -> None
 
                     let fileName = dllInfo.FileName
 
@@ -393,7 +393,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         ReportTime tcConfig "Find dependencies"
 
         // Add edges from modules to the modules that depend on them
-        for KeyValue (_, n) in depModuleTable do
+        for KeyValue(_, n) in depModuleTable do
             for aref in n.refs.AssemblyReferences do
                 let n2 = depModuleTable[aref.Name]
                 n2.edges <- n :: n2.edges
@@ -440,7 +440,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
                 let ccu =
                     match tcImports.FindCcuFromAssemblyRef(ctok, rangeStartup, ilAssemRef) with
                     | ResolvedCcu ccu -> Some ccu
-                    | UnresolvedCcu (_ccuName) -> None
+                    | UnresolvedCcu(_ccuName) -> None
 
                 let modul = dllInfo.RawMetadata.TryGetILModuleDef().Value
                 (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
@@ -504,7 +504,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
     let providerGeneratedAssemblies =
 
         [ // Add all EST-generated assemblies into the static linking set
-            for KeyValue (_, importedBinary: ImportedBinary) in tcImports.DllTable do
+            for KeyValue(_, importedBinary: ImportedBinary) in tcImports.DllTable do
                 if importedBinary.IsProviderGenerated then
                     match importedBinary.ProviderGeneratedStaticLinkMap with
                     | None -> ()
@@ -544,9 +544,9 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
                         dict
                             [
                                 for _, (_, provAssemStaticLinkInfo) in providerGeneratedILModules do
-                                    for KeyValue (k, v) in provAssemStaticLinkInfo.ILTypeMap do
+                                    for KeyValue(k, v) in provAssemStaticLinkInfo.ILTypeMap do
                                         (k, v)
-                                for KeyValue (k, v) in localProvAssemStaticLinkInfo.ILTypeMap do
+                                for KeyValue(k, v) in localProvAssemStaticLinkInfo.ILTypeMap do
                                     (ILTypeRef.Create(ILScopeRef.Local, k.Enclosing, k.Name), v)
                             ]
 
@@ -570,7 +570,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
             let providerGeneratedILModules, ilxMainModule =
                 // Build a dictionary of all remapped IL type defs
                 let ilOrigTyRefsForProviderGeneratedTypesToRelocate =
-                    let rec walk acc (ProviderGeneratedType (ilOrigTyRef, _, xs) as node) =
+                    let rec walk acc (ProviderGeneratedType(ilOrigTyRef, _, xs) as node) =
                         List.fold walk ((ilOrigTyRef, node) :: acc) xs
 
                     dict (Seq.fold walk [] tcImports.ProviderGeneratedTypeRoots)
@@ -594,12 +594,12 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
 
                 // Debugging output
                 if debugStaticLinking then
-                    for ProviderGeneratedType (ilOrigTyRef, _, _) in tcImports.ProviderGeneratedTypeRoots do
+                    for ProviderGeneratedType(ilOrigTyRef, _, _) in tcImports.ProviderGeneratedTypeRoots do
                         printfn "Have [<Generate>] root '%s'" ilOrigTyRef.QualifiedName
 
                 // Build the ILTypeDefs for generated types, starting with the roots
                 let generatedILTypeDefs =
-                    let rec buildRelocatedGeneratedType (ProviderGeneratedType (ilOrigTyRef, ilTgtTyRef, ch)) =
+                    let rec buildRelocatedGeneratedType (ProviderGeneratedType(ilOrigTyRef, ilTgtTyRef, ch)) =
                         let isNested = not (isNil ilTgtTyRef.Enclosing)
 
                         match allTypeDefsInProviderGeneratedAssemblies.TryGetValue ilOrigTyRef with
@@ -618,7 +618,10 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
                                 else
                                     ilOrigTypeDef
 
-                            ilOrigTypeDef.With(name = ilTgtTyRef.Name, nestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch))
+                            ilOrigTypeDef.With(
+                                name = ilTgtTyRef.Name,
+                                nestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch)
+                            )
                         | _ ->
                             // If there is no matching IL type definition, then make a simple container class
                             if debugStaticLinking then
@@ -648,7 +651,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, tcGlobals: TcGlo
                                  ILTypeInit.OnAny)
 
                     [
-                        for ProviderGeneratedType (_, ilTgtTyRef, _) as node in tcImports.ProviderGeneratedTypeRoots do
+                        for ProviderGeneratedType(_, ilTgtTyRef, _) as node in tcImports.ProviderGeneratedTypeRoots do
                             (ilTgtTyRef, buildRelocatedGeneratedType node)
                     ]
 

@@ -26,11 +26,7 @@ open CancellableTasks
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
 type internal FSharpCompletionProvider
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider
-    ) =
+    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider) =
 
     inherit FSharpCompletionProviderBase()
 
@@ -121,9 +117,8 @@ type internal FSharpCompletionProvider
                 Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
             elif not (trigger = CompletionTriggerKind.Insertion) then
                 false
-            else
-            // Do not trigger completion if it's not single dot, i.e. range expression
-            if
+            else if
+                // Do not trigger completion if it's not single dot, i.e. range expression
                 not intelliSenseOptions.ShowAfterCharIsTyped
                 && triggerPosition > 0
                 && sourceText.[triggerPosition - 1] = '.'
