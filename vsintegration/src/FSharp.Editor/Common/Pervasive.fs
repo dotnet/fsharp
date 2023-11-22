@@ -51,7 +51,7 @@ type MaybeBuilder() =
     member inline _.Combine(r1, r2: 'T option) : 'T option =
         match r1 with
         | None -> None
-        | Some () -> r2
+        | Some() -> r2
 
     // M<'T> * ('T -> M<'U>) -> M<'U>
     [<DebuggerStepThrough>]
@@ -116,7 +116,7 @@ type AsyncMaybeBuilder() =
 
             match r1' with
             | None -> return None
-            | Some () -> return! r2
+            | Some() -> return! r2
         }
 
     [<DebuggerStepThrough>]

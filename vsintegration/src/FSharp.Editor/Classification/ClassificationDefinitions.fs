@@ -83,7 +83,8 @@ module internal ClassificationDefinitions =
 
     [<Export>]
     [<Export(typeof<ISetThemeColors>)>]
-    type internal ThemeColors [<ImportingConstructor>]
+    type internal ThemeColors
+        [<ImportingConstructor>]
         (
             classificationformatMapService: IClassificationFormatMapService,
             classificationTypeRegistry: IClassificationTypeRegistryService,

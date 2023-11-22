@@ -35,7 +35,7 @@ module HashIdentity =
         }
 
     let inline FromFunctions hasher equality : IEqualityComparer<'T> =
-        let eq = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (equality)
+        let eq = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(equality)
 
         { new IEqualityComparer<'T> with
             member _.GetHashCode(x) =
@@ -58,7 +58,7 @@ module ComparisonIdentity =
         }
 
     let FromFunction comparer =
-        let comparer = OptimizedClosures.FSharpFunc<'T, 'T, int>.Adapt (comparer)
+        let comparer = OptimizedClosures.FSharpFunc<'T, 'T, int>.Adapt(comparer)
 
         { new IComparer<'T> with
             member _.Compare(x, y) =

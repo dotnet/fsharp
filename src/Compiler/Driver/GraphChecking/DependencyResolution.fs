@@ -69,7 +69,7 @@ let processIdentifier (queryResult: QueryTrieNodeResult) (state: FileContentQuer
 /// Typically used to fold FileContentEntry items over a FileContentQueryState
 let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
     match entry with
-    | FileContentEntry.TopLevelNamespace (topLevelPath, content) ->
+    | FileContentEntry.TopLevelNamespace(topLevelPath, content) ->
         let state =
             match topLevelPath with
             | [] -> state
@@ -107,7 +107,7 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
                     let queryResult = queryTrieDual trie openNS path
                     processIdentifier queryResult acc))
 
-    | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
+    | FileContentEntry.NestedModule(nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
         let nestedState = List.fold (processStateEntry trie) state nestedContent
         // Afterward we are only interested in the found dependencies in the nested module
@@ -154,7 +154,7 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: Fi
             // Both Root and module would expose data, so we can ignore them.
             | Root _
             | Module _ -> None
-            | Namespace (filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
+            | Namespace(filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
                 if filesDefiningNamespaceWithoutTypes.Overlaps(result.FoundDependencies) then
                     // The ghost dependency is already covered by a real dependency.
                     None

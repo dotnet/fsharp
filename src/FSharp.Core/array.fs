@@ -350,7 +350,7 @@ module Array =
     let iter2 action (array1: 'T[]) (array2: 'U[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         if array1.Length <> array2.Length then
             invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
@@ -382,7 +382,7 @@ module Array =
     let map2 mapping (array1: 'T[]) (array2: 'U[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
         if array1.Length <> array2.Length then
             invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
@@ -399,7 +399,7 @@ module Array =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
         checkNonNull "array3" array3
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (mapping)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
         let len1 = array1.Length
 
         if len1 <> array2.Length || len1 <> array3.Length then
@@ -416,7 +416,7 @@ module Array =
     let mapi2 mapping (array1: 'T[]) (array2: 'U[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (mapping)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
 
         if array1.Length <> array2.Length then
             invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
@@ -431,7 +431,7 @@ module Array =
     [<CompiledName("IterateIndexed")>]
     let iteri action (array: 'T[]) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         for i = 0 to array.Length - 1 do
             f.Invoke(i, array.[i])
@@ -440,7 +440,7 @@ module Array =
     let iteri2 action (array1: 'T[]) (array2: 'U[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(action)
 
         if array1.Length <> array2.Length then
             invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
@@ -451,7 +451,7 @@ module Array =
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> 'T -> 'U) (array: 'T[]) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
         let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
 
         for i = 0 to array.Length - 1 do
@@ -497,7 +497,7 @@ module Array =
     let exists2 predicate (array1: _[]) (array2: _[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = array1.Length
 
         if len1 <> array2.Length then
@@ -522,7 +522,7 @@ module Array =
     let forall2 predicate (array1: _[]) (array2: _[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = array1.Length
 
         if len1 <> array2.Length then
@@ -1292,7 +1292,7 @@ module Array =
         let rec loop state =
             match generator state with
             | None -> ()
-            | Some (x, s') ->
+            | Some(x, s') ->
                 res.Add(x)
                 loop s'
 
@@ -1344,7 +1344,7 @@ module Array =
     [<CompiledName("Fold")>]
     let fold<'T, 'State> (folder: 'State -> 'T -> 'State) (state: 'State) (array: 'T[]) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable state = state
 
         for i = 0 to array.Length - 1 do
@@ -1355,7 +1355,7 @@ module Array =
     [<CompiledName("FoldBack")>]
     let foldBack<'T, 'State> (folder: 'T -> 'State -> 'State) (array: 'T[]) (state: 'State) =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable res = state
 
         for i = array.Length - 1 downto 0 do
@@ -1367,7 +1367,7 @@ module Array =
     let foldBack2<'T1, 'T2, 'State> folder (array1: 'T1[]) (array2: 'T2[]) (state: 'State) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
         let mutable res = state
         let len = array1.Length
 
@@ -1383,7 +1383,7 @@ module Array =
     let fold2<'T1, 'T2, 'State> folder (state: 'State) (array1: 'T1[]) (array2: 'T2[]) =
         checkNonNull "array1" array1
         checkNonNull "array2" array2
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
         let mutable state = state
 
         if array1.Length <> array2.Length then
@@ -1396,7 +1396,7 @@ module Array =
 
     let foldSubRight f (array: _[]) start fin acc =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
         let mutable res = acc
 
         for i = fin downto start do
@@ -1406,7 +1406,7 @@ module Array =
 
     let scanSubLeft f initState (array: _[]) start fin =
         checkNonNull "array" array
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
         let mutable state = initState
         let res = create (2 + fin - start) initState
 
@@ -1448,7 +1448,7 @@ module Array =
         if len = 0 then
             invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
         else
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (reduction)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(reduction)
             let mutable res = array.[0]
 
             for i = 1 to array.Length - 1 do
@@ -2065,7 +2065,7 @@ module Array =
         [<CompiledName("MapIndexed")>]
         let mapi mapping (array: 'T[]) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
             let inputLength = array.Length
 
             let result =
@@ -2321,7 +2321,7 @@ module Array =
         [<CompiledName("IterateIndexed")>]
         let iteri action (array: 'T[]) =
             checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
             Parallel.For(0, array.Length, (fun i -> f.Invoke(i, array.[i]))) |> ignore
 
         [<CompiledName("Initialize")>]
