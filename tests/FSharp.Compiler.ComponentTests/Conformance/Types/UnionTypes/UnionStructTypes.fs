@@ -711,7 +711,7 @@ type Foo =
 
 
 let foo = Baz 42
-printfn "%A" foo"""
+printf "%A" foo"""
         |> asExe
         |> compile
         |> shouldSucceed
