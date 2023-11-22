@@ -1535,11 +1535,11 @@ module Patterns =
             let rec loop pat =
                 match pat with
                 | Typed _ -> Some DanglingTyped
-                | Or (_, pat)
-                | ListCons (_, pat)
-                | As (_, pat)
-                | Ands (Last pat)
-                | Tuple (Last pat) -> loop pat
+                | Or(_, pat)
+                | ListCons(_, pat)
+                | As(_, pat)
+                | Ands(Last pat)
+                | Tuple(Last pat) -> loop pat
                 | _ -> None
 
             loop pat
@@ -1579,15 +1579,15 @@ module Patterns =
                 | Const c -> cont (sb.Append c)
                 | Wild -> cont (sb.Append "_")
                 | Named name -> cont (sb.Append name)
-                | Typed (pat, ty) -> loop sb (cont << fun sb -> sb.Append(" : ").Append ty) pat
-                | Attrib (attrib, pat) -> loop (sb.Append("[<").Append(attrib).Append(">] ")) cont pat
-                | Or (l, r) -> loop sb (fun sb -> loop (sb.Append " | ") cont r) l
-                | ListCons (h, t) -> loop sb (fun sb -> loop (sb.Append " :: ") cont t) h
+                | Typed(pat, ty) -> loop sb (cont << fun sb -> sb.Append(" : ").Append ty) pat
+                | Attrib(attrib, pat) -> loop (sb.Append("[<").Append(attrib).Append(">] ")) cont pat
+                | Or(l, r) -> loop sb (fun sb -> loop (sb.Append " | ") cont r) l
+                | ListCons(h, t) -> loop sb (fun sb -> loop (sb.Append " :: ") cont t) h
                 | Ands pats -> separateBy " & " sb cont pats
-                | As (l, r) -> loop sb (fun sb -> loop (sb.Append " as ") cont r) l
+                | As(l, r) -> loop sb (fun sb -> loop (sb.Append " as ") cont r) l
                 | LongIdent id -> cont (sb.Append id)
-                | LongIdentWithArgs (id, arg) -> loop (sb.Append(id).Append ' ') cont arg
-                | LongIdentWithNamedArgs (id, args) ->
+                | LongIdentWithArgs(id, arg) -> loop (sb.Append(id).Append ' ') cont arg
+                | LongIdentWithNamedArgs(id, args) ->
                     fmtFields (sb.Append(id).Append " (") (cont << fun (sb: StringBuilder) -> sb.Append ')') args
                 | Tuple pats -> separateBy ", " sb cont pats
                 | StructTuple pats -> separateBy ", " (sb.Append "struct (") (cont << fun sb -> sb.Append ')') pats
@@ -1627,10 +1627,10 @@ module Patterns =
                     // Attributed patterns can never be nested.
                     | _, Attrib _ -> ()
 
-                    | LongIdentWithArgs (name, _), Atomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, inner)
-                    | LongIdentWithArgs (name, _), NonAtomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, Paren inner)
+                    | LongIdentWithArgs(name, _), Atomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, inner)
+                    | LongIdentWithArgs(name, _), NonAtomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, Paren inner)
 
-                    | LongIdentWithNamedArgs (name, args), _ ->
+                    | LongIdentWithNamedArgs(name, args), _ ->
                         for i, (field, _) in Seq.indexed args do
                             LongIdentWithNamedArgs(name, args |> List.updateAt i (field, Paren inner)),
                             LongIdentWithNamedArgs(name, args |> List.updateAt i (field, inner))
@@ -1642,9 +1642,9 @@ module Patterns =
                         for i, (field, _) in Seq.indexed fields do
                             Record(fields |> List.updateAt i (field, Paren inner)), Record(fields |> List.updateAt i (field, inner))
 
-                    | Typed (_, ty), (Atomic | Typed _ | IsInst _) -> Typed(Paren inner, ty), Typed(inner, ty)
-                    | Typed (_, ty), NonAtomic -> Typed(Paren inner, ty), Typed(Paren inner, ty)
-                    | Attrib (attrib, _), Atomic -> Attrib(attrib, Paren inner), Attrib(attrib, inner)
+                    | Typed(_, ty), (Atomic | Typed _ | IsInst _) -> Typed(Paren inner, ty), Typed(inner, ty)
+                    | Typed(_, ty), NonAtomic -> Typed(Paren inner, ty), Typed(Paren inner, ty)
+                    | Attrib(attrib, _), Atomic -> Attrib(attrib, Paren inner), Attrib(attrib, inner)
                     | OptionalVal _, _ -> ()
 
                     | ListCons _, Tuple _ -> ListCons(Paren inner, Wild), ListCons(Paren inner, Wild)
