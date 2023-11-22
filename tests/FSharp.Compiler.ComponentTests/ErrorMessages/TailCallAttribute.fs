@@ -413,6 +413,34 @@ namespace N
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for return! rec call in task`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>] 
+        let rec f x = task {
+            let y = x - 1
+            let z = y - 1
+            return! f (z - 1)
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 10
+                        StartColumn = 21
+                        EndLine = 10
+                        EndColumn = 22 }
+              Message =
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in async expression`` () =
         """
 namespace N
