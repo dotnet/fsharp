@@ -307,20 +307,20 @@ type FSharpProjectSnapshot =
         // TODO:
         DateTime.Now
 
-    member this.GetMd5Version() = 
+    member this.GetMd5Version() =
         ignore this
         Md5Hasher.empty
-        //|> Md5Hasher.addString this.ProjectFileName
-        //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.FileName))
-        //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
-        //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
-        //|> Md5Hasher.addStrings this.OtherOptions
-        //|> Md5Hasher.addVersions (
-        //    this.ReferencedProjects
-        //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
-        //)
-        //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
-        //|> Md5Hasher.addBool this.UseScriptResolutionRules
+    //|> Md5Hasher.addString this.ProjectFileName
+    //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.FileName))
+    //|> Md5Hasher.addStrings (this.SourceFiles |> Seq.map (fun x -> x.Version))
+    //|> Md5Hasher.addSeq this.ReferencesOnDisk (fun r -> Md5Hasher.addString r.Path >> Md5Hasher.addDateTime r.LastModified)
+    //|> Md5Hasher.addStrings this.OtherOptions
+    //|> Md5Hasher.addVersions (
+    //    this.ReferencedProjects
+    //    |> Seq.map (fun (FSharpReference (_name, p)) -> p.WithoutImplFilesThatHaveSignatures.Key)
+    //)
+    //|> Md5Hasher.addBool this.IsIncompleteTypeCheckEnvironment
+    //|> Md5Hasher.addBool this.UseScriptResolutionRules
 
     member this.GetDebugVersion() : FSharpProjectSnapshotDebugVersion =
         {
