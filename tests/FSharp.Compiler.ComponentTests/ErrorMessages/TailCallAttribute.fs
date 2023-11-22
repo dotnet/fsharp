@@ -915,6 +915,223 @@ namespace N
               Message =
                 "The member or function 'loop' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for simple rec call in try-with`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gTryWith x =
+            try
+                gTryWith (x + 1)
+            with e ->
+                raise (System.InvalidOperationException("Operation has failed", e))
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 17
+                        EndLine = 9
+                        EndColumn = 25 }
+              Message =
+                "The member or function 'gTryWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 17
+                        EndLine = 9
+                        EndColumn = 33 }
+              Message =
+                "The member or function 'gTryWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for return! rec call in async try-with`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gAsyncTryWith (x: int) : Async<int> = async {
+            try
+                return! gAsyncTryWith (x + 1)
+            with e ->
+                return raise (System.InvalidOperationException("Operation has failed", e))
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 9
+                        StartColumn = 25
+                        EndLine = 9
+                        EndColumn = 38 }
+              Message =
+                "The member or function 'gAsyncTryWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in match branch in try-finally`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gTryFinallyMatch x =
+            try
+                match x with
+                | 0 -> x
+                | _ -> gTryFinallyMatch x
+            finally
+                ()
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 11
+                        StartColumn = 24
+                        EndLine = 11
+                        EndColumn = 40 }
+              Message =
+                "The member or function 'gTryFinallyMatch' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in if-else branch in try-with`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gTryWithIfElse x =
+            try
+                if (x = 0) then
+                    x
+                else gTryWithIfElse x
+            with e ->
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(e)
+                Unchecked.defaultof<_>
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 11
+                        StartColumn = 22
+                        EndLine = 11
+                        EndColumn = 36 }
+              Message =
+                "The member or function 'gTryWithIfElse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+        
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in match branch in try-with`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec factorialWithAccTryWith n accumulator =
+            try
+                match n with
+                | 0u | 1u -> accumulator
+                | _ -> factorialWithAccTryWith (n - 1u) (n * accumulator)
+            with e ->
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(e)
+                Unchecked.defaultof<_>
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 11
+                        StartColumn = 24
+                        EndLine = 11
+                        EndColumn = 47 }
+              Message =
+                "The member or function 'factorialWithAccTryWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in with`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gWithRecCallInWith x =
+            try
+                failwith "foo"
+            with _ ->
+                match x with
+                | 0 -> x
+                | _ -> gWithRecCallInWith x
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 13
+                        StartColumn = 24
+                        EndLine = 13
+                        EndColumn = 42 }
+              Message =
+                "The member or function 'gWithRecCallInWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in finally`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec gWithRecCallInFinally x =
+            try
+                failwith "foo"
+            finally
+                match x with
+                | 0 -> x
+                | _ -> gWithRecCallInFinally x
+                |> ignore
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 13
+                        StartColumn = 24
+                        EndLine = 13
+                        EndColumn = 45 }
+              Message =
+                "The member or function 'gWithRecCallInFinally' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda`` () =
