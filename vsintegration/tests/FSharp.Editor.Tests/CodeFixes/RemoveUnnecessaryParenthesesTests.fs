@@ -1522,6 +1522,12 @@ module Patterns =
         | IsInst of string
         | QuoteExpr of string
 
+    /// The original pattern.
+    type OriginalPat = SynPat
+
+    /// The pattern expected after the analyzer and code fix have been applied.
+    type ExpectedPat = SynPat
+
     module SynPat =
         let (|DanglingTyped|_|) pat =
             let (|Last|) = List.last
@@ -1563,6 +1569,7 @@ module Patterns =
             | OptionalVal _
             | IsInst _ -> NonAtomic
 
+        /// Formats the given pattern to the given string builder.
         let fmt (sb: StringBuilder) pat =
             let spaceIfGt (sb: StringBuilder) =
                 if sb.Chars(sb.Length - 1) = '>' then sb.Append ' ' else sb
@@ -1607,12 +1614,17 @@ module Patterns =
 
             loop sb id pat
 
-        let parenthesize inner outer =
+        /// Returns pairings of the inner expression and nests it inside of the outer
+        /// paired with the expected outcome of running the analyzer and code fix
+        /// on the resulting code, i.e., either removal of the parentheses or not,
+        /// depending on the pattern and its context.
+        let parenthesize inner outer : (OriginalPat * ExpectedPat) list =
             let impl paren inner outer =
                 let Paren = paren
 
                 [
                     match outer, inner with
+                    // Attributed patterns can never be nested.
                     | _, Attrib _ -> ()
 
                     | LongIdentWithArgs (name, _), Atomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, inner)
@@ -1623,6 +1635,7 @@ module Patterns =
                             LongIdentWithNamedArgs(name, args |> List.updateAt i (field, Paren inner)),
                             LongIdentWithNamedArgs(name, args |> List.updateAt i (field, inner))
 
+                    // Quotations can never be nested in anything other than a LongIdent.
                     | _, QuoteExpr _ -> ()
 
                     | Record fields, Atomic ->
@@ -1742,7 +1755,7 @@ module Patterns =
 
     let patterns = atomicOrNullaryPatterns @ outerPatterns |> List.distinct
 
-    let bareAtomics =
+    let bareAtomics: (OriginalPat * ExpectedPat) list =
         [
             for pat in
                 patterns
@@ -1757,18 +1770,21 @@ module Patterns =
                 | _ -> Paren pat, pat
         ]
 
-    let nestedAtomics =
+    let nestedAtomics: (OriginalPat * ExpectedPat) list =
         [
             for outer, inner in (outerPatterns, atomicOrNullaryPatterns) ||> Seq.allPairs do
                 yield! SynPat.parenthesize inner outer
         ]
 
-    let nestedOuters =
+    let nestedOuters: (OriginalPat * ExpectedPat) list =
         [
             for outer, inner in (outerPatterns, nestedAtomics |> Seq.map snd) ||> Seq.allPairs |> Seq.distinct do
                 yield! SynPat.parenthesize inner outer
         ]
 
+    /// Formats the given sequence of original and
+    /// expected pattern pairs and returns them as
+    /// an obj array seq suitable for use as xUnit member data.
     let fmtAllAsMemberData pairs =
         memberData {
             let sb = StringBuilder()
@@ -1782,70 +1798,89 @@ module Patterns =
                  expected)
         }
 
-    module Lambda =
-        /// fun pat -> …
-        let expectFix pat expected =
-            let code = $"fun %s{pat} -> ()"
-            let expected = $"fun %s{expected} -> ()"
-
-            expectFix code expected
-
-        let bareAtomics = fmtAllAsMemberData bareAtomics
-
-        let bareNonAtomics =
-            patterns
-            |> List.collect (function
-                | SynPat.Attrib _
-                | SynPat.OptionalVal _
-                | SynPat.IsInst _
-                | SynPat.Atomic -> []
-                | pat -> [ SynPat.Paren pat, SynPat.Paren pat ])
-            |> fmtAllAsMemberData
-
-        [<Theory; MemberData(nameof bareAtomics)>]
-        let ``Bare atomic patterns`` original expected = expectFix original expected
-
-        [<Theory; MemberData(nameof bareNonAtomics)>]
-        let ``Bare non-atomic patterns`` original expected = expectFix original expected
-
+    /// Tests patterns in head-pattern position in (let|and|use)(!) bindings.
     module HeadPat =
-        /// let pat = …
-        let expectFix pat expected =
-            let code = $"let %s{pat} = Unchecked.defaultof<_>"
-            let expected = $"let %s{expected} = Unchecked.defaultof<_>"
+        /// Tests patterns in head-pattern position in let-bindings.
+        module Let =
+            /// let pat = …
+            let expectFix pat expected =
+                let code = $"let %s{pat} = Unchecked.defaultof<_>"
+                let expected = $"let %s{expected} = Unchecked.defaultof<_>"
 
-            expectFix code expected
+                expectFix code expected
 
-        let bareAtomics = fmtAllAsMemberData bareAtomics
+            let bareAtomics = fmtAllAsMemberData bareAtomics
 
-        let bareNonAtomics =
-            patterns
-            |> List.collect (function
-                | SynPat.Attrib _
-                | SynPat.OptionalVal _
-                | SynPat.IsInst _
-                | SynPat.Atomic -> []
-                | SynPat.Typed _ as pat -> [ SynPat.Paren pat, pat ]
-                | SynPat.Tuple pats as pat ->
-                    [
-                        SynPat.Paren pat, pat
-                        SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)),
-                        SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats))
-                        SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats),
-                        SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats)
-                    ]
-                | SynPat.LongIdentWithArgs _
-                | SynPat.DanglingTyped as pat -> [ SynPat.Paren pat, SynPat.Paren pat ]
-                | pat -> [ SynPat.Paren pat, pat ])
-            |> fmtAllAsMemberData
+            let bareNonAtomics =
+                patterns
+                |> List.collect (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.IsInst _
+                    | SynPat.Atomic -> []
+                    | SynPat.Typed _ as pat -> [ SynPat.Paren pat, pat ]
+                    | SynPat.Tuple pats as pat ->
+                        [
+                            SynPat.Paren pat, pat
+                            SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)),
+                            SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats))
+                            SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats),
+                            SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats)
+                        ]
+                    | SynPat.LongIdentWithArgs _
+                    | SynPat.DanglingTyped as pat -> [ SynPat.Paren pat, SynPat.Paren pat ]
+                    | pat -> [ SynPat.Paren pat, pat ])
+                |> fmtAllAsMemberData
 
-        [<Theory; MemberData(nameof bareAtomics)>]
-        let ``Bare atomic patterns`` original expected = expectFix original expected
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
 
-        [<Theory; MemberData(nameof bareNonAtomics)>]
-        let ``Bare non-atomic patterns`` original expected = expectFix original expected
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
 
+        /// Tests patterns in head-pattern position in let!-bindings.
+        module LetBang =
+            /// let! pat = …
+            let expectFix pat expected =
+                let code =
+                    $"
+                    async {{
+                        let! %s{pat} = Unchecked.defaultof<_>
+                        return ()
+                    }}
+                    "
+
+                let expected =
+                    $"
+                    async {{
+                        let! %s{expected} = Unchecked.defaultof<_>
+                        return ()
+                    }}
+                    "
+
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.choose (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.Atomic -> None
+                    | SynPat.DanglingTyped as pat -> Some(SynPat.Paren pat, SynPat.Paren pat)
+                    | pat -> Some(SynPat.Paren pat, pat))
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+    /// Tests patterns in argument position.
     module ArgPat =
+        /// Tests patterns in argument position in let-bound functions.
         module Let =
             /// let f pat = …
             let expectFix pat expected =
@@ -1870,6 +1905,7 @@ module Patterns =
             [<Theory; MemberData(nameof bareNonAtomics)>]
             let ``Bare non-atomic patterns`` original expected = expectFix original expected
 
+        /// Tests patterns in argument position in object members.
         module Member =
             /// member _.M pat = …
             let expectFix pat expected =
@@ -1893,45 +1929,34 @@ module Patterns =
             [<Theory; MemberData(nameof bareNonAtomics)>]
             let ``Bare non-atomic patterns`` original expected = expectFix original expected
 
-    module LetBang =
-        /// let! pat = …
-        let expectFix pat expected =
-            let code =
-                $"
-                async {{
-                    let! %s{pat} = Unchecked.defaultof<_>
-                    return ()
-                }}
-                "
+        /// Tests patterns in argument position in lambda expressions.
+        module Lambda =
+            /// fun pat -> …
+            let expectFix pat expected =
+                let code = $"fun %s{pat} -> ()"
+                let expected = $"fun %s{expected} -> ()"
 
-            let expected =
-                $"
-                async {{
-                    let! %s{expected} = Unchecked.defaultof<_>
-                    return ()
-                }}
-                "
+                expectFix code expected
 
-            expectFix code expected
+            let bareAtomics = fmtAllAsMemberData bareAtomics
 
-        let bareAtomics = fmtAllAsMemberData bareAtomics
+            let bareNonAtomics =
+                patterns
+                |> List.collect (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.IsInst _
+                    | SynPat.Atomic -> []
+                    | pat -> [ SynPat.Paren pat, SynPat.Paren pat ])
+                |> fmtAllAsMemberData
 
-        let bareNonAtomics =
-            patterns
-            |> List.choose (function
-                | SynPat.Attrib _
-                | SynPat.OptionalVal _
-                | SynPat.Atomic -> None
-                | SynPat.DanglingTyped as pat -> Some(SynPat.Paren pat, SynPat.Paren pat)
-                | pat -> Some(SynPat.Paren pat, pat))
-            |> fmtAllAsMemberData
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
 
-        [<Theory; MemberData(nameof bareAtomics)>]
-        let ``Bare atomic patterns`` original expected = expectFix original expected
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
 
-        [<Theory; MemberData(nameof bareNonAtomics)>]
-        let ``Bare non-atomic patterns`` original expected = expectFix original expected
-
+    /// Tests patterns in match clauses.
     module MatchClause =
         /// match … with pat -> …
         let expectFix pat expected =
@@ -1981,8 +2006,6 @@ module Patterns =
         [<Theory; MemberData(nameof bareNonAtomics)>]
         let ``Bare non-atomic patterns`` original expected = expectFix original expected
 
-    // There is no one context in which all patterns are allowed
-    // and treated identically, so we arbitrarily use a match clause here.
     let expectFix original expected =
         let code =
             $"
@@ -2005,9 +2028,12 @@ module Patterns =
     let singlyNestedAtomicPatterns = fmtAllAsMemberData nestedAtomics
     let deeplyNestedPatterns = fmtAllAsMemberData nestedOuters
 
+    /// Tests atomic patterns nested one level deep inside of all non-nullary patterns
+    /// (patterns inside of which other patterns can be nested).
     [<Theory; MemberData(nameof singlyNestedAtomicPatterns)>]
     let ``Singly nested patterns`` original expected = expectFix original expected
 
+    /// Tests non-nullary patterns (atomic or not) nested inside of other non-nullary patterns.
     [<Theory; MemberData(nameof deeplyNestedPatterns)>]
     let ``Deeply nested patterns`` original expected = expectFix original expected
 
