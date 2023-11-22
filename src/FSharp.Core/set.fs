@@ -1062,7 +1062,7 @@ module Set =
 
     [<CompiledName("Intersect")>]
     let intersect (set1: Set<'T>) (set2: Set<'T>) =
-        Set<'T>.Intersection (set1, set2)
+        Set<'T>.Intersection(set1, set2)
 
     [<CompiledName("IntersectMany")>]
     let intersectMany sets =

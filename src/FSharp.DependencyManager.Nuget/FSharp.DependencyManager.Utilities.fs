@@ -197,7 +197,7 @@ module internal Utilities =
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
 
             for varname, value in environment do
-                psi.EnvironmentVariables[ varname ] <- value
+                psi.EnvironmentVariables[varname] <- value
 
             psi.UseShellExecute <- false
 
@@ -224,7 +224,7 @@ module internal Utilities =
     let buildProject projectPath binLogPath timeout =
         let binLoggingArguments =
             match binLogPath with
-            | Some (path) ->
+            | Some(path) ->
                 let path =
                     match path with
                     | Some path -> path // specific file
@@ -235,7 +235,7 @@ module internal Utilities =
 
         let timeout =
             match timeout with
-            | Some (timeout) -> timeout
+            | Some(timeout) -> timeout
             | None -> -1
 
         let arguments prefix =

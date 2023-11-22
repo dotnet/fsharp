@@ -114,7 +114,7 @@ module TcResolutionsExtensions =
             | TFSharpStruct -> SemanticClassificationType.ValueType
             | TFSharpDelegate _ -> SemanticClassificationType.Delegate
             | TFSharpEnum -> SemanticClassificationType.Enumeration
-        | TILObjectRepr (TILObjectReprData (_, _, td)) ->
+        | TILObjectRepr(TILObjectReprData(_, _, td)) ->
             if td.IsClass then
                 SemanticClassificationType.ReferenceType
             elif td.IsStruct then
@@ -256,7 +256,7 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.RecordField
 
-                        | Item.AnonRecdField (_, tys, idx, m), _, _ ->
+                        | Item.AnonRecdField(_, tys, idx, m), _, _ ->
                             let ty = tys[idx]
 
                             // It's not currently possible for anon record fields to be mutable, but they can be ref cells
@@ -271,7 +271,7 @@ module TcResolutionsExtensions =
                             if not pinfo.IsIndexer then
                                 add m SemanticClassificationType.Property
 
-                        | Item.CtorGroup (_, minfos), _, m ->
+                        | Item.CtorGroup(_, minfos), _, m ->
                             match minfos with
                             | [] -> add m SemanticClassificationType.ConstructorForReferenceType
                             | _ ->
@@ -289,7 +289,7 @@ module TcResolutionsExtensions =
 
                         | Item.FakeInterfaceCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
 
-                        | Item.MethodGroup (_, minfos, _), _, m ->
+                        | Item.MethodGroup(_, minfos, _), _, m ->
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
@@ -302,12 +302,12 @@ module TcResolutionsExtensions =
                                     add m SemanticClassificationType.Method
 
                         // Special case measures for struct types
-                        | Item.Types (_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
+                        | Item.Types(_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
                             isStructTyconRef g tyconRef
                             ->
                             add m SemanticClassificationType.ValueType
 
-                        | Item.Types (_, ty :: _), LegitTypeOccurence, m ->
+                        | Item.Types(_, ty :: _), LegitTypeOccurence, m ->
                             let ty = stripTyEqns g ty
 
                             if isDisposableTy g amap ty then
@@ -331,7 +331,7 @@ module TcResolutionsExtensions =
 
                         | Item.ExnCase _, LegitTypeOccurence, m -> add m SemanticClassificationType.Exception
 
-                        | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, m ->
+                        | Item.ModuleOrNamespaces(modref :: _), LegitTypeOccurence, m ->
                             if modref.IsNamespace then
                                 add m SemanticClassificationType.Namespace
                             else
@@ -355,7 +355,7 @@ module TcResolutionsExtensions =
 
                         | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
 
-                        | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, m ->
+                        | Item.UnqualifiedType(tcref :: _), LegitTypeOccurence, m ->
                             if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                                 add m SemanticClassificationType.Enumeration
                             elif tcref.IsFSharpException then
@@ -376,7 +376,7 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.UnionCase
                             elif tcref.IsILTycon then
-                                let (TILObjectReprData (_, _, tydef)) = tcref.ILTyconInfo
+                                let (TILObjectReprData(_, _, tydef)) = tcref.ILTyconInfo
 
                                 if tydef.IsInterface then
                                     add m SemanticClassificationType.Interface

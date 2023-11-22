@@ -267,11 +267,11 @@ and IProjectReference =
 type AssemblyReference =
     | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
-    member x.Range = (let (AssemblyReference (m, _, _)) = x in m)
+    member x.Range = (let (AssemblyReference(m, _, _)) = x in m)
 
-    member x.Text = (let (AssemblyReference (_, text, _)) = x in text)
+    member x.Text = (let (AssemblyReference(_, text, _)) = x in text)
 
-    member x.ProjectReference = (let (AssemblyReference (_, _, contents)) = x in contents)
+    member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
 
     member x.SimpleAssemblyNameIs name =
         (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)

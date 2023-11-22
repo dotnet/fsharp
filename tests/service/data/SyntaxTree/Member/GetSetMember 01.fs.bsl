@@ -33,7 +33,7 @@ ImplFile
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; X], [(4,12--4,13)], [None; None]),
@@ -74,7 +74,7 @@ ImplFile
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2);
                                        SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; X], [(4,12--4,13)], [None; None]),
@@ -121,7 +121,7 @@ ImplFile
                                     ([[SynArgInfo ([], false, None)];
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; Y], [(5,21--5,22)], [None; None]),
@@ -162,7 +162,7 @@ ImplFile
                                       [SynArgInfo ([], false, Some key1);
                                        SynArgInfo ([], false, Some key2);
                                        SynArgInfo ([], false, Some value)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
                                     ([f; Y], [(5,21--5,22)], [None; None]),

@@ -1175,8 +1175,8 @@ module NameMap =
             for m in ms do
                 yield! m
         }
-        |> Seq.groupBy (fun (KeyValue (k, _v)) -> k)
-        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue (_k, v)) -> v) es)))
+        |> Seq.groupBy (fun (KeyValue(k, _v)) -> k)
+        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es)))
         |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold
@@ -1303,11 +1303,11 @@ module MapAutoOpens =
         static member Empty: Map<'Key, 'Value> = Map.empty
 
 #if FSHARPCORE_USE_PACKAGE
-        member x.Values = [ for KeyValue (_, v) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
         member x.AddMany(kvs: _[]) =
-            (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+            (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.AddOrModify(key, f: 'Value option -> 'Value) = x.Add(key, f (x.TryFind key))
 
@@ -1325,7 +1325,7 @@ type LayeredMultiMap<'Key, 'Value when 'Key: equality and 'Key: comparison>(cont
             | _ -> []
 
     member x.AddMany(kvs: _[]) =
-        (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 
