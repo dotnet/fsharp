@@ -407,6 +407,11 @@
         <target state="translated">zarządzanie pakietami</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
         <source>prefer String.GetPinnableReference in fixed bindings</source>
         <target state="translated">preferuj element String.GetPinnableReference w stałych powiązaniach</target>
@@ -8553,8 +8558,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">Klucz menedżera pakietów „{0}” nie został zarejestrowany w {1}. Aktualnie zarejestrowane: {2}. Aby dowiedzieć się więcej o rozszerzeniach, odwiedź stronę: https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Klucz menedżera pakietów „{0}” nie został zarejestrowany w {1}. Aktualnie zarejestrowane: {2}. Aby dowiedzieć się więcej o rozszerzeniach, odwiedź stronę: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
