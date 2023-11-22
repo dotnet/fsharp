@@ -29,7 +29,7 @@ type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node (computation) -> wrapThreadStaticInfo computation
+        | Node(computation) -> wrapThreadStaticInfo computation
 
 [<Sealed>]
 type NodeCodeBuilder() =
@@ -44,7 +44,7 @@ type NodeCodeBuilder() =
         Node(
             async.Delay(fun () ->
                 match f () with
-                | Node (p) -> p)
+                | Node(p) -> p)
         )
 
     [<DebuggerHidden; DebuggerStepThrough>]
@@ -54,7 +54,7 @@ type NodeCodeBuilder() =
     member _.ReturnFrom(computation: NodeCode<_>) = computation
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Bind(Node (p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
+    member _.Bind(Node(p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
         Node(
             async.Bind(
                 p,
@@ -65,7 +65,7 @@ type NodeCodeBuilder() =
         )
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.TryWith(Node (p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
+    member _.TryWith(Node(p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
         Node(
             async.TryWith(
                 p,
@@ -76,7 +76,7 @@ type NodeCodeBuilder() =
         )
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.TryFinally(Node (p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> = Node(async.TryFinally(p, binder))
+    member _.TryFinally(Node(p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> = Node(async.TryFinally(p, binder))
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.For(xs: 'T seq, binder: 'T -> NodeCode<unit>) : NodeCode<unit> =
@@ -90,7 +90,7 @@ type NodeCodeBuilder() =
         )
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Combine(Node (p1): NodeCode<unit>, Node (p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
+    member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
@@ -261,7 +261,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                         | ValueSome value -> return value
                         | _ ->
                             let tcs = TaskCompletionSource<'T>()
-                            let (Node (p)) = computation
+                            let (Node(p)) = computation
 
                             Async.StartWithContinuations(
                                 async {

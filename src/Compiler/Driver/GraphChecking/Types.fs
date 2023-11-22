@@ -40,8 +40,8 @@ type internal TrieNodeInfo =
     member x.Files: Set<FileIndex> =
         match x with
         | Root files -> set files
-        | Module (file = file) -> Set.singleton file
-        | Namespace (filesThatExposeTypes = files) -> set files
+        | Module(file = file) -> Set.singleton file
+        | Namespace(filesThatExposeTypes = files) -> set files
 
 type internal TrieNode =
     {

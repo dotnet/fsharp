@@ -84,6 +84,7 @@ type FSharpSymbol =
     static member internal Create:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item ->
             FSharpSymbol
+
     static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
@@ -1062,6 +1063,7 @@ type FSharpType =
     internal new:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty: TType ->
             FSharpType
+
     internal new: SymbolEnv * ty: TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly
