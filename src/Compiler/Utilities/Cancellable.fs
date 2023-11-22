@@ -135,7 +135,7 @@ type CancellableBuilder() =
 #endif
 
             match Cancellable.run ct comp1 with
-            | ValueOrCancelled.Value () -> Cancellable.run ct comp2
+            | ValueOrCancelled.Value() -> Cancellable.run ct comp2
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =

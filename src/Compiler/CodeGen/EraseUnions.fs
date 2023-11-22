@@ -271,8 +271,8 @@ let mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy afte
     let useHelper = doesRuntimeTypeDiscriminateUseHelper avoidHelpers cuspec alt
 
     match after with
-    | I_brcmp (BI_brfalse, _)
-    | I_brcmp (BI_brtrue, _) when not useHelper -> [ I_isinst altTy; after ]
+    | I_brcmp(BI_brfalse, _)
+    | I_brcmp(BI_brtrue, _) when not useHelper -> [ I_isinst altTy; after ]
     | _ -> mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy @ [ after ]
 
 let mkGetTagFromField ilg cuspec baseTy =
@@ -327,8 +327,8 @@ let mkGetTag ilg (cuspec: IlxUnionSpec) =
 
 let mkCeqThen after =
     match after with
-    | I_brcmp (BI_brfalse, a) -> [ I_brcmp(BI_bne_un, a) ]
-    | I_brcmp (BI_brtrue, a) -> [ I_brcmp(BI_beq, a) ]
+    | I_brcmp(BI_brfalse, a) -> [ I_brcmp(BI_bne_un, a) ]
+    | I_brcmp(BI_brtrue, a) -> [ I_brcmp(BI_beq, a) ]
     | _ -> [ AI_ceq; after ]
 
 let mkTagDiscriminate ilg cuspec _baseTy cidx =
@@ -1009,8 +1009,9 @@ let convAlternativeDef
                                     let instrs =
                                         [
                                             mkLdarg0
-                                            (if td.IsStruct then mkNormalLdflda else mkNormalLdfld)
-                                                (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
+                                            (if td.IsStruct then mkNormalLdflda else mkNormalLdfld) (
+                                                mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy)
+                                            )
                                             mkNormalLdfld (mkILFieldSpecInTy (altTy, fldName, fldTy))
                                         ]
                                         |> nonBranchingInstrsToCode
@@ -1450,7 +1451,9 @@ let mkClassUnionDef
                 nestedTypes =
                     mkILTypeDefs (
                         Option.toList enumTypeDef
-                        @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList()
+                        @ altTypeDefs
+                        @ altDebugTypeDefs
+                        @ td.NestedTypes.AsList()
                     ),
                 extends =
                     (match td.Extends with
@@ -1459,13 +1462,17 @@ let mkClassUnionDef
                 methods =
                     mkILMethods (
                         ctorMeths
-                        @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths
+                        @ baseMethsFromAlt
+                        @ selfMeths
+                        @ tagMeths
+                        @ altUniqObjMeths
+                        @ existingMeths
                     ),
                 fields =
                     mkILFields (
                         selfAndTagFields
                         @ List.map (fun (_, _, _, _, fdef, _) -> fdef) altNullaryFields
-                          @ td.Fields.AsList()
+                        @ td.Fields.AsList()
                     ),
                 properties = mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps)
             )

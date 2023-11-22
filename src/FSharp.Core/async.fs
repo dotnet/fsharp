@@ -992,10 +992,9 @@ module AsyncPrimitives =
                     // Ignore multiple sets of the result. This can happen, e.g. for a race between a cancellation and a success
                     if x.ResultAvailable then
                         [] // invalidOp "multiple results registered for asynchronous operation"
-                    else
-                    // In this case the ResultCell has already been disposed, e.g. due to a timeout.
-                    // The result is dropped on the floor.
-                    if
+                    else if
+                        // In this case the ResultCell has already been disposed, e.g. due to a timeout.
+                        // The result is dropped on the floor.
                         disposed
                     then
                         []
@@ -1182,7 +1181,12 @@ module AsyncPrimitives =
 
         trampolineHolder.ExecuteWithTrampoline(fun () ->
             let ctxt =
-                AsyncActivation.Create cancellationToken trampolineHolder (cont >> fake) (econt >> fake) (ccont >> fake)
+                AsyncActivation.Create
+                    cancellationToken
+                    trampolineHolder
+                    (cont >> fake)
+                    (econt >> fake)
+                    (ccont >> fake)
 
             computation.Invoke ctxt)
         |> unfake
@@ -1323,9 +1327,9 @@ module AsyncPrimitives =
 
         member s.GetResult() =
             match result.TryWaitForResultSynchronously(-1) with
-            | Some (AsyncResult.Ok v) -> v
-            | Some (AsyncResult.Error edi) -> edi.ThrowAny()
-            | Some (AsyncResult.Canceled err) -> raise err
+            | Some(AsyncResult.Ok v) -> v
+            | Some(AsyncResult.Error edi) -> edi.ThrowAny()
+            | Some(AsyncResult.Canceled err) -> raise err
             | None -> failwith "unreachable"
 
         member x.IsClosed = disposed
@@ -1568,9 +1572,9 @@ type Async =
 
                             match firstExn with
                             | None -> ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.cont results)
-                            | Some (Choice1Of2 exn) ->
+                            | Some(Choice1Of2 exn) ->
                                 ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.econt exn)
-                            | Some (Choice2Of2 cexn) ->
+                            | Some(Choice2Of2 cexn) ->
                                 ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont cexn)
                         else
                             fake ()
@@ -2059,7 +2063,10 @@ type Async =
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
         // The 'Begin' member
-        : ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) * (System.IAsyncResult -> 'T) * (System.IAsyncResult -> unit) =
+        : ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) *
+          (System.IAsyncResult -> 'T) *
+          (System.IAsyncResult -> unit)
+        =
         let beginAction =
             fun (a1, callback, state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
 
