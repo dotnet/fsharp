@@ -1734,7 +1734,7 @@ module Patterns =
             IsInst(nameof obj)
         ]
 
-    let outerPatterns =
+    let nonNullaryPatterns =
         [
             Typed(Wild, nameof obj)
             Attrib("OptionalArgument", Wild)
@@ -1753,7 +1753,7 @@ module Patterns =
             OptionalVal(Named "y")
         ]
 
-    let patterns = atomicOrNullaryPatterns @ outerPatterns |> List.distinct
+    let patterns = atomicOrNullaryPatterns @ nonNullaryPatterns |> List.distinct
 
     let bareAtomics: (OriginalPat * ExpectedPat) list =
         [
@@ -1770,15 +1770,22 @@ module Patterns =
                 | _ -> Paren pat, pat
         ]
 
-    let nestedAtomics: (OriginalPat * ExpectedPat) list =
+    let nestedAtomicsOrNullaries: (OriginalPat * ExpectedPat) list =
         [
-            for outer, inner in (outerPatterns, atomicOrNullaryPatterns) ||> Seq.allPairs do
+            for outer, inner in (nonNullaryPatterns, atomicOrNullaryPatterns) ||> Seq.allPairs do
                 yield! SynPat.parenthesize inner outer
         ]
 
     let nestedOuters: (OriginalPat * ExpectedPat) list =
         [
-            for outer, inner in (outerPatterns, nestedAtomics |> Seq.map snd) ||> Seq.allPairs |> Seq.distinct do
+            let nonAtomics =
+                nestedAtomicsOrNullaries
+                |> Seq.map snd
+                |> Seq.filter (function
+                    | SynPat.NonAtomic -> true
+                    | _ -> false)
+
+            for outer, inner in (nonNullaryPatterns, nonAtomics) ||> Seq.allPairs |> Seq.distinct do
                 yield! SynPat.parenthesize inner outer
         ]
 
@@ -2025,15 +2032,16 @@ module Patterns =
 
         TopLevel.expectFix code expected
 
-    let singlyNestedAtomicPatterns = fmtAllAsMemberData nestedAtomics
+    let singlyNestedAtomicOrNullaryPatterns =
+        fmtAllAsMemberData nestedAtomicsOrNullaries
+
     let deeplyNestedPatterns = fmtAllAsMemberData nestedOuters
 
-    /// Tests atomic patterns nested one level deep inside of all non-nullary patterns
-    /// (patterns inside of which other patterns can be nested).
-    [<Theory; MemberData(nameof singlyNestedAtomicPatterns)>]
+    /// Tests atomic or nullary patterns nested one level deep inside of all non-nullary patterns.
+    [<Theory; MemberData(nameof singlyNestedAtomicOrNullaryPatterns)>]
     let ``Singly nested patterns`` original expected = expectFix original expected
 
-    /// Tests non-nullary patterns (atomic or not) nested inside of other non-nullary patterns.
+    /// Tests non-nullary, non-atomic patterns nested inside of other non-nullary patterns.
     [<Theory; MemberData(nameof deeplyNestedPatterns)>]
     let ``Deeply nested patterns`` original expected = expectFix original expected
 
