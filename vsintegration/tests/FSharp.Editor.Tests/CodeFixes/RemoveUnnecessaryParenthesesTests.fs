@@ -3,7 +3,8 @@
 module FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests
 
 open System.Text
-open FSharp.Compiler.Text
+open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -13,17 +14,45 @@ open CodeFixTestFramework
 [<AutoOpen>]
 module private TopLevel =
     let private fixer = FSharpRemoveUnnecessaryParenthesesCodeFixProvider()
-    let private fixAllProvider = fixer.RegisterFsharpFixAll()
+
+    // It is much (2–3×) faster to reuse the same solution
+    // rather than creating a new one for each test.
+    // Unfortunately, it is not safe to reuse the same solution across
+    // tests that may set different project or editor options,
+    // because they may run concurrently on other threads,
+    // and the in-memory settings store used for tests is global,
+    // so we restrict this optimization to this file.
+    let private sln, projId =
+        let projInfo =
+            RoslynTestHelpers.CreateProjectInfo (ProjectId.CreateNewId()) "C:\\test.fsproj" []
+
+        let sln = RoslynTestHelpers.CreateSolution [ projInfo ]
+
+        let projectOptions =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                OtherOptions =
+                    [|
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    |]
+            }
+
+        RoslynTestHelpers.SetProjectOptions projInfo.Id sln projectOptions
+
+        RoslynTestHelpers.SetEditorOptions
+            sln
+            { CodeFixesOptions.Default with
+                RemoveParens = true
+            }
+
+        sln, projInfo.Id
 
     let private tryFix (code: string) =
         cancellableTask {
-            let mode =
-                WithSettings
-                    { CodeFixesOptions.Default with
-                        RemoveParens = true
-                    }
+            let document =
+                let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" code
+                (sln.AddDocument docInfo).GetDocument docInfo.Id
 
-            let document = Document.create mode code
             let sourceText = SourceText.From code
 
             let! diagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
@@ -34,7 +63,6 @@ module private TopLevel =
                 |> ValueOption.either (fixer :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync (CancellableTask.singleton ValueNone)
                 |> CancellableTask.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
         }
-        |> CancellableTask.startWithoutCancellation
 
     let expectFix = expectFix tryFix
 

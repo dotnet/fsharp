@@ -220,7 +220,7 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.UnexpectedCodeFixException">
     /// Thrown if a code fix is applied.
     /// </exception>
-    let expectNoFix (tryFix: string -> Task<TestCodeFix option>) code =
+    let expectNoFix (tryFix: string -> CancellableTask<TestCodeFix option>) code =
         cancellableTask {
             match! tryFix code with
             | None -> ()
@@ -246,7 +246,7 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.WrongCodeFixException">
     /// Thrown if the generated fix does not match the expected fixed code.
     /// </exception>
-    let expectFix tryFix code fixedCode =
+    let expectFix (tryFix: string -> CancellableTask<TestCodeFix option>) code fixedCode =
         if code = fixedCode then
             expectNoFix tryFix code
         else
