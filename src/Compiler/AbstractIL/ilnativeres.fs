@@ -54,7 +54,7 @@ type CvtResFile() =
         let mutable resourceNames = List<RESOURCE>()
 
         // The stream might be empty, so let's check
-        if not (reader.PeekChar() = -1) then
+        if reader.PeekChar() <> -1 then
             let mutable startPos = stream.Position
             let mutable initial32Bits = reader.ReadUInt32()
 

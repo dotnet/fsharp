@@ -57,7 +57,7 @@ module FindDeclExternalType =
         | ILType.TypeVar ordinal ->
             typeVarNames
             |> Array.tryItem (int ordinal)
-            |> Option.map (fun typeVarName -> FindDeclExternalType.TypeVar typeVarName)
+            |> Option.map FindDeclExternalType.TypeVar
         | _ -> None
 
 [<RequireQualifiedAccess>]

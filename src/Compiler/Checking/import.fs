@@ -503,7 +503,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
                 buckets[key] <-
                     match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
-                    | _ -> (rest, v) :: []
+                    | _ -> [rest, v]
 
         [ for KeyValue(key, items) in buckets -> nodef key items ]
 

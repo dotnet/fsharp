@@ -1245,7 +1245,7 @@ let mkClassUnionDef
                     let ctor =
                         // Structs with fields are created using static makers methods
                         // Structs without fields can share constructor for the 'tag' value, we just create one
-                        if isStruct && not (cidx = minNullaryIdx) then
+                        if isStruct && cidx <> minNullaryIdx then
                             []
                         else
                             [

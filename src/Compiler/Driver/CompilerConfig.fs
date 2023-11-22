@@ -99,7 +99,7 @@ let GetWarningNumber (m, warningNumber: string) =
         //      anything else is ignored None
         if Char.IsDigit(warningNumber[0]) then
             Some(int32 warningNumber)
-        elif warningNumber.StartsWithOrdinal("FS") = true then
+        elif warningNumber.StartsWithOrdinal "FS" then
             raise (ArgumentException())
         else
             None
@@ -864,7 +864,7 @@ type TcConfigBuilder =
     member tcConfigB.DecideNames sourceFiles =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        if sourceFiles = [] then
+        if List.isEmpty sourceFiles then
             errorR (Error(FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
 
         let ext () =

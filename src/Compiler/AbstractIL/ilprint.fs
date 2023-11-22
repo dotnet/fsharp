@@ -272,7 +272,7 @@ and output_tyvar os d =
 
 and goutput_typ_with_shortened_class_syntax env os =
     function
-    | ILType.Boxed tspec when tspec.GenericArgs = [] -> goutput_tref env os tspec.TypeRef
+    | ILType.Boxed tspec when List.isEmpty tspec.GenericArgs -> goutput_tref env os tspec.TypeRef
     | typ2 -> goutput_typ env os typ2
 
 and goutput_gactuals env os inst =

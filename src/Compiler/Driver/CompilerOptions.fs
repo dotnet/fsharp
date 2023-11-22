@@ -570,7 +570,7 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
+    | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         tcConfigB.emitMetadataAssembly <-
             if (switch = OptionSwitch.On) then
                 MetadataAssemblyGeneration.ReferenceOnly
@@ -580,7 +580,7 @@ let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
+    | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         if FileSystem.IsInvalidPathShim outputPath then
             error (Error(FSComp.SR.optsInvalidRefOut (), rangeCmdArgs))
         else
@@ -747,13 +747,7 @@ let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
             None,
             Some(FSComp.SR.optsReference ())
         )
-        CompilerOption(
-            "compilertool",
-            tagFile,
-            OptionString(fun s -> tcConfigB.AddCompilerToolsByPath s),
-            None,
-            Some(FSComp.SR.optsCompilerTool ())
-        )
+        CompilerOption("compilertool", tagFile, OptionString tcConfigB.AddCompilerToolsByPath, None, Some(FSComp.SR.optsCompilerTool ()))
     ]
 
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
@@ -981,13 +975,7 @@ let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsNowin32manifest ())
         )
 
-        CompilerOption(
-            "resource",
-            tagResInfo,
-            OptionString(fun s -> tcConfigB.AddEmbeddedResource s),
-            None,
-            Some(FSComp.SR.optsResource ())
-        )
+        CompilerOption("resource", tagResInfo, OptionString tcConfigB.AddEmbeddedResource, None, Some(FSComp.SR.optsResource ()))
 
         CompilerOption(
             "linkresource",
@@ -1019,13 +1007,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
         [
             CompilerOption("embed", tagNone, OptionSwitch(SetEmbedAllSourceSwitch tcConfigB), None, Some(FSComp.SR.optsEmbedAllSource ()))
 
-            CompilerOption(
-                "embed",
-                tagFileList,
-                OptionStringList(fun f -> tcConfigB.AddEmbeddedSourceFile f),
-                None,
-                Some(FSComp.SR.optsEmbedSource ())
-            )
+            CompilerOption("embed", tagFileList, OptionStringList tcConfigB.AddEmbeddedSourceFile, None, Some(FSComp.SR.optsEmbedSource ()))
 
             CompilerOption("sourcelink", tagFile, OptionString(fun f -> tcConfigB.sourceLink <- f), None, Some(FSComp.SR.optsSourceLink ()))
         ]
@@ -2217,7 +2199,7 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string[]) =
 
 let testingAndQAFlags _tcConfigB =
     [
-        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
+        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(DumpCompilerOptionBlocks), None, None) // "Command line options")
     ]
 
 // Core compiler options, overview
