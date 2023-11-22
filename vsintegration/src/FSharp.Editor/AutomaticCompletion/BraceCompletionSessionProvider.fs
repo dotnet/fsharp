@@ -137,7 +137,7 @@ type BraceCompletionSession
 
                         match nextSnapshot with
                         | ValueNone -> ()
-                        | ValueSome (nextSnapshot) ->
+                        | ValueSome(nextSnapshot) ->
 
                             let beforePoint = beforeTrackingPoint.GetPoint(textView.TextSnapshot)
 
@@ -564,11 +564,9 @@ type EditorBraceCompletionSessionFactory() =
 [<BracePair(VerticalBar.OpenCharacter, VerticalBar.CloseCharacter)>]
 [<BracePair(AngleBrackets.OpenCharacter, AngleBrackets.CloseCharacter)>]
 [<BracePair(Asterisk.OpenCharacter, Asterisk.CloseCharacter)>]
-type BraceCompletionSessionProvider [<ImportingConstructor>]
-    (
-        undoManager: ITextBufferUndoManagerProvider,
-        editorOperationsFactoryService: IEditorOperationsFactoryService
-    ) =
+type BraceCompletionSessionProvider
+    [<ImportingConstructor>]
+    (undoManager: ITextBufferUndoManagerProvider, editorOperationsFactoryService: IEditorOperationsFactoryService) =
 
     interface IBraceCompletionSessionProvider with
 

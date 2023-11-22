@@ -188,10 +188,13 @@ type ListCollector<'T> =
 type ArrayCollector<'T> =
     [<DefaultValue(false)>]
     val mutable internal ResizeArray: ResizeArray<'T>
+
     [<DefaultValue(false)>]
     val mutable internal First: 'T
+
     [<DefaultValue(false)>]
     val mutable internal Second: 'T
+
     [<DefaultValue(false)>]
     val mutable internal Count: int
 

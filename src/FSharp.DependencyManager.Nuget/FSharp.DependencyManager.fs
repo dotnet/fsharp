@@ -251,14 +251,7 @@ module FSharpDependencyManager =
 
 /// The results of ResolveDependencies
 type ResolveDependenciesResult
-    (
-        success: bool,
-        stdOut: string array,
-        stdError: string array,
-        resolutions: string seq,
-        sourceFiles: string seq,
-        roots: string seq
-    ) =
+    (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
     /// Succeded?
     member _.Success = success
