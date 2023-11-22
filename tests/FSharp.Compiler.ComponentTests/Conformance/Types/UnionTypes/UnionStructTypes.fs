@@ -702,6 +702,23 @@ type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T *
         |> shouldSucceed
 
     [<Fact>]
+    let ``Regression 16282 DefaultAugment false on a struct union with fields`` ()  =
+        Fsx """
+[<Struct>]
+[<DefaultAugmentation(false)>]
+type Foo =
+    | Baz of int
+
+
+let foo = Baz 42
+printfn "%A" foo"""
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "Baz 42"
+
+    [<Fact>]
     let ``Struct DU ValueOption keeps working`` ()  =
         Fsx """
 module VOTests
