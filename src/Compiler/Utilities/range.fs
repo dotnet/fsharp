@@ -457,10 +457,9 @@ module Range =
     let unionRanges (m1: range) (m2: range) =
         if m1.FileIndex <> m2.FileIndex then
             m2
-        else
+        else if
 
-        // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
-        if
+            // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
             m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2
         then
             m1
@@ -557,13 +556,13 @@ module Range =
                     lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrWhiteSpace s))
 
                 match nonWhiteLine with
-                | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
+                | Some(i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
                 | None ->
 
                     let nonEmptyLine = lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrEmpty s))
 
                     match nonEmptyLine with
-                    | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
+                    | Some(i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
