@@ -367,7 +367,7 @@ module internal Implementation =
                 let action =
                     let immediateAction = int tables.immediateActions[state]
 
-                    if not (immediateAction = anyMarker) then
+                    if immediateAction <> anyMarker then
                         // Action has been pre-determined, no need to lookahead
                         // Expecting it to be a Reduce action on a non-fakeStartNonTerminal ?
                         immediateAction

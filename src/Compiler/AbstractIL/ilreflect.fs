@@ -265,12 +265,12 @@ type TypeBuilder with
         let t = typB.CreateTypeAndLog()
 
         let m =
-            if box t <> null then
+            if not (isNull (box t)) then
                 t.GetMethod(nm, (args |> Seq.map (fun x -> x.GetType()) |> Seq.toArray))
             else
                 null
 
-        if m <> null then
+        if not (isNull m) then
             m.Invoke(null, args)
         else
             raise (MissingMethodException nm)
@@ -1787,7 +1787,7 @@ let definePInvokeMethod =
             |]
         )
 
-let enablePInvoke = definePInvokeMethod <> null
+let enablePInvoke = not (isNull definePInvokeMethod)
 
 let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef) =
     let attrs = mdef.Attributes
@@ -1828,7 +1828,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 
         // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
-            System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
+            System.Diagnostics.Debug.Assert(not (isNull definePInvokeMethod), "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
 
             definePInvokeMethod.Invoke(
                 typB,
@@ -1988,7 +1988,7 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                     delayedFieldInits = (fun () -> fieldB.SetConstant(initial.AsObject())) :: emEnv.delayedFieldInits
                 }
 
-    fdef.Offset |> Option.iter (fun offset -> fieldB.SetOffset offset)
+    fdef.Offset |> Option.iter (fieldB.SetOffset)
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)

@@ -78,7 +78,7 @@ module List =
     let countByRefType (projection: 'T -> 'Key) (list: 'T list) =
         countByImpl
             RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (projection >> RuntimeHelpers.StructBox)
             (fun sb -> sb.Value)
             list
 
@@ -557,11 +557,7 @@ module List =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (list: 'T list) =
-        groupByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
-            list
+        groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value) list
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (list: 'T list) =

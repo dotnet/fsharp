@@ -125,7 +125,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
 
         sources
         |> List.map(fun src -> computeInclude src)
-        |> List.fold (fun acc s -> acc + s) ""
+        |> List.fold (+) ""
 
     let replace tag items addDirectory addCondition compileItem (template:string) = template.Replace(tag, computeSourceItems addDirectory addCondition compileItem items)
 

@@ -44,7 +44,7 @@ type PackageBuildResolutionResult =
 module internal Utilities =
 
     let verifyFilesExist files =
-        files |> List.tryFind (fun f -> not (File.Exists(f))) |> Option.isNone
+        files |> List.tryFind (File.Exists >> not) |> Option.isNone
 
     let findLoadsFromResolutions (resolutions: Resolution[]) =
         resolutions
@@ -98,7 +98,7 @@ module internal Utilities =
                 File
                     .ReadAllText(resolutionsFile)
                     .Split([| '\r'; '\n' |], StringSplitOptions.None)
-                |> Array.filter (fun line -> not (String.IsNullOrEmpty(line)))
+                |> Array.filter (String.IsNullOrEmpty >> not)
             with _ ->
                 [||]
 
@@ -169,7 +169,7 @@ module internal Utilities =
                 insideSQ <- not insideSQ // keep reading
             | _ -> ()
 
-        result |> List.ofSeq |> List.map (fun option -> split option)
+        result |> List.ofSeq |> List.map split
 
     let executeTool pathToExe arguments workingDir environment timeout =
         match pathToExe with
