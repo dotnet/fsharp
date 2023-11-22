@@ -9,6 +9,7 @@ open System.IO
 open System.Collections.Immutable
 
 open Internal.Utilities.Collections
+open Internal.Utilities.Hashing
 
 type ISourceText =
 

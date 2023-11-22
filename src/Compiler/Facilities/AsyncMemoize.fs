@@ -8,6 +8,7 @@ open System.Threading
 open System.Threading.Tasks
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.BuildGraph
 
 [<AutoOpen>]
 module internal Utils =
@@ -35,12 +36,12 @@ type internal MemoizeReply<'TValue> =
     | Existing of Task<'TValue>
 
 type internal MemoizeRequest<'TValue> =
-    | GetOrCompute of Async<'TValue> * CancellationToken
+    | GetOrCompute of NodeCode<'TValue> * CancellationToken
     | Sync
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
-    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime
+    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * NodeCode<'TValue> * DateTime
     | Completed of 'TValue
 
     member this.DebuggerDisplay =
@@ -77,42 +78,7 @@ type private KeyData<'TKey, 'TVersion> =
         Version: 'TVersion
     }
 
-/// Tools for hashing things with MD5 into a string that can be used as a cache key.
-module internal Md5Hasher =
 
-    let private md5 =
-        new ThreadLocal<_>(fun () -> System.Security.Cryptography.MD5.Create())
-
-    let private computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
-
-    let hashString (s: string) =
-        System.Text.Encoding.UTF8.GetBytes(s) |> computeHash
-
-    let empty = String.Empty
-
-    let addBytes (bytes: byte array) (s: string) =
-        let sbytes = s |> hashString
-
-        Array.append sbytes bytes
-        |> computeHash
-        |> System.BitConverter.ToString
-        |> (fun x -> x.Replace("-", ""))
-
-    let addString (s: string) (s2: string) =
-        s |> System.Text.Encoding.UTF8.GetBytes |> addBytes <| s2
-
-    let addSeq<'item> (items: 'item seq) (addItem: 'item -> string -> string) (s: string) =
-        items |> Seq.fold (fun s a -> addItem a s) s
-
-    let addStrings strings = addSeq strings addString
-
-    let addVersions<'a, 'b when 'a :> ICacheKey<'b, string>> (versions: 'a seq) (s: string) =
-        versions |> Seq.map (fun x -> x.GetVersion()) |> addStrings <| s
-
-    let addBool (b: bool) (s: string) =
-        b |> BitConverter.GetBytes |> addBytes <| s
-
-    let addDateTime (dt: System.DateTime) (s: string) = dt.Ticks.ToString() |> addString <| s
 
 type internal AsyncLock() =
 
@@ -315,7 +281,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                             log (Started, key)
                                             Interlocked.Increment &restarted |> ignore
                                             System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                            let! result = Async.StartAsTask(computation, cancellationToken = cts.Token)
+                                            let! result = NodeCode.StartAsTask_ForTesting(computation, ct = cts.Token)
                                             post (key, (JobCompleted result))
                                         with
                                         | :? OperationCanceledException ->
@@ -408,26 +374,26 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        async {
-            let! ct = Async.CancellationToken
+        node {
+            let! ct = NodeCode.CancellationToken
 
-            match! processRequest post (key, GetOrCompute(computation, ct)) |> Async.AwaitTask with
+            match! processRequest post (key, GetOrCompute(computation, ct)) |> NodeCode.AwaitTask with
             | New internalCt ->
 
                 let linkedCtSource = CancellationTokenSource.CreateLinkedTokenSource(ct, internalCt)
 
                 try
                     return!
-                        Async.StartAsTask(
-                            async {
+                        NodeCode.StartAsTask_ForTesting(
+                            node {
                                 log (Started, key)
                                 let! result = computation
                                 post (key, (JobCompleted result))
                                 return result
                             },
-                            cancellationToken = linkedCtSource.Token
+                            ct = linkedCtSource.Token
                         )
-                        |> Async.AwaitTask
+                        |> NodeCode.AwaitTask
                 with
                 | :? TaskCanceledException
                 | :? OperationCanceledException as ex -> return raise ex
@@ -435,7 +401,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     post (key, (JobFailed ex))
                     return raise ex
 
-            | Existing job -> return! job |> Async.AwaitTask
+            | Existing job -> return! job |> NodeCode.AwaitTask
+
         }
 
     member _.Clear() = cache.Clear()

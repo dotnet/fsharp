@@ -139,7 +139,7 @@ type internal IBackgroundCompiler =
 
     abstract member ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
-            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+            NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// Parse and typecheck the whole project.
     abstract member ParseAndCheckProject: options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpCheckProjectResults>
@@ -151,7 +151,7 @@ type internal IBackgroundCompiler =
             Async<FSharpParseFileResults>
 
     abstract member ParseFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string -> NodeCode<FSharpParseFileResults>
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string -> Async<FSharpParseFileResults>
 
     /// Try to get recent approximate type check results for a file.
     abstract member TryGetRecentCheckResultsForFile:
@@ -1622,17 +1622,16 @@ type internal BackgroundCompiler
                 fileName: string,
                 projectSnapshot: FSharpProjectSnapshot,
                 userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
-            async {
+            ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            node {
                 let fileSnapshot =
                     projectSnapshot.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
 
-                let! sourceText = fileSnapshot.GetSource() |> Async.AwaitTask
+                let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
                 let options = projectSnapshot.ToOptions()
 
                 return!
                     self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
-                    |> Async.AwaitNodeCode
             }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
@@ -1649,7 +1648,7 @@ type internal BackgroundCompiler
                 cache: bool,
                 flatErrors: bool,
                 userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            ) =
             self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member _.ParseFile(_fileName: string, _projectSnapshot: FSharpProjectSnapshot, _userOpName: string) =
