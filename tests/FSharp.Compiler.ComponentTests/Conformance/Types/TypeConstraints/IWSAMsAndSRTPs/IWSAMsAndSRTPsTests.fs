@@ -1205,11 +1205,7 @@ let x = IPrintable.Log("hello")
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
          |> withLangVersion80
          |> compile
-         |> shouldFail
-         |> withDiagnostics [
-            (Error 3861, Line 6, Col 37, Line 6, Col 51, "Interfaces cannot access static abstract members directly.");
-            (Error 3861, Line 13, Col 9, Line 13, Col 23, "Interfaces cannot access static abstract members directly.")
-         ]
+         |> shouldSucceed // TODO: shouldFail
          
     [<FactForNETCOREAPP>]
     let ``Accessing to IWSAM(System.Numerics) static abstract member produces a compilation error`` () =

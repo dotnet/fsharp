@@ -9800,10 +9800,6 @@ and TcMethodApplication
         | accessibleMeths -> accessibleMeths
 
     let candidates = candidateMethsAndProps |> List.map fst
-    for candidate in candidates do
-         if isInterfaceTyconRef candidate.DeclaringTyconRef && candidate.IsAbstract && not candidate.IsInstance then
-            errorR(Error(FSComp.SR.chkStaticMembersDirectlyOnInterfaces(), mItem))
-
     // Step 0. Split the syntactic arguments (if any) into named and unnamed parameters
     let curriedCallerArgsOpt, unnamedDelayedCallerArgExprOpt, exprTy =
         TcMethodApplication_SplitSynArguments cenv env tpenv isProp candidates exprTy curriedCallerArgs mItem
@@ -9840,8 +9836,16 @@ and TcMethodApplication
 
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
 
+        for minfo, _, _, _ in preArgumentTypeCheckingCalledMethGroup do
+            match minfo with
+            | ILMeth(ilMethInfo = ilMethInfo) ->
+                if ilMethInfo.IsStatic && ilMethInfo.IsAbstract then
+                    errorR(Error(FSComp.SR.chkStaticMembersDirectlyOnInterfaces(), mItem))
+            | _ -> ()
+              
         let postArgumentTypeCheckingCalledMethGroup =
-            preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
+            preArgumentTypeCheckingCalledMethGroup
+            |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs =
                     match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
