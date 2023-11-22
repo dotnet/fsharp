@@ -920,7 +920,10 @@ let main _ =
         |> withNoWarn 3535
         |> withLangVersion70
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3861, Line 13, Col 71, Line 13, Col 79, "Interfaces cannot access static abstract members directly.")
+        ]
         
     [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
