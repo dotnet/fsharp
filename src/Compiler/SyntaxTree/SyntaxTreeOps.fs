@@ -97,9 +97,9 @@ let rec pushUnaryArg expr arg =
     | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) -> SynExpr.DotGet(pushUnaryArg synExpr arg, rangeOfDot, synLongIdent, range)
     | SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range) ->
         SynExpr.DotIndexedGet(pushUnaryArg objectExpr arg, indexArgs, dotRange, range)
-    | SynExpr.TypeApp(innerExpr,mLess,tyargs,mCommas,mGreater,mTypars,m) ->
+    | SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m) ->
         let innerExpr = pushUnaryArg innerExpr arg
-        SynExpr.TypeApp(innerExpr,mLess,tyargs,mCommas,mGreater,mTypars,m)
+        SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m)
     | _ ->
         errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
         expr
