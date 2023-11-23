@@ -530,7 +530,7 @@ module DeclarationListHelpers =
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width = 
         DiagnosticsScope.Protect m 
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item symbol width)
-            (fun err -> ToolTipElement.CompositionError err)
+            ToolTipElement.CompositionError
 
 /// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
@@ -739,8 +739,7 @@ module internal DescriptionListsImpl =
                     // This is good enough as we don't provide ways to display info for the second curried argument
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
-                        |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+                        |> List.map (ParamNameAndType.FromArgInfo >> fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 

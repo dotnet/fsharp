@@ -1337,18 +1337,20 @@ type Exception with
                     |> List.exists (fun prods ->
                         let prodIds =
                             prods
-                            |> List.map Parser.prodIdxToNonTerminal
-                            |> List.map (fun nonTerminal ->
-                                match nonTerminal with
-                                | NONTERM_Category_Type -> Parser.NONTERM_typ
-                                | NONTERM_Category_Expr -> Parser.NONTERM_declExpr
-                                | NONTERM_Category_Pattern -> Parser.NONTERM_atomicPattern
-                                | NONTERM_Category_IfThenElse -> Parser.NONTERM_ifExprThen
-                                | NONTERM_Category_SignatureFile -> Parser.NONTERM_signatureFile
-                                | NONTERM_Category_ImplementationFile -> Parser.NONTERM_implementationFile
-                                | NONTERM_Category_Definition -> Parser.NONTERM_moduleDefn
-                                | NONTERM_Category_Interaction -> Parser.NONTERM_interaction
-                                | nt -> nt)
+                            |> List.map (
+                                Parser.prodIdxToNonTerminal
+                                >> fun nonTerminal ->
+                                    match nonTerminal with
+                                    | NONTERM_Category_Type -> Parser.NONTERM_typ
+                                    | NONTERM_Category_Expr -> Parser.NONTERM_declExpr
+                                    | NONTERM_Category_Pattern -> Parser.NONTERM_atomicPattern
+                                    | NONTERM_Category_IfThenElse -> Parser.NONTERM_ifExprThen
+                                    | NONTERM_Category_SignatureFile -> Parser.NONTERM_signatureFile
+                                    | NONTERM_Category_ImplementationFile -> Parser.NONTERM_implementationFile
+                                    | NONTERM_Category_Definition -> Parser.NONTERM_moduleDefn
+                                    | NONTERM_Category_Interaction -> Parser.NONTERM_interaction
+                                    | nt -> nt
+                            )
                             |> Set.ofList
                             |> Set.toList
 
@@ -1655,7 +1657,7 @@ type Exception with
 
             os.AppendString(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString()))
 
-        | LetRecEvaluatedOutOfOrder(_, _, _, _) -> os.AppendString(LetRecEvaluatedOutOfOrderE().Format)
+        | LetRecEvaluatedOutOfOrder(_) -> os.AppendString(LetRecEvaluatedOutOfOrderE().Format)
 
         | LetRecCheckedAtRuntime _ -> os.AppendString(LetRecCheckedAtRuntimeE().Format)
 

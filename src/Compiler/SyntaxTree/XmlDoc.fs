@@ -77,6 +77,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             match paramNamesOpt with
             | None -> ()
             | Some paramNames ->
+
                 for p in xml.Descendants(XName.op_Implicit "param") do
                     match p.Attribute(XName.op_Implicit "name") with
                     | null -> warning (Error(FSComp.SR.xmlDocMissingParameterName (), doc.Range))
@@ -95,6 +96,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     ]
 
                 if paramsWithDocs.Length > 0 then
+
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
                             warning (Error(FSComp.SR.xmlDocMissingParameter (p), doc.Range))
