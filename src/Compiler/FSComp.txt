@@ -750,7 +750,7 @@ tcTypeAbbreviationsCheckedAtCompileTime,"As of F# 4.1, the accessibility of type
 897,tcMeasureDeclarationsRequireStaticMembers,"Measure declarations may have only static members"
 tcStructsMayNotContainDoBindings,"Structs cannot contain 'do' bindings because the default constructor for structs would not execute these bindings"
 901,tcStructsMayNotContainLetBindings,"Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type."
-902,tcStaticLetBindingsRequireClassesWithImplicitConstructors,"For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'."
+902,tcStaticLetBindingsRequireClassesWithImplicitConstructors,"For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher."
 904,tcMeasureDeclarationsRequireStaticMembersNotConstructors,"Measure declarations may have only static members: constructors are not available"
 905,tcMemberAndLocalClassBindingHaveSameName,"A member and a local class binding both have the name '%s'"
 906,tcTypeAbbreviationsCannotHaveInterfaceDeclaration,"Type abbreviations cannot have interface declarations"

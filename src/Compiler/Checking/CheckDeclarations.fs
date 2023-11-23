@@ -4192,7 +4192,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
-             | SynMemberDefn.AutoProperty(range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+             | SynMemberDefn.AutoProperty(isStatic=false;range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (isStatic=false; range=m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.AbstractSlot (range=m) :: _ 
              | SynMemberDefn.Interface (range=m) :: _ 
