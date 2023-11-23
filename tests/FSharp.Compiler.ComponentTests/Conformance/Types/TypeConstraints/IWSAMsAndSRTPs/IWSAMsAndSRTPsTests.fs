@@ -1211,7 +1211,7 @@ let x = IPrintable.Log("hello")
          |> shouldSucceed // TODO: shouldFail
          
     [<FactForNETCOREAPP>]
-    let ``Accessing to IWSAM(System.Numerics) static abstract member produces a compilation error`` () =
+    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
         Fsx """
 open System.Numerics
 
@@ -1221,6 +1221,20 @@ IAdditionOperators.op_Addition (3, 6)
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withDiagnostics [
-             (Error 3861, Line 4, Col 1, Line 4, Col 31, "Interfaces cannot access static abstract members directly.")
-         ]
+         |> withSingleDiagnostic (Error 3861, Line 4, Col 1, Line 4, Col 31, "Interfaces cannot access static abstract members directly.")
+         
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
+        Fsx """
+open System.Numerics
+
+let res = IAdditionOperators.op_CheckedAddition (3, 6)
+
+printf "%A" res"""
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withLangVersion80
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "9"
