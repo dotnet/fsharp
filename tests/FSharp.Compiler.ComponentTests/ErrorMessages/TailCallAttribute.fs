@@ -1076,3 +1076,75 @@ module M =
         |> withLangVersion80
         |> compile
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn about attribute on non-rec function`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let someNonRecFun x = x + x
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3861
+              Range = { StartLine = 7
+                        StartColumn = 13
+                        EndLine = 7
+                        EndColumn = 26 }
+              Message =
+               "The TailCall attribute should only be applied to recursive functions." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn about attribute on non-recursive let-bound value`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let someX = 23
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3861
+              Range = { StartLine = 7
+                        StartColumn = 13
+                        EndLine = 7
+                        EndColumn = 18 }
+              Message =
+                           "The TailCall attribute should only be applied to recursive functions." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn about attribute on recursive let-bound value`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec someRecLetBoundValue = nameof(someRecLetBoundValue)
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3861
+              Range = { StartLine = 7
+                        StartColumn = 17
+                        EndLine = 7
+                        EndColumn = 37 }
+              Message =
+                           "The TailCall attribute should only be applied to recursive functions." }
+        ]

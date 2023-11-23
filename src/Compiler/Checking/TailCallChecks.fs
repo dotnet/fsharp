@@ -727,6 +727,23 @@ and CheckBindings cenv binds =
         CheckBinding cenv false PermitByRefExpr.Yes bind
 
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
+
+    // warn for non-rec functions which have the attribute
+    if
+        cenv.reportErrors
+        && cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec
+    then
+        let isNotAFunction =
+            match bind.Var.ValReprInfo with
+            | Some info -> info.HasNoArgs
+            | _ -> false
+
+        if
+            (not isRec || isNotAFunction)
+            && HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute bind.Var.Attribs
+        then
+            warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
+
     // Check that a let binding to the result of a rec expression is not inside the rec expression
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
     // see test ``Warn successfully for rec call in binding`` for an example
