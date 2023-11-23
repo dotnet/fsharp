@@ -52,11 +52,11 @@ module private CheckerExtensions =
 
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
                     | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | ValueSome (parsingOptions, projectOptions) ->
+                    | ValueSome(parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
-                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
+                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> result))
                 }
 
     let getProjectSnapshot (snapshotAccumulatorOpt) (project: Project) =
@@ -174,7 +174,7 @@ module private CheckerExtensions =
                 return
                     match checkFileAnswer with
                     | FSharpCheckFileAnswer.Aborted -> None
-                    | FSharpCheckFileAnswer.Succeeded (checkFileResults) -> Some(parseResults, checkFileResults)
+                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> Some(parseResults, checkFileResults)
             }
 
         /// Parse and check the source text from the Roslyn document with possible stale results.
