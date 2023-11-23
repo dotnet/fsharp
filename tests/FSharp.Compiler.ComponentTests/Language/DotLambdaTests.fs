@@ -205,7 +205,7 @@ let f (a, (b, c)) =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 3570, Line 5, Col 20, Line 5, Col 21, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
+    |> withSingleDiagnostic (Warning 3570, Line 7, Col 24, Line 7, Col 25, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
 
 [<Fact>]
 let ``Simple anonymous unary function shorthands compile`` () =
