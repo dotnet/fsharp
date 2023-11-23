@@ -120,6 +120,13 @@ let ``Static let in empty generic type`` compilation =
 Accessing name for String
 Accessing name for Byte"""
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+let ``Static member val in empty type`` compilation =
+    compilation
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
 let ``Static let in simple union`` compilation =
     compilation
