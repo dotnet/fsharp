@@ -108,7 +108,7 @@ module CompileHelpers =
     let setOutputStreams execute =
         // Set the output streams, if requested
         match execute with
-        | Some (writer, error) ->
+        | Some(writer, error) ->
             Console.SetOut writer
             Console.SetError error
         | None -> ()
@@ -240,7 +240,7 @@ type FSharpChecker
 
         let useChangeNotifications =
             match documentSource with
-            | Some (DocumentSource.Custom _) -> true
+            | Some(DocumentSource.Custom _) -> true
             | _ -> false
 
         let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
@@ -263,7 +263,7 @@ type FSharpChecker
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             (match documentSource with
-             | Some (DocumentSource.Custom f) -> Some f
+             | Some(DocumentSource.Custom f) -> Some f
              | _ -> None),
             useChangeNotifications,
             useSyntaxTreeCache,

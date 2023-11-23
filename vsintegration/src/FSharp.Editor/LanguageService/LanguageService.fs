@@ -269,9 +269,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
 
-
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
                     Orientation = ToolWindowOrientation.Bottom,
@@ -281,8 +279,8 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
                     Width = 360,
                     Height = 120,
                     Window = "34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")
-  // The following should place the ToolWindow with the OutputWindow by default.
-  >]
+// The following should place the ToolWindow with the OutputWindow by default.
+>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
@@ -374,15 +372,12 @@ type internal FSharpPackage() as this =
                 this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
             let optionsManager =
-                workspace
-                    .Services
+                workspace.Services
                     .GetService<IFSharpWorkspaceService>()
                     .FSharpProjectOptionsManager
 
             let metadataAsSource =
-                this
-                    .ComponentModel
-                    .DefaultExportProvider
+                this.ComponentModel.DefaultExportProvider
                     .GetExport<FSharpMetadataAsSourceService>()
                     .Value
 
@@ -444,11 +439,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
         let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
 
         let solutionAnalysis =
-            workspace
-                .Services
+            workspace.Services
                 .GetService<EditorOptions>()
-                .Advanced
-                .SolutionBackgroundAnalysis
+                .Advanced.SolutionBackgroundAnalysis
 
         globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
@@ -482,10 +475,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
 
 [<Composition.Shared>]
 [<ComponentModel.Composition.Export(typeof<HackCpsCommandLineChanges>)>]
-type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingConstructor>]
-    (
-        [<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace
-    ) =
+type internal HackCpsCommandLineChanges
+    [<ComponentModel.Composition.ImportingConstructor>]
+    ([<ComponentModel.Composition.Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace) =
 
     static let projectDisplayNameOf projectFileName =
         if String.IsNullOrWhiteSpace projectFileName then

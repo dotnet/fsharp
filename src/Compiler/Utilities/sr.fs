@@ -16,7 +16,7 @@ module internal SR =
                 .Force()
                 .GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
 #if DEBUG
-        if null = s then
+        if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf "**RESOURCE ERROR**: Resource token %s does not exist!" name)
 #endif
         s
@@ -28,7 +28,7 @@ module internal DiagnosticMessage =
     let mkFunctionValue (tys: System.Type[]) (impl: obj -> obj) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys[0], tys[1]), impl)
 
-    let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition ()
+    let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition()
 
     let isNamedType (ty: System.Type) =
         not (ty.IsArray || ty.IsByRef || ty.IsPointer)
@@ -98,7 +98,7 @@ module internal DiagnosticMessage =
         // validate that the message string exists
         let fmtString = fmt.Value
 
-        if null = messageString then
+        if isNull messageString then
             System.Diagnostics.Debug.Assert(false, sprintf "**DECLARED MESSAGE ERROR** String resource %s does not exist" messageID)
             messageString <- ""
 

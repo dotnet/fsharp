@@ -44,9 +44,7 @@ module SignatureHelpProvider =
 
             let paramInfoLocations =
                 parseResults
-                    .FindParameterLocations(
-                        Position.fromZ caretLinePos.Line caretLineColumn
-                    )
+                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                     .Value
 
             let triggered =

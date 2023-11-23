@@ -171,7 +171,7 @@ module internal Tainted =
     let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
         t1.PUntaintNoFailure(fun t1 -> t1 === t2.AccessObjectDirectly)
 
-    let GetHashCodeTainted (t:Tainted<'T>) = t.PUntaintNoFailure(fun t -> hash t)
+    let GetHashCodeTainted (t:Tainted<'T>) = t.PUntaintNoFailure hash
     
 #endif
     

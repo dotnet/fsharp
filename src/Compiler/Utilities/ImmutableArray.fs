@@ -78,7 +78,7 @@ module ImmutableArray =
         match arrs.Length with
         | 0 -> ImmutableArray.Empty
         | 1 -> arrs[0]
-        | 2 -> arrs[ 0 ].AddRange(arrs[1])
+        | 2 -> arrs[0].AddRange(arrs[1])
         | _ ->
             let mutable acc = 0
 
@@ -104,7 +104,7 @@ module ImmutableArray =
         if arr1.Length <> arr2.Length then
             invalidOp "Block lengths do not match."
 
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
         let len1 = arr1.Length
 
         let rec loop i =
@@ -180,7 +180,7 @@ module ImmutableArray =
     let isEmpty (arr: ImmutableArray<_>) = arr.IsEmpty
 
     let fold folder state (arr: ImmutableArray<_>) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
         let mutable state = state
 
         for i = 0 to arr.Length - 1 do

@@ -16,8 +16,8 @@ type CreateFSharpManifestResourceName public () =
         (
             fileName: string,
             linkFileName: string,
-            rootNamespace: string,  // may be null
-            dependentUponFileName: string,  // may be null
+            rootNamespace: string, // may be null
+            dependentUponFileName: string, // may be null
             binaryStream: Stream // may be null
         ) : string =
 

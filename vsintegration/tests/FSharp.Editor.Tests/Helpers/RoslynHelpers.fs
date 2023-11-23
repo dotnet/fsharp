@@ -261,12 +261,9 @@ type RoslynTestHelpers private () =
         )
 
     static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions) =
-        solution
-            .Workspace
-            .Services
+        solution.Workspace.Services
             .GetService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager
-            .SetCommandLineOptions(
+            .FSharpProjectOptionsManager.SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
                 options.OtherOptions |> ImmutableArray.CreateRange

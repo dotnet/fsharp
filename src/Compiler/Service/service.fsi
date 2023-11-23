@@ -457,6 +457,7 @@ type public FSharpChecker =
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
+
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 

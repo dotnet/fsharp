@@ -139,14 +139,14 @@ module internal SymbolHelpers =
             | scope ->
                 let projectsToCheck =
                     match scope with
-                    | Some (SymbolScope.Projects (scopeProjects, false)) ->
+                    | Some(SymbolScope.Projects(scopeProjects, false)) ->
                         [
                             for scopeProject in scopeProjects do
                                 yield scopeProject
                                 yield! scopeProject.GetDependentProjects()
                         ]
                         |> List.distinct
-                    | Some (SymbolScope.Projects (scopeProjects, true)) -> scopeProjects
+                    | Some(SymbolScope.Projects(scopeProjects, true)) -> scopeProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList currentDocument.Project.Solution.Projects

@@ -38,7 +38,8 @@ module internal UnusedCodeFixHelper =
 
                 return
                     lexerSymbol
-                    |> Option.bind (fun symbol -> checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> Option.bind (fun symbol ->
+                        checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
                     |> ValueOption.ofOption
                     |> ValueOption.bind (fun symbolUse ->
                         match symbolUse.Symbol with

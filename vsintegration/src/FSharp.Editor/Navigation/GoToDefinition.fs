@@ -343,7 +343,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 | Some targetSymbolUse ->
 
                     match declarations with
-                    | FindDeclResult.ExternalDecl (assembly, targetExternalSym) ->
+                    | FindDeclResult.ExternalDecl(assembly, targetExternalSym) ->
                         let projectOpt =
                             originDocument.Project.Solution.Projects
                             |> Seq.tryFindV (fun p -> p.AssemblyName.Equals(assembly, StringComparison.OrdinalIgnoreCase))
@@ -388,10 +388,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         if not (originDocument.Project.Solution.ContainsDocumentWithFilePath(targetRange.FileName)) then
                             let metadataReferences = originDocument.Project.MetadataReferences
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
-                        else
-                        // if goto definition is called at we are alread at the declaration location of a symbol in
-                        // either a signature or an implementation file then we jump to it's respective postion in thethe
-                        if
+                        else if
+                            // if goto definition is called at we are alread at the declaration location of a symbol in
+                            // either a signature or an implementation file then we jump to it's respective postion in thethe
                             lexerSymbol.Range = targetRange
                         then
                             // jump from signature to the corresponding implementation
@@ -594,7 +593,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | _ -> None
 
         match textOpt with
-        | Some (text, fileName) ->
+        | Some(text, fileName) ->
             let tmpProjInfo, tmpDocInfo =
                 MetadataAsSource.generateTemporaryDocument (
                     AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName),
@@ -709,7 +708,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
 
             return
                 match result with
-                | ValueSome (FSharpGoToDefinitionResult.NavigableItem (navItem), _) -> ImmutableArray.create navItem
+                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> ImmutableArray.create navItem
                 | _ -> ImmutableArray.empty
         }
 
@@ -728,10 +727,10 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
 
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                 match gtdTask.Result with
-                | ValueSome (FSharpGoToDefinitionResult.NavigableItem (navItem), _) ->
+                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
                     gtd.NavigateToItem(navItem, cancellationToken) |> ignore
                     true
-                | ValueSome (FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _) ->
+                | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
                     gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
                     |> ignore
 
@@ -811,8 +810,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
     let metadataAsSource =
-        componentModel
-            .DefaultExportProvider
+        componentModel.DefaultExportProvider
             .GetExport<FSharpMetadataAsSourceService>()
             .Value
 
@@ -930,7 +928,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
         match m.Success, t with
         | true, ("M" | "P" | "E") ->
             // TODO: Probably, there's less janky way of dealing with those.
-            let parts = m.Groups[ "entity" ].Value.Split('.')
+            let parts = m.Groups["entity"].Value.Split('.')
             let entityPath = parts[.. (parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
 
@@ -963,10 +961,10 @@ type FSharpCrossLanguageSymbolNavigationService() =
                     (SymbolMemberType.FromString t)
                 )
         | true, "T" ->
-            let entityPath = m.Groups[ "entity" ].Value.Split('.') |> List.ofArray
+            let entityPath = m.Groups["entity"].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
         | true, "F" ->
-            let parts = m.Groups[ "entity" ].Value.Split('.')
+            let parts = m.Groups["entity"].Value.Split('.')
             let entityPath = parts[.. (parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
 
@@ -1000,12 +998,12 @@ type FSharpCrossLanguageSymbolNavigationService() =
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
-                    | DocCommentId.Member ({
-                                               EntityPath = entityPath
-                                               MemberOrValName = memberOrVal
-                                               GenericParameters = genericParametersCount
-                                           },
-                                           memberType) ->
+                    | DocCommentId.Member({
+                                              EntityPath = entityPath
+                                              MemberOrValName = memberOrVal
+                                              GenericParameters = genericParametersCount
+                                          },
+                                          memberType) ->
                         let entity = result.AssemblySignature.FindEntityByPath(entityPath)
 
                         entity
