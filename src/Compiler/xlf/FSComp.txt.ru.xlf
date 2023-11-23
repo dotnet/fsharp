@@ -5063,8 +5063,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Определения статических значений для F#7 и ниже можно использовать только в типах с первичным конструктором ("type X(args) = ..."). Чтобы включить их во всех других типах, используйте версию языка "preview".</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Определения статических значений для F#7 и ниже можно использовать только в типах с первичным конструктором ("type X(args) = ..."). Чтобы включить их во всех других типах, используйте версию языка "preview".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
