@@ -3425,14 +3425,24 @@ let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = match attrOpt with Some (AttribInfo(_, tcref)) -> tyconRefEq g tcref tcref2 | _ -> false
 
+[<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
-    args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) 
+    args |> List.tryPickV (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> ValueSome v | _ -> ValueNone)
 
-let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> Some n | _ -> None
-let (|AttribInt32Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int32 n, _, _)) -> Some n | _ -> None
-let (|AttribInt16Arg|_|) = function AttribExpr(_, Expr.Const (Const.Int16 n, _, _)) -> Some n | _ -> None
-let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)) -> Some n | _ -> None
-let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> Some n | _ -> None
+[<return: Struct>]
+let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
+
+[<return: Struct>]
+let (|AttribInt32Arg|_|) = function AttribExpr (_, Expr.Const (Const.Int32 n, _, _)) -> ValueSome n | _ -> ValueNone
+
+[<return: Struct>]
+let (|AttribInt16Arg|_|) = function AttribExpr (_, Expr.Const (Const.Int16 n, _, _)) -> ValueSome n | _ -> ValueNone
+
+[<return: Struct>]
+let (|AttribBoolArg|_|) = function AttribExpr (_, Expr.Const (Const.Bool n, _, _)) -> ValueSome n | _ -> ValueNone
+
+[<return: Struct>]
+let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
@@ -8223,39 +8233,44 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, arg
 let MakeApplicationAndBetaReduce g (f, fty, tyargsl, argl, m) = 
   MakeApplicationAndBetaReduceAux g (f, fty, tyargsl, argl, m)
 
+[<return: Struct>]
 let (|NewDelegateExpr|_|) g expr =
     match expr with
     | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], m) when isDelegateTy g ty ->
-        Some (lambdaId, List.concat tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
-    | _ -> None
+        ValueSome (lambdaId, List.concat tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
     | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
-            Some(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
-    | _ -> None
+            ValueSome(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|OpPipeRight|_|) g expr =
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, [_; resType], [xExpr; fExpr], m) 
         when valRefEq g vref g.piperight_vref -> 
-            Some(resType, xExpr, fExpr, m)
-    | _ -> None
+            ValueSome(resType, xExpr, fExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|OpPipeRight2|_|) g expr =
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, [_; _; resType], [Expr.Op (TOp.Tuple _, _, [arg1; arg2], _); fExpr], m) 
         when valRefEq g vref g.piperight2_vref -> 
-            Some(resType, arg1, arg2, fExpr, m)
-    | _ -> None
+            ValueSome(resType, arg1, arg2, fExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|OpPipeRight3|_|) g expr =
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, [_; _; _; resType], [Expr.Op (TOp.Tuple _, _, [arg1; arg2; arg3], _); fExpr], m) 
         when valRefEq g vref g.piperight3_vref -> 
-            Some(resType, arg1, arg2, arg3, fExpr, m)
-    | _ -> None
+            ValueSome(resType, arg1, arg2, arg3, fExpr, m)
+    | _ -> ValueNone
 
 let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
     match delExpr with 
@@ -8993,30 +9008,33 @@ let rec TypeHasDefaultValue g m ty =
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
-let (|SpecialComparableHeadType|_|) g ty =           
-    if isAnyTupleTy g ty then 
+[<return: Struct>]
+let (|SpecialComparableHeadType|_|) g ty =
+    if isAnyTupleTy g ty then
         let _tupInfo, elemTys = destAnyTupleTy g ty
-        Some elemTys 
-    elif isAnonRecdTy g ty then 
+        ValueSome elemTys
+    elif isAnonRecdTy g ty then
         match tryDestAnonRecdTy g ty with
-        | ValueNone -> Some []
-        | ValueSome (_anonInfo, elemTys) -> Some elemTys 
+        | ValueNone -> ValueSome []
+        | ValueSome (_anonInfo, elemTys) -> ValueSome elemTys
     else
         match tryAppTy g ty with
         | ValueSome (tcref, tinst) ->
             if isArrayTyconRef g tcref ||
                tyconRefEq g tcref g.system_UIntPtr_tcref ||
                tyconRefEq g tcref g.system_IntPtr_tcref then
-                 Some tinst 
-            else 
-                None
+                 ValueSome tinst
+            else
+                ValueNone
         | _ ->
-            None
+            ValueNone
 
+[<return: Struct>]
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 
+[<return: Struct>]
 let (|SpecialNotEquatableHeadType|_|) g ty = 
-    if isFunTy g ty then Some() else None
+    if isFunTy g ty then ValueSome() else ValueNone
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
@@ -9914,23 +9932,24 @@ and EvaledAttribExprEquality g e1 e2 =
     | TypeDefOfExpr g ty1, TypeDefOfExpr g ty2 -> typeEquiv g ty1 ty2
     | _ -> false
 
+[<return: Struct>]
 let (|ConstToILFieldInit|_|) c =
     match c with 
-    | Const.SByte n -> Some (ILFieldInit.Int8 n)
-    | Const.Int16 n -> Some (ILFieldInit.Int16 n)
-    | Const.Int32 n -> Some (ILFieldInit.Int32 n)
-    | Const.Int64 n -> Some (ILFieldInit.Int64 n)
-    | Const.Byte n -> Some (ILFieldInit.UInt8 n)
-    | Const.UInt16 n -> Some (ILFieldInit.UInt16 n)
-    | Const.UInt32 n -> Some (ILFieldInit.UInt32 n)
-    | Const.UInt64 n -> Some (ILFieldInit.UInt64 n)
-    | Const.Bool n -> Some (ILFieldInit.Bool n)
-    | Const.Char n -> Some (ILFieldInit.Char (uint16 n))
-    | Const.Single n -> Some (ILFieldInit.Single n)
-    | Const.Double n -> Some (ILFieldInit.Double n)
-    | Const.String s -> Some (ILFieldInit.String s)
-    | Const.Zero -> Some ILFieldInit.Null
-    | _ -> None
+    | Const.SByte n -> ValueSome (ILFieldInit.Int8 n)
+    | Const.Int16 n -> ValueSome (ILFieldInit.Int16 n)
+    | Const.Int32 n -> ValueSome (ILFieldInit.Int32 n)
+    | Const.Int64 n -> ValueSome (ILFieldInit.Int64 n)
+    | Const.Byte n -> ValueSome (ILFieldInit.UInt8 n)
+    | Const.UInt16 n -> ValueSome (ILFieldInit.UInt16 n)
+    | Const.UInt32 n -> ValueSome (ILFieldInit.UInt32 n)
+    | Const.UInt64 n -> ValueSome (ILFieldInit.UInt64 n)
+    | Const.Bool n -> ValueSome (ILFieldInit.Bool n)
+    | Const.Char n -> ValueSome (ILFieldInit.Char (uint16 n))
+    | Const.Single n -> ValueSome (ILFieldInit.Single n)
+    | Const.Double n -> ValueSome (ILFieldInit.Double n)
+    | Const.String s -> ValueSome (ILFieldInit.String s)
+    | Const.Zero -> ValueSome ILFieldInit.Null
+    | _ -> ValueNone
 
 let EvalLiteralExprOrAttribArg g x = 
     match x with 
@@ -10011,60 +10030,66 @@ let mkGetTupleItemN g m n (ty: ILType) isStruct expr retTy =
         mkAsmExpr ([mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [expr], [retTy], m)
 
 /// Match an Int32 constant expression
-let (|Int32Expr|_|) expr = 
-    match expr with 
-    | Expr.Const (Const.Int32 n, _, _) -> Some n
-    | _ -> None 
+[<return: Struct>]
+let (|Int32Expr|_|) expr =
+    match expr with
+    | Expr.Const (Const.Int32 n, _, _) -> ValueSome n
+    | _ -> ValueNone
 
 /// Match a try-finally expression
+[<return: Struct>]
 let (|TryFinally|_|) expr = 
     match expr with 
-    | Expr.Op (TOp.TryFinally _, [_resTy], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], _) -> Some(e1, e2)
-    | _ -> None
+    | Expr.Op (TOp.TryFinally _, [_resTy], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], _) -> ValueSome(e1, e2)
+    | _ -> ValueNone
     
 // detect ONLY the while loops that result from compiling 'for ... in ... do ...'
+[<return:Struct>]
 let (|WhileLoopForCompiledForEachExpr|_|) expr = 
     match expr with 
     | Expr.Op (TOp.While (spInWhile, WhileLoopForCompiledForEachExprMarker), _, [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) ->
-        Some(spInWhile, e1, e2, m)
-    | _ -> None
-    
-let (|Let|_|) expr = 
-    match expr with 
-    | Expr.Let (TBind(v, e1, sp), e2, _, _) -> Some(v, e1, sp, e2)
-    | _ -> None
+        ValueSome(spInWhile, e1, e2, m)
+    | _ -> ValueNone
 
-let (|RangeInt32Step|_|) g expr = 
-    match expr with 
-    // detect 'n .. m' 
+[<return:Struct>]
+let (|Let|_|) expr =
+    match expr with
+    | Expr.Let (TBind(v, e1, sp), e2, _, _) -> ValueSome(v, e1, sp, e2)
+    | _ -> ValueNone
+
+[<return:Struct>]
+let (|RangeInt32Step|_|) g expr =
+    match expr with
+    // detect 'n .. m'
     | Expr.App (Expr.Val (vf, _, _), _, [tyarg], [startExpr;finishExpr], _)
-         when valRefEq g vf g.range_op_vref && typeEquiv g tyarg g.int_ty -> Some(startExpr, 1, finishExpr)
-    
+         when valRefEq g vf g.range_op_vref && typeEquiv g tyarg g.int_ty -> ValueSome(startExpr, 1, finishExpr)
     // detect (RangeInt32 startExpr N finishExpr), the inlined/compiled form of 'n .. m' and 'n .. N .. m'
     | Expr.App (Expr.Val (vf, _, _), _, [], [startExpr; Int32Expr n; finishExpr], _)
-         when valRefEq g vf g.range_int32_op_vref -> Some(startExpr, n, finishExpr)
+         when valRefEq g vf g.range_int32_op_vref -> ValueSome(startExpr, n, finishExpr)
 
-    | _ -> None
+    | _ -> ValueNone
 
-let (|GetEnumeratorCall|_|) expr =   
-    match expr with   
+[<return:Struct>]
+let (|GetEnumeratorCall|_|) expr =
+    match expr with
     | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
-        if ilMethodRef.Name = "GetEnumerator" then Some vref  
-        else None  
-    | _ -> None  
+        if ilMethodRef.Name = "GetEnumerator" then ValueSome vref
+        else ValueNone
+    | _ -> ValueNone
 
 // This code matches exactly the output of TcForEachExpr
-let (|CompiledForEachExpr|_|) g expr =   
+[<return:Struct>]
+let (|CompiledForEachExpr|_|) g expr =
     match expr with
-    | Let (enumerableVar, enumerableExpr, spFor, 
-           Let (enumeratorVar, GetEnumeratorCall enumerableVar2, _enumeratorBind, 
-              TryFinally (WhileLoopForCompiledForEachExpr (spInWhile, _, (Let (elemVar, _, _, bodyExpr) as elemLet), _), _))) 
+    | Let (enumerableVar, enumerableExpr, spFor,
+           Let (enumeratorVar, GetEnumeratorCall enumerableVar2, _enumeratorBind,
+              TryFinally (WhileLoopForCompiledForEachExpr (spInWhile, _, (Let (elemVar, _, _, bodyExpr) as elemLet), _), _)))
                  // Apply correctness conditions to ensure this really is a compiled for-each expression.
                  when valRefEq g (mkLocalValRef enumerableVar) enumerableVar2 &&
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
                       (let fvs = (freeInExpr CollectLocals bodyExpr)
-                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
+                       not (Zset.contains enumerableVar fvs.FreeLocals) &&
                        not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
@@ -10077,18 +10102,19 @@ let (|CompiledForEachExpr|_|) g expr =
         let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
-        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
-    | _ -> None  
-             
+        ValueSome (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
+    | _ -> ValueNone
 
-let (|CompiledInt32RangeForEachExpr|_|) g expr = 
+
+[<return:Struct>]
+let (|CompiledInt32RangeForEachExpr|_|) g expr =
     match expr with
     | CompiledForEachExpr g (_, RangeInt32Step g (startExpr, step, finishExpr), elemVar, bodyExpr, ranges) ->
-        Some (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
-    | _ -> None
+        ValueSome (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
+    | _ -> ValueNone
 
 
-let mkDebugPoint m expr = 
+let mkDebugPoint m expr =
     Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
 
 type OptimizeForExpressionOptions =
@@ -10196,11 +10222,11 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
 
-
+[<return: Struct>]
 let (|ValApp|_|) g vref expr =
     match expr with
-    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
-    | _ -> None
+    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 -> ValueSome (tyargs, args, m)
+    | _ -> ValueNone
 
 let (|UseResumableStateMachinesExpr|_|) g expr =
     match expr with
@@ -10208,18 +10234,20 @@ let (|UseResumableStateMachinesExpr|_|) g expr =
     | _ -> None
 
 /// Match an if...then...else expression or the result of "a && b" or "a || b"
+[<return: Struct>]
 let (|IfThenElseExpr|_|) expr =
     match expr with
     | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
-                  [| TTarget([], thenExpr, _); TTarget([], elseExpr, _) |], _m, _ty) -> 
-        Some (cond, thenExpr,  elseExpr)
-    | _ -> None
+                  [| TTarget([], thenExpr, _); TTarget([], elseExpr, _) |], _m, _ty) ->
+        ValueSome (cond, thenExpr, elseExpr)
+    | _ -> ValueNone
 
 /// if __useResumableCode then ... else ...
+[<return: Struct>]
 let (|IfUseResumableStateMachinesExpr|_|) g expr =
     match expr with
-    | IfThenElseExpr(UseResumableStateMachinesExpr g (), thenExpr, elseExpr) -> Some (thenExpr, elseExpr)
-    | _ -> None
+    | IfThenElseExpr(UseResumableStateMachinesExpr g (), thenExpr, elseExpr) -> ValueSome (thenExpr, elseExpr)
+    | _ -> ValueNone
 
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
@@ -10295,30 +10323,35 @@ let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
             member _.GetHashCode(a) = hash a.MemberName
         })
 
+[<return: Struct>]
 let (|WhileExpr|_|) expr = 
     match expr with 
     | Expr.Op (TOp.While (sp1, sp2), _, [Expr.Lambda (_, _, _, [_gv], guardExpr, _, _);Expr.Lambda (_, _, _, [_bv], bodyExpr, _, _)], m) ->
-        Some (sp1, sp2, guardExpr, bodyExpr, m)
-    | _ -> None
+        ValueSome (sp1, sp2, guardExpr, bodyExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|TryFinallyExpr|_|) expr = 
     match expr with 
     | Expr.Op (TOp.TryFinally (sp1, sp2), [ty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) ->
-        Some (sp1, sp2, ty, e1, e2, m)
-    | _ -> None
+        ValueSome (sp1, sp2, ty, e1, e2, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|IntegerForLoopExpr|_|) expr = 
     match expr with 
     | Expr.Op (TOp.IntegerForLoop (sp1, sp2, style), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
-        Some (sp1, sp2, style, e1, e2, v, e3, m)
-    | _ -> None
+        ValueSome (sp1, sp2, style, e1, e2, v, e3, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|TryWithExpr|_|) expr =
     match expr with 
     | Expr.Op (TOp.TryWith (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) ->
-        Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
-    | _ -> None
+        ValueSome (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|MatchTwoCasesExpr|_|) expr =
     match expr with 
     | Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
@@ -10327,11 +10360,12 @@ let (|MatchTwoCasesExpr|_|) expr =
         let rebuild (cond, ucref, tg1, tg2, tgs) = 
             Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
 
-        Some (cond, ucref, tg1, tg2, tgs, rebuild)
+        ValueSome (cond, ucref, tg1, tg2, tgs, rebuild)
 
-    | _ -> None
+    | _ -> ValueNone
 
 /// match e with None -> ... | Some v -> ... or other variations of the same
+[<return: Struct>]
 let (|MatchOptionExpr|_|) expr =
     match expr with
     | MatchTwoCasesExpr(cond, ucref, tg1, tg2, tgs, rebuildTwoCases) -> 
@@ -10350,9 +10384,9 @@ let (|MatchOptionExpr|_|) expr =
                                                     Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a16)
                 rebuildTwoCases (cond, ucref, tg1, tg2, tgs)
 
-            Some (cond, noneBranchExpr, someVar, someBranchExpr, rebuild)
-        | _ -> None
-    | _ -> None
+            ValueSome (cond, noneBranchExpr, someVar, someBranchExpr, rebuild)
+        | _ -> ValueNone
+    | _ -> ValueNone
 
 let (|ResumableEntryAppExpr|_|) g expr =
     match expr with
@@ -10360,6 +10394,7 @@ let (|ResumableEntryAppExpr|_|) g expr =
     | _ -> None
 
 /// Match an (unoptimized) __resumableEntry expression
+[<return: Struct>]
 let (|ResumableEntryMatchExpr|_|) g expr =
     match expr with
     | Expr.Let(TBind(matchVar, matchExpr, sp1), MatchOptionExpr (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr, rebuildMatch), d, e) ->
@@ -10371,13 +10406,14 @@ let (|ResumableEntryMatchExpr|_|) g expr =
                 let rebuild (noneBranchExpr, someBranchExpr) =
                     Expr.Let(TBind(matchVar, matchExpr, sp1), rebuildMatch (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr), d, e)
 
-                Some (noneBranchExpr, someVar, someBranchExpr, rebuild)
+                ValueSome (noneBranchExpr, someVar, someBranchExpr, rebuild)
 
-            else None
+            else ValueNone
 
-        | _ -> None
-    | _ -> None
+        | _ -> ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|StructStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; afterCode], _m) ->
@@ -10385,37 +10421,40 @@ let (|StructStateMachineExpr|_|) g expr =
         | NewDelegateExpr g (_, [moveNextThisVar], moveNextBody, _, _),
           NewDelegateExpr g (_, [setStateMachineThisVar;setStateMachineStateVar], setStateMachineBody, _, _),
           NewDelegateExpr g (_, [afterCodeThisVar], afterCodeBody, _, _) ->
-              Some (dataTy, 
+              ValueSome (dataTy, 
                     (moveNextThisVar, moveNextBody), 
                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
                     (afterCodeThisVar, afterCodeBody))
-        | _ -> None
-    | _ -> None
+        | _ -> ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ResumeAtExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> Some pcExpr
-    | _ -> None
+    | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> ValueSome pcExpr
+    | _ -> ValueNone
 
 // Detect __debugPoint calls
+[<return: Struct>]
 let (|DebugPointExpr|_|) g expr =
     match expr with
-    | ValApp g g.cgh__debugPoint_vref (_, [StringExpr debugPointName], _m) -> Some debugPointName
-    | _ -> None
+    | ValApp g g.cgh__debugPoint_vref (_, [StringExpr debugPointName], _m) -> ValueSome debugPointName
+    | _ -> ValueNone
 
 // Detect sequencing constructs in state machine code
+[<return: Struct>]
 let (|SequentialResumableCode|_|) (g: TcGlobals) expr = 
     match expr with
 
     // e1; e2
     | Expr.Sequential(e1, e2, NormalSeq, m) ->
-        Some (e1, e2, m, (fun e1 e2 -> Expr.Sequential(e1, e2, NormalSeq, m)))
+        ValueSome (e1, e2, m, (fun e1 e2 -> Expr.Sequential(e1, e2, NormalSeq, m)))
 
     // let __stack_step = e1 in e2
     | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState).StartsWith(stackVarPrefix) ->
-        Some (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.DebugPoint m bind.Var e1 e2))
+        ValueSome (bind.Expr, e2, m, (fun e1 e2 -> mkLet bind.DebugPoint m bind.Var e1 e2))
 
-    | _ -> None
+    | _ -> ValueNone
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
@@ -10425,13 +10464,14 @@ let rec isReturnsResumableCodeTy g ty =
     if isFunTy g ty then isReturnsResumableCodeTy g (rangeOfFunTy g ty)
     else isResumableCodeTy g ty
 
+[<return: Struct>]
 let (|ResumableCodeInvoke|_|) g expr =
     match expr with
     // defn.Invoke x --> let arg = x in [defn][arg/x]
     | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args), m) 
             when invokeRef.LogicalName = "Invoke" && isReturnsResumableCodeTy g (tyOfExpr g f) -> 
-        Some (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
-    | _ -> None
+        ValueSome (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
+    | _ -> ValueNone
 
 let ComputeUseMethodImpl g (v: Val) =
     v.ImplementedSlotSigs |> List.exists (fun slotsig ->
@@ -10461,27 +10501,31 @@ let ComputeUseMethodImpl g (v: Val) =
 
          not isStructural))
 
+[<return: Struct>]
 let (|Seq|_|) g expr =
     match expr with
     // use 'seq { ... }' as an indicator
-    | ValApp g g.seq_vref ([elemTy], [e], _m) -> Some (e, elemTy)
-    | _ -> None
+    | ValApp g g.seq_vref ([elemTy], [e], _m) -> ValueSome (e, elemTy)
+    | _ -> ValueNone
 
 /// Detect a 'yield x' within a 'seq { ... }'
+[<return: Struct>]
 let (|SeqYield|_|) g expr =
     match expr with
-    | ValApp g g.seq_singleton_vref (_, [arg], m) -> Some (arg, m)
-    | _ -> None
+    | ValApp g g.seq_singleton_vref (_, [arg], m) -> ValueSome (arg, m)
+    | _ -> ValueNone
 
 /// Detect a 'expr; expr' within a 'seq { ... }'
+[<return: Struct>]
 let (|SeqAppend|_|) g expr =
     match expr with
-    | ValApp g g.seq_append_vref (_, [arg1; arg2], m) -> Some (arg1, arg2, m)
-    | _ -> None
+    | ValApp g g.seq_append_vref (_, [arg1; arg2], m) -> ValueSome (arg1, arg2, m)
+    | _ -> ValueNone
 
 let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
 
 /// Detect a 'while gd do expr' within a 'seq { ... }'
+[<return: Struct>]
 let (|SeqWhile|_|) g expr =
     match expr with
     | ValApp g g.seq_generated_vref (_, [Expr.Lambda (_, _, _, [dummyv], guardExpr, _, _);innerExpr], m) 
@@ -10490,11 +10534,12 @@ let (|SeqWhile|_|) g expr =
         // The debug point for 'while' is attached to the innerExpr, see TcSequenceExpression
         let mWhile = innerExpr.Range
         let spWhile = match mWhile.NotedSourceConstruct with NotedSourceConstruct.While -> DebugPointAtWhile.Yes mWhile | _ -> DebugPointAtWhile.No
-        Some (guardExpr, innerExpr, spWhile, m)
+        ValueSome (guardExpr, innerExpr, spWhile, m)
 
     | _ ->
-        None
+        ValueNone
 
+[<return: Struct>]
 let (|SeqTryFinally|_|) g expr =
     match expr with
     | ValApp g g.seq_finally_vref (_, [arg1;Expr.Lambda (_, _, _, [dummyv], compensation, _, _) as arg2], m) 
@@ -10507,53 +10552,58 @@ let (|SeqTryFinally|_|) g expr =
         let spTry = match mTry.NotedSourceConstruct with NotedSourceConstruct.Try -> DebugPointAtTry.Yes mTry | _ -> DebugPointAtTry.No
         let spFinally = match mFinally.NotedSourceConstruct with NotedSourceConstruct.Finally -> DebugPointAtFinally.Yes mFinally | _ -> DebugPointAtFinally.No
 
-        Some (arg1, compensation, spTry, spFinally, m)
+        ValueSome (arg1, compensation, spTry, spFinally, m)
 
     | _ ->
-        None
+        ValueNone
 
+[<return: Struct>]
 let (|SeqUsing|_|) g expr =
     match expr with
     | ValApp g g.seq_using_vref ([_;_;elemTy], [resource;Expr.Lambda (_, _, _, [v], body, mBind, _)], m) ->
         // The debug point mFor at the 'use x = ... ' gets attached to the lambda
         let spBind = match mBind.NotedSourceConstruct with NotedSourceConstruct.Binding -> DebugPointAtBinding.Yes mBind | _ -> DebugPointAtBinding.NoneAtInvisible
-        Some (resource, v, body, elemTy, spBind, m)
+        ValueSome (resource, v, body, elemTy, spBind, m)
     | _ ->
-        None
+        ValueNone
 
+[<return: Struct>]
 let (|SeqForEach|_|) g expr =
     match expr with
     // Nested for loops are represented by calls to Seq.collect
     | ValApp g g.seq_collect_vref ([_inpElemTy;_enumty2;genElemTy], [Expr.Lambda (_, _, _, [v], body, mIn, _); inp], mFor) ->
         // The debug point mIn at the 'in' gets attached to the first argument, see TcSequenceExpression
         let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
-        Some (inp, v, body, genElemTy, mFor, mIn, spIn)
+        ValueSome (inp, v, body, genElemTy, mFor, mIn, spIn)
 
     // "for x in e -> e2" is converted to a call to Seq.map by the F# type checker. This could be removed, except it is also visible in F# quotations.
     | ValApp g g.seq_map_vref ([_inpElemTy;genElemTy], [Expr.Lambda (_, _, _, [v], body, mIn, _); inp], mFor) ->
         let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
         // The debug point mFor at the 'for' gets attached to the first argument, see TcSequenceExpression
-        Some (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, mFor, mIn, spIn)
+        ValueSome (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, mFor, mIn, spIn)
 
-    | _ -> None
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqDelay|_|) g expr =
     match expr with
-    | ValApp g g.seq_delay_vref ([elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m) 
-        when not (isVarFreeInExpr v e) -> 
-        Some (e, elemTy)
-    | _ -> None
+    | ValApp g g.seq_delay_vref ([elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m)
+        when not (isVarFreeInExpr v e) ->
+        ValueSome (e, elemTy)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqEmpty|_|) g expr =
     match expr with
-    | ValApp g g.seq_empty_vref (_, [], m) -> Some m
-    | _ -> None
+    | ValApp g g.seq_empty_vref (_, [], m) -> ValueSome m
+    | _ -> ValueNone
 
 let isFSharpExceptionTy g ty =
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
+[<return: Struct>]
 let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
     match moduleOrNamespaceContents with
     | TMDefs(defs = defs) ->
@@ -10582,10 +10632,10 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
                 | _ -> None)
 
         if mdDefsLength = emptyModuleOrNamespaces.Length then
-            Some emptyModuleOrNamespaces
+            ValueSome emptyModuleOrNamespaces
         else
-            None
-    | _ -> None
+            ValueNone
+    | _ -> ValueNone
 
 let tryAddExtensionAttributeIfNotAlreadyPresent
     (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
