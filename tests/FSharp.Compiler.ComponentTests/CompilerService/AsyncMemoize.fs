@@ -7,17 +7,19 @@ open Internal.Utilities.Collections
 open System.Threading.Tasks
 open System.Diagnostics
 open System.Collections.Concurrent
-
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.BuildGraph
 
 [<Fact>]
 let ``Stack trace`` () =
 
     let memoize = AsyncMemoize<int, int, int>()
 
-    let computation key = async {
+    let computation key = node {
        // do! Async.Sleep 1 |> NodeCode.AwaitAsync
 
-        let! result = memoize.Get'(key * 2, async {
+        let! result = memoize.Get'(key * 2, node {
             //do! Async.Sleep 1 |> NodeCode.AwaitAsync
             return key * 5
         })
@@ -27,7 +29,7 @@ let ``Stack trace`` () =
 
     //let _r2 = computation 10
 
-    let result = memoize.Get'(1, computation 1) |> Async.RunSynchronously
+    let result = memoize.Get'(1, computation 1) |> NodeCode.RunImmediateWithoutCancellation
 
     Assert.Equal(10, result)
 
@@ -35,8 +37,8 @@ let ``Stack trace`` () =
 [<Fact>]
 let ``Basics``() =
 
-    let computation key = async {
-        do! Async.Sleep 1
+    let computation key = node {
+        do! Async.Sleep 1 |> NodeCode.AwaitAsync
         return key * 2
     }
 
@@ -54,8 +56,8 @@ let ``Basics``() =
             memoize.Get'(3, computation 3)
             memoize.Get'(2, computation 2)
         }
-        |> Async.Parallel
-        |> Async.RunSynchronously
+        |> NodeCode.Parallel
+        |> NodeCode.RunImmediateWithoutCancellation
 
     let expected = [| 10; 10; 4; 10; 6; 4|]
 
@@ -72,9 +74,9 @@ let ``We can cancel a job`` () =
 
         let jobStarted = new ManualResetEvent(false)
 
-        let computation key = async {
+        let computation key = node {
             jobStarted.Set() |> ignore
-            do! Async.Sleep 1000
+            do! Async.Sleep 1000 |> NodeCode.AwaitAsync
             failwith "Should be canceled before it gets here"
             return key * 2
         }
@@ -89,9 +91,9 @@ let ``We can cancel a job`` () =
 
         let key = 1
 
-        let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
-        let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let _task3 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts3.Token)
+        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         jobStarted.WaitOne() |> ignore
 
@@ -118,11 +120,11 @@ let ``Job is restarted if first requestor cancels`` () =
     task {
         let jobStarted = new ManualResetEvent(false)
 
-        let computation key = async {
+        let computation key = node {
             jobStarted.Set() |> ignore
 
             for _ in 1 .. 5 do
-                do! Async.Sleep 100
+                do! Async.Sleep 100 |> NodeCode.AwaitAsync
 
             return key * 2
         }
@@ -137,10 +139,9 @@ let ``Job is restarted if first requestor cancels`` () =
 
         let key = 1
 
-        let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
-        let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let _task3 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts3.Token)
-
+        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         jobStarted.WaitOne() |> ignore
 
@@ -165,11 +166,11 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
     task {
         let jobStarted = new ManualResetEvent(false)
 
-        let computation key = async {
+        let computation key = node {
             jobStarted.Set() |> ignore
 
             for _ in 1 .. 5 do
-                do! Async.Sleep 100
+                do! Async.Sleep 100 |> NodeCode.AwaitAsync
 
             return key * 2
         }
@@ -184,12 +185,12 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         let key = 1
 
-        let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
+        let _task1 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts1.Token)
 
         jobStarted.WaitOne() |> ignore
         jobStarted.Reset() |> ignore
-        let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let _task3 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts3.Token)
+        let _task2 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts2.Token)
+        let _task3 = NodeCode.StartAsTask_ForTesting( memoize.Get'(key, computation key), ct = cts3.Token)
 
         cts1.Cancel()
 
@@ -240,21 +241,21 @@ let ``Stress test`` () =
             while (int s.ElapsedMilliseconds) < durationMs do
                 number <- number + 1 % 12345
             return [result]
-        }
+        } |> NodeCode.AwaitAsync
 
     let rec sleepyComputation durationMs result =
-        async {
+        node {
             if rng.NextDouble() < (exceptionProbability / (float durationMs / float stepMs)) then
                 raise (ExpectedException())
             if durationMs > 0 then
-                do! Async.Sleep (min stepMs durationMs)
+                do! Async.Sleep (min stepMs durationMs) |> NodeCode.AwaitAsync
                 return! sleepyComputation (durationMs - stepMs) result
             else
                 return [result]
         }
 
     let rec mixedComputation durationMs result =
-        async {
+        node {
             if durationMs > 0 then
                 if rng.NextDouble() < 0.5 then
                     let! _ = intenseComputation (min stepMs durationMs) ()
@@ -296,7 +297,7 @@ let ``Stress test`` () =
                         let result = key * 2
                         let job = cache.Get'(key, computation durationMs result)
                         let cts = new CancellationTokenSource()
-                        let runningJob = Async.StartAsTask(job, cancellationToken = cts.Token)
+                        let runningJob = NodeCode.StartAsTask_ForTesting(job, ct = cts.Token)
                         cts.CancelAfter timeoutMs
                         Interlocked.Increment &started |> ignore
                         try
@@ -342,10 +343,10 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
         let mutable started = 0
         let mutable finished = 0
 
-        let work () = async {
+        let work () = node {
             Interlocked.Increment &started |> ignore
             for _ in 1..10 do
-                do! Async.Sleep 10
+                do! Async.Sleep 10 |> NodeCode.AwaitAsync
             Interlocked.Increment &finished |> ignore
         }
 
@@ -355,7 +356,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = 1
                   member _.GetLabel() = "key1" }
 
-        cache.Get(key1, work()) |> Async.Start
+        cache.Get(key1, work()) |> Async.AwaitNodeCode |> Async.Start
 
         do! Task.Delay 50
 
@@ -365,9 +366,160 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                   member _.GetVersion() = key1.GetVersion() + 1
                   member _.GetLabel() = "key2" }
 
-        cache.Get(key2, work()) |> Async.Start
+        cache.Get(key2, work()) |> Async.AwaitNodeCode |> Async.Start
 
         do! Task.Delay 500
 
         Assert.Equal((2, expectFinished), (started, finished))
     }
+
+
+type DummyException(msg) =
+    inherit Exception(msg)
+
+[<Fact>]
+let ``Preserve thread static diagnostics`` () = 
+
+    let seed = System.Random().Next()
+
+    let rng = System.Random seed
+    
+    let job1Cache = AsyncMemoize()
+    let job2Cache = AsyncMemoize()
+
+    let job1 (input: string) = node {
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+        let ex = DummyException("job1 error")
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+        return Ok input
+    }
+
+    let job2 (input: int) = node {
+        
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
+
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
+
+        let key = { new ICacheKey<_, _> with
+                        member _.GetKey() = "job1"
+                        member _.GetVersion() = input
+                        member _.GetLabel() = "job1" }
+
+        let! result = job1Cache.Get(key, job1 "${input}" )
+
+        DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 2"))
+
+        return input, result
+
+    }
+
+    let tasks = seq {
+        for i in 1 .. 100 do
+
+            task {
+                let diagnosticsLogger =
+                    CompilationDiagnosticLogger($"Testing task {i}", FSharpDiagnosticOptions.Default)
+
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+
+                DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("task error"))
+
+
+                let key = { new ICacheKey<_, _> with
+                                member _.GetKey() = "job2"
+                                member _.GetVersion() = rng.Next(1, 10)
+                                member _.GetLabel() = "job2" }
+
+                let! result = job2Cache.Get(key, job2 (i % 10)) |> Async.AwaitNodeCode
+
+                let diagnostics = diagnosticsLogger.GetDiagnostics()
+
+                //Assert.Equal(3, diagnostics.Length)
+
+                return result, diagnostics
+            }
+    }
+
+    let results = (Task.WhenAll tasks).Result
+
+    let _diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
+
+    //Assert.Equal<(int * int) list>([4, 100], diagnosticCounts)
+
+    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map (fun (d, _) -> d.Exception.Message) >> Array.toList) |> Set
+
+    Assert.Equal<Set<_>>(Set [["task error"; "job2 error 1"; "job1 error"; "job2 error 2"; ]], diagnosticMessages)
+
+
+[<Fact>]
+let ``Preserve thread static diagnostics already completed job`` () = 
+
+    let cache = AsyncMemoize()
+
+    let key = { new ICacheKey<_, _> with
+                    member _.GetKey() = "job1"
+                    member _.GetVersion() = 1
+                    member _.GetLabel() = "job1" }
+
+    let job (input: string) = node {
+        let ex = DummyException($"job {input} error")
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+        return Ok input
+    }
+
+    async {
+
+        let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
+
+        use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+
+        let! _ = cache.Get(key, job "1" ) |> Async.AwaitNodeCode    
+        let! _ = cache.Get(key, job "2" ) |> Async.AwaitNodeCode    
+
+        let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
+
+        Assert.Equal<list<_>>(["job 1 error"; "job 1 error"], diagnosticMessages)
+
+    }
+    |> Async.StartAsTask
+
+
+[<Fact>]
+let ``We get diagnostics from the job that failed`` () = 
+
+    let cache = AsyncMemoize()
+
+    let key = { new ICacheKey<_, _> with
+                    member _.GetKey() = "job1"
+                    member _.GetVersion() = 1
+                    member _.GetLabel() = "job1" }
+
+    let job (input: int) = node {
+        let ex = DummyException($"job {input} error")
+        do! Async.Sleep 100 |> NodeCode.AwaitAsync
+        DiagnosticsThreadStatics.DiagnosticsLogger.Error(ex)
+        return 5
+    }
+
+    let result = 
+        [1; 2]
+        |> Seq.map (fun i ->
+            async {
+            let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
+
+            use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+            try
+                let! _ = cache.Get(key, job i ) |> Async.AwaitNodeCode
+                ()
+            with _ ->
+                ()
+            let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
+
+            //Assert.Equal<list<_>>(["job 1 error"], diagnosticMessages)
+            return diagnosticMessages
+        })
+        |> Async.Parallel
+        |> Async.StartAsTask
+        |> (fun t -> t.Result)
+
+    Assert.Equal<list<_>>([["job 1 error"]; ["job 1 error"]], result)

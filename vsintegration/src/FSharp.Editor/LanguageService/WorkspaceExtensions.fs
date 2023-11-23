@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.BuildGraph
 
 open CancellableTasks
 
@@ -132,11 +133,12 @@ module private CheckerExtensions =
 
         snapshotCache.Get(
             key,
-            async {
-                let! ct = Async.CancellationToken
-                return! getProjectSnapshot None document.Project ct |> Async.AwaitTask
+            node {
+                let! ct = NodeCode.CancellationToken
+                return! getProjectSnapshot None document.Project ct |> NodeCode.AwaitTask
             }
         )
+        |> Async.AwaitNodeCode
 
     type FSharpChecker with
 

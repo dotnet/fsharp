@@ -321,7 +321,6 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
-        |> Async.AwaitNodeCode
 
     member ic.ParseFileInProject(fileName, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
@@ -450,7 +449,9 @@ type FSharpChecker
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
+        |> Async.AwaitNodeCode
 
     member _.ParseAndCheckProject(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -496,7 +497,9 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
-            let! parseResults = backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+            let! parseResults =
+                backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+                |> NodeCode.AwaitAsync
 
             if
                 parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore

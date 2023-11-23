@@ -7,7 +7,9 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 
+open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.DiagnosticsLogger
 
 [<AutoOpen>]
 module internal Utils =
@@ -24,28 +26,30 @@ module internal Utils =
 
         $"{dir}{Path.GetFileName path}"
 
+    let replayDiagnostics (logger: DiagnosticsLogger) = Seq.iter ((<|) logger.DiagnosticSink)
+
 type internal StateUpdate<'TValue> =
     | CancelRequest
     | OriginatorCanceled
-    | JobCompleted of 'TValue
-    | JobFailed of exn
+    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    | JobFailed of exn * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
 type internal MemoizeReply<'TValue> =
     | New of CancellationToken
     | Existing of Task<'TValue>
 
 type internal MemoizeRequest<'TValue> =
-    | GetOrCompute of Async<'TValue> * CancellationToken
+    | GetOrCompute of NodeCode<'TValue> * CancellationToken
     | Sync
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal Job<'TValue> =
-    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime
-    | Completed of 'TValue
+    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * NodeCode<'TValue> * DateTime * ResizeArray<DiagnosticsLogger>
+    | Completed of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
     member this.DebuggerDisplay =
         match this with
-        | Running(_, cts, _, ts) ->
+        | Running(_, cts, _, ts, _) ->
             let cancellation =
                 if cts.IsCancellationRequested then
                     " ! Cancellation Requested"
@@ -53,7 +57,7 @@ type internal Job<'TValue> =
                     ""
 
             $"Running since {ts.ToShortTimeString()}{cancellation}"
-        | Completed value -> $"Completed {value}"
+        | Completed(value, diags) -> $"Completed {value}" + (if diags.Length > 0 then $" ({diags.Length})" else "")
 
 type internal JobEvent =
     | Started
@@ -77,43 +81,6 @@ type private KeyData<'TKey, 'TVersion> =
         Version: 'TVersion
     }
 
-/// Tools for hashing things with MD5 into a string that can be used as a cache key.
-module internal Md5Hasher =
-
-    let private md5 =
-        new ThreadLocal<_>(fun () -> System.Security.Cryptography.MD5.Create())
-
-    let private computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
-
-    let hashString (s: string) =
-        System.Text.Encoding.UTF8.GetBytes(s) |> computeHash
-
-    let empty = String.Empty
-
-    let addBytes (bytes: byte array) (s: string) =
-        let sbytes = s |> hashString
-
-        Array.append sbytes bytes
-        |> computeHash
-        |> System.BitConverter.ToString
-        |> (fun x -> x.Replace("-", ""))
-
-    let addString (s: string) (s2: string) =
-        s |> System.Text.Encoding.UTF8.GetBytes |> addBytes <| s2
-
-    let addSeq<'item> (items: 'item seq) (addItem: 'item -> string -> string) (s: string) =
-        items |> Seq.fold (fun s a -> addItem a s) s
-
-    let addStrings strings = addSeq strings addString
-
-    let addVersions<'a, 'b when 'a :> ICacheKey<'b, string>> (versions: 'a seq) (s: string) =
-        versions |> Seq.map (fun x -> x.GetVersion()) |> addStrings <| s
-
-    let addBool (b: bool) (s: string) =
-        b |> BitConverter.GetBytes |> addBytes <| s
-
-    let addDateTime (dt: System.DateTime) (s: string) = dt.Ticks.ToString() |> addString <| s
-
 type internal AsyncLock() =
 
     let semaphore = new SemaphoreSlim(1, 1)
@@ -132,6 +99,22 @@ type internal AsyncLock() =
 
     interface IDisposable with
         member _.Dispose() = semaphore.Dispose()
+
+type internal CachingDiagnosticsLogger(originalLogger: DiagnosticsLogger option) =
+    inherit DiagnosticsLogger($"CachingDiagnosticsLogger")
+
+    let capturedDiagnostics = ResizeArray()
+
+    override _.ErrorCount =
+        originalLogger
+        |> Option.map (fun x -> x.ErrorCount)
+        |> Option.defaultValue capturedDiagnostics.Count
+
+    override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity: FSharpDiagnosticSeverity) =
+        originalLogger |> Option.iter (fun x -> x.DiagnosticSink(diagnostic, severity))
+        capturedDiagnostics.Add(diagnostic, severity)
+
+    member _.CapturedDiagnostics = capturedDiagnostics |> Seq.toList
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
@@ -215,7 +198,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     let lock = new AsyncLock()
 
-    let processRequest post (key: KeyData<_, _>, msg) =
+    let processRequest post (key: KeyData<_, _>, msg) diagnosticLogger =
 
         lock.Do(fun () ->
             task {
@@ -225,10 +208,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 return
                     match msg, cached with
                     | Sync, _ -> New Unchecked.defaultof<_>
-                    | GetOrCompute _, Some(Completed result) ->
+                    | GetOrCompute _, Some(Completed(result, diags)) ->
                         Interlocked.Increment &hits |> ignore
+                        diags |> replayDiagnostics diagnosticLogger
                         Existing(Task.FromResult result)
-                    | GetOrCompute(_, ct), Some(Running(tcs, _, _, _)) ->
+                    | GetOrCompute(_, ct), Some(Running(tcs, _, _, _, loggers)) ->
                         Interlocked.Increment &hits |> ignore
                         incrRequestCount key
 
@@ -236,6 +220,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             let _name = name
                             post (key, CancelRequest))
                         |> saveRegistration key
+
+                        loggers.Add diagnosticLogger
 
                         Existing tcs.Task
 
@@ -250,11 +236,16 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         let cts = new CancellationTokenSource()
 
-                        cache.Set(key.Key, key.Version, key.Label, (Running(TaskCompletionSource(), cts, computation, DateTime.Now)))
+                        cache.Set(
+                            key.Key,
+                            key.Version,
+                            key.Label,
+                            (Running(TaskCompletionSource(), cts, computation, DateTime.Now, ResizeArray()))
+                        )
 
                         otherVersions
                         |> Seq.choose (function
-                            | v, Running(_tcs, cts, _, _) -> Some(v, cts)
+                            | v, Running(_tcs, cts, _, _, _) -> Some(v, cts)
                             | _ -> None)
                         |> Seq.iter (fun (_v, cts) ->
                             use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label |]
@@ -284,7 +275,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         match action, cached with
 
-                        | OriginatorCanceled, Some(Running(tcs, cts, computation, _)) ->
+                        | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
 
                             decrRequestCount key
 
@@ -298,30 +289,39 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 Interlocked.Increment &canceled |> ignore
                                 use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
                                 ()
-                            //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                             else
                                 // We need to restart the computation
                                 Task.Run(fun () ->
-                                    task {
-                                        do! Task.Delay 0
+                                    Async.StartAsTask(
+                                        async {
 
-                                        try
-                                            log (Started, key)
-                                            Interlocked.Increment &restarted |> ignore
-                                            System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                            let! result = Async.StartAsTask(computation, cancellationToken = cts.Token)
-                                            post (key, (JobCompleted result))
-                                        with
-                                        | :? OperationCanceledException ->
-                                            post (key, CancelRequest)
-                                            ()
-                                        | ex -> post (key, (JobFailed ex))
-                                    },
+                                            let cachingLogger = new CachingDiagnosticsLogger(None)
+
+                                            try
+                                                log (Started, key)
+                                                Interlocked.Increment &restarted |> ignore
+                                                System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
+                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+
+                                                try
+                                                    let! result = computation |> Async.AwaitNodeCode
+                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                                    return ()
+                                                finally
+                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                            with
+                                            | :? OperationCanceledException ->
+                                                post (key, CancelRequest)
+                                                ()
+                                            | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
+                                        }
+                                    ),
                                     cts.Token)
                                 |> ignore
 
-                        | CancelRequest, Some(Running(tcs, cts, _c, _)) ->
+                        | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
 
                             decrRequestCount key
 
@@ -335,7 +335,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 Interlocked.Increment &canceled |> ignore
                                 use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
                                 ()
-                        //System.Diagnostics.Trace.TraceInformation $"{name} Canceled {key.Label}"
 
                         // Probably in some cases cancellation can be fired off even after we just unregistered it
                         | CancelRequest, None
@@ -343,18 +342,22 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         | OriginatorCanceled, None
                         | OriginatorCanceled, Some(Completed _) -> ()
 
-                        | JobFailed ex, Some(Running(tcs, _cts, _c, _ts)) ->
+                        | JobFailed(ex, diags), Some(Running(tcs, _cts, _c, _ts, loggers)) ->
                             cancelRegistration key
                             cache.Remove(key.Key, key.Version)
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
                             Interlocked.Increment &failed |> ignore
                             failures.Add(key.Label, ex)
+
+                            for logger in loggers do
+                                diags |> replayDiagnostics logger
+
                             tcs.TrySetException ex |> ignore
 
-                        | JobCompleted result, Some(Running(tcs, _cts, _c, started)) ->
+                        | JobCompleted(result, diags), Some(Running(tcs, _cts, _c, started, loggers)) ->
                             cancelRegistration key
-                            cache.Set(key.Key, key.Version, key.Label, (Completed result))
+                            cache.Set(key.Key, key.Version, key.Label, (Completed(result, diags)))
                             requestCounts.Remove key |> ignore
                             log (Finished, key)
                             Interlocked.Increment &completed |> ignore
@@ -366,6 +369,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 else
                                     avgDurationMs + (duration - avgDurationMs) / float completed
 
+                            for logger in loggers do
+                                diags |> replayDiagnostics logger
+
                             if tcs.TrySetResult result = false then
                                 internalError key.Label "Invalid state: Completed job already completed"
 
@@ -374,9 +380,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
 
-                        | JobFailed ex, Some(Completed _job) -> internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
+                        | JobFailed(ex, _diags), Some(Completed(_job, _diags2)) ->
+                            internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
 
-                        | JobCompleted _result, Some(Completed _job) -> internalError key.Label "Invalid state: Double-Completed job"
+                        | JobCompleted(_result, _diags), Some(Completed(_job, _diags2)) ->
+                            internalError key.Label "Invalid state: Double-Completed job"
                     })
         }
 
@@ -403,34 +411,47 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        async {
-            let! ct = Async.CancellationToken
+        node {
+            let! ct = NodeCode.CancellationToken
 
-            match! processRequest post (key, GetOrCompute(computation, ct)) |> Async.AwaitTask with
+            let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+
+            match!
+                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
+                |> NodeCode.AwaitTask
+            with
             | New internalCt ->
 
                 let linkedCtSource = CancellationTokenSource.CreateLinkedTokenSource(ct, internalCt)
+                let cachingLogger = new CachingDiagnosticsLogger(Some callerDiagnosticLogger)
 
                 try
                     return!
                         Async.StartAsTask(
                             async {
                                 log (Started, key)
-                                let! result = computation
-                                post (key, (JobCompleted result))
-                                return result
+                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+
+                                try
+                                    let! result = computation |> Async.AwaitNodeCode
+                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                    return result
+                                finally
+                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
                             },
                             cancellationToken = linkedCtSource.Token
                         )
-                        |> Async.AwaitTask
+                        |> NodeCode.AwaitTask
                 with
                 | :? TaskCanceledException
                 | :? OperationCanceledException as ex -> return raise ex
                 | ex ->
-                    post (key, (JobFailed ex))
+                    post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
                     return raise ex
 
-            | Existing job -> return! job |> Async.AwaitTask
+            | Existing job -> return! job |> NodeCode.AwaitTask
+
         }
 
     member _.Clear() = cache.Clear()
@@ -460,7 +481,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         let running =
             valueStats.TryFind "Running"
-            |> Option.map (sprintf " Running: %d")
+            |> Option.map (sprintf " Running: %d ")
             |> Option.defaultValue ""
 
         let avgDuration = avgDurationMs |> sprintf "| Avg: %.0f ms"
@@ -474,7 +495,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let stats =
             [|
                 if errors + failed > 0 then
-                    " [!] "
+                    " /_!_\ "
                 if errors > 0 then $"| ERRORS: {errors} " else ""
                 if failed > 0 then $"| FAILED: {failed} " else ""
                 $"| hits: {hits}{hitRatio} "
@@ -491,7 +512,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |]
             |> String.concat ""
 
-        $"{locked}{running} {cache.DebuggerDisplay} {stats}{avgDuration}"
+        $"{locked}{running}{cache.DebuggerDisplay} {stats}{avgDuration}"
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
