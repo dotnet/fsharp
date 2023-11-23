@@ -154,6 +154,7 @@ type internal RawFSharpAssemblyDataBackedByLanguageService =
         assemblyName: string *
         ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
             RawFSharpAssemblyDataBackedByLanguageService
+
     interface IRawFSharpAssemblyData
 
 /// Manages an incremental build graph for the build of an F# project

@@ -33,7 +33,7 @@ type FindDeclExternalType =
 
     override this.ToString() =
         match this with
-        | Type (name, genericArgs) ->
+        | Type(name, genericArgs) ->
             match genericArgs with
             | [] -> ""
             | args -> args |> List.map (sprintf "%O") |> String.concat ", " |> sprintf "<%s>"
@@ -46,7 +46,7 @@ module FindDeclExternalType =
     let rec tryOfILType (typeVarNames: string array) (ilType: ILType) =
 
         match ilType with
-        | ILType.Array (_, inner) -> tryOfILType typeVarNames inner |> Option.map FindDeclExternalType.Array
+        | ILType.Array(_, inner) -> tryOfILType typeVarNames inner |> Option.map FindDeclExternalType.Array
         | ILType.Boxed tyspec
         | ILType.Value tyspec ->
             tyspec.GenericArgs
@@ -57,7 +57,7 @@ module FindDeclExternalType =
         | ILType.TypeVar ordinal ->
             typeVarNames
             |> Array.tryItem (int ordinal)
-            |> Option.map (fun typeVarName -> FindDeclExternalType.TypeVar typeVarName)
+            |> Option.map FindDeclExternalType.TypeVar
         | _ -> None
 
 [<RequireQualifiedAccess>]
@@ -111,21 +111,21 @@ type FindDeclExternalSymbol =
     override this.ToString() =
         match this with
         | Type fullName -> fullName
-        | Constructor (typeName, args) ->
+        | Constructor(typeName, args) ->
             args
             |> List.map (sprintf "%O")
             |> String.concat ", "
             |> sprintf "%s..ctor(%s)" typeName
-        | Method (typeName, name, args, genericArity) ->
+        | Method(typeName, name, args, genericArity) ->
             let genericAritySuffix = if genericArity > 0 then sprintf "`%d" genericArity else ""
 
             args
             |> List.map (sprintf "%O")
             |> String.concat ", "
             |> sprintf "%s.%s%s(%s)" typeName name genericAritySuffix
-        | Field (typeName, name)
-        | Event (typeName, name)
-        | Property (typeName, name) -> sprintf "%s.%s" typeName name
+        | Field(typeName, name)
+        | Event(typeName, name)
+        | Property(typeName, name) -> sprintf "%s.%s" typeName name
 
     member this.ToDebuggerDisplay() =
         let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<FindDeclExternalSymbol>)

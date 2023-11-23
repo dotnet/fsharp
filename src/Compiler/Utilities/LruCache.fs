@@ -22,12 +22,7 @@ type internal ValueLink<'T when 'T: not struct> =
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TValue: not struct>
-    (
-        keepStrongly,
-        ?keepWeakly,
-        ?requiredToKeep,
-        ?event
-    ) =
+    (keepStrongly, ?keepWeakly, ?requiredToKeep, ?event) =
 
     let keepWeakly = defaultArg keepWeakly 100
     let requiredToKeep = defaultArg requiredToKeep (fun _ -> false)
@@ -50,7 +45,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                 match w.TryGetTarget() with
                 | false, _ ->
                     weakList.Remove node
-                    dictionary[ key ].Remove version |> ignore
+                    dictionary[key].Remove version |> ignore
 
                     if dictionary[key].Count = 0 then
                         dictionary.Remove key |> ignore
@@ -71,7 +66,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVers
                 let previous = node.Previous
                 let key, version, label, _ = node.Value
                 weakList.Remove node
-                dictionary[ key ].Remove version |> ignore
+                dictionary[key].Remove version |> ignore
 
                 if dictionary[key].Count = 0 then
                     dictionary.Remove key |> ignore

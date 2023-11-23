@@ -154,13 +154,7 @@ module internal PervasiveAutoOpens =
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
 
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken
-            )
+            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
             task.Result
 
@@ -278,7 +272,7 @@ module Array =
         let rec loop p l n =
             (n < Array.length l)
             && (if p l[n] then
-                    forallFrom (fun x -> not (p x)) l (n + 1)
+                    forallFrom (p >> not) l (n + 1)
                 else
                     loop p l (n + 1))
 
@@ -628,7 +622,7 @@ module List =
         xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
 
     let existsSquared f xss =
-        xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+        xss |> List.exists (fun xs -> xs |> List.exists f)
 
     let mapiFoldSquared f z xss =
         mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
@@ -1181,8 +1175,8 @@ module NameMap =
             for m in ms do
                 yield! m
         }
-        |> Seq.groupBy (fun (KeyValue (k, _v)) -> k)
-        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue (_k, v)) -> v) es)))
+        |> Seq.groupBy (fun (KeyValue(k, _v)) -> k)
+        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es)))
         |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold
@@ -1309,11 +1303,11 @@ module MapAutoOpens =
         static member Empty: Map<'Key, 'Value> = Map.empty
 
 #if FSHARPCORE_USE_PACKAGE
-        member x.Values = [ for KeyValue (_, v) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
         member x.AddMany(kvs: _[]) =
-            (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+            (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.AddOrModify(key, f: 'Value option -> 'Value) = x.Add(key, f (x.TryFind key))
 
@@ -1331,7 +1325,7 @@ type LayeredMultiMap<'Key, 'Value when 'Key: equality and 'Key: comparison>(cont
             | _ -> []
 
     member x.AddMany(kvs: _[]) =
-        (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 

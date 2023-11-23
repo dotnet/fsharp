@@ -266,7 +266,7 @@ type internal ReadLineConsole() =
                 i
             else
                 match input.Chars(i - 1) with
-                | c when Char.IsLetterOrDigit(c) (* or Char.IsWhiteSpace(c) *)  -> look parenCount (i - 1)
+                | c when Char.IsLetterOrDigit(c) (* or Char.IsWhiteSpace(c) *) -> look parenCount (i - 1)
                 | '.'
                 | '_' -> look parenCount (i - 1)
                 | '}'

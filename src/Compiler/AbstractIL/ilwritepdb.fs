@@ -324,7 +324,7 @@ let sortMethods info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (fun x -> builder.Add x)
+    tableRowCounts |> Seq.iter (builder.Add)
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
@@ -340,14 +340,7 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
         0
 
 type PortablePdbGenerator
-    (
-        embedAllSource: bool,
-        embedSourceList: string list,
-        sourceLink: string,
-        checksumAlgorithm,
-        info: PdbData,
-        pathMap: PathMap
-    ) =
+    (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
 
     let docs =
         match info.Documents with
@@ -438,7 +431,7 @@ type PortablePdbGenerator
             // For F# Interactive, file name 'stdin' gets generated for interactive inputs
             let handle =
                 match checkSum doc.File checksumAlgorithm with
-                | Some (hashAlg, checkSum) ->
+                | Some(hashAlg, checkSum) ->
                     let dbgInfo =
                         (serializeDocumentName doc.File,
                          metadata.GetOrAddGuid hashAlg,

@@ -24,7 +24,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
-                               None, None),
+                               None),
                             LongIdent
                               (SynLongIdent ([Y], [], [None]), None, None,
                                Pats [], None, (3,18--3,19)),

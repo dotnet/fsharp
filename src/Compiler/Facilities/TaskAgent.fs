@@ -45,10 +45,7 @@ type TaskInbox<'Msg, 'MsgNoReply, 'Reply>() =
 
 [<Sealed>]
 type TaskAgent<'Msg, 'MsgNoReply, 'Reply>
-    (
-        processMessage: ('MsgNoReply -> unit) -> 'Msg -> 'Reply,
-        processMessageNoReply: ('MsgNoReply -> unit) -> 'MsgNoReply -> unit
-    ) =
+    (processMessage: ('MsgNoReply -> unit) -> 'Msg -> 'Reply, processMessageNoReply: ('MsgNoReply -> unit) -> 'MsgNoReply -> unit) =
     let inbox = new TaskInbox<'Msg, 'MsgNoReply, 'Reply>()
 
     let exceptionEvent = new Event<_>()
@@ -59,7 +56,7 @@ type TaskAgent<'Msg, 'MsgNoReply, 'Reply>
         backgroundTask {
             while running do
                 match! inbox.Receive() with
-                | ExpectsReply (msg, replySource) ->
+                | ExpectsReply(msg, replySource) ->
                     try
                         let reply = processMessage inbox.Post msg
                         replySource.SetResult reply
