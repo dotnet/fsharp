@@ -15,15 +15,15 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct> =
     /// Lookup the value without making it the most recent.
     /// Returns the original key value because the areSame function
     /// may have unified two different keys.
-    member TryPeekKeyValue: 'Token * key: 'Key -> ('Key * 'Value) option
+    member TryPeekKeyValue: 'Token * key: 'Key -> ('Key * 'Value) voption
 
     /// Lookup a value and make it the most recent.
     /// Returns the original key value because the areSame function
     /// may have unified two different keys.
-    member TryGetKeyValue: 'Token * key: 'Key -> ('Key * 'Value) option
+    member TryGetKeyValue: 'Token * key: 'Key -> ('Key * 'Value) voption
 
     /// Lookup a value and make it the most recent. Return <c>None</c> if it wasn't there.
-    member TryGet: 'Token * key: 'Key -> 'Value option
+    member TryGet: 'Token * key: 'Key -> 'Value voption
 
     /// Add an element to the collection. Make it the most recent.
     member Put: 'Token * 'Key * 'Value -> unit
@@ -63,16 +63,16 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct> =
     member ContainsSimilarKey: 'Token * key: 'Key -> bool
 
     /// Get the value for the given key or <c>None</c> if not still valid.
-    member TryGetAny: 'Token * key: 'Key -> 'Value option
+    member TryGetAny: 'Token * key: 'Key -> 'Value voption
 
     /// Get the value for the given key or None, but only if entry is still valid
-    member TryGet: 'Token * key: 'Key -> 'Value option
+    member TryGet: 'Token * key: 'Key -> 'Value voption
 
     /// Get the value for the given key or <c>None</c> if not still valid. Skips `areSame` checking unless `areSimilar` is not provided.
-    member TryGetSimilarAny: 'Token * key: 'Key -> 'Value option
+    member TryGetSimilarAny: 'Token * key: 'Key -> 'Value voption
 
     /// Get the value for the given key or None, but only if entry is still valid. Skips `areSame` checking unless `areSimilar` is not provided.
-    member TryGetSimilar: 'Token * key: 'Key -> 'Value option
+    member TryGetSimilar: 'Token * key: 'Key -> 'Value voption
 
     /// Remove the given value from the mru cache.
     member RemoveAnySimilar: 'Token * key: 'Key -> unit

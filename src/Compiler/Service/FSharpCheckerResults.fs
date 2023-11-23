@@ -1982,8 +1982,8 @@ type internal TypeCheckInfo
         let key = line, colAtEndOfNames, lineStr, width
 
         match getToolTipTextCache.TryGet(AnyCallerThread, key) with
-        | Some res -> res
-        | None ->
+        | ValueSome res -> res
+        | ValueNone ->
             let res = Compute()
             getToolTipTextCache.Put(AnyCallerThread, key, res)
             res

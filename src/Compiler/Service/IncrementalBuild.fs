@@ -9,6 +9,7 @@ open System.Diagnostics
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -249,7 +250,7 @@ type BoundModel private (
         fileChecked: Event<string>,
         prevTcInfo: TcInfo,
         syntaxTreeOpt: SyntaxTree option,
-        ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
+        tcStateOpt: (GraphNode<TcInfo> * GraphNode<TcInfoExtras>) voption
     ) =
 
     let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
@@ -308,7 +309,7 @@ type BoundModel private (
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
             SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
-            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
+            |> ValueOption.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
                     {
                         tcState = tcState
                         tcEnvAtEndOfFile = tcState.TcEnvFromImpls
@@ -319,7 +320,7 @@ type BoundModel private (
                         tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
                         sigNameOpt = Some(fileName, qualifiedName)
                     })
-        | _ -> None
+        | _ -> ValueNone
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         node {
@@ -383,10 +384,10 @@ type BoundModel private (
 
     let tcInfo, tcInfoExtras =
         match tcStateOpt with
-        | Some tcState -> tcState
+        | ValueSome tcState -> tcState
         | _ ->
             match skippedImplemetationTypeCheck with
-            | Some tcInfo ->
+            | ValueSome tcInfo ->
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
@@ -437,7 +438,8 @@ type BoundModel private (
                 beforeFileChecked,
                 fileChecked,
                 tcInfo,
-                Some syntaxTree
+                Some syntaxTree,
+                ValueNone
             )
     }
 
@@ -458,7 +460,7 @@ type BoundModel private (
                     fileChecked,
                     prevTcInfo,
                     syntaxTreeOpt,
-                    (GraphNode.FromResult finishState, this.TcInfoExtras)
+                    ValueSome(GraphNode.FromResult finishState, this.TcInfoExtras)
                 )
         }
 
@@ -482,7 +484,8 @@ type BoundModel private (
             beforeFileChecked,
             fileChecked,
             prevTcInfo,
-            syntaxTreeOpt
+            syntaxTreeOpt,
+            ValueNone
         )
 
 
@@ -525,8 +528,8 @@ type FrameworkImportsCache(size) =
         let node =
             lock gate (fun () ->
                 match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
-                | Some lazyWork -> lazyWork
-                | None ->
+                | ValueSome lazyWork -> lazyWork
+                | ValueNone ->
                     let lazyWork = GraphNode(node {
                         let tcConfigP = TcConfigProvider.Constant tcConfig
                         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
@@ -637,7 +640,7 @@ module IncrementalBuilderHelpers =
         nonFrameworkResolutions, 
         unresolvedReferences, 
         dependencyProvider, 
-        loadClosureOpt: LoadClosure option, 
+        loadClosureOpt: LoadClosure voption, 
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -691,8 +694,8 @@ module IncrementalBuilderHelpers =
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
-             | None -> ()
-             | Some loadClosure ->
+             | ValueNone -> ()
+             | ValueSome loadClosure ->
                 for inp in loadClosure.Inputs do
                     yield! inp.MetaCommandDiagnostics ]
 
@@ -1361,7 +1364,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
             frameworkTcImportsCache: FrameworkImportsCache,
-            loadClosureOpt: LoadClosure option,
+            loadClosureOpt: LoadClosure voption,
             sourceFiles: string list,
             commandLineArgs: string list,
             projectReferences,
@@ -1408,8 +1411,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 let sdkDirOverride =
                     match loadClosureOpt with
-                    | None -> None
-                    | Some loadClosure -> loadClosure.SdkDirOverride
+                    | ValueNone -> None
+                    | ValueSome loadClosure -> loadClosure.SdkDirOverride
 
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB =
@@ -1426,8 +1429,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 tcConfigB.primaryAssembly <-
                     match loadClosureOpt with
-                    | None -> PrimaryAssembly.Mscorlib
-                    | Some loadClosure ->
+                    | ValueNone -> PrimaryAssembly.Mscorlib
+                    | ValueSome loadClosure ->
                         if loadClosure.UseDesktopFramework then
                             PrimaryAssembly.Mscorlib
                         else
@@ -1457,6 +1460,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                             // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                             XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
+                            |> ValueOption.toOption
                     }
                     |> Some
 
@@ -1471,22 +1475,22 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
             let setupConfigFromLoadClosure () =
                 match loadClosureOpt with
-                | Some loadClosure ->
+                | ValueSome loadClosure ->
                     let dllReferences =
                         [for reference in tcConfigB.referencedDLLs do
                             // If there's (one or more) resolutions of closure references then yield them all
-                            match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
-                            | Some (resolved, closureReferences) ->
+                            match loadClosure.References |> List.tryFindV (fun (resolved, _)->resolved=reference.Text) with
+                            | ValueSome (resolved, closureReferences) ->
                                 for closureReference in closureReferences do
                                     yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                            | None -> yield reference]
+                            | ValueNone -> yield reference]
                     tcConfigB.referencedDLLs <- []
                     tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
                     // Add one by one to remove duplicates
                     dllReferences |> List.iter (fun dllReference ->
                         tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
                     tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-                | None -> ()
+                | ValueNone -> ()
 
             setupConfigFromLoadClosure()
 

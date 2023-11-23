@@ -93,10 +93,10 @@ type public PreXmlDoc =
 type internal XmlDocumentationInfo =
 
     /// Look up an item in the XmlDoc file
-    member TryGetXmlDocBySig: xmlDocSig: string -> XmlDoc option
+    member TryGetXmlDocBySig: xmlDocSig: string -> XmlDoc voption
 
     /// Create an XmlDocumentationInfo from a file
-    static member TryCreateFromFile: xmlFileName: string -> XmlDocumentationInfo option
+    static member TryCreateFromFile: xmlFileName: string -> XmlDocumentationInfo voption
 
 /// Represents a capability to access XmlDoc files
 type internal IXmlDocumentationInfoLoader =

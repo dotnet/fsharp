@@ -300,7 +300,7 @@ type PreXmlDoc =
     static member Merge a b = PreXmlMerge(a, b)
 
 [<Sealed>]
-type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option) =
+type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument voption) =
 
     // 2 and 4 are arbitrary but should be reasonable enough
     [<Literal>]
@@ -322,10 +322,10 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
     let tryGetSummaryNode (xmlDocSig: string) =
         if xmlDocSig.Contains "'" && xmlDocSig.Contains "\"" then
             // No easy way to find this signature with XPath
-            None
+            ValueNone
         else
             tryGetXmlDocument ()
-            |> Option.bind (fun doc ->
+            |> ValueOption.bind (fun doc ->
                 let name =
                     if xmlDocSig.Contains "'" then
                         $"\"{xmlDocSig}\""
@@ -333,13 +333,13 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
                         $"'{xmlDocSig}'"
 
                 match doc.SelectSingleNode $"doc/members/member[@name={name}]" with
-                | null -> None
-                | node when node.HasChildNodes -> Some node
-                | _ -> None)
+                | null -> ValueNone
+                | node when node.HasChildNodes -> ValueSome node
+                | _ -> ValueNone)
 
     member _.TryGetXmlDocBySig(xmlDocSig: string) =
         tryGetSummaryNode xmlDocSig
-        |> Option.map (fun node ->
+        |> ValueOption.map (fun node ->
             let childNodes = node.ChildNodes
             let lines = Array.zeroCreate childNodes.Count
 
@@ -354,7 +354,7 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             not (FileSystem.FileExistsShim(xmlFileName))
             || not (String.Equals(Path.GetExtension(xmlFileName), ".xml", StringComparison.OrdinalIgnoreCase))
         then
-            None
+            ValueNone
         else
             let tryGetXmlDocument () =
                 try
@@ -362,17 +362,17 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
                     let cacheKey = (xmlFileName, lastWriteTime)
 
                     match cache.TryGet((), cacheKey) with
-                    | Some doc -> Some doc
+                    | ValueSome doc -> ValueSome doc
                     | _ ->
                         let doc = XmlDocument()
                         use xmlStream = FileSystem.OpenFileForReadShim(xmlFileName)
                         doc.Load(xmlStream)
                         cache.Put((), cacheKey, doc)
-                        Some doc
+                        ValueSome doc
                 with _ ->
-                    None
+                    ValueNone
 
-            Some(XmlDocumentationInfo(tryGetXmlDocument))
+            ValueSome(XmlDocumentationInfo(tryGetXmlDocument))
 
 type IXmlDocumentationInfoLoader =
 

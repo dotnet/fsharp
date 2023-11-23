@@ -478,8 +478,11 @@ module List =
             match chooser h with
             | ValueNone -> tryPickV chooser t
             | r -> r
+    
 
 [<RequireQualifiedAccess>]
 module ValueOption =
     let inline defaultArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
     let inline toOption arg = match arg with ValueNone -> None | ValueSome v -> Some v
+    let inline ofOption arg = match arg with None -> ValueNone | Some v -> ValueSome v
+    

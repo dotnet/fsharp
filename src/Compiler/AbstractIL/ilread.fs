@@ -5010,11 +5010,11 @@ let OpenILModuleReader fileName opts =
         if keyOk && opts.pdbDirPath.IsNone then
             ilModuleReaderCache1Lock.AcquireLock(fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
         else
-            None
+            ValueNone
 
     match cacheResult1 with
-    | Some ilModuleReader -> ilModuleReader
-    | None ->
+    | ValueSome ilModuleReader -> ilModuleReader
+    | ValueNone ->
 
         let cacheResult2 =
             // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable

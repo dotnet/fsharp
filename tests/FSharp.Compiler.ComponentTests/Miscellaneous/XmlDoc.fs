@@ -37,11 +37,11 @@ let ``Can extract XML docs from a file for a signature`` signature =
 
         let docInfo =
             XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
-            |> Option.defaultWith (fun () -> failwith "Couldn't create XmlDoc from file")
+            |> ValueOption.defaultWith (fun () -> failwith "Couldn't create XmlDoc from file")
 
         match docInfo.TryGetXmlDocBySig(signature) with
-        | None -> failwith "Got no doc"
-        | Some doc -> Assert.Equal(memberDoc, doc.UnprocessedLines |> String.concat "\n")
+        | ValueNone -> failwith "Got no doc"
+        | ValueSome doc -> Assert.Equal(memberDoc, doc.UnprocessedLines |> String.concat "\n")
 
     finally
         File.Delete xmlFileName

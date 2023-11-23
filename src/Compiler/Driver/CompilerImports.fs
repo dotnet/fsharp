@@ -1584,6 +1584,7 @@ and [<Sealed>] TcImports
 
                 member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
+                    |> ValueOption.ofOption
 
                 member _.GetProvidedAssemblyInfo(ctok, m, assembly) =
                     tcImports.GetProvidedAssemblyInfo(ctok, m, assembly)

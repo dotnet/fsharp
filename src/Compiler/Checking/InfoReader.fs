@@ -7,6 +7,7 @@ module internal FSharp.Compiler.InfoReader
 open System.Collections.Concurrent
 open System.Collections.Generic
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
@@ -1080,9 +1081,9 @@ let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref =
 /// Try to find the xml doc associated with the assembly name and xml doc signature
 let TryFindXmlDocByAssemblyNameAndSig (infoReader: InfoReader) assemblyName xmlDocSig =
     infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
-    |> Option.bind (fun xmlDocInfo ->
-        xmlDocInfo.TryGetXmlDocBySig(xmlDocSig)
-    )
+    |> ValueOption.bind (fun xmlDocInfo ->
+        xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
+    |> ValueOption.toOption
 
 let private libFileOfEntityRef x =
     match x with

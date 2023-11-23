@@ -305,3 +305,4 @@ module List =
 module ValueOption =
     val inline defaultArg: 'T voption -> 'T -> 'T
     val inline toOption: 'T voption -> 'T option
+    val inline ofOption: 'T option -> 'T voption

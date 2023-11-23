@@ -31,7 +31,7 @@ type AssemblyLoader =
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
-    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
+    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo voption
 
 #if !NO_TYPEPROVIDERS
 
@@ -710,4 +710,3 @@ let RescopeAndImportILType scoref amap m importInst ilTy =
 
 let CanRescopeAndImportILType scoref amap m ilTy =
     ilTy |> rescopeILType scoref |>  CanImportILType amap m
-

@@ -255,7 +255,7 @@ type internal IncrementalBuilder =
         legacyReferenceResolver: LegacyReferenceResolver *
         defaultFSharpBinariesDir: string *
         frameworkTcImportsCache: FrameworkImportsCache *
-        loadClosureOpt: LoadClosure option *
+        loadClosureOpt: LoadClosure voption *
         sourceFiles: string list *
         commandLineArgs: string list *
         projectReferences: IProjectReference list *

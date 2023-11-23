@@ -1254,10 +1254,10 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
                 CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
             let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-            Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
+            ValueSome((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
 
-        | _ -> None
-    | _ -> None
+        | _ -> ValueNone
+    | _ -> ValueNone
 
 /// Typecheck a single file (or interactive entry into F# Interactive).
 let CheckOneInput

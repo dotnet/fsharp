@@ -397,16 +397,16 @@ type BackgroundCompiler
     let tryGetBuilderNode options =
         incrementalBuildersCache.TryGet(AnyCallerThread, options)
 
-    let tryGetBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        tryGetBuilderNode options |> Option.map (fun x -> x.GetOrComputeValue())
+    let tryGetBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> voption =
+        tryGetBuilderNode options |> ValueOption.map (fun x -> x.GetOrComputeValue())
 
-    let tryGetSimilarBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> option =
+    let tryGetSimilarBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> voption =
         incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options)
-        |> Option.map (fun x -> x.GetOrComputeValue())
+        |> ValueOption.map (fun x -> x.GetOrComputeValue())
 
-    let tryGetAnyBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> option =
+    let tryGetAnyBuilder options : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> voption =
         incrementalBuildersCache.TryGetAny(AnyCallerThread, options)
-        |> Option.map (fun x -> x.GetOrComputeValue())
+        |> ValueOption.map (fun x -> x.GetOrComputeValue())
 
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
@@ -426,7 +426,7 @@ type BackgroundCompiler
 
     let getOrCreateBuilder (options, userOpName) : NodeCode<IncrementalBuilder option * FSharpDiagnostic[]> =
         match tryGetBuilder options with
-        | Some getBuilder ->
+        | ValueSome getBuilder ->
             node {
                 match! getBuilder with
                 | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated -> return builderOpt, creationDiags
@@ -447,9 +447,9 @@ type BackgroundCompiler
 
     let getSimilarOrCreateBuilder (options, userOpName) =
         match tryGetSimilarBuilder options with
-        | Some res -> res
+        | ValueSome res -> res
         // The builder does not exist at all. Create it.
-        | None -> getOrCreateBuilder (options, userOpName)
+        | ValueNone -> getOrCreateBuilder (options, userOpName)
 
     let getOrCreateBuilderWithInvalidationFlag (options, canInvalidateProject, userOpName) =
         if canInvalidateProject then
@@ -459,7 +459,7 @@ type BackgroundCompiler
 
     let getAnyBuilder (options, userOpName) =
         match tryGetAnyBuilder options with
-        | Some getBuilder -> getBuilder
+        | ValueSome getBuilder -> getBuilder
         | _ -> getOrCreateBuilder (options, userOpName)
 
     static let mutable actualParseFileCount = 0
@@ -474,7 +474,7 @@ type BackgroundCompiler
             let key = (fileName, sourceText.GetHashCode() |> int64, options)
 
             match checkFileInProjectCache.TryGet(ltok, key) with
-            | Some res -> res
+            | ValueSome res -> res
             | _ ->
                 let res =
                     GraphNode(
@@ -503,8 +503,8 @@ type BackgroundCompiler
                 let hash = sourceText.GetHashCode() |> int64
 
                 match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (fileName, hash, options))) with
-                | Some res -> return res
-                | None ->
+                | ValueSome res -> return res
+                | ValueNone ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
                     let! ct = Async.CancellationToken
 
@@ -583,7 +583,7 @@ type BackgroundCompiler
             let cachedResultsOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, key))
 
             match cachedResultsOpt with
-            | Some cachedResults ->
+            | ValueSome cachedResults ->
                 match! cachedResults.GetOrComputeValue() with
                 | parseResults, checkResults, _, priorTimeStamp when
                     (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName with
@@ -628,7 +628,7 @@ type BackgroundCompiler
                     tcPrior.TcImports,
                     tcInfo.tcState,
                     tcInfo.moduleNamesDict,
-                    loadClosure,
+                    (ValueOption.toOption loadClosure),
                     tcInfo.TcDiagnostics,
                     options.IsIncompleteTypeCheckEnvironment,
                     options,
@@ -919,7 +919,7 @@ type BackgroundCompiler
                         tcResolutions,
                         tcSymbolUses,
                         tcEnvAtEnd.NameEnv,
-                        loadClosure,
+                        (ValueOption.toOption loadClosure),
                         latestImplementationFile,
                         tcOpenDeclarations
                     )
@@ -1005,11 +1005,11 @@ type BackgroundCompiler
                 parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, (fileName, hash, options)))
 
             match resOpt with
-            | Some res ->
+            | ValueSome res ->
                 match res.TryPeekValue() with
                 | ValueSome (a, b, c, _) -> Some(a, b, c)
                 | ValueNone -> None
-            | None -> None
+            | ValueNone -> None
         | None -> None
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
@@ -1101,7 +1101,7 @@ type BackgroundCompiler
     /// Get the timestamp that would be on the output if fully built immediately
     member private _.TryGetLogicalTimeStampForProject(cache, options) =
         match tryGetBuilderNode options with
-        | Some lazyWork ->
+        | ValueSome lazyWork ->
             match lazyWork.TryPeekValue() with
             | ValueSome (Some builder, _) -> Some(builder.GetLogicalTimeStampForProject(cache))
             | _ -> None
@@ -1454,8 +1454,8 @@ type FSharpChecker
 
         async {
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
-            | Some res -> return res
-            | None ->
+            | ValueSome res -> return res
+            | ValueNone ->
                 let! ct = Async.CancellationToken
 
                 let res =

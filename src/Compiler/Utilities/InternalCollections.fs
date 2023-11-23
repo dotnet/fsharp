@@ -35,10 +35,10 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
             // Treat a list of key-value pairs as a lookup collection.
             // This function returns true if two keys are the same according to the predicate
             // function passed in.
-            | [] -> None
+            | [] -> ValueNone
             | (similarKey, value) :: t ->
                 if areSimilar (key, similarKey) then
-                    Some(similarKey, value)
+                    ValueSome(similarKey, value)
                 else
                     Lookup key t
 
@@ -64,10 +64,10 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
 
     let TryGetKeyValueImpl (data, key) =
         match TryPeekKeyValueImpl(data, key) with
-        | Some (similarKey, value) as result ->
+        | ValueSome (similarKey, value) as result ->
             // If the result existed, move it to the end of the list (more likely to keep it)
             result, Promote(data, similarKey, value)
-        | None -> None, data
+        | ValueNone -> ValueNone, data
 
     /// Remove weak entries from the list that have been collected.
     let FilterAndHold (tok: 'Token) =
@@ -136,8 +136,8 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         AssignWithStrength(tok, newData)
 
         match result with
-        | Some (_, value) -> Some(value)
-        | None -> None
+        | ValueSome (_, value) -> ValueSome(value)
+        | ValueNone -> ValueNone
 
     member al.Put(tok, key, value) =
         let data = FilterAndHold(tok)
@@ -192,32 +192,32 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
 
     member bc.ContainsSimilarKey(tok, key) =
         match cache.TryPeekKeyValue(tok, key) with
-        | Some (_similarKey, _value) -> true
-        | None -> false
+        | ValueSome (_similarKey, _value) -> true
+        | ValueNone -> false
 
     member bc.TryGetAny(tok, key) =
         match cache.TryPeekKeyValue(tok, key) with
-        | Some (similarKey, value) -> if areSame (similarKey, key) then Some(value) else None
-        | None -> None
+        | ValueSome (similarKey, value) -> if areSame (similarKey, key) then ValueSome(value) else ValueNone
+        | ValueNone -> ValueNone
 
     member bc.TryGet(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (similarKey, value) ->
+        | ValueSome (similarKey, value) ->
             if areSame (similarKey, key) && isStillValid (key, value) then
-                Some value
+                ValueSome value
             else
-                None
-        | None -> None
+                ValueNone
+        | ValueNone -> ValueNone
 
     member bc.TryGetSimilarAny(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (_, value) -> Some value
-        | None -> None
+        | ValueSome (_, value) -> ValueSome value
+        | ValueNone -> ValueNone
 
     member bc.TryGetSimilar(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (_, value) -> if isStillValid (key, value) then Some value else None
-        | None -> None
+        | ValueSome (_, value) -> if isStillValid (key, value) then ValueSome value else ValueNone
+        | ValueNone -> ValueNone
 
     member bc.Set(tok, key: 'Key, value: 'Value) = cache.Put(tok, key, value)
 

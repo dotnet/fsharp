@@ -19,6 +19,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
+[<Struct>]
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1
@@ -133,6 +134,40 @@ module TcResolutionsExtensions =
 #endif
         | TNoRepr -> SemanticClassificationType.ReferenceType
 
+    [<return: Struct>]
+    let inline (|LegitTypeOccurence|_|) occ =
+        match occ with
+        | ItemOccurence.UseInType
+        | ItemOccurence.UseInAttribute
+        | ItemOccurence.Use
+        | ItemOccurence.Binding
+        | ItemOccurence.Pattern
+        | ItemOccurence.Open -> ValueSome()
+        | _ -> ValueNone
+
+    [<return: Struct>]
+    let inline (|KeywordIntrinsicValue|_|) (g: TcGlobals) (vref: ValRef) =
+        if
+            valRefEq g g.raise_vref vref
+            || valRefEq g g.reraise_vref vref
+            || valRefEq g g.typeof_vref vref
+            || valRefEq g g.typedefof_vref vref
+            || valRefEq g g.sizeof_vref vref
+            || valRefEq g g.nameof_vref vref
+        then
+            ValueSome()
+        else
+            ValueNone
+
+    [<return: Struct>]
+    let inline (|EnumCaseFieldInfo|_|) (rfinfo: RecdFieldInfo) =
+        match rfinfo.TyconRef.TypeReprInfo with
+        | TFSharpTyconRepr x ->
+            match x.fsobjmodel_kind with
+            | TFSharpEnum -> ValueSome()
+            | _ -> ValueNone
+        | _ -> ValueNone
+
     type TcResolutions with
 
         member sResolutions.GetSemanticClassification
@@ -145,37 +180,6 @@ module TcResolutionsExtensions =
             DiagnosticsScope.Protect
                 range0
                 (fun () ->
-                    let (|LegitTypeOccurence|_|) occ =
-                        match occ with
-                        | ItemOccurence.UseInType
-                        | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use
-                        | ItemOccurence.Binding
-                        | ItemOccurence.Pattern
-                        | ItemOccurence.Open -> Some()
-                        | _ -> None
-
-                    let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-                        if
-                            valRefEq g g.raise_vref vref
-                            || valRefEq g g.reraise_vref vref
-                            || valRefEq g g.typeof_vref vref
-                            || valRefEq g g.typedefof_vref vref
-                            || valRefEq g g.sizeof_vref vref
-                            || valRefEq g g.nameof_vref vref
-                        then
-                            Some()
-                        else
-                            None
-
-                    let (|EnumCaseFieldInfo|_|) (rfinfo: RecdFieldInfo) =
-                        match rfinfo.TyconRef.TypeReprInfo with
-                        | TFSharpTyconRepr x ->
-                            match x.fsobjmodel_kind with
-                            | TFSharpEnum -> Some()
-                            | _ -> None
-                        | _ -> None
-
                     // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
                     // We should prefer the latter, otherwise they would not get classified as CEs.
                     let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
@@ -217,7 +221,7 @@ module TcResolutionsExtensions =
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
-                        | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
+                        | Item.Value (KeywordIntrinsicValue g), ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
                         | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
                             if isDiscard vref.DisplayName then

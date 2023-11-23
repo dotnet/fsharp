@@ -262,10 +262,10 @@ module internal PrintUtilities =
                 match info with
                 | Some(Some ccuFileName, xmlDocSig) ->
                     infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension ccuFileName)
-                    |> Option.bind (fun xmlDocInfo ->
+                    |> ValueOption.bind (fun xmlDocInfo ->
                         xmlDocInfo.TryGetXmlDocBySig(xmlDocSig)
                     )
-                    |> Option.defaultValue possibleXmlDoc
+                    |> ValueOption.defaultValue possibleXmlDoc
                 | _ ->
                     possibleXmlDoc
             else
