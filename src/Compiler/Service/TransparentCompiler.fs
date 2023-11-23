@@ -42,6 +42,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.TypedTreeOps
 open System.Threading
+open Internal.Utilities.Hashing
 
 type internal FSharpFile =
     {

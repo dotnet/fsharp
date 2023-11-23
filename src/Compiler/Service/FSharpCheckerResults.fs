@@ -56,6 +56,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 

@@ -147,6 +147,7 @@
     <Compile Include="Facilities\DiagnosticsLogger.fs" />
     <Compile Include="Facilities\DiagnosticResolutionHints.fsi" />
     <Compile Include="Facilities\DiagnosticResolutionHints.fs" />
+    <Compile Include="facilities\Hashing.fs" />
     <Compile Include="Facilities\prim-lexing.fsi" />
     <Compile Include="Facilities\prim-lexing.fs" />
     <Compile Include="Facilities\prim-parsing.fsi" />
