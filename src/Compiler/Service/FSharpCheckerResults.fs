@@ -172,7 +172,7 @@ type FSharpProjectSnapshot =
 
     static member UseSameProject(options1, options2) =
         match options1.ProjectId, options2.ProjectId with
-        | Some (projectId1), Some (projectId2) when
+        | Some(projectId1), Some(projectId2) when
             not (String.IsNullOrWhiteSpace(projectId1))
             && not (String.IsNullOrWhiteSpace(projectId2))
             ->
@@ -195,7 +195,7 @@ type FSharpProjectSnapshot =
             && (options1.ReferencedProjects, options2.ReferencedProjects)
                ||> List.forall2 (fun r1 r2 ->
                    match r1, r2 with
-                   | FSharpReferencedProjectSnapshot.FSharpReference (n1, a), FSharpReferencedProjectSnapshot.FSharpReference (n2, b) ->
+                   | FSharpReferencedProjectSnapshot.FSharpReference(n1, a), FSharpReferencedProjectSnapshot.FSharpReference(n2, b) ->
                        n1 = n2 && FSharpProjectSnapshot.AreSameForChecking(a, b))
 
             && options1.LoadTime = options2.LoadTime
@@ -330,7 +330,7 @@ type FSharpProjectSnapshot =
             OtherOptions = this.OtherOptions
             ReferencedProjects =
                 [
-                    for FSharpReference (_, p) in this.ReferencedProjects -> p.WithoutImplFilesThatHaveSignatures.GetDebugVersion()
+                    for FSharpReference(_, p) in this.ReferencedProjects -> p.WithoutImplFilesThatHaveSignatures.GetDebugVersion()
                 ]
             IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
             UseScriptResolutionRules = this.UseScriptResolutionRules
@@ -463,7 +463,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     /// </summary>
     member this.OutputFile =
         match this with
-        | FSharpReference (projectOutputFile, _) -> projectOutputFile
+        | FSharpReference(projectOutputFile, _) -> projectOutputFile
 
     /// <summary>
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
@@ -477,7 +477,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
         match o with
         | :? FSharpReferencedProjectSnapshot as o ->
             match this, o with
-            | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
+            | FSharpReference(projectOutputFile1, options1), FSharpReference(projectOutputFile2, options2) ->
                 projectOutputFile1 = projectOutputFile2 && options1 = options2
 
         | _ -> false
@@ -486,7 +486,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
 
     member this.Key =
         match this with
-        | FSharpReference (_, snapshot) -> snapshot.Key
+        | FSharpReference(_, snapshot) -> snapshot.Key
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -572,7 +572,7 @@ type FSharpProjectSnapshot with
             ReferencedProjects =
                 this.ReferencedProjects
                 |> Seq.map (function
-                    | FSharpReference (name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ToOptions()))
+                    | FSharpReference(name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ToOptions()))
                 |> Seq.toArray
             IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
             UseScriptResolutionRules = this.UseScriptResolutionRules
@@ -595,7 +595,7 @@ type FSharpProjectSnapshot with
                 let! referencedProjects =
                     options.ReferencedProjects
                     |> Seq.choose (function
-                        | FSharpReferencedProject.FSharpReference (outputName, options) ->
+                        | FSharpReferencedProject.FSharpReference(outputName, options) ->
                             Some(
                                 async {
                                     let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
@@ -3859,7 +3859,19 @@ type FSharpCheckProjectResults
         tcConfigOption: TcConfig option,
         keepAssemblyContents: bool,
         diagnostics: FSharpDiagnostic[],
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, Async<TcSymbolUses seq>> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option
+        details:
+            (TcGlobals *
+            TcImports *
+            CcuThunk *
+            ModuleOrNamespaceType *
+            Choice<IncrementalBuilder, Async<TcSymbolUses seq>> *
+            TopAttribs option *
+            (unit -> IRawFSharpAssemblyData option) *
+            ILAssemblyRef *
+            AccessorDomain *
+            CheckedImplFile list option *
+            string[] *
+            FSharpProjectOptions) option
     ) =
 
     let getDetails () =

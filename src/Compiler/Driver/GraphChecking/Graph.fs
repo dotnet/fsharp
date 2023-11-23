@@ -56,7 +56,7 @@ module internal Graph =
         let relevant n = n = node || allDeps |> Array.contains n
 
         graph
-        |> Seq.choose (fun (KeyValue (src, deps)) ->
+        |> Seq.choose (fun (KeyValue(src, deps)) ->
             if relevant src then
                 Some(src, deps |> Array.filter relevant)
             else

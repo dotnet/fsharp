@@ -1484,7 +1484,8 @@ let CheckOneInputWithCallback
       tcSink,
       tcState: TcState,
       input: ParsedInput,
-      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+      _skipImplIfSigExists: bool):
+        (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
     : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     cancellable {
         try
@@ -1763,7 +1764,7 @@ let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
 
     // Transform the graph to include ArtificialImplFile nodes when necessary.
     graph
-    |> Seq.collect (fun (KeyValue (fileIdx, deps)) ->
+    |> Seq.collect (fun (KeyValue(fileIdx, deps)) ->
         if filePairs.IsSignature fileIdx then
             // Add an additional ArtificialImplFile node for the signature file.
             [|
@@ -1778,7 +1779,16 @@ let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
 
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
-    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs):
+        'a *
+        (unit -> bool) *
+        TcConfig *
+        TcImports *
+        TcGlobals *
+        LongIdent option *
+        TcState *
+        (PhasedDiagnostic -> PhasedDiagnostic) *
+        ParsedInput list)
     : FinalFileResult list * TcState =
     use cts = new CancellationTokenSource()
 

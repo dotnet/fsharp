@@ -223,12 +223,12 @@ module private TypeCheckingGraphProcessing =
         async {
 
             let workWrapper
-                (getProcessedNode: NodeToTypeCheck
-                                       -> ProcessedNode<NodeToTypeCheck, TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>>)
+                (getProcessedNode:
+                    NodeToTypeCheck -> ProcessedNode<NodeToTypeCheck, TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>>)
                 (node: NodeInfo<NodeToTypeCheck>)
                 : Async<TcInfo * Finisher<NodeToTypeCheck, TcInfo, PartialResult>> =
                 async {
-                    let folder (state: TcInfo) (Finisher (finisher = finisher)) : TcInfo = finisher state |> snd
+                    let folder (state: TcInfo) (Finisher(finisher = finisher)) : TcInfo = finisher state |> snd
                     let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
 
                     let transitiveDeps =
@@ -245,14 +245,14 @@ module private TypeCheckingGraphProcessing =
 
             let! results = processGraphAsync graph workWrapper
 
-            let finalFileResults, state: (int * PartialResult) list * TcInfo =
+            let finalFileResults, state =
                 (([], emptyState),
                  results
                  |> Array.choose (fun (item, res) ->
                      match item with
                      | NodeToTypeCheck.ArtificialImplFile _ -> None
                      | NodeToTypeCheck.PhysicalFile file -> Some(file, res)))
-                ||> Array.fold (fun (fileResults, state) (item, (_, Finisher (finisher = finisher))) ->
+                ||> Array.fold (fun (fileResults, state) (item, (_, Finisher(finisher = finisher))) ->
                     let fileResult, state = finisher state
                     (item, fileResult) :: fileResults, state)
 
@@ -499,7 +499,7 @@ type internal TransparentCompiler
             for r in project.ReferencedProjects do
 
                 match r with
-                | FSharpReferencedProjectSnapshot.FSharpReference (nm, projectSnapshot) ->
+                | FSharpReferencedProjectSnapshot.FSharpReference(nm, projectSnapshot) ->
                     // Don't use cross-project references for FSharp.Core, since various bits of code
                     // require a concrete FSharp.Core to exist on-disk. The only solutions that have
                     // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
@@ -543,7 +543,7 @@ type internal TransparentCompiler
 
         let getSwitchValue (switchString: string) =
             match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
-            | Some idx -> Some(commandLineArgs[ idx ].Substring(switchString.Length))
+            | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
             | _ -> None
 
         let sdkDirOverride =
@@ -644,7 +644,7 @@ type internal TransparentCompiler
                                         loadClosure.References
                                         |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
                                     with
-                                    | Some (resolved, closureReferences) ->
+                                    | Some(resolved, closureReferences) ->
                                         for closureReference in closureReferences do
                                             yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                                     | None -> yield reference
@@ -701,7 +701,7 @@ type internal TransparentCompiler
 
                 let basicDependencies =
                     [
-                        for UnresolvedAssemblyReference (referenceText, _) in unresolvedReferences do
+                        for UnresolvedAssemblyReference(referenceText, _) in unresolvedReferences do
                             // Exclude things that are definitely not a file name
                             if not (FileSystem.IsInvalidPathShim referenceText) then
                                 let file =
@@ -1186,7 +1186,7 @@ type internal TransparentCompiler
                 let! tcIntermediate =
                     ComputeTcIntermediate projectSnapshot dependencyFiles fileNode (input, parseErrors) bootstrapInfo tcInfo
 
-                let (Finisher (node = node; finisher = finisher)) = tcIntermediate.finisher
+                let (Finisher(node = node; finisher = finisher)) = tcIntermediate.finisher
 
                 return
                     Finisher(
@@ -1526,11 +1526,10 @@ type internal TransparentCompiler
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs
-                            |> List.exists (fun (Attrib (tcref, _, _, _, _, _, _)) ->
+                            |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
 
-                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>
-                                    .FullName)
+                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true

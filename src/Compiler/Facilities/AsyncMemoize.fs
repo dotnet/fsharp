@@ -45,7 +45,7 @@ type internal Job<'TValue> =
 
     member this.DebuggerDisplay =
         match this with
-        | Running (_, cts, _, ts) ->
+        | Running(_, cts, _, ts) ->
             let cancellation =
                 if cts.IsCancellationRequested then
                     " ! Cancellation Requested"
@@ -135,12 +135,7 @@ type internal AsyncLock() =
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
-    (
-        ?keepStrongly,
-        ?keepWeakly,
-        ?name: string,
-        ?cancelDuplicateRunningJobs: bool
-    ) =
+    (?keepStrongly, ?keepWeakly, ?name: string, ?cancelDuplicateRunningJobs: bool) =
 
     let name = defaultArg name "N/A"
     let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs false
@@ -230,10 +225,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 return
                     match msg, cached with
                     | Sync, _ -> New Unchecked.defaultof<_>
-                    | GetOrCompute _, Some (Completed result) ->
+                    | GetOrCompute _, Some(Completed result) ->
                         Interlocked.Increment &hits |> ignore
                         Existing(Task.FromResult result)
-                    | GetOrCompute (_, ct), Some (Running (tcs, _, _, _)) ->
+                    | GetOrCompute(_, ct), Some(Running(tcs, _, _, _)) ->
                         Interlocked.Increment &hits |> ignore
                         incrRequestCount key
 
@@ -244,7 +239,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         Existing tcs.Task
 
-                    | GetOrCompute (computation, ct), None ->
+                    | GetOrCompute(computation, ct), None ->
                         Interlocked.Increment &started |> ignore
                         incrRequestCount key
 
@@ -259,7 +254,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         otherVersions
                         |> Seq.choose (function
-                            | v, Running (_tcs, cts, _, _) -> Some(v, cts)
+                            | v, Running(_tcs, cts, _, _) -> Some(v, cts)
                             | _ -> None)
                         |> Seq.iter (fun (_v, cts) ->
                             use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label |]
@@ -289,7 +284,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         match action, cached with
 
-                        | OriginatorCanceled, Some (Running (tcs, cts, computation, _)) ->
+                        | OriginatorCanceled, Some(Running(tcs, cts, computation, _)) ->
 
                             decrRequestCount key
 
@@ -326,7 +321,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                     cts.Token)
                                 |> ignore
 
-                        | CancelRequest, Some (Running (tcs, cts, _c, _)) ->
+                        | CancelRequest, Some(Running(tcs, cts, _c, _)) ->
 
                             decrRequestCount key
 
@@ -344,11 +339,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         // Probably in some cases cancellation can be fired off even after we just unregistered it
                         | CancelRequest, None
-                        | CancelRequest, Some (Completed _)
+                        | CancelRequest, Some(Completed _)
                         | OriginatorCanceled, None
-                        | OriginatorCanceled, Some (Completed _) -> ()
+                        | OriginatorCanceled, Some(Completed _) -> ()
 
-                        | JobFailed ex, Some (Running (tcs, _cts, _c, _ts)) ->
+                        | JobFailed ex, Some(Running(tcs, _cts, _c, _ts)) ->
                             cancelRegistration key
                             cache.Remove(key.Key, key.Version)
                             requestCounts.Remove key |> ignore
@@ -357,7 +352,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             failures.Add(key.Label, ex)
                             tcs.TrySetException ex |> ignore
 
-                        | JobCompleted result, Some (Running (tcs, _cts, _c, started)) ->
+                        | JobCompleted result, Some(Running(tcs, _cts, _c, started)) ->
                             cancelRegistration key
                             cache.Set(key.Key, key.Version, key.Label, (Completed result))
                             requestCounts.Remove key |> ignore
@@ -379,9 +374,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
 
-                        | JobFailed ex, Some (Completed _job) -> internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
+                        | JobFailed ex, Some(Completed _job) -> internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
 
-                        | JobCompleted _result, Some (Completed _job) -> internalError key.Label "Invalid state: Double-Completed job"
+                        | JobCompleted _result, Some(Completed _job) -> internalError key.Label "Invalid state: Double-Completed job"
                     })
         }
 
@@ -500,12 +495,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
-    (
-        ?keepStrongly,
-        ?keepWeakly,
-        ?name: string,
-        ?cancelDuplicateRunningJobs: bool
-    ) =
+    (?keepStrongly, ?keepWeakly, ?name: string, ?cancelDuplicateRunningJobs: bool) =
 
     do ignore (keepStrongly, keepWeakly, name, cancelDuplicateRunningJobs)
 
