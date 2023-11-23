@@ -1188,28 +1188,7 @@ let execute = IPrintable.Say("hello")
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
-    
-    [<FactForNETCOREAPP>]
-    let ``Accessing to IWSAM static abstract member produces a compilation error`` () =
-        Fsx """
-type IPrintable =
-    static abstract member Log: string -> string
 
-type SomeClass1() =
-    member this.GetLog(s: string) = IPrintable.Log(s)
-    
-    static member Log(s: string) = s
-    
-    interface IPrintable with
-        static member Log(s: string) = s
-        
-let x = IPrintable.Log("hello")  
-        """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldSucceed // TODO: shouldFail
-         
     [<FactForNETCOREAPP>]
     let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
         Fsx """

@@ -9809,6 +9809,7 @@ and TcMethodApplication
         | accessibleMeths -> accessibleMeths
 
     let candidates = candidateMethsAndProps |> List.map fst
+
     // Step 0. Split the syntactic arguments (if any) into named and unnamed parameters
     let curriedCallerArgsOpt, unnamedDelayedCallerArgExprOpt, exprTy =
         TcMethodApplication_SplitSynArguments cenv env tpenv isProp candidates exprTy curriedCallerArgs mItem
@@ -9853,8 +9854,7 @@ and TcMethodApplication
             | _ -> ()
               
         let postArgumentTypeCheckingCalledMethGroup =
-            preArgumentTypeCheckingCalledMethGroup
-            |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
+            preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs =
                     match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
