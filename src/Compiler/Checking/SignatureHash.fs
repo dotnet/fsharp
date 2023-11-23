@@ -95,14 +95,14 @@ module HashIL =
     let rec hashILType (ty: ILType) : Hash =
         match ty with
         | ILType.Void -> hash ILType.Void
-        | ILType.Array (sh, t) -> hashILType t @@ hashILArrayShape sh
+        | ILType.Array(sh, t) -> hashILType t @@ hashILArrayShape sh
         | ILType.Value t
         | ILType.Boxed t -> hashILTypeRef t.TypeRef @@ (t.GenericArgs |> hashListOrderMatters (hashILType))
         | ILType.Ptr t
         | ILType.Byref t -> hashILType t
         | ILType.FunctionPointer t -> hashILCallingSignature t
         | ILType.TypeVar n -> hash n
-        | ILType.Modified (_, _, t) -> hashILType t
+        | ILType.Modified(_, _, t) -> hashILType t
 
     and hashILCallingSignature (signature: ILCallingSignature) =
         let res = signature.ReturnType |> hashILType
@@ -113,7 +113,7 @@ module HashAccessibility =
     let isHiddenToObserver (TAccess access) (observer: ObserverVisibility) =
         let isInternalCompPath x =
             match x with
-            | CompPath (ILScopeRef.Local, []) -> true
+            | CompPath(ILScopeRef.Local, []) -> true
             | _ -> false
 
         match access with
@@ -134,7 +134,7 @@ module rec HashTypes =
     let hashMemberFlags (memFlags: SynMemberFlags) = hash memFlags
 
     /// Hash an attribute 'Type(arg1, ..., argN)'
-    let private hashAttrib (Attrib (tyconRef = tcref)) = hashTyconRefImpl tcref
+    let private hashAttrib (Attrib(tyconRef = tcref)) = hashTyconRefImpl tcref
 
     let hashAttributeList attrs =
         attrs |> hashListOrderIndependent hashAttrib
@@ -151,18 +151,18 @@ module rec HashTypes =
         let tpHash = hashTyparRefWithInfo tp
 
         match tpc with
-        | TyparConstraint.CoercesTo (tgtTy, _) -> tpHash @@ 1 @@ hashTType g tgtTy
-        | TyparConstraint.MayResolveMember (traitInfo, _) -> tpHash @@ 2 @@ hashTraitWithInfo (* denv *) g traitInfo
-        | TyparConstraint.DefaultsTo (_, ty, _) -> tpHash @@ 3 @@ hashTType g ty
-        | TyparConstraint.IsEnum (ty, _) -> tpHash @@ 4 @@ hashTType g ty
+        | TyparConstraint.CoercesTo(tgtTy, _) -> tpHash @@ 1 @@ hashTType g tgtTy
+        | TyparConstraint.MayResolveMember(traitInfo, _) -> tpHash @@ 2 @@ hashTraitWithInfo (* denv *) g traitInfo
+        | TyparConstraint.DefaultsTo(_, ty, _) -> tpHash @@ 3 @@ hashTType g ty
+        | TyparConstraint.IsEnum(ty, _) -> tpHash @@ 4 @@ hashTType g ty
         | TyparConstraint.SupportsComparison _ -> tpHash @@ 5
         | TyparConstraint.SupportsEquality _ -> tpHash @@ 6
-        | TyparConstraint.IsDelegate (aty, bty, _) -> tpHash @@ 7 @@ hashTType g aty @@ hashTType g bty
+        | TyparConstraint.IsDelegate(aty, bty, _) -> tpHash @@ 7 @@ hashTType g aty @@ hashTType g bty
         | TyparConstraint.SupportsNull _ -> tpHash @@ 8
         | TyparConstraint.IsNonNullableStruct _ -> tpHash @@ 9
         | TyparConstraint.IsUnmanaged _ -> tpHash @@ 10
         | TyparConstraint.IsReferenceType _ -> tpHash @@ 11
-        | TyparConstraint.SimpleChoice (tys, _) -> tpHash @@ 12 @@ (tys |> hashListOrderIndependent (hashTType g))
+        | TyparConstraint.SimpleChoice(tys, _) -> tpHash @@ 12 @@ (tys |> hashListOrderIndependent (hashTType g))
         | TyparConstraint.RequiresDefaultConstructor _ -> tpHash @@ 13
 
     /// Hash type parameter constraints
@@ -197,23 +197,23 @@ module rec HashTypes =
     let hashTType (g: TcGlobals) ty =
 
         match stripTyparEqns ty |> (stripTyEqns g) with
-        | TType_ucase (UnionCaseRef (tc, _), args)
-        | TType_app (tc, args, _) -> args |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTyconRef tc)
-        | TType_anon (anonInfo, tys) ->
+        | TType_ucase(UnionCaseRef(tc, _), args)
+        | TType_app(tc, args, _) -> args |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTyconRef tc)
+        | TType_anon(anonInfo, tys) ->
             tys
             |> hashListOrderMatters (hashTType g)
             |> pipeToHash (anonInfo.SortedNames |> hashListOrderMatters hashText)
             |> addFullStructuralHash (evalAnonInfoIsStruct anonInfo)
-        | TType_tuple (tupInfo, t) ->
+        | TType_tuple(tupInfo, t) ->
             t
             |> hashListOrderMatters (hashTType g)
             |> addFullStructuralHash (evalTupInfoIsStruct tupInfo)
         // Hash a first-class generic type.
-        | TType_forall (tps, tau) -> tps |> hashListOrderMatters (hashTyparRef) |> pipeToHash (hashTType g tau)
+        | TType_forall(tps, tau) -> tps |> hashListOrderMatters (hashTyparRef) |> pipeToHash (hashTType g tau)
         | TType_fun _ ->
             let argTys, retTy = stripFunTy g ty
             argTys |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTType g retTy)
-        | TType_var (r, _) -> hashTyparRefWithInfo r
+        | TType_var(r, _) -> hashTyparRefWithInfo r
         | TType_measure unt -> hashMeasure unt
 
     // Hash a single argument, including its name and type
@@ -268,7 +268,7 @@ module rec HashTypes =
 
     let hashMemberType (g: TcGlobals) vref typarInst argInfos retTy =
         match PartitionValRefTypars g vref with
-        | Some (_, _, memberMethodTypars, memberToParentInst, _) ->
+        | Some(_, _, memberMethodTypars, memberToParentInst, _) ->
             hashMemberSigCore g memberToParentInst (typarInst, memberMethodTypars, argInfos, retTy)
         | None -> hashUncurriedSig g typarInst argInfos retTy
 
@@ -293,7 +293,11 @@ module HashTastMemberOrVals =
 
             let combinedHash =
                 memberFlagsHash
-                @@ parentTypeHash @@ memberTypeHash @@ flagsHash @@ nameHash @@ attribsHash
+                @@ parentTypeHash
+                @@ memberTypeHash
+                @@ flagsHash
+                @@ nameHash
+                @@ attribsHash
 
             combinedHash
 
@@ -344,7 +348,10 @@ module TyconDefinitionHash =
             let combined =
                 nameHash
                 @@ attribHash
-                   @@ typeHash @@ (hash fld.IsStatic) @@ (hash fld.IsVolatile) @@ (hash fld.IsMutable)
+                @@ typeHash
+                @@ (hash fld.IsStatic)
+                @@ (hash fld.IsVolatile)
+                @@ (hash fld.IsMutable)
 
             combined
 
@@ -368,7 +375,7 @@ module TyconDefinitionHash =
         |> hashListOrderMatters (hashUnionCase (g, obs))
 
     let private hashFsharpDelegate g slotSig =
-        let (TSlotSig (_, _, _, _, paraml, retTy)) = slotSig
+        let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig
 
         (paraml
          |> hashListOrderMatters (fun pl -> pl |> hashListOrderMatters (fun sp -> hashTType g sp.Type)))
@@ -471,11 +478,11 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
         match monb with
         | ModuleOrNamespaceBinding.Binding b when b.Var.LogicalName.StartsWith("doval@") -> 0
         | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef b.Var)
-        | ModuleOrNamespaceBinding.Module (moduleInfo, contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo, contents)
+        | ModuleOrNamespaceBinding.Module(moduleInfo, contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo, contents)
 
     and hashSingleModuleOrNamespaceContents x =
         match x with
-        | TMDefRec (_, _opens, tycons, mbinds, _) ->
+        | TMDefRec(_, _opens, tycons, mbinds, _) ->
             let mbindsHash = mbinds |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
 
             let tyconsHash = TyconDefinitionHash.hashTyconDefns (g, observer) tycons
@@ -485,7 +492,7 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
             else
                 0
 
-        | TMDefLet (bind, _) -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef bind.Var)
+        | TMDefLet(bind, _) -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef bind.Var)
         | TMDefOpens _ -> 0 (* empty hash *)
         | TMDefs defs -> defs |> hashListOrderIndependent hashSingleModuleOrNamespaceContents
         | TMDefDo _ -> 0 (* empty hash *)
@@ -525,4 +532,5 @@ let calculateHashOfAssemblyTopAttributes (attrs: TopAttribs) (platform: ILPlatfo
 
     HashTypes.hashAttributeList attrs.assemblyAttrs
     @@ HashTypes.hashAttributeList attrs.mainMethodAttrs
-       @@ HashTypes.hashAttributeList attrs.netModuleAttrs @@ platformHash
+    @@ HashTypes.hashAttributeList attrs.netModuleAttrs
+    @@ platformHash

@@ -459,7 +459,7 @@ type TcGlobals(
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argTys, retTy))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argTys) retTy)
       let isMember = Option.isSome memberParentName
-      let argCount = if isMember then List.sum (List.map List.length argTys) else 0
+      let argCount = if isMember then List.sumBy List.length argTys else 0
       let linkageType = if isMember then Some ty else None
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, linkageType)
       let vref = IntrinsicValRef(enclosingEntity, logicalName, isMember, ty, key)
@@ -1058,7 +1058,7 @@ type TcGlobals(
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
-      for key in embeddedILTypeDefs.Keys.OrderBy(fun k -> k) do
+      for key in embeddedILTypeDefs.Keys.OrderBy id do
         match (embeddedILTypeDefs.TryRemove(key)) with
         | true, ilTypeDef -> yield ilTypeDef
         | false, _ -> ()
