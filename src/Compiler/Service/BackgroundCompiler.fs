@@ -916,8 +916,8 @@ type internal BackgroundCompiler
                             parsingOptions,
                             userOpName,
                             suggestNamesForErrors,
-                            captureIdentifiersWhenParsing,
                             builder.TcConfig.flatErrors,
+                            captureIdentifiersWhenParsing,
                             ct
                         )
 
