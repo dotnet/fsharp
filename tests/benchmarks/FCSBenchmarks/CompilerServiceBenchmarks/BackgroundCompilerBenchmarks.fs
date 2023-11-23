@@ -234,7 +234,7 @@ type TestProjectType =
 [<MemoryDiagnoser>]
 [<ThreadingDiagnoser>]
 [<BenchmarkCategory(FSharpCategory)>]
-[<SimpleJob(warmupCount=1,targetCount=4)>]
+[<SimpleJob(warmupCount=1,iterationCount=4)>]
 type TransparentCompilerBenchmark() =
 
     let size = 30
@@ -338,7 +338,7 @@ type TransparentCompilerBenchmark() =
 [<MemoryDiagnoser>]
 [<ThreadingDiagnoser>]
 [<BenchmarkCategory(FSharpCategory)>]
-[<SimpleJob(warmupCount=1,targetCount=8)>]
+[<SimpleJob(warmupCount=1,iterationCount=8)>]
 type TransparentCompilerGiraffeBenchmark() =
 
     let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
