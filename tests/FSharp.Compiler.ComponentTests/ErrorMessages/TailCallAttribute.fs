@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.ErrorMessages
+namespace ErrorMessages
 
 open FSharp.Test.Compiler
 open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
