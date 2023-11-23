@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
-        <source>Static members are not allowed in object expressions.</source>
-        <target state="new">Static members are not allowed in object expressions.</target>
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -405,6 +405,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">패키지 관리</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -8553,8 +8558,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">패키지 관리자 키 '{0}'이(가) {1}에서 등록되지 않았습니다. 현재 등록: {2}. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">패키지 관리자 키 '{0}'이(가) {1}에서 등록되지 않았습니다. 현재 등록: {2}. 확장에 대한 자세한 내용은 다음을 참조하세요. https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

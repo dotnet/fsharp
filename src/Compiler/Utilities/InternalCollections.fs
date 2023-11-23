@@ -76,8 +76,8 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         [
             for key, value in refs do
                 match value with
-                | Strong (value) -> yield (key, value)
-                | Weak (weakReference) ->
+                | Strong(value) -> yield (key, value)
+                | Weak(weakReference) ->
 #if FX_NO_GENERIC_WEAKREFERENCE
                     match weakReference.Target with
                     | Null -> ()
@@ -164,14 +164,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         AssignWithStrength(tok, keep)
 
 type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
-    (
-        keepStrongly,
-        areSame,
-        ?isStillValid: 'Key * 'Value -> bool,
-        ?areSimilar,
-        ?requiredToKeep,
-        ?keepMax
-    ) =
+    (keepStrongly, areSame, ?isStillValid: 'Key * 'Value -> bool, ?areSimilar, ?requiredToKeep, ?keepMax) =
 
     /// Default behavior of <c>areSimilar</c> function is areSame.
     let areSimilar = defaultArg areSimilar areSame

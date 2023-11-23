@@ -135,7 +135,7 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 
 /// Get the object used to perform strong-name signing
 let GetStrongNameSigner signingInfo =
-    let (StrongNameSigningInfo (delaysign, publicsign, signer, container)) = signingInfo
+    let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container -> Some(ILStrongNameSigner.OpenKeyContainer container)
@@ -239,7 +239,7 @@ module MainModuleBuilder =
 
         match findStringAttr attrName with
         | None -> assemblyVersion
-        | Some (AttributeHelpers.ILVersion v) -> v
+        | Some(AttributeHelpers.ILVersion v) -> v
         | Some _ ->
             // Warning will be reported by CheckExpressions.fs
             assemblyVersion
@@ -253,7 +253,7 @@ module MainModuleBuilder =
         match findStringAttr attrName with
         | None
         | Some "" -> fileVersion |> toDotted
-        | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
+        | Some(AttributeHelpers.ILVersion v) -> v |> toDotted
         | Some v ->
             // Warning will be reported by CheckExpressions.fs
             v

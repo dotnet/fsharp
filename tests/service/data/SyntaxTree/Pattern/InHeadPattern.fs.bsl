@@ -10,8 +10,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   ListCons
                     (Const (Int32 1, (2,4--2,5)), Wild (2,9--2,10), (2,4--2,10),
                      { ColonColonRange = (2,6--2,8) }), None,

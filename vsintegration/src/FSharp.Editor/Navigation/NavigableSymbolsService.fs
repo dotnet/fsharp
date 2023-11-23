@@ -55,17 +55,17 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
 
                         match definition with
                         | ValueNone -> return null
-                        | ValueSome (result, range) ->
+                        | ValueSome(result, range) ->
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
                             match result with
-                            | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
+                            | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
                                 return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol
 
-                            | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
+                            | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
                                 let nav =
                                     { new INavigableSymbol with
                                         member _.Navigate(_: INavigableRelationship) =

@@ -20,7 +20,7 @@ let mutable progress = false
 let mutable tracking = false
 
 let isEnvVarSet s =
-    try (Environment.GetEnvironmentVariable(s) <> null) with _ -> false
+    try not(isNull(Environment.GetEnvironmentVariable s)) with _ -> false
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 

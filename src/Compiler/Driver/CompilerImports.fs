@@ -508,7 +508,7 @@ type TcConfig with
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
 
-        if originalReferences = [] then
+        if List.isEmpty originalReferences then
             [], []
         else
             // Group references by name with range values in the grouped value list.
@@ -529,7 +529,7 @@ type TcConfig with
                 [|
                     for (_filename, maxIndexOfReference, references) in groupedReferences do
                         let assemblyResolution =
-                            references |> List.choose (fun r -> tcConfig.TryResolveLibWithDirectories r)
+                            references |> List.choose (tcConfig.TryResolveLibWithDirectories)
 
                         if not assemblyResolution.IsEmpty then
                             (maxIndexOfReference, assemblyResolution)
@@ -1756,14 +1756,14 @@ and [<Sealed>] TcImports
                 assert (nameof (tcImports) = "tcImports")
 
                 let mutable systemRuntimeContainsTypeRef =
-                    (fun typeName -> tcImports.SystemRuntimeContainsType typeName)
+                    tcImports.SystemRuntimeContainsType
 
                 // When the tcImports is disposed the systemRuntimeContainsTypeRef thunk is replaced
                 // with one raising an exception.
                 tcImportsStrong.AttachDisposeTypeProviderAction(fun () ->
                     systemRuntimeContainsTypeRef <- fun _ -> raise (ObjectDisposedException("The type provider has been disposed")))
 
-                (fun arg -> systemRuntimeContainsTypeRef arg)
+                systemRuntimeContainsTypeRef
 
             // Note, this only captures tcImportsWeak
             let mutable getReferencedAssemblies =
@@ -2130,8 +2130,7 @@ and [<Sealed>] TcImports
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2 ())
 #endif
             ccuRawDataAndInfos
-            |> List.map p23
-            |> List.map (fun asm -> ResolvedImportedAssembly(asm, m))
+            |> List.map (p23 >> fun asm -> ResolvedImportedAssembly(asm, m))
 
         phase2
 
