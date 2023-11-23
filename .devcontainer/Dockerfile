@@ -25,3 +25,4 @@ ENV DEBIAN_FRONTEND=dialog
 
 # Make sure we can build using plain dotnet
 ENV BUILDING_USING_DOTNET="true"
+ENV FSHARPCORE_USE_PACKAGE="false"
