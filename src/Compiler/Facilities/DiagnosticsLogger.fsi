@@ -37,7 +37,7 @@ val NoSuggestions: Suggestions
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 
-val (|StopProcessing|_|): exn: exn -> unit option
+val (|StopProcessing|_|): exn: exn -> unit voption
 
 val StopProcessing<'T> : exn
 
@@ -428,7 +428,7 @@ val NormalizeErrorString: text: string -> string
 
 /// Indicates whether a language feature check should be skipped. Typically used in recursive functions
 /// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type SuppressLanguageFeatureCheck =
     | Yes
     | No
@@ -440,7 +440,7 @@ val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: Lang
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val tryLanguageFeatureErrorOption:
-    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
+    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn voption
 
 val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 

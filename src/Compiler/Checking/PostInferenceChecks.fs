@@ -747,8 +747,8 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
                     | ExactlyEqual -> ()
                     | FeasiblyEqual ->
                         match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
+                        | ValueNone -> ()
+                        | ValueSome exn -> exn
 
                         let typ1Str = NicePrint.minimalStringOfType cenv.denv ty1
                         let typ2Str = NicePrint.minimalStringOfType cenv.denv ty2
@@ -760,8 +760,8 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
 
                     | NotEqual ->
                         match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
-                        | None -> ()
-                        | Some exn -> exn
+                        | ValueNone -> ()
+                        | ValueSome exn -> exn
     }
     match Seq.tryHead errors with
     | None -> ()

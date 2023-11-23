@@ -266,17 +266,17 @@ type DiagnosticsScope(flatErrors: bool)  =
         use diagnosticsScope = new DiagnosticsScope(false)
         let res = 
             try 
-                Some (f())
+                ValueSome (f())
             with e -> 
                 // Here we only call errorRecovery to save the error message for later use by TryGetFirstErrorText.
                 try 
                     errorRecovery e m
                 with RecoverableException _ -> 
                     ()
-                None
+                ValueNone
         match res with 
-        | Some res -> res
-        | None -> 
+        | ValueSome res -> res
+        | ValueNone -> 
             match diagnosticsScope.TryGetFirstErrorText() with 
             | Some text -> err text
             | None -> err ""
