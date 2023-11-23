@@ -184,7 +184,7 @@ module internal FSharpEnvironment =
                 | None -> ()
                 | Some(p: string) ->
                     match Path.GetDirectoryName(p) with
-                    | s when s = "" || s = null || Path.GetFileName(p) = "packages" || s = p -> ()
+                    | s when s = "" || isNull s || Path.GetFileName(p) = "packages" || s = p -> ()
                     | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
 
                 for p in searchToolPaths path compilerToolPaths do

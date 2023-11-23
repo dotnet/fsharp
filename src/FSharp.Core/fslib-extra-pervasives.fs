@@ -101,11 +101,11 @@ module ExtraTopLevelOperators =
             member _.TryGetValue(k, r) =
                 let safeKey = makeSafeKey k
 
-                if t.ContainsKey(safeKey) then
-                    (r <- t.[safeKey]
+                match t.TryGetValue safeKey with
+                | true, tsafe ->
+                    (r <- tsafe
                      true)
-                else
-                    false
+                | false, _ -> false
 
             member _.Remove(_: 'Key) =
                 (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))): bool)
@@ -197,7 +197,7 @@ module ExtraTopLevelOperators =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let dictRefType (l: seq<'Key * 'T>) =
-        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (RuntimeHelpers.StructBox) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs: seq<'Key * 'T>) : IDictionary<'Key, 'T> =

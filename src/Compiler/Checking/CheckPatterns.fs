@@ -387,7 +387,7 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames)) ty pat2
     let (TcPatLinearEnv(tpenv, names2, takenNames2)) = patEnv2
 
-    if not (takenNames1 = takenNames2) then
+    if takenNames1 <> takenNames2 then
         errorR (UnionPatternsBindDifferentNames m)
 
     names1 |> Map.iter (fun _ (PrelimVal1 (id=id1; prelimType=ty1)) ->

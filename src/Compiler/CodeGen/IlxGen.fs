@@ -4525,7 +4525,7 @@ and GenNamedLocalTyFuncCall cenv (cgbuf: CodeGenBuffer) eenv ty cloinfo tyargs m
 
         ilDirectGenericParams, ilDirectWitnessParams, directWitnessInfos
 
-    if not (List.length ilDirectGenericParams = ilTyArgs.Length) then
+    if List.length ilDirectGenericParams <> ilTyArgs.Length then
         errorR (Error(FSComp.SR.ilIncorrectNumberOfTypeArguments (), m))
 
     // Recover result (value or reference types) via unbox_any.
@@ -7839,10 +7839,10 @@ and GenDecisionTreeCases
         | _ -> contf targetInfos
 
 // Used for the peephole optimization below
-and (|BoolExpr|_|) =
+and [<return: Struct>] (|BoolExpr|_|) =
     function
-    | Expr.Const(Const.Bool b1, _, _) -> Some b1
-    | _ -> None
+    | Expr.Const(Const.Bool b1, _, _) -> ValueSome b1
+    | _ -> ValueNone
 
 and GenDecisionTreeTest
     cenv

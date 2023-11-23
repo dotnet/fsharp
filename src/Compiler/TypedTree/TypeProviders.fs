@@ -121,7 +121,7 @@ let CreateTypeProvider (
     let getReferencedAssemblies () =
         resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
 
-    if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
+    if not(isNull(typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]))) then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
@@ -146,7 +146,7 @@ let CreateTypeProvider (
 #endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
-    elif typeProviderImplementationType.GetConstructor [| |] <> null then 
+    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
         protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
 
     else

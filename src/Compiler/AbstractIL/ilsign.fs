@@ -183,10 +183,10 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidAlgId ())))
 
     // Validate the RSA structure first.
-    if rsaParameters.Modulus = null then
+    if isNull rsaParameters.Modulus then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Modulus")))
 
-    if rsaParameters.Exponent = null || rsaParameters.Exponent.Length > 4 then
+    if isNull rsaParameters.Exponent || rsaParameters.Exponent.Length > 4 then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Exponent")))
 
     let modulusLength = rsaParameters.Modulus.Length
@@ -194,7 +194,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
     // We assume that if P != null, then so are Q, DP, DQ, InverseQ and D and indicate KeyPair RSA Parameters
     let isPrivate =
-        if rsaParameters.P <> null then
+        if not (isNull rsaParameters.P) then
             validateRSAField rsaParameters.P halfModulusLength "P"
             validateRSAField rsaParameters.Q halfModulusLength "Q"
             validateRSAField rsaParameters.DP halfModulusLength "DP"
@@ -213,7 +213,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
         bw.Write(int (modulusLength + BLOBHEADER_LENGTH)) // CLRHeader.KeyLength
 
         // Write out the BLOBHEADER
-        bw.Write(byte (if isPrivate = true then PRIVATEKEYBLOB else PUBLICKEYBLOB)) // BLOBHEADER.bType
+        bw.Write(byte (if isPrivate then PRIVATEKEYBLOB else PUBLICKEYBLOB)) // BLOBHEADER.bType
 
         bw.Write(byte BLOBHEADER_CURRENT_BVERSION) // BLOBHEADER.bVersion
         bw.Write(int16 0) // BLOBHEADER.wReserved
@@ -235,7 +235,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
         bw.Write expAsDword // RSAPubKey.pubExp
         bw.Write(rsaParameters.Modulus |> Array.rev) // Copy over the modulus for both public and private
 
-        if isPrivate = true then
+        if isPrivate then
             do
                 bw.Write(rsaParameters.P |> Array.rev)
                 bw.Write(rsaParameters.Q |> Array.rev)
