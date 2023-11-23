@@ -1630,8 +1630,7 @@ type internal BackgroundCompiler
                 let! sourceText = fileSnapshot.GetSource() |> NodeCode.AwaitTask
                 let options = projectSnapshot.ToOptions()
 
-                return!
-                    self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
+                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
             }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =

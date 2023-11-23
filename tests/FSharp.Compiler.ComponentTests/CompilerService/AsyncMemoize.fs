@@ -388,7 +388,7 @@ let ``Preserve thread static diagnostics`` () =
     let job2Cache = AsyncMemoize()
 
     let job1 (input: string) = node {
-        let! _ = Async.Sleep 10 |> NodeCode.AwaitAsync
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
         let ex = DummyException("job1 error")
         DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
         return Ok input
@@ -398,7 +398,7 @@ let ``Preserve thread static diagnostics`` () =
         
         DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
 
-        let! _ = Async.Sleep 10 |> NodeCode.AwaitAsync
+        let! _ = Async.Sleep (rng.Next(1, 30)) |> NodeCode.AwaitAsync
 
         let key = { new ICacheKey<_, _> with
                         member _.GetKey() = "job1"
@@ -442,6 +442,84 @@ let ``Preserve thread static diagnostics`` () =
 
     let results = (Task.WhenAll tasks).Result
 
-    let diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
+    let _diagnosticCounts = results |> Seq.map snd |> Seq.map Array.length |> Seq.groupBy id |> Seq.map (fun (k, v) -> k, v |> Seq.length) |> Seq.sortBy fst |> Seq.toList
 
-    Assert.Equal<(int * int) list>([], diagnosticCounts)
+    //Assert.Equal<(int * int) list>([4, 100], diagnosticCounts)
+
+    let diagnosticMessages = results |> Seq.map snd |> Seq.map (Array.map (fun (d, _) -> d.Exception.Message) >> Array.toList) |> Set
+
+    Assert.Equal<Set<_>>(Set [["task error"; "job2 error 1"; "job1 error"; "job2 error 2"; ]], diagnosticMessages)
+
+
+[<Fact>]
+let ``Preserve thread static diagnostics already completed job`` () = 
+
+    let cache = AsyncMemoize()
+
+    let key = { new ICacheKey<_, _> with
+                    member _.GetKey() = "job1"
+                    member _.GetVersion() = 1
+                    member _.GetLabel() = "job1" }
+
+    let job (input: string) = node {
+        let ex = DummyException($"job {input} error")
+        DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR(ex)
+        return Ok input
+    }
+
+    async {
+
+        let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
+
+        use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+
+        let! _ = cache.Get(key, job "1" ) |> Async.AwaitNodeCode    
+        let! _ = cache.Get(key, job "2" ) |> Async.AwaitNodeCode    
+
+        let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
+
+        Assert.Equal<list<_>>(["job 1 error"; "job 1 error"], diagnosticMessages)
+
+    }
+    |> Async.StartAsTask
+
+
+[<Fact>]
+let ``We get diagnostics from the job that failed`` () = 
+
+    let cache = AsyncMemoize()
+
+    let key = { new ICacheKey<_, _> with
+                    member _.GetKey() = "job1"
+                    member _.GetVersion() = 1
+                    member _.GetLabel() = "job1" }
+
+    let job (input: int) = node {
+        let ex = DummyException($"job {input} error")
+        do! Async.Sleep 100 |> NodeCode.AwaitAsync
+        DiagnosticsThreadStatics.DiagnosticsLogger.Error(ex)
+        return 5
+    }
+
+    let result = 
+        [1; 2]
+        |> Seq.map (fun i ->
+            async {
+            let diagnosticsLogger = CompilationDiagnosticLogger($"Testing", FSharpDiagnosticOptions.Default)
+
+            use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Optimize)
+            try
+                let! _ = cache.Get(key, job i ) |> Async.AwaitNodeCode
+                ()
+            with _ ->
+                ()
+            let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
+
+            //Assert.Equal<list<_>>(["job 1 error"], diagnosticMessages)
+            return diagnosticMessages
+        })
+        |> Async.Parallel
+        |> Async.StartAsTask
+        |> (fun t -> t.Result)
+
+    Assert.Equal<list<_>>([["job 1 error"]; ["job 1 error"]], result)

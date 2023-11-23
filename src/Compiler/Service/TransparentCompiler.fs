@@ -1085,7 +1085,7 @@ type internal TransparentCompiler
         caches.TcIntermediate.Get(
             key,
             node {
-            
+
                 let input = parsedInput
                 let fileName = input.FileName
 
@@ -1816,8 +1816,7 @@ type internal TransparentCompiler
 
                 ignore parseResults
 
-                let! _, result =
-                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
 
                 return result
             }
@@ -1838,8 +1837,7 @@ type internal TransparentCompiler
 
                 ignore parseResults
 
-                let! _, result =
-                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                let! _, result = this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
 
                 return Some result
             }
@@ -1873,15 +1871,11 @@ type internal TransparentCompiler
                 ignore canInvalidateProject
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
-                return!
-                    this.FindReferencesInFile(fileName, snapshot, symbol, userOpName)
+                return! this.FindReferencesInFile(fileName, snapshot, symbol, userOpName)
             }
 
         member this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) =
-            node {
-                return!
-                    this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName)
-            }
+            node { return! this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) }
 
         member _.FrameworkImportsCache: FrameworkImportsCache =
             backgroundCompiler.FrameworkImportsCache
@@ -1909,9 +1903,7 @@ type internal TransparentCompiler
             node {
                 let! snapshot = FSharpProjectSnapshot.FromOptions options |> NodeCode.AwaitAsync
 
-                match!
-                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
-                with
+                match! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName) with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return parseResult, checkResult
                 | parseResult, FSharpCheckFileAnswer.Aborted -> return parseResult, FSharpCheckFileResults.MakeEmpty(fileName, [||], true)
             }
@@ -1941,9 +1933,7 @@ type internal TransparentCompiler
                     FSharpProjectSnapshot.FromOptions(options, fileName, 1, sourceText)
                     |> NodeCode.AwaitAsync
 
-                match!
-                    this.ParseAndCheckFileInProject(fileName, snapshot, "GetCachedCheckFileResult")
-                with
+                match! this.ParseAndCheckFileInProject(fileName, snapshot, "GetCachedCheckFileResult") with
                 | parseResult, FSharpCheckFileAnswer.Succeeded checkResult -> return Some(parseResult, checkResult)
                 | _, FSharpCheckFileAnswer.Aborted -> return None
             }
@@ -2016,8 +2006,7 @@ type internal TransparentCompiler
                     FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText)
                     |> NodeCode.AwaitAsync
 
-                return!
-                    this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
+                return! this.ParseAndCheckFileInProject(fileName, snapshot, userOpName)
             }
 
         member this.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
