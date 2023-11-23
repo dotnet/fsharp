@@ -708,15 +708,17 @@ type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T *
 [<DefaultAugmentation(false)>]
 type Foo =
     | Baz of int
+    | Bat
+    | Batman
 
 
-let foo = Baz 42
+let foo = [Baz 42; Bat; Batman]
 printf "%A" foo"""
         |> asExe
         |> compile
         |> shouldSucceed
         |> run
-        |> verifyOutput "Baz 42"
+        |> verifyOutput "[Baz 42; Bat; Batman]"
 
     [<Fact>]
     let ``Struct DU ValueOption keeps working`` ()  =
