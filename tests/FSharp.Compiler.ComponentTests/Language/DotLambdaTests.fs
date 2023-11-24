@@ -230,7 +230,8 @@ let c : string = let _ = "test" in "asd" |> _.ToString()
 let ``DotLambda selector converted to Func when used in LINQ`` () =
     FSharp """open System.Linq
 let _ = [""; ""; ""].Select(fun x -> x.Length)
-let _ = [""; ""; ""].Select(_.Length)"""
+let _ = [""; ""; ""].Select(_.Length)
+let _ = [""; ""; ""].Select _.Length"""
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
