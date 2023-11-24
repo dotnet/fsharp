@@ -3,7 +3,6 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/samples"
-
 [<Theory;
     Directory(
         folder
