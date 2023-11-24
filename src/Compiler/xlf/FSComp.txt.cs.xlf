@@ -5073,8 +5073,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Pro F#7 a nižší se definice statických hodnot dají použít jenom v typech s primárním konstruktorem ('type X(args) = ...'). Pokud je chcete povolit ve všech ostatních typech, použijte jazykovou verzi „preview“.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Pro F#7 a nižší se definice statických hodnot dají použít jenom v typech s primárním konstruktorem ('type X(args) = ...'). Pokud je chcete povolit ve všech ostatních typech, použijte jazykovou verzi „preview“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
