@@ -127,6 +127,11 @@
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">'AssemblyKeyNameAttribute' a été déprécié. Utilisez 'AssemblyKeyFileAttribute' à la place.</target>
@@ -245,6 +250,11 @@
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Lève des avertissements si un membre ou une fonction possède l'attribut « TailCall », mais n'est pas utilisé de manière récursive.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
