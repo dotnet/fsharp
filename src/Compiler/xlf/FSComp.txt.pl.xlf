@@ -122,6 +122,11 @@
         <target state="translated">Składowa lub funkcja „{0}” ma atrybut „TailCallAttribute”, ale nie jest używana w sposób cykliczny końca.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Static members are not allowed in object expressions.</source>
+        <target state="new">Static members are not allowed in object expressions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Element „AssemblyKeyNameAttribute” jest przestarzały. Zamiast niego użyj elementu „AssemblyKeyFileAttribute”.</target>

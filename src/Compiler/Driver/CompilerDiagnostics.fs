@@ -1552,7 +1552,7 @@ type Exception with
 
                     // If implementation and required slot doesn't have same "instance-ness", then tell user that.
                     if impl.IsInstance <> minfoVirt.IsInstance then
-                        // Requried slot is instance, meaning implementation is static, tell user that we expect instance.
+                        // Required slot is instance, meaning implementation is static, tell user that we expect instance.
                         if minfoVirt.IsInstance then
                             os.AppendString(OverrideShouldBeStatic().Format)
                         else

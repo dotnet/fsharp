@@ -103,6 +103,24 @@ let _ =
             "struct ((1), 1)", "struct (1, 1)"
             "struct (1, (1))", "struct (1, 1)"
             "(fun x -> x), y", "(fun x -> x), y"
+            "3, (null: string)", "3, (null: string)"
+
+            "
+            let _ =
+                1,
+                (true
+                 || false
+                 || true),
+                1
+            ",
+            "
+            let _ =
+                1,
+                true
+                || false
+                || true,
+                1
+            "
 
             // AnonymousRecord
             "{| A = (1) |}", "{| A = 1 |}"
@@ -155,6 +173,9 @@ let _ =
             "for x in [] do (ignore 3)", "for x in [] do ignore 3"
 
             // ArrayOrListComputed
+            "[1; 2; (if x then 3 else 4); 5]", "[1; 2; (if x then 3 else 4); 5]"
+            "[|1; 2; (if x then 3 else 4); 5|]", "[|1; 2; (if x then 3 else 4); 5|]"
+
             // IndexRange
             "[(1)..10]", "[1..10]"
             "[1..(10)]", "[1..10]"
@@ -222,15 +243,26 @@ let _ =
             "(match x with _ -> 3) > 3", "(match x with _ -> 3) > 3"
             "match x with 1 -> (fun x -> x) | _ -> id", "match x with 1 -> (fun x -> x) | _ -> id"
 
+            "match (try () with _ -> ()) with () -> ()", "match (try () with _ -> ()) with () -> ()"
+
+            "
+            match (try () with _ -> ()) with
+            | () -> ()
+            ",
+            "
+            match (try () with _ -> ()) with
+            | () -> ()
+            "
+
             "
             3 > (match x with
                  | 1
                  | _ -> 3)
             ",
             "
-            3 >  match x with
-                 | 1
-                 | _ -> 3
+            3 > match x with
+                | 1
+                | _ -> 3
             "
 
             // Do
@@ -257,8 +289,8 @@ let _ =
             in x
             """,
             """
-            let x =  printfn $"{y}"
-                     2
+            let x = printfn $"{y}"
+                    2
             in x
             """
 
@@ -274,13 +306,60 @@ let _ =
             "
 
             "
+            let x =
+             (2
+            + 2)
+            in x
+            ",
+            "
+            let x =
+             2
+           + 2
+            in x
+            "
+
+            "
+            let x =
+     
+
+             (2
+     
+
+            + 2)
+            in x
+            ",
+            "
+            let x =
+     
+
+             2
+    
+
+           + 2
+            in x
+            "
+
+            "
+            let x = (
+              2
+            + 2)
+            in x
+            ",
+            "
+            let x = 
+              2
+            + 2
+            in x
+            "
+
+            "
             let x = (2
                      +             2)
             in x
             ",
             "
-            let x =  2
-                     +             2
+            let x = 2
+                    +             2
             in x
             "
 
@@ -290,8 +369,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   +             2
+            let x = 2
+                  +             2
             in x
             "
 
@@ -301,8 +380,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                   + 2
+            let x = 2
+                  + 2
             in x
             "
 
@@ -312,8 +391,8 @@ let _ =
             in x
             ",
             "
-            let x =  x
-                    +y
+            let x = x
+                   +y
             in x
             "
 
@@ -323,8 +402,8 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                     +2
+            let x = 2
+                    +2
             in x
             "
 
@@ -334,9 +413,22 @@ let _ =
             in x
             ",
             "
-            let x =  2
-                 <<< 2
+            let x = 2
+                <<< 2
             in x
+            "
+
+            "
+let (<<<<<<<<) = (<<<)
+let x = (2
+<<<<<<<< 2)
+in x
+            ",
+            "
+let (<<<<<<<<) = (<<<)
+let x = 2
+<<<<<<<< 2
+in x
             "
 
             "
@@ -384,8 +476,8 @@ let _ =
                 )
 
             let y =
-                 2
-               + 2
+                2
+              + 2
 
             in x + y
             "
@@ -411,9 +503,9 @@ let _ =
             ",
             "
             x <
-                 2
-               + 3
-                
+                2
+              + 3
+               
             "
 
             // LetOrUse
@@ -469,6 +561,21 @@ let _ =
                 else 3
             "
 
+            """
+            if
+                (printfn "1"
+                 true)
+            then
+                ()
+            """,
+            """
+            if
+                (printfn "1"
+                 true)
+            then
+                ()
+            """
+
             // LongIdent
             "(|Failure|_|) null", "(|Failure|_|) null"
 
@@ -477,6 +584,7 @@ let _ =
 
             // DotGet
             "([]).Length", "[].Length"
+            "([] : int list).Length", "([] : int list).Length"
 
             // DotLambda
             "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
@@ -516,8 +624,8 @@ let _ =
             """,
             """
             let mutable x = 3
-            x <-  3
-              <<< 3
+            x <- 3
+             <<< 3
             """
 
             // DotIndexedGet
@@ -671,6 +779,22 @@ let _ =
 
             // LibraryOnlyILAssembly
             """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
+
+            // Miscellaneous
+            "
+            (match x with
+             | 1 -> ()
+             | _ -> ())
+
+            y
+            ",
+            "
+            match x with
+            | 1 -> ()
+            | _ -> ()
+
+            y
+            "
         }
 
     [<Theory; MemberData(nameof exprs)>]
@@ -757,6 +881,7 @@ let _ =
 
                 // Typed
                 "id (x : int)", "id (x : int)"
+                """ "abc".Contains (x : char, StringComparison.Ordinal) """, """ "abc".Contains (x : char, StringComparison.Ordinal) """
 
                 // Tuple
                 "id (x, y)", "id (x, y)"
@@ -968,9 +1093,14 @@ let _ =
                 """id ("x").[0]""", """id "x".[0]"""
                 """(id("x")).[0]""", """(id "x").[0]"""
                 """(id "x").[0]""", """(id "x").[0]"""
+                """id ("".ToCharArray().[0])""", """id ("".ToCharArray().[0])"""
+                """id ("".ToCharArray()[0])""", """id ("".ToCharArray()[0])"""
+                """id ("".ToCharArray()[0])""", """id ("".ToCharArray()[0])"""
 
                 // DotIndexedSet
                 "id ([|x|].[y] <- z)", "id ([|x|].[y] <- z)"
+                """id ("".ToCharArray().[0] <- '0')""", """id ("".ToCharArray().[0] <- '0')"""
+                """id ("".ToCharArray()[0] <- '0')""", """id ("".ToCharArray()[0] <- '0')"""
 
                 // NamedIndexedPropertySet
                 "let xs = [|0|] in id (xs.Item 0 <- 0)", "let xs = [|0|] in id (xs.Item 0 <- 0)"
@@ -1036,6 +1166,10 @@ let _ =
 
                 // InterpolatedString
                 """ id ($"{x}") """, """ id $"{x}" """
+
+                // Miscellaneous
+                "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))",
+                "System.Threading.Tasks.Task.CompletedTask.ConfigureAwait((x = x))"
             }
 
         [<Theory; MemberData(nameof functionApplications)>]
@@ -1143,6 +1277,17 @@ let _ = (2 + 2) { return 5 }
                     inherit exn
                     val Message2 : string
                     new (str1, str2) = { inherit exn (str1); Message2 = str2 }
+                "
+
+                "
+                type T = static member M (x : bool, y) = ()
+                let x = 3
+                T.M ((x = 4), 5)
+                ",
+                "
+                type T = static member M (x : bool, y) = ()
+                let x = 3
+                T.M ((x = 4), 5)
                 "
             }
 
@@ -1436,6 +1581,8 @@ match Unchecked.defaultof<_> with
             "fun (_) -> ()", "fun _ -> ()"
             "fun (x) -> x", "fun x -> x"
             "fun (x: int) -> x", "fun (x: int) -> x"
+            "fun x (y: int) -> x", "fun x (y: int) -> x"
+            "fun x (y, z) -> x", "fun x (y, z) -> x"
             "fun x (y) -> x", "fun x y -> x"
             "fun x -> fun (y) -> x", "fun x -> fun y -> x"
             "fun (Lazy x) -> x", "fun (Lazy x) -> x"
@@ -1447,6 +1594,8 @@ match Unchecked.defaultof<_> with
             "function (_) -> ()", "function _ -> ()"
             "function (x) -> x", "function x -> x"
             "function (x: int) -> x", "function (x: int) -> x"
+            "function (x: int, y) -> x", "function x: int, y -> x"
+            "function (x, y: int) -> x", "function (x, y: int) -> x"
             "function (Lazy x) -> x", "function Lazy x -> x"
             "function (1 | 2) -> () | _ -> ()", "function 1 | 2 -> () | _ -> ()"
             "function (x & y) -> x, y", "function x & y -> x, y"
@@ -1465,6 +1614,8 @@ match Unchecked.defaultof<_> with
             "match x with (_) -> ()", "match x with _ -> ()"
             "match x with (x) -> x", "match x with x -> x"
             "match x with (x: int) -> x", "match x with (x: int) -> x"
+            "match x, y with (x: int, y) -> x", "match x, y with x: int, y -> x"
+            "match x, y with (x, y: int) -> x", "match x, y with (x, y: int) -> x"
             "match x with (Lazy x) -> x", "match x with Lazy x -> x"
             "match x with (x, y) -> x, y", "match x with x, y -> x, y"
             "match x with (struct (x, y)) -> x, y", "match x with struct (x, y) -> x, y"
@@ -1481,6 +1632,8 @@ match Unchecked.defaultof<_> with
             "let (x) = y in ()", "let x = y in ()"
             "let (x: int) = y in ()", "let x: int = y in ()"
             "let (x, y) = x, y in ()", "let x, y = x, y in ()"
+            "let (x: int, y) = x, y in ()", "let (x: int, y) = x, y in ()"
+            "let (x: int -> int), (y: int) = x, y in ()", "let (x: int -> int), (y: int) = x, y in ()"
             "let (struct (x, y)) = x, y in ()", "let struct (x, y) = x, y in ()"
             "let (x & y) = z in ()", "let x & y = z in ()"
             "let (x as y) = z in ()", "let x as y = z in ()"
@@ -1580,6 +1733,50 @@ match Unchecked.defaultof<_> with
             "type T = member _.M(struct (x, y)) = x, y", "type T = member _.M struct (x, y) = x, y"
             "type T = member _.M(?x) = ()", "type T = member _.M ?x = ()"
             "type T = member _.M(?x: int) = ()", "type T = member _.M(?x: int) = ()"
+
+            // See https://github.com/dotnet/fsharp/issues/16254.
+            "
+            type C = abstract M : unit -> unit
+            let _ = { new C with override _.M (()) = () }
+            ",
+            "
+            type C = abstract M : unit -> unit
+            let _ = { new C with override _.M (()) = () }
+            "
+
+            // See https://github.com/dotnet/fsharp/issues/16254.
+            "
+            type C<'T> = abstract M : 'T -> unit
+            let _ = { new C<unit> with override _.M (()) = () }
+            ",
+            "
+            type C<'T> = abstract M : 'T -> unit
+            let _ = { new C<unit> with override _.M (()) = () }
+            "
+
+            // See https://github.com/dotnet/fsharp/issues/16257.
+            "
+            type T (x, y) =
+                new (x, y, z) = T (x, y)
+                new (x) = T (x, 3)
+            ",
+            "
+            type T (x, y) =
+                new (x, y, z) = T (x, y)
+                new (x) = T (x, 3)
+            "
+
+            // See https://github.com/dotnet/fsharp/issues/16257.
+            "
+            type T (x, y) =
+                new (x) = T (x, 3)
+                new (x, y, z) = T (x, y)
+            ",
+            "
+            type T (x, y) =
+                new (x) = T (x, 3)
+                new (x, y, z) = T (x, y)
+            "
         }
 
     [<Theory; MemberData(nameof args)>]
@@ -1626,6 +1823,8 @@ match Unchecked.defaultof<_> with
                 "(A as B) :: C", "(A as B) :: C"
                 "(A as B) as C", "A as B as C"
                 "(A as B), C", "(A as B), C"
+                "(A, B) :: C", "(A, B) :: C"
+                "(struct (A, B)) :: C", "struct (A, B) :: C"
             }
 
         [<Theory; MemberData(nameof infixPatterns)>]

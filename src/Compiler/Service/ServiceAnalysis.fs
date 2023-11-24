@@ -456,6 +456,8 @@ module UnusedDeclarations =
 module UnnecessaryParentheses =
     open System
 
+    let (|Ident|) (ident: Ident) = ident.idText
+
     /// Represents an expression's precedence, or,
     /// for a few few types of expression whose exact
     /// kind can be significant, the expression's exact kind.
@@ -873,11 +875,27 @@ module UnnecessaryParentheses =
             | SynExpr.DotIndexedGet(objectExpr = SynExpr.Paren(expr = Is inner)) -> ValueSome(Dot, Left)
             | _ -> ValueNone
 
+        /// Matches a SynExpr.App nested in a sequence of dot-gets.
+        ///
+        /// x.M.N().O
+        [<return: Struct>]
+        let (|NestedApp|_|) expr =
+            let rec loop =
+                function
+                | SynExpr.DotGet (expr = expr)
+                | SynExpr.DotIndexedGet (objectExpr = expr) -> loop expr
+                | SynExpr.App _ -> ValueSome NestedApp
+                | _ -> ValueNone
+
+            loop expr
+
         /// Returns the given expression's precedence, if applicable.
         [<return: Struct>]
         let (|InnerBinaryExpr|_|) expr : Precedence voption =
             match expr with
             | SynExpr.Tuple(isStruct = false) -> ValueSome Comma
+            | SynExpr.DotGet(expr = NestedApp)
+            | SynExpr.DotIndexedGet(objectExpr = NestedApp) -> ValueSome Apply
             | SynExpr.DotGet _
             | SynExpr.DotIndexedGet _ -> ValueSome Dot
             | PrefixApp prec -> ValueSome prec
@@ -934,6 +952,13 @@ module UnnecessaryParentheses =
             let (|IfThen|_|) =
                 dangling (function
                     | SynExpr.IfThenElse _ as expr -> Some expr
+                    | _ -> None)
+
+            /// Matches a dangling sequential expression.
+            [<return: Struct>]
+            let (|Sequential|_|) =
+                dangling (function
+                    | SynExpr.Sequential _ as expr -> Some expr
                     | _ -> None)
 
             /// Matches a dangling try-with or try-finally construct.
@@ -1192,6 +1217,19 @@ module UnnecessaryParentheses =
               SyntaxNode.SynExpr (SynExpr.App _) :: SyntaxNode.SynExpr (SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _ ->
                 ValueNone
 
+            // Parens must stay around binary equals expressions in argument
+            // position lest they be interpreted as named argument assignments:
+            //
+            //     o.M((x = y))
+            //     o.N((x = y), z)
+            | SynExpr.Paren(expr = SynExpr.Paren(expr = InfixApp (Eq, _))),
+              SyntaxNode.SynExpr (SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+            | SynExpr.Paren(expr = InfixApp (Eq, _)),
+              SyntaxNode.SynExpr (SynExpr.Paren _) :: SyntaxNode.SynExpr (SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _
+            | SynExpr.Paren(expr = InfixApp (Eq, _)),
+              SyntaxNode.SynExpr (SynExpr.Tuple(isStruct = false)) :: SyntaxNode.SynExpr (SynExpr.Paren _) :: SyntaxNode.SynExpr (SynExpr.App(funcExpr = SynExpr.LongIdent _)) :: _ ->
+                ValueNone
+
             // The :: operator is parsed differently from other symbolic infix operators,
             // so we need to give it special treatment.
 
@@ -1249,6 +1287,8 @@ module UnnecessaryParentheses =
                 match outer, inner with
                 | ConfusableWithTypeApp, _ -> ValueNone
 
+                | SynExpr.IfThenElse _, Dangling.Sequential _ -> ValueNone
+
                 | SynExpr.IfThenElse (trivia = trivia), Dangling.IfThen ifThenElse when
                     problematic ifThenElse.Range trivia.ThenKeyword
                     || trivia.ElseKeyword |> Option.exists (problematic ifThenElse.Range)
@@ -1258,14 +1298,46 @@ module UnnecessaryParentheses =
                 | SynExpr.TryFinally (trivia = trivia), Dangling.Try tryExpr when problematic tryExpr.Range trivia.FinallyKeyword ->
                     ValueNone
 
-                | (SynExpr.Match (clauses = clauses) | SynExpr.MatchLambda (matchClauses = clauses) | SynExpr.MatchBang (clauses = clauses)),
-                  Dangling.Match matchOrTry when anyProblematic matchOrTry.Range clauses -> ValueNone
-
-                | SynExpr.TryWith (withCases = clauses; trivia = trivia), Dangling.Match matchOrTry when
-                    anyProblematic matchOrTry.Range clauses
-                    || problematic matchOrTry.Range trivia.WithKeyword
+                | SynExpr.Match (clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.Match matchOrTry when
+                    problematic matchOrTry.Range withKeyword
+                    || anyProblematic matchOrTry.Range clauses
                     ->
                     ValueNone
+
+                | SynExpr.MatchBang (clauses = clauses; trivia = { WithKeyword = withKeyword }), Dangling.Match matchOrTry when
+                    problematic matchOrTry.Range withKeyword
+                    || anyProblematic matchOrTry.Range clauses
+                    ->
+                    ValueNone
+
+                | SynExpr.MatchLambda (matchClauses = clauses), Dangling.Match matchOrTry when anyProblematic matchOrTry.Range clauses ->
+                    ValueNone
+
+                | SynExpr.TryWith (withCases = clauses; trivia = trivia), Dangling.Match matchOrTry when
+                    problematic matchOrTry.Range trivia.WithKeyword
+                    || anyProblematic matchOrTry.Range clauses
+                    ->
+                    ValueNone
+
+                | SynExpr.Sequential (expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), Dangling.Problematic _ when
+                    problematic inner.Range expr2.Range
+                    ->
+                    ValueNone
+
+                | SynExpr.Paren _, SynExpr.Typed _
+                | SynExpr.Quote _, SynExpr.Typed _
+                | SynExpr.AnonRecd _, SynExpr.Typed _
+                | SynExpr.Record _, SynExpr.Typed _
+                | SynExpr.While(doExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
+                | SynExpr.WhileBang(doExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
+                | SynExpr.For(doBody = Is inner), SynExpr.Typed _
+                | SynExpr.ForEach(bodyExpr = Is inner), SynExpr.Typed _
+                | SynExpr.Match _, SynExpr.Typed _
+                | SynExpr.Do _, SynExpr.Typed _
+                | SynExpr.LetOrUse(body = Is inner), SynExpr.Typed _
+                | SynExpr.TryWith _, SynExpr.Typed _
+                | SynExpr.TryFinally _, SynExpr.Typed _ -> ValueSome range
+                | _, SynExpr.Typed _ -> ValueNone
 
                 | OuterBinaryExpr inner (outerPrecedence, side), InnerBinaryExpr innerPrecedence ->
                     let ambiguous =
@@ -1295,31 +1367,6 @@ module UnnecessaryParentheses =
                 | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse(trivia = { InKeyword = None })) -> ValueNone
                 | OuterBinaryExpr inner (_, Right), inner -> if dangling inner then ValueNone else ValueSome range
 
-                | SynExpr.Typed _, SynExpr.Typed _
-                | SynExpr.WhileBang(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
-                | SynExpr.While(whileExpr = SynExpr.Paren(expr = Is inner)), SynExpr.Typed _
-                | SynExpr.For(identBody = Is inner), SynExpr.Typed _
-                | SynExpr.For(toBody = Is inner), SynExpr.Typed _
-                | SynExpr.ForEach(enumExpr = Is inner), SynExpr.Typed _
-                | SynExpr.ArrayOrList _, SynExpr.Typed _
-                | SynExpr.ArrayOrListComputed _, SynExpr.Typed _
-                | SynExpr.IndexRange _, SynExpr.Typed _
-                | SynExpr.IndexFromEnd _, SynExpr.Typed _
-                | SynExpr.ComputationExpr _, SynExpr.Typed _
-                | SynExpr.Lambda _, SynExpr.Typed _
-                | SynExpr.Assert _, SynExpr.Typed _
-                | SynExpr.App _, SynExpr.Typed _
-                | SynExpr.Lazy _, SynExpr.Typed _
-                | SynExpr.LongIdentSet _, SynExpr.Typed _
-                | SynExpr.DotSet _, SynExpr.Typed _
-                | SynExpr.Set _, SynExpr.Typed _
-                | SynExpr.DotIndexedSet _, SynExpr.Typed _
-                | SynExpr.NamedIndexedPropertySet _, SynExpr.Typed _
-                | SynExpr.Upcast _, SynExpr.Typed _
-                | SynExpr.Downcast _, SynExpr.Typed _
-                | SynExpr.AddressOf _, SynExpr.Typed _
-                | SynExpr.JoinIn _, SynExpr.Typed _ -> ValueNone
-
                 // new T(expr)
                 | SynExpr.New _, AtomicExprAfterType -> ValueSome range
                 | SynExpr.New _, _ -> ValueNone
@@ -1331,7 +1378,6 @@ module UnnecessaryParentheses =
                 | _, SynExpr.Paren _
                 | _, SynExpr.Quote _
                 | _, SynExpr.Const _
-                | _, SynExpr.Typed _
                 | _, SynExpr.Tuple(isStruct = true)
                 | _, SynExpr.AnonRecd _
                 | _, SynExpr.ArrayOrList _
@@ -1378,29 +1424,51 @@ module UnnecessaryParentheses =
             | _ -> ValueNone
 
     module SynPat =
+        [<return: Struct>]
+        let (|AnyTyped|_|) pats =
+            if
+                pats
+                |> List.exists (function
+                    | SynPat.Typed _ -> true
+                    | _ -> false)
+            then
+                ValueSome AnyTyped
+            else
+                ValueNone
+
         /// If the given pattern is a parenthesized pattern and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
         let unnecessaryParentheses pat path =
+            let (|Last|) = List.last
+
             match pat, path with
             // Parens are needed in:
             //
             //     let (Pattern …) = …
+            //     let (x: …, y…) = …
+            //     let (x: …), (y: …) = …
             //     let! (x: …) = …
             //     and! (x: …) = …
             //     use! (x: …) = …
             //     _.member M(x: …) = …
             //     match … with (x: …) -> …
+            //     match … with (x, y: …) -> …
             //     function (x: …) -> …
             //     fun (x, y, …) -> …
             //     fun (x: …) -> …
             //     fun (Pattern …) -> …
-            | SynPat.Paren _, SyntaxNode.SynExpr (SynExpr.LetOrUseBang(pat = SynPat.Paren(pat = SynPat.Typed _))) :: _
-            | SynPat.Paren _, SyntaxNode.SynMatchClause (SynMatchClause(pat = SynPat.Paren(pat = SynPat.Typed _))) :: _
-            | SynPat.Paren(pat = SynPat.LongIdent _), SyntaxNode.SynBinding _ :: _
-            | SynPat.Paren(pat = SynPat.LongIdent _), SyntaxNode.SynExpr (SynExpr.Lambda _) :: _
-            | SynPat.Paren _, SyntaxNode.SynExpr (SynExpr.Lambda(args = SynSimplePats.SimplePats(pats = _ :: _ :: _))) :: _
-            | SynPat.Paren _, SyntaxNode.SynExpr (SynExpr.Lambda(args = SynSimplePats.SimplePats(pats = [ SynSimplePat.Typed _ ]))) :: _ ->
-                ValueNone
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynPat (SynPat.Tuple _) :: SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+            | SynPat.Paren (SynPat.Tuple (isStruct = false; elementPats = AnyTyped), _), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynMatchClause _ :: _
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynPat (SynPat.Tuple _) :: SyntaxNode.SynMatchClause _ :: _
+            | SynPat.Paren (SynPat.Tuple (isStruct = false; elementPats = Last (SynPat.Typed _)), _), SyntaxNode.SynMatchClause _ :: _
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynPat (SynPat.Tuple _) :: SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren (SynPat.Tuple (isStruct = false; elementPats = AnyTyped), _), SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren (SynPat.LongIdent _, _), SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren (SynPat.LongIdent _, _), SyntaxNode.SynExpr (SynExpr.Lambda _) :: _
+            | SynPat.Paren (SynPat.Tuple(isStruct = false), _), SyntaxNode.SynExpr (SynExpr.Lambda(parsedData = Some _)) :: _
+            | SynPat.Paren (SynPat.Typed _, _), SyntaxNode.SynExpr (SynExpr.Lambda(parsedData = Some _)) :: _ -> ValueNone
 
             // () is parsed as this in certain cases…
             //
@@ -1414,6 +1482,24 @@ module UnnecessaryParentheses =
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.ForEach _) :: _
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynExpr (SynExpr.LetOrUseBang _) :: _
             | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), SyntaxNode.SynMatchClause _ :: _ -> ValueNone
+
+            // (()) is required when overriding a generic member
+            // where unit is the generic type argument:
+            //
+            //     type C<'T> = abstract M : 'T -> unit
+            //     let _ = { new C<unit> with override _.M (()) = () }
+            | SynPat.Paren (SynPat.Paren (SynPat.Const (SynConst.Unit, _), _), _),
+              SyntaxNode.SynPat (SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _),
+              SyntaxNode.SynPat (SynPat.Paren _) :: SyntaxNode.SynPat (SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _ -> ValueNone
+
+            // Parens are required for the first of multiple additional constructors.
+            // We simply require them always.
+            //
+            //     type T … =
+            //         new (x) = …
+            //         new (x, y) = …
+            | SynPat.Paren _, SyntaxNode.SynPat (SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: _ -> ValueNone
 
             // Parens are otherwise never needed in these cases:
             //
@@ -1437,7 +1523,9 @@ module UnnecessaryParentheses =
             | SynPat.Paren (inner, range), SyntaxNode.SynPat outer :: _ ->
                 match outer, inner with
                 // (x :: xs) :: ys
-                | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.ListCons _ -> ValueNone
+                // (x, xs) :: ys
+                | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.ListCons _
+                | SynPat.ListCons(lhsPat = SynPat.Paren(pat = Is inner)), SynPat.Tuple(isStruct = false) -> ValueNone
 
                 // A as (B | C)
                 // A as (B & C)

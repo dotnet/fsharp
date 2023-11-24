@@ -324,6 +324,7 @@ module DispatchSlotChecking =
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
+                                          isObjExpr: bool,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
@@ -331,7 +332,7 @@ module DispatchSlotChecking =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        let isReqdTyInterface = isInterfaceTy g reqdTy 
+        let isReqdTyInterface = isInterfaceTy g reqdTy
         let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
         
         let mutable res = true
@@ -392,7 +393,7 @@ module DispatchSlotChecking =
                             noimpl()
                         | [ overrideBy ] ->
 
-                            let (Override(_, _, _, methTypars, _, argTys, _, _, _, _)) = overrideBy
+                            let (Override(_, _, _, methTypars, _, argTys, _, _, _, isInstance)) = overrideBy
 
                             let moreThanOnePossibleDispatchSlot =
                                 dispatchSlots
@@ -401,18 +402,21 @@ module DispatchSlotChecking =
                                 |> not
                             
                             let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
+                            
+                            // Object expressions can only implement instance members
+                            let isObjExprWithInstanceMembers = (isObjExpr && isInstance)
+                            if isObjExprWithInstanceMembers || isInstance then
+                                if moreThanOnePossibleDispatchSlot then
+                                    noimpl()
 
-                            if moreThanOnePossibleDispatchSlot then
-                                noimpl()
-
-                            elif argTys.Length <> vargTys.Length then
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                            elif methTypars.Length <> fvmethTypars.Length then
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                            elif not (IsTyparKindMatch compiledSig overrideBy) then
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                            else 
-                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                elif (argTys.Length <> vargTys.Length) then
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                elif methTypars.Length <> fvmethTypars.Length then
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                elif not (IsTyparKindMatch compiledSig overrideBy) then
+                                    fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                else 
+                                    fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
 
@@ -599,11 +603,18 @@ module DispatchSlotChecking =
                 match relevantVirts |> List.filter (fun dispatchSlot -> IsPartialMatch g dispatchSlot (CompiledSigOfMeth g amap m dispatchSlot) overrideBy) with 
                 | [dispatchSlot] -> 
                     errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
-                | _ -> 
+                | _ ->
                     match relevantVirts |> List.filter (fun dispatchSlot -> IsNameMatch dispatchSlot overrideBy) with 
-                    | [] -> errorR(OverrideDoesntOverride(denv, overrideBy, None, g, amap, m))
-                    | [dispatchSlot] -> 
-                        errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
+                    | [] ->
+                        if isObjExpr && not overrideBy.IsInstance then
+                            errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), overrideBy.Range))
+                        else
+                            errorR(OverrideDoesntOverride(denv, overrideBy, None, g, amap, m))
+                    | [dispatchSlot] ->
+                        if isObjExpr && not overrideBy.IsInstance then
+                            errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), overrideBy.Range))
+                        else
+                            errorR(OverrideDoesntOverride(denv, overrideBy, Some dispatchSlot, g, amap, m))
                     | possibleDispatchSlots -> 
                        let details =
                             possibleDispatchSlots
@@ -820,7 +831,7 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 

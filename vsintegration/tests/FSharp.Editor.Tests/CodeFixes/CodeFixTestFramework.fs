@@ -209,7 +209,7 @@ module Xunit =
         let actual = split actual
 
         try
-            Assert.All(Array.zip expected actual, (fun (expected, actual) -> Assert.Equal(expected, actual)))
+            Assert.All((expected, actual) ||> Array.zip |> Array.rev, (fun (expected, actual) -> Assert.Equal(expected, actual)))
         with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
             raise all.Failures[0]
 
