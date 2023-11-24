@@ -9438,7 +9438,8 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) env tpenv x =
         GetNewInferenceTypeForMethodArg cenv env tpenv a
     | SynExpr.AddressOf (true, a, _, m) ->
         mkByrefTyWithInference g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType g m)
-    | SynExpr.Lambda (body = a) ->
+    | SynExpr.Lambda (body = a) 
+    | SynExpr.DotLambda (expr = a) ->
         mkFunTy g (NewInferenceType g) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote (_, raw, a, _, _) ->
         if raw then mkRawQuotedExprTy g

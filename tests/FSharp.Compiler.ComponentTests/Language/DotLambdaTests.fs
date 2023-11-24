@@ -225,3 +225,12 @@ let c : string = let _ = "test" in "asd" |> _.ToString()
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
+    
+[<Fact>]
+let ``DotLambda selector converted to Func when used in LINQ`` () =
+    FSharp """open System.Linq
+let _ = [""; ""; ""].Select(fun x -> x.Length)
+let _ = [""; ""; ""].Select(_.Length)"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
