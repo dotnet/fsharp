@@ -165,4 +165,4 @@ let GetAllUsesOfAllSymbols() =
     traceProvider.ForceFlush() |> ignore
     traceProvider.Dispose()
 
-    if result.Length <> 79 then failwith $"Expected 80 symbolUses, got {result.Length}:\n%A{result}"
+    if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
