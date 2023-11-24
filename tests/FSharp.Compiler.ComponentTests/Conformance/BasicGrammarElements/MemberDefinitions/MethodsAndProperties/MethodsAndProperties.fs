@@ -592,7 +592,7 @@ type MyIndexerClass() =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
+        |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
         
     [<Fact>]
     let ``Indexed2PropertiesSameType_fs preview``() =
@@ -605,7 +605,7 @@ type MyIndexerClass() =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
+        |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
     
     [<Fact>]
     let ``Indexed3PropertiesSameType_fs preview``() =
@@ -632,7 +632,7 @@ type MyIndexerClass() =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
+        |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
         
     [<Fact>]
     let ``Indexed5PropertiesSameType_fs preview``() =
@@ -645,7 +645,7 @@ type MyIndexerClass() =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3581, Line 4, Col 14, Line 4, Col 17, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
+        |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
             
     [<Fact>]
     let ``GenericIndexerPropertiesSameType_fs preview``() =
@@ -667,4 +667,4 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3581, Line 9, Col 27, Line 9, Col 30, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")
+        |> withSingleDiagnostic (Warning 3581, Line 9, Col 17, Line 9, Col 21, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")

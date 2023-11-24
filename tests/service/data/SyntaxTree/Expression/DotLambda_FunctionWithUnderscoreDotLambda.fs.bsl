@@ -1,17 +1,16 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/FunctionWithUnderscoreDotLambda.fs", false,
-      QualifiedNameOfFile FunctionWithUnderscoreDotLambda, [], [],
+     ("/root/Expression/DotLambda_FunctionWithUnderscoreDotLambda.fs", false,
+      QualifiedNameOfFile DotLambda_FunctionWithUnderscoreDotLambda, [], [],
       [SynModuleOrNamespace
-         ([FunctionWithUnderscoreDotLambda], false, AnonModule,
+         ([DotLambda_FunctionWithUnderscoreDotLambda], false, AnonModule,
           [Let
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
                   PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named (SynIdent (myFunc, None), false, None, (1,4--1,10)),
                   None,
                   DotLambda

@@ -836,6 +836,11 @@ type PropInfo =
     member IsFSharpExplicitInterfaceImplementation: bool
 
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
+    /// <code lang="fsharp">
+    /// member x.Prop with
+    ///     get (indexPiece1:int,indexPiece2: string) = ...
+    ///     and set (indexPiece1:int,indexPiece2: string) value = ...
+    /// </code>
     member IsIndexer: bool
 
     /// Indicates if the property is logically a 'newslot', i.e. hides any previous slots of the same name.

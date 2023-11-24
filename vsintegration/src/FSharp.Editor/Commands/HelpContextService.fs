@@ -88,7 +88,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                         let island = QuickParse.GetCompleteIdentifierIsland false lineText col
 
                         match island with
-                        | Some (s, colAtEndOfNames, _) when check.HasFullTypeCheckInfo ->
+                        | Some(s, colAtEndOfNames, _) when check.HasFullTypeCheckInfo ->
                             let qualId = PrettyNaming.GetLongNameFromString s
 
                             let f1Keyword =

@@ -35,7 +35,7 @@ let rec stripUpTo n test dest x =
 
 let destTyLambda =
     function
-    | Lambdas_forall (l, r) -> (l, r)
+    | Lambdas_forall(l, r) -> (l, r)
     | _ -> failwith "no"
 
 let isTyLambda =
@@ -66,11 +66,11 @@ let stripTyLambdasUpTo n lambdas =
 // and type applications are never mixed in a single step.
 let stripSupportedIndirectCall apps =
     match apps with
-    | Apps_app (x, Apps_app (y, Apps_app (z, Apps_app (w, Apps_app (v, rest))))) -> [], [ x; y; z; w; v ], rest
-    | Apps_app (x, Apps_app (y, Apps_app (z, Apps_app (w, rest)))) -> [], [ x; y; z; w ], rest
-    | Apps_app (x, Apps_app (y, Apps_app (z, rest))) -> [], [ x; y; z ], rest
-    | Apps_app (x, Apps_app (y, rest)) -> [], [ x; y ], rest
-    | Apps_app (x, rest) -> [], [ x ], rest
+    | Apps_app(x, Apps_app(y, Apps_app(z, Apps_app(w, Apps_app(v, rest))))) -> [], [ x; y; z; w; v ], rest
+    | Apps_app(x, Apps_app(y, Apps_app(z, Apps_app(w, rest)))) -> [], [ x; y; z; w ], rest
+    | Apps_app(x, Apps_app(y, Apps_app(z, rest))) -> [], [ x; y; z ], rest
+    | Apps_app(x, Apps_app(y, rest)) -> [], [ x; y ], rest
+    | Apps_app(x, rest) -> [], [ x ], rest
     | Apps_tyapp _ ->
         let maxTyApps = 1
         let tys, rest = stripUpTo maxTyApps isTyApp destTyFuncApp apps
@@ -89,12 +89,11 @@ let stripSupportedIndirectCall apps =
 // and type applications are never mixed in a single step.
 let stripSupportedAbstraction lambdas =
     match lambdas with
-    | Lambdas_lambda (x, Lambdas_lambda (y, Lambdas_lambda (z, Lambdas_lambda (w, Lambdas_lambda (v, rest))))) ->
-        [], [ x; y; z; w; v ], rest
-    | Lambdas_lambda (x, Lambdas_lambda (y, Lambdas_lambda (z, Lambdas_lambda (w, rest)))) -> [], [ x; y; z; w ], rest
-    | Lambdas_lambda (x, Lambdas_lambda (y, Lambdas_lambda (z, rest))) -> [], [ x; y; z ], rest
-    | Lambdas_lambda (x, Lambdas_lambda (y, rest)) -> [], [ x; y ], rest
-    | Lambdas_lambda (x, rest) -> [], [ x ], rest
+    | Lambdas_lambda(x, Lambdas_lambda(y, Lambdas_lambda(z, Lambdas_lambda(w, Lambdas_lambda(v, rest))))) -> [], [ x; y; z; w; v ], rest
+    | Lambdas_lambda(x, Lambdas_lambda(y, Lambdas_lambda(z, Lambdas_lambda(w, rest)))) -> [], [ x; y; z; w ], rest
+    | Lambdas_lambda(x, Lambdas_lambda(y, Lambdas_lambda(z, rest))) -> [], [ x; y; z ], rest
+    | Lambdas_lambda(x, Lambdas_lambda(y, rest)) -> [], [ x; y ], rest
+    | Lambdas_lambda(x, rest) -> [], [ x ], rest
     | Lambdas_forall _ ->
         let maxTyApps = 1
         let tys, rest = stripTyLambdasUpTo maxTyApps lambdas
@@ -173,13 +172,13 @@ let typ_Func cenv (dtys: ILType list) rty =
 let rec mkTyOfApps cenv apps =
     match apps with
     | Apps_tyapp _ -> cenv.mkILTyFuncTy
-    | Apps_app (dty, rest) -> mkILFuncTy cenv dty (mkTyOfApps cenv rest)
+    | Apps_app(dty, rest) -> mkILFuncTy cenv dty (mkTyOfApps cenv rest)
     | Apps_done rty -> rty
 
 let rec mkTyOfLambdas cenv lam =
     match lam with
     | Lambdas_return rty -> rty
-    | Lambdas_lambda (d, r) -> mkILFuncTy cenv d.Type (mkTyOfLambdas cenv r)
+    | Lambdas_lambda(d, r) -> mkILFuncTy cenv d.Type (mkTyOfLambdas cenv r)
     | Lambdas_forall _ -> cenv.mkILTyFuncTy
 
 // --------------------------------------------------------------------
@@ -239,11 +238,11 @@ let mkCallFunc cenv allocLocal numThisGenParams tailness apps =
     // the apps, and the loaders are used to load them back on.
     let rec unwind apps =
         match apps with
-        | Apps_tyapp (actual, rest) ->
+        | Apps_tyapp(actual, rest) ->
             let rest = instAppsAux varCount [ actual ] rest
             let storers, loaders = unwind rest
             [] :: storers, [] :: loaders
-        | Apps_app (arg, rest) ->
+        | Apps_app(arg, rest) ->
             let storers, loaders = unwind rest
 
             let argStorers, argLoaders =
@@ -341,10 +340,10 @@ let mkCallFunc cenv allocLocal numThisGenParams tailness apps =
 let convReturnInstr ty instr =
     match instr with
     | I_ret -> [ I_box ty; I_ret ]
-    | I_call (_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
-    | I_callvirt (_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
-    | I_callconstraint (callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
-    | I_calli (_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
+    | I_call(_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
+    | I_callvirt(_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
+    | I_callconstraint(callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
+    | I_calli(_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
     | _ -> [ instr ]
 
 let convILMethodBody (thisClo, boxReturnTy) (il: ILMethodBody) =

@@ -481,12 +481,8 @@ type ReflectionDependencyManagerProvider
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
 type DependencyProvider
-    internal
-    (
-        assemblyProbingPaths: AssemblyResolutionProbe option,
-        nativeProbingRoots: NativeResolutionProbe option,
-        useResultsCache: bool
-    ) =
+    internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option, useResultsCache: bool)
+    =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
@@ -709,7 +705,7 @@ type DependencyProvider
         | Ok res ->
             dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
             res
-        | Error (errorNumber, errorData) ->
+        | Error(errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 

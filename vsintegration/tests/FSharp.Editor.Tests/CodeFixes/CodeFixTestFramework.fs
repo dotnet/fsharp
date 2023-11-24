@@ -67,7 +67,7 @@ module FSharpDiagnostics =
     /// Generates F# diagnostics using the given document according to the given mode.
     let generate mode (document: Document) =
         match mode with
-        | Manual (squiggly, diagnostic) ->
+        | Manual(squiggly, diagnostic) ->
             cancellableTask {
                 let! sourceText = document.GetTextAsync()
                 let spanStart = sourceText.ToString().IndexOf squiggly
@@ -209,7 +209,7 @@ module Xunit =
         let actual = split actual
 
         try
-            Assert.All(Array.zip expected actual, (fun (expected, actual) -> Assert.Equal(expected, actual)))
+            Assert.All((expected, actual) ||> Array.zip |> Array.rev, (fun (expected, actual) -> Assert.Equal(expected, actual)))
         with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
             raise all.Failures[0]
 
@@ -220,7 +220,7 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.UnexpectedCodeFixException">
     /// Thrown if a code fix is applied.
     /// </exception>
-    let expectNoFix (tryFix: string -> Task<TestCodeFix option>) code =
+    let expectNoFix (tryFix: string -> CancellableTask<TestCodeFix option>) code =
         cancellableTask {
             match! tryFix code with
             | None -> ()
@@ -246,7 +246,7 @@ module Xunit =
     /// <exception cref="T:FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework.Xunit.WrongCodeFixException">
     /// Thrown if the generated fix does not match the expected fixed code.
     /// </exception>
-    let expectFix tryFix code fixedCode =
+    let expectFix (tryFix: string -> CancellableTask<TestCodeFix option>) code fixedCode =
         if code = fixedCode then
             expectNoFix tryFix code
         else
