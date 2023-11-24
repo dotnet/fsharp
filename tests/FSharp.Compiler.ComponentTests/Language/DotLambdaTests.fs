@@ -231,7 +231,13 @@ let ``DotLambda selector converted to Func when used in LINQ`` () =
     FSharp """open System.Linq
 let _ = [""; ""; ""].Select(fun x -> x.Length)
 let _ = [""; ""; ""].Select(_.Length)
-let _ = [""; ""; ""].Select _.Length"""
+let _ = [""; ""; ""].Select _.Length
+
+let asQ = [""; ""; ""].AsQueryable()
+let _ = asQ.Select(fun x -> x.Length)
+let _ = asQ.Select(_.Length)
+let _ = asQ.Select _.Length
+"""
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
