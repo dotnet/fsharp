@@ -727,37 +727,44 @@ and CheckBindings cenv binds =
         CheckBinding cenv false PermitByRefExpr.Yes bind
 
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
-    // Check that a let binding to the result of a rec expression is not inside the rec expression
+    // Check if a let binding to the result of a rec expression is not inside the rec expression
+    // Check if a call of a rec expression is not inside a TryWith/TryFinally operation
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
     // see test ``Warn successfully for rec call in binding`` for an example
+    // see test ``Warn for simple rec call in try-with`` for an example
     if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match bind.Expr with
         | Expr.TyLambda(bodyExpr = bodyExpr)
         | Expr.Lambda(bodyExpr = bodyExpr) ->
-            let rec checkTailCall (insideSubBinding: bool) expr =
+            let rec checkTailCall (insideSubBindingOrTry: bool) expr =
                 match expr with
                 | Expr.Val(valRef = valRef; range = m) ->
-                    if isRec && insideSubBinding && cenv.mustTailCall.Contains valRef.Deref then
+                    if isRec && insideSubBindingOrTry && cenv.mustTailCall.Contains valRef.Deref then
                         warning (Error(FSComp.SR.chkNotTailRecursive valRef.DisplayName, m))
                 | Expr.App(funcExpr = funcExpr; args = argExprs) ->
-                    checkTailCall insideSubBinding funcExpr
-                    argExprs |> List.iter (checkTailCall insideSubBinding)
-                | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
-                | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBinding bodyExpr
-                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
+                    checkTailCall insideSubBindingOrTry funcExpr
+                    argExprs |> List.iter (checkTailCall insideSubBindingOrTry)
+                | Expr.Link exprRef -> checkTailCall insideSubBindingOrTry exprRef.Value
+                | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
+                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
                 | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
                     checkTailCall true binding.Expr
 
                     let warnForBodyExpr =
-                        match stripDebugPoints bodyExpr with
-                        | Expr.Op _ -> true // ToDo: too crude of a check?
-                        | _ -> false
+                        insideSubBindingOrTry
+                        || match stripDebugPoints bodyExpr with
+                           | Expr.Op _ -> true
+                           | _ -> false
 
                     checkTailCall warnForBodyExpr bodyExpr
                 | Expr.Match(targets = decisionTreeTargets) ->
                     decisionTreeTargets
-                    |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
-                | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBinding)
+                    |> Array.iter (fun target -> checkTailCall insideSubBindingOrTry target.TargetExpression)
+                | Expr.Op(args = exprs; op = TOp.TryWith _)
+                | Expr.Op(args = exprs; op = TOp.TryFinally _) ->
+                    // warn for recursive calls in TryWith/TryFinally operations
+                    exprs |> Seq.iter (checkTailCall true)
+                | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBindingOrTry)
                 | _ -> ()
 
             checkTailCall false bodyExpr
