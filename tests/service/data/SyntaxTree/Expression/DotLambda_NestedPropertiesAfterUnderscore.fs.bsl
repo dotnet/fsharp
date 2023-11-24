@@ -1,17 +1,16 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/DotLambda/NestedPropertiesAfterUnderscore.fs", false,
-      QualifiedNameOfFile NestedPropertiesAfterUnderscore, [], [],
+     ("/root/Expression/DotLambda_NestedPropertiesAfterUnderscore.fs", false,
+      QualifiedNameOfFile DotLambda_NestedPropertiesAfterUnderscore, [], [],
       [SynModuleOrNamespace
-         ([NestedPropertiesAfterUnderscore], false, AnonModule,
+         ([DotLambda_NestedPropertiesAfterUnderscore], false, AnonModule,
           [Let
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
                   PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named (SynIdent (myFunc, None), false, None, (1,4--1,10)),
                   None,
                   DotLambda

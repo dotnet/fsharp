@@ -363,7 +363,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -639,7 +639,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true ShouldNotifySink.Yes with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -997,25 +997,30 @@ module MutRecBindingChecking =
                     for b1, b2 in List.pairwise defnAs do
                         match b1, b2 with
                         | TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some getPropertyIdent; memberFlags = Some mf))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = getIdent)); valSynData = SynValData(memberFlags = Some mf))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
                           },
                           TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some setPropertyIdent))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getPropertyIdent.idRange setPropertyIdent.idRange ->
+                          } when Range.equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
-                            let apparentEnclosingType =  generalizedTyconRef g parentRef
-                            let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
-                            let item =
-                                Item.Property(
-                                    getPropertyIdent.idText,
-                                    [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
-                                    Some getPropertyIdent.idRange
-                                )
-                            CallNameResolutionSink cenv.tcSink (getPropertyIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                                let apparentEnclosingType =  generalizedTyconRef g parentRef
+                                let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
+                                let propertyName =
+                                    if vGet.Id.idText.StartsWith("get_", StringComparison.Ordinal) then
+                                        vGet.Id.idText.Replace("get_", "")
+                                    else
+                                        vGet.Id.idText
+                                let item =
+                                    Item.Property(
+                                        propertyName,
+                                        [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
+                                        Some getIdent.idRange
+                                    )
+                                CallNameResolutionSink cenv.tcSink (getIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
                         | _ -> ()
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
@@ -1531,7 +1536,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
 
         let mvvs = ForceRaise resolved
 
@@ -1723,7 +1728,7 @@ module MutRecBindingChecking =
                      // Check it is not one of the generalized variables...
                      not (genSet.Contains tp) && 
                      // Check it involves a generalized variable in one of its constraints...
-                     freeInTypar.Exists(fun otherTypar -> genSet.Contains otherTypar))
+                     freeInTypar.Exists(genSet.Contains))
              //printfn "unsolvedTyparsInvolvingGeneralizedVariables.Length = %d" unsolvedTyparsInvolvingGeneralizedVariables.Length
              //for x in unsolvedTypars do 
              //    printfn "unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
@@ -2382,7 +2387,7 @@ module TcExceptionDeclarations =
           match reprIdOpt with 
           | Some longId ->
               let resolution =
-                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId 
+                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId None
                   |> ForceRaise
               match resolution with
               | _, Item.ExnCase exnc, [] -> 
@@ -2531,6 +2536,7 @@ module EstablishTypeDefinitionCores =
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(), m))
             k
 
+    [<return: Struct>]
     let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner: TcEnv, id: Ident) synTyconRepr =
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(SynLongIdent([unionCaseName], _, _))), m) 
@@ -2538,9 +2544,9 @@ module EstablishTypeDefinitionCores =
                                 (not hasMeasureAttr && 
                                  (isNil (LookupTypeNameInEnvNoArity OpenQualified unionCaseName.idText envinner.NameEnv) || 
                                   id.idText = unionCaseName.idText)) -> 
-            Some(unionCaseName, m)
+            ValueSome(unionCaseName, m)
         | _ -> 
-            None
+            ValueNone
 
     /// Get the component types that make a record, union or struct type.
     ///
@@ -4187,7 +4193,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
-             | SynMemberDefn.AutoProperty(range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+             | SynMemberDefn.AutoProperty(isStatic=false;range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (isStatic=false; range=m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.AbstractSlot (range=m) :: _ 
              | SynMemberDefn.Interface (range=m) :: _ 
@@ -4263,6 +4269,8 @@ module TcDeclarations =
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                 let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
+                let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
                 let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
 
@@ -4279,20 +4287,7 @@ module TcDeclarations =
                             let rhsExpr = SynExpr.Ident fldId
                             let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                             let attribs = mkAttributeList attribs mMemberPortion
-                            let headPatIds =
-                                let id =
-                                    match mGetSetOpt with
-                                    | Some (GetSetKeywords.GetSet(get = mGet)) -> Ident(id.idText, mGet)
-                                    | _ -> id
-                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
-                            let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
-                            let binding =
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet _) ->
-                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
-                                    updatePropertyIdentInSynBinding id binding
-                                | _ -> binding
                             SynMemberDefn.Member (binding, mMemberPortion) 
                         yield getter
                     | _ -> ()
@@ -4301,25 +4296,10 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = 
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet(set = mSet)) -> ident("v", mSet)
-                                | _ -> ident("v", mMemberPortion)
-                            let headPatIds =
-                                let id =
-                                    match mGetSetOpt with
-                                    | Some (GetSetKeywords.GetSet(set = mSet)) -> Ident(id.idText, mSet)
-                                    | _ -> id
-                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                            let vId = ident("v", mMemberPortion)
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
-                            let binding =
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet _) ->
-                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
-                                    updatePropertyIdentInSynBinding id binding
-                                | _ -> binding
                             SynMemberDefn.Member (binding, mMemberPortion)
                         yield setter 
                     | _ -> ()]
@@ -4418,7 +4398,7 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extra_vals_Inherits_Abstractslots @ extraMembers
-
+            
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -4738,7 +4718,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -5342,7 +5322,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         let moduleContents = TMDefs moduleDefs 
 
         // Collect up the attributes that are global to the file 
-        let topAttrsNew = compiledDefs |> List.map p33 |> List.concat
+        let topAttrsNew = compiledDefs |> List.collect p33
         return (moduleContents, topAttrsNew, envAtEnd)
   }  
     
@@ -5433,7 +5413,7 @@ let CombineTopAttrs topAttrs1 topAttrs2 =
       assemblyAttrs = topAttrs1.assemblyAttrs @ topAttrs2.assemblyAttrs } 
 
 let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) = 
-    mty.AllEntities |> QueueList.iter (fun tycon -> f tycon)
+    mty.AllEntities |> QueueList.iter f
     mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> 
         IterTyconsOfModuleOrNamespaceType f v.ModuleOrNamespaceType)
 

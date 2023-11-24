@@ -20,11 +20,9 @@ open FSharp.Compiler.EditorServices
 open CancellableTasks
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
-type internal FSharpNavigateToSearchService [<ImportingConstructor>]
-    (
-        patternMatcherFactory: IPatternMatcherFactory,
-        [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace
-    ) =
+type internal FSharpNavigateToSearchService
+    [<ImportingConstructor>]
+    (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
     let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 

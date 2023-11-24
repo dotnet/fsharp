@@ -73,7 +73,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let nativeLibraryType: Type =
             Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
 
-        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType () |])
+        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path :> obj; IntPtr.Zero :> obj |]

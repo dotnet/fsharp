@@ -216,7 +216,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length, tcGlobals, debugStore) =
 
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
-        | Some (singleStore: ItemKeyStore) ->
+        | Some(singleStore: ItemKeyStore) ->
             let keyString1 = singleStore.ReadFirstKeyString()
             (singleStore :> IDisposable).Dispose()
 
@@ -271,7 +271,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         debug.WriteEntityRef eref
         writeString ItemKeyTags.entityRef
         writeString eref.CompiledName
-        eref.CompilationPath.MangledPath |> List.iter (fun str -> writeString str)
+        eref.CompilationPath.MangledPath |> List.iter writeString
 
     let rec writeILType (ilTy: ILType) =
         debug.WriteILType ilTy
@@ -281,9 +281,9 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString "!"
             writeUInt16 n
 
-        | ILType.Modified (_, _, ty2) -> writeILType ty2
+        | ILType.Modified(_, _, ty2) -> writeILType ty2
 
-        | ILType.Array (ILArrayShape s, ty) ->
+        | ILType.Array(ILArrayShape s, ty) ->
             writeILType ty
             writeString "["
             writeInt32 (s.Length - 1)
@@ -312,30 +312,30 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeChar '>'
 
         | ILType.FunctionPointer mref ->
-            mref.ArgTypes |> List.iter (fun x -> writeILType x)
+            mref.ArgTypes |> List.iter writeILType
             writeILType mref.ReturnType
 
     let rec writeType isStandalone (ty: TType) =
         debug.WriteType isStandalone ty
 
         match stripTyparEqns ty with
-        | TType_forall (_, ty) -> writeType false ty
+        | TType_forall(_, ty) -> writeType false ty
 
-        | TType_app (tcref, _, _) ->
+        | TType_app(tcref, _, _) ->
             match isStandalone, tcref.TypeAbbrev with
             | false, Some ty -> writeType false ty
             | _ -> writeEntityRef tcref
 
-        | TType_tuple (_, tinst) ->
+        | TType_tuple(_, tinst) ->
             writeString ItemKeyTags.typeTuple
             tinst |> List.iter (writeType false)
 
-        | TType_anon (anonInfo, tinst) ->
+        | TType_anon(anonInfo, tinst) ->
             writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
 
-        | TType_fun (domainTy, rangeTy, _) ->
+        | TType_fun(domainTy, rangeTy, _) ->
             writeString ItemKeyTags.typeFunction
             writeType false domainTy
             writeType false rangeTy
@@ -345,11 +345,11 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 writeString ItemKeyTags.typeMeasure
                 writeMeasure isStandalone ms
 
-        | TType_var (tp, _) -> writeTypar isStandalone tp
+        | TType_var(tp, _) -> writeTypar isStandalone tp
 
-        | TType_ucase (uc, _) ->
+        | TType_ucase(uc, _) ->
             match uc with
-            | UnionCaseRef.UnionCaseRef (tcref, nm) ->
+            | UnionCaseRef.UnionCaseRef(tcref, nm) ->
                 writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
@@ -395,7 +395,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             match vref.IsInstanceMember, tryDestFunTy tcGlobals vref.Type with
             // In case of an instance member, we will skip the type of "this" because it will differ
             // between the definition and overrides. Also it's not needed to uniquely identify the reference.
-            | true, ValueSome (_thisTy, funTy) -> funTy
+            | true, ValueSome(_thisTy, funTy) -> funTy
             | _ -> vref.Type
             |> writeType false
 
@@ -406,7 +406,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeType false vref.Type
 
             match vref.Deref.ArgReprInfoForDisplay with
-            | Some ({ OtherRange = Some (r) }) -> writeRange r
+            | Some({ OtherRange = Some(r) }) -> writeRange r
             | _ -> ()
 
             match vref.TryDeclaringEntity with
@@ -455,12 +455,12 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         match item with
         | Item.Value vref -> writeValue vref
 
-        | Item.UnionCase (info, _) ->
+        | Item.UnionCase(info, _) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
             writeString info.LogicalName
 
-        | Item.ActivePatternResult (info, _, index, _) -> writeActivePatternCase info index
+        | Item.ActivePatternResult(info, _, index, _) -> writeActivePatternCase info index
 
         | Item.ActivePatternCase elemRef -> writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
 
@@ -474,13 +474,13 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString info.LogicalName
             writeType false info.FieldType
 
-        | Item.UnionCaseField (info, fieldIndex) ->
+        | Item.UnionCaseField(info, fieldIndex) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
             writeString info.LogicalName
             writeInt32 fieldIndex
 
-        | Item.AnonRecdField (info, tys, i, _) ->
+        | Item.AnonRecdField(info, tys, i, _) ->
             writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName
             tys |> List.iter (writeType false)
@@ -500,7 +500,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeString info.EventName
             writeEntityRef info.DeclaringTyconRef
 
-        | Item.Property (nm, infos, _) ->
+        | Item.Property(nm, infos, _) ->
             writeString ItemKeyTags.itemProperty
             writeString nm
 
@@ -508,26 +508,26 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             | Some info -> writeEntityRef info.DeclaringTyconRef
             | _ -> ()
 
-        | Item.Trait (info) ->
+        | Item.Trait(info) ->
             writeString ItemKeyTags.itemTrait
             writeString info.MemberLogicalName
             info.SupportTypes |> List.iter (writeType false)
             info.CompiledObjectAndArgumentTypes |> List.iter (writeType false)
             info.CompiledReturnType |> Option.iter (writeType false)
 
-        | Item.TypeVar (_, typar) -> writeTypar true typar
+        | Item.TypeVar(_, typar) -> writeTypar true typar
 
-        | Item.Types (_, [ ty ]) -> writeType true ty
+        | Item.Types(_, [ ty ]) -> writeType true ty
 
         | Item.UnqualifiedType [ tcref ] -> writeEntityRef tcref
 
-        | Item.MethodGroup (_, [ info ], _)
-        | Item.CtorGroup (_, [ info ]) ->
+        | Item.MethodGroup(_, [ info ], _)
+        | Item.CtorGroup(_, [ info ]) ->
             match info with
-            | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
-            | FSMeth (_, _, vref, _) -> writeValue vref
-            | ILMeth (_, ilMethInfo, _) when info.IsConstructor -> writeType true ilMethInfo.ApparentEnclosingType
-            | ILMeth (_, ilMethInfo, _) ->
+            | FSMeth(_, ty, vref, _) when vref.IsConstructor -> writeType true ty
+            | FSMeth(_, _, vref, _) -> writeValue vref
+            | ILMeth(_, ilMethInfo, _) when info.IsConstructor -> writeType true ilMethInfo.ApparentEnclosingType
+            | ILMeth(_, ilMethInfo, _) ->
                 ilMethInfo.ILMethodRef.ArgTypes |> List.iter writeILType
                 writeILType ilMethInfo.ILMethodRef.ReturnType
                 writeString ilMethInfo.ILName
@@ -552,7 +552,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
             writeType false ty
 
         // Named argument in a signature
-        | Item.OtherName (ident = Some (ident); argType = ty; argInfo = Some _) ->
+        | Item.OtherName(ident = Some(ident); argType = ty; argInfo = Some _) ->
             writeString ItemKeyTags.itemValue
             writeString ident.idText
             writeString ItemKeyTags.parameters
@@ -569,18 +569,18 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         | Item.SetterArg _ -> ()
 
         // Empty lists do not occur
-        | Item.Types (_, []) -> ()
+        | Item.Types(_, []) -> ()
         | Item.UnqualifiedType [] -> ()
-        | Item.MethodGroup (_, [], _) -> ()
-        | Item.CtorGroup (_, []) -> ()
+        | Item.MethodGroup(_, [], _) -> ()
+        | Item.CtorGroup(_, []) -> ()
         | Item.ModuleOrNamespaces [] -> ()
 
         // Items are flattened so multiples are not expected
-        | Item.Types (_, _ :: _ :: _) -> ()
-        | Item.UnqualifiedType (_ :: _ :: _) -> ()
-        | Item.MethodGroup (_, (_ :: _ :: _), _) -> ()
-        | Item.CtorGroup (_, (_ :: _ :: _)) -> ()
-        | Item.ModuleOrNamespaces (_ :: _ :: _) -> ()
+        | Item.Types(_, _ :: _ :: _) -> ()
+        | Item.UnqualifiedType(_ :: _ :: _) -> ()
+        | Item.MethodGroup(_, (_ :: _ :: _), _) -> ()
+        | Item.CtorGroup(_, (_ :: _ :: _)) -> ()
+        | Item.ModuleOrNamespaces(_ :: _ :: _) -> ()
 
         let postCount = b.Count
 

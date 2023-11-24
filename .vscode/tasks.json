@@ -31,10 +31,18 @@
                     "-c",
                     "Debug",
                     "FSharp.Compiler.Service.sln"
-                ],
+                ]
+            },
+            "options": {
+                "env": {
+                    "UpdateXlfOnBuild": "true"
+                }
             },
             "problemMatcher": "$msCompile",
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "Build (Release)",
@@ -53,10 +61,15 @@
                     "-c",
                     "Release",
                     "FSharp.Compiler.Service.sln"
-                ],
+                ]
+            },
+            "options": {
+                "env": {
+                    "UpdateXlfOnBuild": "true"
+                }
             },
             "problemMatcher": "$msCompile",
-            "group": "build",
+            "group": "build"
         },
         {
             "label": "Update xlf files",

@@ -69,6 +69,9 @@ type LanguageFeature =
     | WhileBang
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    /// RFC-1137
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
 
 /// LanguageVersion management
 type LanguageVersion =

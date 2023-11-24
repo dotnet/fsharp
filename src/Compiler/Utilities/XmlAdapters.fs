@@ -12,6 +12,6 @@ let getEscapeSequence c =
     | '\"' -> "&quot;"
     | '\'' -> "&apos;"
     | '&' -> "&amp;"
-    | _ as ch -> ch.ToString()
+    | ch -> ch.ToString()
 
 let escape str = String.collect getEscapeSequence str

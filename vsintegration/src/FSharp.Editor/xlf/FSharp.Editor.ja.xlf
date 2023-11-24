@@ -216,6 +216,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
         <target state="translated">'return!' の削除</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
         <target state="translated">使用されていないバインドの削除</target>

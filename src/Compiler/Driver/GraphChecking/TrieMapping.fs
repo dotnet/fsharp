@@ -48,15 +48,15 @@ let isAnyAttributeAutoOpen (attributes: SynAttributes) =
 /// This can happen when a `namespace global` is used, or when a module (with a single ident name) has the `[<AutoOpen>]` attribute.
 let doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
     match ast with
-    | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
         contents
-        |> List.exists (fun (SynModuleOrNamespaceSig (attribs = attribs; longId = longId; kind = kind)) ->
+        |> List.exists (fun (SynModuleOrNamespaceSig(attribs = attribs; longId = longId; kind = kind)) ->
             (isAnyAttributeAutoOpen attribs && longId.Length < 2)
             || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
-    | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = contents)) ->
         contents
-        |> List.exists (fun (SynModuleOrNamespace (attribs = attribs; longId = longId; kind = kind)) ->
+        |> List.exists (fun (SynModuleOrNamespace(attribs = attribs; longId = longId; kind = kind)) ->
             (isAnyAttributeAutoOpen attribs && longId.Length < 2)
             || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
@@ -65,10 +65,9 @@ let rec mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : Tri
     let nextNodeInfo: TrieNodeInfo =
         match accumulatorTrie.Current, currentTrie.Current with
         | TrieNodeInfo.Root accFiles, TrieNodeInfo.Root currentFiles -> TrieNodeInfo.Root(accFiles.Union currentFiles)
-        | TrieNodeInfo.Namespace (name = name
-                                  filesThatExposeTypes = currentFilesThatExposeTypes
-                                  filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
-          TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
+        | TrieNodeInfo.Namespace(
+            name = name; filesThatExposeTypes = currentFilesThatExposeTypes; filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
+          TrieNodeInfo.Namespace(filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
             TrieNodeInfo.Namespace(
                 name,
                 currentFilesThatExposeTypes.Union otherFiles,
@@ -76,19 +75,19 @@ let rec mergeTrieNodes (accumulatorTrie: TrieNode) (currentTrie: TrieNode) : Tri
             )
         // Edge case scenario detected in https://github.com/dotnet/fsharp/issues/15985
         // Keep the namespace (as it can still have nested children).
-        | TrieNodeInfo.Namespace (name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes), TrieNodeInfo.Module (_name, file)
+        | TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes), TrieNodeInfo.Module(_name, file)
         // Replace the module in favour of the namespace (which can hold nested children).
-        | TrieNodeInfo.Module (_name, file), TrieNodeInfo.Namespace (name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
+        | TrieNodeInfo.Module(_name, file), TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes, filesDefiningNamespaceWithoutTypes) ->
             TrieNodeInfo.Namespace(name, currentFilesThatExposeTypes.Add file, filesDefiningNamespaceWithoutTypes)
         | _ -> accumulatorTrie.Current
 
     let nextChildren =
         (accumulatorTrie.Children, currentTrie.Children)
-        ||> Seq.fold (fun accChildren (KeyValue (k, v)) ->
-            if not (accChildren.ContainsKey k) then
-                accChildren.Add(k, v)
-            else
-                let accNode = accChildren[k]
+        ||> Seq.fold (fun accChildren (KeyValue(k, v)) ->
+            match accChildren.TryGetValue k with
+            | false, _ -> accChildren.Add(k, v)
+            | true, kVal ->
+                let accNode = kVal
                 accChildren.SetItem(k, mergeTrieNodes accNode v))
 
     {
@@ -207,37 +206,32 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
     else
         let trie =
             match file.ParsedInput with
-            | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
+            | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
                 contents
                 |> List.map
-                    (fun (SynModuleOrNamespaceSig (longId = longId
-                                                   kind = kind
-                                                   attribs = attribs
-                                                   decls = decls
-                                                   accessibility = _accessibility)) ->
+                    (fun
+                        (SynModuleOrNamespaceSig(
+                            longId = longId; kind = kind; attribs = attribs; decls = decls; accessibility = _accessibility)) ->
                         let hasTypesOrAutoOpenNestedModules =
                             decls
                             |> List.exists (function
                                 | SynModuleSigDecl.Types _ -> true
-                                | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
+                                | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attributes)) ->
                                     isAnyAttributeAutoOpen attributes
                                 | _ -> false)
 
                         processSynModuleOrNamespace mkTrieForSynModuleSigDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
                 |> List.reduce mergeTrieNodes
-            | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
+            | ParsedInput.ImplFile(ParsedImplFileInput(contents = contents)) ->
                 contents
                 |> List.map
-                    (fun (SynModuleOrNamespace (longId = longId
-                                                attribs = attribs
-                                                kind = kind
-                                                decls = decls
-                                                accessibility = _accessibility)) ->
+                    (fun
+                        (SynModuleOrNamespace(longId = longId; attribs = attribs; kind = kind; decls = decls; accessibility = _accessibility)) ->
                         let hasTypesOrAutoOpenNestedModules =
                             List.exists
                                 (function
                                 | SynModuleDecl.Types _ -> true
-                                | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
+                                | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(attributes = attributes)) ->
                                     isAnyAttributeAutoOpen attributes
                                 | _ -> false)
                                 decls
@@ -249,7 +243,7 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
 
 and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
-    | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
+    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
         let name = nestedModuleIdent.idText
 
         let children =
@@ -270,7 +264,7 @@ and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyVal
 
 and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
-    | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); moduleDecls = decls) ->
+    | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); moduleDecls = decls) ->
         let name = nestedModuleIdent.idText
 
         let children =
@@ -316,8 +310,8 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
     let getName (node: TrieNodeInfo) =
         match node with
         | Root _ -> "root"
-        | Module (name, _) -> $"mod_{name}"
-        | Namespace (name, _, _) -> $"ns_{name}"
+        | Module(name, _) -> $"mod_{name}"
+        | Namespace(name, _, _) -> $"ns_{name}"
 
     let toBoxList (boxPos: MermaidBoxPos) (files: ImmutableHashSet<FileIndex>) =
         let sb = StringBuilder()
@@ -343,12 +337,12 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
                 appendLine "class root\n"
             else
                 appendLine $"class root {{\n{firstBox}}}\n"
-        | TrieNodeInfo.Module (_name, file) as md ->
+        | TrieNodeInfo.Module(_name, file) as md ->
             let name = getName md
             let fileName = System.IO.Path.GetFileName(filesInProject[file].FileName)
             appendLine $"{getName parent.Current} <|-- {name}"
             appendLine $"class {name} {{\n    {fileName}[{file}]\n}}\n"
-        | TrieNodeInfo.Namespace (_name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) as ns ->
+        | TrieNodeInfo.Namespace(_name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) as ns ->
             let name = getName ns
             let firstBox = toBoxList First filesThatExposeTypes
             let secondBox = toBoxList Second filesDefiningNamespaceWithoutTypes

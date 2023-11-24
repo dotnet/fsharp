@@ -22,6 +22,16 @@
         <target state="translated">只有在使用 RequireQualifiedAccess 屬性時，才允許小寫區分聯結案例</target>
         <note />
       </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="new"> Non-static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="new"> Static member is expected.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">符號 '..^'</target>

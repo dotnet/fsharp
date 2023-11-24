@@ -530,7 +530,7 @@ module DeclarationListHelpers =
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width = 
         DiagnosticsScope.Protect m 
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item symbol width)
-            (fun err -> ToolTipElement.CompositionError err)
+            ToolTipElement.CompositionError
 
 /// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
@@ -739,8 +739,7 @@ module internal DescriptionListsImpl =
                     // This is good enough as we don't provide ways to display info for the second curried argument
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
-                        |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+                        |> List.map (ParamNameAndType.FromArgInfo >> fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 
@@ -1128,6 +1127,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 ) (0, 0, [])
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
+        let supportsPreferExtsMethodsOverProperty = denv.g.langVersion.SupportsFeature Features.LanguageFeature.PreferExtensionMethodOverPlainProperty
 
         // Group by full name for unresolved items and by display name for resolved ones.
         let decls = 
@@ -1144,22 +1144,79 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
-
-            |> List.map (fun (_, items) -> 
-                let item = items.Head
-                let textInDeclList = 
+            |> List.map (
+                let textInDeclList item =
                     match item.Unresolved with
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayNameCore
-                let textInCode = 
+                let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
                         match item.Unresolved with
                         | Some u -> u.DisplayName
                         | None -> item.Item.DisplayName
-                textInDeclList, textInCode, items)
-
+                if not supportsPreferExtsMethodsOverProperty then
+                    // we don't pay the cost of filtering specific to RFC-1137
+                    // nor risk a change in behaviour for the intellisense item list
+                    // if the feature is disabled
+                    fun (_, items) ->
+                      let item = items.Head
+                      [textInDeclList item, textInCode item, items]
+                else
+                    // RFC-1137 shenanigans:
+                    // due to not desiring to merge Property and extension Method bearing same name,
+                    // but still merging extension method if it tries to shadow other stuff than a Property
+                    // we proceed with a pre-scan to see if we hit the particular case, in which case we partition
+                    // items to be split and those that were initially remaining grouped.
+                    // If we don't hit the specific case, or have a single entry, we keep the same logic as originally
+                    // N.B: due to the logic returning 1 to N instead of 1, the next stage of the pipeline is List.concat
+                    // introduced for this RFC
+                    let hasBothPropertiesAndExtensionMethods items =
+                        let rec inner hasProperty hasExtensionMethod items =
+                            if hasProperty && hasExtensionMethod then
+                                true
+                            else
+                                match items with
+                                | [] -> hasProperty && hasExtensionMethod
+                                | item :: tail when item.Kind = CompletionItemKind.Property                 -> inner true hasExtensionMethod tail 
+                                | item :: tail when item.Kind = CompletionItemKind.Method(isExtension=true) -> inner hasProperty true tail
+                                | _ :: tail                                                                 -> inner hasProperty hasExtensionMethod tail
+                        inner false false items
+                    function
+                        | _, ([_] as items) 
+                        | _,items when not (hasBothPropertiesAndExtensionMethods items) ->
+                            let item = items.Head
+                            [textInDeclList item, textInCode item, items]
+                        | _, items (* RFC-1137 we have both property and extension method ...*) ->
+                            let toSplit, together =
+                                items
+                                |> List.partition
+                                    (fun item ->
+                                        match item.Kind with
+                                        | CompletionItemKind.Property | CompletionItemKind.Method(isExtension=true) -> true
+                                        | _ -> false
+                                    )
+                            [
+                                let rec createSublists list =
+                                    match list with
+                                    | [] -> []
+                                    | _ :: tail -> list :: createSublists tail
+                                    
+                                // we use createSublists here so the `items` sent down the
+                                // pipeline have their first element being the actual
+                                // item, in order for the glyph to be the correct one
+                                // notice how the later stage uses `GlyphOfItem(denv,items.Head)`
+                                for items in createSublists toSplit do
+                                    let item = items.Head
+                                    textInDeclList item, textInCode item, items
+                                if not together.IsEmpty then
+                                  let item = together.Head
+                                  textInDeclList item, textInCode item, items
+                            ]
+                 )
+            // RFC-1137: concat previous result
+            |> List.concat 
             // Filter out operators, active patterns (as values)
             |> List.filter (fun (_textInDeclList, textInCode, items) -> 
                 not (isOperatorItem textInCode items) && 

@@ -206,7 +206,7 @@ module List =
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
-    /// <summary>Divides the input list into lists (chunks) with at a positive number of at most <c>chunkSize</c> elements.
+    /// <summary>Divides the input list into lists (chunks) of size at most <c>chunkSize</c>.
     /// Returns a new list containing the generated lists (chunks) as its elements.
     /// 
     /// Returns an empty list when the input list is empty.</summary>
@@ -243,7 +243,7 @@ module List =
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
 
-    /// <summary>For each element of the list, applies the given function. Concatenates all the results and return the combined list.</summary>
+    /// <summary>For each element of the list, applies the given function. Concatenates all the results and returns the combined list.</summary>
     ///
     /// <param name="mapping">The function to transform each input element into a sublist to be concatenated.</param>
     /// <param name="list">The input list.</param>
@@ -339,7 +339,7 @@ module List =
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
-    /// <summary>Returns a new list that contains the elements of each the lists in order.</summary>
+    /// <summary>Returns a new list that contains the elements of each of the lists in order.</summary>
     ///
     /// <param name="lists">The input sequence of lists.</param>
     ///
@@ -1148,7 +1148,7 @@ module List =
     val inline iter: action:('T -> unit) -> list:'T list -> unit
 
     /// <summary>Applies the given function to two collections simultaneously. The
-    /// collections must have identical size.</summary>
+    /// collections must have identical sizes.</summary>
     ///
     /// <param name="action">The function to apply to pairs of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
@@ -1173,7 +1173,7 @@ module List =
     val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Applies the given function to each element of the collection. The integer passed to the
-    /// function indicates the index of element.</summary>
+    /// function indicates the index of the element.</summary>
     ///
     /// <param name="action">The function to apply to the elements of the list along with their index.</param>
     /// <param name="list">The input list.</param>
@@ -1196,8 +1196,8 @@ module List =
     val inline iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
 
     /// <summary>Applies the given function to two collections simultaneously. The
-    /// collections must have identical size. The integer passed to the
-    /// function indicates the index of element.</summary>
+    /// collections must have identical sizes. The integer passed to the
+    /// function indicates the index of the element.</summary>
     ///
     /// <param name="action">The function to apply to a pair of elements from the input lists along with their index.</param>
     /// <param name="list1">The first input list.</param>
@@ -1411,7 +1411,7 @@ module List =
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to each of the elements of the collection. The integer index passed to the
-    /// function indicates the index (from 0) of element being transformed.</summary>
+    /// function indicates the index (from 0) of the element being transformed.</summary>
     ///
     /// <param name="mapping">The function to transform elements and their indices.</param>
     /// <param name="list">The input list.</param>
