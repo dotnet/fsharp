@@ -1407,17 +1407,19 @@ type internal TransparentCompiler
                             None // TODO: Add SymbolEnv
                         )
 
-                    let extraDiagnostics = DiagnosticHelpers.CreateDiagnostics(
-                        diagnosticsOptions,
-                        false,
-                        fileName,
-                        extraLogger.Diagnostics,
-                        suggestNamesForErrors,
-                        bootstrapInfo.TcConfig.flatErrors,
-                        None // TODO: Add SymbolEnv
-                    )
+                    let extraDiagnostics =
+                        DiagnosticHelpers.CreateDiagnostics(
+                            diagnosticsOptions,
+                            false,
+                            fileName,
+                            extraLogger.Diagnostics,
+                            suggestNamesForErrors,
+                            bootstrapInfo.TcConfig.flatErrors,
+                            None // TODO: Add SymbolEnv
+                        )
 
-                    let tcDiagnostics = [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics; |]
+                    let tcDiagnostics =
+                        [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics |]
 
                     let loadClosure = None // TODO: script support
 
