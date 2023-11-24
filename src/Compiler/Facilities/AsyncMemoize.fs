@@ -299,6 +299,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                             let cachingLogger = new CachingDiagnosticsLogger(None)
 
                                             try
+                                                // TODO: Should unify starting and restarting
                                                 log (Started, key)
                                                 Interlocked.Increment &restarted |> ignore
                                                 System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
@@ -429,6 +430,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     return!
                         Async.StartAsTask(
                             async {
+                                // TODO: Should unify starting and restarting
                                 log (Started, key)
                                 let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
                                 DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger

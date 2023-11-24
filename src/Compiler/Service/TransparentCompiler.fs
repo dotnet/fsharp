@@ -1392,6 +1392,10 @@ type internal TransparentCompiler
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
 
+                    // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
+                    let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
+                    use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
+
                     let tcDiagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
@@ -1403,7 +1407,17 @@ type internal TransparentCompiler
                             None // TODO: Add SymbolEnv
                         )
 
-                    let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+                    let extraDiagnostics = DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        extraLogger.Diagnostics,
+                        suggestNamesForErrors,
+                        bootstrapInfo.TcConfig.flatErrors,
+                        None // TODO: Add SymbolEnv
+                    )
+
+                    let tcDiagnostics = [| yield! creationDiags; yield! extraDiagnostics; yield! tcDiagnostics; |]
 
                     let loadClosure = None // TODO: script support
 

@@ -116,7 +116,8 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> withLangVersion80
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
+        // Informational become warning if explicitly on and not explicitly off
+        |> withSingleDiagnostic (Warning 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
 
     [<Theory>]
     [<MemberData(nameof(quotableNoWarningCases))>]
