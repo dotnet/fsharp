@@ -40,7 +40,7 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
         |> withLangVersion80
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col col1, Line line2, Col col2, message)
+        |> withSingleDiagnostic (Warning 3559, Line line1, Col col1, Line line2, Col col2, message)
 
     let quotableNoWarningCases =
         [

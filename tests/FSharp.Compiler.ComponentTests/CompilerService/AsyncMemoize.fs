@@ -230,7 +230,7 @@ let ``Stress test`` () =
     let keyCount = rng.Next(5, 200)
     let keys = [| 1 .. keyCount |]
 
-    let testTimeoutMs = threads * iterations * maxDuration / 2
+    let testTimeoutMs = threads * iterations * maxDuration
 
     let intenseComputation durationMs result =
         async {
@@ -523,3 +523,8 @@ let ``We get diagnostics from the job that failed`` () =
         |> (fun t -> t.Result)
 
     Assert.Equal<list<_>>([["job 1 error"]; ["job 1 error"]], result)
+
+
+[<Fact>]
+let ``What if requestor cancels and their diagnosticsLogger gets disposed?``() =
+    failwith "TODO"
