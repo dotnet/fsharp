@@ -122,11 +122,6 @@
         <target state="translated">Элемент или функция "{0}" содержит атрибут "TailCallAttribute", но не используется в рекурсивном хвостовом режиме.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkStaticMembersDirectlyOnInterfaces">
-        <source>Interfaces cannot access static abstract members directly.</source>
-        <target state="new">Interfaces cannot access static abstract members directly.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
         <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>

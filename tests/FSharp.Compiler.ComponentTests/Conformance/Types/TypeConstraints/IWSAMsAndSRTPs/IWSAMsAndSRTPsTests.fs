@@ -920,10 +920,7 @@ let main _ =
         |> withNoWarn 3535
         |> withLangVersion70
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3861, Line 13, Col 71, Line 13, Col 79, "Interfaces cannot access static abstract members directly.")
-        ]
+        |> shouldSucceed
         
     [<FactForNETCOREAPP>]
     let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
@@ -1200,7 +1197,7 @@ IAdditionOperators.op_Addition (3, 6)
          |> withLangVersion80
          |> compile
          |> shouldFail
-         |> withSingleDiagnostic (Error 3861, Line 4, Col 1, Line 4, Col 31, "Interfaces cannot access static abstract members directly.")
+         |> withSingleDiagnostic (Error 509, Line 4, Col 1, Line 4, Col 38, "Method or object constructor 'op_Addition' not found")
          
     [<FactForNETCOREAPP>]
     let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =

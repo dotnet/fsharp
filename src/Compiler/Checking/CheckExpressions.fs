@@ -9846,16 +9846,13 @@ and TcMethodApplication
     let finalCalledMeth =
 
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
-
-        for minfo, _, _, _ in preArgumentTypeCheckingCalledMethGroup do
-            match minfo with
-            | ILMeth(ilMethInfo = ilMethInfo) ->
-                if ilMethInfo.IsStatic && ilMethInfo.IsAbstract then
-                    errorR(Error(FSComp.SR.chkStaticMembersDirectlyOnInterfaces(), mItem))
-            | _ -> ()
-              
         let postArgumentTypeCheckingCalledMethGroup =
-            preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
+            preArgumentTypeCheckingCalledMethGroup
+            |> List.filter (fun (minfo, _, _, _) ->
+                match minfo with
+                | ILMeth(ilMethInfo = ilMethInfo) -> not(ilMethInfo.IsStatic && ilMethInfo.IsAbstract)
+                | _ -> true)
+            |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs =
                     match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
