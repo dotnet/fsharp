@@ -3411,12 +3411,7 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals
-    (
-        primaryScopeRef: ILScopeRef,
-        equivPrimaryAssemblyRefs: ILAssemblyRef list,
-        fsharpCoreAssemblyScopeRef: ILScopeRef
-    ) =
+type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
 
     let equivPrimaryAssemblyRefs = Array.ofList equivPrimaryAssemblyRefs
 

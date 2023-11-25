@@ -215,7 +215,7 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
 let mkCompareTestConjuncts g m exprs =
     match List.tryFrontAndBack exprs with
     | None -> mkZero g m
-    | Some (a, b) ->
+    | Some(a, b) ->
         (a, b)
         ||> List.foldBack (fun e acc ->
             let nv, ne = mkCompGenLocal m "n" g.int_ty
@@ -235,7 +235,7 @@ let mkCompareTestConjuncts g m exprs =
 let mkEqualsTestConjuncts g m exprs =
     match List.tryFrontAndBack exprs with
     | None -> mkOne g m
-    | Some (a, b) -> List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e acc (mkFalse g m)) a b
+    | Some(a, b) -> List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) =
     if tcref.Deref.IsFSharpException then
@@ -1343,7 +1343,7 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
     let mkCompare comparef =
         match tycon.GeneratedCompareToValues with
         | None -> []
-        | Some (vref1, vref2) ->
+        | Some(vref1, vref2) ->
             let vspec1 = vref1.Deref
             let vspec2 = vref2.Deref
             (* this is the body of the override *)
@@ -1419,7 +1419,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
     let mkStructuralEquatable hashf equalsf =
         match tycon.GeneratedHashAndEqualsWithComparerValues with
         | None -> []
-        | Some (objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal) ->
+        | Some(objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal) ->
 
             // build the hash rhs
             let withcGetHashCodeExpr =
@@ -1504,7 +1504,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
     let mkEquals equalsf =
         match tycon.GeneratedHashAndEqualsValues with
         | None -> []
-        | Some (objEqualsVal, nocEqualsVal) ->
+        | Some(objEqualsVal, nocEqualsVal) ->
             // this is the body of the real strongly typed implementation
             let nocEqualsExpr =
                 let thisv, thatv, equalse = equalsf g tcref tycon
@@ -1558,7 +1558,7 @@ let rec TypeDefinitelyHasEquality g ty =
     let appTy = tryAppTy g ty
 
     match appTy with
-    | ValueSome (tcref, _) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs -> false
+    | ValueSome(tcref, _) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs -> false
     | _ ->
         if
             isTyparTy g ty
@@ -1575,7 +1575,7 @@ let rec TypeDefinitelyHasEquality g ty =
             | _ ->
                 // The type is equatable because it has Object.Equals(...)
                 match appTy with
-                | ValueSome (tcref, tinst) ->
+                | ValueSome(tcref, tinst) ->
                     // Give a good error for structural types excluded from the equality relation because of their fields
                     not (
                         TyconIsCandidateForAugmentationWithEquals g tcref.Deref

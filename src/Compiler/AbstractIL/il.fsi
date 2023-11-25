@@ -4,7 +4,6 @@
 
 module rec FSharp.Compiler.AbstractIL.IL
 
-open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
@@ -1917,9 +1916,7 @@ type internal ILGlobals =
 ///   primaryScopeRef is the primary assembly we are emitting
 ///   equivPrimaryAssemblyRefs are ones regarded as equivalent
 val internal mkILGlobals:
-    primaryScopeRef: ILScopeRef *
-    equivPrimaryAssemblyRefs: ILAssemblyRef list *
-    fsharpCoreAssemblyScopeRef: ILScopeRef ->
+    primaryScopeRef: ILScopeRef * equivPrimaryAssemblyRefs: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
