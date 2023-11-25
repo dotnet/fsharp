@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.OcamlCompat
+namespace OcamlCompat
 
 open Xunit
 open FSharp.Test
@@ -86,7 +86,7 @@ module ``OCamlCompat test cases`` =
 
     //	SOURCE=E_mlExtension01.ml  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_mlExtension01.ml
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_mlExtension01.ml"|])>]
-    let ``E_mlExtension01.ml --test:ErrorRanges`` compilation =
+    let ``E_mlExtension01_ml --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -147,7 +147,7 @@ module ``OCamlCompat test cases`` =
 
     //	SOURCE=W_MultiArgumentGenericType.fs					# W_MultiArgumentGenericType.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_MultiArgumentGenericType.fs"|])>]
-    let ``W_MultiArgumentGenericType.fs``compilation =
+    let ``W_MultiArgumentGenericType_fs``compilation =
         compilation
         |> asExe
         |> ignoreWarnings

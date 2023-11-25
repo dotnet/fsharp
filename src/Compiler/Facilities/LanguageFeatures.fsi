@@ -10,6 +10,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -45,6 +46,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
@@ -58,6 +60,20 @@ type LanguageFeature =
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
     | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
+    | ConstraintIntersectionOnFlexibleTypes
+    | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
+    | UnmanagedConstraintCsharpInterop
+    | WhileBang
+    | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
+    /// RFC-1137
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
 
 /// LanguageVersion management
 type LanguageVersion =

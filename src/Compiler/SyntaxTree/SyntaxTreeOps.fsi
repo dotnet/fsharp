@@ -41,6 +41,8 @@ val mkSynSimplePatVar: isOpt: bool -> id: Ident -> SynSimplePat
 
 val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
+val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 val (|LongOrSingleIdent|_|):
     inp: SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) option
@@ -255,6 +257,8 @@ module SynInfo =
 
     val emptySynValData: SynValData
 
+    val emptySynArgInfo: SynArgInfo
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
@@ -330,8 +334,6 @@ val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) opti
 val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: SynLongIdent -> SynLongIdent
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
-
-val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
 
 val normalizeTuplePat: pats: SynPat list -> commas: range list -> SynPat list * range List
 

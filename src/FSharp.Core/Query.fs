@@ -244,7 +244,7 @@ type QueryBuilder() =
         QuerySource (Enumerable.Join(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.GroupJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
-        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x g)))
+        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x (g.DefaultIfEmpty()))))
@@ -403,7 +403,7 @@ module Query =
         (fun (obj: Expr, tyargs: Type list, args: Expr list) -> Expr.Call (obj, BindGenericStaticMethod methInfo tyargs, args))
 
     let ImplicitExpressionConversionHelperMethodInfo =
-        methodhandleof (fun e -> LeafExpressionConverter.ImplicitExpressionConversionHelper e)
+        methodhandleof (LeafExpressionConverter.ImplicitExpressionConversionHelper)
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -722,21 +722,21 @@ module Query =
             (if isIQ then CQ else CE) ([srcItemTy], [src])
         Make, Call
 
-    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.First x)) (methodhandleof (fun x -> Enumerable.First x))
+    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.First)) (methodhandleof (Enumerable.First))
 
-    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.FirstOrDefault x)) (methodhandleof (fun x -> Enumerable.FirstOrDefault x))
+    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.FirstOrDefault)) (methodhandleof (Enumerable.FirstOrDefault))
 
-    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Last x)) (methodhandleof (fun x -> Enumerable.Last x))
+    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Last)) (methodhandleof (Enumerable.Last))
 
-    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.LastOrDefault x)) (methodhandleof (fun x -> Enumerable.LastOrDefault x))
+    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.LastOrDefault)) (methodhandleof (Enumerable.LastOrDefault))
 
-    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Single x)) (methodhandleof (fun x -> Enumerable.Single x))
+    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Single)) (methodhandleof (Enumerable.Single))
 
-    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.SingleOrDefault x)) (methodhandleof (fun x -> Enumerable.SingleOrDefault x))
+    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.SingleOrDefault)) (methodhandleof (Enumerable.SingleOrDefault))
 
-    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Count x)) (methodhandleof (fun x -> Enumerable.Count x))
+    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Count)) (methodhandleof (Enumerable.Count))
 
-    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.DefaultIfEmpty x))
+    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (Enumerable.DefaultIfEmpty))
 
     /// Indicates if we can eliminate redundant 'Select(x=>x)' nodes
     type CanEliminate =
@@ -898,8 +898,8 @@ module Query =
             (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.TakeWhile(x, y)))
 
     let MakeDistinct =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun x -> System.Linq.Queryable.Distinct x))
-        let FE = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.Distinct x))
+        let FQ = MakeGenericStaticMethod (methodhandleof (System.Linq.Queryable.Distinct))
+        let FE = MakeGenericStaticMethod (methodhandleof (Enumerable.Distinct))
         fun (isIQ, srcItemTy, src: Expr) ->
             if isIQ then
                 FQ ([srcItemTy], [src])

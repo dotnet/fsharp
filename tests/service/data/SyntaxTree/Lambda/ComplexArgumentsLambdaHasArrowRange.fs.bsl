@@ -25,7 +25,7 @@ ImplFile
                          (NoneAtInvisible, Ident _arg2,
                           [SynMatchClause
                              (Record
-                                ([(([], Y), (3,9--3,10),
+                                ([(([], Y), Some (3,9--3,10),
                                    ListCons
                                      (Named
                                         (SynIdent (h, None), false, None,
@@ -88,7 +88,7 @@ ImplFile
                         (2,4--2,10));
                      Paren
                        (Record
-                          ([(([], Y), (3,9--3,10),
+                          ([(([], Y), Some (3,9--3,10),
                              ListCons
                                (Named
                                   (SynIdent (h, None), false, None, (3,11--3,12)),
@@ -108,7 +108,7 @@ ImplFile
                       (NoneAtInvisible, Ident _arg2,
                        [SynMatchClause
                           (Record
-                             ([(([], Y), (3,9--3,10),
+                             ([(([], Y), Some (3,9--3,10),
                                 ListCons
                                   (Named
                                      (SynIdent (h, None), false, None,

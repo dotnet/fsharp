@@ -79,6 +79,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart).
+        /// </summary>
+        public static string Analyze_full_solution_on_background {
+            get {
+                return ResourceManager.GetString("Analyze_full_solution_on_background", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Background analysis.
+        /// </summary>
+        public static string Background_analysis {
+            get {
+                return ResourceManager.GetString("Background_analysis", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Block Structure Guides.
         /// </summary>
         public static string Block_Structure {
@@ -133,6 +151,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep background symbol keys.
+        /// </summary>
+        public static string Enable_Background_ItemKeyStore_And_Semantic_Classification {
+            get {
+                return ResourceManager.GetString("Enable_Background_ItemKeyStore_And_Semantic_Classification", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable fast find references &amp; rename (experimental).
         /// </summary>
         public static string Enable_Fast_Find_References {
@@ -142,7 +169,16 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        ///   Looks up a localized string similar to _Enable in-memory cross project references.
+        /// </summary>
+        public static string Enable_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for analysis (restart required).
         /// </summary>
         public static string Enable_Live_Buffers {
             get {
@@ -259,6 +295,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep all background intermediate resolutions (increases memory usage).
+        /// </summary>
+        public static string Keep_All_Background_Resolutions {
+            get {
+                return ResourceManager.GetString("Keep_All_Background_Resolutions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep all background symbol uses (increases memory usage).
+        /// </summary>
+        public static string Keep_All_Background_Symbol_Uses {
+            get {
+                return ResourceManager.GetString("Keep_All_Background_Symbol_Uses", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
@@ -268,7 +322,16 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Live Buffers (experimental).
+        ///   Looks up a localized string similar to Language service settings (advanced).
+        /// </summary>
+        public static string Language_Service_Settings {
+            get {
+                return ResourceManager.GetString("Language_Service_Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Live Buffers.
         /// </summary>
         public static string LiveBuffers {
             get {
@@ -318,6 +381,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Project_Performance {
             get {
                 return ResourceManager.GetString("Project_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove unnecessary parentheses (experimental, might affect typing performance).
+        /// </summary>
+        public static string Remove_parens_code_fix {
+            get {
+                return ResourceManager.GetString("Remove_parens_code_fix", resourceCulture);
             }
         }
         
@@ -453,6 +525,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Time_until_stale_completion {
             get {
                 return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
             }
         }
         

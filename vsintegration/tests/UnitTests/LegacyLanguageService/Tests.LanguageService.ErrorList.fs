@@ -40,7 +40,7 @@ type UsingMSBuild() as this =
         let errorList = GetErrors(project)
         [for error in errorList do
             if (error.Severity = Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning) then
-            yield error]
+                yield error]
     
     let CheckErrorList (content : string) f : unit = 
         let (_, project, file) = this.CreateSingleFileProject(content)
@@ -207,13 +207,7 @@ let g (t : T) = t.Count()
         X(1.0)
         """
 
-        let expectedMessages = [ """No overloads match for method 'X'.
-
-Known type of argument: float
-
-Available overloads:
- - new: bool -> X // Argument at index 1 doesn't match
- - new: int -> X // Argument at index 1 doesn't match""" ]
+        let expectedMessages = [ "No overloads match for method 'X'.\u001d\u001dKnown type of argument: float\u001d\u001dAvailable overloads:\u001d - new: bool -> X // Argument at index 1 doesn't match\u001d - new: int -> X // Argument at index 1 doesn't match" ]
 
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
@@ -292,15 +286,7 @@ let x =
         let content = """
         System.Console.WriteLine(null)
         """
-        let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
-
-Known type of argument: 'a0 when 'a0: null
-
-Candidates:
- - System.Console.WriteLine(buffer: char array) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit
- - System.Console.WriteLine(value: obj) : unit
- - System.Console.WriteLine(value: string) : unit""" ]
+        let expectedMessages = [ "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.\u001d\u001dKnown type of argument: 'a0 when 'a0: null\u001d\u001dCandidates:\u001d - System.Console.WriteLine(buffer: char array) : unit\u001d - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit\u001d - System.Console.WriteLine(value: obj) : unit\u001d - System.Console.WriteLine(value: string) : unit" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test>]
@@ -315,13 +301,7 @@ type B() =
 let b = B()
 b.Do(1, 1)
         """
-        let expectedMessages = [ """A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
-
-Known types of arguments: int * int
-
-Candidates:
- - member A.Do: a: int * b: 'T -> unit
- - member A.Do: a: int * b: int -> unit""" ]
+        let expectedMessages = [ "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.\u001d\u001dKnown types of arguments: int * int\u001d\u001dCandidates:\u001d - member A.Do: a: int * b: 'T -> unit\u001d - member A.Do: a: int * b: int -> unit" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]
@@ -397,7 +377,7 @@ type staticInInterface =
             
         CheckErrorList fileContent (function
             | err1 :: _ ->
-                Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
+                Assert.IsTrue(err1.Message.Contains("No static abstract member was found that corresponds to this override"))
             | x ->
                 Assert.Fail(sprintf "Unexpected errors: %A" x))
     
@@ -472,10 +452,7 @@ type staticInInterface =
         // dummy Type Provider exposes a parametric type (N1.T) that takes 2 static params (string * int) 
         // but here as you can see it's give (int * int)
         let fileContent = """ type foo = N1.T< const 42,2>"""
-        let expectedStr = """This expression was expected to have type
-    'string'    
-but here has type
-    'int'    """
+        let expectedStr = "This expression was expected to have type\u001d    'string'    \u001dbut here has type\u001d    'int'"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
@@ -533,19 +510,6 @@ but here has type
             fileContents = """
                             type foo = N1.T< const "Hello World",2>""",
             num = 1) 
-    
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
-    //This test case Verify that the Warning list count is one in the Warning list item when there is incorrect indentation in the code.
-    member public this.``TypeProvider.StaticParameters.WarningListItem `` () =
-        
-         this.VerifyWarningListCountAtOpenProject(
-            fileContents = """
-                            type foo = N1.T< 
-                           const "Hello World",2>""",
-            expectedNum = 1,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -650,7 +614,7 @@ but here has type
                     let a = NoVal""",
             num = 1 )
 
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``CompilerErrorsInErrList4``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = """
@@ -667,13 +631,8 @@ but here has type
                 let f x = function A -> true | B -> false
 
 
-                #nowarn "58" // FS0058: possible incorrect indentation: this token is offside of context started at
   
-                let _fsyacc_gotos = [| 
-                0us; 
-                1us;
-                2us
-                |] """ )
+                let _fsyacc_gotos = [| 0us; 1us; 2us|] """ )
 
     [<Test>]
     member public this.``CompilerErrorsInErrList5``() = 

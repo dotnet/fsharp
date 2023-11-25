@@ -6,7 +6,6 @@ open System
 open System.Composition
 open System.Threading
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -15,6 +14,7 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "AddExplicitTypeToParameter"); Shared>]
 type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor>] () =
@@ -29,6 +29,8 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
+            let! ct = Async.CancellationToken |> liftAsync
+
             let! lexerSymbol =
                 document.TryFindFSharpLexerSymbolAsync(
                     position,
@@ -37,9 +39,13 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
                     false,
                     nameof (FSharpAddExplicitTypeToParameterRefactoring)
                 )
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
 
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
                 |> liftAsync
 
             let! symbolUse =

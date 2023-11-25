@@ -37,17 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guide per strutture a blocchi;
+Mostra le linee guida per la struttura per il codice F#;
+Struttura;
+Mostra i nodi struttura e comprimibili per il codice F#;
+Suggerimenti inline;
+Visualizza suggerimenti di tipo inline (anteprima);
+Visualizza suggerimenti di tipo restituito (anteprima);
+Visualizza suggerimenti per i nomi di parametro inline (anteprima);
+Buffer in tempo reale;
+Usa buffer in tempo reale (non salvati) per il controllo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">Use ":" per il tipo nella dichiarazione di campo</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -162,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Opzioni prestazioni progetto F# e memorizzazione nella cache;
+        <target state="needs-review-translation">Opzioni prestazioni progetto F# e memorizzazione nella cache;
 Abilita riferimenti tra progetti in memoria;
 Enable_partial_type_checking;
 Opzioni prestazioni IntelliSense;
@@ -209,6 +214,11 @@ Sottolineatura a trattini;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Rimuovi 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -259,6 +269,11 @@ Sottolineatura a trattini;</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Rimuovi dichiarazioni OPEN inutilizzate</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">Simbolo "=" imprevisto nella dichiarazione di campo. Previsto ":" o altro token.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

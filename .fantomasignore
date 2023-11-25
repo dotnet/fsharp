@@ -15,7 +15,6 @@ artifacts/
 # For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
 .git/
 
-
 # Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
@@ -98,6 +97,7 @@ src/Compiler/Service/IncrementalBuild.fs
 src/Compiler/Service/ServiceAssemblyContent.fs
 src/Compiler/Service/ServiceDeclarationLists.fs
 src/Compiler/Service/ServiceErrorResolutionHints.fs
+vsintegration/src/FSharp.Editor/Common/CancellableTasks.fs
 
 # Fantomas limitations on signature files  (to investigate)
 

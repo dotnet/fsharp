@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Language.InterfaceTests
+﻿module Language.InterfaceTests
 
 open Xunit
 open FSharp.Test.Compiler
@@ -10,7 +10,7 @@ let ``Concrete instance method is not allowed in interfaces in lang preview``() 
 type I =
     member _.X () = 1
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -24,7 +24,7 @@ let ``Concrete instance property is not allowed in interfaces in lang preview``(
 type I =
     member _.Prop = "x"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -42,7 +42,7 @@ type I<'T> =
 if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed
@@ -59,8 +59,26 @@ type I<'T> =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
+
+[<Fact>]
+let ``Concrete static members are allowed in interfaces as intrinsics in lang preview``() =
+    FSharp $"""
+[<Interface>]
+type I<'T> = 
+    static member Prop = Unchecked.defaultof<'T>
+type I<'T> with
+    static member Echo (x: 'T) = x
+
+if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
+    failwith "failed"
+    """
+    |> withLangVersion80
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
 
 [<Fact>]
 let ``Interface with concrete static members can be implemented in lang preview``() =
@@ -79,7 +97,7 @@ let o = {{ new I with member _.Blah = 4 }}
 if I.Echo "yup" <> "yup" || (Imp() :> I).Blah <> 3 || o.Blah <> 4 then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed

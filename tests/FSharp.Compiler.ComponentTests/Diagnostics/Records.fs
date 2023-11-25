@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Diagnostics.Records
+module Diagnostics.Records
 
 open Xunit
 open FSharp.Test
@@ -16,7 +16,7 @@ type R = { F1: int; F2: string }
 let updateOk r = { r with F1 = 1 }
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -45,7 +45,7 @@ type R = { F1: int; F2: string }
 
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withOptions ["--nowarn:3560"]
     |> typecheck
     |> shouldSucceed
@@ -85,7 +85,7 @@ let t2 (x: RecTy) (a: AnotherNestedRecTy) = { x with D.C.c = { a with A = 3 } }
 //                                                           vvvvvvvvvvvvvvvvvvvvvvv
 let t3 (x: RecTy) (a: AnotherNestedRecTy) = { x with D.C.c = { a with A = 3; B = 4 } }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [

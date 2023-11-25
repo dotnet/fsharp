@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions
+namespace CompilerOptions.Fsc
 
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -10,7 +10,7 @@ module Checked =
 
     //  SOURCE=unchecked01.fs       # fsc-default
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsc-unchecked - unchecked01.fs``  compilation =
+    let ``fsc-unchecked - unchecked01_fs``  compilation =
         compilation
         |> asFs
         |> compile
@@ -18,7 +18,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked"       # fsc-checked
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsc-unchecked - unchecked01.fs --checked``  compilation =
+    let ``fsc-unchecked - unchecked01_fs --checked``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked"]
@@ -27,7 +27,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked+"      # fsc-checked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsc-unchecked - unchecked01.fs --checked+``  compilation =
+    let ``fsc-unchecked - unchecked01_fs --checked+``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked+"]
@@ -36,7 +36,7 @@ module Checked =
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked-"      # fsc-checked-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsc-unchecked - unchecked01.fs --checked-``  compilation =
+    let ``fsc-unchecked - unchecked01_fs --checked-``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked-"]
@@ -45,7 +45,7 @@ module Checked =
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked-"      # fsc-checked-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsi-unchecked - unchecked01.fs --checked-``  compilation =
+    let ``fsi-unchecked - unchecked01_fs --checked-``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked-"]
@@ -54,7 +54,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked"  FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsi-checked - checked01.fs --checked``  compilation =
+    let ``fsi-checked - checked01_fs --checked``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked"]
@@ -63,7 +63,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked+" FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsi-checked - checked01.fs --checked+``  compilation =
+    let ``fsi-checked - checked01_fs --checked+``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked+"]
@@ -72,7 +72,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked-" FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsi-checked - checked01.fs --checked-``  compilation =
+    let ``fsi-checked - checked01_fs --checked-``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked-"]
@@ -84,7 +84,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked  --checked+"   # fsc-checkedchecked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsc-checked - checked01.fs --checked  --checked+``  compilation =
+    let ``fsc-checked - checked01_fs --checked  --checked+``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked"; "--checked+"]
@@ -93,7 +93,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked- --checked+"   # fsc-checked-checked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsc-checked - checked01.fs --checked- --checked+``  compilation =
+    let ``fsc-checked - checked01_fs --checked- --checked+``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked-"; "--checked+"]
@@ -102,7 +102,7 @@ module Checked =
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked+ --checked-"   # fsc-checked+checked-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsc-checked - unchecked01.fs --checked+ --checked-``  compilation =
+    let ``fsc-checked - unchecked01_fs --checked+ --checked-``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked+"; "--checked-"]
@@ -111,7 +111,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked  --checked+"   # fsc-checkedchecked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsi-checked - checked01.fs --checked  --checked+``  compilation =
+    let ``fsi-checked - checked01_fs --checked  --checked+``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked"; "--checked+"]
@@ -120,7 +120,7 @@ module Checked =
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked- --checked+"   # fsc-checked-checked+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checked01.fs"|])>]
-    let ``fsi-checked - checked01.fs --checked- --checked+``  compilation =
+    let ``fsi-checked - checked01_fs --checked- --checked+``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked-"; "--checked+"]
@@ -129,7 +129,7 @@ module Checked =
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked+ --checked-"   # fsc-checked+checked-
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unchecked01.fs"|])>]
-    let ``fsi-checked - unchecked01.fs --checked+ --checked-``  compilation =
+    let ``fsi-checked - unchecked01_fs --checked+ --checked-``  compilation =
         compilation
         |> asFsx
         |> withOptions["--checked+"; "--checked-"]
@@ -139,7 +139,7 @@ module Checked =
     //# Unrecognized argument
     //  SOURCE=unrecogarg.fs  SCFLAGS="--Checked"   # fsc--Checked
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unrecogarg.fs"|])>]
-    let ``fsc-checked - unchecked01.fs Checked``  compilation =
+    let ``fsc-checked - unchecked01_fs Checked``  compilation =
         compilation
         |> asFs
         |> withOptions["--Checked"]
@@ -151,7 +151,7 @@ module Checked =
 
     //  SOURCE=unrecogarg.fs  SCFLAGS="--checked*"  # fsc--checked*
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"unrecogarg.fs"|])>]
-    let ``fsc-checked - unchecked01.fs --checked-star``  compilation =
+    let ``fsc-checked - unchecked01_fs --checked-star``  compilation =
         compilation
         |> asFs
         |> withOptions["--checked*"]

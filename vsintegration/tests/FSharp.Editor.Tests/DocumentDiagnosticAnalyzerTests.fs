@@ -7,32 +7,37 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
-    let getDiagnostics (fileContents: string) =
-        async {
-            let document =
-                RoslynTestHelpers.CreateSolution(fileContents)
-                |> RoslynTestHelpers.GetSingleDocument
+    member private _.getDiagnostics(fileContents: string, ?additionalFlags) =
+        let task =
+            cancellableTask {
+                let document =
+                    RoslynTestHelpers.CreateSolution(fileContents, ?extraFSharpProjectOtherOptions = additionalFlags)
+                    |> RoslynTestHelpers.GetSingleDocument
 
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-            return syntacticDiagnostics.AddRange(semanticDiagnostics)
-        }
-        |> Async.RunSynchronously
+                let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+                let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                return syntacticDiagnostics.AddRange(semanticDiagnostics)
+            }
+            |> CancellableTask.start CancellationToken.None
+
+        task.Result
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
-        let errors = getDiagnostics fileContents
+        let errors = this.getDiagnostics (fileContents, ?additionalFlags = additionalFlags)
 
         if not errors.IsEmpty then
             failwith $"There should be no errors generated: {errors}"
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
@@ -63,7 +68,7 @@ type DocumentDiagnosticAnalyzerTests() =
             expectedSeverity: DiagnosticSeverity
         ) =
         let errors =
-            getDiagnostics fileContents
+            this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
@@ -86,6 +91,72 @@ type DocumentDiagnosticAnalyzerTests() =
         actualError.Location.SourceSpan.End
         |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
+    member private this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
+        (
+            fileContents: string,
+            expectedMessage: string,
+            expectedSeverity: DiagnosticSeverity
+        ) =
+        // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
+        let errors =
+            this.getDiagnostics fileContents
+            |> Seq.filter (fun e -> e.Severity = expectedSeverity)
+            |> Seq.toArray
+
+        errors.Length
+        |> Assert.shouldBeEqualWith 2 "There should be two errors generated"
+
+        let actualError = errors.[0]
+        Assert.Equal(expectedSeverity, actualError.Severity)
+
+        actualError.GetMessage()
+        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
+
+        let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
+        let expectedEnd = fileContents.IndexOf(endMarker)
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+
+    member private this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents: string, expectedMessage: string) =
+        // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
+        this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents, expectedMessage, DiagnosticSeverity.Error)
+
+    member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
+        (
+            fileContents: string,
+            expectedMarker: string,
+            ?expectedMessage: string
+        ) =
+        let errors =
+            this.getDiagnostics fileContents
+            |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
+            |> Seq.toArray
+
+        errors.Length
+        |> Assert.shouldBeEqualWith 2 "There should be exactly two errors generated"
+
+        let actualError = errors.[0]
+
+        if expectedMessage.IsSome then
+            actualError.GetMessage()
+            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
+
+        Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
+        let expectedStart = fileContents.IndexOf(expectedMarker)
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
+        let expectedEnd = expectedStart + expectedMarker.Length
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
 
@@ -94,7 +165,7 @@ type DocumentDiagnosticAnalyzerTests() =
 
     [<Fact>]
     member public this.Error_Expression_IllegalIntegerLiteral() =
-        this.VerifyErrorBetweenMarkers(
+        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 let _ = 1
@@ -105,7 +176,7 @@ let a = 0.1(*start*).(*end*)0
 
     [<Fact>]
     member public this.Error_Expression_IncompleteDefine() =
-        this.VerifyErrorBetweenMarkers(
+        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 let a = (*start*);(*end*)
@@ -115,7 +186,7 @@ let a = (*start*);(*end*)
 
     [<Fact>]
     member public this.Error_Expression_KeywordAsValue() =
-        this.VerifyErrorBetweenMarkers(
+        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 let b =
@@ -125,23 +196,13 @@ let b =
         )
 
     [<Fact>]
-    member public this.Error_Type_WithoutName() =
-        this.VerifyErrorBetweenMarkers(
-            fileContents =
-                """
-type (*start*)=(*end*)
-                """,
-            expectedMessage = "Unexpected symbol '=' in type name"
-        )
-
-    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_1() =
         this.VerifyNoErrors(
             """
 [<AbstractClass>]
 type C(a : int) = 
     new(a : string) = C(int a)
-    new(b) = match b with Some _ -> C(1) | _ -> C("")
+    new b = match b with Some _ -> C 1 | _ -> C ""
             """
         )
 
@@ -152,7 +213,7 @@ type C(a : int) =
 [<AbstractClass>]
 type C(a : int) = 
     new(a : string) = new C(int a)
-    new(b) = match b with Some _ -> new C(1) | _ -> new C("")
+    new b = match b with Some _ -> new C 1 | _ -> new C ""
             """
         )
 
@@ -162,7 +223,7 @@ type C(a : int) =
             """
 [<AbstractClass>]
 type O(o : int) = 
-    new() = O(1)
+    new() = O 1
             """
         )
 
@@ -182,7 +243,7 @@ type O(o : int) =
             """
 [<AbstractClass>]
 type O(o : int) = 
-    new() = new O(1) then printfn "A"
+    new() = new O 1 then printfn "A"
             """
         )
 
@@ -260,7 +321,7 @@ let f () =
 
     [<Fact>]
     member public this.Error_Identifer_IllegalFloatPointLiteral() =
-        this.VerifyErrorBetweenMarkers(
+        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 let x: float = 1.2(*start*).(*end*)3
@@ -373,7 +434,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.ExtraEndif() =
-        this.VerifyErrorBetweenMarkers(
+        this.VerifyErrorBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 #if UNDEFINED
@@ -388,7 +449,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_If() =
-        this.VerifyErrorAtMarker(
+        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 (*comment*) #if UNDEFINED
@@ -403,7 +464,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_Endif() =
-        this.VerifyErrorAtMarker(
+        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 #if DEBUG
@@ -418,7 +479,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithMultilineComment() =
-        this.VerifyErrorAtMarker(
+        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 #if DEBUG (*comment*)
@@ -430,7 +491,7 @@ async { if true then return 1 } |> ignore
 
     [<Fact>]
     member public this.Squiggles_HashIfWithUnexpected() =
-        this.VerifyErrorAtMarker(
+        this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(
             fileContents =
                 """
 #if DEBUG TEST

@@ -11,13 +11,11 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.PlatformUI
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.Internal.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Language.StandardClassification
 open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
 [<RequireQualifiedAccess>]
@@ -85,30 +83,15 @@ module internal ClassificationDefinitions =
 
     [<Export>]
     [<Export(typeof<ISetThemeColors>)>]
-    type internal ThemeColors [<ImportingConstructor>]
+    type internal ThemeColors
+        [<ImportingConstructor>]
         (
             classificationformatMapService: IClassificationFormatMapService,
             classificationTypeRegistry: IClassificationTypeRegistryService,
             [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
         ) =
 
-        let (|LightTheme|DarkTheme|UnknownTheme|) id =
-            if
-                id = KnownColorThemes.Light
-                || id = KnownColorThemes.Blue
-                || id = Guids.blueHighContrastThemeId
-            then
-                LightTheme
-            elif id = KnownColorThemes.Dark then
-                DarkTheme
-            else
-                UnknownTheme
-
-        let getCurrentThemeId () =
-            let themeService =
-                serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
-
-            themeService.CurrentTheme.ThemeId
+        let mutable isDarkBackground = false
 
         let customColorData =
             [
@@ -144,7 +127,16 @@ module internal ClassificationDefinitions =
                 |}
             ]
 
+        let setIsDarkBackground () =
+            isDarkBackground <-
+                VSColorTheme
+                    .GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey)
+                    .GetBrightness() < 0.5f
+
         let setColors _ =
+
+            setIsDarkBackground ()
+
             let fontAndColorStorage =
                 serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
 
@@ -173,10 +165,10 @@ module internal ClassificationDefinitions =
                         let oldProps = formatMap.GetTextProperties(ict)
 
                         let newProps =
-                            match getCurrentThemeId () with
-                            | LightTheme -> oldProps.SetForeground item.LightThemeColor
-                            | DarkTheme -> oldProps.SetForeground item.DarkThemeColor
-                            | UnknownTheme -> oldProps
+                            if isDarkBackground then
+                                oldProps.SetForeground item.DarkThemeColor
+                            else
+                                oldProps.SetForeground item.LightThemeColor
 
                         formatMap.SetTextProperties(ict, newProps)
 
@@ -188,16 +180,14 @@ module internal ClassificationDefinitions =
 
         do VSColorTheme.add_ThemeChanged handler
 
-        member _.GetColor(ctype) =
-            match customColorData |> List.tryFind (fun item -> item.ClassificationName = ctype) with
-            | Some item ->
-                let light, dark = item.LightThemeColor, item.DarkThemeColor
+        do setIsDarkBackground ()
 
-                match getCurrentThemeId () with
-                | LightTheme -> Nullable light
-                | DarkTheme -> Nullable dark
-                | UnknownTheme -> Nullable()
-            | None -> Nullable()
+        member _.GetColor(ctype) =
+            match customColorData |> List.tryFindV (fun item -> item.ClassificationName = ctype) with
+            | ValueSome item ->
+                let light, dark = item.LightThemeColor, item.DarkThemeColor
+                if isDarkBackground then Nullable dark else Nullable light
+            | ValueNone -> Nullable()
 
         interface ISetThemeColors with
             member _.SetColors() = setColors ()

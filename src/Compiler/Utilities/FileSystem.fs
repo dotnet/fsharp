@@ -968,7 +968,7 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- byte i
+        buf.bbArray[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
     member buf.EmitByte(b: byte) =
@@ -990,10 +990,10 @@ type internal ByteBuffer =
 
     member bb.FixupInt32 pos value =
         bb.CheckDisposed()
-        bb.bbArray[ pos ] <- (Bytes.b0 value |> byte)
-        bb.bbArray[ pos + 1 ] <- (Bytes.b1 value |> byte)
-        bb.bbArray[ pos + 2 ] <- (Bytes.b2 value |> byte)
-        bb.bbArray[ pos + 3 ] <- (Bytes.b3 value |> byte)
+        bb.bbArray[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
         buf.CheckDisposed()
@@ -1030,8 +1030,8 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
-        buf.bbArray[ buf.bbCurrent ] <- (Bytes.b0 n |> byte)
-        buf.bbArray[ buf.bbCurrent + 1 ] <- (Bytes.b1 n |> byte)
+        buf.bbArray[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
     member buf.EmitBoolAsByte(b: bool) =

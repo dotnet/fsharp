@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions.fsc
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -11,10 +11,12 @@ module TestCompilerWarningLevel =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level0.fs"|])>]
     let ``warn_level0_fs --warn:0`` compilation =
         compilation
+        |> withLangVersion80
         |> asExe
         |> withOptions ["--warn:0"]
         |> compileAndRun
         |> shouldSucceed
+        |> withDiagnostics []
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level1.fs"|])>]
     let ``warn_level1_fs --warn:1 --warnaserror:52`` compilation =

@@ -2,10 +2,12 @@
 
 namespace FSharp.Editor.Tests
 
+open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open Xunit
 open FSharp.Editor.Tests.Helpers
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module QuickInfo =
     open FSharp.Compiler.EditorServices
@@ -31,7 +33,11 @@ module QuickInfo =
             let document =
                 RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
 
-            let! _, _, _, tooltip = FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+            let! _, _, _, tooltip =
+                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
+
             return tooltip
         }
         |> Async.RunSynchronously
@@ -41,7 +47,7 @@ module QuickInfo =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
-        | Some (ToolTipText elements) when not elements.IsEmpty ->
+        | Some(ToolTipText elements) when not elements.IsEmpty ->
             let documentationBuilder =
                 { new IDocumentationBuilder with
                     override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
@@ -293,7 +299,7 @@ module Test =
 """
 
         let quickInfo = GetQuickInfoTextFromCode code
-        let expected = "val methodSeq: seq<(int -> string * int)>"
+        let expected = "val methodSeq: (int -> string * int) seq"
         Assert.Equal(expected, quickInfo)
         ()
 

@@ -6,7 +6,6 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
-open FSharp.Compiler
 
 type ISourceText =
 
@@ -27,6 +26,8 @@ type ISourceText =
     abstract ContentEquals: sourceText: ISourceText -> bool
 
     abstract CopyTo: sourceIndex: int * destination: char[] * destinationIndex: int * count: int -> unit
+
+    abstract GetSubTextFromRange: range: range -> string
 
 [<Sealed>]
 type StringText(str: string) =
@@ -108,6 +109,41 @@ type StringText(str: string) =
         member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
+        member this.GetSubTextFromRange(range) =
+            let totalAmountOfLines = getLines.Value.Length
+
+            if
+                range.StartLine = 0
+                && range.StartColumn = 0
+                && range.EndLine = 0
+                && range.EndColumn = 0
+            then
+                String.Empty
+            elif
+                range.StartLine < 1
+                || (range.StartLine - 1) > totalAmountOfLines
+                || range.EndLine < 1
+                || (range.EndLine - 1) > totalAmountOfLines
+            then
+                invalidArg (nameof range) "The range is outside the file boundaries"
+            else
+                let sourceText = this :> ISourceText
+                let startLine = range.StartLine - 1
+                let line = sourceText.GetLineString startLine
+
+                if range.StartLine = range.EndLine then
+                    let length = range.EndColumn - range.StartColumn
+                    line.Substring(range.StartColumn, length)
+                else
+                    let firstLineContent = line.Substring(range.StartColumn)
+                    let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
+
+                    for lineNumber in range.StartLine .. range.EndLine - 2 do
+                        sb.AppendLine(sourceText.GetLineString lineNumber) |> ignore
+
+                    let lastLine = sourceText.GetLineString(range.EndLine - 1)
+                    sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
+
 module SourceText =
 
     let ofString str = StringText(str) :> ISourceText
@@ -154,13 +190,16 @@ type internal Position =
     member x.ApplyLineDirective(fileIdx, line) =
         Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
 
+    override p.ToString() = $"({p.Line},{p.Column})"
+
     static member Empty = Position()
 
     static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0, 0)
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
-and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, langVersion: LanguageVersion) =
+and [<Sealed>] internal LexBuffer<'Char>
+    (filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, langVersion: LanguageVersion, strictIndentation: bool option) =
     let context = Dictionary<string, obj>(1)
     let mutable buffer = [||]
     /// number of valid characters beyond bufferScanStart.
@@ -261,10 +300,18 @@ and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportL
 
     member _.SupportsFeature featureId = langVersion.SupportsFeature featureId
 
+    member _.StrictIndentation = strictIndentation
+
     member _.CheckLanguageFeatureAndRecover featureId range =
         FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureAndRecover langVersion featureId range
 
-    static member FromFunction(reportLibraryOnlyFeatures, langVersion, f: 'Char[] * int * int -> int) : LexBuffer<'Char> =
+    static member FromFunction
+        (
+            reportLibraryOnlyFeatures,
+            langVersion,
+            strictIndentation,
+            f: 'Char[] * int * int -> int
+        ) : LexBuffer<'Char> =
         let extension = Array.zeroCreate 4096
 
         let filler (lexBuffer: LexBuffer<'Char>) =
@@ -273,45 +320,50 @@ and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportL
             Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
 
-        new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion)
+        new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion, strictIndentation)
 
     // Important: This method takes ownership of the array
-    static member FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, buffer: 'Char[]) : LexBuffer<'Char> =
+    static member FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer: 'Char[]) : LexBuffer<'Char> =
         let lexBuffer =
-            new LexBuffer<'Char>((fun _ -> ()), reportLibraryOnlyFeatures, langVersion)
+            new LexBuffer<'Char>((fun _ -> ()), reportLibraryOnlyFeatures, langVersion, strictIndentation)
 
         lexBuffer.Buffer <- buffer
         lexBuffer.BufferMaxScanLength <- buffer.Length
         lexBuffer
 
     // Important: this method does copy the array
-    static member FromArray(reportLibraryOnlyFeatures, langVersion, s: 'Char[]) : LexBuffer<'Char> =
+    static member FromArray(reportLibraryOnlyFeatures, langVersion, strictIndentation, s: 'Char[]) : LexBuffer<'Char> =
         let buffer = Array.copy s
-        LexBuffer<'Char>.FromArrayNoCopy (reportLibraryOnlyFeatures, langVersion, buffer)
+
+        LexBuffer<'Char>
+            .FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer)
 
     // Important: This method takes ownership of the array
-    static member FromChars(reportLibraryOnlyFeatures, langVersion, arr: char[]) =
-        LexBuffer.FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, arr)
+    static member FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, arr: char[]) =
+        LexBuffer.FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, arr)
 
-    static member FromSourceText(reportLibraryOnlyFeatures, langVersion, sourceText: ISourceText) =
+    static member FromSourceText(reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText: ISourceText) =
         let mutable currentSourceIndex = 0
 
-        LexBuffer<char>.FromFunction
-            (reportLibraryOnlyFeatures,
-             langVersion,
-             fun (chars, start, length) ->
-                 let lengthToCopy =
-                     if currentSourceIndex + length <= sourceText.Length then
-                         length
-                     else
-                         sourceText.Length - currentSourceIndex
+        LexBuffer<char>
+            .FromFunction(
+                reportLibraryOnlyFeatures,
+                langVersion,
+                strictIndentation,
+                fun (chars, start, length) ->
+                    let lengthToCopy =
+                        if currentSourceIndex + length <= sourceText.Length then
+                            length
+                        else
+                            sourceText.Length - currentSourceIndex
 
-                 if lengthToCopy <= 0 then
-                     0
-                 else
-                     sourceText.CopyTo(currentSourceIndex, chars, start, lengthToCopy)
-                     currentSourceIndex <- currentSourceIndex + lengthToCopy
-                     lengthToCopy)
+                    if lengthToCopy <= 0 then
+                        0
+                    else
+                        sourceText.CopyTo(currentSourceIndex, chars, start, lengthToCopy)
+                        currentSourceIndex <- currentSourceIndex + lengthToCopy
+                        lengthToCopy
+            )
 
 module GenericImplFragments =
     let startInterpret (lexBuffer: LexBuffer<char>) =

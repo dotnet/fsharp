@@ -204,7 +204,7 @@ module Impl =
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
     member _.Contents g = denv g
 
-    static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+    static member Empty = FSharpDisplayContext DisplayEnv.Empty 
 
     member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
@@ -283,7 +283,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.Event einfo -> 
             FSharpMemberOrFunctionOrValue(cenv, E einfo, item) :> _
             
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             FSharpMemberOrFunctionOrValue(cenv, P pinfo, item) :> _
             
         | Item.MethodGroup(_, minfo :: _, _) -> 
@@ -337,7 +337,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.CustomOperation (_, _, None) 
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
-        | Item.Property (_, [])
+        | Item.Property (info = [])
         | Item.MethodGroup (_, [], _)
         | Item.CtorGroup (_, [])
         // These cases cover misc. corned cases (non-symbol types)
@@ -585,7 +585,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
     member _.FSharpDelegateSignature =
         checkIsResolved()
         match entity.TypeReprInfo with 
-        | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
+        | TFSharpTyconRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
             | TFSharpDelegate ss -> FSharpDelegateSignature(cenv, ss)
             | _ -> invalidOp "not a delegate type"
@@ -664,7 +664,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
            let events = cenv.infoReader.GetImmediateIntrinsicEventsOfType (None, AccessibleFromSomeFSharpCode, range0, entityTy)
 
            for pinfo in props do
-                yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
 
            for einfo in events do
                 yield FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
@@ -679,10 +679,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                    match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentEnclosingEntity with
                    | SynMemberKind.PropertyGet, Parent tcref -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g tcref, Some vref, None)
-                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
                    | SynMemberKind.PropertySet, Parent p -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g p, None, Some vref)
-                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
+                        yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo], None))
                    | _ -> ()
 
                elif not v.IsMember then
@@ -987,6 +987,10 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     member _.DeclarationLocation = 
         checkIsResolved()
         v.Range
+
+    member _.DeclaringEntity =
+        checkIsResolved()
+        FSharpEntity(cenv, v.TyconRef)
 
     member _.HasFields =
         if isUnresolved() then false else
@@ -1666,7 +1670,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let methods =
                     if matchParameterNumber then
                         methodInfos
-                        |> List.filter (fun methodInfo -> not (methodInfo.NumArgs = m.NumArgs) )
+                        |> List.filter (fun methodInfo -> methodInfo.NumArgs <> m.NumArgs )
                     else methodInfos
                 methods
                 |> List.map (fun mi ->
@@ -2358,6 +2362,41 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> LayoutRender.toArray
             |> Some
     
+    member x.GetValSignatureText (displayContext: FSharpDisplayContext, m: range) =
+        checkIsResolved()
+        let displayEnv = { displayContext.Contents cenv.g with includeStaticParametersInTypeNames = true; suppressInlineKeyword = false }
+
+        let stringValOfMethInfo (methInfo: MethInfo) =
+            match methInfo with
+            | FSMeth(valRef = vref) -> NicePrint.stringValOrMember displayEnv cenv.infoReader vref
+            | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
+
+        let stringValOfPropInfo (p: PropInfo) =
+            match p with
+            | DifferentGetterAndSetter(getValRef, setValRef) ->
+                let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                $"{g}\n{s}"
+            | _ ->
+                let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                let withGetSet =
+                    if p.HasGetter && p.HasSetter then "with get, set"
+                    elif p.HasGetter then "with get"
+                    elif p.HasSetter then "with set"
+                    else ""
+
+                $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
+
+        match d with
+        | E _ -> None
+        | V v ->
+            NicePrint.stringValOrMember displayEnv cenv.infoReader v
+            |> Some
+        | C methInfo
+        | M methInfo -> stringValOfMethInfo methInfo |> Some
+        | P p -> stringValOfPropInfo p |> Some
+
+
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 

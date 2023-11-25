@@ -10,7 +10,7 @@ ImplFile
                  [SynMatchClause
                     (Wild (4,2--4,3), Some (Const (Bool true, (4,9--4,13))),
                      ArbitraryAfterError
-                       ("typedSequentialExprBlockR", (4,14--4,16)), (4,2--4,16),
+                       ("typedSequentialExprBlockR1", (4,16--4,16)), (4,2--4,16),
                      Yes, { ArrowRange = Some (4,14--4,16)
                             BarRange = Some (4,0--4,1) });
                   SynMatchClause

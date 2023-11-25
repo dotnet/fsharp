@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ArgumentsInSigAndImplMismatch">
+        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
+        <target state="translated">Los nombres de argumento en la firma "{0}" y la implementación "{1}" no coinciden. Se utilizará el nombre del argumento desde el archivo de firma. Esto puede causar problemas durante la depuración o la generación de perfiles.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Error de coincidencia de tipos. Se espera una tupla de longitud {0} de tipo\n    {1}    \nperero se ha proporcionado una tupla de longitud {2} de tipo\n    {3}{4}\n</target>
@@ -15,6 +20,16 @@
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">Los casos de unión discriminada en minúsculas solo se permiten cuando se usa el atributo RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="new"> Non-static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="new"> Static member is expected.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -40,6 +55,11 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">cadena interpolada (parte)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHILE.BANG">
+        <source>keyword 'while!'</source>
+        <target state="translated">palabra clave “while!”</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

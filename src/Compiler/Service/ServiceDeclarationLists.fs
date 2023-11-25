@@ -66,6 +66,7 @@ type ToolTipText =
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
+    | SuggestedName
     | Field
     | Property
     | Method of isExtension : bool
@@ -320,7 +321,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# and .NET properties
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
@@ -520,7 +521,7 @@ module DeclarationListHelpers =
 
         // We don't expect these cases
         | Item.Types (_, []) 
-        | Item.Property (_, []) 
+        | Item.Property (info = []) 
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
@@ -529,7 +530,7 @@ module DeclarationListHelpers =
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width = 
         DiagnosticsScope.Protect m 
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item symbol width)
-            (fun err -> ToolTipElement.CompositionError err)
+            ToolTipElement.CompositionError
 
 /// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
@@ -738,8 +739,7 @@ module internal DescriptionListsImpl =
                     // This is good enough as we don't provide ways to display info for the second curried argument
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
-                        |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+                        |> List.map (ParamNameAndType.FromArgInfo >> fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 
@@ -798,7 +798,7 @@ module internal DescriptionListsImpl =
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
-        | Item.Property(_, pinfo :: _) -> 
+        | Item.Property(info = pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap, m)
             let propTy = pinfo.GetPropertyType(amap, m) 
 
@@ -874,7 +874,7 @@ module internal DescriptionListsImpl =
         | Item.OtherName _
         | Item.MethodGroup(_, [], _)
         | Item.CtorGroup(_,[])
-        | Item.Property(_,[]) -> 
+        | Item.Property(info = []) -> 
             [], emptyL
 
 
@@ -883,15 +883,15 @@ module internal DescriptionListsImpl =
          /// Find the glyph for the given representation.    
          let reprToGlyph repr = 
             match repr with
-            | TFSharpObjectRepr om -> 
+            | TFSharpTyconRepr om -> 
                 match om.fsobjmodel_kind with 
+                | TFSharpUnion -> FSharpGlyph.Union
+                | TFSharpRecord -> FSharpGlyph.Type
                 | TFSharpClass -> FSharpGlyph.Class
                 | TFSharpInterface -> FSharpGlyph.Interface
                 | TFSharpStruct -> FSharpGlyph.Struct
                 | TFSharpDelegate _ -> FSharpGlyph.Delegate
                 | TFSharpEnum -> FSharpGlyph.Enum
-            | TFSharpRecdRepr _ -> FSharpGlyph.Type
-            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct
@@ -999,7 +999,7 @@ module internal DescriptionListsImpl =
             if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase(ecr) -> 
             if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-        | Item.Property(_, pinfos) -> 
+        | Item.Property(info = pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_TYPEPROVIDERS
@@ -1035,10 +1035,12 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.NameInCode = textInCode
 
     member _.Description = 
-        match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+        match kind, info with
+        | CompletionItemKind.SuggestedName, _ ->
+            ToolTipText [ ToolTipElement.Single ([| tagText (FSComp.SR.suggestedName()) |], FSharpXmlDoc.None) ]
+        | _, Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
             ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None None))
-        | Choice2Of2 result -> 
+        | _, Choice2Of2 result -> 
             result
 
     member _.Glyph = glyph 
@@ -1112,7 +1114,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
-                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
+                | Item.Property(info = pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)
@@ -1125,6 +1127,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 ) (0, 0, [])
 
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
+        let supportsPreferExtsMethodsOverProperty = denv.g.langVersion.SupportsFeature Features.LanguageFeature.PreferExtensionMethodOverPlainProperty
 
         // Group by full name for unresolved items and by display name for resolved ones.
         let decls = 
@@ -1141,22 +1144,79 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
-
-            |> List.map (fun (_, items) -> 
-                let item = items.Head
-                let textInDeclList = 
+            |> List.map (
+                let textInDeclList item =
                     match item.Unresolved with
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayNameCore
-                let textInCode = 
+                let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
                         match item.Unresolved with
                         | Some u -> u.DisplayName
                         | None -> item.Item.DisplayName
-                textInDeclList, textInCode, items)
-
+                if not supportsPreferExtsMethodsOverProperty then
+                    // we don't pay the cost of filtering specific to RFC-1137
+                    // nor risk a change in behaviour for the intellisense item list
+                    // if the feature is disabled
+                    fun (_, items) ->
+                      let item = items.Head
+                      [textInDeclList item, textInCode item, items]
+                else
+                    // RFC-1137 shenanigans:
+                    // due to not desiring to merge Property and extension Method bearing same name,
+                    // but still merging extension method if it tries to shadow other stuff than a Property
+                    // we proceed with a pre-scan to see if we hit the particular case, in which case we partition
+                    // items to be split and those that were initially remaining grouped.
+                    // If we don't hit the specific case, or have a single entry, we keep the same logic as originally
+                    // N.B: due to the logic returning 1 to N instead of 1, the next stage of the pipeline is List.concat
+                    // introduced for this RFC
+                    let hasBothPropertiesAndExtensionMethods items =
+                        let rec inner hasProperty hasExtensionMethod items =
+                            if hasProperty && hasExtensionMethod then
+                                true
+                            else
+                                match items with
+                                | [] -> hasProperty && hasExtensionMethod
+                                | item :: tail when item.Kind = CompletionItemKind.Property                 -> inner true hasExtensionMethod tail 
+                                | item :: tail when item.Kind = CompletionItemKind.Method(isExtension=true) -> inner hasProperty true tail
+                                | _ :: tail                                                                 -> inner hasProperty hasExtensionMethod tail
+                        inner false false items
+                    function
+                        | _, ([_] as items) 
+                        | _,items when not (hasBothPropertiesAndExtensionMethods items) ->
+                            let item = items.Head
+                            [textInDeclList item, textInCode item, items]
+                        | _, items (* RFC-1137 we have both property and extension method ...*) ->
+                            let toSplit, together =
+                                items
+                                |> List.partition
+                                    (fun item ->
+                                        match item.Kind with
+                                        | CompletionItemKind.Property | CompletionItemKind.Method(isExtension=true) -> true
+                                        | _ -> false
+                                    )
+                            [
+                                let rec createSublists list =
+                                    match list with
+                                    | [] -> []
+                                    | _ :: tail -> list :: createSublists tail
+                                    
+                                // we use createSublists here so the `items` sent down the
+                                // pipeline have their first element being the actual
+                                // item, in order for the glyph to be the correct one
+                                // notice how the later stage uses `GlyphOfItem(denv,items.Head)`
+                                for items in createSublists toSplit do
+                                    let item = items.Head
+                                    textInDeclList item, textInCode item, items
+                                if not together.IsEmpty then
+                                  let item = together.Head
+                                  textInDeclList item, textInCode item, items
+                            ]
+                 )
+            // RFC-1137: concat previous result
+            |> List.concat 
             // Filter out operators, active patterns (as values)
             |> List.filter (fun (_textInDeclList, textInCode, items) -> 
                 not (isOperatorItem textInCode items) && 

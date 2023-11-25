@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.TestUtils
+﻿module TypeChecks.TestUtils
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.GraphChecking

@@ -5,13 +5,9 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
-CompilerOptions01,NoMT,Determinism  CompilerOptions\fsc\determinism
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
 CompilerOptions02,NoMT,gcc			CompilerOptions\fsc\gccerrors
-CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
-CompilerOptions01,NoMT				CompilerOptions\fsc\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
 CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
@@ -130,23 +126,6 @@ Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\basic
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\intrinsic
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeKindInference
-
-Conformance07			Conformance\PatternMatching\And
-Conformance07			Conformance\PatternMatching\Array
-Conformance07			Conformance\PatternMatching\As
-Conformance07			Conformance\PatternMatching\ConsList
-Conformance07			Conformance\PatternMatching\DynamicTypeTest
-Conformance07			Conformance\PatternMatching\Expression
-Conformance07			Conformance\PatternMatching\Named
-Conformance07			Conformance\PatternMatching\Null
-Conformance07			Conformance\PatternMatching\Record
-Conformance07			Conformance\PatternMatching\Simple
-Conformance07			Conformance\PatternMatching\SimpleConstant
-Conformance08			Conformance\PatternMatching\Tuple
-Conformance08			Conformance\PatternMatching\TypeAnnotated
-Conformance08			Conformance\PatternMatching\TypeConstraint
-Conformance08			Conformance\PatternMatching\Union
-Conformance08			Conformance\PatternMatching\Wildcard
 
 Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
