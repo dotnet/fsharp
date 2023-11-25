@@ -18,6 +18,38 @@ if foo.IsBar then failwith "Should not be Bar"
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Simple Is* discriminated union property satisfies SRTP constraint`` () =
+        Fsx """
+type X =
+   | A of string
+   | B
+
+let inline test<'a when 'a: (member IsA: bool)> (v: 'a) =
+    if not v.IsA then failwith "Should be A"
+
+X.A "a" |> test
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Lowercase Is* discriminated union properties are visible, proper values are returned`` () =
+        Fsx """
+[<RequireQualifiedAccess>]
+type X =
+   | A
+   | a of int
+
+let foo = X.a 1
+if not foo.Isa then failwith "Should be a"
+if foo.IsA then failwith "Should not be A"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
         Fsx """
 type Foo = | Foo of string | ``Mars Bar``
