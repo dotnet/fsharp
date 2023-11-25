@@ -2483,7 +2483,7 @@ and [<Sealed>] TcImports
                 sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName publicOnly)
 
             let ilGlobals =
-                mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef, tcConfig.langVersion)
+                mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
 
             // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
             let tcGlobals =

@@ -1878,7 +1878,6 @@ type internal ILGlobals =
     member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
     member fsharpCoreAssemblyScopeRef: ILScopeRef
-    member langVersion: LanguageVersion
 
     member typ_Attribute: ILType
     member typ_Enum: ILType
@@ -1920,8 +1919,7 @@ type internal ILGlobals =
 val internal mkILGlobals:
     primaryScopeRef: ILScopeRef *
     equivPrimaryAssemblyRefs: ILAssemblyRef list *
-    fsharpCoreAssemblyScopeRef: ILScopeRef *
-    langVersion: LanguageVersion ->
+    fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
