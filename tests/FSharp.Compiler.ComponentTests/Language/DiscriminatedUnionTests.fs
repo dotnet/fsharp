@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Language
+namespace Language
 
-open Xunit
 open FSharp.Test.Compiler
 
-#if NETCOREAPP
 module DiscriminatedUnionTests =
-
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Simple Is* discriminated union properties are visible, proper values are returned`` () =
         Fsx """
 type Foo = | Foo of string | Bar
@@ -20,7 +17,23 @@ if foo.IsBar then failwith "Should not be Bar"
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
+        Fsx """
+type Foo = | Foo of string | ``Mars Bar``
+let foo = Foo.Foo "hi"
+if not foo.IsFoo then failwith "Should be Foo"
+if foo.``IsMars Bar`` then failwith "Should not be ``Mars Bar``"
+
+let marsbar = ``Mars Bar``
+if marsbar.IsFoo then failwith "Should not be Foo"
+if not marsbar.``IsMars Bar`` then failwith "Should be ``Mars Bar``"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, before the definition`` () =
         FSharp """
 namespace rec Hello
@@ -43,7 +56,7 @@ type Foo =
         |> shouldSucceed
 
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, in SRTP`` () =
         FSharp """
 namespace Hello
@@ -70,4 +83,3 @@ module Main =
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
-#endif
