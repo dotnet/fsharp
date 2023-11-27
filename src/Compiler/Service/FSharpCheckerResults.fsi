@@ -115,12 +115,6 @@ type internal FSharpProjectSnapshot =
         Stamp: int64 option
     }
 
-    /// Whether the two parse options refer to the same project.
-    static member internal UseSameProject: options1: FSharpProjectSnapshot * options2: FSharpProjectSnapshot -> bool
-
-    /// Compare two options sets with respect to the parts of the options that are important to building.
-    static member internal AreSameForChecking: options1: FSharpProjectSnapshot * options2: FSharpProjectSnapshot -> bool
-
     /// Compute the project directory.
     member internal ProjectDirectory: string
 

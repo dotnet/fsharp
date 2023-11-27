@@ -21,6 +21,7 @@
     <Compile Include="FileCascadeBenchmarks.fs" />
     <Compile Include="GraphTypeCheckingBenchmarks.fs" />
     <Compile Include="BackgroundCompilerBenchmarks.fs" />
+    <Compile Include="ProjectSnapshotBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

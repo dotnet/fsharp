@@ -171,36 +171,6 @@ type FSharpProjectSnapshot =
         Stamp: int64 option
     }
 
-    static member UseSameProject(options1, options2) =
-        match options1.ProjectId, options2.ProjectId with
-        | Some(projectId1), Some(projectId2) when
-            not (String.IsNullOrWhiteSpace(projectId1))
-            && not (String.IsNullOrWhiteSpace(projectId2))
-            ->
-            projectId1 = projectId2
-        | Some _, Some _
-        | None, None -> options1.ProjectFileName = options2.ProjectFileName
-        | _ -> false
-
-    static member AreSameForChecking(options1, options2) =
-        match options1.Stamp, options2.Stamp with
-        | Some x, Some y -> (x = y)
-        | _ ->
-            FSharpProjectSnapshot.UseSameProject(options1, options2)
-            && options1.SourceFiles = options2.SourceFiles
-            && options1.OtherOptions = options2.OtherOptions
-            && options1.ReferencesOnDisk = options2.ReferencesOnDisk
-            && options1.UnresolvedReferences = options2.UnresolvedReferences
-            && options1.OriginalLoadReferences = options2.OriginalLoadReferences
-            && options1.ReferencedProjects.Length = options2.ReferencedProjects.Length
-            && (options1.ReferencedProjects, options2.ReferencedProjects)
-               ||> List.forall2 (fun r1 r2 ->
-                   match r1, r2 with
-                   | FSharpReferencedProjectSnapshot.FSharpReference(n1, a), FSharpReferencedProjectSnapshot.FSharpReference(n2, b) ->
-                       n1 = n2 && FSharpProjectSnapshot.AreSameForChecking(a, b))
-
-            && options1.LoadTime = options2.LoadTime
-
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
     member this.OutputFileName =

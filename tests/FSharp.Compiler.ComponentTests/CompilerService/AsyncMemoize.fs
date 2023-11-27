@@ -515,7 +515,6 @@ let ``We get diagnostics from the job that failed`` () =
                 ()
             let diagnosticMessages = diagnosticsLogger.GetDiagnostics() |> Array.map (fun (d, _) -> d.Exception.Message) |> Array.toList
 
-            //Assert.Equal<list<_>>(["job 1 error"], diagnosticMessages)
             return diagnosticMessages
         })
         |> Async.Parallel

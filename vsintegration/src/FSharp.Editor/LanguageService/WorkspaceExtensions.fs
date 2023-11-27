@@ -15,6 +15,9 @@ open FSharp.Compiler.BuildGraph
 open CancellableTasks
 
 open Internal.Utilities.Collections
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+open System.Text.Json.Nodes
 
 [<RequireQualifiedAccess>]
 module internal ProjectCache =
@@ -30,6 +33,63 @@ type Solution with
     /// Get the instance of IFSharpWorkspaceService.
     member internal this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+
+
+module internal FSharpProjectSnapshotSerialization =
+
+    let serializeFileSnapshot (snapshot: FSharpFileSnapshot) =
+        let output = JObject()
+        output.Add("FileName", snapshot.FileName)
+        output.Add("Version", snapshot.Version)
+        output
+
+    let serializeReferenceOnDisk (reference: ReferenceOnDisk) =
+        let output = JObject()
+        output.Add("Path", reference.Path)
+        output.Add("LastModified", reference.LastModified)
+        output
+
+    let rec serializeReferencedProject (reference: FSharpReferencedProjectSnapshot) =
+        let output = JObject()
+        match reference with
+        | FSharpReference (projectOutputFile, snapshot) ->
+            output.Add("projectOutputFile", projectOutputFile)
+            output.Add("snapshot", serializeSnapshot snapshot)
+        output
+
+    and serializeSnapshot (snapshot: FSharpProjectSnapshot) =
+        
+        let output = JObject()
+
+        output.Add("ProjectFileName", snapshot.ProjectFileName)
+        output.Add("ProjectId", (snapshot.ProjectId |> Option.defaultValue null |> JToken.FromObject))
+        output.Add("SourceFiles", snapshot.SourceFiles |> Seq.map serializeFileSnapshot |> JArray )
+        output.Add("ReferencesOnDisk", snapshot.ReferencesOnDisk |> Seq.map serializeReferenceOnDisk |> JArray )
+        output.Add("OtherOptions", JArray(snapshot.OtherOptions))
+        output.Add("ReferencedProjects", snapshot.ReferencedProjects |> Seq.map serializeReferencedProject |> JArray )
+        output.Add("IsIncompleteTypeCheckEnvironment", snapshot.IsIncompleteTypeCheckEnvironment)
+        output.Add("UseScriptResolutionRules", snapshot.UseScriptResolutionRules)
+        output.Add("LoadTime", snapshot.LoadTime)
+        // output.Add("UnresolvedReferences", snapshot.UnresolvedReferences)
+        output.Add("OriginalLoadReferences",
+            snapshot.OriginalLoadReferences
+            |> Seq.map (fun (r:Text.range, a, b) ->
+                 JArray(r.FileName, r.Start, r.End, a, b)) |> JArray)
+
+        output.Add("Stamp", (snapshot.Stamp |> (Option.defaultValue 0) |> JToken.FromObject ))
+
+        output
+
+    let dumpToJson (snapshot) =
+
+        let jObject = serializeSnapshot snapshot
+
+        let json = jObject.ToString(Formatting.Indented)
+
+        json
+    
+
+open FSharpProjectSnapshotSerialization
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -119,7 +179,11 @@ module private CheckerExtensions =
                         }
                 }
 
-            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
+
+            let _json = dumpToJson snapshot
+
+            return snapshot
         }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
