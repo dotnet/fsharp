@@ -1590,6 +1590,7 @@ featureExtendedFixedBindings,"extended fixed bindings for byref and GetPinnableR
 featurePreferStringGetPinnableReference,"prefer String.GetPinnableReference in fixed bindings"
 featurePreferExtensionMethodOverPlainProperty,"prefer extension method over plain property"
 featureWarningIndexedPropertiesGetSetSameType,"Indexed properties getter and setter must have the same type"
+featureChkTailCallAttrOnNonRec,"Raises warnings if the 'TailCall' attribute is used on non-recursive functions."
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3355,tcNotAnIndexerNamedIndexingNotYetEnabled,"The value '%s' is not a function and does not support index notation."
@@ -1732,3 +1733,4 @@ featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged
 3855,tcNoStaticMemberFoundForOverride,"No static abstract member was found that corresponds to this override"
 3859,tcNoStaticPropertyFoundForOverride,"No static abstract property was found that corresponds to this override"
 3860,chkStaticMembersOnObjectExpressions,"Object expressions cannot implement interfaces with static abstract members or declare static members."
+3861,chkTailCallAttrOnNonRec,"The TailCall attribute should only be applied to recursive functions."
