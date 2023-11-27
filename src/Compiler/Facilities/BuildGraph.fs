@@ -140,7 +140,7 @@ type NodeCode private () =
                         return! computation |> Async.AwaitNodeCode
                     }
 
-                Async.StartImmediateAsTask(work, cancellationToken = ct2).Result
+                Async.StartImmediateAsTask(work, cancellationToken = ct).Result
             finally
                 DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                 DiagnosticsThreadStatics.BuildPhase <- phase
