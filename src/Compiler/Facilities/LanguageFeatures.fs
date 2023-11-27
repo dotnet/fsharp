@@ -188,7 +188,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion          
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
                 LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
@@ -333,7 +333,6 @@ type LanguageVersion(versionText) =
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
-
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
