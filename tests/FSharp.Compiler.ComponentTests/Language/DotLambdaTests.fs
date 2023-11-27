@@ -182,7 +182,32 @@ let ``ToString with F# 7`` () =
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Error 3350, Line 1, Col 16, Line 1, Col 18, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 8.0 or greater." )
-        
+  
+[<Theory>]
+[<InlineData("let f (a, (b, c)) = _.ToString()")>]
+[<InlineData("""let c = let _ = "test" in "asd" |> _.ToString() """)>]
+[<InlineData("""let a = (fun _almost -> 5 |> _.ToString()) """)>]
+let ``Regression 16276 - hidden discard value`` (code) =
+    Fsx code
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Regression 16276 - hidden discard value - nested`` () =
+    Fsx """
+let f (a, (b, c)) = 
+    let _ = 42
+    let _ = 43
+    (fun (a, (b, c)) -> 
+        let _ = 458
+        (fun _ -> 5 |> _.ToString()))"""
+    |> withLangVersion80
+    |> withWarnOn 3570
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 3570, Line 7, Col 24, Line 7, Col 25, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
+
 [<Fact>]
 let ``Simple anonymous unary function shorthands compile`` () =
     FSharp """
@@ -207,6 +232,7 @@ module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     """
     |> withLangVersion80
+    |> withWarnOn 3570
     |> typecheck
     |> shouldFail
     |> withDiagnostics [ 
@@ -222,6 +248,7 @@ let b : int -> int -> string = function |5 -> (fun _ -> "Five") |_ -> _.ToString
 let c : string = let _ = "test" in "asd" |> _.ToString()
     """
     |> withLangVersion80
+    |> withWarnOn 3570
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
