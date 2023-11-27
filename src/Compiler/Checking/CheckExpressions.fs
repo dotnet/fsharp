@@ -4537,7 +4537,7 @@ and TcTupleType kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv isStru
         else
             let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
             TType_tuple(tupInfo, argsR), tpenv
-            
+
 and CheckAnonRecdTypeDuplicateFields (elems: Ident array) =
     elems |> Array.iteri (fun i (uc1: Ident) -> 
         elems |> Array.iteri (fun j (uc2: Ident) -> 
@@ -6220,7 +6220,7 @@ and RewriteRangeExpr synExpr =
     // a..b..c (parsed as (a..b)..c )
     | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some synExpr1, _, Some synStepExpr, _, _, _)), _, Some synExpr2, _m1, _m2, mWhole) ->
         let mWhole = mWhole.MakeSynthetic()
-        Some (mkSynTrifix mWhole ".. .." synExpr1 synStepExpr synExpr2)
+        ValueSome (mkSynTrifix mWhole ".. .." synExpr1 synStepExpr synExpr2)
     // a..b
     | SynExpr.IndexRange (Some synExpr1, mOperator, Some synExpr2, _m1, _m2, mWhole) ->
         let otherExpr =
@@ -6228,8 +6228,8 @@ and RewriteRangeExpr synExpr =
             match mkSynInfix mOperator synExpr1 ".." synExpr2 with
             | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, mWhole)
             | _ -> failwith "impossible"
-        Some otherExpr  
-    | _ -> None
+        ValueSome otherExpr  
+    | _ -> ValueNone
 
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
@@ -7734,8 +7734,8 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
 
     let synEnumExpr =
         match RewriteRangeExpr synEnumExpr with
-        | Some e -> e
-        | None -> synEnumExpr
+        | ValueSome e -> e
+        | ValueNone -> synEnumExpr
 
     let tryGetOptimizeSpanMethodsAux g m ty isReadOnlySpan =
         match (if isReadOnlySpan then tryDestReadOnlySpanTy g m ty else tryDestSpanTy g m ty) with

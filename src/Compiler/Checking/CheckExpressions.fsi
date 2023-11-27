@@ -637,7 +637,7 @@ val CheckTupleIsCorrectLength:
 
 /// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
 /// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
-val RewriteRangeExpr: synExpr: SynExpr -> SynExpr option
+val RewriteRangeExpr: synExpr: SynExpr -> SynExpr voption
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType:
