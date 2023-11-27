@@ -127,6 +127,11 @@
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">'AssemblyKeyNameAttribute'는 사용되지 않습니다. 대신 'AssemblyKeyFileAttribute'를 사용하세요.</target>
@@ -245,6 +250,11 @@
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">멤버 또는 함수에 'TailCall' 특성이 있지만 비상 재귀적인 방식으로 사용되지 않는 경우 경고를 발생합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -5063,8 +5073,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">F#7 이하의 경우 정적 값 정의는 기본 생성자('type X(args) = ...')가 있는 형식에서만 사용할 수 있습니다. 다른 모든 형식에서 사용하도록 설정하려면 언어 버전 '미리 보기'를 사용합니다.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">F#7 이하의 경우 정적 값 정의는 기본 생성자('type X(args) = ...')가 있는 형식에서만 사용할 수 있습니다. 다른 모든 형식에서 사용하도록 설정하려면 언어 버전 '미리 보기'를 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

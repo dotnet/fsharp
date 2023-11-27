@@ -72,6 +72,7 @@ type LanguageFeature =
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
 
 /// LanguageVersion management
 type LanguageVersion =

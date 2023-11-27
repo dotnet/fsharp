@@ -23,7 +23,7 @@ let ``Should fail in F# 7 and lower`` (implFileName:string) =
     |> typecheck
     |> shouldFail
     |> withErrorCode 902
-    |> withDiagnosticMessageMatches "static value definitions may only be used in types with a primary constructor"
+    |> withDiagnosticMessageMatches "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor.*"
 
 [<Theory>]
 [<InlineData("7.0")>]
@@ -119,6 +119,21 @@ let ``Static let in empty generic type`` compilation =
     |> withStdOutContains """Accessing name for Int32
 Accessing name for String
 Accessing name for Byte"""
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+let ``Static member val in empty type`` compilation =
+    compilation
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+let ``Static member val in empty type Fsharp 7`` compilation =
+    compilation
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 902, Line 4, Col 5, Line 4, Col 41, "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher."]
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
 let ``Static let in simple union`` compilation =
