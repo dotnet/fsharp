@@ -61,44 +61,14 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
                                None),
-                            FromParseError (Wild (5,16--5,16), (5,16--5,16)),
-                            None,
-                            ArbitraryAfterError
-                              ("classDefnMember1", (5,16--5,16)), (5,4--5,16),
+                            LongIdent
+                              (SynLongIdent ([C], [], [None]), None, None,
+                               Pats [], None, (6,6--6,7)), None,
+                            Const (Int32 3, (6,27--6,28)), (5,4--6,7),
                             NoneAtInvisible,
                             { LeadingKeyword = Static (5,10--5,16)
                               InlineKeyword = None
-                              EqualsRange = None }), (5,4--5,16));
-                      Member
-                        (SynBinding
-                           (None, Normal, false, false,
-                            [{ Attributes =
-                                [{ TypeName = SynLongIdent ([C], [], [None])
-                                   ArgExpr = Const (Unit, (6,6--6,7))
-                                   Target = None
-                                   AppliesToGetterAndSetter = false
-                                   Range = (6,6--6,7) }]
-                               Range = (6,4--6,9) }],
-                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            SynValData
-                              (Some { IsInstance = true
-                                      IsDispatchSlot = false
-                                      IsOverrideOrExplicitImpl = false
-                                      IsFinal = false
-                                      GetterOrSetterIsCompilerGenerated = false
-                                      MemberKind = Member },
-                               SynValInfo
-                                 ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None),
-                            LongIdent
-                              (SynLongIdent
-                                 ([this; P3], [(6,21--6,22)], [None; None]),
-                               None, None, Pats [], None, (6,17--6,24)), None,
-                            Const (Int32 3, (6,27--6,28)), (6,4--6,24),
-                            NoneAtInvisible,
-                            { LeadingKeyword = Member (6,10--6,16)
-                              InlineKeyword = None
-                              EqualsRange = Some (6,25--6,26) }), (6,4--6,28))],
+                              EqualsRange = Some (6,25--6,26) }), (5,4--6,28))],
                      (4,4--6,28)), [], None, (3,5--6,28),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

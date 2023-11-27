@@ -1548,9 +1548,9 @@ memberFlags:
         let mMember = rhs parseState 2
         StaticMemberFlags, SynLeadingKeyword.StaticMember(mStatic, mMember) }
 
- | STATIC
+ | STATIC recover
       { let mStatic = rhs parseState 1
-        // todo: it should be possible to make it work better for both `abstract` and `member` in the type checker
+        // todo: it should be possible to make it work better for both `abstract` and `member` in the type checker        
         StaticMemberFlags, SynLeadingKeyword.Static(mStatic) }
 
   | MEMBER
