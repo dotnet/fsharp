@@ -1405,4 +1405,137 @@ Console.WriteLine("Hello World!")"""
         ]
         |> ignore
 
+    [<Test>]
+    let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_empty_signature`` () =
+
+        let signature = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    static abstract BoomStatic: unit -> 'a
+    abstract BoomInstance: unit -> 'a
+
+type CompilerGoesBoom<'a> =
+    interface IHasStaticAbstractBase<'a>
+    new: unit -> CompilerGoesBoom<'a>"""
+
+        let implementation = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    abstract BoomInstance: unit -> 'a
+    static abstract BoomStatic: unit -> 'a
+
+type CompilerGoesBoom<'a>() =
+    interface IHasStaticAbstractBase<'a> with
+        member (*virtual*) this.BoomInstance() = Unchecked.defaultof<'a>
+        static member (*non-virtual*) BoomStatic() = Unchecked.defaultof<'a>
+    """
+
+        Fsi signature
+        |> withAdditionalSourceFile (FsSource implementation)
+        |> withOptions [ "--refonly" ]
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> verifyIL
+            [
+                referenceAssemblyAttributeExpectedIL
+                """.class interface public abstract auto ansi serializable beforefieldinit Foobar.IHasStaticAbstractBase`1<a>
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+  .method public hidebysig abstract virtual
+          instance !a  BoomInstance() cil managed
+  {
+  }
+
+  .method public hidebysig static abstract virtual
+          !a  BoomStatic() cil managed
+  {
+  }
+
+}"""
+                """.method private hidebysig newslot virtual
+            instance !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomInstance'() cil managed
+    {
+      .override  method instance !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomInstance()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method assembly hidebysig static !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomStatic'() cil managed
+    {
+      .override  method !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomStatic()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }"""
+        ]
+
+
+    [<Test>]
+    let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_signature`` () =
+        let signature = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    static abstract BoomStatic: unit -> 'a
+    abstract BoomInstance: unit -> 'a
+
+type CompilerGoesBoom<'a> =
+    interface IHasStaticAbstractBase<'a>
+    new: unit -> CompilerGoesBoom<'a>"""
+
+        let implementation = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    abstract BoomInstance: unit -> 'a
+    static abstract BoomStatic: unit -> 'a
+
+type CompilerGoesBoom<'a>() =
+    interface IHasStaticAbstractBase<'a> with
+        member (*virtual*) this.BoomInstance() = Unchecked.defaultof<'a>
+        static member (*non-virtual*) BoomStatic() = Unchecked.defaultof<'a>
+    """
+
+        Fsi signature
+        |> withAdditionalSourceFile (FsSource implementation)
+        |> withOptions ["--refonly"]
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> verifyIL
+            [
+                referenceAssemblyAttributeExpectedIL
+                """.class interface public abstract auto ansi serializable beforefieldinit Foobar.IHasStaticAbstractBase`1<a>
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+  .method public hidebysig abstract virtual
+          instance !a  BoomInstance() cil managed
+  {
+  }
+
+  .method public hidebysig static abstract virtual
+          !a  BoomStatic() cil managed
+  {
+  }
+
+}"""
+                """.method private hidebysig newslot virtual
+            instance !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomInstance'() cil managed
+    {
+      .override  method instance !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomInstance()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method assembly hidebysig static !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomStatic'() cil managed
+    {
+      .override  method !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomStatic()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }"""
+            ]
+
+
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.
