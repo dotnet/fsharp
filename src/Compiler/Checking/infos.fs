@@ -2377,18 +2377,19 @@ let SettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinf
 
 let GettersOfPropInfos (pinfos: PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod, Some pinfo) else None)
 
-let (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
+[<return: Struct>]
+let inline (|DifferentGetterAndSetter|_|) (pinfo: PropInfo) =
     if not (pinfo.HasGetter && pinfo.HasSetter) then
-        None
+        ValueNone
     else
         match pinfo.GetterMethod.ArbitraryValRef, pinfo.SetterMethod.ArbitraryValRef with
         | Some getValRef, Some setValRef ->
             if getValRef.Accessibility <> setValRef.Accessibility then
-                Some (getValRef, setValRef)
+                ValueSome (getValRef, setValRef)
             else
                 match getValRef.ValReprInfo with
                 | Some getValReprInfo when
                     // Getter has an index parameter
-                    getValReprInfo.TotalArgCount > 1  -> Some (getValRef, setValRef)
-                | _ -> None 
-        | _ -> None
+                    getValReprInfo.TotalArgCount > 1  -> ValueSome (getValRef, setValRef)
+                | _ -> ValueNone 
+        | _ -> ValueNone

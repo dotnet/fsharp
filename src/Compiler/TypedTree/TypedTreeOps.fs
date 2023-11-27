@@ -3430,19 +3430,34 @@ let (|ExtractAttribNamedArg|_|) nm args =
     args |> List.tryPickV (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> ValueSome v | _ -> ValueNone)
 
 [<return: Struct>]
-let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
+let (|StringExpr|_|) expr =
+    match expr with
+    | Expr.Const (Const.String n, _, _) -> ValueSome n
+    | _ -> ValueNone
 
 [<return: Struct>]
-let (|AttribInt32Arg|_|) = function AttribExpr (_, Expr.Const (Const.Int32 n, _, _)) -> ValueSome n | _ -> ValueNone
+let (|AttribInt32Arg|_|) expr =
+    match expr with
+    | AttribExpr (_, Expr.Const (Const.Int32 n, _, _)) -> ValueSome n
+    | _ -> ValueNone
 
 [<return: Struct>]
-let (|AttribInt16Arg|_|) = function AttribExpr (_, Expr.Const (Const.Int16 n, _, _)) -> ValueSome n | _ -> ValueNone
+let (|AttribInt16Arg|_|) expr =
+    match expr with
+    | AttribExpr (_, Expr.Const (Const.Int16 n, _, _)) -> ValueSome n
+    | _ -> ValueNone
 
 [<return: Struct>]
-let (|AttribBoolArg|_|) = function AttribExpr (_, Expr.Const (Const.Bool n, _, _)) -> ValueSome n | _ -> ValueNone
+let (|AttribBoolArg|_|) expr =
+    match expr with
+    | AttribExpr (_, Expr.Const (Const.Bool n, _, _)) -> ValueSome n
+    | _ -> ValueNone
 
 [<return: Struct>]
-let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
+let (|AttribStringArg|_|) expr =
+    match expr with
+    | AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n
+    | _ -> ValueNone
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
@@ -10388,28 +10403,20 @@ let (|MatchOptionExpr|_|) expr =
         | _ -> ValueNone
     | _ -> ValueNone
 
-let (|ResumableEntryAppExpr|_|) g expr =
-    match expr with
-    | ValApp g g.cgh__resumableEntry_vref (_, _, _m) -> Some ()
-    | _ -> None
-
 /// Match an (unoptimized) __resumableEntry expression
 [<return: Struct>]
 let (|ResumableEntryMatchExpr|_|) g expr =
     match expr with
     | Expr.Let(TBind(matchVar, matchExpr, sp1), MatchOptionExpr (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr, rebuildMatch), d, e) ->
         match matchExpr with 
-        | ResumableEntryAppExpr g () -> 
-            if valRefEq g (mkLocalValRef matchVar) matchVar2 then 
+        | ValApp g g.cgh__resumableEntry_vref (_, _, _) 
+            when valRefEq g (mkLocalValRef matchVar) matchVar2 ->
 
                 // How to rebuild this construct
                 let rebuild (noneBranchExpr, someBranchExpr) =
                     Expr.Let(TBind(matchVar, matchExpr, sp1), rebuildMatch (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr), d, e)
 
                 ValueSome (noneBranchExpr, someVar, someBranchExpr, rebuild)
-
-            else ValueNone
-
         | _ -> ValueNone
     | _ -> ValueNone
 
