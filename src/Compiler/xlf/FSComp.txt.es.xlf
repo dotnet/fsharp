@@ -127,6 +127,11 @@
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">El elemento "AssemblyKeyNameAttribute" está en desuso. Use "AssemblyKeyFileAttribute" en su lugar.</target>
@@ -245,6 +250,11 @@
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Genera advertencias si un miembro o función tiene el atributo “TailCall”, pero no se usa de forma de recursión de cola.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -5063,8 +5073,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Para F#7 y versiones anteriores, las definiciones de valores estáticos solo se pueden usar en tipos con un constructor principal ('type X(args) = ...'). Para habilitarlos en todos los demás tipos, use la versión de idioma "preview".</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Para F#7 y versiones anteriores, las definiciones de valores estáticos solo se pueden usar en tipos con un constructor principal ('type X(args) = ...'). Para habilitarlos en todos los demás tipos, use la versión de idioma "preview".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
