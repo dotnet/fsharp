@@ -59,4 +59,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(2,3)-(2,9) parse error Incomplete static member declaration. Use the keywords 'static member' to declare a new member.
+(2,3)-(2,9) parse error Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.

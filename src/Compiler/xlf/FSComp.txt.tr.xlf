@@ -943,8 +943,8 @@
         <note />
       </trans-unit>
       <trans-unit id="parsStaticMemberImcompleteSyntax">
-        <source>Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</source>
-        <target state="new">Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</target>
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
