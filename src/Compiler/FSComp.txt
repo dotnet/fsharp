@@ -1716,4 +1716,4 @@ featureAccessorFunctionShorthand,"underscore dot shorthand for accessor only fun
 featureUnmanagedConstraintCsharpInterop,"Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)"
 3578,chkCopyUpdateSyntaxInAnonRecords,"This expression is an anonymous record, use {{|...|}} instead of {{...}}."
 featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] discriminated union as long as they have same name and type"
-3579,tcStructUnionMultiCaseFieldsSameType,"If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."
+3579,tcStructUnionMultiCaseFieldsSameType,"If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
