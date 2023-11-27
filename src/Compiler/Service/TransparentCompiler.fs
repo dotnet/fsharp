@@ -1382,29 +1382,24 @@ type internal TransparentCompiler
 
                     let tcDependencyFiles = [] // TODO add as a set to TcIntermediate
 
-                    let tcDiagnostics =
-                        seq {
-                            yield! tcInfo.TcDiagnostics
-
-                        //for x in tcIntermediate.tcDiagnosticsRev do
-                        //    yield! x
-                        }
-
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
 
                     // TODO: Apparently creating diagnostics can produce further diagnostics. So let's capture those too. Hopefully there is a more elegant solution...
+                    // Probably diagnostics need to be evaluated during typecheck anyway for proper formatting, which might take care of this too.
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
                     use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
+
+                    let symbolEnv = SymbolEnv(bootstrapInfo.TcGlobals, tcState.Ccu, Some tcState.CcuSig, bootstrapInfo.TcImports)
 
                     let tcDiagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
                             false,
                             fileName,
-                            tcDiagnostics,
+                            tcInfo.TcDiagnostics,
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
-                            None // TODO: Add SymbolEnv
+                            Some symbolEnv
                         )
 
                     let extraDiagnostics =
@@ -1415,7 +1410,7 @@ type internal TransparentCompiler
                             extraLogger.Diagnostics,
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
-                            None // TODO: Add SymbolEnv
+                            Some symbolEnv
                         )
 
                     let tcDiagnostics =
