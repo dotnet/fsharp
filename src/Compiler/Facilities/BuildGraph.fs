@@ -128,7 +128,6 @@ type NodeCode private () =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
         let ct2 = Cancellable.Token
-        assert (ct = ct2)
 
         try
             try
@@ -155,10 +154,6 @@ type NodeCode private () =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
         let ct2 = Cancellable.Token
-
-        match ct with
-        | Some ct -> assert (ct = ct2)
-        | _ -> ()
 
         try
             let work =
