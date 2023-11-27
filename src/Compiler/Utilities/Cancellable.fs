@@ -14,8 +14,7 @@ type Cancellable =
         Cancellable.token <- Some ct
 
         { new IDisposable with
-            member this.Dispose() =
-                Cancellable.token <- oldCt
+            member this.Dispose() = Cancellable.token <- oldCt
         }
 
     static member Token

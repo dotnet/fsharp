@@ -1301,7 +1301,7 @@ type BackgroundCompiler
         async {
             let! ct = Async.CancellationToken
             use _ = Cancellable.UsingToken(ct)
-        
+
             let! ct = Async.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous
