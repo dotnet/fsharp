@@ -3,7 +3,7 @@
   <PropertyGroup>
     <PreRelease>true</PreRelease>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
@@ -19,8 +19,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ArcadeSdkDir Condition="'$(ArcadeSdkDir)' == ''">$(NuGetPackageRoot)microsoft.dotnet.arcade.sdk\$(ArcadeSdkVersion)\</ArcadeSdkDir>
-    <_BuildReleasePackagesTargets>$(ArcadeSdkDir)tools\BuildReleasePackages.targets</_BuildReleasePackagesTargets>
+    <_ArcadeSdkMSBuildProjectDir>$([System.IO.Path]::GetDirectoryName('$(ArcadeSdkBuildTasksAssembly)'))\..\</_ArcadeSdkMSBuildProjectDir>
+    <_BuildReleasePackagesTargets>$(_ArcadeSdkMSBuildProjectDir)BuildReleasePackages.targets</_BuildReleasePackagesTargets>
   </PropertyGroup>
 
   <Import Project="$(_BuildReleasePackagesTargets)" />

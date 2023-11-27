@@ -216,9 +216,17 @@ type SynRationalConst =
 
     | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
+    | Rational of
+        numerator: int32 *
+        numeratorRange: range *
+        divRange: range *
+        denominator: int32 *
+        denominatorRange: range *
+        range: range
 
     | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
 [<RequireQualifiedAccess>]
@@ -374,7 +382,12 @@ type SynBindingKind =
 
 /// Represents the explicit declaration of a type parameter
 [<NoEquality; NoComparison>]
-type SynTyparDecl = SynTyparDecl of attributes: SynAttributes * SynTypar
+type SynTyparDecl =
+    | SynTyparDecl of
+        attributes: SynAttributes *
+        typar: SynTypar *
+        intersectionConstraints: SynType list *
+        trivia: SynTyparDeclTrivia
 
 /// The unchecked abstract syntax tree of F# type constraints
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -520,6 +533,11 @@ type SynType =
 
     /// A type arising from a parse error
     | FromParseError of range: range
+
+    /// F# syntax: x: #I1 & #I2
+    /// F# syntax: x: 't & #I1 & #I2
+    /// Shorthand for x: 't when 't :> I1 and 't :> I2
+    | Intersection of typar: SynTypar option * types: SynType list * range: range * trivia: SynTyparDeclTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1086,7 +1104,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     /// The 'null' pattern
     | Null of range: range
@@ -1099,9 +1117,6 @@ type SynPat =
 
     /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of expr: SynExpr * range: range
-
-    /// Deprecated character range: ranges
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
 
     /// Used internally in the type checker
     | InstanceMember of
@@ -1180,13 +1195,7 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of
-        memberFlags: SynMemberFlags option *
-        valInfo: SynValInfo *
-        thisIdOpt: Ident option *
-        /// Is only populated during type-checking when an property has both a getter and setter.
-        /// It is used to track the fact that the getter and setter are part of the same property when they are desugared.
-        transformedFromProperty: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
 
     member SynValInfo: SynValInfo
 

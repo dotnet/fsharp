@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -19,6 +20,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
+open CancellableTasks
 
 type SignatureHelpParameterInfo =
     {
@@ -159,7 +161,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             // should not result in a prompt, whereas this one will:
             //    Console.WriteLine( [(1,2)],
             match triggerIsTypedChar with
-            | Some ('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) -> return! None // comma or paren at wrong location = remove help display
+            | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn)) -> return! None // comma or paren at wrong location = remove help display
             | _ ->
 
                 // Compute the argument index by working out where the caret is between the various commas.
@@ -361,7 +363,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     let numArgsAlreadyAppliedViaPipeline =
                         match possiblePipelineIdent with
                         | None -> 0
-                        | Some (_, numArgsApplied) -> numArgsApplied
+                        | Some(_, numArgsApplied) -> numArgsApplied
 
                     let definedArgs = mfv.CurriedParameterGroups |> Array.ofSeq
 
@@ -607,7 +609,12 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+
+            let! parseResults, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp")
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
+                |> liftAsync
 
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 

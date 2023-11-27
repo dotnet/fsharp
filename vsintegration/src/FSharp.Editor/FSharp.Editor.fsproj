@@ -18,7 +18,7 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
-  <ItemGroup>    
+  <ItemGroup>
     <EmbeddedResource Include="FSharp.Editor.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
@@ -70,6 +70,7 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
@@ -103,6 +104,7 @@
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
+    <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFixes\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFixes\AddMissingRecToMutuallyRecFunctions.fs" />
@@ -125,17 +127,19 @@
     <Compile Include="CodeFixes\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFixes\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFixes\RemoveSuperflousCaptureForUnionCaseWithNoData.fs" />
+    <Compile Include="CodeFixes\RemoveSuperfluousCaptureForUnionCaseWithNoData.fs" />
     <Compile Include="CodeFixes\RemoveUnusedBinding.fs" />
-    <Compile Include="CodeFixes\RenameUnusedValue.fs" />
-    <Compile Include="CodeFixes\ImplementInterfaceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\PrefixUnusedValue.fs" />
+    <Compile Include="CodeFixes\DiscardUnusedValue.fs" />
+    <Compile Include="CodeFixes\ImplementInterface.fs" />
     <Compile Include="CodeFixes\SimplifyName.fs" />
     <Compile Include="CodeFixes\RemoveUnusedOpens.fs" />
-    <Compile Include="CodeFixes\MissingReferenceCodeFixProvider.fs" />
+    <Compile Include="CodeFixes\MissingReference.fs" />
     <Compile Include="CodeFixes\FixIndexerAccessLegacy.fs" />
     <Compile Include="CodeFixes\FixIndexerAccess.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
     <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryParentheses.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />

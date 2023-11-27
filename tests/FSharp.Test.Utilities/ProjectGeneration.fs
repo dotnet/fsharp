@@ -231,7 +231,9 @@ type SyntheticProject =
       OtherOptions: string list
       AutoAddModules: bool
       NugetReferences: Reference list
-      FrameworkReferences: Reference list }
+      FrameworkReferences: Reference list
+      /// If set to true this project won't cause an exception if there are errors in the initial check
+      SkipInitialCheck: bool }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -245,7 +247,8 @@ type SyntheticProject =
           OtherOptions = []
           AutoAddModules = true
           NugetReferences = []
-          FrameworkReferences = [] }
+          FrameworkReferences = []
+          SkipInitialCheck = false }
 
     static member Create([<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create() with SourceFiles = sourceFiles |> List.ofArray }
@@ -424,7 +427,7 @@ let private renderFsProj (p: SyntheticProject) =
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net7.0</TargetFramework>
+            <TargetFramework>net8.0</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>
@@ -437,6 +440,9 @@ let private renderFsProj (p: SyntheticProject) =
         for reference in p.NugetReferences do
             let version = reference.Version |> Option.map (fun v -> $" Version=\"{v}\"") |> Option.defaultValue ""
             $"<PackageReference Include=\"{reference.Name}\"{version}/>"
+
+        for project in p.DependsOn do
+            $"<ProjectReference Include=\"{project.ProjectFileName}\" />"
 
         for f in p.SourceFiles do
             if f.HasSignatureFile then
@@ -754,7 +760,7 @@ let SaveAndCheckProject project checker =
 
         let! results = checker.ParseAndCheckProject(options)
 
-        if not (Array.isEmpty results.Diagnostics) then
+        if not (Array.isEmpty results.Diagnostics || project.SkipInitialCheck) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
 
         let! signatures =
@@ -800,7 +806,7 @@ type ProjectWorkflowBuilder
         defaultArg
             checker
             (FSharpChecker.Create(
-                keepAllBackgroundSymbolUses = false,
+                keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
@@ -1016,10 +1022,10 @@ type ProjectWorkflowBuilder
 
     member this.FindSymbolUse(ctx: WorkflowContext, fileId, symbolName: string) =
         async {
-            let file = ctx.Project.Find fileId
-            let fileName = ctx.Project.ProjectDir ++ file.FileName
-            let source = renderSourceFile ctx.Project file
-            let options= ctx.Project.GetProjectOptions checker
+            let project, file = ctx.Project.FindInAllProjects fileId
+            let fileName = project.ProjectDir ++ file.FileName
+            let source = renderSourceFile project file
+            let options= project.GetProjectOptions checker
             return! getSymbolUse fileName source symbolName options checker
         }
 
@@ -1069,7 +1075,6 @@ type ProjectWorkflowBuilder
     member this.FindAllReferences(workflow: Async<WorkflowContext>, processResults) =
         async {
             let! ctx = workflow
-            let options = ctx.Project.GetProjectOptions checker
 
             let symbolUse =
                 ctx.Cursor
@@ -1077,8 +1082,10 @@ type ProjectWorkflowBuilder
                     failwith $"Please place cursor at a valid location via placeCursor first")
 
             let! results =
-                [ for f in options.SourceFiles do
-                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol, fastCheck = true) ]
+                [ for p, f in ctx.Project.GetAllFiles() do
+                    let options = p.GetProjectOptions checker
+                    for fileName in [getFilePath p f; if f.SignatureFile <> No then getSignatureFilePath p f] do
+                        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true) ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults

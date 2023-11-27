@@ -559,6 +559,7 @@ type StructUnion =
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+
         
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 37 - preview`` () =
@@ -601,7 +602,7 @@ type StructUnion =
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 40`` () =
         Fsx """
@@ -751,6 +752,25 @@ type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T *
         """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Regression 16282 DefaultAugment false on a struct union with fields`` ()  =
+        Fsx """
+[<Struct>]
+[<DefaultAugmentation(false)>]
+type Foo =
+    | Baz of int
+    | Bat
+    | Batman
+
+
+let foo = [Baz 42; Bat; Batman]
+printf "%A" foo"""
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "[Baz 42; Bat; Batman]"
 
     [<Fact>]
     let ``Struct DU ValueOption keeps working`` ()  =

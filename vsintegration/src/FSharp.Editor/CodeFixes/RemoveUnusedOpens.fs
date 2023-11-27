@@ -3,14 +3,15 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+
+open FSharp.Compiler.Text
+
+open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedOpens); Shared>]
 type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
@@ -21,30 +22,28 @@ type internal RemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
     override _.FixableDiagnosticIds =
         ImmutableArray.Create FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId
 
-    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
-        backgroundTask {
-            let! sourceText = document.GetTextAsync(ct)
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
 
-            let changes =
-                diagnostics
-                |> Seq.map (fun d ->
-                    sourceText
-                        .Lines
-                        .GetLineFromPosition(
-                            d.Location.SourceSpan.Start
-                        )
-                        .SpanIncludingLineBreak)
-                |> Seq.map (fun span -> TextChange(span, ""))
+    override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
-            return changes
-        }
+    interface IFSharpCodeFixProvider with
+        member _.GetCodeFixIfAppliesAsync context =
+            cancellableTask {
+                let! sourceText = context.GetSourceTextAsync()
 
-    override this.RegisterCodeFixesAsync ctx : Task =
-        backgroundTask {
-            if ctx.Document.Project.IsFSharpCodeFixesUnusedOpensEnabled then
-                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
-                ctx.RegisterFsharpFix(CodeFix.RemoveUnusedOpens, title, changes)
-        }
+                let! unusedOpensOpt = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges context.Document
 
-    override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedOpens this.GetChanges
+                return
+                    unusedOpensOpt
+                    |> ValueOption.map (
+                        List.map (fun m ->
+                            let span = sourceText.Lines[Line.toZ m.StartLine].SpanIncludingLineBreak
+                            TextChange(span, ""))
+                    )
+                    |> ValueOption.map (fun changes ->
+                        {
+                            Name = CodeFix.RemoveUnusedOpens
+                            Message = title
+                            Changes = changes
+                        })
+            }

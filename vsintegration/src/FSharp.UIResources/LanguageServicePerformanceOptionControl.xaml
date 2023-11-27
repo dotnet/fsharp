@@ -19,6 +19,10 @@
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Project_Performance}">
                     <StackPanel>
+                        <CheckBox x:Name="enableInMemoryCrossProjectReferences"
+                                  IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
+                                  Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
+                                  ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
                         <CheckBox x:Name="enablePartialTypeChecking"
                                   IsChecked="{Binding EnablePartialTypeChecking}"
                                   Content="{x:Static local:Strings.Enable_partial_type_checking}" />
@@ -81,9 +85,6 @@
                         <CheckBox x:Name="enableBackgroundItemKeyStoreAndSemanticClassification"
                                   IsChecked="{Binding EnableBackgroundItemKeyStoreAndSemanticClassification}"
                                   Content="{x:Static local:Strings.Enable_Background_ItemKeyStore_And_Semantic_Classification}"/>
-                        <CheckBox x:Name="captureIdentifiersWhenParsing"
-                                  IsChecked="{Binding CaptureIdentifiersWhenParsing}"
-                                  Content="{x:Static local:Strings.Capture_Identifiers_When_Parsing}"/>                        
                     </StackPanel>
                 </GroupBox>
 

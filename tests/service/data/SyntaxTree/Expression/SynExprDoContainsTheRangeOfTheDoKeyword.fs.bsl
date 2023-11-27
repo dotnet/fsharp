@@ -10,9 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (a, None), false, None, (2,4--2,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (a, None), false, None, (2,4--2,5)), None,
                   Sequential
                     (SuppressNeither, true, Do (Ident foobar, (3,4--4,14)),
                      DoBang (Ident foobarBang, (5,4--6,18)), (3,4--6,18)),

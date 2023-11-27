@@ -106,15 +106,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Capture identifiers while parsing.
-        /// </summary>
-        public static string Capture_Identifiers_When_Parsing {
-            get {
-                return ResourceManager.GetString("Capture_Identifiers_When_Parsing", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
@@ -178,7 +169,16 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        ///   Looks up a localized string similar to _Enable in-memory cross project references.
+        /// </summary>
+        public static string Enable_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for analysis (restart required).
         /// </summary>
         public static string Enable_Live_Buffers {
             get {
@@ -331,7 +331,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Live Buffers (experimental).
+        ///   Looks up a localized string similar to Live Buffers.
         /// </summary>
         public static string LiveBuffers {
             get {
@@ -381,6 +381,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Project_Performance {
             get {
                 return ResourceManager.GetString("Project_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove unnecessary parentheses (experimental, might affect typing performance).
+        /// </summary>
+        public static string Remove_parens_code_fix {
+            get {
+                return ResourceManager.GetString("Remove_parens_code_fix", resourceCulture);
             }
         }
         
@@ -516,6 +525,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Time_until_stale_completion {
             get {
                 return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        /// </summary>
+        public static string Tooltip_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
             }
         }
         

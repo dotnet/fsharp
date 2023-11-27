@@ -62,7 +62,7 @@ module HintService =
                             [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |]
                         )
 
-                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let! cancellationToken = CancellableTask.getCancellationToken ()
                     let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
 
                     let nativeHints =

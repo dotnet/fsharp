@@ -3,8 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading
-open System.Threading.Tasks
 open System.Collections.Immutable
 open System.Diagnostics
 
@@ -15,7 +13,41 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+
 open CancellableTasks
+
+module internal UnusedCodeFixHelper =
+    let getUnusedSymbol textSpan (document: Document) (sourceText: SourceText) codeFixName =
+        let ident = sourceText.ToString textSpan
+
+        // Prefixing operators and backticked identifiers does not make sense.
+        // We have to use the additional check for backticks
+        if PrettyNaming.IsIdentifierName ident then
+            cancellableTask {
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
+
+                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync codeFixName
+
+                return
+                    lexerSymbol
+                    |> Option.bind (fun symbol ->
+                        checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> ValueOption.ofOption
+                    |> ValueOption.bind (fun symbolUse ->
+                        match symbolUse.Symbol with
+                        | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> ValueSome symbolUse.Symbol
+                        | _ -> ValueNone)
+            }
+        else
+            CancellableTask.singleton ValueNone
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
@@ -41,59 +73,46 @@ module internal CodeFixHelpers =
 
         TelemetryReporter.ReportSingleEvent(TelemetryEvents.CodefixActivated, props)
 
-    let createFixAllProvider name getChanges =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
-            backgroundTask {
-                let sw = Stopwatch.StartNew()
-                let! (changes: seq<TextChange>) = getChanges (doc, allDiagnostics, fixAllCtx.CancellationToken)
-                let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
-                let doc = doc.WithText(text.WithChanges(changes))
-
-                do
-                    reportCodeFixTelemetry
-                        allDiagnostics
-                        doc
-                        name
-                        [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
-
-                return doc
-            })
-
-    let createTextChangeCodeFix (name: string, title: string, context: CodeFixContext, changes: TextChange seq) =
+    let createTextChangeCodeFix (codeFix, context: CodeFixContext) =
         CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                backgroundTask {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                    let doc = context.Document.WithText(sourceText.WithChanges(changes))
-                    reportCodeFixTelemetry context.Diagnostics context.Document name [||]
+            codeFix.Message,
+            (fun cancellationToken ->
+                cancellableTask {
+                    let! sourceText = context.Document.GetTextAsync cancellationToken
+                    let doc = context.Document.WithText(sourceText.WithChanges(codeFix.Changes))
+                    reportCodeFixTelemetry context.Diagnostics context.Document codeFix.Name [||]
                     return doc
-                }),
-            name
+                }
+                |> CancellableTask.start cancellationToken)
         )
 
 [<AutoOpen>]
 module internal CodeFixExtensions =
     type CodeFixContext with
 
-        member ctx.RegisterFsharpFix(staticName, title, changes, ?diagnostics) =
-            let codeAction =
-                CodeFixHelpers.createTextChangeCodeFix (staticName, title, ctx, changes)
-
-            let diag = diagnostics |> Option.defaultValue ctx.Diagnostics
-            ctx.RegisterCodeFix(codeAction, diag)
-
         member ctx.RegisterFsharpFix(codeFix: IFSharpCodeFixProvider) =
             cancellableTask {
                 match! codeFix.GetCodeFixIfAppliesAsync ctx with
-                | Some codeFix -> ctx.RegisterFsharpFix(codeFix.Name, codeFix.Message, codeFix.Changes)
-                | None -> ()
+                | ValueSome codeFix ->
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
+                | ValueNone -> ()
+            }
+            |> CancellableTask.startAsTask ctx.CancellationToken
+
+        member ctx.RegisterFsharpFixes(codeFix: IFSharpMultiCodeFixProvider) =
+            cancellableTask {
+                let! codeFixes = codeFix.GetCodeFixesAsync ctx
+
+                for codeFix in codeFixes do
+                    let codeAction = CodeFixHelpers.createTextChangeCodeFix (codeFix, ctx)
+                    ctx.RegisterCodeFix(codeAction, ctx.Diagnostics)
             }
             |> CancellableTask.startAsTask ctx.CancellationToken
 
         member ctx.GetSourceTextAsync() =
             cancellableTask {
-                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! cancellationToken = CancellableTask.getCancellationToken ()
                 return! ctx.Document.GetTextAsync cancellationToken
             }
 
@@ -109,23 +128,32 @@ module internal CodeFixExtensions =
                 return RoslynHelpers.TextSpanToFSharpRange(ctx.Document.FilePath, ctx.Span, sourceText)
             }
 
+        member ctx.GetLineNumberAndText position =
+            cancellableTask {
+                let! sourceText = ctx.GetSourceTextAsync()
+                let textLine = sourceText.Lines.GetLineFromPosition position
+                let textLinePos = sourceText.Lines.GetLinePosition position
+                let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                return fcsTextLineNumber, textLine.ToString()
+            }
+
 // This cannot be an extension on the code fix context
 // because the underlying GetFixAllProvider method doesn't take the context in.
 #nowarn "3511" // state machine not statically compilable
 
 [<AutoOpen>]
 module IFSharpCodeFixProviderExtensions =
-    type IFSharpCodeFixProvider with
+    // Cache this no-op delegate.
+    let private registerCodeFix =
+        Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-        // this is not used anywhere, it's just needed to create the context
-        static member private Action =
-            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+    type IFSharpCodeFixProvider with
 
         member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
             cancellableTask {
                 let sw = Stopwatch.StartNew()
 
-                let! token = CancellableTask.getCurrentCancellationToken ()
+                let! token = CancellableTask.getCancellationToken ()
                 let! sourceText = doc.GetTextAsync token
 
                 let! codeFixOpts =
@@ -135,12 +163,12 @@ module IFSharpCodeFixProviderExtensions =
                     // TODO: this crops the diags on a very high level,
                     // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
-                    |> Seq.map (fun diag -> CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token))
-                    |> Seq.map (fun context -> provider.GetCodeFixIfAppliesAsync context)
-                    |> Seq.map (fun task -> task token)
-                    |> Task.WhenAll
+                    |> Seq.map (fun diag ->
+                        let context = CodeFixContext(doc, diag, registerCodeFix, token)
+                        provider.GetCodeFixIfAppliesAsync context)
+                    |> CancellableTask.whenAll
 
-                let codeFixes = codeFixOpts |> Seq.choose id
+                let codeFixes = codeFixOpts |> Seq.map ValueOption.toOption |> Seq.choose id
                 let changes = codeFixes |> Seq.collect (fun codeFix -> codeFix.Changes)
                 let updatedDoc = doc.WithText(sourceText.WithChanges changes)
 
@@ -166,4 +194,11 @@ module IFSharpCodeFixProviderExtensions =
         member provider.RegisterFsharpFixAll() =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 provider.FixAllAsync fixAllCtx doc allDiagnostics
+                |> CancellableTask.start fixAllCtx.CancellationToken)
+
+        member provider.RegisterFsharpFixAll filter =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                let filteredDiagnostics = filter allDiagnostics
+
+                provider.FixAllAsync fixAllCtx doc filteredDiagnostics
                 |> CancellableTask.start fixAllCtx.CancellationToken)

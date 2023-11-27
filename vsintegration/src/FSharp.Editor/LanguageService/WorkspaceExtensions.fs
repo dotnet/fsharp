@@ -3,12 +3,14 @@ module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 
 open System
 open System.Runtime.CompilerServices
-open System.Threading
-open System.Threading.Tasks
+
 open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.FSharp.Editor
+
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -17,9 +19,9 @@ module private CheckerExtensions =
 
         /// Parse the source text from the Roslyn document.
         member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, userOpName: string) =
-            async {
-                let! ct = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            cancellableTask {
+                let! ct = CancellableTask.getCancellationToken ()
+                let! sourceText = document.GetTextAsync(ct)
 
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
             }
@@ -32,17 +34,17 @@ module private CheckerExtensions =
                 allowStaleResults: bool,
                 userOpName: string
             ) =
-            async {
-                let! ct = Async.CancellationToken
+            cancellableTask {
+                let! ct = CancellableTask.getCancellationToken ()
 
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(ct)
+                let! textVersion = document.GetTextVersionAsync(ct)
 
                 let filePath = document.FilePath
                 let textVersionHash = textVersion.GetHashCode()
 
                 let parseAndCheckFile =
-                    async {
+                    cancellableTask {
                         let! (parseResults, checkFileAnswer) =
                             checker.ParseAndCheckFileInProject(
                                 filePath,
@@ -55,11 +57,11 @@ module private CheckerExtensions =
                         return
                             match checkFileAnswer with
                             | FSharpCheckFileAnswer.Aborted -> None
-                            | FSharpCheckFileAnswer.Succeeded (checkFileResults) -> Some(parseResults, checkFileResults)
+                            | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> Some(parseResults, checkFileResults)
                     }
 
                 let tryGetFreshResultsWithTimeout () =
-                    async {
+                    cancellableTask {
                         let! worker =
                             Async.StartChild(
                                 async {
@@ -77,28 +79,22 @@ module private CheckerExtensions =
                             return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
                     }
 
-                let bindParsedInput (results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-                    match results with
-                    | Some (parseResults, checkResults) -> Some(parseResults, parseResults.ParseTree, checkResults)
-                    | None -> None
-
                 if allowStaleResults then
                     let! freshResults = tryGetFreshResultsWithTimeout ()
 
                     let! results =
                         match freshResults with
-                        | Some x -> async.Return(Some x)
+                        | Some x -> CancellableTask.singleton (Some x)
                         | None ->
-                            async {
+                            cancellableTask {
                                 match checker.TryGetRecentCheckResultsForFile(filePath, options, userOpName = userOpName) with
-                                | Some (parseResults, checkFileResults, _) -> return Some(parseResults, checkFileResults)
+                                | Some(parseResults, checkFileResults, _) -> return Some(parseResults, checkFileResults)
                                 | None -> return! parseAndCheckFile
                             }
 
-                    return bindParsedInput results
+                    return results
                 else
-                    let! results = parseAndCheckFile
-                    return bindParsedInput results
+                    return! parseAndCheckFile
             }
 
         /// Parse and check the source text from the Roslyn document.
@@ -109,7 +105,7 @@ module private CheckerExtensions =
                 userOpName: string,
                 ?allowStaleResults: bool
             ) =
-            async {
+            cancellableTask {
                 let allowStaleResults =
                     match allowStaleResults with
                     | Some b -> b
@@ -137,36 +133,25 @@ type Document with
 
     /// Get the FSharpParsingOptions and FSharpProjectOptions from the F# project that is associated with the given F# document.
     member this.GetFSharpCompilationOptionsAsync(userOpName) =
-        async {
-            if this.Project.IsFSharp then
-                match ProjectCache.Projects.TryGetValue(this.Project) with
-                | true, result -> return result
-                | _ ->
+        if not this.Project.IsFSharp then
+            raise (OperationCanceledException("Document is not a FSharp document."))
+        else
+            match ProjectCache.Projects.TryGetValue(this.Project) with
+            | true, result -> CancellableTask.singleton result
+            | _ ->
+                cancellableTask {
                     let service = this.Project.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
-                    let! ct = Async.CancellationToken
+                    let! ct = CancellableTask.getCancellationToken ()
 
                     match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
-                    | None -> return raise (System.OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome(parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
-                        return
-                            ProjectCache.Projects.GetValue(
-                                this.Project,
-                                Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result)
-                            )
-            else
-                return raise (System.OperationCanceledException("Document is not a FSharp document."))
-        }
-
-    /// Get the compilation defines from F# project that is associated with the given F# document.
-    member this.GetFSharpCompilationDefinesAsync(userOpName) =
-        async {
-            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-        }
+                        return ProjectCache.Projects.GetValue(this.Project, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> result))
+                }
 
     /// Get the compilation defines and language version from F# project that is associated with the given F# document.
     member this.GetFsharpParsingOptionsAsync(userOpName) =
@@ -209,34 +194,35 @@ type Document with
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        async {
+        cancellableTask {
             let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
             return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
 
     /// Parses and checks the given F# document.
     member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
-        async {
+        cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             match! checker.ParseAndCheckDocument(this, projectOptions, userOpName, allowStaleResults = false) with
-            | Some (parseResults, _, checkResults) -> return (parseResults, checkResults)
-            | _ -> return raise (System.OperationCanceledException("Unable to get FSharp parse and check results."))
+            | Some results -> return results
+            | _ -> return raise (OperationCanceledException("Unable to get FSharp parse and check results."))
         }
 
     /// Get the semantic classifications of the given F# document.
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
-        async {
+        cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            let! result = checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
 
-            match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
-            | Some results -> return results
-            | _ -> return raise (System.OperationCanceledException("Unable to get FSharp semantic classification."))
+            return
+                result
+                |> Option.defaultWith (fun _ -> raise (OperationCanceledException("Unable to get FSharp semantic classification.")))
         }
 
     /// Find F# references in the given F# document.
-    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
-        async {
+    member inline this.FindFSharpReferencesAsync(symbol, [<InlineIfLambda>] onFound, userOpName) =
+        cancellableTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
@@ -248,16 +234,19 @@ type Document with
                     fastCheck = this.Project.IsFastFindReferencesEnabled
                 )
 
-            for symbolUse in symbolUses do
-                do! onFound symbolUse
+            do!
+                symbolUses
+                |> Seq.map onFound
+                |> CancellableTask.whenAll
+                |> CancellableTask.ignore
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
-        async {
+        cancellableTask {
             let! defines, langVersion, strictIndentation = this.GetFsharpParsingOptionsAsync(userOpName)
-            let! ct = Async.CancellationToken
-            let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
+            let! ct = CancellableTask.getCancellationToken ()
+            let! sourceText = this.GetTextAsync(ct)
 
             return
                 Tokenizer.getSymbolAtPosition (
@@ -278,8 +267,8 @@ type Document with
 type Project with
 
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, ct) : Task =
-        backgroundTask {
+    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName) =
+        cancellableTask {
 
             let declarationLocation =
                 symbol.SignatureLocation
@@ -289,27 +278,27 @@ type Project with
             let declarationDocument =
                 declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
 
+            // Can we skip documents, which are above current, since they can't contain symbols from current one.
             let! canSkipDocuments =
                 match declarationDocument with
                 | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
-                    backgroundTask {
-                        let! _, _, _, options =
-                            document.GetFSharpCompilationOptionsAsync(userOpName)
-                            |> RoslynHelpers.StartAsyncAsTask ct
+                    cancellableTask {
+                        let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName)
 
                         let signatureFile =
                             if not (document.FilePath |> isSignatureFile) then
-                                $"{document.FilePath}i"
+                                document.FilePath + "i"
                             else
                                 null
 
                         return
+
                             options.SourceFiles
                             |> Seq.takeWhile ((<>) document.FilePath)
                             |> Seq.filter ((<>) signatureFile)
                             |> Set
                     }
-                | _ -> Task.FromResult Set.empty
+                | _ -> CancellableTask.singleton Set.empty
 
             let documents =
                 this.Documents
@@ -318,34 +307,32 @@ type Project with
             if this.IsFastFindReferencesEnabled then
                 do!
                     documents
-                    |> Seq.map (fun doc ->
-                        Task.Run(fun () ->
-                            doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                            |> RoslynHelpers.StartAsyncUnitAsTask ct))
-                    |> Task.WhenAll
+                    |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName))
+                    |> CancellableTask.whenAll
             else
                 for doc in documents do
-                    do!
-                        doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
-                        |> RoslynHelpers.StartAsyncAsTask ct
+                    do! doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
         }
 
-    member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =
-        backgroundTask {
-            if this.IsFSharp then
-                match ProjectCache.Projects.TryGetValue(this) with
-                | true, result -> return result
-                | _ ->
+    member this.GetFSharpCompilationOptionsAsync() =
+        if not this.IsFSharp then
+            raise (OperationCanceledException("Project is not a FSharp project."))
+        else
+            match ProjectCache.Projects.TryGetValue(this) with
+            | true, result -> CancellableTask.singleton result
+            | _ ->
+                cancellableTask {
+
+                    let! ct = CancellableTask.getCancellationToken ()
+
                     let service = this.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
 
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
-                    | None -> return raise (OperationCanceledException("FSharp project options not found."))
-                    | Some (parsingOptions, projectOptions) ->
+                    | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+                    | ValueSome(parsingOptions, projectOptions) ->
                         let result =
                             (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
 
-                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback (fun _ -> result))
-            else
-                return raise (OperationCanceledException("Project is not a FSharp project."))
-        }
+                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> result))
+                }

@@ -26,11 +26,7 @@ open CancellableTasks
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
 type internal FSharpCompletionProvider
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider
-    ) =
+    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider) =
 
     inherit FSharpCompletionProviderBase()
 
@@ -121,9 +117,8 @@ type internal FSharpCompletionProvider
                 Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
             elif not (trigger = CompletionTriggerKind.Insertion) then
                 false
-            else
-            // Do not trigger completion if it's not single dot, i.e. range expression
-            if
+            else if
+                // Do not trigger completion if it's not single dot, i.e. range expression
                 not intelliSenseOptions.ShowAfterCharIsTyped
                 && triggerPosition > 0
                 && sourceText.[triggerPosition - 1] = '.'
@@ -150,13 +145,13 @@ type internal FSharpCompletionProvider
         (
             document: Document,
             caretPosition: int,
-            getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list
+            getAllSymbols: FSharpCheckFileResults -> AssemblySymbol array
         ) =
 
         cancellableTask {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
+            let! ct = CancellableTask.getCancellationToken ()
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
             let! sourceText = document.GetTextAsync(ct)
             let textLines = sourceText.Lines
@@ -167,11 +162,15 @@ type internal FSharpCompletionProvider
             let line = caretLine.ToString()
             let partialName = QuickParse.GetPartialLongNameEx(line, caretLineColumn - 1)
 
-            let getAllSymbols () =
-                getAllSymbols checkFileResults
-                |> List.filter (fun assemblySymbol ->
-                    assemblySymbol.FullName.Contains "."
-                    && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
+            let inline getAllSymbols () =
+                [
+                    for assemblySymbol in getAllSymbols checkFileResults do
+                        if
+                            assemblySymbol.FullName.Contains(".")
+                            && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName)
+                        then
+                            yield assemblySymbol
+                ]
 
             let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
 
@@ -190,9 +189,8 @@ type internal FSharpCompletionProvider
 
             let results = List<Completion.CompletionItem>()
 
-            declarationItems <-
-                declarations.Items
-                |> Array.sortWith (fun x y ->
+            Array.sortInPlaceWith
+                (fun (x: DeclarationListItem) (y: DeclarationListItem) ->
                     let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
 
                     if n <> 0 then
@@ -216,6 +214,9 @@ type internal FSharpCompletionProvider
                                     n
                                 else
                                     x.MinorPriority.CompareTo(y.MinorPriority))
+                declarations.Items
+
+            declarationItems <- declarations.Items
 
             let maxHints =
                 if mruItems.Values.Count = 0 then
@@ -223,23 +224,20 @@ type internal FSharpCompletionProvider
                 else
                     Seq.max mruItems.Values
 
-            declarationItems
-            |> Array.iteri (fun number declarationItem ->
+            for number = 0 to declarationItems.Length - 1 do
+                let declarationItem = declarationItems[number]
+
                 let glyph =
                     Tokenizer.FSharpGlyphToRoslynGlyph(declarationItem.Glyph, declarationItem.Accessibility)
 
-                let namespaceName =
-                    match declarationItem.NamespaceToOpen with
-                    | Some namespaceToOpen -> namespaceToOpen
-                    | _ -> null // Icky, but this is how roslyn handles it
-
-                let filterText =
+                let namespaceName, filterText =
                     match declarationItem.NamespaceToOpen, declarationItem.NameInList.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
-                    | None, [| _ |] -> null
+                    | None, [| _ |] -> null, null
+                    | Some namespaceToOpen, idents -> namespaceToOpen, Array.last idents
                     // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
                     // We are passing last part of long ident as FilterText.
-                    | _, idents -> Array.last idents
+                    | None, idents -> null, Array.last idents
 
                 let completionItem =
                     FSharpCommonCompletionItem
@@ -278,7 +276,7 @@ type internal FSharpCompletionProvider
 
                 let sortText = priority.ToString("D6")
                 let completionItem = completionItem.WithSortText(sortText)
-                results.Add(completionItem))
+                results.Add(completionItem)
 
             if
                 results.Count > 0
@@ -318,7 +316,7 @@ type internal FSharpCompletionProvider
             use _logBlock =
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! ct = CancellableTask.getCancellationToken ()
 
             let document = context.Document
 
@@ -348,11 +346,11 @@ type internal FSharpCompletionProvider
                 )
 
             if shouldProvideCompetion then
-                let getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
+                let inline getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
                     if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                     else
-                        []
+                        Array.empty
 
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
 
@@ -365,42 +363,30 @@ type internal FSharpCompletionProvider
         (
             document: Document,
             completionItem: Completion.CompletionItem,
-            cancellationToken: CancellationToken
+            _cancellationToken: CancellationToken
         ) : Task<CompletionDescription> =
-        cancellableTask {
+
+        match completionItem.Properties.TryGetValue IndexPropName with
+        | true, completionItemIndexStr when int completionItemIndexStr >= declarationItems.Length ->
+            Task.FromResult CompletionDescription.Empty
+        | true, completionItemIndexStr ->
             use _logBlock =
                 Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
 
-            match completionItem.Properties.TryGetValue IndexPropName with
-            | true, completionItemIndexStr ->
-                let completionItemIndex = int completionItemIndexStr
+            let completionItemIndex = int completionItemIndexStr
 
-                if completionItemIndex < declarationItems.Length then
-                    let declarationItem = declarationItems.[completionItemIndex]
-                    let description = declarationItem.Description
-                    let documentation = List()
-                    let collector = RoslynHelpers.CollectTaggedText documentation
-                    // mix main description and xmldoc by using one collector
-                    XmlDocumentation.BuildDataTipText(
-                        documentationBuilder,
-                        collector,
-                        collector,
-                        collector,
-                        collector,
-                        collector,
-                        description
-                    )
+            let declarationItem = declarationItems.[completionItemIndex]
+            let description = declarationItem.Description
+            let documentation = List()
+            let collector = RoslynHelpers.CollectTaggedText documentation
+            // mix main description and xmldoc by using one collector
+            XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description)
 
-                    return CompletionDescription.Create(documentation.ToImmutableArray())
-                else
-                    return CompletionDescription.Empty
-            | _ ->
-                // Try keyword descriptions if they exist
-                match completionItem.Properties.TryGetValue KeywordDescription with
-                | true, keywordDescription -> return CompletionDescription.FromText(keywordDescription)
-                | false, _ -> return CompletionDescription.Empty
-        }
-        |> CancellableTask.start cancellationToken
+            Task.FromResult(CompletionDescription.Create(documentation.ToImmutableArray()))
+        | _ ->
+            match completionItem.Properties.TryGetValue KeywordDescription with
+            | true, keywordDescription -> Task.FromResult(CompletionDescription.FromText(keywordDescription))
+            | false, _ -> Task.FromResult(CompletionDescription.Empty)
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         cancellableTask {
@@ -409,8 +395,8 @@ type internal FSharpCompletionProvider
 
             let fullName =
                 match item.Properties.TryGetValue FullNamePropName with
-                | true, x -> Some x
-                | _ -> None
+                | true, x -> ValueSome x
+                | _ -> ValueNone
 
             // do not add extension members and unresolved symbols to the MRU list
             if
@@ -418,7 +404,7 @@ type internal FSharpCompletionProvider
                 && not (item.Properties.ContainsKey IsExtensionMemberPropName)
             then
                 match fullName with
-                | Some fullName ->
+                | ValueSome fullName ->
                     match mruItems.TryGetValue fullName with
                     | true, hints -> mruItems.[fullName] <- hints + 1
                     | _ -> mruItems.[fullName] <- 1
@@ -442,7 +428,9 @@ type internal FSharpCompletionProvider
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
 
                 let fullNameIdents =
-                    fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
+                    fullName
+                    |> ValueOption.map (fun x -> x.Split '.')
+                    |> ValueOption.defaultValue [||]
 
                 let insertionPoint =
                     if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then

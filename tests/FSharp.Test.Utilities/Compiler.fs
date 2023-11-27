@@ -355,7 +355,7 @@ module rec Compiler =
 
     let FsxFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path) |> FS
-
+    
     let Fs (source: string) : CompilationUnit =
         fsFromString (FsSource source) |> FS
 
@@ -945,7 +945,14 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
-                let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                let isFsx =
+                    match s.Compilation with
+                    | FS fs ->
+                        match fs.Source with
+                        | SourceCodeFileKind.Fsx _ -> true
+                        | _ -> false
+                    | _ -> false
+                let exitCode, output, errors = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
                 printfn "---------output-------\n%s\n-------"  output
                 printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
@@ -1075,10 +1082,37 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        FileSystem.OpenFileForWriteShim(baselineFile.FilePath + ".err").Write(actualErrors)
+    let convenienceBaselineInstructions baseline expected actual =
+        $"""to update baseline:
+$ cp {baseline.FilePath} {baseline.BslSource}
+to compare baseline:
+$ code --diff {baseline.FilePath} {baseline.BslSource}
+Expected:
+{expected}
+Actual:
+{actual}"""
+    let updateBaseline () =
+        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
+    let updateBaseLineIfEnvironmentSaysSo baseline =
+        if updateBaseline () then
+            if FileSystem.FileExistsShim baseline.FilePath then
+                FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
 
-    let private verifyFSBaseline (fs) : unit =
+    let assertBaseline expected actual baseline fOnFail =
+        if expected <> actual then
+            fOnFail()
+            updateBaseLineIfEnvironmentSaysSo baseline
+            createBaselineErrors baseline actual
+            Assert.AreEqual(expected, actual, convenienceBaselineInstructions baseline expected actual)
+        elif FileSystem.FileExistsShim baseline.FilePath then
+            FileSystem.FileDeleteShim baseline.FilePath
+
+    
+    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
+        printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
+        FileSystem.OpenFileForWriteShim(baselineFile.FilePath).Write(actualErrors)
+
+    let private verifyFSBaseline fs : unit =
         match fs.Baseline with
         | None -> failwith "Baseline was not provided."
         | Some bsl ->
@@ -1089,15 +1123,20 @@ module rec Compiler =
 
             let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
 
-            let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
+            let errorsActual =
+                (typecheckDiagnostics
+                |> Array.map (sprintf "%A")
+                |> String.concat "\n"
+                ).Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
                 fs.CreateOutputDirectory()
                 createBaselineErrors bsl.FSBaseline errorsActual
+                updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline
+                let errorMsg = (convenienceBaselineInstructions bsl.FSBaseline errorsExpectedBaseLine errorsActual)
+                Assert.AreEqual(errorsExpectedBaseLine, errorsActual, errorMsg)
             elif FileSystem.FileExistsShim(bsl.FSBaseline.FilePath) then
                 FileSystem.FileDeleteShim(bsl.FSBaseline.FilePath)
-
-            Assert.AreEqual(errorsExpectedBaseLine, errorsActual, $"\nExpected:\n{errorsExpectedBaseLine}\nActual:\n{errorsActual}")
 
     /// Check the typechecker output against the baseline, if invoked with empty baseline, will expect no error/warnings output.
     let verifyBaseline (cUnit: CompilationUnit) : CompilationUnit =
@@ -1113,7 +1152,7 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
             | Some p -> func p il
-        | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+        | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
     let verifyIL = doILCheck ILChecker.checkIL
 
@@ -1121,37 +1160,42 @@ module rec Compiler =
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
-    let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
-        match baseline with
-        | None -> failwith "Baseline was not provided."
-        | Some bsl ->
-            match result.OutputPath with
-                | None -> failwith "Operation didn't produce any output!"
-                | Some p ->
-                    let expectedIL =
-                        match bsl.ILBaseline.Content with
-                        | Some b -> b
-                        | None ->  String.Empty
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
+    let private verifyFSILBaseline (baseline: Baseline) (result: CompilationOutput) : unit =
+        match result.OutputPath with
+        | None -> failwith "Operation didn't produce any output!"
+        | Some p ->
+            let expectedIL =
+                match baseline.ILBaseline.Content with
+                | Some b -> b
+                | None ->  String.Empty
+            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual p expectedIL
 
-                    if not success then
-                        // Failed try update baselines if required
-                        // If we are here then the il file has been produced we can write it back to the baseline location
-                        // if the environment variable TEST_UPDATE_BSL has been set
-                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
-                            match baseline with
-                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                            | None -> ()
-
-                        createBaselineErrors bsl.ILBaseline actualIL
-                        Assert.Fail(errorMsg)
+            if not success then
+                // Failed try update baselines if required
+                // If we are here then the il file has been produced we can write it back to the baseline location
+                // if the environment variable TEST_UPDATE_BSL has been set
+                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                createBaselineErrors baseline.ILBaseline actualIL
+                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs ->
-            match fs |> compileFSharp  with
-            | CompilationResult.Failure a -> failwith $"Build failure: {a}"
-            | CompilationResult.Success s -> verifyFSILBaseline fs.Baseline s
+            match fs |> compileFSharp, fs.Baseline with
+            | CompilationResult.Failure a, Some baseline ->
+                match baseline.ILBaseline.Content with
+                | Some "" -> ()
+                | Some il ->
+                    failwith $"Build failure: {a} while expected il\n{il}"
+                | None ->
+                    if not (FileSystem.FileExistsShim baseline.ILBaseline.BslSource) && updateBaseline () then
+                        File.WriteAllText(baseline.ILBaseline.BslSource, "")
+                    else
+                        failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
+            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
+            | _, None ->
+                failwithf $"Baseline was not provided."
         | _ -> failwith "Baseline tests are only supported for F#."
 
         cUnit
@@ -1404,11 +1448,13 @@ module rec Compiler =
                 $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
 
             let expectedErrors = expected |> List.map (fun error -> errorMessage error)
+            let expectedErrorsAsStr = expectedErrors |> String.concat ";\n" |> sprintf "[%s]"
             let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+            let sourceErrorsAsStr = sourceErrors |> String.concat ";\n" |> sprintf "[%s]"
 
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b sourceErrors expectedErrors)
+                 Assert.AreEqual(a, b, $"%s{what}: Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{sourceErrorsAsStr}\nExpected errors:\n%s{expectedErrorsAsStr}")
 
             // For lists longer than 100 errors:
             expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine

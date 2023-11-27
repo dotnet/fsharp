@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -18,33 +19,33 @@ type internal AddMissingEqualsToTypeDefinitionCodeFixProvider() =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0010"
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
+    override this.RegisterCodeFixesAsync context =
+        // This is a performance shortcut.
+        // Since FS0010 fires all too often, we're just stopping any processing if it's a different error message.
+        // The code fix logic itself still has this logic and implements it more reliably.
+        if
+            context.Diagnostics
+            |> Seq.exists (fun d -> d.Descriptor.MessageFormat.ToString().Contains "=")
+        then
+            context.RegisterFsharpFix this
+        else
+            Task.CompletedTask
 
     interface IFSharpCodeFixProvider with
         member _.GetCodeFixIfAppliesAsync context =
             cancellableTask {
-                let message =
-                    context.Diagnostics
-                    |> Seq.exactlyOne
-                    |> fun d -> d.Descriptor.MessageFormat.ToString()
+                let! range = context.GetErrorRangeAsync()
+                let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof AddMissingEqualsToTypeDefinitionCodeFixProvider)
 
-                // this should eliminate 99.9% of germs
-                if not <| message.Contains "=" then
-                    return None
+                if not <| parseResults.IsPositionWithinTypeDefinition range.Start then
+                    return ValueNone
+
                 else
-
-                    let! range = context.GetErrorRangeAsync()
-                    let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof AddMissingEqualsToTypeDefinitionCodeFixProvider)
-
-                    if not <| parseResults.IsPositionWithinTypeDefinition range.Start then
-                        return None
-
-                    else
-                        return
-                            Some
-                                {
-                                    Name = CodeFix.AddMissingEqualsToTypeDefinition
-                                    Message = title
-                                    Changes = [ TextChange(TextSpan(context.Span.Start, 0), "= ") ]
-                                }
+                    return
+                        ValueSome
+                            {
+                                Name = CodeFix.AddMissingEqualsToTypeDefinition
+                                Message = title
+                                Changes = [ TextChange(TextSpan(context.Span.Start, 0), "= ") ]
+                            }
             }

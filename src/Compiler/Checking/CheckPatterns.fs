@@ -216,7 +216,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
 and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValFlags) patEnv ty (synPat: SynPat) =
     try
        TcPat warnOnUpper cenv env valReprInfo vFlags patEnv ty synPat
-    with e ->
+    with RecoverableException e ->
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
         let m = synPat.Range
@@ -309,11 +309,6 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
     | SynPat.Record (flds, m) ->
         TcRecordPat warnOnUpper cenv env vFlags patEnv ty flds m
 
-    | SynPat.DeprecatedCharRange (c1, c2, m) ->
-        errorR(Deprecated(FSComp.SR.tcUseWhenPatternGuard(), m))
-        UnifyTypes cenv env m ty g.char_ty
-        (fun _ -> TPat_range(c1, c2, m)), patEnv
-
     | SynPat.Null m ->
         TcNullPat cenv env patEnv ty m
 
@@ -340,7 +335,7 @@ and TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m =
         try
             let c = TcConst cenv ty m env synConst
             (fun _ -> TPat_const (c, m)), patEnv
-        with e ->
+        with RecoverableException e ->
             errorRecovery e m
             (fun _ -> TPat_error m), patEnv
 
@@ -392,14 +387,14 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames)) ty pat2
     let (TcPatLinearEnv(tpenv, names2, takenNames2)) = patEnv2
 
-    if not (takenNames1 = takenNames2) then
+    if takenNames1 <> takenNames2 then
         errorR (UnionPatternsBindDifferentNames m)
 
     names1 |> Map.iter (fun _ (PrelimVal1 (id=id1; prelimType=ty1)) ->
         match names2.TryGetValue id1.idText with
         | true, PrelimVal1 (id=id2; prelimType=ty2) ->
             try UnifyTypes cenv env id2.idRange ty1 ty2
-            with exn -> errorRecovery exn m
+            with RecoverableException exn -> errorRecovery exn m
         | _ -> ())
 
     let namesR = NameMap.layer names1 names2
@@ -422,7 +417,7 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
         phase2, acc
-    with e ->
+    with RecoverableException e ->
         errorRecovery e m
         let _, acc = TcPatterns warnOnUpper cenv env vFlags patEnv (NewInferenceTypes g args) args
         let phase2 _ = TPat_error m
@@ -441,7 +436,7 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
 
 and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     let fieldPats = fieldPats |> List.map (fun (fieldId, _, fieldPat) -> fieldId, fieldPat)
-    match BuildFieldMap cenv env true ty fieldPats m with
+    match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
@@ -467,7 +462,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
 and TcNullPat cenv env patEnv ty m =
     try
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace ty
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
     (fun _ -> TPat_null m), patEnv
 
@@ -491,7 +486,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
     let g = cenv.g
     id.idText = "nameof" &&
     try
-        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] None with
         | Result (_, Item.Value vref, _) -> valRefEq g vref g.nameof_vref
         | _ -> false
     with _ -> false
@@ -600,18 +595,23 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length
+    let warnOnUnionWithNoData =
+        g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData)
 
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args ->
-            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+            if warnOnUnionWithNoData then
                 match args with
-                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
+                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                    // Here we only care about the cases where the user has written the wildcard pattern explicitly
+                    // | Case _ -> ...
+                    // let myDiscardedArgFunc(Case _) = ..."""
+                    // This needs to be a waring because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
+                    // The rest of the cases will still be reported as FS0725
                     warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
-                    args, []
-                | _ -> args, []
-            else
-                args, []
+                | _ -> ()
+            args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int
@@ -669,12 +669,8 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []
 
         | args when numArgTys = 0 ->
-            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
-                [], args
-            else
-                errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-                [], args
-
+            errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
+            [], args
         | arg :: rest when numArgTys = 1 ->
             if numArgTys = 1 && not (List.isEmpty rest) then
                 errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))

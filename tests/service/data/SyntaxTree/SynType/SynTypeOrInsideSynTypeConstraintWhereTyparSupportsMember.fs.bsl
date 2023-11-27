@@ -13,16 +13,19 @@ ImplFile
                  (None, Normal, true, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent ([f_StaticMethod], [], [None]), None,
                      Some
                        (SynValTyparDecls
                           (Some
                              (PostfixList
-                                ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                  SynTyparDecl ([], SynTypar (T2, None, false))],
+                                ([SynTyparDecl
+                                    ([], SynTypar (T1, None, false), [],
+                                     { AmpersandRanges = [] });
+                                  SynTyparDecl
+                                    ([], SynTypar (T2, None, false), [],
+                                     { AmpersandRanges = [] })],
                                  [WhereTyparSupportsMember
                                     (Paren
                                        (Or

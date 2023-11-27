@@ -516,6 +516,16 @@ type SynMemberSigMemberTrivia =
 
     static member Zero: SynMemberSigMemberTrivia
 
+/// Represents additional information for SynTyparDecl
+[<NoEquality; NoComparison>]
+type SynTyparDeclTrivia =
+    {
+        /// The syntax ranges of the `&` tokens
+        AmpersandRanges: range list
+    }
+
+    static member Zero: SynTyparDeclTrivia
+
 /// Represents additional information for SynConst.Measure
 [<NoEquality; NoComparison>]
 type SynMeasureConstantTrivia =

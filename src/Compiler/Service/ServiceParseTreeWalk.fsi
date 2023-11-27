@@ -17,6 +17,11 @@ type SyntaxNode =
     | SynMemberDefn of SynMemberDefn
     | SynMatchClause of SynMatchClause
     | SynBinding of SynBinding
+    | SynModuleOrNamespaceSig of SynModuleOrNamespaceSig
+    | SynModuleSigDecl of SynModuleSigDecl
+    | SynValSig of SynValSig
+    | SynTypeDefnSig of SynTypeDefnSig
+    | SynMemberSig of SynMemberSig
 
 type SyntaxVisitorPath = SyntaxNode list
 
@@ -26,6 +31,7 @@ type SyntaxVisitorBase<'T> =
 
     default VisitBinding:
         path: SyntaxVisitorPath * defaultTraverse: (SynBinding -> 'T option) * synBinding: SynBinding -> 'T option
+
     abstract VisitBinding:
         path: SyntaxVisitorPath * defaultTraverse: (SynBinding -> 'T option) * synBinding: SynBinding -> 'T option
 
@@ -43,6 +49,7 @@ type SyntaxVisitorBase<'T> =
         defaultTraverse: (SynExpr -> 'T option) *
         synExpr: SynExpr ->
             'T option
+
     default VisitExpr:
         path: SyntaxVisitorPath *
         traverseSynExpr: (SynExpr -> 'T option) *
@@ -52,6 +59,7 @@ type SyntaxVisitorBase<'T> =
 
     abstract VisitHashDirective:
         path: SyntaxVisitorPath * hashDirective: ParsedHashDirective * range: range -> 'T option
+
     default VisitHashDirective: path: SyntaxVisitorPath * hashDirective: ParsedHashDirective * range: range -> 'T option
 
     abstract VisitImplicitInherit:
@@ -61,6 +69,7 @@ type SyntaxVisitorBase<'T> =
         synArgs: SynExpr *
         range: range ->
             'T option
+
     default VisitImplicitInherit:
         path: SyntaxVisitorPath *
         defaultTraverse: (SynExpr -> 'T option) *
@@ -77,6 +86,7 @@ type SyntaxVisitorBase<'T> =
         members: SynMemberDefns *
         range: range ->
             'T option
+
     default VisitInheritSynMemberDefn:
         path: SyntaxVisitorPath *
         componentInfo: SynComponentInfo *
@@ -105,6 +115,7 @@ type SyntaxVisitorBase<'T> =
         bindings: SynBinding list *
         range: range ->
             'T option
+
     default VisitLetOrUse:
         path: SyntaxVisitorPath *
         isRecursive: bool *
@@ -116,6 +127,7 @@ type SyntaxVisitorBase<'T> =
     abstract VisitMatchClause:
         path: SyntaxVisitorPath * defaultTraverse: (SynMatchClause -> 'T option) * matchClause: SynMatchClause ->
             'T option
+
     default VisitMatchClause:
         path: SyntaxVisitorPath * defaultTraverse: (SynMatchClause -> 'T option) * matchClause: SynMatchClause ->
             'T option
@@ -123,6 +135,7 @@ type SyntaxVisitorBase<'T> =
     abstract VisitModuleDecl:
         path: SyntaxVisitorPath * defaultTraverse: (SynModuleDecl -> 'T option) * synModuleDecl: SynModuleDecl ->
             'T option
+
     default VisitModuleDecl:
         path: SyntaxVisitorPath * defaultTraverse: (SynModuleDecl -> 'T option) * synModuleDecl: SynModuleDecl ->
             'T option
@@ -135,6 +148,7 @@ type SyntaxVisitorBase<'T> =
 
     abstract VisitRecordField:
         path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: SynLongIdent option -> 'T option
+
     default VisitRecordField:
         path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: SynLongIdent option -> 'T option
 
@@ -143,6 +157,7 @@ type SyntaxVisitorBase<'T> =
 
     abstract VisitType:
         path: SyntaxVisitorPath * defaultTraverse: (SynType -> 'T option) * synType: SynType -> 'T option
+
     default VisitType: path: SyntaxVisitorPath * defaultTraverse: (SynType -> 'T option) * synType: SynType -> 'T option
 
     abstract VisitTypeAbbrev: path: SyntaxVisitorPath * synType: SynType * range: range -> 'T option
@@ -150,6 +165,26 @@ type SyntaxVisitorBase<'T> =
 
     abstract VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
     default VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
+
+    abstract VisitModuleOrNamespaceSig:
+        path: SyntaxVisitorPath * synModuleOrNamespaceSig: SynModuleOrNamespaceSig -> 'T option
+
+    default VisitModuleOrNamespaceSig:
+        path: SyntaxVisitorPath * synModuleOrNamespaceSig: SynModuleOrNamespaceSig -> 'T option
+
+    abstract VisitModuleSigDecl:
+        path: SyntaxVisitorPath * defaultTraverse: (SynModuleSigDecl -> 'T option) * synModuleSigDecl: SynModuleSigDecl ->
+            'T option
+
+    default VisitModuleSigDecl:
+        path: SyntaxVisitorPath * defaultTraverse: (SynModuleSigDecl -> 'T option) * synModuleSigDecl: SynModuleSigDecl ->
+            'T option
+
+    abstract VisitValSig:
+        path: SyntaxVisitorPath * defaultTraverse: (SynValSig -> 'T option) * valSig: SynValSig -> 'T option
+
+    default VisitValSig:
+        path: SyntaxVisitorPath * defaultTraverse: (SynValSig -> 'T option) * valSig: SynValSig -> 'T option
 
 module public SyntaxTraversal =
 
@@ -163,5 +198,7 @@ module public SyntaxTraversal =
 
     val internal pick:
         pos: pos -> outerRange: range -> debugObj: obj -> diveResults: (range * (unit -> 'a option)) list -> 'a option
+
+    val internal traverseAll: visitor: SyntaxVisitorBase<'T> -> parseTree: ParsedInput -> unit
 
     val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option

@@ -612,4 +612,192 @@ open Foo.Bar.Y // Y.fs
 """
                     (set [| 1 |])
             ]
+        scenario
+            "Identifier in type augmentation can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Identifier in type augmentation in signature file can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fsi"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase =
+        class
+            new: unit -> PoolingValueTaskBuilderBase
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fsi"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+
+            member Source: a: int -> int
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0; 2 |])
+            ]
+        scenario
+            "ModuleSuffix clash"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "ModuleSuffix clash, module before namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+                    
+                sourceFile
+                    "Program"
+                    """
+printfn "Hello"
+"""
+                    Set.empty
+            ]
     ]

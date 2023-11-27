@@ -133,6 +133,9 @@ module internal CodeFix =
     let ChangeToUpcast = "ChangeToUpcast"
 
     [<Literal>]
+    let ChangeEqualsInFieldTypeToColon = "ChangeEqualsInFieldTypeToColon"
+
+    [<Literal>]
     let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
 
     [<Literal>]
@@ -143,6 +146,9 @@ module internal CodeFix =
 
     [<Literal>]
     let FixIndexerAccess = "FixIndexerAccess"
+
+    [<Literal>]
+    let ImplementInterface = "ImplementInterface"
 
     [<Literal>]
     let RemoveReturnOrYield = "RemoveReturnOrYield"
@@ -159,6 +165,9 @@ module internal CodeFix =
 
     [<Literal>]
     let MakeDeclarationMutable = "MakeDeclarationMutable"
+
+    [<Literal>]
+    let MissingReference = "MissingReference"
 
     [<Literal>]
     let ChangePrefixNegationToInfixSubtraction =
@@ -196,3 +205,6 @@ module internal CodeFix =
 
     [<Literal>]
     let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"
+
+    [<Literal>]
+    let RemoveUnnecessaryParentheses = "RemoveUnnecessaryParentheses"

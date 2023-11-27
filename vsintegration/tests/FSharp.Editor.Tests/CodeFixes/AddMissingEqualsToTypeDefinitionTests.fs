@@ -54,6 +54,13 @@ type Name = Name of string
 [<Theory>]
 [<InlineData "type X = open">]
 [<InlineData "=">]
+[<InlineData "let f x = 
+    match x with
+    | _ ->
+        let _ = [
+            x with
+        ]
+">]
 let ``Doesn't fix FS0010 for random unexpected symbols`` code =
     let expected = None
 

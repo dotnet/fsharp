@@ -211,7 +211,7 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</value>
   </data>
   <data name="6012" xml:space="preserve">
@@ -227,7 +227,7 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</value>
+Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
@@ -279,6 +279,12 @@ Use live (unsaved) buffers for checking</value>
   </data>
   <data name="UseUpcastOperator" xml:space="preserve">
     <value>Use ':&gt;' operator</value>
+  </data>
+  <data name="UnexpectedEqualsInFieldExpectedColon" xml:space="preserve">
+    <value>Unexpected symbol '=' in field declaration. Expected ':' or other token.</value>
+  </data>
+  <data name="ChangeEqualsInFieldTypeToColon" xml:space="preserve">
+    <value>Use ':' for type in field declaration</value>
   </data>
   <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
     <value>Add missing '=' to type definition</value>
@@ -345,5 +351,8 @@ Use live (unsaved) buffers for checking</value>
   </data>
   <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
     <value>Convert C# 'using' to F# 'open'</value>
+  </data>
+  <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
+    <value>Remove unnecessary parentheses</value>
   </data>
 </root>
