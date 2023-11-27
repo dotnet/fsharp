@@ -59,4 +59,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(2,10)-(2,14) parse error Unexpected identifier in type definition
+(2,3)-(2,9) parse error Incomplete static member declaration. Use the keywords 'static member' to declare a new member.

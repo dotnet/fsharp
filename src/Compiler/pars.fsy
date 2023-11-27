@@ -1548,9 +1548,9 @@ memberFlags:
         let mMember = rhs parseState 2
         StaticMemberFlags, SynLeadingKeyword.StaticMember(mStatic, mMember) }
 
- | STATIC recover
+ | STATIC
       { let mStatic = rhs parseState 1
-        // todo: it should be possible to make it work better for both `abstract` and `member` in the type checker        
+        // todo: it should be possible to make it work better for both `abstract` and `member` in the type checker
         StaticMemberFlags, SynLeadingKeyword.Static(mStatic) }
 
   | MEMBER
@@ -1988,6 +1988,9 @@ classDefnMember:
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let flags = $3
+       match flags with
+       | _, SynLeadingKeyword.Static(mStatic) -> errorR (Error (FSComp.SR.parsStaticMemberImcompleteSyntax (), mStatic))
+       | _ -> ()
        $4 $2 flags $1 rangeStart }
 
   | opt_attributes opt_access memberFlags recover

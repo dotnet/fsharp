@@ -942,6 +942,11 @@
         <target state="translated">此成员访问权限不明确。请在对象创建周围使用括号，例如 “(new SomeType(args)).MemberName”</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</source>
+        <target state="new">Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">条件表达式的 "else if" 或 "elif" 分支中的输入意外结束。应为 "elif &lt;expr&gt; then &lt;expr&gt;" 或 "else if &lt;expr&gt; then &lt;expr&gt;"。</target>

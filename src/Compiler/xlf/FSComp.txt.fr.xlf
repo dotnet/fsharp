@@ -942,6 +942,11 @@
         <target state="translated">L’accès à ce membre est ambigu. Utilisez des parenthèses autour de la création de l’objet, par exemple' (New SomeType (args)). MemberName</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</source>
+        <target state="new">Incomplete static member declaration. Use the keywords 'static member' to declare a new member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Fin d'entrée inattendue dans la branche 'else if' ou 'elif' de l'expression conditionnelle. Attendu 'elif &lt;expr&gt; then &lt;expr&gt;' ou 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
