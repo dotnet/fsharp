@@ -61,7 +61,6 @@ let neverEndingLambda = _.(while true do ())"""
 [<InlineData("_.\"🙃\"")>]
 [<InlineData("_.[||]")>]
 [<InlineData("_.{||}")>]
-[<InlineData("_.typeof<int>")>]
 [<InlineData("_.null")>]
 [<InlineData("_.__SOURCE_DIRECTORY__")>]
 [<InlineData("_.(<@ 1 @>)")>]
@@ -224,7 +223,31 @@ let a6 = [1] |> List.map _.ToString()
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
-        
+
+[<Fact>]
+let ``Regression 16318 Error on explicit generic type argument dot dot lambda`` () =
+
+    
+    FSharp """
+module Regression
+type A() =
+    member x.M<'T>() = 1
+
+let _ = [A()] |> Seq.map _.M<int>()
+let _ = [A()] |> Seq.map _.M()
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Regression 16318 typeof dotlambda should fail`` () = 
+    FSharp """ let x = _.typeof<int>"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 72, Line 1, Col 10, Line 1, Col 18, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
+
 [<Fact>]
 let ``Nested anonymous unary function shorthands fails because of ambigous discard`` () =
     FSharp """
