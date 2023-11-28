@@ -1056,6 +1056,8 @@ module Display =
             else
                 let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
                 let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
+                let messageRegexLookup = System.Text.RegularExpressions.Regex(messageRegexPattern)
+                let illFormedBracketPatternLookup = System.Text.RegularExpressions.Regex(illFormedBracketPattern)
 
                 let rec buildObjMessageL (txt: string) (layouts: Layout list) =
 
@@ -1066,12 +1068,12 @@ module Display =
                     //  1) Everything up to the first opening bracket not preceded by a "\", lazily
                     //  2) Everything between that opening bracket and a closing bracket not preceded by a "\", lazily
                     //  3) Everything after that closing bracket
-                    let m = System.Text.RegularExpressions.Regex.Match(txt, messageRegexPattern)
+                    let m = messageRegexLookup.Match txt
 
                     if not m.Success then
                         // there isn't a match on the regex looking for a property, so now let's make sure we don't have an ill-formed format string (i.e. mismatched/stray brackets)
                         let illFormedMatch =
-                            System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
+                            illFormedBracketPatternLookup.IsMatch txt
 
                         if illFormedMatch then
                             None // there are mismatched brackets, bail out
@@ -1129,9 +1131,8 @@ module Display =
 
                                     // look for stray brackets in the text before the next opening bracket
                                     let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(
-                                            postTextMatch.Groups["pre"].Value,
-                                            illFormedBracketPattern
+                                        illFormedBracketPatternLookup.IsMatch(
+                                            postTextMatch.Groups["pre"].Value
                                         )
 
                                     if strayClosingMatch then
@@ -1144,7 +1145,7 @@ module Display =
                                 | remaingPropertyText ->
                                     // make sure we don't have any stray brackets
                                     let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(remaingPropertyText, illFormedBracketPattern)
+                                        illFormedBracketPatternLookup.IsMatch remaingPropertyText
 
                                     if strayClosingMatch then
                                         None
