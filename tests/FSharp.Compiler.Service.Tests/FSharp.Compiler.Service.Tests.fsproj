@@ -97,6 +97,7 @@
       <Link>RangeTests.fs</Link>
     </Compile>
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="FSharpExprPatternsTests.fs" />
     <Compile Include="SourceTextTests.fs" />
     <Compile Include="UnnecessaryParenthesesTests.fs" />
     <Compile Include="..\service\Program.fs">

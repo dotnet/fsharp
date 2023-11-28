@@ -1193,7 +1193,67 @@ namespace N
               Message =
                 "The member or function 'gWithRecCallInFinally' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+        
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call inside of match lambda with closure over local function`` () =
+        """
+namespace N
+
+    module M =
     
+        [<TailCall>]
+        let rec f x y z =
+            let g x = x
+            function
+            | [] -> None
+            | h :: tail ->
+                h ()
+                f x (g y) z tail
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 13
+                        StartColumn = 17
+                        EndLine = 13
+                        EndColumn = 33 }
+              Message =
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+    
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call inside of match lambda with closure over local function using pipe`` () =
+        """
+namespace N
+
+    module M =
+    
+        [<TailCall>]
+        let rec f x y z =
+            let g x = x
+            function
+            | [] -> None
+            | h :: tail ->
+                h ()
+                tail |> f x (g y) z // using the pipe in this match lambda and closing over g caused FS0251 in 8.0 release, issue #16330
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 13
+                        StartColumn = 17
+                        EndLine = 13
+                        EndColumn = 36 }
+              Message =
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda`` () =
         """
