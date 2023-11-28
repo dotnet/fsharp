@@ -292,8 +292,8 @@ type StructUnion =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            Error 3579, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."
-            Error 3579, Line 6, Col 12, Line 6, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."
+            Error 3579, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
+            Error 3579, Line 6, Col 12, Line 6, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
          ]
         
     [<Fact>]
@@ -356,8 +356,8 @@ type StructUnion =
         |> typecheck
         |> shouldFail
         |> withDiagnostics  [
-                Error 3579, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."
-                Error 3579, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."]  
+                Error 3579, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
+                Error 3579, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."]  
         
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 21 - preview`` () =
@@ -531,8 +531,8 @@ type StructUnion = A of int | B of string
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-              Error 3579, Line 4, Col 25, Line 4, Col 28, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields."
-              Error 3579, Line 4, Col 36, Line 4, Col 42, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rules applies also to the generated 'Item' name in case of unnamed fields." ]
+              Error 3579, Line 4, Col 25, Line 4, Col 28, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
+              Error 3579, Line 4, Col 36, Line 4, Col 42, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields." ]
         
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 35`` () =
