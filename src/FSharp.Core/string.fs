@@ -49,7 +49,7 @@ module String =
     [<CompiledName("IterateIndexed")>]
     let iteri action (str: string) =
         if not (String.IsNullOrEmpty str) then
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
             for i = 0 to str.Length - 1 do
                 f.Invoke(i, str.[i])
@@ -76,7 +76,7 @@ module String =
             String.Empty
         else
             let result = str.ToCharArray()
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
             let mutable i = 0
 

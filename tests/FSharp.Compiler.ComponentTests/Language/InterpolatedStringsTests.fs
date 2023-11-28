@@ -38,7 +38,7 @@ let c: System.IFormattable = $"string"
 let a = $"{{hello}} world" : System.FormattableString
 printf $"{a.Format}"
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "{{hello}} world"
@@ -49,7 +49,7 @@ printf $"{a.Format}"
         // printfn "%s" s
         Fsx "let s = $$\"\"\"{{42 + 0}} = {41 + 1}\"\"\"\n\
 printfn \"%s\" s"
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "42 = {41 + 1}"
@@ -58,7 +58,7 @@ printfn \"%s\" s"
     let ``Too many consecutive opening braces in interpolated string result in an error`` () =
         // $$"""{{{{42 - 0}}"""
         Fsx "$$\"\"\"{{{{42 - 0}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 1248, Line 1, Col 1, Line 1, Col 10, "The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.")
@@ -67,7 +67,7 @@ printfn \"%s\" s"
     let ``Too many consecutive closing braces in interpolated string result in an error`` () =
         // $$"""{{42 - 0}}}}"""
         Fsx "$$\"\"\"{{42 - 0}}}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 1249, Line 1, Col 15, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
@@ -81,7 +81,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Double percent sign characters in triple quote interpolated strings`` () =
         Fsx "printfn \"%s\" $$$\"\"\"%%\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "%%"
@@ -89,7 +89,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Percent sign after interpolation hole in triple quote strings`` () =
         Fsx "printfn \"%s\" $$\"\"\"{{42}}%\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "42%"
@@ -97,7 +97,7 @@ printfn \"%s\" s"
     [<Fact>]
     let ``Percent sign before format specifier in triple quote interpolated strings`` () =
         Fsx "printfn \"%s\" $$\"\"\"%%%3d{{42}}\"\"\""
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "% 42"

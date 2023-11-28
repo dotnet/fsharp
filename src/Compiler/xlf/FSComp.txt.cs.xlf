@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="alwaysUseTypedStringInterpolation">
         <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
-        <target state="new">Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</target>
+        <target state="translated">Interpolovaný řetězec obsahuje netypové identifikátory. Doporučuje se přidat specifikátory zadaného formátu.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeTuple">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="chkCopyUpdateSyntaxInAnonRecords">
         <source>This expression is an anonymous record, use {{|...|}} instead of {{...}}.</source>
-        <target state="new">This expression is an anonymous record, use {{|...|}} instead of {{...}}.</target>
+        <target state="translated">Tento výraz je anonymní záznam, použijte {{|...|}} místo {{...}}.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -80,6 +80,11 @@
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Pokud typ používá atributy [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Implementace rozhraní není povolena.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkIndexedGetterAndSetterHaveSamePropertyType">
+        <source>An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</source>
+        <target state="new">An indexed property's getter and setter must have the same type. Property '{0}' has getter of type '{1}' but setter of type '{2}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -114,7 +119,17 @@
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
         <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <target state="translated">Člen nebo funkce „{0}“ má atribut „TailCallAttribute“, ale nepoužívá se koncovým (tail) rekurzivním způsobem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStaticMembersOnObjectExpressions">
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -189,7 +204,7 @@
       </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
-        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <target state="translated">Omezení „unmanaged“ a „not struct“ jsou nekonzistentní</target>
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
@@ -219,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
-        <target state="new">underscore dot shorthand for accessor only function</target>
+        <target state="translated">zkrácený tvar podtržítka pouze pro funkci přístupový objekt</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
@@ -254,12 +269,17 @@
       </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
+        <target state="translated">Vyvolá upozornění, pokud člen nebo funkce má atribut „TailCall“, ale nepoužívá se koncovým (tail) rekurzivním způsobem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
-        <target state="new">Constraint intersection on flexible types</target>
+        <target state="translated">Průnik omezení u flexibilních typů</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -309,12 +329,12 @@
       </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="new">extended fixed bindings for byref and GetPinnableReference</target>
+        <target state="translated">rozšířené pevné vazby pro byref a GetPinnableReference</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
         <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="new">Extended string interpolation similar to C# raw string literals.</target>
+        <target state="translated">Rozšířená interpolace řetězců podobná nezpracovaným řetězcovým literálům jazyka C#.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -334,7 +354,7 @@
       </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNames">
         <source>Improved implied argument names</source>
-        <target state="new">Improved implied argument names</target>
+        <target state="translated">Vylepšené názvy implikovaných argumentů</target>
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
@@ -344,7 +364,7 @@
       </trans-unit>
       <trans-unit id="featureInformationalObjInferenceDiagnostic">
         <source>Diagnostic 3559 (warn when obj inferred) at informational level, off by default</source>
-        <target state="new">Diagnostic 3559 (warn when obj inferred) at informational level, off by default</target>
+        <target state="translated">Diagnostika 3559 (upozornit při odvození objektu) na informační úrovni, vypnuto ve výchozím nastavení</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInitProperties">
@@ -422,9 +442,14 @@
         <target state="translated">správa balíčků</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
         <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="new">prefer String.GetPinnableReference in fixed bindings</target>
+        <target state="translated">preferovat String.GetPinnableReference v pevných vazbách</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
@@ -474,7 +499,7 @@
       </trans-unit>
       <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
         <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="new">Allow static let bindings in union, record, struct, non-incremental-class types</target>
+        <target state="translated">Povolit vazby statického let v typech union, record, struct a non-incremental-class</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
@@ -484,7 +509,7 @@
       </trans-unit>
       <trans-unit id="featureStrictIndentation">
         <source>Raises errors on incorrect indentation, allows better recovery and analysis during editing</source>
-        <target state="new">Raises errors on incorrect indentation, allows better recovery and analysis during editing</target>
+        <target state="translated">Vyvolává chyby při nesprávném odsazení, umožňuje lepší obnovení a analýzu během úprav</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -504,7 +529,12 @@
       </trans-unit>
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
-        <target state="new">Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</target>
+        <target state="translated">Interoperabilita mezi neřízeným obecným omezením jazyka C# a F# (emitovat další modreq)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
+        <source>Indexed properties getter and setter must have the same type</source>
+        <target state="new">Indexed properties getter and setter must have the same type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
@@ -519,12 +549,12 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <target state="translated">Vyvolá upozornění, pokud bylo během překladu názvů nalezeno více shod typu záznamu z důvodu překrývajících se názvů polí.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWhileBang">
         <source>'while!' expression</source>
-        <target state="new">'while!' expression</target>
+        <target state="translated">Výraz „while!“</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -629,7 +659,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionWhileBang">
         <source>Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression.</target>
+        <target state="translated">Používá se ve výpočtových výrazech pro zavedení konstrukce smyčky, kde podmínka je výsledkem jiného výpočtového výrazu.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -639,7 +669,7 @@
       </trans-unit>
       <trans-unit id="lexExtendedStringInterpolationNotSupported">
         <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
+        <target state="translated">Rozšířená interpolace řetězců není v této verzi jazyka F# podporována.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIfOCaml">
@@ -649,7 +679,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
-        <target state="new">This is not a valid identifier</target>
+        <target state="translated">Toto není platný identifikátor</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -664,12 +694,12 @@
       </trans-unit>
       <trans-unit id="lexTooManyLBracesInTripleQuote">
         <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
-        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <target state="translated">Interpolovaný řetězcový literál s trojitými uvozovkami nezačíná dostatečným počtem znaků „$“, aby bylo možné jako obsah použít tolik po sobě jdoucích otevíracích závorek.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTooManyPercentsInTripleQuote">
         <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
-        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</target>
+        <target state="translated">Interpolovaný řetězcový literál s trojitými uvozovkami nezačíná dostatečným počtem znaků „$“, aby bylo možné použít tolik po sobě jdoucích znaků „%“.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
@@ -679,7 +709,7 @@
       </trans-unit>
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
-        <target state="new">The interpolated string contains unmatched closing braces.</target>
+        <target state="translated">Interpolovaný řetězec obsahuje nespárované složené závorky.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -824,7 +854,7 @@
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
         <source>Override indentation rules implied by the language version</source>
-        <target state="new">Override indentation rules implied by the language version</target>
+        <target state="translated">Přepsat pravidla odsazení implikovaná verzí jazyka</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -864,7 +894,7 @@
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
         <source>Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</source>
-        <target state="new">Constraint intersection syntax may only be used with flexible types, e.g. '#IDisposable &amp; #ISomeInterface'.</target>
+        <target state="translated">Syntaxi průniku omezení lze použít pouze s flexibilními typy, například „#IDisposable a #ISomeInterface“.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -899,17 +929,17 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpression">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">Byl očekáván výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
-        <target state="new">Expecting pattern</target>
+        <target state="translated">Očekává se vzorek.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
-        <target state="new">Expecting type</target>
+        <target state="translated">Očekává se typ</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -924,27 +954,22 @@
       </trans-unit>
       <trans-unit id="parsMissingKeyword">
         <source>Missing keyword '{0}'</source>
-        <target state="new">Missing keyword '{0}'</target>
+        <target state="translated">Chybí klíčové slovo „{0}“</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingMemberBody">
         <source>Expecting member body</source>
-        <target state="new">Expecting member body</target>
+        <target state="translated">Očekává se text člena</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingUnionCaseName">
         <source>Missing union case name</source>
-        <target state="new">Missing union case name</target>
+        <target state="translated">Chybí název případu sjednocení</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Tento přístup člena je nejednoznačný. Při vytváření objektu použijte závorky, např. (new SomeType(args)).MemberName'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnderScoreDotLambdaNonAtomic">
-        <source> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</source>
-        <target state="new"> _. shorthand syntax for lambda functions can only be used with atomic expressions. That means expressions with no whitespace unless enclosed in parentheses.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -969,7 +994,7 @@
       </trans-unit>
       <trans-unit id="pickleFsharpCoreBackwardsCompatible">
         <source>Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </source>
-        <target state="new">Newly added pickle state cannot be used in FSharp.Core, since it must be working in older compilers+tooling as well. The time window is at least 3 years after feature introduction. Violation: {0} . Context: \n {1} </target>
+        <target state="translated">Nově přidaný stav pickle nejde použít v FSharp.Core, protože musí fungovat i ve starších kompilátorech a nástrojích. Časové okno je nejméně 3 roky po zavedení funkce. Porušení: {0}. Kontext: \n {1} </target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
@@ -1054,12 +1079,12 @@
       </trans-unit>
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
-        <target state="new">(Suggested name)</target>
+        <target state="translated">(Navržený název)</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
         <source>The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</source>
-        <target state="new">The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.</target>
+        <target state="translated">Význam _ je tady nejednoznačný. Nelze ho použít pro proměnnou typu discard a zkratku funkce ve stejném oboru.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
@@ -1079,7 +1104,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="new">This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</target>
+        <target state="translated">Tento anonymní záznam neodpovídá přesně očekávanému tvaru. Přidejte chybějící pole {0} a odeberte nadbytečná pole {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
@@ -1089,42 +1114,42 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameMultipleDifferent">
         <source>This anonymous record should have fields {0}; but here has fields {1}.</source>
-        <target state="new">This anonymous record should have fields {0}; but here has fields {1}.</target>
+        <target state="translated">Tento anonymní záznam by měl mít pole {0}, ale tady má pole {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldNameSingleDifferent">
         <source>This anonymous record should have fields {0}; but here has field '{1}'.</source>
-        <target state="new">This anonymous record should have fields {0}; but here has field '{1}'.</target>
+        <target state="translated">Tento anonymní záznam by měl mít pole {0}, ale tady má pole „{1}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSubset">
         <source>This anonymous record is missing fields {0}.</source>
-        <target state="new">This anonymous record is missing fields {0}.</target>
+        <target state="translated">V tomto anonymním záznamu chybí pole {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdMultipleFieldsNameSuperset">
         <source>This anonymous record has extra fields. Remove fields {0}.</source>
-        <target state="new">This anonymous record has extra fields. Remove fields {0}.</target>
+        <target state="translated">Tento anonymní záznam obsahuje další pole. Odebrat pole {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameMultipleDifferent">
         <source>This anonymous record should have field '{0}' but here has fields {1}.</source>
-        <target state="new">This anonymous record should have field '{0}' but here has fields {1}.</target>
+        <target state="translated">Tento anonymní záznam by měl mít pole „{0}“, ale tady má pole {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSingleDifferent">
         <source>This anonymous record should have field '{0}' but here has field '{1}'.</source>
-        <target state="new">This anonymous record should have field '{0}' but here has field '{1}'.</target>
+        <target state="translated">Tento anonymní záznam by měl mít pole „{0}“, ale tady má pole „{1}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSubset">
         <source>This anonymous record is missing field '{0}'.</source>
-        <target state="new">This anonymous record is missing field '{0}'.</target>
+        <target state="translated">V tomto anonymním záznamu chybí pole „{0}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdSingleFieldNameSuperset">
         <source>This anonymous record has an extra field. Remove field '{0}'.</source>
-        <target state="new">This anonymous record has an extra field. Remove field '{0}'.</target>
+        <target state="translated">Tento anonymní záznam obsahuje další pole. Odebrat pole „{0}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
@@ -1140,6 +1165,11 @@
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">Tento výraz záznamu kopírování a aktualizace mění všechna pole typu záznamu '{0}'. Zvažte použití syntaxe konstrukce záznamu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDotLambdaAtNotSupportedExpression">
+        <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
+        <target state="new">Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1175,6 +1205,11 @@
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
         <target state="translated">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs. Toto upozornění může být vypnuté pomocí '#nowarn \"3391\".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
+        <source>This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</source>
+        <target state="new">This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
@@ -1259,17 +1294,27 @@
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
         <source>The field '{0}' appears multiple times in this record expression or pattern</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression or pattern</target>
+        <target state="translated">Pole „{0}“ se v tomto výrazu nebo vzoru záznamu zobrazuje vícekrát</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleRecdTypeChoice">
         <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
-        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <target state="translated">Bylo nalezeno více shod typů:\n{0}\nTyp „{1}“ byl použit. Vzhledem k překrývajícím se názvům polí\n{2}\nzvažte použití poznámek typu nebo změňte pořadí otevřených příkazů.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">Použití metod s atributem NoEagerConstraintApplicationAttribute vyžaduje /langversion:6.0 nebo novější.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticMemberFoundForOverride">
+        <source>No static abstract member was found that corresponds to this override</source>
+        <target state="new">No static abstract member was found that corresponds to this override</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoStaticPropertyFoundForOverride">
+        <source>No static abstract property was found that corresponds to this override</source>
+        <target state="new">No static abstract property was found that corresponds to this override</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -1309,7 +1354,7 @@
       </trans-unit>
       <trans-unit id="tcOverrideUsesMultipleArgumentsInsteadOfTuple">
         <source>This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</source>
-        <target state="new">This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the method definition (e.g. 'member _.Foo((x, y))'), or remove parentheses at the abstract method declaration (e.g. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
+        <target state="translated">Toto přepsání přebírá řazenou kolekci členů místo více argumentů. Zkuste do definice metody přidat další vrstvu závorek, např. member _. Foo((x, y)) nebo odeberte závorky v deklaraci abstraktní metody (např. 'abstract member Foo: 'a * 'b -&gt; 'c').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
@@ -1324,7 +1369,7 @@
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</target>
+        <target state="translated">Konstrukt „let! ... and! ...“ se dá použít jen v případě, že tvůrce výpočetních výrazů definuje buď metodu „{0}“, nebo vhodné metody „MergeSource“ a „Bind“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
@@ -1364,7 +1409,7 @@
       </trans-unit>
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
-        <target state="new">Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</target>
+        <target state="translated">Statické vazby nelze přidat do rozšíření extrinsic. Zvažte použití „statického člena“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1414,7 +1459,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
         <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
-        <target state="new">Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</target>
+        <target state="translated">Neočekávaný typ funkce v definici pole případu sjednocení. Pokud chcete, aby pole bylo funkcí, zvažte zabalení signatury funkce závorkami, např. | Případ a -&gt; b na | případ (a -&gt; b).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -1585,6 +1630,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Zvažte použití parametru return! namísto return.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unnecessaryParentheses">
+        <source>Parentheses can be removed.</source>
+        <target state="new">Parentheses can be removed.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedAttribute">
@@ -1814,7 +1864,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
-        <target state="new">Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</target>
+        <target state="translated">Nerozpoznaná možnost:{0} K získání informací o rozpoznaných možnostech příkazového řádku použijte „--help“.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -3469,7 +3519,7 @@
       </trans-unit>
       <trans-unit id="parsMultipleAccessibilitiesForGetSet">
         <source>When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</source>
-        <target state="new">When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.</target>
+        <target state="translated">Pokud je zadána viditelnost vlastnosti, nastavení viditelnosti metody set nebo get není povoleno.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSetSyntax">
@@ -5063,8 +5113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="needs-review-translation">Statické definice hodnot se dají použít jenom u typů s primárním konstruktorem. Zvažte přidání argumentů do definice typu, třeba type X(args) = ...</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Pro F#7 a nižší se definice statických hodnot dají použít jenom v typech s primárním konstruktorem ('type X(args) = ...'). Pokud je chcete povolit ve všech ostatních typech, použijte jazykovou verzi „preview“.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -6183,8 +6233,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
-        <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">Je možné, že máte nesprávné odsazení: tento token leží mimo odsazení kontextu, který začíná na pozici {0}. Zkuste tento token odsadit víc nebo použijte standardní konvence formátování.</target>
+        <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
+        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
@@ -7899,7 +7949,7 @@
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
         <source>Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is one of the following: an array, the address of an array element, a string, a byref, an inref, or a type implementing GetPinnableReference()</source>
-        <target state="needs-review-translation">Neplatné použití fixed. fixed se dá použít jenom v deklaraci ve tvaru use x = fixed expr, kde výraz je pole, adresa pole nebo adresa prvku pole nebo řetězce.</target>
+        <target state="translated">Neplatné použití „fixed“. Výraz „fixed“ se dá použít jenom v deklaraci ve formátu „use x = fixed expr“, kde výraz je jedna z těchto věcí: pole, adresa elementu pole, řetězec, byref, inref nebo typ implementující GetPinnableReference().</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCouldNotFindOffsetToStringData">
@@ -8332,11 +8382,6 @@
         <target state="translated">Tato hodnota není funkce a nedá se použít. Nezapomněli jste ukončit deklaraci?</target>
         <note />
       </trans-unit>
-      <trans-unit id="ArgumentsInSigAndImplMismatch">
-        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="translated">Názvy argumentů v signatuře {0} a implementaci {1} si neodpovídají. Použije se název argumentu ze souboru signatury. To může způsobit problémy při ladění nebo profilování.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Při čtení metadat jazyka F# sestavení {0} došlo k chybě. Byl použit rezervovaný konstruktor. Je možné, že budete muset upgradovat kompilátor jazyka F# nebo použít dřívější verzi sestavení, ve které se nevyužívá konkrétní konstruktor.</target>
@@ -8473,8 +8518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
-        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="translated">Nejde volat metodu rozšíření byref {0}. První parametr vyžaduje, aby hodnota byla měnitelná nebo typu byref, která není jen pro čtení.</target>
+        <source>Cannot call the byref extension method '{0}. 'this' parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="needs-review-translation">Nejde volat metodu rozšíření byref {0}. První parametr vyžaduje, aby hodnota byla měnitelná nebo typu byref, která není jen pro čtení.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
@@ -8563,8 +8608,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="needs-review-translation">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Klíč správce balíčků „{0}“ nebyl v {1} zaregistrován. Aktuálně zaregistrováno: {2}. Další informace o rozšířeních najdete tady: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

@@ -58,7 +58,7 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     let isOpName opName vref s =
         (s = opName) &&
-        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] with
+        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] None with
         | Result (_, Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
@@ -229,7 +229,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery = 
         match stripDebugPoints interpExpr with 
-        | Expr.Val (vref, _, m) -> 
+        // An unparameterized custom builder, e.g., `query`, `async`.
+        | Expr.Val (vref, _, m)
+        // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
+        | Expr.App (funcExpr = Expr.Val (vref, _, m)) ->
             let item = Item.CustomBuilder (vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref 
@@ -2210,7 +2213,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
 
-            if enableImplicitYield then 
+            if enableImplicitYield then
                 let hasTypeUnit, expr, tpenv = TryTcStmt cenv env tpenv comp
                 if hasTypeUnit then 
                     Choice2Of2 expr, tpenv
@@ -2218,6 +2221,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
+                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
                     let resExpr = mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr(expr, genResultTy, mExpr, exprTy))

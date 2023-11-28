@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 
 open CancellableTasks
 
@@ -20,16 +19,16 @@ open CancellableTasks
 type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0495")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0495", "FS1129")
 
     override this.RegisterCodeFixesAsync context =
         if context.Document.Project.IsFSharpCodeFixesSuggestNamesForErrorsEnabled then
-            context.RegisterFsharpFix this
+            context.RegisterFsharpFixes this
         else
             Task.CompletedTask
 
-    interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync context =
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
             cancellableTask {
                 let! parseFileResults, checkFileResults =
                     context.Document.GetFSharpParseAndCheckResultsAsync(nameof ReplaceWithSuggestionCodeFixProvider)
@@ -38,9 +37,7 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
                 let! unresolvedIdentifierText = context.GetSquigglyTextAsync()
                 let pos = context.Span.End
                 let caretLinePos = sourceText.Lines.GetLinePosition(pos)
-                let caretLine = sourceText.Lines.GetLineFromPosition(pos)
-                let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-                let lineText = caretLine.ToString()
+                let! fcsCaretLineNumber, lineText = context.GetLineNumberAndText pos
 
                 let partialName =
                     QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
@@ -52,20 +49,14 @@ type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
                     for item in declInfo.Items do
                         addToBuffer item.NameInList
 
-                let suggestionOpt =
+                return
                     CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText
-                    |> Seq.tryHead
+                    |> Seq.map (fun suggestion ->
+                        let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
 
-                match suggestionOpt with
-                | None -> return ValueNone
-                | Some suggestion ->
-                    let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
-
-                    return
-                        ValueSome
-                            {
-                                Name = CodeFix.ReplaceWithSuggestion
-                                Message = CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
-                                Changes = [ TextChange(context.Span, replacement) ]
-                            }
+                        {
+                            Name = CodeFix.ReplaceWithSuggestion
+                            Message = CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
+                            Changes = [ TextChange(context.Span, replacement) ]
+                        })
             }

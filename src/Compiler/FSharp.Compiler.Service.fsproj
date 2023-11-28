@@ -106,6 +106,8 @@
     <Compile Include="Utilities\TaggedCollections.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
+    <Compile Include="Utilities\Cancellable.fsi" />
+    <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
     <Compile Include="Utilities\FileSystem.fs" />
     <Compile Include="Utilities\ildiag.fsi" />
@@ -154,6 +156,8 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
+    <Compile Include="Utilities\ReadOnlySpan.fsi" />
+    <Compile Include="Utilities\ReadOnlySpan.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
@@ -440,12 +444,12 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
-    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
-    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />
     <Compile Include="Symbols\Symbols.fs" />
+    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
+    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\Exprs.fsi" />
     <Compile Include="Symbols\Exprs.fs" />
     <Compile Include="Symbols\SymbolPatterns.fsi" />
@@ -521,15 +525,15 @@
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>

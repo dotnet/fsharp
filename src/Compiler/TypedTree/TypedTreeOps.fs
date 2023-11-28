@@ -53,6 +53,10 @@ type TyparMap<'T> =
     member tm.ContainsKey (tp: Typar) = 
         let (TPMap m) = tm
         m.ContainsKey(tp.Stamp)
+        
+    member tm.TryGetValue (tp: Typar) = 
+        let (TPMap m) = tm
+        m.TryGetValue(tp.Stamp)
 
     member tm.TryFind (tp: Typar) = 
         let (TPMap m) = tm
@@ -72,6 +76,7 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member _.Add (tcref: TyconRef) x = TyconRefMap (imap.Add (tcref.Stamp, x))
     member _.Remove (tcref: TyconRef) = TyconRefMap (imap.Remove tcref.Stamp)
     member _.IsEmpty = imap.IsEmpty
+    member _.TryGetValue (tcref: TyconRef) = imap.TryGetValue tcref.Stamp 
 
     static member Empty: TyconRefMap<'T> = TyconRefMap Map.empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
@@ -1087,8 +1092,8 @@ and structnessAEquiv un1 un2 =
 
 and measureAEquiv g aenv un1 un2 =
     let vars1 = ListMeasureVarOccs un1
-    let trans tp1 = if aenv.EquivTypars.ContainsKey tp1 then destAnyParTy g aenv.EquivTypars[tp1] else tp1
-    let remapTyconRef tcref = if aenv.EquivTycons.ContainsKey tcref then aenv.EquivTycons[tcref] else tcref
+    let trans tp1 = match aenv.EquivTypars.TryGetValue tp1 with true, etv -> destAnyParTy g etv | false, _ -> tp1
+    let remapTyconRef tcref = match aenv.EquivTycons.TryGetValue tcref with true, tval -> tval | false, _ -> tcref
     let vars1R = List.map trans vars1
     let vars2 = ListSet.subtract typarEq (ListMeasureVarOccs un2) vars1R
     let cons1 = ListMeasureConOccsAfterRemapping g remapTyconRef un1
@@ -2961,7 +2966,7 @@ module PrettyTypes =
       let tys, cxs = (PrettifyThings g List.fold List.map (x |> List.map snd))
       List.zip (List.map fst x) tys, cxs
       
-    let PrettifyCurriedTypes g x = PrettifyThings g (fun f -> List.fold (List.fold f)) List.mapSquared x
+    let PrettifyCurriedTypes g x = PrettifyThings g (List.fold >> List.fold) List.mapSquared x
     let PrettifyCurriedSigTypes g x = PrettifyThings g (fun f -> foldPair (List.fold (List.fold f), f)) (fun f -> mapPair (List.mapSquared f, f)) x
 
     // Badly formed code may instantiate rigid declared typars to types.
@@ -3016,7 +3021,7 @@ module PrettyTypes =
  
     let PrettifyInst g x = 
         PrettifyThings g 
-            (fun f -> foldTyparInst f) 
+            (foldTyparInst) 
             (fun f -> mapTyparInst g f)
             x
  
@@ -3106,7 +3111,7 @@ type GenericParameterStyle =
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
-      openTopPathsSorted: Lazy<string list list>
+      openTopPathsSorted: InterruptibleLazy<string list list>
       openTopPathsRaw: string list list
       shortTypeNames: bool
       suppressNestedTypes: bool
@@ -3137,7 +3142,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths paths = 
         { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = (InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
              openTopPathsRaw = paths 
         }
 
@@ -4982,8 +4987,7 @@ let IsHidden setF accessF remapF =
             Zset.contains x (setF mhi) || 
             // Recurse... 
             check rest (remapF rpi x))
-    fun mrmi x -> 
-        check mrmi x
+    check
 
 let IsHiddenTycon mrmi x = IsHidden (fun mhi -> mhi.HiddenTycons) (fun tc -> tc.Accessibility) (fun rpi x -> (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x
 
@@ -5225,7 +5229,7 @@ and accFreeInInterfaceImpl opts (ty, overrides) acc =
 
 and accFreeInExpr (opts: FreeVarOptions) x acc = 
     match x with
-    | Expr.Let _ -> accFreeInExprLinear opts x acc (fun e -> e)
+    | Expr.Let _ -> accFreeInExprLinear opts x acc id
     | _ -> accFreeInExprNonLinear opts x acc
       
 and accFreeInExprLinear (opts: FreeVarOptions) x acc contf =   
@@ -5819,7 +5823,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     | Expr.Sequential _  
     | Expr.Let _ 
     | Expr.DebugPoint _ ->
-        remapLinearExpr ctxt compgen tmenv expr (fun x -> x)
+        remapLinearExpr ctxt compgen tmenv expr id
 
     // Binding constructs - see also dtrees below 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, vs, b, m, bodyTy) -> 
@@ -7117,7 +7121,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
 let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
     let optBind, addre, readonly, writeonly = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
     match optBind with 
-    | None -> (fun x -> x), addre, readonly, writeonly
+    | None -> id, addre, readonly, writeonly
     | Some (tmp, rval) -> (fun x -> mkCompGenLet m tmp rval x), addre, readonly, writeonly
 
 let mkTupleFieldGet g (tupInfo, e, tinst, i, m) = 
@@ -8026,7 +8030,7 @@ let tref_SourceConstructFlags (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef,
 let mkCompilationMappingAttrPrim (g: TcGlobals) k nums = 
     mkILCustomAttribute (tref_CompilationMappingAttr g, 
                                ((mkILNonGenericValueTy (tref_SourceConstructFlags g)) :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))), 
-                               ((k :: nums) |> List.map (fun n -> ILAttribElem.Int32 n)), 
+                               ((k :: nums) |> List.map (ILAttribElem.Int32)), 
                                [])
 
 let mkCompilationMappingAttr g kind = mkCompilationMappingAttrPrim g kind []
@@ -8037,7 +8041,7 @@ let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum = mkCom
 
 let mkCompilationArgumentCountsAttr (g: TcGlobals) nums = 
     mkILCustomAttribute (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ], 
-                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map (fun n -> ILAttribElem.Int32 n) nums)], 
+                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map (ILAttribElem.Int32) nums)], 
                                [])
 
 let mkCompilationSourceNameAttr (g: TcGlobals) n = 
@@ -8494,7 +8498,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     binderBuilder, expr
                 else                
                     if typeEquiv g (mkRefTupledTy g actualTys) argExprTy then 
-                        (fun tm -> tm), argExpr
+                        id, argExpr
                     else
                     
                         let detupledArgs, argTys = 
@@ -8512,7 +8516,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                         //     let f (x, y) = 1
                         // and we're not building lambdas, just coerce the arguments in place
                         if detupledArgs.Length = actualTys.Length then 
-                            (fun tm -> tm), CoerceDetupled argTys detupledArgs actualTys
+                            id, CoerceDetupled argTys detupledArgs actualTys
                         else 
                             // In this case there is a tuple mismatch.
                             //     f p
@@ -8592,13 +8596,13 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                                 match suppliedArg with 
                                 | Some arg -> 
                                     let binderBuilder, inpsAsActualArg = CoerceTupled niceNames arg actualArgTys
-                                    let lambdaBuilder = (fun tm -> tm)
+                                    let lambdaBuilder = id
                                     lambdaBuilder, binderBuilder, inpsAsActualArg
                                 | None -> 
                                     let inpsAsVars, inpsAsExprs = (niceNames, inpArgTys) ||> List.map2 (fun nm ty -> mkCompGenLocal appm nm ty) |> List.unzip
                                     let inpsAsActualArg = CoerceDetupled inpArgTys inpsAsExprs actualArgTys
                                     let lambdaBuilder = (fun tm -> mkMultiLambda appm inpsAsVars (tm, tyOfExpr g tm))
-                                    let binderBuilder = (fun tm -> tm)
+                                    let binderBuilder = id
                                     lambdaBuilder, binderBuilder, inpsAsActualArg)
                         |> List.unzip3
                     
@@ -9046,7 +9050,7 @@ let rec TypeHasDefaultValueAux isNew g m ty =
                 // Note this includes fields implied by the use of the implicit class construction syntax
                 tcref.AllInstanceFieldsAsList
                   // We can ignore fields with the DefaultValue(false) attribute 
-                  |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some false))
+                  |> List.filter (fun fld -> TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs <> Some false)
 
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 
@@ -9361,7 +9365,7 @@ and RewriteExpr env expr =
     | Expr.Let _ 
     | Expr.Sequential _ 
     | Expr.DebugPoint _ ->
-        rewriteLinearExpr env expr (fun e -> e)
+        rewriteLinearExpr env expr id
     | _ -> 
         let expr = 
             match preRewriteExpr env expr with 
@@ -10349,7 +10353,7 @@ let CombineCcuContentFragments l =
             let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
             { data1 with 
                 entity_attribs = entity1.Attribs @ entity2.Attribs
-                entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                entity_modul_type = MaybeLazy.Lazy (InterruptibleLazy(fun _ -> CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                 entity_opt_data = 
                 match data1.entity_opt_data with
                 | Some optData -> Some { optData with entity_xmldoc = xml }

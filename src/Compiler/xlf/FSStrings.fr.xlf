@@ -2,24 +2,9 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSStrings.resx">
     <body>
-      <trans-unit id="ConstraintSolverNullnessWarning">
-        <source>Nullness warning: {0}.</source>
-        <target state="new">Nullness warning: {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningWithType">
-        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
-        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+      <trans-unit id="ArgumentsInSigAndImplMismatch">
+        <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
+        <target state="translated">Les noms d'arguments dans la signature '{0}' et l'implémentation '{1}' ne correspondent pas. Le nom d'argument du fichier de signature va être utilisé. Cela peut entraîner des problèmes durant le débogage ou le profilage.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -37,9 +22,14 @@
         <target state="translated">Les cas d’union discriminée en minuscules sont uniquement autorisés lors de l’utilisation de l’attribut RequireQualifiedAccess.</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
-        <source>symbol '|' (directly before 'null')</source>
-        <target state="new">symbol '|' (directly before 'null')</target>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="new"> Non-static member is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="new"> Static member is expected.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -69,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">mot-clé « pendant ! »</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

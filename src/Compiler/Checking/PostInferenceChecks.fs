@@ -2213,7 +2213,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             match TryChopPropertyName v.DisplayName with
             | Some res -> check true res
             | None -> ()
-        with e -> errorRecovery e v.Range
+        with RecoverableException e -> errorRecovery e v.Range
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
@@ -2415,11 +2415,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter then
                 let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
                 let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
-                    errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if g.langVersion.SupportsFeature(LanguageFeature.WarningIndexedPropertiesGetSetSameType) && pinfo.IsIndexer then
+                        warning(Error(FSComp.SR.chkIndexedGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if not pinfo.IsIndexer then
+                        errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
             hashOfImmediateProps[nm] <- pinfo :: others
 

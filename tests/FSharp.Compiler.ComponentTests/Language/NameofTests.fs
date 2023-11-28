@@ -124,8 +124,7 @@ if not((getData b) = re2.Data) then
         """
         Fsx source
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
-

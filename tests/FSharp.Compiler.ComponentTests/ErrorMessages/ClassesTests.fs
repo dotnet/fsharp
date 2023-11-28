@@ -147,7 +147,7 @@ type C() =
     override this.M4() = ()
     member this.M5() = ()
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -245,7 +245,7 @@ type B() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -274,7 +274,7 @@ type B() =
     member this.M4() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -346,7 +346,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -424,7 +424,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -498,7 +498,7 @@ type C() =
     member this.M5() = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -568,7 +568,7 @@ type C() =
     override _.M1 (i: int) = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -595,7 +595,7 @@ type C() =
     override _.M1 (i: string) = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -623,7 +623,7 @@ type Over () =
         
         app
         |> withReferences [CSLib]
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -651,7 +651,7 @@ type PD() =
     override this.M(x: int) = ()
         """
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 361, Line 19, Col 19, Line 19, Col 20, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
@@ -684,6 +684,24 @@ type X =
     override this.M(a, b, c, d) = ()
         """ |> withReferences [CSLib]
         app
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``No separator between member and type annotation`` () =
+         FSharp """
+    type IFoo<'T> =
+        abstract member Bar<'T>: string -> unit
+            """
+        |> typecheck
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Separator between member and type annotation`` () =
+         FSharp """
+    type IFoo<'T> =
+        abstract member Bar<'T> : string -> unit
+            """
+        |> typecheck
         |> shouldSucceed

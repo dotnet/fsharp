@@ -37,22 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guias de Estrutura de Bloco;
+Mostrar diretrizes de estrutura para código F#;
+Estrutura de tópicos;
+Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
+Dicas embutidas;
+Exibir dicas de tipo embutido (versão prévia);
+Exibir dicas de tipo de retorno (versão prévia);
+Exibir dicas de nome de parâmetro embutido (versão prévia);
+Buffers Dinâmicos;
+Usar buffers dinâmicos (não salvos) para verificação</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">Usar ":" para tipo na declaração de campo</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Opções de desempenho de projeto e cache do F#;
+        <target state="needs-review-translation">Opções de desempenho de projeto e cache do F#;
  Habilitar referências de projeto cruzado na memória;
  Enable_partial_type_checking;
  Opções de desempenho do IntelliSense;
@@ -214,6 +214,11 @@ Traço sublinhado;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Remover 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -268,7 +273,7 @@ Traço sublinhado;</target>
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">Símbolo inesperado "=" na declaração de campo. "." ou outro token é esperado.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.7') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.8') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.7
+          MirrorBranch: release/dev17.8
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -274,10 +274,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check error code sorting in src/Compiler/FSComp.txt
-          - script: dotnet fantomas . -r --check
+          - script: dotnet fantomas . --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas . -r' to fix)
+            displayName: Check code formatting (run 'dotnet fantomas .' to fix)
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -383,6 +383,29 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
+        - job: WindowsNoStrictIndentation
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
+            env:
+              NativeToolsOnMachine: true
+            displayName: Build
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows Release build binlogs'
+                ArtifactType: Container
+                parallel: true
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
@@ -414,7 +437,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+              ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
@@ -781,8 +804,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.7
-      insertTargetBranch: rel/d17.7
+      componentBranchName: refs/heads/release/dev17.8
+      insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

@@ -3578,8 +3578,8 @@ namespace Microsoft.FSharp.Core
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
         /// let fullName firstName lastName = 
-        ///     nullArg (nameof(firstName))
-        ///     nullArg (nameof(lastName))
+        ///     if isNull firstName then nullArg (nameof(firstName))
+        ///     if isNull lastName then nullArg (nameof(lastName))
         ///     firstName + " " + lastName
         ///   
         ///   fullName null "Jones"  // Throws System.ArgumentNullException: Value cannot be null. (Parameter 'firstName')

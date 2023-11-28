@@ -37,22 +37,22 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Руководства по блочной структуре;
+Показать рекомендации по структуре кода F#;
+Структурирование;
+Показать структурные и сворачиваемые узлы кода F#;
+Встроенные подсказки;
+Отображать подсказки встроенного типа (предварительная версия);
+Отображать подсказки типа возвращаемого значения (предварительная версия);
+Отображать подсказки имен встроенных параметров (предварительная версия);
+Динамические буферы;
+Использовать динамические (несохраненные) буферы для проверки</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">Использовать ":" для обозначения типа в объявлении поля</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">Параметры производительности проекта F# и кэширования;
+        <target state="needs-review-translation">Параметры производительности проекта F# и кэширования;
 Включить перекрестные ссылки проекта в памяти;
 Enable_partial_type_checking;
 Параметры производительности IntelliSense;
@@ -214,6 +214,11 @@ Dash underline;</source>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Удалить "return!"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -268,7 +273,7 @@ Dash underline;</source>
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">Непредвиденный символ "=" в объявлении поля. Требуется ":" или другая лексема.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

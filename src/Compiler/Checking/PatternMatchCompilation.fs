@@ -232,7 +232,7 @@ let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
     and mkOneKnown tm n tys =
         let flds = List.mapi (fun i ty -> if i = n then tm ty else (mkUnknown ty, CounterExampleType.WithoutEnum)) tys
         List.map fst flds, List.fold (fun acc (_, eCoversVals) -> acc.Combine(eCoversVals)) CounterExampleType.WithoutEnum flds
-    and mkUnknowns tys = List.map (fun x -> mkUnknown x) tys
+    and mkUnknowns tys = List.map mkUnknown tys
 
     let tm ty =
         match discrims with
@@ -243,24 +243,24 @@ let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
         | DecisionTreeTest.Const c :: rest ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const c -> Some c | _ -> None) rest)
             let c' =
-                Seq.tryFind (fun c -> not (consts.Contains c))
+                Seq.tryFind (consts.Contains >> not)
                    (match c with
-                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool v)
-                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte v)
-                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16 v)
-                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map (fun v -> Const.Int32 v)
-                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.Int64 v)
-                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.IntPtr v)
-                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map (fun v -> Const.Byte v)
-                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.UInt16 v)
-                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map (fun v -> Const.UInt32 v)
-                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UInt64 v)
-                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UIntPtr v)
-                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Double(float v))
-                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Single(float32 v))
-                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.Char(char v))
+                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map Const.Bool
+                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map Const.SByte
+                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map Const.Int16
+                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map Const.Int32
+                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.Int64
+                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map Const.IntPtr
+                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map Const.Byte
+                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map Const.UInt16
+                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map Const.UInt32
+                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UInt64
+                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map Const.UIntPtr
+                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float >> Const.Double)
+                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (float32 >> Const.Single)
+                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (char >> Const.Char)
                     | Const.String _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.String(System.String('a', v)))
-                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Decimal(decimal v))
+                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (decimal >> Const.Decimal)
                     | _ ->
                         raise CannotRefute)
 
@@ -1146,6 +1146,8 @@ let CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler.
     let rec InvestigateFrontiers refuted frontiers =
+        Cancellable.CheckAndThrow()
+
         match frontiers with
         | [] -> failwith "CompilePattern: compile - empty clauses: at least the final clause should always succeed"
         | Frontier (i, active, valMap) :: rest ->

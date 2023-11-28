@@ -453,7 +453,7 @@ module internal SymbolHelpers =
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
-                  (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
+                  (pi1s, pi2s) ||> List.forall2 PropInfo.PropInfosUseIdenticalDefinitions
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
@@ -462,7 +462,7 @@ module internal SymbolHelpers =
                  (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) ->
                   (meths1, meths2)
-                  ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  ||> List.forall2 MethInfo.MethInfosUseIdenticalDefinitions
               | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
                   (tcrefs1, tcrefs2)
                   ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)

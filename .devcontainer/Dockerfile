@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-ARG VARIANT=8.0.100-preview.7-bookworm-slim-amd64
+ARG VARIANT=8.0.100-rc.1-bookworm-slim-amd64
 FROM mcr.microsoft.com/dotnet/sdk:${VARIANT}
 
 # Avoid warnings by switching to noninteractive
@@ -14,6 +14,7 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     # Verify bash, git, process tools, lsb-release (common in install instructions for CLIs) installed
     && apt-get -y install bash git openssh-client less iproute2 procps lsb-release \
+    && apt-get -y install gnupg \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \

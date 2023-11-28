@@ -756,7 +756,6 @@ let MakeCtorForIncrClassConstructionPhase2C(
     /// binding in the implicit class construction sequence 
     let TransTrueDec isCtorArg (reps: IncrClassReprInfo) dec = 
             match dec with 
-            // Pokud to neni staticke, a zaroven to nema construktor info, tak zkusit vyhnout se TransBind mozna?
             | IncrClassBindingGroup(binds, isStatic, isRec) ->
                 let actions, reps, methodBinds = 
                     let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind)) // extend

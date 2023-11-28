@@ -47,7 +47,7 @@ module QuickInfo =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
-        | Some (ToolTipText elements) when not elements.IsEmpty ->
+        | Some(ToolTipText elements) when not elements.IsEmpty ->
             let documentationBuilder =
                 { new IDocumentationBuilder with
                     override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()

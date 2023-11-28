@@ -37,22 +37,23 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">블록 구조 안내선; 
+
+F# 코드에 대한 구조 지침 표시;
+개요;
+F# 코드에 대한 개요 및 축소 가능한 노드 표시;
+인라인 힌트;
+인라인 형식 힌트 표시(미리 보기);
+반환 유형 힌트 표시(미리 보기);
+인라인 매개 변수 이름 힌트 표시(미리 보기);
+라이브 버퍼;
+확인에 라이브(저장되지 않은) 버퍼 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">필드 선언의 형식에 ':' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -167,9 +168,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# 프로젝트 및 캐싱 성능 옵션;
+        <target state="needs-review-translation">F# 프로젝트 및 캐싱 성능 옵션;
 메모리 내 프로젝트 간 참조 활성화;
 Enable_partial_type_checking;
 IntelliSense 성능 옵션;
@@ -214,6 +215,11 @@ F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' 제거</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -268,7 +274,7 @@ F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">필드 선언에 예기치 않은 기호 '='가 있습니다. ':' 또는 다른 토큰이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">
