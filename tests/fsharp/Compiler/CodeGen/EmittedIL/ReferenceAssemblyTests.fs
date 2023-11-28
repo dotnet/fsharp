@@ -1404,8 +1404,9 @@ Console.WriteLine("Hello World!")"""
 """
         ]
         |> ignore
-
+#if NETCOREAPP
     [<Test>]
+#endif
     let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_empty_signature`` () =
 
         let signature = """namespace Foobar
@@ -1472,7 +1473,9 @@ type CompilerGoesBoom<'a>() =
         ]
 
 
+#if NETCOREAPP
     [<Test>]
+#endif
     let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_signature`` () =
         let signature = """namespace Foobar
 type IHasStaticAbstractBase<'a> =
