@@ -26,9 +26,9 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
   .field public static literal string nullableLiteral = ""
-  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public specialname static string 
@@ -113,12 +113,12 @@
   } 
   .property string nullableStringField()
   {
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .get string MyTestModule::get_nullableStringField()
   } 
   .property string nullableMutableStringField()
   {
-    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     .set void MyTestModule::set_nullableMutableStringField(string)
     .get string MyTestModule::get_nullableMutableStringField()
@@ -137,9 +137,9 @@
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$MyTestModule
        extends [runtime]System.Object
 {
-  .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
   .field static assembly string nullableMutableStringField@6
-  .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -153,72 +153,6 @@
     IL_0000:  ldnull
     IL_0001:  stsfld     string '<StartupCode$assembly>'.$MyTestModule::nullableMutableStringField@6
     IL_0006:  ret
-  } 
-
-} 
-
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
-       extends [runtime]System.Attribute
-{
-  .field public uint8[] NullableFlags
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 scalarByteValue) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldc.i4.1
-    IL_0008:  newarr     [runtime]System.Byte
-    IL_000d:  dup
-    IL_000e:  ldc.i4.0
-    IL_000f:  ldarg.1
-    IL_0010:  stelem.i1
-    IL_0011:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_0016:  ret
-  } 
-
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8[] NullableFlags) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      uint8[] System.Runtime.CompilerServices.NullableAttribute::NullableFlags
-    IL_000d:  ret
-  } 
-
-} 
-
-.class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableContextAttribute
-       extends [runtime]System.Attribute
-{
-  .field public uint8 Flag
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 Flag) cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
-    IL_0006:  ldarg.0
-    IL_0007:  ldarg.1
-    IL_0008:  stfld      uint8 System.Runtime.CompilerServices.NullableContextAttribute::Flag
-    IL_000d:  ret
   } 
 
 } 

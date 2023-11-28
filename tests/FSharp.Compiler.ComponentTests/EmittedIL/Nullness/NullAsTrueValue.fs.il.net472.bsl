@@ -970,6 +970,7 @@
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.NullableAttribute
        extends [runtime]System.Attribute
 {
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
