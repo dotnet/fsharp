@@ -19,7 +19,6 @@
         "vscode": {
             // Add the IDs of extensions you want installed when the container is created.
             "extensions": [
-                "github.vscode-github-actions",
                 "GitHub.copilot",
                 "GitHub.vscode-github-actions",
                 "ms-dotnettools.vscode-dotnet-runtime",
@@ -31,7 +30,6 @@
         }
     },
     "remoteEnv": {
-        "DOTNET_MULTILEVEL_LOOKUP": "0",
         "TARGET": "net8.0"
     },
     "postCreateCommand": [ "dotnet", "build", "FSharp.Compiler.Service.sln"]
