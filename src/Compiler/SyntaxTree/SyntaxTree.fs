@@ -348,6 +348,7 @@ type SynTypeConstraint =
         | WhereTyparIsReferenceType(range = range)
         | WhereTyparIsUnmanaged(range = range)
         | WhereTyparSupportsNull(range = range)
+        | WhereTyparNotSupportsNull(range = range)
         | WhereTyparIsComparable(range = range)
         | WhereTyparIsEquatable(range = range)
         | WhereTyparDefaultsToType(range = range)

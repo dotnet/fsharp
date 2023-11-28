@@ -135,8 +135,6 @@ let mkLocalPrivateAttributeWithPropertyConstructors
             )
         )
 
-    let ilCustomAttrs = mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |]
-
     mkILGenericClass (
         name,
         ILTypeDefAccess.Private,
@@ -213,7 +211,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
         emptyILTypeDefs,
         emptyILProperties,
         emptyILEvents,
-        ilCustomAttrs,
+        mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |],
         ILTypeInit.BeforeField
     )
 
