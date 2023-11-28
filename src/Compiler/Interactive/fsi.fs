@@ -1559,7 +1559,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
             if
                 ctors.Length = 1
-                && not (isNull (box (ctors[ 0 ].GetCustomAttribute<CompilerGeneratedAttribute>())))
+                && not (isNull (box (ctors[0].GetCustomAttribute<CompilerGeneratedAttribute>())))
                 && not ctors[0].IsPublic
                 && IsCompilerGeneratedName reflectionTy.Name
             then
@@ -3525,7 +3525,7 @@ type FsiStdinLexerProvider
                         fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
 
                     0
-                | Some (NonNull input) ->
+                | Some(NonNull input) ->
                     let input = nonNull input + "\n"
 
                     if input.Length > len then

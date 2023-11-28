@@ -172,18 +172,18 @@ type Exception with
         | UnresolvedConversionOperator(_, _, _, m)
         | VirtualAugmentationOnNullValuedType m
         | NonVirtualAugmentationOnNullValuedType m
-        | NonRigidTypar (_, _, _, _, _, m)
-        | ConstraintSolverTupleDiffLengths (_, _, _, _, m, _)
-        | ConstraintSolverInfiniteTypes (_, _, _, _, m, _)
-        | ConstraintSolverMissingConstraint (_, _, _, m, _)
-        | ConstraintSolverNullnessWarningEquivWithTypes (_, _, _, _, _, m, _)
-        | ConstraintSolverNullnessWarningWithTypes (_, _, _, _, _, m, _)
-        | ConstraintSolverNullnessWarningWithType (_, _, _, m, _)
-        | ConstraintSolverNullnessWarning (_, m, _)
-        | ConstraintSolverTypesNotInEqualityRelation (_, _, _, m, _, _)
-        | ConstraintSolverError (_, m, _)
-        | ConstraintSolverTypesNotInSubsumptionRelation (_, _, _, m, _)
-        | SelfRefObjCtor (_, m) -> Some m
+        | NonRigidTypar(_, _, _, _, _, m)
+        | ConstraintSolverTupleDiffLengths(_, _, _, _, m, _)
+        | ConstraintSolverInfiniteTypes(_, _, _, _, m, _)
+        | ConstraintSolverMissingConstraint(_, _, _, m, _)
+        | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+        | ConstraintSolverNullnessWarning(_, m, _)
+        | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
+        | ConstraintSolverError(_, m, _)
+        | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
+        | SelfRefObjCtor(_, m) -> Some m
 
         | NotAFunction(_, _, mfun, _) -> Some mfun
 
@@ -685,7 +685,7 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
-        | ConstraintSolverNullnessWarningEquivWithTypes (denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
             // Turn on nullness annotations for messages about nullness
             let denv =
@@ -701,7 +701,7 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarningWithTypes (denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
             // Turn on nullness annotations for messages about nullness
             let denv =
@@ -716,7 +716,7 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarningWithType (denv, ty, _, m, m2) ->
+        | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
 
             // Turn on nullness annotations for messages about nullness
             let denv =
@@ -730,13 +730,13 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarning (msg, m, m2) ->
+        | ConstraintSolverNullnessWarning(msg, m, m2) ->
             os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m2))
 
-        | ConstraintSolverMissingConstraint (denv, tpr, tpc, m, m2) ->
+        | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
             os.AppendString(
                 ConstraintSolverMissingConstraintE()
                     .Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc))

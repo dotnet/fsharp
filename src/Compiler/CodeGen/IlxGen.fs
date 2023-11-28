@@ -10856,7 +10856,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 customAttrs =
                                     mkILCustomAttrs (
                                         GenAttrs cenv eenv fattribs
-                                        @ extraAttribs @ GenAdditionalAttributesForTy g fspec.FormalType
+                                        @ extraAttribs
+                                        @ GenAdditionalAttributesForTy g fspec.FormalType
                                     )
                             )
                                 .WithAccess(access)

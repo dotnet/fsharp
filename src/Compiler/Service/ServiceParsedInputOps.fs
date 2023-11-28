@@ -631,16 +631,16 @@ module ParsedInput =
 
         and walkTypeConstraint cx =
             match cx with
-            | SynTypeConstraint.WhereTyparDefaultsToType (t1, t2, _) -> walkTypar t1 |> Option.orElseWith (fun () -> walkType t2)
-            | SynTypeConstraint.WhereTyparIsValueType (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparIsReferenceType (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparIsUnmanaged (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparSupportsNull (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparIsComparable (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparSubtypeOfType (t, ty, _) -> walkTypar t |> Option.orElseWith (fun () -> walkType ty)
-            | SynTypeConstraint.WhereTyparSupportsMember (TypesForTypar ts, sign, _) ->
+            | SynTypeConstraint.WhereTyparDefaultsToType(t1, t2, _) -> walkTypar t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynTypeConstraint.WhereTyparIsValueType(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparIsReferenceType(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparIsUnmanaged(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparSupportsNull(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparNotSupportsNull(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparIsComparable(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparIsEquatable(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparSubtypeOfType(t, ty, _) -> walkTypar t |> Option.orElseWith (fun () -> walkType ty)
+            | SynTypeConstraint.WhereTyparSupportsMember(TypesForTypar ts, sign, _) ->
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
@@ -694,21 +694,21 @@ module ParsedInput =
                     ifPosInRange ident.Range (fun _ -> Some EntityKind.Type)
                 with _ ->
                     None
-            | SynType.App (ty, _, types, _, _, _, _) -> walkType ty |> Option.orElseWith (fun () -> List.tryPick walkType types)
-            | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
-            | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick walkType
-            | SynType.Array (_, t, _) -> walkType t
-            | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
-            | SynType.WithGlobalConstraints (t, _, _) -> walkType t
-            | SynType.WithNull (t, _, _)
-            | SynType.HashConstraint (t, _) -> walkType t
-            | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
-            | SynType.MeasurePower (t, _, _) -> walkType t
-            | SynType.Paren (t, _)
-            | SynType.SignatureParameter (usedType = t) -> walkType t
-            | SynType.StaticConstantExpr (e, _) -> walkExpr e
-            | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
-            | SynType.Intersection (types = types) -> List.tryPick walkType types
+            | SynType.App(ty, _, types, _, _, _, _) -> walkType ty |> Option.orElseWith (fun () -> List.tryPick walkType types)
+            | SynType.LongIdentApp(_, _, _, types, _, _, _) -> List.tryPick walkType types
+            | SynType.Tuple(path = segments) -> getTypeFromTuplePath segments |> List.tryPick walkType
+            | SynType.Array(_, t, _) -> walkType t
+            | SynType.Fun(argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.WithGlobalConstraints(t, _, _) -> walkType t
+            | SynType.WithNull(t, _, _)
+            | SynType.HashConstraint(t, _) -> walkType t
+            | SynType.Or(t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.MeasurePower(t, _, _) -> walkType t
+            | SynType.Paren(t, _)
+            | SynType.SignatureParameter(usedType = t) -> walkType t
+            | SynType.StaticConstantExpr(e, _) -> walkExpr e
+            | SynType.StaticConstantNamed(ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Intersection(types = types) -> List.tryPick walkType types
             | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _
@@ -1771,15 +1771,15 @@ module ParsedInput =
 
         and walkTypeConstraint cx =
             match cx with
-            | SynTypeConstraint.WhereTyparIsValueType (t, _)
-            | SynTypeConstraint.WhereTyparIsReferenceType (t, _)
-            | SynTypeConstraint.WhereTyparIsUnmanaged (t, _)
-            | SynTypeConstraint.WhereTyparSupportsNull (t, _)
-            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _)
-            | SynTypeConstraint.WhereTyparIsComparable (t, _)
-            | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
-            | SynTypeConstraint.WhereTyparDefaultsToType (t, ty, _)
-            | SynTypeConstraint.WhereTyparSubtypeOfType (t, ty, _) ->
+            | SynTypeConstraint.WhereTyparIsValueType(t, _)
+            | SynTypeConstraint.WhereTyparIsReferenceType(t, _)
+            | SynTypeConstraint.WhereTyparIsUnmanaged(t, _)
+            | SynTypeConstraint.WhereTyparSupportsNull(t, _)
+            | SynTypeConstraint.WhereTyparNotSupportsNull(t, _)
+            | SynTypeConstraint.WhereTyparIsComparable(t, _)
+            | SynTypeConstraint.WhereTyparIsEquatable(t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparDefaultsToType(t, ty, _)
+            | SynTypeConstraint.WhereTyparSubtypeOfType(t, ty, _) ->
                 walkTypar t
                 walkType ty
             | SynTypeConstraint.WhereTyparIsEnum(t, ts, _)
@@ -1834,14 +1834,14 @@ module ParsedInput =
 
         and walkType synType =
             match synType with
-            | SynType.Array (_, t, _)
-            | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _)
-            | SynType.WithNull (t, _, _)
-            | SynType.Paren (t, _)
-            | SynType.SignatureParameter (usedType = t) -> walkType t
-            | SynType.Fun (argType = t1; returnType = t2)
-            | SynType.Or (t1, t2, _, _) ->
+            | SynType.Array(_, t, _)
+            | SynType.HashConstraint(t, _)
+            | SynType.MeasurePower(t, _, _)
+            | SynType.WithNull(t, _, _)
+            | SynType.Paren(t, _)
+            | SynType.SignatureParameter(usedType = t) -> walkType t
+            | SynType.Fun(argType = t1; returnType = t2)
+            | SynType.Or(t1, t2, _, _) ->
                 walkType t1
                 walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -1857,7 +1857,7 @@ module ParsedInput =
             | SynType.StaticConstantNamed(ident, value, _) ->
                 walkType ident
                 walkType value
-            | SynType.Intersection (types = types) -> List.iter walkType types
+            | SynType.Intersection(types = types) -> List.iter walkType types
             | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _

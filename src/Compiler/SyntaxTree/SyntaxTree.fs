@@ -471,27 +471,27 @@ type SynType =
 
     member x.Range =
         match x with
-        | SynType.App (range = m)
-        | SynType.LongIdentApp (range = m)
-        | SynType.Tuple (range = m)
-        | SynType.Array (range = m)
-        | SynType.AnonRecd (range = m)
-        | SynType.Fun (range = m)
-        | SynType.Var (range = m)
-        | SynType.Anon (range = m)
-        | SynType.WithGlobalConstraints (range = m)
-        | SynType.StaticConstant (range = m)
-        | SynType.StaticConstantNull (range = m)
-        | SynType.StaticConstantExpr (range = m)
-        | SynType.StaticConstantNamed (range = m)
-        | SynType.HashConstraint (range = m)
-        | SynType.WithNull (range = m)
-        | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m)
-        | SynType.SignatureParameter (range = m)
-        | SynType.Or (range = m)
-        | SynType.Intersection (range = m)
-        | SynType.FromParseError (range = m) -> m
+        | SynType.App(range = m)
+        | SynType.LongIdentApp(range = m)
+        | SynType.Tuple(range = m)
+        | SynType.Array(range = m)
+        | SynType.AnonRecd(range = m)
+        | SynType.Fun(range = m)
+        | SynType.Var(range = m)
+        | SynType.Anon(range = m)
+        | SynType.WithGlobalConstraints(range = m)
+        | SynType.StaticConstant(range = m)
+        | SynType.StaticConstantNull(range = m)
+        | SynType.StaticConstantExpr(range = m)
+        | SynType.StaticConstantNamed(range = m)
+        | SynType.HashConstraint(range = m)
+        | SynType.WithNull(range = m)
+        | SynType.MeasurePower(range = m)
+        | SynType.Paren(range = m)
+        | SynType.SignatureParameter(range = m)
+        | SynType.Or(range = m)
+        | SynType.Intersection(range = m)
+        | SynType.FromParseError(range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

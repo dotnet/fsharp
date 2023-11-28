@@ -765,21 +765,21 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynType ty :: origPath
 
                 match ty with
-                | SynType.App (typeName, _, typeArgs, _, _, _, _)
-                | SynType.LongIdentApp (typeName, _, _, typeArgs, _, _, _) -> typeName :: typeArgs |> List.tryPick (traverseSynType path)
-                | SynType.Fun (argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
-                | SynType.MeasurePower (ty, _, _)
-                | SynType.HashConstraint (ty, _)
-                | SynType.WithNull (ty, _, _)
-                | SynType.WithGlobalConstraints (ty, _, _)
-                | SynType.Array (_, ty, _) -> traverseSynType path ty
-                | SynType.StaticConstantNamed (ty1, ty2, _)
-                | SynType.Or (ty1, ty2, _, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
-                | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
-                | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
-                | SynType.Paren (innerType = t)
-                | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
-                | SynType.Intersection (types = types) -> List.tryPick (traverseSynType path) types
+                | SynType.App(typeName, _, typeArgs, _, _, _, _)
+                | SynType.LongIdentApp(typeName, _, _, typeArgs, _, _, _) -> typeName :: typeArgs |> List.tryPick (traverseSynType path)
+                | SynType.Fun(argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
+                | SynType.MeasurePower(ty, _, _)
+                | SynType.HashConstraint(ty, _)
+                | SynType.WithNull(ty, _, _)
+                | SynType.WithGlobalConstraints(ty, _, _)
+                | SynType.Array(_, ty, _) -> traverseSynType path ty
+                | SynType.StaticConstantNamed(ty1, ty2, _)
+                | SynType.Or(ty1, ty2, _, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
+                | SynType.Tuple(path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
+                | SynType.StaticConstantExpr(expr, _) -> traverseSynExpr [] expr
+                | SynType.Paren(innerType = t)
+                | SynType.SignatureParameter(usedType = t) -> traverseSynType path t
+                | SynType.Intersection(types = types) -> List.tryPick (traverseSynType path) types
                 | SynType.StaticConstantNull _
                 | SynType.Anon _
                 | SynType.AnonRecd _

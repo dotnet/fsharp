@@ -245,9 +245,9 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.AnonRecd(fields = fields) ->
             let continuations = List.map (snd >> visit) fields
             Continuation.concatenate continuations continuation
-        | SynType.Array (elementType = elementType) -> visit elementType continuation
-        | SynType.WithNull (innerType = innerType) -> visit innerType continuation
-        | SynType.Fun (argType, returnType, _, _) ->
+        | SynType.Array(elementType = elementType) -> visit elementType continuation
+        | SynType.WithNull(innerType = innerType) -> visit innerType continuation
+        | SynType.Fun(argType, returnType, _, _) ->
             let continuations = List.map visit [ argType; returnType ]
             Continuation.concatenate continuations continuation
         | SynType.Var _ -> continuation []
@@ -258,8 +258,8 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.MeasurePower(baseMeasure = baseMeasure) -> visit baseMeasure continuation
         | SynType.StaticConstant _ -> continuation []
         | SynType.StaticConstantNull _ -> continuation []
-        | SynType.StaticConstantExpr (expr, _) -> continuation (visitSynExpr expr)
-        | SynType.StaticConstantNamed (ident, value, _) ->
+        | SynType.StaticConstantExpr(expr, _) -> continuation (visitSynExpr expr)
+        | SynType.StaticConstantNamed(ident, value, _) ->
             let continuations = List.map visit [ ident; value ]
             Continuation.concatenate continuations continuation
         | SynType.Paren(innerType, _) -> visit innerType continuation

@@ -1362,7 +1362,8 @@ let mkClassUnionDef
                                         match nullableIdx with
                                         | None ->
                                             existingAttrs
-                                            |> Array.append [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
+                                            |> Array.append
+                                                [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
                                         | Some idx ->
                                             let replacementAttr =
                                                 match existingAttrs[idx] with
@@ -1372,11 +1373,11 @@ let mkClassUnionDef
                                                  If the field was already declared as nullable (value = 2uy) or ambivalent(value = 0uy), we can keep it that way
                                                  If it was marked as non-nullable within that UnionCase, we have to convert it to WithNull (2uy) due to other cases being possible
                                                 *)
-                                                | Encoded (method, _data, [ ILAttribElem.Byte 1uy ]) ->
+                                                | Encoded(method, _data, [ ILAttribElem.Byte 1uy ]) ->
                                                     mkILCustomAttribMethRef (method, [ ILAttribElem.Byte 2uy ], [])
-                                                | Encoded (method,
-                                                           _data,
-                                                           [ ILAttribElem.Array (elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
+                                                | Encoded(method,
+                                                          _data,
+                                                          [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 1uy) :: otherElems) ]) ->
                                                     mkILCustomAttribMethRef (
                                                         method,
                                                         [ ILAttribElem.Array(elemType, (ILAttribElem.Byte 2uy) :: otherElems) ],

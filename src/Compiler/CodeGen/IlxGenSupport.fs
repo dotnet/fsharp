@@ -392,7 +392,7 @@ Type parameter reference: the nullability (0, 1, or 2, with 0 for unconstrained 
 *)
 let rec GetNullnessFromTType (g: TcGlobals) ty =
     match ty |> stripTyEqns g with
-    | TType_app (tcref, tinst, nullness) ->
+    | TType_app(tcref, tinst, nullness) ->
         let isValueType = tcref.IsStructOrEnumTycon
         let isNonGeneric = tinst.IsEmpty
 
@@ -415,7 +415,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                     yield! GetNullnessFromTType g tt
             ]
 
-    | TType_fun (domainTy, retTy, nullness) ->
+    | TType_fun(domainTy, retTy, nullness) ->
         // FsharpFunc<DomainType,ReturnType>
         [
             yield nullness.Evaluate()
@@ -423,7 +423,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
             yield! GetNullnessFromTType g retTy
         ]
 
-    | TType_tuple (tupInfo, elementTypes) ->
+    | TType_tuple(tupInfo, elementTypes) ->
         // Tuple: the representation of the underlying constructed type
         [
             if evalTupInfoIsStruct tupInfo then
@@ -434,7 +434,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                 yield! GetNullnessFromTType g t
         ]
 
-    | TType_anon (anonInfo, tys) ->
+    | TType_anon(anonInfo, tys) ->
         // It is unlikely for an anon type to be used from C# due to the mangled name, but can still carry the nullability info about it's generic type arguments == the types of the fields
         [
             if evalAnonInfoIsStruct anonInfo then
