@@ -2148,7 +2148,7 @@ and [<Sealed>] TcImports
                         | None -> None
                         | Some (readerA, readerB) ->
                             let data =
-                                GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB))
+                                GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB)
 
                             let fixupThunk () =
                                 data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))
