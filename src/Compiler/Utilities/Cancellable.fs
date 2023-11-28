@@ -6,28 +6,23 @@ open System.Threading
 [<Sealed>]
 type Cancellable =
     [<ThreadStatic; DefaultValue>]
-    static val mutable private token: CancellationToken option
+    static val mutable private token: CancellationToken
 
     static member UsingToken(ct) =
         let oldCt = Cancellable.token
 
-        Cancellable.token <- Some ct
+        Cancellable.token <- ct
 
         { new IDisposable with
             member this.Dispose() = Cancellable.token <- oldCt
         }
 
     static member Token
-        with get () =
-            match Cancellable.token with
-            | None -> CancellationToken.None
-            | Some ct -> ct
-        and internal set v = Cancellable.token <- Some v
+        with get () = Cancellable.token
+        and internal set v = Cancellable.token <- v
 
     static member CheckAndThrow() =
-        match Cancellable.token with
-        | Some token -> token.ThrowIfCancellationRequested()
-        | _ -> ()
+        Cancellable.token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 
