@@ -4209,9 +4209,6 @@ module TcDeclarations =
             | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
             | _ -> ()
 
-
-
-
     /// Split auto-properties into 'let' and 'member' bindings
     let private SplitAutoProps members =
         let membersIncludingAutoProps, vals_Inherits_Abstractslots = 
@@ -4330,6 +4327,16 @@ module TcDeclarations =
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, members, m) ->
             let members = desugarGetSetMembers members
+            let implementedAutoProperties =
+                members
+                |> List.choose (
+                    fun mem ->
+                        match mem with
+                        | SynMemberDefn.Interface (members= Some defs) ->
+                            let autoProps = defs |> List.filter(isAutoProperty)
+                            Some autoProps
+                        | _ -> None)
+                |> List.concat
 
             CheckMembersForm members
 
@@ -4371,6 +4378,14 @@ module TcDeclarations =
                 members |> List.tryPick (function 
                     | SynMemberDefn.ImplicitCtor (ctorArgs = SynSimplePats.SimplePats _ as spats) -> Some spats
                     | _ -> None)
+                                
+            // Raise a new error if we try to have an interface implementation with auto properties on constructor-less types,
+            if not implementedAutoProperties.IsEmpty then
+                for mem in implementedAutoProperties do
+                    match mem with
+                    | SynMemberDefn.AutoProperty(range = m) when implicitCtorSynPats.IsNone ->
+                        errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+                    | _ -> ()
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type

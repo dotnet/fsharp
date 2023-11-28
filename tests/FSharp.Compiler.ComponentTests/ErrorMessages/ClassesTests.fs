@@ -705,3 +705,46 @@ type X =
             """
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Error if we try to have auto properties on constructor-less types`` () =
+         Fsx """
+type Foo =
+    abstract member X : string with get, set
+    abstract member Y : string with get, set
+    abstract member Z : string with get, set
+
+type FooImpl =
+    interface Foo with
+        member val X = "" with get, set
+        member val Y = "" with get, set
+        member this.Z
+            with get() = ""
+            and set(value) = ()
+            """
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3133, Line 9, Col 9, Line 9, Col 40, "'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.");
+            (Error 3133, Line 10, Col 9, Line 10, Col 40, "'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.")
+        ]
+        
+    [<Fact>]
+    let ``No error if we try to have auto properties on types with primary constructor`` () =
+         Fsx """
+type Foo =
+    abstract member X : string with get, set
+    abstract member Y : string with get, set
+    abstract member Z : string with get, set
+
+type FooImpl() =
+    interface Foo with
+        member val X = "" with get, set
+        member val Y = "" with get, set
+        member this.Z
+            with get() = ""
+            and set(value) = ()
+            """
+        |> typecheck
+        |> shouldSucceed
