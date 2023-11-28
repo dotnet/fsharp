@@ -127,6 +127,11 @@
         <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Element „AssemblyKeyNameAttribute” jest przestarzały. Zamiast niego użyj elementu „AssemblyKeyFileAttribute”.</target>
@@ -245,6 +250,11 @@
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Zgłasza ostrzeżenia, jeśli składowa lub funkcja ma atrybut „TailCall”, ale nie jest używana w sposób cykliczny końca.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -405,6 +415,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">zarządzanie pakietami</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -5058,8 +5073,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">W przypadku języka F#7 i niższych, definicje wartości statycznych mogą być używane tylko w typach z konstruktorem podstawowym („type X(args) = ...”). Aby włączyć je we wszystkich innych typach, użyj wersji językowej „wersja zapoznawcza”.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">W przypadku języka F#7 i niższych, definicje wartości statycznych mogą być używane tylko w typach z konstruktorem podstawowym („type X(args) = ...”). Aby włączyć je we wszystkich innych typach, użyj wersji językowej „wersja zapoznawcza”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8553,8 +8568,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">Klucz menedżera pakietów „{0}” nie został zarejestrowany w {1}. Aktualnie zarejestrowane: {2}. Aby dowiedzieć się więcej o rozszerzeniach, odwiedź stronę: https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Klucz menedżera pakietów „{0}” nie został zarejestrowany w {1}. Aktualnie zarejestrowane: {2}. Aby dowiedzieć się więcej o rozszerzeniach, odwiedź stronę: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

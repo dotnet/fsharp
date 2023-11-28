@@ -35,7 +35,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
+            | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
             | _ -> None
 
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
@@ -43,7 +43,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
+            | Some(Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
             | _ -> None
 
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
@@ -51,7 +51,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
+            | Some(Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
             | _ -> None
 
     let (|ILVersion|_|) (versionString: string) =
@@ -134,7 +134,7 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 
 /// Get the object used to perform strong-name signing
 let GetStrongNameSigner signingInfo =
-    let (StrongNameSigningInfo (delaysign, publicsign, signer, container)) = signingInfo
+    let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container -> Some(ILStrongNameSigner.OpenKeyContainer container)
@@ -238,7 +238,7 @@ module MainModuleBuilder =
 
         match findStringAttr attrName with
         | None -> assemblyVersion
-        | Some (AttributeHelpers.ILVersion v) -> v
+        | Some(AttributeHelpers.ILVersion v) -> v
         | Some _ ->
             // Warning will be reported by CheckExpressions.fs
             assemblyVersion
@@ -252,7 +252,7 @@ module MainModuleBuilder =
         match findStringAttr attrName with
         | None
         | Some "" -> fileVersion |> toDotted
-        | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
+        | Some(AttributeHelpers.ILVersion v) -> v |> toDotted
         | Some v ->
             // Warning will be reported by CheckExpressions.fs
             v

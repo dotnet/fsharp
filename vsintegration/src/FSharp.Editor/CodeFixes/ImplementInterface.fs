@@ -69,13 +69,13 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
     let inferStartColumn indentSize state (sourceText: SourceText) =
         match InterfaceStubGenerator.GetMemberNameAndRanges state.InterfaceData with
         | (_, range) :: _ ->
-            let lineStr = sourceText.Lines[ range.StartLine - 1 ].ToString()
+            let lineStr = sourceText.Lines[range.StartLine - 1].ToString()
             getLineIdent lineStr
         | [] ->
             match state.InterfaceData with
             | InterfaceData.Interface _ as iface ->
                 // 'interface ISomething with' is often in a new line, we use the indentation of that line
-                let lineStr = sourceText.Lines[ iface.Range.StartLine - 1 ].ToString()
+                let lineStr = sourceText.Lines[iface.Range.StartLine - 1].ToString()
                 getLineIdent lineStr + indentSize
             | InterfaceData.ObjExpr _ as iface ->
                 state.Tokens
@@ -146,7 +146,7 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then
 
                 let getMemberByLocation (name, range: range) =
-                    let lineStr = sourceText.Lines[ range.EndLine - 1 ].ToString()
+                    let lineStr = sourceText.Lines[range.EndLine - 1].ToString()
                     results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [ name ])
 
                 cancellableTask {
