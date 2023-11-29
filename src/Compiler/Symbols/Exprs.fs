@@ -1267,7 +1267,7 @@ module FSharpExprConvert =
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
-                | None -> wfail( "FSharp.Compiler.Service cannot yet return this kind of pattern match", m)
+                | None -> E.DecisionTreeSuccess(0, [])
 
             (csl, acc) ||> List.foldBack (ConvDecisionTreeCase (cenv: SymbolEnv) env m inpExpr dtreeRetTy)
 
