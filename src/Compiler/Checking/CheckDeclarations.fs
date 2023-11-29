@@ -3357,12 +3357,26 @@ module EstablishTypeDefinitionCores =
 
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
                 if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
-                    let distFieldNames = fieldNames |> List.distinctBy fst
-                    if distFieldNames.Length <> fieldNames.Length then
-                        let fieldRanges = distFieldNames |> List.map snd
-                        for m in fieldRanges do
-                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
+                    let allTypesEqual listOfNamesAndTypes =
+                        match listOfNamesAndTypes with
+                        | [] | [_] -> true
+                        | (_,headField : RecdField) :: tail -> 
+                            let headType = headField.FormalType
+                            tail |> List.forall (fun (_,elemType) -> typeEquivAux EraseAll g elemType.FormalType headType)
+
+                    let diagnostics,duplicateCriteria =
+                        if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReuseSameFieldsInStructUnions) then
+                            FSComp.SR.tcStructUnionMultiCaseFieldsSameType, allTypesEqual >> not
+                        else
+                            FSComp.SR.tcStructUnionMultiCaseDistinctFields, (fun group -> group.Length > 1)
+
+                    [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield(ft.LogicalName,ft) ]
+                    |> List.groupBy fst
+                    |> List.filter (fun (_name,group) -> duplicateCriteria group)                    
+                    |> List.iter (fun (_,dups) ->
+                        for _,ft in dups do
+                            errorR(Error(diagnostics(), ft.Range)))
+
 
             // Notify the Language Service about field names in record/class declaration
             let ad = envinner.AccessRights
@@ -4193,7 +4207,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
-             | SynMemberDefn.AutoProperty(range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+             | SynMemberDefn.AutoProperty(isStatic=false;range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (isStatic=false; range=m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.AbstractSlot (range=m) :: _ 
              | SynMemberDefn.Interface (range=m) :: _ 

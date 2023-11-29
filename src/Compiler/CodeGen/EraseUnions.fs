@@ -751,6 +751,53 @@ let convAlternativeDef
     // within FSharp.Core.dll on fresh unpublished cons cells.
     let isTotallyImmutable = (cud.HasHelpers <> SpecialFSharpListHelpers)
 
+    let makeNonNullaryMakerMethod () =
+        let locals, ilInstrs =
+            if repr.RepresentAlternativeAsStructValue info then
+                let local = mkILLocal baseTy None
+                let ldloca = I_ldloca(0us)
+
+                let ilInstrs =
+                    [
+                        ldloca
+                        ILInstr.I_initobj baseTy
+                        if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
+                            ldloca
+                            mkLdcInt32 num
+                            mkSetTagToField g.ilg cuspec baseTy
+                        for i in 0 .. fields.Length - 1 do
+                            ldloca
+                            mkLdarg (uint16 i)
+                            mkNormalStfld (mkILFieldSpecInTy (baseTy, fields[i].LowerName, fields[i].Type))
+                        mkLdloc 0us
+                    ]
+
+                [ local ], ilInstrs
+            else
+                let ilInstrs =
+                    [
+                        for i in 0 .. fields.Length - 1 do
+                            mkLdarg (uint16 i)
+                        yield! convNewDataInstrInternal g.ilg cuspec num
+                    ]
+
+                [], ilInstrs
+
+        let mdef =
+            mkILNonGenericStaticMethod (
+                mkMakerName cuspec altName,
+                cud.HelpersAccessibility,
+                fields
+                |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type))
+                |> Array.toList,
+                mkILReturn baseTy,
+                mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
+            )
+            |> addMethodGeneratedAttrs
+            |> addAltAttribs
+
+        mdef
+
     let altUniqObjMeths =
 
         // This method is only generated if helpers are not available. It fetches the unique object for the alternative
@@ -885,54 +932,13 @@ let convAlternativeDef
                     [ nullaryMeth ], [ nullaryProp ]
 
                 else
-                    let locals, ilInstrs =
-                        if repr.RepresentAlternativeAsStructValue info then
-                            let local = mkILLocal baseTy None
-                            let ldloca = I_ldloca(0us)
-
-                            let ilInstrs =
-                                [
-                                    ldloca
-                                    ILInstr.I_initobj baseTy
-                                    if (repr.DiscriminationTechnique info) = IntegerTag && num <> 0 then
-                                        ldloca
-                                        mkLdcInt32 num
-                                        mkSetTagToField g.ilg cuspec baseTy
-                                    for i in 0 .. fields.Length - 1 do
-                                        ldloca
-                                        mkLdarg (uint16 i)
-                                        mkNormalStfld (mkILFieldSpecInTy (baseTy, fields[i].LowerName, fields[i].Type))
-                                    mkLdloc 0us
-                                ]
-
-                            [ local ], ilInstrs
-                        else
-                            let ilInstrs =
-                                [
-                                    for i in 0 .. fields.Length - 1 do
-                                        mkLdarg (uint16 i)
-                                    yield! convNewDataInstrInternal g.ilg cuspec num
-                                ]
-
-                            [], ilInstrs
-
-                    let mdef =
-                        mkILNonGenericStaticMethod (
-                            mkMakerName cuspec altName,
-                            cud.HelpersAccessibility,
-                            fields
-                            |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type))
-                            |> Array.toList,
-                            mkILReturn baseTy,
-                            mkMethodBody (true, locals, fields.Length + locals.Length, nonBranchingInstrsToCode ilInstrs, attr, imports)
-                        )
-                        |> addMethodGeneratedAttrs
-                        |> addAltAttribs
-
-                    [ mdef ], []
+                    [ makeNonNullaryMakerMethod () ], []
 
             (baseMakerMeths @ baseTesterMeths), (baseMakerProps @ baseTesterProps)
 
+        | NoHelpers when not (alt.IsNullary) && cuspecRepr.RepresentAlternativeAsStructValue(cuspec) ->
+            // For non-nullary struct DUs, maker method is used to create their values.
+            [ makeNonNullaryMakerMethod () ], []
         | NoHelpers -> [], []
 
     let typeDefs, altDebugTypeDefs, altNullaryFields =
@@ -1226,6 +1232,8 @@ let mkClassUnionDef
                 |> Array.tryFindIndex (fun t -> t.IsNullary)
                 |> Option.defaultValue -1
 
+            let fieldsEmitted = new HashSet<_>()
+
             for cidx, alt in Array.indexed cud.UnionCases do
                 if
                     repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
@@ -1245,7 +1253,7 @@ let mkClassUnionDef
                     let ctor =
                         // Structs with fields are created using static makers methods
                         // Structs without fields can share constructor for the 'tag' value, we just create one
-                        if isStruct && cidx <> minNullaryIdx then
+                        if isStruct && not (cidx = minNullaryIdx) then
                             []
                         else
                             [
@@ -1262,6 +1270,12 @@ let mkClassUnionDef
                                 |> addMethodGeneratedAttrs
                             ]
 
+                    let fieldsToBeAddedIntoType =
+                        alt.FieldDefs
+                        |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
+
+                    let fields = fieldsToBeAddedIntoType |> Array.map mkUnionCaseFieldId |> Array.toList
+
                     let props, meths =
                         mkMethodsAndPropertiesForFields
                             (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
@@ -1270,7 +1284,7 @@ let mkClassUnionDef
                             cud.DebugImports
                             cud.HasHelpers
                             baseTy
-                            alt.FieldDefs
+                            fieldsToBeAddedIntoType
 
                     yield (fields, (ctor @ meths), props)
         ]

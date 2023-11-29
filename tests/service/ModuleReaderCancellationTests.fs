@@ -58,27 +58,36 @@ module ModuleReader =
              securityDecls, customAttrs)
 
 
-type ModuleReader(name, typeDefs) =
-    let assemblyName = $"{name}.dll"
-    let moduleName = name
-    let isDll = true
 
-    let ilModuleDef =
-        mkILSimpleModule
-            assemblyName moduleName isDll
-            ModuleReader.subsystemVersion
-            ModuleReader.useHighEntropyVA
-            typeDefs
-            None None
-            ModuleReader.flags
-            ModuleReader.exportedTypes
-            ""
+type ModuleReader(name, typeDefs, cancelOnModuleAccess) =
+    let assemblyName = $"{name}.dll"
+
+    let mkModuleDef =
+        let mkModuleDef () =
+            let assemblyName = $"{name}.dll"
+            let moduleName = name
+            let isDll = true
+
+            mkILSimpleModule
+                assemblyName moduleName isDll
+                ModuleReader.subsystemVersion
+                ModuleReader.useHighEntropyVA
+                typeDefs
+                None None
+                ModuleReader.flags
+                ModuleReader.exportedTypes
+                ""
+
+        if cancelOnModuleAccess then
+            runCancelFirstTime mkModuleDef
+        else
+            mkModuleDef
 
     member val Timestamp = DateTime.UtcNow
     member val Path = Path.Combine(Path.GetTempPath(), assemblyName)
 
     interface ILModuleReader with
-        member x.ILModuleDef = ilModuleDef
+        member x.ILModuleDef = mkModuleDef ()
         member x.ILAssemblyRefs = []
         member x.Dispose() = ()
 
@@ -126,8 +135,8 @@ let createPreTypeDefs typeData =
     |> Array.ofList
     |> Array.map (fun data -> PreTypeDef data :> ILPreTypeDef)
 
-let referenceReaderProject getPreTypeDefs (options: FSharpProjectOptions) =
-    let reader = new ModuleReader("Reference", mkILTypeDefsComputed getPreTypeDefs)
+let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options: FSharpProjectOptions) =
+    let reader = new ModuleReader("Reference", mkILTypeDefsComputed getPreTypeDefs, cancelOnModuleAccess)
 
     let project = FSharpReferencedProject.ILModuleReference(
         reader.Path, (fun _ -> reader.Timestamp), (fun _ -> reader)
@@ -171,7 +180,7 @@ let ``Type defs 01 - assembly import`` () =
     let getPreTypeDefs typeData = runCancelFirstTime (fun _ -> createPreTypeDefs typeData)
     let typeDefs = getPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = false; CancelOnImport = false } ]
     let path, options = mkTestFileAndOptions source [||]
-    let options = referenceReaderProject typeDefs options
+    let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside getPreTypeDefs
     // The cancellation happens in side CombineImportedAssembliesTask, so background builder node fails to be evaluated
@@ -196,7 +205,7 @@ let ``Type defs 02 - assembly import`` () =
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = ["Ns"]; HasCtor = false; CancelOnImport = true } ]
     let path, options = mkTestFileAndOptions source [||]
-    let options = referenceReaderProject typeDefs options
+    let options = referenceReaderProject typeDefs false options
 
     parseAndCheck path source options |> ignore
     wasCancelled |> shouldEqual false
@@ -214,7 +223,7 @@ let ``Type defs 03 - type import`` () =
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = ["Ns1"; "Ns2"]; HasCtor = false; CancelOnImport = true } ]
     let path, options = mkTestFileAndOptions source [||]
-    let options = referenceReaderProject typeDefs options
+    let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside GetTypeDef
     // This shouldn't be cached due to InterruptibleLazy
@@ -239,7 +248,7 @@ let ``Type defs 04 - ctor import`` () =
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = true; CancelOnImport = false } ]
     let path, options = mkTestFileAndOptions source [||]
-    let options = referenceReaderProject typeDefs options
+    let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside ILMethodDefs
     // This shouldn't be cached due to InterruptibleLazy
@@ -251,5 +260,30 @@ let ``Type defs 04 - ctor import`` () =
     | Some results ->
         wasCancelled |> shouldEqual false
         results.Diagnostics |> Array.isEmpty |> shouldEqual true
+
+    | None -> failwith "Expecting results"
+
+[<Test>]
+let ``Module def 01 - assembly import`` () =
+    let source = source1
+
+    let getPreTypeDefs typeData = fun _ -> createPreTypeDefs typeData
+    let typeDefs = getPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = false; CancelOnImport = false } ]
+    let path, options = mkTestFileAndOptions source [||]
+    let options = referenceReaderProject typeDefs true options
+
+    // First request, should be cancelled inside getPreTypeDefs
+    // The cancellation happens in side CombineImportedAssembliesTask, so background builder node fails to be evaluated
+    parseAndCheck path source options |> ignore
+    wasCancelled |> shouldEqual true
+
+    // Second request, should succeed, with complete analysis
+    match parseAndCheck path source options with
+    | Some results ->
+        wasCancelled |> shouldEqual false
+
+        results.Diagnostics
+        |> Array.map _.Message
+        |> shouldEqual [| "No constructors are available for the type 'T'" |]
 
     | None -> failwith "Expecting results"
