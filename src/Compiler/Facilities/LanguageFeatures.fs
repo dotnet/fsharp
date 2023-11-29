@@ -81,6 +81,7 @@ type LanguageFeature =
     | PreferStringGetPinnableReference
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -189,6 +190,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
                 LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
+                LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -327,6 +329,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
+        | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
