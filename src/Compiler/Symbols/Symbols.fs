@@ -198,7 +198,7 @@ module Impl =
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
         match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
-        | Some (_, docsig) -> docsig
+        | ValueSome (_, docsig) -> docsig
         | _ -> ""
 
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
@@ -1012,7 +1012,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
         match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
-        | Some (_, docsig) -> docsig
+        | ValueSome (_, docsig) -> docsig
         | _ -> ""
 
     member _.XmlDoc = 
@@ -1192,9 +1192,9 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                 GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
                 GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
-            | AnonField _ -> None
+            | AnonField _ -> ValueNone
         match xmlsig with
-        | Some (_, docsig) -> docsig
+        | ValueSome (_, docsig) -> docsig
         | _ -> ""
 
     member _.XmlDoc = 
@@ -1329,9 +1329,9 @@ type FSharpActivePatternCase(cenv, apinfo: ActivePatternInfo, ty, n, valOpt: Val
         let xmlsig = 
             match valOpt with
             | Some valref -> GetXmlDocSigOfValRef cenv.g valref
-            | None -> None
+            | None -> ValueNone
         match xmlsig with
-        | Some (_, docsig) -> docsig
+        | ValueSome (_, docsig) -> docsig
         | _ -> ""
 
 type FSharpActivePatternGroup(cenv, apinfo:ActivePatternInfo, ty, valOpt) =
@@ -1780,7 +1780,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member _.EventDelegateType =
         checkIsResolved()
-        match d with 
+        match d with
         | E e -> FSharpType(cenv, e.GetDelegateType(cenv.amap, range0))
         | P _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated event delegate type" 
 
@@ -1789,7 +1789,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> 
             let dty = e.GetDelegateType(cenv.amap, range0)
-            TryDestStandardDelegateType cenv.infoReader range0 AccessibleFromSomewhere dty |> Option.isSome
+            TryDestStandardDelegateType cenv.infoReader range0 AccessibleFromSomewhere dty |> ValueOption.isSome
         | P _ | M _ | C _ | V _ -> invalidOp "the value or member is not an event" 
 
     member _.IsCompilerGenerated = 
@@ -2033,23 +2033,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | E e ->
             let range = defaultArg sym.DeclarationLocationOpt range0
             match GetXmlDocSigOfEvent cenv.infoReader range e with
-            | Some (_, docsig) -> docsig
+            | ValueSome (_, docsig) -> docsig
             | _ -> ""
         | P p ->
             let range = defaultArg sym.DeclarationLocationOpt range0
             match GetXmlDocSigOfProp cenv.infoReader range p with
-            | Some (_, docsig) -> docsig
+            | ValueSome (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
             let range = defaultArg sym.DeclarationLocationOpt range0
             match GetXmlDocSigOfMethInfo cenv.infoReader range m with
-            | Some (_, docsig) -> docsig
+            | ValueSome (_, docsig) -> docsig
             | _ -> ""
         | V v ->
             match v.TryDeclaringEntity with 
             | Parent entityRef -> 
                 match GetXmlDocSigOfScopedValRef cenv.g entityRef v with
-                | Some (_, docsig) -> docsig
+                | ValueSome (_, docsig) -> docsig
                 | _ -> ""
             | ParentNone -> "" 
 
@@ -2946,4 +2946,3 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
     member _.AppliedScope = appliedScope
 
     member _.IsOwnNamespace = isOwnNamespace
-

@@ -153,7 +153,7 @@ module MutRecShapes =
            | MutRecShape.Module (_, d) -> collectTycons d
            | _ -> [])
 
-   let topTycons x = 
+   let topTycons x =
        x |> List.choose (function MutRecShape.Tycon a -> Some a | _ -> None)
 
    let rec iter f1 f2 f3 f4 f5 x = 

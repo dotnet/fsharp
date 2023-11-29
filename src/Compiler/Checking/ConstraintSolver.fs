@@ -1698,7 +1698,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   let props = 
                     supportTys |> List.choose (fun ty ->
                         match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty with
-                        | Some (RecdFieldItem rfinfo) 
+                        | ValueSome (RecdFieldItem rfinfo) 
                               when (isGetProp || rfinfo.RecdField.IsMutable) && 
                                    (rfinfo.IsStatic = not memFlags.IsInstance) && 
                                    IsRecdFieldAccessible amap m AccessibleFromEverywhere rfinfo.RecdFieldRef &&
@@ -1707,10 +1707,10 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                             Some (rfinfo, isSetProp)
                         | _ -> None)
                   match props with 
-                  | [ prop ] -> Some prop
-                  | _ -> None
+                  | [ prop ] -> ValueSome prop
+                  | _ -> ValueNone
               else
-                  None
+                  ValueNone
 
           let anonRecdPropSearch = 
               let isGetProp = nm.StartsWith "get_" 
@@ -1722,14 +1722,14 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         | Some (NameResolution.Item.AnonRecdField(anonInfo, tinst, i, _)) -> Some (anonInfo, tinst, i)
                         | _ -> None)
                   match props with 
-                  | [ prop ] -> Some prop
-                  | _ -> None
+                  | [ prop ] -> ValueSome prop
+                  | _ -> ValueNone
               else
-                  None
+                  ValueNone
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch, anonRecdPropSearch with 
-          | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
+          | [], ValueNone, ValueNone when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
               if supportTys |> List.exists (isFunTy g) then
                   return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(ConvertValLogicalNameToDisplayNameCore nm), m, m2))
               elif supportTys |> List.exists (isAnyTupleTy g) then
@@ -1778,19 +1778,19 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                       (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
-              | Some (anonInfo, tinst, i), None, None -> 
+              | ValueSome (anonInfo, tinst, i), ValueNone, None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = List.item i tinst
                   do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
                   return TTraitSolvedAnonRecdProp(anonInfo, tinst, i)
 
-              | None, Some (rfinfo, isSetProp), None -> 
+              | ValueNone, ValueSome (rfinfo, isSetProp), None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
                   do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
                   return TTraitSolvedRecdProp(rfinfo, isSetProp)
 
-              | None, None, Some (calledMeth: CalledMeth<_>) -> 
+              | ValueNone, ValueNone, Some (calledMeth: CalledMeth<_>) -> 
                   // OK, the constraint is solved.
                   let minfo = calledMeth.Method
 
@@ -2426,12 +2426,12 @@ and SolveTypeIsDelegate (csenv: ConstraintSolverEnv) ndeep m2 trace ty aty bty =
     | _ ->
         if isDelegateTy g ty then 
             match TryDestStandardDelegateType csenv.InfoReader m AccessibleFromSomewhere ty with 
-            | Some (tupledArgTy, retTy) ->
+            | ValueSome (tupledArgTy, retTy) ->
                 trackErrors {
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace aty tupledArgTy 
                     do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bty retTy 
                 }
-            | None ->
+            | ValueNone ->
                 ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNonStandardDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))
         else 
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotDelegateType(NicePrint.minimalStringOfType denv ty), m, m2))

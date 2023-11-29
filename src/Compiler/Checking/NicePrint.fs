@@ -256,11 +256,11 @@ module internal PrintUtilities =
             xmlDocL @@ restL
         else restL
 
-    let layoutXmlDocFromSig (denv: DisplayEnv) (infoReader: InfoReader) alwaysAddEmptyLine (possibleXmlDoc: XmlDoc) restL (info: (string option * string) option) =
+    let layoutXmlDocFromSig (denv: DisplayEnv) (infoReader: InfoReader) alwaysAddEmptyLine (possibleXmlDoc: XmlDoc) restL (info: (string option * string) voption) =
         let xmlDoc =
             if possibleXmlDoc.IsEmpty then
                 match info with
-                | Some(Some ccuFileName, xmlDocSig) ->
+                | ValueSome(Some ccuFileName, xmlDocSig) ->
                     infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension ccuFileName)
                     |> ValueOption.bind (fun xmlDocInfo ->
                         xmlDocInfo.TryGetXmlDocBySig(xmlDocSig)

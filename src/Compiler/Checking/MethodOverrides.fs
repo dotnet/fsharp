@@ -466,25 +466,28 @@ module DispatchSlotChecking =
 
         res
 
+    let inline filterInterfaces g (ty, m) =
+        if isInterfaceTy g ty then
+            ValueSome(ty, m)
+        else
+            ValueNone
+
     /// This is to find override methods that are at the most specific in the hierarchy of interface types.
     let GetMostSpecificOverrideInterfaceMethodSets (infoReader: InfoReader) allReqdTys =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        let multipleSets =
-            allReqdTys
-            // Widdle down to the most specific interfaces.
-            |> GetMostSpecificItemsByType g amap (fun (ty, m) ->
-                if isInterfaceTy g ty then
-                    Some(ty, m)
-                else
-                    None)
+        let filterInterfaces = filterInterfaces g
 
-            // Get the most specific method overrides for each interface type.
-            |> List.choose (fun (ty, m) -> 
-                let mostSpecificOverrides = GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
-                if mostSpecificOverrides.IsEmpty then None
-                else Some mostSpecificOverrides)
+        let multipleSets =
+            [ for (ty, m) in GetMostSpecificItemsByType g amap filterInterfaces allReqdTys do
+                let mostSpecificOverrides =
+                    GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
+
+                if mostSpecificOverrides.IsEmpty then
+                    ()
+                else
+                    yield mostSpecificOverrides ]
 
         match multipleSets with
         | [] -> NameMultiMap.Empty
@@ -577,7 +580,7 @@ module DispatchSlotChecking =
         if isInterfaceTy g reqdTy then 
             [ for impliedTy in impliedTys do
                 yield (impliedTy, GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces mostSpecificOverrides impliedTy) ]
-        else                  
+        else
             [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
 
     /// Check all implementations implement some dispatch slot.
@@ -650,7 +653,7 @@ module DispatchSlotChecking =
 
         let g = infoReader.g
         let amap = infoReader.amap
-        
+
         let availImpliedInterfaces : TType list = 
             [ for reqdTy, m in allReqdTys do
                 if not (isInterfaceTy g reqdTy) then 
@@ -658,7 +661,7 @@ module DispatchSlotChecking =
                     match baseTyOpt with 
                     | None -> ()
                     | Some baseTy -> yield! AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes baseTy  ]
-                    
+
         // For each implemented type, get a list containing the transitive closure of
         // interface types implied by the type. This includes the implemented type itself if the implemented type
         // is an interface type.
@@ -743,16 +746,16 @@ module DispatchSlotChecking =
                                     // If the slot is optional, then we do not need an explicit implementation.
                                     minfo.IsNewSlot && not reqdSlot.IsOptional) then
                                 errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
-                     
+
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
                 (x.IsVirtualProperty && not (isInterfaceTy g reqdTy)) ||
                 isImpliedInterfaceType x.ApparentEnclosingType
-                
+
             let reqdProperties = 
                 GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
-                
+
             let dispatchSlots = dispatchSlotSet |> List.collect snd
             let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun reqdSlot -> reqdSlot.MethodInfo.LogicalName) 
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]

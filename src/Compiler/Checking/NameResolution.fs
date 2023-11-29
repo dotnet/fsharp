@@ -1741,88 +1741,101 @@ let (|ValRefOfProp|_|) (pi: PropInfo) = pi.ArbitraryValRef
 let (|ValRefOfMeth|_|) (mi: MethInfo) = mi.ArbitraryValRef
 let (|ValRefOfEvent|_|) (evt: EventInfo) = evt.ArbitraryValRef
 
+[<return: Struct>]
 let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
-    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> Some (name, tcref)
-    | Item.SetterArg(_, RecordFieldUse f) -> Some f
-    | _ -> None
+    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> ValueSome (name, tcref)
+    | Item.SetterArg(_, RecordFieldUse f) -> ValueSome f
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|UnionCaseFieldUse|_|) (item: Item) =
     match item with
-    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
-    | _ -> None
+    | Item.UnionCaseField (uci, fieldIndex) -> ValueSome (fieldIndex, uci.UnionCaseRef)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|ILFieldUse|_|) (item: Item) =
     match item with
-    | Item.ILField finfo -> Some finfo
-    | Item.SetterArg(_, ILFieldUse f) -> Some f
-    | _ -> None
+    | Item.ILField finfo -> ValueSome finfo
+    | Item.SetterArg(_, ILFieldUse f) -> ValueSome f
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|PropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(info = pinfo :: _) -> Some pinfo
-    | Item.SetterArg(_, PropertyUse pinfo) -> Some pinfo
-    | _ -> None
+    | Item.Property(info = pinfo :: _) -> ValueSome pinfo
+    | Item.SetterArg(_, PropertyUse pinfo) -> ValueSome pinfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let rec (|FSharpPropertyUse|_|) (item: Item) =
     match item with
-    | Item.Property(info = [ValRefOfProp vref]) -> Some vref
-    | Item.SetterArg(_, FSharpPropertyUse propDef) -> Some propDef
-    | _ -> None
+    | Item.Property(info = [ValRefOfProp vref]) -> ValueSome vref
+    | Item.SetterArg(_, FSharpPropertyUse propDef) -> ValueSome propDef
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|MethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [minfo], _) -> Some minfo
-    | _ -> None
+    | Item.MethodGroup(_, [minfo], _) -> ValueSome minfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|FSharpMethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> Some vref
-    | Item.Value vref when vref.IsMember -> Some vref
-    | _ -> None
+    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> ValueSome vref
+    | Item.Value vref when vref.IsMember -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|EntityUse|_|) (item: Item) =
     match item with
-    | Item.UnqualifiedType (tcref :: _) -> Some tcref
-    | Item.ExnCase tcref -> Some tcref
+    | Item.UnqualifiedType (tcref :: _) -> ValueSome tcref
+    | Item.ExnCase tcref -> ValueSome tcref
     | Item.Types(_, [AbbrevOrAppTy tcref])
     | Item.DelegateCtor(AbbrevOrAppTy tcref)
-    | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
+    | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> ValueSome tcref
     | Item.CtorGroup(_, ctor :: _) ->
         match ctor.ApparentEnclosingType with
-        | AbbrevOrAppTy tcref -> Some tcref
-        | _ -> None
-    | _ -> None
+        | AbbrevOrAppTy tcref -> ValueSome tcref
+        | _ -> ValueNone
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|EventUse|_|) (item: Item) =
     match item with
-    | Item.Event einfo -> Some einfo
-    | _ -> None
+    | Item.Event einfo -> ValueSome einfo
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|FSharpEventUse|_|) (item: Item) =
     match item with
-    | Item.Event(ValRefOfEvent vref) -> Some vref
-    | _ -> None
+    | Item.Event(ValRefOfEvent vref) -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|UnionCaseUse|_|) (item: Item) =
     match item with
-    | Item.UnionCase(UnionCaseInfo(_, u1), _) -> Some u1
-    | _ -> None
+    | Item.UnionCase(UnionCaseInfo(_, u1), _) -> ValueSome u1
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ValUse|_|) (item: Item) =
     match item with
     | Item.Value vref
     | FSharpPropertyUse vref
     | FSharpMethodUse vref
     | FSharpEventUse vref
-    | Item.CustomBuilder(_, vref) -> Some vref
-    | _ -> None
+    | Item.CustomBuilder(_, vref) -> ValueSome vref
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ActivePatternCaseUse|_|) (item: Item) =
     match item with
-    | Item.ActivePatternCase(APElemRef(_, vref, idx, _)) -> Some (vref.SigRange, vref.DefinitionRange, idx)
-    | Item.ActivePatternResult(ap, _, idx, _) -> Some (ap.Range, ap.Range, idx)
-    | _ -> None
+    | Item.ActivePatternCase(APElemRef(_, vref, idx, _)) -> ValueSome (vref.SigRange, vref.DefinitionRange, idx)
+    | Item.ActivePatternResult(ap, _, idx, _) -> ValueSome (ap.Range, ap.Range, idx)
+    | _ -> ValueNone
 
 let tyconRefDefnHash (_g: TcGlobals) (eref1: EntityRef) =
     hash eref1.LogicalName
@@ -2616,10 +2629,10 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | None ->
 
             match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad, true) findFlag m ty with
-            | Some (TraitItem (traitInfo :: _)) when isLookUpExpr ->
+            | ValueSome (TraitItem (traitInfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Trait traitInfo, rest]
 
-            | Some (PropertyItem psets) when isLookUpExpr ->
+            | ValueSome (PropertyItem psets) when isLookUpExpr ->
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
@@ -2679,7 +2692,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                     // `Some(PropertyItem psets) when isLookUpExpr` in the first place.
                     raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, NoSuggestions))     
 
-            | Some(MethodItem msets) when isLookUpExpr ->
+            | ValueSome(MethodItem msets) when isLookUpExpr ->
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
@@ -2687,13 +2700,13 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
                 success [resInfo, Item.MakeMethGroup (nm, minfos@extensionMethInfos), rest]
 
-            | Some (ILFieldItem (finfo :: _))  when (match lookupKind with LookupKind.Expr _ | LookupKind.Pattern -> true | _ -> false) ->
+            | ValueSome (ILFieldItem (finfo :: _))  when (match lookupKind with LookupKind.Expr _ | LookupKind.Pattern -> true | _ -> false) ->
                 success [resInfo, Item.ILField finfo, rest]
 
-            | Some (EventItem (einfo :: _)) when isLookUpExpr ->
+            | ValueSome (EventItem (einfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Event einfo, rest]
 
-            | Some (RecdFieldItem rfinfo) when (match lookupKind with LookupKind.Expr _ | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
+            | ValueSome (RecdFieldItem rfinfo) when (match lookupKind with LookupKind.Expr _ | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
                 success [resInfo, Item.RecdField rfinfo, rest]
 
             | _ ->
@@ -2843,9 +2856,10 @@ let private ResolveLongIdentInTyconRefs atMostOne (ncenv: NameResolver) nenv loo
 // ResolveExprLongIdentInModuleOrNamespace
 //-------------------------------------------------------------------------
 
+[<return: Struct>]
 let (|AccessibleEntityRef|_|) amap m ad (modref: ModuleOrNamespaceRef) mspec =
     let eref = modref.NestedTyconRef mspec
-    if IsEntityAccessible amap m ad eref then Some eref else None
+    if IsEntityAccessible amap m ad eref then ValueSome eref else ValueNone
 
 let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (typeNameResInfo: TypeNameResolutionInfo) ad resInfo depth m modref (mty: ModuleOrNamespaceType) (id: Ident) (rest: Ident list) =
     // resInfo records the modules or namespaces actually relevant to a resolution
@@ -3028,10 +3042,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m search with
                     | Result (resInfo, item) ->
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                        Some(resInfo.EnclosingTypeInst, item, rest)
+                        ValueSome(resInfo.EnclosingTypeInst, item, rest)
                     | Exception e -> 
                         typeError <- Some e
-                        None
+                        ValueNone
 
                 | true, res ->
                     let fresh = ResolveUnqualifiedItem ncenv nenv m res
@@ -3040,16 +3054,16 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
                         if isNameOfOperator && not ncenv.languageSupportsNameOf then
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
-                            None
+                            ValueNone
                          else
-                            Some (emptyEnclosingTypeInst, fresh, rest)
-                    | _ -> Some (emptyEnclosingTypeInst, fresh, rest)
+                            ValueSome (emptyEnclosingTypeInst, fresh, rest)
+                    | _ -> ValueSome (emptyEnclosingTypeInst, fresh, rest)
                 | _ ->
-                    None
+                    ValueNone
 
             match envSearch with
-            | Some res -> success res
-            | None ->
+            | ValueSome res -> success res
+            | ValueNone ->
                 let innerSearch =
                     // Check if it's a type name, e.g. a constructor call or a type instantiation
                     let ctorSearch =
@@ -4065,11 +4079,12 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
     success (tinstEnclosing, item, itemRange, rest, afterResolution)
 
+[<return: Struct>]
 let (|NonOverridable|_|) namedItem =
     match namedItem with
-    |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
-    |   Item.Property(info = pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
-    |   _ -> Some ()
+    |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> ValueNone
+    |   Item.Property(info = pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> ValueNone
+    |   _ -> ValueSome ()
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups

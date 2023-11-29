@@ -247,7 +247,7 @@ module internal SymbolHelpers =
 
     let mkXmlComment thing =
         match thing with
-        | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)
+        | ValueSome (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)
         | _ -> FSharpXmlDoc.None
 
     let GetXmlDocFromLoader (infoReader: InfoReader) xmlDoc =
@@ -256,8 +256,8 @@ module internal SymbolHelpers =
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
             TryFindXmlDocByAssemblyNameAndSig infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
-            |> Option.map FSharpXmlDoc.FromXmlText
-            |> Option.defaultValue xmlDoc
+            |> ValueOption.map FSharpXmlDoc.FromXmlText
+            |> ValueOption.defaultValue xmlDoc
 
     /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
     let rec GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d =

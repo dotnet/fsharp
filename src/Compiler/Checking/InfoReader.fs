@@ -249,14 +249,14 @@ let IsIndexerType g amap ty =
 let GetMostSpecificItemsByType g amap f xs =
     [ for x in xs do
         match f x with
-        | None -> ()
-        | Some (xTy, m) ->
+        | ValueNone -> ()
+        | ValueSome (xTy, m) ->
             let isEqual =
                 xs
                 |> List.forall (fun y ->
                     match f y with
-                    | None -> true
-                    | Some (yTy, _) ->
+                    | ValueNone -> true
+                    | ValueSome (yTy, _) ->
                         if typeEquiv g xTy yTy then true
                         else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy))
             if isEqual then
@@ -270,9 +270,9 @@ let GetMostSpecificMethodInfosByMethInfoSig g amap m (ty, minfo) minfos =
             typeEquiv g ty ty2 &&
             MethInfosEquivByPartialSig EraseNone true g amap m minfo minfo2
         if isEqual then
-            Some(minfo2.ApparentEnclosingType, m)
+            ValueSome(minfo2.ApparentEnclosingType, m)
         else
-            None)
+            ValueNone)
 
 /// From the given method sets, filter each set down to the most specific ones. 
 let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameMultiMap<_> =
@@ -445,7 +445,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     /// The primitive reader for the named items up a hierarchy
     let GetIntrinsicNamedItemsUncached ((nm, ad, includeConstraints), m, ty) =
-        if nm = ".ctor" then None else // '.ctor' lookups only ever happen via constructor syntax
+        if nm = ".ctor" then ValueNone else // '.ctor' lookups only ever happen via constructor syntax
         let optFilter = Some nm
         FoldPrimaryHierarchyOfType (fun ty acc -> 
              let qinfos = if includeConstraints then GetImmediateTraitsInfosOfType optFilter g ty else []
@@ -455,22 +455,22 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
-             | _ when not (isNil qinfos) -> Some(TraitItem (qinfos))
-             | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
-             | _ when not (isNil minfos) -> Some(MethodItem [minfos])
-             | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
-             | _ when not (isNil pinfos) -> Some(PropertyItem([pinfos]))
-             | _ when not (isNil finfos) -> Some(ILFieldItem(finfos))
-             | _ when not (isNil einfos) -> Some(EventItem(einfos))
+             | _ when not (isNil qinfos) -> ValueSome(TraitItem (qinfos))
+             | ValueSome(MethodItem(inheritedMethSets)) when not (isNil minfos) -> ValueSome(MethodItem (minfos :: inheritedMethSets))
+             | _ when not (isNil minfos) -> ValueSome(MethodItem [minfos])
+             | ValueSome(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> ValueSome(PropertyItem(pinfos :: inheritedPropSets))
+             | _ when not (isNil pinfos) -> ValueSome(PropertyItem([pinfos]))
+             | _ when not (isNil finfos) -> ValueSome(ILFieldItem(finfos))
+             | _ when not (isNil einfos) -> ValueSome(EventItem(einfos))
              | _ when not (isNil rfinfos) -> 
                 match rfinfos with
-                | [single] -> Some(RecdFieldItem(single))
+                | [single] -> ValueSome(RecdFieldItem(single))
                 | _ -> failwith "Unexpected multiple fields with the same name" // Because an explicit name (i.e., nm) was supplied, there will be only one element at most.
              | _ -> acc)
           g amap m 
           AllowMultiIntfInstantiations.Yes
           ty
-          None
+          ValueNone
 
     let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m (interfaceTys: TType list) ty acc =
         match tryAppTy g ty with
@@ -908,14 +908,14 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member _.GetTraitInfosInType optFilter ty = 
         GetImmediateTraitsInfosOfType optFilter g ty
 
-    member infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty = 
+    member infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty =
         match infoReader.TryFindNamedItemOfType((nm, ad, includeConstraints), m, ty) with
-        | Some item -> 
-            match item with 
-            | PropertyItem psets -> Some(PropertyItem (psets |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m))
-            | MethodItem msets -> Some(MethodItem (msets |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m))
-            | _ -> Some(item)
-        | None -> None
+        | ValueSome item ->
+            match item with
+            | PropertyItem psets -> ValueSome(PropertyItem (psets |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m))
+            | MethodItem msets -> ValueSome(MethodItem (msets |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m))
+            | _ -> ValueSome(item)
+        | ValueNone -> ValueNone
 
     /// Try to detect the existence of a method on a type.
     member infoReader.TryFindIntrinsicMethInfo m ad nm ty : MethInfo list = 
@@ -1021,8 +1021,8 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_, delArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match delArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
-    | _ -> None
+    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys) -> ValueSome(mkRefTupledTy g argTys, delRetTy)
+    | _ -> ValueNone
 
 
 /// Indicates if an event info is associated with a delegate type that is a "standard" .NET delegate type
@@ -1043,16 +1043,16 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
 let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let delTy = einfo.GetDelegateType(infoReader.amap, m)
     match TryDestStandardDelegateType infoReader m ad delTy with
-    | Some _ -> true
-    | None -> false
+    | ValueSome _ -> true
+    | ValueNone -> false
 
 /// Get the (perhaps tupled) argument type accepted by an event 
 let ArgsTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
     let amap = infoReader.amap
     let delTy = einfo.GetDelegateType(amap, m)
     match TryDestStandardDelegateType infoReader m ad delTy with
-    | Some(argTys, _) -> argTys
-    | None -> error(nonStandardEventError einfo.EventName m)
+    | ValueSome(argTys, _) -> argTys
+    | ValueNone -> error(nonStandardEventError einfo.EventName m)
 
 /// Get the type of the event when looked at as if it is a property 
 /// Used when displaying the property in Intellisense 
@@ -1067,7 +1067,7 @@ let PropTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
 let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref = 
     let g = infoReader.g
     match eref with 
-    | ERefLocal _ -> None
+    | ERefLocal _ -> ValueNone
     | ERefNonLocal nlref -> 
         // Generalize to get a formal signature 
         let formalTypars = eref.Typars m
@@ -1075,15 +1075,14 @@ let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref =
         let ty = TType_app(eref, formalTypeInst, 0uy)
         if isILAppTy g ty then
             let formalTypeInfo = ILTypeInfo.FromType g ty
-            Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
-        else None
+            ValueSome(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
+        else ValueNone
 
 /// Try to find the xml doc associated with the assembly name and xml doc signature
 let TryFindXmlDocByAssemblyNameAndSig (infoReader: InfoReader) assemblyName xmlDocSig =
     infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(assemblyName)
     |> ValueOption.bind (fun xmlDocInfo ->
         xmlDocInfo.TryGetXmlDocBySig(xmlDocSig))
-    |> ValueOption.toOption
 
 let private libFileOfEntityRef x =
     match x with
@@ -1093,14 +1092,14 @@ let private libFileOfEntityRef x =
 let GetXmlDocSigOfEntityRef infoReader m (eref: EntityRef) = 
     if eref.IsILTycon then 
         match TryFindMetadataInfoOfExternalEntityRef infoReader m eref  with
-        | None -> None
-        | Some (ccuFileName, _, formalTypeInfo) -> Some(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
+        | ValueNone -> ValueNone
+        | ValueSome (ccuFileName, _, formalTypeInfo) -> ValueSome(ccuFileName, "T:"+formalTypeInfo.ILTypeRef.FullName)
     else
         let ccuFileName = libFileOfEntityRef eref
         let m = eref.Deref
         if m.XmlDocSig = "" then
             m.XmlDocSig <- XmlDocSigOfEntity eref
-        Some (ccuFileName, m.XmlDocSig)
+        ValueSome (ccuFileName, m.XmlDocSig)
 
 let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) = 
     let ccuFileName = libFileOfEntityRef tcref
@@ -1114,21 +1113,21 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
             else
                 ap
         v.XmlDocSig <- XmlDocSigOfVal g false path v
-    Some (ccuFileName, v.XmlDocSig)                
+    ValueSome (ccuFileName, v.XmlDocSig)
 
 let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) = 
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
     if rfref.RecdField.XmlDocSig = "" then
         rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
-    Some (ccuFileName, rfref.RecdField.XmlDocSig)
+    ValueSome (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
     let tcref =  ucref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref
     if  ucref.UnionCase.XmlDocSig = "" then
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
-    Some (ccuFileName, ucref.UnionCase.XmlDocSig)
+    ValueSome (ccuFileName, ucref.UnionCase.XmlDocSig)
 
 let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
     let amap = infoReader.amap
@@ -1141,8 +1140,8 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         let genericArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
 
         match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
-        | None -> None
-        | Some (ccuFileName, formalTypars, formalTypeInfo) ->
+        | ValueNone -> ValueNone
+        | ValueSome (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
             let args = 
                 if ilminfo.IsILExtensionMethod then
@@ -1156,16 +1155,16 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
             // qualified name of the String constructor would be "System.String.#ctor".
             let normalizedName = ilminfo.ILName.Replace(".", "#")
 
-            Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genericArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
+            ValueSome (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genericArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
 
     | DefaultStructCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
-            Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
-        | _ -> None
+            ValueSome(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
+        | _ -> ValueNone
 
 #if !NO_TYPEPROVIDERS
-    | ProvidedMeth _ -> None
+    | ProvidedMeth _ -> ValueNone
 #endif
 
 let GetXmlDocSigOfValRef g (vref: ValRef) =
@@ -1174,42 +1173,42 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
         let v = vref.Deref
         if v.XmlDocSig = "" && v.HasDeclaringEntity then
             v.XmlDocSig <- XmlDocSigOfVal g false vref.DeclaringEntity.CompiledRepresentationForNamedType.Name v
-        Some (ccuFileName, v.XmlDocSig)
+        ValueSome (ccuFileName, v.XmlDocSig)
     else 
         match vref.ApparentEnclosingEntity with
         | Parent tcref ->
             GetXmlDocSigOfScopedValRef g tcref vref
         | _ ->
-            None
+            ValueNone
 
 let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
     let g = pinfo.TcGlobals
     match pinfo with 
 #if !NO_TYPEPROVIDERS
-    | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
+    | ProvidedProp _ -> ValueNone // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
 #endif
     | FSProp _ as fspinfo -> 
         match fspinfo.ArbitraryValRef with 
-        | None -> None
+        | None -> ValueNone
         | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
     | ILProp(ILPropInfo(_, pdef)) -> 
         match TryFindMetadataInfoOfExternalEntityRef infoReader m pinfo.DeclaringTyconRef with
-        | Some (ccuFileName, formalTypars, formalTypeInfo) ->
+        | ValueSome (ccuFileName, formalTypars, formalTypeInfo) ->
             let filpinfo = ILPropInfo(formalTypeInfo, pdef)
-            Some (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
-        | _ -> None
+            ValueSome (ccuFileName, "P:"+formalTypeInfo.ILTypeRef.FullName+"."+pdef.Name+XmlDocArgsEnc g (formalTypars, []) (filpinfo.GetParamTypes(infoReader.amap, m)))
+        | _ -> ValueNone
 
 let GetXmlDocSigOfEvent infoReader m (einfo: EventInfo) =
     match einfo with
     | ILEvent _ ->
         match TryFindMetadataInfoOfExternalEntityRef infoReader m einfo.DeclaringTyconRef with 
-        | Some (ccuFileName, _, formalTypeInfo) -> 
-            Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
-        | _ -> None
-    | _ -> None
+        | ValueSome (ccuFileName, _, formalTypeInfo) -> 
+            ValueSome(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
+        | _ -> ValueNone
+    | _ -> ValueNone
 
 let GetXmlDocSigOfILFieldInfo infoReader m (finfo: ILFieldInfo) =
     match TryFindMetadataInfoOfExternalEntityRef infoReader m finfo.DeclaringTyconRef with
-    | Some (ccuFileName, _, formalTypeInfo) ->
-        Some(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
-    | _ -> None
+    | ValueSome (ccuFileName, _, formalTypeInfo) ->
+        ValueSome(ccuFileName, "F:"+formalTypeInfo.ILTypeRef.FullName+"."+finfo.FieldName)
+    | _ -> ValueNone

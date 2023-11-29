@@ -60,7 +60,7 @@ val IsIndexerType: g: TcGlobals -> amap: ImportMap -> ty: TType -> bool
 
 /// Get the items that are considered the most specific in the hierarchy out of the given items by type.
 val GetMostSpecificItemsByType:
-    g: TcGlobals -> amap: ImportMap -> f: ('a -> (TType * range) option) -> xs: 'a list -> 'a list
+    g: TcGlobals -> amap: ImportMap -> f: ('a -> (TType * range) voption) -> xs: 'a list -> 'a list
 
 /// From the given method sets, filter each set down to the most specific ones.
 val FilterMostSpecificMethInfoSets:
@@ -196,7 +196,7 @@ type InfoReader =
             findFlag: FindMemberFlag ->
             m: range ->
             ty: TType ->
-                HierarchyItem option
+                HierarchyItem voption
 
     /// Find the op_Implicit for a type
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list
@@ -268,7 +268,7 @@ val TryFindIntrinsicNamedItemOfType:
         findFlag: FindMemberFlag ->
         m: range ->
         ty: TType ->
-            HierarchyItem option
+            HierarchyItem voption
 
 /// Try to detect the existence of a method on a type.
 val TryFindIntrinsicMethInfo:
@@ -296,7 +296,7 @@ val GetSigOfFunctionForDelegate:
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
 val TryDestStandardDelegateType:
-    infoReader: InfoReader -> m: range -> ad: AccessorDomain -> delTy: TType -> (TType * TType) option
+    infoReader: InfoReader -> m: range -> ad: AccessorDomain -> delTy: TType -> (TType * TType) voption
 
 /// Indicates if an event info is associated with a delegate type that is a "standard" .NET delegate type
 /// with a sender parameter.
@@ -308,27 +308,27 @@ val PropTypeOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomai
 
 /// Try to find the name of the metadata file for this external definition
 val TryFindMetadataInfoOfExternalEntityRef:
-    infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * Typars * ILTypeInfo) option
+    infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * Typars * ILTypeInfo) voption
 
 /// Try to find the xml doc associated with the assembly name and metadata key
 val TryFindXmlDocByAssemblyNameAndSig:
-    infoReader: InfoReader -> assemblyName: string -> xmlDocSig: string -> XmlDoc option
+    infoReader: InfoReader -> assemblyName: string -> xmlDocSig: string -> XmlDoc voption
 
-val GetXmlDocSigOfEntityRef: infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * string) option
+val GetXmlDocSigOfEntityRef: infoReader: InfoReader -> m: range -> eref: EntityRef -> (string option * string) voption
 
-val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref: TyconRef -> vref: ValRef -> (string option * string) option
+val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref: TyconRef -> vref: ValRef -> (string option * string) voption
 
-val GetXmlDocSigOfRecdFieldRef: rfref: RecdFieldRef -> (string option * string) option
+val GetXmlDocSigOfRecdFieldRef: rfref: RecdFieldRef -> (string option * string) voption
 
-val GetXmlDocSigOfUnionCaseRef: ucref: UnionCaseRef -> (string option * string) option
+val GetXmlDocSigOfUnionCaseRef: ucref: UnionCaseRef -> (string option * string) voption
 
-val GetXmlDocSigOfMethInfo: infoReader: InfoReader -> m: range -> minfo: MethInfo -> (string option * string) option
+val GetXmlDocSigOfMethInfo: infoReader: InfoReader -> m: range -> minfo: MethInfo -> (string option * string) voption
 
-val GetXmlDocSigOfValRef: TcGlobals -> vref: ValRef -> (string option * string) option
+val GetXmlDocSigOfValRef: TcGlobals -> vref: ValRef -> (string option * string) voption
 
-val GetXmlDocSigOfProp: infoReader: InfoReader -> m: range -> pinfo: PropInfo -> (string option * string) option
+val GetXmlDocSigOfProp: infoReader: InfoReader -> m: range -> pinfo: PropInfo -> (string option * string) voption
 
-val GetXmlDocSigOfEvent: infoReader: InfoReader -> m: range -> einfo: EventInfo -> (string option * string) option
+val GetXmlDocSigOfEvent: infoReader: InfoReader -> m: range -> einfo: EventInfo -> (string option * string) voption
 
 val GetXmlDocSigOfILFieldInfo:
-    infoReader: InfoReader -> m: range -> finfo: ILFieldInfo -> (string option * string) option
+    infoReader: InfoReader -> m: range -> finfo: ILFieldInfo -> (string option * string) voption
