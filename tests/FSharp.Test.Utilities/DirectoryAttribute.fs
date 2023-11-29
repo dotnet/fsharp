@@ -35,7 +35,8 @@ type DirectoryAttribute(dir: string) =
         // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
         let extraDirectory =
             if multipleFiles then
-                filename.Substring(0, filename.Length - 3) // remove .fs
+                let extension = Path.GetExtension(filename)
+                filename.Substring(0, filename.Length - extension.Length) // remove .fs/the extension
                 |> normalizeName
             else ""
         let outputDirectory = outputDirectory methodName extraDirectory
@@ -44,7 +45,7 @@ type DirectoryAttribute(dir: string) =
             | Some path -> path.FullName
             | None -> failwith "Can't set the output directory"
         let sourceFilePath = normalizePathSeparator (path ++ filename)
-        let fsBslFilePath = sourceFilePath + ".err.bsl"
+        let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
 #if DEBUG
@@ -78,7 +79,7 @@ type DirectoryAttribute(dir: string) =
             | None -> sourceFilePath + baselineSuffix + ".il.bsl"
 
         let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
+        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il.err"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -88,8 +89,8 @@ type DirectoryAttribute(dir: string) =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
+                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
                     }
             Options           = []
             OutputType        = Library
@@ -98,7 +99,7 @@ type DirectoryAttribute(dir: string) =
             References        = []
             OutputDirectory   = outputDirectory
             TargetFramework   = TargetFramework.Current
-            StaticLink = false
+            StaticLink        = false
             } |> FS
 
     new([<ParamArray>] dirs: string[]) = DirectoryAttribute(Path.Combine(dirs) : string)

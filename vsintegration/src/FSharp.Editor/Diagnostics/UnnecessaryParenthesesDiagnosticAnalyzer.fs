@@ -68,7 +68,7 @@ type internal UnnecessaryParenthesesDiagnosticAnalyzer [<ImportingConstructor>] 
                         let! sourceText = document.GetTextAsync cancellationToken
 
                         let getLineString line =
-                            sourceText.Lines[ Line.toZ line ].ToString()
+                            sourceText.Lines[Line.toZ line].ToString()
 
                         let! unnecessaryParentheses = UnnecessaryParentheses.getUnnecessaryParentheses getLineString parseResults.ParseTree
 
