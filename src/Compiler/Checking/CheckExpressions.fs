@@ -10487,7 +10487,7 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
-and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind  =
+and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind =
 
     let g = cenv.g
 
@@ -10520,7 +10520,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnLetValues) then
                 match pat, rhsExpr with
                 | SynPat.Named _ , SynExpr.Lambda _ -> declKind.AllowedAttribTargets memberFlagsOpt
-                | SynPat.Named _, _ -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+                | SynPat.Named _, _ when isNil declaredTypars -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
                 | _ -> declKind.AllowedAttribTargets memberFlagsOpt
             else
                 declKind.AllowedAttribTargets memberFlagsOpt
