@@ -54,8 +54,10 @@ type public FSharpChecker =
         ?enablePartialTypeChecking: bool *
         ?parallelReferenceResolution: bool *
         ?captureIdentifiersWhenParsing: bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache: bool ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource:
+            DocumentSource *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache:
+            bool ->
             FSharpChecker
 
     /// <summary>
@@ -421,6 +423,7 @@ type public FSharpChecker =
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
+
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 

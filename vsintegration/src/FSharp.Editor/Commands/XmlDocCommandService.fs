@@ -82,11 +82,11 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 let xmlDocablesBelowThisLine =
                                     // +1 because looking below current line for e.g. a 'member' or 'let'
                                     xmlDocables
-                                    |> List.filter (fun (XmlDocable (line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
+                                    |> List.filter (fun (XmlDocable(line, _indent, _paramNames)) -> line = curEditorLineNum + 1)
 
                                 match xmlDocablesBelowThisLine with
                                 | [] -> ()
-                                | XmlDocable (_line, indent, paramNames) :: _xs ->
+                                | XmlDocable(_line, indent, paramNames) :: _xs ->
                                     // delete the slashes the user typed (they may be indented wrong)
                                     let editorLineToDelete =
                                         wpfTextView.TextBuffer.CurrentSnapshot.GetLineFromLineNumber(
@@ -156,7 +156,8 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
-type internal XmlDocCommandFilterProvider [<ImportingConstructor>]
+type internal XmlDocCommandFilterProvider
+    [<ImportingConstructor>]
     (
         workspace: VisualStudioWorkspace,
         textDocumentFactoryService: ITextDocumentFactoryService,

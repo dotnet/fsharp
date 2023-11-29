@@ -208,10 +208,10 @@ module internal Impl =
                 let elements =
                     match getTupleElementAccessors typ with
                     // typ is a struct tuple and its elements are accessed via fields
-                    | Choice1Of2 (fi: FieldInfo[]) ->
+                    | Choice1Of2(fi: FieldInfo[]) ->
                         fi |> Array.map (fun fi -> Expression.Field(tuple, fi), fi.FieldType)
                     // typ is a class tuple and its elements are accessed via properties
-                    | Choice2Of2 (pi: PropertyInfo[]) ->
+                    | Choice2Of2(pi: PropertyInfo[]) ->
                         pi |> Array.map (fun pi -> Expression.Property(tuple, pi), pi.PropertyType)
 
                 for index, (element, elementType) in elements |> Array.indexed do
@@ -362,12 +362,12 @@ module internal Impl =
     let isFieldProperty (prop: PropertyInfo) =
         match tryFindCompilationMappingAttributeFromMemberInfo prop with
         | None -> false
-        | Some (flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
+        | Some(flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
     let tryFindSourceConstructFlagsOfType (typ: Type) =
         match tryFindCompilationMappingAttributeFromType typ with
         | None -> None
-        | Some (flags, _n, _vn) -> Some flags
+        | Some(flags, _n, _vn) -> Some flags
 
     //-----------------------------------------------------------------
     // UNION DECOMPILATION
@@ -394,7 +394,7 @@ module internal Impl =
             |> Array.choose (fun minfo ->
                 match tryFindCompilationMappingAttributeFromMemberInfo minfo with
                 | None -> None
-                | Some (flags, n, _vn) ->
+                | Some(flags, n, _vn) ->
                     if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
                         let nm = minfo.Name
                         // chop "get_" or  "New" off the front
@@ -505,13 +505,13 @@ module internal Impl =
     let fieldsPropsOfUnionCase (typ, tag, bindingFlags) =
         if isOptionType typ then
             match tag with
-            | 0 (* None *)  -> getInstancePropertyInfos (typ, [||], bindingFlags)
-            | 1 (* Some *)  -> getInstancePropertyInfos (typ, [| "Value" |], bindingFlags)
+            | 0 (* None *) -> getInstancePropertyInfos (typ, [||], bindingFlags)
+            | 1 (* Some *) -> getInstancePropertyInfos (typ, [| "Value" |], bindingFlags)
             | _ -> failwith "fieldsPropsOfUnionCase"
         elif isListType typ then
             match tag with
-            | 0 (* Nil *)  -> getInstancePropertyInfos (typ, [||], bindingFlags)
-            | 1 (* Cons *)  -> getInstancePropertyInfos (typ, [| "Head"; "Tail" |], bindingFlags)
+            | 0 (* Nil *) -> getInstancePropertyInfos (typ, [||], bindingFlags)
+            | 1 (* Cons *) -> getInstancePropertyInfos (typ, [| "Head"; "Tail" |], bindingFlags)
             | _ -> failwith "fieldsPropsOfUnionCase"
         else
             // Lookup the type holding the fields for the union case
@@ -783,7 +783,7 @@ module internal Impl =
         assert (nestedTupIndex = tupTyTbl.Length - 1)
 
         match tblIdx with
-        | idx when idx < nestedTupIndex -> tupTyTbl[ idx ].MakeGenericType tys
+        | idx when idx < nestedTupIndex -> tupTyTbl[idx].MakeGenericType tys
         | _ ->
             let tysA = tys.[0..lastRegularTupIndex]
             let tysB = tys.[nestedTupIndex..]

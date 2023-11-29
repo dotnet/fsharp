@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
-        <source>Static members are not allowed in object expressions.</source>
-        <target state="new">Static members are not allowed in object expressions.</target>
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -405,6 +405,11 @@
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">gestione pacchetti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
@@ -5058,8 +5063,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Per F#7 e versioni precedenti, le definizioni di valori statici possono essere usate solo in tipi con un costruttore primario ('type X(args) = ...'). Per abilitarli in tutti gli altri tipi, usare la versione di "anteprima" del linguaggio.</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Per F#7 e versioni precedenti, le definizioni di valori statici possono essere usate solo in tipi con un costruttore primario ('type X(args) = ...'). Per abilitarli in tutti gli altri tipi, usare la versione di "anteprima" del linguaggio.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8553,8 +8558,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">La chiave "'{0}" del gestione pacchetti non è stata registrata in {1}. Attualmente registrata: {2}. Per altre informazioni sulle estensioni, vedere: https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">La chiave "'{0}" del gestione pacchetti non è stata registrata in {1}. Attualmente registrata: {2}. Per altre informazioni sulle estensioni, vedere: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
