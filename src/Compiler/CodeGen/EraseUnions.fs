@@ -1393,7 +1393,7 @@ let mkClassUnionDef
                                     |> IlxUnionCaseField)
                         else
                             alt.FieldDefs
-                            
+
                     let fieldsToBeAddedIntoType =
                         fieldDefs
                         |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
