@@ -775,10 +775,10 @@ module FSharpExprConvert =
                 let argTy2 = tyOfExpr g arg2
                 let resTy = 
                     match getMeasureOfType g argTy1, getMeasureOfType g argTy2 with
-                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
-                    | Some _, None  -> argTy1
-                    | None, Some _ -> argTy2
-                    | None, None -> argTy1
+                    | ValueSome (tcref, ms1), ValueSome (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
+                    | ValueSome _, ValueNone  -> argTy1
+                    | ValueNone, ValueSome _ -> argTy2
+                    | ValueNone, ValueNone -> argTy1
                 let op = binaryOp g m argTy1 argTy2 resTy arg1 arg2
                 ConvExprPrim cenv env op
 
@@ -1493,4 +1493,3 @@ module FSharpExprPatterns =
     let (|TraitCall|_|) (e: FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
 
     let (|WitnessArg|_|) (e: FSharpExpr) = match e.E with E.WitnessArg n -> Some n | _ -> None
-

@@ -239,6 +239,7 @@ val BakedInTraitConstraintNames: Set<string>
 [<Sealed; NoEquality; NoComparison>]
 type Trace
 
+[<NoEquality; NoComparison; Struct>]
 type OptionalTrace =
     | NoTrace
     | WithTrace of Trace

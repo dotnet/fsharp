@@ -329,10 +329,10 @@ val suppressErrorReporting: f: (unit -> 'T) -> 'T
 val conditionallySuppressErrorReporting: cond: bool -> f: (unit -> 'T) -> 'T
 
 /// The result type of a computational modality to collect warnings and possibly fail
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Struct>]
 type OperationResult<'T> =
-    | OkResult of warnings: exn list * result: 'T
-    | ErrorResult of warnings: exn list * error: exn
+    | OkResult of okwarnings: exn list * result: 'T
+    | ErrorResult of errorwarnings: exn list * error: exn
 
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -350,7 +350,7 @@ val CompleteD: OperationResult<unit>
 
 val inline ResultD: x: 'T -> OperationResult<'T>
 
-val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
+val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) voption
 
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue.
 /// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>

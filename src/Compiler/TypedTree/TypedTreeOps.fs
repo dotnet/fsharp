@@ -1117,9 +1117,9 @@ let getMeasureOfType g ty =
     match ty with 
     | AppTy g (tcref, [tyarg]) ->
         match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
-        | _ -> None
-    | _ -> None
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> ValueSome (tcref, ms)
+        | _ -> ValueNone
+    | _ -> ValueNone
 
 let isErasedType g ty = 
   match stripTyEqns g ty with

@@ -127,18 +127,18 @@ type AgedLookup() =
             
         let AssertCached(i,o:byte array) = 
             match al.TryPeekKeyValue(atok,i) with
-            | Some(_,x) -> Assert.IsTrue(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
-            | None -> Assert.IsTrue(false, "Object fell out of cache")
+            | ValueSome(_,x) -> Assert.IsTrue(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
+            | ValueNone -> Assert.IsTrue(false, "Object fell out of cache")
                 
         let AssertExistsInCached(i) = 
             match al.TryPeekKeyValue(atok,i) with
-            | Some _ -> ()
-            | None -> Assert.IsTrue(false, "Object fell out of cache")                
+            | ValueSome _ -> ()
+            | ValueNone -> Assert.IsTrue(false, "Object fell out of cache")                
                 
         let AssertNotCached(i) = 
             match al.TryPeekKeyValue(atok,i) with
-            | Some _ -> Assert.IsTrue(false, "Expected key to have fallen out of cache")     
-            | None -> ()         
+            | ValueSome _ -> Assert.IsTrue(false, "Expected key to have fallen out of cache")     
+            | ValueNone -> ()         
             
         let f() =
             try

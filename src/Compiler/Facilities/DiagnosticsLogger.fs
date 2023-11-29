@@ -621,10 +621,10 @@ let conditionallySuppressErrorReporting cond f =
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking
 
 /// The result type of a computational modality to collect warnings and possibly fail
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; Struct>]
 type OperationResult<'T> =
-    | OkResult of warnings: exn list * result: 'T
-    | ErrorResult of warnings: exn list * error: exn
+    | OkResult of okwarnings: exn list * result: 'T
+    | ErrorResult of errorwarnings: exn list * error: exn
 
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -654,8 +654,8 @@ let inline ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res =
     match res with
-    | OkResult(warns, res2) -> Some(warns, res2)
-    | ErrorResult _ -> None
+    | OkResult(warns, res2) -> ValueSome(warns, res2)
+    | ErrorResult _ -> ValueNone
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline bind ([<InlineIfLambda>] f) res =

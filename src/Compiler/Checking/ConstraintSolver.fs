@@ -468,6 +468,7 @@ type Trace =
     member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
     member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
+[<NoComparison; NoEquality; Struct>]
 type OptionalTrace = 
     | NoTrace
     | WithTrace of Trace
@@ -501,16 +502,16 @@ let CollectThenUndo f =
     res
 
 let FilterEachThenUndo f meths = 
-    meths 
-    |> List.choose (fun calledMeth -> 
-        let trace = Trace.New()        
+    [ for calledMeth in meths do
+        let trace = Trace.New()
         let res = f trace calledMeth
         trace.Undo()
-        match CheckNoErrorsAndGetWarnings res with 
-        | None -> None 
-        | Some (warns, res) -> Some (calledMeth, warns, trace, res))
 
-let ShowAccessDomain ad =
+        match CheckNoErrorsAndGetWarnings res with
+        | ValueNone -> ()
+        | ValueSome(warns, res) -> yield (calledMeth, warns, trace, res) ]
+
+let inline ShowAccessDomain ad =
     match ad with 
     | AccessibleFromEverywhere -> "public" 
     | AccessibleFrom _ -> "accessible"
@@ -551,7 +552,7 @@ exception AbortForFailedMemberConstraintResolution
 
 /// This is used internally in method overload resolution
 let IgnoreFailedMemberConstraintResolution f1 f2 =
-    TryD 
+    TryD
         f1
         (function
          | AbortForFailedMemberConstraintResolution -> CompleteD
@@ -1380,9 +1381,9 @@ and DepthCheck ndeep m =
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     match getMeasureOfType csenv.g ty with
-    | Some (tcref, _) -> 
+    | ValueSome (tcref, _) -> 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
-    | None ->
+    | ValueNone ->
         CompleteD
 
 /// Attempt to solve a statically resolved member constraint.
@@ -1477,13 +1478,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) in
+                     (isNil minfos || (ValueOption.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) in
 
                    checkRuleAppliesInPreferenceToMethods argTy1 argTy2 || 
                    checkRuleAppliesInPreferenceToMethods argTy2 argTy1) ->
                    
           match getMeasureOfType g argTy1 with
-          | Some (tcref, ms1) -> 
+          | ValueSome (tcref, ms1) -> 
             let ms2 = freshMeasure ()
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkAppTy tcref [TType_measure ms2])
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
@@ -1492,7 +1493,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           | _ ->
 
             match getMeasureOfType g argTy2 with
-            | Some (tcref, ms2) -> 
+            | ValueSome (tcref, ms2) -> 
               let ms1 = freshMeasure ()
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure ms1]) 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
@@ -1627,12 +1628,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       | _, _, false, "Sqrt", [argTy1] 
           when isFpTy g argTy1 ->
           match getMeasureOfType g argTy1 with
-            | Some (tcref, _) -> 
+            | ValueSome (tcref, _) -> 
               let ms1 = freshMeasure () 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure ms1])
               return TTraitBuiltIn
-            | None -> 
+            | ValueNone -> 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
               return TTraitBuiltIn
 
@@ -1681,8 +1682,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           when isFpTy g argTy1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
           match getMeasureOfType g argTy1 with
-          | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
-          | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure Measure.One])
+          | ValueNone -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
+          | ValueSome (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkAppTy tcref [TType_measure Measure.One])
           return TTraitBuiltIn
 
       | _ -> 
@@ -3488,13 +3489,13 @@ let UndoIfFailed f =
         try 
             f trace 
             |> CheckNoErrorsAndGetWarnings
-        with e -> None
+        with e -> ValueNone
     match res with 
-    | None -> 
+    | ValueNone -> 
         // Don't report warnings if we failed
         trace.Undo()
         false
-    | Some (warns, _) -> 
+    | ValueSome (warns, _) -> 
         // Report warnings if we succeeded
         ReportWarnings warns
         true
@@ -3505,9 +3506,9 @@ let UndoIfFailedOrWarnings f =
         try 
             f trace 
             |> CheckNoErrorsAndGetWarnings
-        with _ -> None
+        with _ -> ValueNone
     match res with 
-    | Some ([], _)-> 
+    | ValueSome ([], _)-> 
         true
     | _ -> 
         trace.Undo()

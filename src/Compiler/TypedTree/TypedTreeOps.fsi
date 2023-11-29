@@ -32,7 +32,7 @@ val typeEquiv: TcGlobals -> TType -> TType -> bool
 val measureEquiv: TcGlobals -> Measure -> Measure -> bool
 
 /// Get the unit of measure for an annotated type
-val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
+val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) voption
 
 /// Reduce a type to its more canonical form subject to an erasure flag, inference equations and abbreviations
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
