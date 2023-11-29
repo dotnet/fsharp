@@ -1576,6 +1576,7 @@ and [<Sealed>] TcImports
 
                 member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
+                    |> ValueOption.ofOption
             }
 #else
             { new AssemblyLoader with
