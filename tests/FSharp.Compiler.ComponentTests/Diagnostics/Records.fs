@@ -98,14 +98,16 @@ let ``Error when implementing interface with auto property in record type``() =
     FSharp """
 type Foo =
   abstract member X : string with get, set
+  abstract GetValue: unit -> string
 
 type FooImpl = 
   { name: string }
   interface Foo with
     member val X = "" with get, set
+    member x.GetValue() = x.name
     """
     |> withLangVersion80
     |> asExe
     |> compile
     |> shouldFail
-    |> withSingleDiagnostic (Error 912, Line 8, Col 5, Line 8, Col 36, "This declaration element is not permitted in an augmentation")
+    |> withSingleDiagnostic (Error 912, Line 9, Col 5, Line 9, Col 36, "This declaration element is not permitted in an augmentation")
