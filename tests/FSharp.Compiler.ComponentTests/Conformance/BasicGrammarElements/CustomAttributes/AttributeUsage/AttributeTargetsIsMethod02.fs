@@ -9,10 +9,10 @@ type MethodOnlyAttribute() =
   inherit Attribute()
 
 [<MethodOnly>]
-let someValue = "someValue"
+let someValue = "someValue" // Should fail
 
 [<MethodOnly>]
-let i, j, k = (1, 2, 3)
+let i, j, k = (1, 2, 3) // Should fail
 
 [<MethodOnly>]
 let someFunction () = "someFunction"

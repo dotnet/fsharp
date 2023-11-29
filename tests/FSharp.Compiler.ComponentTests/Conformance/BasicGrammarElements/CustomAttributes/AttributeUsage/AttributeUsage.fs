@@ -66,6 +66,13 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=AttributeTargetsIsMethod02.fs					# AttributeTargetsIsMethod02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod02.fs"|])>]
+    let ``AttributeTargetsIsMethod02_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE=AttributeTargetsIsMethod02.fs					# AttributeTargetsIsMethod02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod02.fs"|])>]
     let ``AttributeTargetsIsMethod02_fs preview lang`` compilation =
         compilation
         |> withLangVersionPreview
@@ -73,7 +80,6 @@ module CustomAttributes_AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Error 842, Line 11, Col 3, Line 11, Col 13, "This attribute is not valid for use on this language element");
-            (Error 842, Line 41, Col 3, Line 41, Col 13, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=ConditionalAttribute.fs					# ConditionalAttribute.fs
