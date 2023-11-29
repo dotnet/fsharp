@@ -1140,7 +1140,17 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         trivia
     )
 
-let mkSynField parseState (idOpt: Ident option) (t: SynType option) (isMutable: range option) (vis: SynAccess option) (attributes: SynAttributes) (mStatic: range option) (rangeStart: range) (leadingKeyword: SynLeadingKeyword option) =
+let mkSynField
+    parseState
+    (idOpt: Ident option)
+    (t: SynType option)
+    (isMutable: range option)
+    (vis: SynAccess option)
+    (attributes: SynAttributes)
+    (mStatic: range option)
+    (rangeStart: range)
+    (leadingKeyword: SynLeadingKeyword option)
+    =
     let t, mStart =
         match t with
         | Some value -> value, rangeStart
@@ -1150,22 +1160,22 @@ let mkSynField parseState (idOpt: Ident option) (t: SynType option) (isMutable: 
                 | Some id -> id.idRange, rangeStart
                 | _ ->
 
-                match vis with
-                | Some vis -> vis.Range, rangeStart
-                | _ ->
-                    
-                match isMutable with
-                | Some m -> m, rangeStart
-                | _ -> 
+                    match vis with
+                    | Some vis -> vis.Range, rangeStart
+                    | _ ->
 
-                match leadingKeyword with
-                | Some keyword -> keyword.Range, rangeStart
-                | None ->
+                        match isMutable with
+                        | Some m -> m, rangeStart
+                        | _ ->
 
-                attributes
-                |> Seq.tryLast
-                |> Option.map (fun l -> l.Range, rangeStart)
-                |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
+                            match leadingKeyword with
+                            | Some keyword -> keyword.Range, rangeStart
+                            | None ->
+
+                                attributes
+                                |> Seq.tryLast
+                                |> Option.map (fun l -> l.Range, rangeStart)
+                                |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
 
             SynType.FromParseError(mType.EndRange), mStart
 
@@ -1175,11 +1185,23 @@ let mkSynField parseState (idOpt: Ident option) (t: SynType option) (isMutable: 
 
     SynField(attributes, Option.isSome mStatic, idOpt, t, Option.isSome isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
 
-let mkValField parseState mVal (isMutable: range option) access (idOpt: Ident option) (typ: SynType option) (rangeStart: range) attribs mStaticOpt =
+let mkValField
+    parseState
+    mVal
+    (isMutable: range option)
+    access
+    (idOpt: Ident option)
+    (typ: SynType option)
+    (rangeStart: range)
+    attribs
+    mStaticOpt
+    =
     let leadingKeyword =
         match mStaticOpt with
         | None -> SynLeadingKeyword.Val mVal
         | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
 
-    let field = mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
+    let field =
+        mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
+
     SynMemberDefn.ValField(field, field.Range)
