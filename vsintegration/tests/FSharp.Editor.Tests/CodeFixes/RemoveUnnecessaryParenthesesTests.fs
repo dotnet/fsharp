@@ -2,7 +2,9 @@
 
 module FSharp.Editor.Tests.CodeFixes.RemoveUnnecessaryParenthesesTests
 
-open FSharp.Compiler.Text
+open System.Text
+open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -12,17 +14,45 @@ open CodeFixTestFramework
 [<AutoOpen>]
 module private TopLevel =
     let private fixer = FSharpRemoveUnnecessaryParenthesesCodeFixProvider()
-    let private fixAllProvider = fixer.RegisterFsharpFixAll()
+
+    // It is much (2–3×) faster to reuse the same solution
+    // rather than creating a new one for each test.
+    // Unfortunately, it is not safe to reuse the same solution across
+    // tests that may set different project or editor options,
+    // because they may run concurrently on other threads,
+    // and the in-memory settings store used for tests is global,
+    // so we restrict this optimization to this file.
+    let private sln, projId =
+        let projInfo =
+            RoslynTestHelpers.CreateProjectInfo (ProjectId.CreateNewId()) "C:\\test.fsproj" []
+
+        let sln = RoslynTestHelpers.CreateSolution [ projInfo ]
+
+        let projectOptions =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                OtherOptions =
+                    [|
+                        "--targetprofile:netcore" // without this lib some symbols are not loaded
+                        "--nowarn:3384" // The .NET SDK for this script could not be determined
+                    |]
+            }
+
+        RoslynTestHelpers.SetProjectOptions projInfo.Id sln projectOptions
+
+        RoslynTestHelpers.SetEditorOptions
+            sln
+            { CodeFixesOptions.Default with
+                RemoveParens = true
+            }
+
+        sln, projInfo.Id
 
     let private tryFix (code: string) =
         cancellableTask {
-            let mode =
-                WithSettings
-                    { CodeFixesOptions.Default with
-                        RemoveParens = true
-                    }
+            let document =
+                let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" code
+                (sln.AddDocument docInfo).GetDocument docInfo.Id
 
-            let document = Document.create mode code
             let sourceText = SourceText.From code
 
             let! diagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
@@ -33,7 +63,6 @@ module private TopLevel =
                 |> ValueOption.either (fixer :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync (CancellableTask.singleton ValueNone)
                 |> CancellableTask.map (ValueOption.map (TestCodeFix.ofFSharpCodeFix sourceText) >> ValueOption.toOption)
         }
-        |> CancellableTask.startWithoutCancellation
 
     let expectFix = expectFix tryFix
 
@@ -1469,271 +1498,555 @@ let _ = (2 + 2) { return 5 }
             let ``Infix operators with leading and trailing chars`` expr expected = expectFix expr expected
 
 module Patterns =
-    let attributedPatterns =
+    type SynPat =
+        | Const of string
+        | Wild
+        | Named of string
+        | Typed of SynPat * string
+        | Attrib of string * SynPat
+        | Or of SynPat * SynPat
+        | ListCons of SynPat * SynPat
+        | Ands of SynPat list
+        | As of SynPat * SynPat
+        | LongIdent of string
+        | LongIdentWithArgs of string * SynPat
+        | LongIdentWithNamedArgs of string * (string * SynPat) list
+        | Tuple of SynPat list
+        | StructTuple of SynPat list
+        | Paren of SynPat
+        | List of SynPat list
+        | Array of SynPat list
+        | Record of (string * SynPat) list
+        | Null
+        | OptionalVal of SynPat
+        | IsInst of string
+        | QuoteExpr of string
+
+    /// The original pattern.
+    type OriginalPat = SynPat
+
+    /// The pattern expected after the analyzer and code fix have been applied.
+    type ExpectedPat = SynPat
+
+    module SynPat =
+        let (|DanglingTyped|_|) pat =
+            let (|Last|) = List.last
+
+            let rec loop pat =
+                match pat with
+                | Typed _ -> Some DanglingTyped
+                | Or(_, pat)
+                | ListCons(_, pat)
+                | As(_, pat)
+                | Ands(Last pat)
+                | Tuple(Last pat) -> loop pat
+                | _ -> None
+
+            loop pat
+
+        let (|Atomic|NonAtomic|) pat =
+            match pat with
+            | Const _
+            | Wild
+            | Named _
+            | Null
+            | LongIdent _
+            | StructTuple _
+            | List _
+            | Array _
+            | Paren _
+            | Record _
+            | QuoteExpr _ -> Atomic
+            | Typed _
+            | Attrib _
+            | Or _
+            | ListCons _
+            | Ands _
+            | As _
+            | LongIdentWithArgs _
+            | LongIdentWithNamedArgs _
+            | Tuple _
+            | OptionalVal _
+            | IsInst _ -> NonAtomic
+
+        /// Formats the given pattern to the given string builder.
+        let fmt (sb: StringBuilder) pat =
+            let spaceIfGt (sb: StringBuilder) =
+                if sb.Chars(sb.Length - 1) = '>' then sb.Append ' ' else sb
+
+            let rec loop (sb: StringBuilder) (cont: StringBuilder -> StringBuilder) =
+                function
+                | Const c -> cont (sb.Append c)
+                | Wild -> cont (sb.Append "_")
+                | Named name -> cont (sb.Append name)
+                | Typed(pat, ty) -> loop sb (cont << fun sb -> sb.Append(" : ").Append ty) pat
+                | Attrib(attrib, pat) -> loop (sb.Append("[<").Append(attrib).Append(">] ")) cont pat
+                | Or(l, r) -> loop sb (fun sb -> loop (sb.Append " | ") cont r) l
+                | ListCons(h, t) -> loop sb (fun sb -> loop (sb.Append " :: ") cont t) h
+                | Ands pats -> separateBy " & " sb cont pats
+                | As(l, r) -> loop sb (fun sb -> loop (sb.Append " as ") cont r) l
+                | LongIdent id -> cont (sb.Append id)
+                | LongIdentWithArgs(id, arg) -> loop (sb.Append(id).Append ' ') cont arg
+                | LongIdentWithNamedArgs(id, args) ->
+                    fmtFields (sb.Append(id).Append " (") (cont << fun (sb: StringBuilder) -> sb.Append ')') args
+                | Tuple pats -> separateBy ", " sb cont pats
+                | StructTuple pats -> separateBy ", " (sb.Append "struct (") (cont << fun sb -> sb.Append ')') pats
+                | Paren pat -> loop (sb.Append '(') (cont << fun sb -> sb.Append ')') pat
+                | List pats -> separateBy "; " (sb.Append '[') (cont << fun sb -> (spaceIfGt sb).Append ']') pats
+                | Array pats -> separateBy "; " (sb.Append "[|") (cont << fun sb -> (spaceIfGt sb).Append "|]") pats
+                | Record fields -> fmtFields (sb.Append "{ ") (cont << fun (sb: StringBuilder) -> sb.Append " }") fields
+                | Null -> cont (sb.Append "null")
+                | OptionalVal pat -> loop (sb.Append '?') cont pat
+                | IsInst ty -> cont (sb.Append(":? ").Append ty)
+                | QuoteExpr expr -> cont (sb.Append("<@ ").Append(expr).Append " @>")
+
+            and separateBy separator sb cont =
+                function
+                | [] -> cont sb
+                | pat :: [] -> loop sb cont pat
+                | pat :: pats -> loop sb (fun sb -> separateBy separator (sb.Append separator) cont pats) pat
+
+            and fmtFields sb cont =
+                function
+                | [] -> cont sb
+                | (field, pat) :: [] -> loop (sb.Append(field).Append " = ") cont pat
+                | (field, pat) :: pats -> loop (sb.Append(field).Append " = ") (fun sb -> fmtFields (sb.Append "; ") cont pats) pat
+
+            loop sb id pat
+
+        /// Returns pairings of the inner expression and nests it inside of the outer
+        /// paired with the expected outcome of running the analyzer and code fix
+        /// on the resulting code, i.e., either removal of the parentheses or not,
+        /// depending on the pattern and its context.
+        let parenthesize inner outer : (OriginalPat * ExpectedPat) list =
+            let impl paren inner outer =
+                let Paren = paren
+
+                [
+                    match outer, inner with
+                    // Attributed patterns can never be nested.
+                    | _, Attrib _ -> ()
+
+                    | LongIdentWithArgs(name, _), Atomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, inner)
+                    | LongIdentWithArgs(name, _), NonAtomic -> LongIdentWithArgs(name, Paren inner), LongIdentWithArgs(name, Paren inner)
+
+                    | LongIdentWithNamedArgs(name, args), _ ->
+                        for i, (field, _) in Seq.indexed args do
+                            LongIdentWithNamedArgs(name, args |> List.updateAt i (field, Paren inner)),
+                            LongIdentWithNamedArgs(name, args |> List.updateAt i (field, inner))
+
+                    // Quotations can never be nested in anything other than a LongIdent.
+                    | _, QuoteExpr _ -> ()
+
+                    | Record fields, Atomic ->
+                        for i, (field, _) in Seq.indexed fields do
+                            Record(fields |> List.updateAt i (field, Paren inner)), Record(fields |> List.updateAt i (field, inner))
+
+                    | Typed(_, ty), (Atomic | Typed _ | IsInst _) -> Typed(Paren inner, ty), Typed(inner, ty)
+                    | Typed(_, ty), NonAtomic -> Typed(Paren inner, ty), Typed(Paren inner, ty)
+                    | Attrib(attrib, _), Atomic -> Attrib(attrib, Paren inner), Attrib(attrib, inner)
+                    | OptionalVal _, _ -> ()
+
+                    | ListCons _, Tuple _ -> ListCons(Paren inner, Wild), ListCons(Paren inner, Wild)
+                    | ListCons _, ListCons _ ->
+                        ListCons(Paren inner, Wild), ListCons(Paren inner, Wild)
+                        ListCons(Wild, Paren inner), ListCons(Wild, inner)
+                    | ListCons _, (Or _ | Ands _ | As _) ->
+                        ListCons(Paren inner, Wild), ListCons(Paren inner, Wild)
+                        ListCons(Wild, Paren inner), ListCons(Wild, Paren inner)
+                    | ListCons _, _ ->
+                        ListCons(Paren inner, Wild), ListCons(inner, Wild)
+                        ListCons(Wild, Paren inner), ListCons(Wild, inner)
+
+                    | As _, (Or _ | Ands _ | Tuple _ | ListCons _) ->
+                        As(Paren inner, Wild), As(inner, Wild)
+                        As(Wild, Paren inner), As(Wild, Paren inner)
+                    | As _, _ ->
+                        As(Paren inner, Wild), As(inner, Wild)
+                        As(Wild, Paren inner), As(Wild, inner)
+
+                    | Or _, As _ ->
+                        Or(Paren inner, Wild), Or(Paren inner, Wild)
+                        Or(Wild, Paren inner), Or(Wild, Paren inner)
+                    | Or _, _ ->
+                        Or(Paren inner, Wild), Or(inner, Wild)
+                        Or(Wild, Paren inner), Or(Wild, inner)
+
+                    | Ands pats, Typed _ ->
+                        let last = pats.Length - 1
+
+                        for i, _ in Seq.indexed pats do
+                            if i = last then
+                                Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i inner)
+                            else
+                                Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
+                    | Ands pats, (Or _ | As _) ->
+                        for i, _ in Seq.indexed pats do
+                            Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
+                    | Ands pats, _ ->
+                        for i, _ in Seq.indexed pats do
+                            Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i inner)
+
+                    | Tuple pats, (Or _ | As _ | Tuple _) ->
+                        for i, _ in Seq.indexed pats do
+                            Tuple(pats |> List.updateAt i (Paren inner)), Tuple(pats |> List.updateAt i (Paren inner))
+                    | Tuple pats, _ ->
+                        for i, _ in Seq.indexed pats do
+                            Tuple(pats |> List.updateAt i (Paren inner)), Tuple(pats |> List.updateAt i inner)
+
+                    | StructTuple pats, (Or _ | As _ | Tuple _) ->
+                        for i, _ in Seq.indexed pats do
+                            StructTuple(pats |> List.updateAt i (Paren inner)), StructTuple(pats |> List.updateAt i (Paren inner))
+                    | StructTuple pats, _ ->
+                        for i, _ in Seq.indexed pats do
+                            StructTuple(pats |> List.updateAt i (Paren inner)), StructTuple(pats |> List.updateAt i inner)
+
+                    | List pats, _ ->
+                        for i, _ in Seq.indexed pats do
+                            List(pats |> List.updateAt i (Paren inner)), List(pats |> List.updateAt i inner)
+
+                    | Array pats, _ ->
+                        for i, _ in Seq.indexed pats do
+                            Array(pats |> List.updateAt i (Paren inner)), Array(pats |> List.updateAt i inner)
+
+                    | _ -> ()
+                ]
+
+            // We want to test both single () and double (())
+            // in every context.
+            match inner with
+            | Const "()" -> [ yield! impl id inner outer; yield! impl Paren inner outer ]
+            | _ -> impl Paren inner outer
+
+    let atomicOrNullaryPatterns =
+        [
+            Const "()"
+            Const "3"
+            Wild
+            Named "x"
+            LongIdent "C"
+            StructTuple [ Wild; Wild ]
+            List []
+            Array []
+            Record [ "Z", Wild ]
+            Null
+            QuoteExpr "3"
+            IsInst(nameof obj)
+        ]
+
+    let nonNullaryPatterns =
+        [
+            Typed(Wild, nameof obj)
+            Attrib("OptionalArgument", Wild)
+            Or(Wild, Wild)
+            ListCons(Wild, Wild)
+            Ands [ Wild; Wild ]
+            As(Wild, Wild)
+            LongIdentWithArgs("A", Wild)
+            LongIdentWithNamedArgs("B", [ "x", Wild ])
+            Tuple [ Wild; Wild ]
+            StructTuple [ Wild; Wild ]
+            Paren Wild
+            List [ Wild; Wild ]
+            Array [ Wild; Wild ]
+            Record [ "X", Wild; "Y", Wild ]
+            OptionalVal(Named "y")
+        ]
+
+    let patterns = atomicOrNullaryPatterns @ nonNullaryPatterns |> List.distinct
+
+    let bareAtomics: (OriginalPat * ExpectedPat) list =
+        [
+            for pat in
+                patterns
+                |> Seq.filter (function
+                    | SynPat.QuoteExpr _
+                    | SynPat.NonAtomic -> false
+                    | _ -> true) do
+                match pat with
+                | Const "()" ->
+                    pat, pat
+                    Paren pat, pat
+                | _ -> Paren pat, pat
+        ]
+
+    let nestedAtomicsOrNullaries: (OriginalPat * ExpectedPat) list =
+        [
+            for outer, inner in (nonNullaryPatterns, atomicOrNullaryPatterns) ||> Seq.allPairs do
+                yield! SynPat.parenthesize inner outer
+        ]
+
+    let nestedOuters: (OriginalPat * ExpectedPat) list =
+        [
+            let nonAtomics =
+                nestedAtomicsOrNullaries
+                |> Seq.map snd
+                |> Seq.filter (function
+                    | SynPat.NonAtomic -> true
+                    | _ -> false)
+
+            for outer, inner in (nonNullaryPatterns, nonAtomics) ||> Seq.allPairs |> Seq.distinct do
+                yield! SynPat.parenthesize inner outer
+        ]
+
+    /// Formats the given sequence of original and
+    /// expected pattern pairs and returns them as
+    /// an obj array seq suitable for use as xUnit member data.
+    let fmtAllAsMemberData pairs =
         memberData {
-            "let inline f ([<InlineIfLambda>] g) = g ()", "let inline f ([<InlineIfLambda>] g) = g ()"
-            "let inline f ([<InlineIfLambda()>] g) = g ()", "let inline f ([<InlineIfLambda()>] g) = g ()" // Not currently removing parens in attributes, but we could.
-            "let inline f ([<InlineIfLambda>] (g)) = g ()", "let inline f ([<InlineIfLambda>] g) = g ()"
-            "type T = member inline _.M([<InlineIfLambda>] g) = g ()", "type T = member inline _.M([<InlineIfLambda>] g) = g ()"
-            "type T = member inline _.M([<InlineIfLambda()>] g) = g ()", "type T = member inline _.M([<InlineIfLambda()>] g) = g ()" // Not currently removing parens in attributes, but we could.
-            "type T = member inline _.M([<InlineIfLambda>] (g)) = g ()", "type T = member inline _.M([<InlineIfLambda>] g) = g ()"
+            let sb = StringBuilder()
+
+            for original, expected in pairs ->
+                (let original = string (SynPat.fmt sb original) in
+                 ignore <| sb.Clear()
+                 original),
+                (let expected = string (SynPat.fmt sb expected) in
+                 ignore <| sb.Clear()
+                 expected)
         }
 
-    [<Theory; MemberData(nameof attributedPatterns)>]
-    let ``Attributed patterns`` original expected = expectFix original expected
+    /// Tests patterns in head-pattern position in (let|and|use)(!) bindings.
+    module HeadPat =
+        /// Tests patterns in head-pattern position in let-bindings.
+        module Let =
+            /// let pat = …
+            let expectFix pat expected =
+                let code = $"let %s{pat} = Unchecked.defaultof<_>"
+                let expected = $"let %s{expected} = Unchecked.defaultof<_>"
 
-    /// match … with pat -> …
-    let expectFix pat expected =
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.collect (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.IsInst _
+                    | SynPat.Atomic -> []
+                    | SynPat.Typed _ as pat -> [ SynPat.Paren pat, pat ]
+                    | SynPat.Tuple pats as pat ->
+                        [
+                            SynPat.Paren pat, pat
+                            SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)),
+                            SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats))
+                            SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats),
+                            SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats)
+                        ]
+                    | SynPat.LongIdentWithArgs _
+                    | SynPat.DanglingTyped as pat -> [ SynPat.Paren pat, SynPat.Paren pat ]
+                    | pat -> [ SynPat.Paren pat, pat ])
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+        /// Tests patterns in head-pattern position in let!-bindings.
+        module LetBang =
+            /// let! pat = …
+            let expectFix pat expected =
+                let code =
+                    $"
+                    async {{
+                        let! %s{pat} = Unchecked.defaultof<_>
+                        return ()
+                    }}
+                    "
+
+                let expected =
+                    $"
+                    async {{
+                        let! %s{expected} = Unchecked.defaultof<_>
+                        return ()
+                    }}
+                    "
+
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.choose (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.Atomic -> None
+                    | SynPat.DanglingTyped as pat -> Some(SynPat.Paren pat, SynPat.Paren pat)
+                    | pat -> Some(SynPat.Paren pat, pat))
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+    /// Tests patterns in argument position.
+    module ArgPat =
+        /// Tests patterns in argument position in let-bound functions.
+        module Let =
+            /// let f pat = …
+            let expectFix pat expected =
+                let code = $"let f %s{pat} = Unchecked.defaultof<_>"
+                let expected = $"let f %s{expected} = Unchecked.defaultof<_>"
+
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.choose (function
+                    | SynPat.OptionalVal _
+                    | SynPat.Atomic -> None
+                    | SynPat.NonAtomic as pat -> Some(SynPat.Paren pat, SynPat.Paren pat))
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+        /// Tests patterns in argument position in object members.
+        module Member =
+            /// member _.M pat = …
+            let expectFix pat expected =
+                let code = $"type T () = member _.M %s{pat} = Unchecked.defaultof<_>"
+                let expected = $"type T () = member _.M %s{expected} = Unchecked.defaultof<_>"
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.choose (function
+                    | SynPat.Atomic -> None
+                    | SynPat.OptionalVal _ as pat -> Some(SynPat.Paren pat, pat)
+                    | SynPat.NonAtomic as pat -> Some(SynPat.Paren pat, SynPat.Paren pat))
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+        /// Tests patterns in argument position in lambda expressions.
+        module Lambda =
+            /// fun pat -> …
+            let expectFix pat expected =
+                let code = $"fun %s{pat} -> ()"
+                let expected = $"fun %s{expected} -> ()"
+
+                expectFix code expected
+
+            let bareAtomics = fmtAllAsMemberData bareAtomics
+
+            let bareNonAtomics =
+                patterns
+                |> List.collect (function
+                    | SynPat.Attrib _
+                    | SynPat.OptionalVal _
+                    | SynPat.IsInst _
+                    | SynPat.Atomic -> []
+                    | pat -> [ SynPat.Paren pat, SynPat.Paren pat ])
+                |> fmtAllAsMemberData
+
+            [<Theory; MemberData(nameof bareAtomics)>]
+            let ``Bare atomic patterns`` original expected = expectFix original expected
+
+            [<Theory; MemberData(nameof bareNonAtomics)>]
+            let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+    /// Tests patterns in match clauses.
+    module MatchClause =
+        /// match … with pat -> …
+        let expectFix pat expected =
+            let code =
+                $"
+                match Unchecked.defaultof<_> with
+                | %s{pat} ->
+                    ()
+                | _ -> ()
+                "
+
+            let expected =
+                $"
+                match Unchecked.defaultof<_> with
+                | %s{expected} ->
+                    ()
+                | _ -> ()
+                "
+
+            expectFix code expected
+
+        let bareAtomics = fmtAllAsMemberData bareAtomics
+
+        let bareNonAtomics =
+            patterns
+            |> List.collect (function
+                | SynPat.Attrib _
+                | SynPat.OptionalVal _
+                | SynPat.Atomic -> []
+                | SynPat.Tuple pats as pat ->
+                    [
+                        SynPat.Paren pat, pat
+                        SynPat.Paren(SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)), SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)
+                        SynPat.Tuple(SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats), SynPat.Tuple(SynPat.Typed(Wild, "obj") :: pats)
+                        SynPat.Paren(SynPat.Tuple(List.rev (SynPat.Typed(Wild, "obj") :: pats))),
+                        SynPat.Paren(SynPat.Tuple(List.rev (SynPat.Typed(Wild, "obj") :: pats)))
+                        SynPat.Tuple(List.rev (SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats)),
+                        SynPat.Tuple(List.rev (SynPat.Paren(SynPat.Typed(Wild, "obj")) :: pats))
+                    ]
+                | SynPat.DanglingTyped as pat -> [ SynPat.Paren pat, SynPat.Paren pat ]
+                | pat -> [ SynPat.Paren pat, pat ])
+            |> fmtAllAsMemberData
+
+        [<Theory; MemberData(nameof bareAtomics)>]
+        let ``Bare atomic patterns`` original expected = expectFix original expected
+
+        [<Theory; MemberData(nameof bareNonAtomics)>]
+        let ``Bare non-atomic patterns`` original expected = expectFix original expected
+
+    let expectFix original expected =
         let code =
             $"
-let (|A|_|) _ = None
-let (|B|_|) _ = None
-let (|C|_|) _ = None
-let (|D|_|) _ = None
-let (|P|_|) _ _ = None
-match Unchecked.defaultof<_> with
-| %s{pat} -> ()
-| _ -> ()
-"
+            match Unchecked.defaultof<_> with
+            |
+                %s{original}
+                | _ -> ()
+            "
 
         let expected =
             $"
-let (|A|_|) _ = None
-let (|B|_|) _ = None
-let (|C|_|) _ = None
-let (|D|_|) _ = None
-let (|P|_|) _ _ = None
-match Unchecked.defaultof<_> with
-| %s{expected} -> ()
-| _ -> ()
-"
+            match Unchecked.defaultof<_> with
+            |
+                %s{expected}
+                | _ -> ()
+            "
 
-        expectFix code expected
+        TopLevel.expectFix code expected
 
-    let nestedPatterns =
+    let singlyNestedAtomicOrNullaryPatterns =
+        fmtAllAsMemberData nestedAtomicsOrNullaries
+
+    let deeplyNestedPatterns = fmtAllAsMemberData nestedOuters
+
+    /// Tests atomic or nullary patterns nested one level deep inside of all non-nullary patterns.
+    [<Theory; MemberData(nameof singlyNestedAtomicOrNullaryPatterns)>]
+    let ``Singly nested patterns`` original expected = expectFix original expected
+
+    /// Tests non-nullary, non-atomic patterns nested inside of other non-nullary patterns.
+    [<Theory; MemberData(nameof deeplyNestedPatterns)>]
+    let ``Deeply nested patterns`` original expected = expectFix original expected
+
+    let miscellaneous =
         memberData {
-            // Typed
-            "((3) : int)", "(3 : int)"
-
-            // Attrib
-            // Or
-            "(A) | B", "A | B"
-            "A | (B)", "A | B"
-
-            // ListCons
-            "(3) :: []", "3 :: []"
-            "3 :: ([])", "3 :: []"
-
-            // Ands
-            "(A) & B", "A & B"
-            "A & (B)", "A & B"
-            "A & (B) & C", "A & B & C"
-            "A & B & (C)", "A & B & C"
-
-            // As
-            "_ as (A)", "_ as A"
-
-            // LongIdent
-            "Lazy (3)", "Lazy 3"
-            "Some (3)", "Some 3"
-            "Some(3)", "Some 3"
-
-            // Tuple
-            "(1), 2", "1, 2"
-            "1, (2)", "1, 2"
-
-            // Paren
-            "()", "()"
-            "(())", "()"
-            "((3))", "(3)"
-
-            // ArrayOrList
-            "[(3)]", "[3]"
-            "[(3); 4]", "[3; 4]"
-            "[3; (4)]", "[3; 4]"
-            "[|(3)|]", "[|3|]"
-            "[|(3); 4|]", "[|3; 4|]"
-            "[|3; (4)|]", "[|3; 4|]"
-
-            // Record
-            "{ A = (3) }", "{ A = 3 }"
-            "{ A =(3) }", "{ A = 3 }"
-            "{ A=(3) }", "{ A=3 }"
-            "{A=(3)}", "{A=3}"
-
-            // QuoteExpr
-            "P <@ (3) @>", "P <@ 3 @>"
-        }
-
-    // This is mainly to verify that all pattern kinds are traversed.
-    // It is _not_ an exhaustive test of all possible pattern nestings.
-    [<Theory; MemberData(nameof nestedPatterns)>]
-    let ``Nested patterns`` original expected = expectFix original expected
-
-    let patternsInExprs =
-        memberData {
-            // ForEach
-            "for (x) in [] do ()", "for x in [] do ()"
-            "for (Lazy x) in [] do ()", "for Lazy x in [] do ()"
-
-            // Lambda
-            "fun () -> ()", "fun () -> ()"
-            "fun (_) -> ()", "fun _ -> ()"
-            "fun (x) -> x", "fun x -> x"
-            "fun (x: int) -> x", "fun (x: int) -> x"
-            "fun x (y: int) -> x", "fun x (y: int) -> x"
-            "fun x (y, z) -> x", "fun x (y, z) -> x"
-            "fun x (y) -> x", "fun x y -> x"
-            "fun x -> fun (y) -> x", "fun x -> fun y -> x"
-            "fun (Lazy x) -> x", "fun (Lazy x) -> x"
-            "fun (x, y) -> x, y", "fun (x, y) -> x, y"
-            "fun (struct (x, y)) -> x, y", "fun struct (x, y) -> x, y"
-
-            // MatchLambda
-            "function () -> ()", "function () -> ()"
-            "function (_) -> ()", "function _ -> ()"
-            "function (x) -> x", "function x -> x"
-            "function (x: int) -> x", "function (x: int) -> x"
-            "function (x: int, y) -> x", "function x: int, y -> x"
-            "function (x, y: int) -> x", "function (x, y: int) -> x"
-            "function (Lazy x) -> x", "function Lazy x -> x"
-            "function (1 | 2) -> () | _ -> ()", "function 1 | 2 -> () | _ -> ()"
-            "function (x & y) -> x, y", "function x & y -> x, y"
-            "function (x as y) -> x, y", "function x as y -> x, y"
-            "function (x :: xs) -> ()", "function x :: xs -> ()"
-            "function (x, y) -> x, y", "function x, y -> x, y"
-            "function (struct (x, y)) -> x, y", "function struct (x, y) -> x, y"
-            "function x when (true) -> x | y -> y", "function x when true -> x | y -> y"
-            "function x when (match x with _ -> true) -> x | y -> y", "function x when (match x with _ -> true) -> x | y -> y"
-
-            "function x when (let x = 3 in match x with _ -> true) -> x | y -> y",
-            "function x when (let x = 3 in match x with _ -> true) -> x | y -> y"
-
-            // Match
-            "match x with () -> ()", "match x with () -> ()"
-            "match x with (_) -> ()", "match x with _ -> ()"
-            "match x with (x) -> x", "match x with x -> x"
-            "match x with (x: int) -> x", "match x with (x: int) -> x"
-            "match x, y with (x: int, y) -> x", "match x, y with x: int, y -> x"
-            "match x, y with (x, y: int) -> x", "match x, y with (x, y: int) -> x"
-            "match x with (Lazy x) -> x", "match x with Lazy x -> x"
-            "match x with (x, y) -> x, y", "match x with x, y -> x, y"
-            "match x with (struct (x, y)) -> x, y", "match x with struct (x, y) -> x, y"
-            "match x with x when (true) -> x | y -> y", "match x with x when true -> x | y -> y"
-            "match x with x when (match x with _ -> true) -> x | y -> y", "match x with x when (match x with _ -> true) -> x | y -> y"
-
-            "match x with x when (let x = 3 in match x with _ -> true) -> x | y -> y",
-            "match x with x when (let x = 3 in match x with _ -> true) -> x | y -> y"
-
-            // LetOrUse
-            "let () = () in ()", "let () = () in ()"
-            "let (()) = () in ()", "let () = () in ()"
-            "let (_) = y in ()", "let _ = y in ()"
-            "let (x) = y in ()", "let x = y in ()"
-            "let (x: int) = y in ()", "let x: int = y in ()"
-            "let (x, y) = x, y in ()", "let x, y = x, y in ()"
-            "let (x: int, y) = x, y in ()", "let (x: int, y) = x, y in ()"
-            "let (x: int -> int), (y: int) = x, y in ()", "let (x: int -> int), (y: int) = x, y in ()"
-            "let (struct (x, y)) = x, y in ()", "let struct (x, y) = x, y in ()"
-            "let (x & y) = z in ()", "let x & y = z in ()"
-            "let (x as y) = z in ()", "let x as y = z in ()"
-            "let (Lazy x) = y in ()", "let (Lazy x) = y in ()"
-            "let (Lazy _ | _) = z in ()", "let Lazy _ | _ = z in ()"
-            "let f () = () in ()", "let f () = () in ()"
-            "let f (_) = () in ()", "let f _ = () in ()"
-            "let f (x) = x in ()", "let f x = x in ()"
-            "let f (x: int) = x in ()", "let f (x: int) = x in ()"
-            "let f x (y) = x in ()", "let f x y = x in ()"
-            "let f (Lazy x) = x in ()", "let f (Lazy x) = x in ()"
-            "let f (x, y) = x, y in ()", "let f (x, y) = x, y in ()"
-            "let f (struct (x, y)) = x, y in ()", "let f struct (x, y) = x, y in ()"
-
-            // TryWith
-            "try raise null with () -> ()", "try raise null with () -> ()"
-            "try raise null with (_) -> ()", "try raise null with _ -> ()"
-            "try raise null with (x) -> x", "try raise null with x -> x"
-            "try raise null with (:? exn) -> ()", "try raise null with :? exn -> ()"
-            "try raise null with (Failure x) -> x", "try raise null with Failure x -> x"
-            "try raise null with x when (true) -> x | y -> y", "try raise null with x when true -> x | y -> y"
-
-            "try raise null with x when (match x with _ -> true) -> x | y -> y",
-            "try raise null with x when (match x with _ -> true) -> x | y -> y"
-
-            "try raise null with x when (let x = 3 in match x with _ -> true) -> x | y -> y",
-            "try raise null with x when (let x = 3 in match x with _ -> true) -> x | y -> y"
-
-            // Sequential
-            "let (x) = y; z in x", "let x = y; z in x"
-
-            // LetOrUseBang
-            "let! () = ()", "let! () = ()"
-            "let! (()) = ()", "let! () = ()"
-            "let! (_) = y", "let! _ = y"
-            "let! (x) = y", "let! x = y"
-            "let! (x: int) = y", "let! (x: int) = y"
-            "let! (x, y) = x, y", "let! x, y = x, y"
-            "let! (struct (x, y)) = x, y", "let! struct (x, y) = x, y"
-            "let! (x & y) = z", "let! x & y = z"
-            "let! (x as y) = z", "let! x as y = z"
-            "let! (Lazy x) = y", "let! Lazy x = y"
-            "let! (Lazy _ | _) = z", "let! Lazy _ | _ = z"
-
-            // MatchBang
-            "async { match! x with () -> return () }", "async { match! x with () -> return () }"
-            "async { match! x with (_) -> return () }", "async { match! x with _ -> return () }"
-            "async { match! x with (x) -> return x }", "async { match! x with x -> return x }"
-            "async { match! x with (x: int) -> return x }", "async { match! x with (x: int) -> return x }"
-            "async { match! x with (Lazy x) -> return x }", "async { match! x with Lazy x -> return x }"
-            "async { match! x with (x, y) -> return x, y }", "async { match! x with x, y -> return x, y }"
-            "async { match! x with (struct (x, y)) -> return x, y }", "async { match! x with struct (x, y) -> return x, y }"
-
-            "async { match! x with x when (true) -> return x | y -> return y }",
-            "async { match! x with x when true -> return x | y -> return y }"
-
-            "async { match! x with x when (match x with _ -> true) -> return x | y -> return y }",
-            "async { match! x with x when (match x with _ -> true) -> return x | y -> return y }"
-
-            "async { match! x with x when (let x = 3 in match x with _ -> true) -> return x | y -> return y }",
-            "async { match! x with x when (let x = 3 in match x with _ -> true) -> return x | y -> return y }"
-        }
-
-    [<Theory; MemberData(nameof patternsInExprs)>]
-    let ``Patterns in expressions`` original expected = Expressions.expectFix original expected
-
-    let args =
-        memberData {
-            "type T = static member M() = ()", "type T = static member M() = ()"
-            "type T = static member M(_) = ()", "type T = static member M _ = ()"
-            "type T = static member M(x) = x", "type T = static member M x = x"
-            "type T = static member M(x: int) = x", "type T = static member M(x: int) = x"
-            "type T = static member inline M([<InlineIfLambda>] f) = ()", "type T = static member inline M([<InlineIfLambda>] f) = ()"
-            "type T = static member M x (y) = x", "type T = static member M x y = x"
-            "type T = static member M(Lazy x) = x", "type T = static member M(Lazy x) = x"
-            "type T = static member M(Failure _ | _) = ()", "type T = static member M(Failure _ | _) = ()"
-            "type T = static member M(x & y) = ()", "type T = static member M(x & y) = ()"
-            "type T = static member M(x as y) = ()", "type T = static member M(x as y) = ()"
-            "type T = static member M(x :: xs) = ()", "type T = static member M(x :: xs) = ()"
-            "type T = static member M(x, y) = x, y", "type T = static member M(x, y) = x, y"
-            "type T = static member M(struct (x, y)) = x, y", "type T = static member M struct (x, y) = x, y"
-            "type T = static member M(?x) = ()", "type T = static member M ?x = ()"
-            "type T = static member M(?x: int) = ()", "type T = static member M(?x: int) = ()"
-
-            "type T = member _.M() = ()", "type T = member _.M() = ()"
-            "type T = member _.M(_) = ()", "type T = member _.M _ = ()"
-            "type T = member _.M(x) = x", "type T = member _.M x = x"
-            "type T = member _.M(x: int) = x", "type T = member _.M(x: int) = x"
-            "type T = member inline _.M([<InlineIfLambda>] f) = ()", "type T = member inline _.M([<InlineIfLambda>] f) = ()"
-            "type T = member _.M x (y) = x", "type T = member _.M x y = x"
-            "type T = member _.M(Lazy x) = x", "type T = member _.M(Lazy x) = x"
-            "type T = member _.M(Failure _ | _) = ()", "type T = member _.M(Failure _ | _) = ()"
-            "type T = member _.M(x & y) = ()", "type T = member _.M(x & y) = ()"
-            "type T = member _.M(x as y) = ()", "type T = member _.M(x as y) = ()"
-            "type T = member _.M(x :: xs) = ()", "type T = member _.M(x :: xs) = ()"
-            "type T = member _.M(x, y) = x, y", "type T = member _.M(x, y) = x, y"
-            "type T = member _.M(struct (x, y)) = x, y", "type T = member _.M struct (x, y) = x, y"
-            "type T = member _.M(?x) = ()", "type T = member _.M ?x = ()"
-            "type T = member _.M(?x: int) = ()", "type T = member _.M(?x: int) = ()"
-
             // See https://github.com/dotnet/fsharp/issues/16254.
             "
             type C = abstract M : unit -> unit
@@ -1741,7 +2054,7 @@ match Unchecked.defaultof<_> with
             ",
             "
             type C = abstract M : unit -> unit
-            let _ = { new C with override _.M (()) = () }
+            let _ = { new C with override _.M () = () }
             "
 
             // See https://github.com/dotnet/fsharp/issues/16254.
@@ -1754,16 +2067,54 @@ match Unchecked.defaultof<_> with
             let _ = { new C<unit> with override _.M (()) = () }
             "
 
+            // See https://github.com/dotnet/fsharp/issues/16254.
+            "
+            type C<'T> = abstract M : 'T -> unit
+            type T () = interface C<unit> () with override _.M (()) = ()
+            ",
+            "
+            type C<'T> = abstract M : 'T -> unit
+            type T () = interface C<unit> () with override _.M (()) = ()
+            "
+
+            // See https://github.com/dotnet/fsharp/issues/16254.
+            "
+            type [<AbstractClass>] C<'T> () = abstract M : 'T -> unit
+            type T () = inherit C<unit> () with override _.M (()) = ()
+            ",
+            "
+            type [<AbstractClass>] C<'T> () = abstract M : 'T -> unit
+            type T () = inherit C<unit> () with override _.M (()) = ()
+            "
+
             // See https://github.com/dotnet/fsharp/issues/16257.
             "
             type T (x, y) =
                 new (x, y, z) = T (x, y)
                 new (x) = T (x, 3)
+                member _.Z = x + y
             ",
             "
             type T (x, y) =
                 new (x, y, z) = T (x, y)
-                new (x) = T (x, 3)
+                new x = T (x, 3)
+                member _.Z = x + y
+            "
+
+            // See https://github.com/dotnet/fsharp/issues/16257.
+            "
+            let f (x: string) = int x
+            type T (x, y) =
+                new (x) = T (f x, 3)
+                new x = T (id x, 3)
+                member _.Z = x + y
+            ",
+            "
+            let f (x: string) = int x
+            type T (x, y) =
+                new (x) = T (f x, 3)
+                new x = T (id x, 3)
+                member _.Z = x + y
             "
 
             // See https://github.com/dotnet/fsharp/issues/16257.
@@ -1771,61 +2122,15 @@ match Unchecked.defaultof<_> with
             type T (x, y) =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
+                member _.Z = x + y
             ",
             "
             type T (x, y) =
                 new (x) = T (x, 3)
                 new (x, y, z) = T (x, y)
+                member _.Z = x + y
             "
         }
 
-    [<Theory; MemberData(nameof args)>]
-    let ``Argument patterns`` original expected = TopLevel.expectFix original expected
-
-    module InfixPatterns =
-        let infixPatterns =
-            memberData {
-                "A | (B | C)", "A | B | C"
-                "A & (B | C)", "A & (B | C)"
-                "A :: (B | C)", "A :: (B | C)"
-                "A as (B | C)", "A as (B | C)"
-                "A as (B | C) & D", "A as (B | C) & D"
-                "A as (_, _) & D", "A as (_, _) & D"
-                "A | (B & C)", "A | B & C"
-                "A & (B & C)", "A & B & C"
-                "A :: (B & C)", "A :: (B & C)"
-                "A as (B & C)", "A as (B & C)"
-                "A | (B :: C)", "A | B :: C"
-                "A & (B :: C)", "A & B :: C"
-                "A :: (B :: C)", "A :: B :: C"
-                "A as (B :: C)", "A as (B :: C)"
-                "A | (B as C)", "A | (B as C)"
-                "_ as x | (_ as x)", "_ as x | (_ as x)"
-                "A & (B as C)", "A & (B as C)"
-                "A :: (B as C)", "A :: (B as C)"
-                "A as (B as C)", "A as B as C"
-
-                "(A | B) | C", "A | B | C"
-                "(A | B) & C", "(A | B) & C"
-                "(A | B) :: C", "(A | B) :: C"
-                "(A | B) as C", "A | B as C"
-                "(A & B) | C", "A & B | C"
-                "(A & B) & C", "A & B & C"
-                "(A & B) :: C", "(A & B) :: C"
-                "(A & B) as C", "A & B as C"
-                "A | (B & C) as _", "A | B & C as _"
-                "(A :: B) | C", "A :: B | C"
-                "(A :: B) & C", "A :: B & C"
-                "(x :: y) :: xs", "(x :: y) :: xs"
-                "(A :: B) as C", "A :: B as C"
-                "(A as B) | C", "(A as B) | C"
-                "(A as B) & C", "(A as B) & C"
-                "(A as B) :: C", "(A as B) :: C"
-                "(A as B) as C", "A as B as C"
-                "(A as B), C", "(A as B), C"
-                "(A, B) :: C", "(A, B) :: C"
-                "(struct (A, B)) :: C", "struct (A, B) :: C"
-            }
-
-        [<Theory; MemberData(nameof infixPatterns)>]
-        let ``Infix patterns`` pat expected = expectFix pat expected
+    [<Theory; MemberData(nameof miscellaneous)>]
+    let ``Miscellaneous patterns`` original expected = TopLevel.expectFix original expected

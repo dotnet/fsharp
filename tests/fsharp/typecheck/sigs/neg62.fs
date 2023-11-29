@@ -27,7 +27,7 @@ type Bad2() =
         member x.Clone() = obj()
     let X = 1 + 1
 
-type Bad4 = 
+type WasBadButIsNowGood = 
     static member val X = 1 + 1
 
 type Bad3 = 

@@ -1425,6 +1425,9 @@ module UnnecessaryParentheses =
             | _ -> ValueNone
 
     module SynPat =
+        let (|Last|) = List.last
+
+        /// Matches if any pattern in the given list is a SynPat.Typed.
         [<return: Struct>]
         let (|AnyTyped|_|) pats =
             if
@@ -1437,11 +1440,52 @@ module UnnecessaryParentheses =
             else
                 ValueNone
 
+        /// Matches if any member in the given list is an inherit
+        /// or implementation of an interface with generic type args.
+        [<return: Struct>]
+        let (|AnyGenericInheritOrInterfaceImpl|_|) members =
+            if
+                members
+                |> List.exists (function
+                    | SynMemberDefn.ImplicitInherit(inheritType = SynType.App(typeArgs = _ :: _))
+                    | SynMemberDefn.ImplicitInherit(inheritType = SynType.LongIdentApp(typeArgs = _ :: _))
+                    | SynMemberDefn.Interface(interfaceType = SynType.App(typeArgs = _ :: _))
+                    | SynMemberDefn.Interface(interfaceType = SynType.LongIdentApp(typeArgs = _ :: _)) -> true
+                    | _ -> false)
+            then
+                ValueSome AnyGenericInheritOrInterfaceImpl
+            else
+                ValueNone
+
+        /// Matches the rightmost potentially dangling nested pattern.
+        let rec (|Rightmost|) pat =
+            match pat with
+            | SynPat.Or(rhsPat = Rightmost pat)
+            | SynPat.ListCons(rhsPat = Rightmost pat)
+            | SynPat.As(rhsPat = Rightmost pat)
+            | SynPat.Ands(pats = Last(Rightmost pat))
+            | SynPat.Tuple(isStruct = false; elementPats = Last(Rightmost pat)) -> pat
+            | pat -> pat
+
+        /// Matches if the given pattern is atomic.
+        [<return: Struct>]
+        let (|Atomic|_|) pat =
+            match pat with
+            | SynPat.Named _
+            | SynPat.Wild _
+            | SynPat.Paren _
+            | SynPat.Tuple(isStruct = true)
+            | SynPat.Record _
+            | SynPat.ArrayOrList _
+            | SynPat.Const _
+            | SynPat.LongIdent(argPats = SynArgPats.Pats [])
+            | SynPat.Null _
+            | SynPat.QuoteExpr _ -> ValueSome Atomic
+            | _ -> ValueNone
+
         /// If the given pattern is a parenthesized pattern and the parentheses
         /// are unnecessary in the given context, returns the unnecessary parentheses' range.
         let unnecessaryParentheses pat path =
-            let (|Last|) = List.last
-
             match pat, path with
             // Parens are needed in:
             //
@@ -1458,31 +1502,24 @@ module UnnecessaryParentheses =
             //     fun (x, y, …) -> …
             //     fun (x: …) -> …
             //     fun (Pattern …) -> …
+            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynPat(Rightmost rightmost) :: SyntaxNode.SynMatchClause _ :: _ when
+                obj.ReferenceEquals(pat, rightmost)
+                ->
+                ValueNone
+            | SynPat.Paren(Rightmost(SynPat.Typed _), _), SyntaxNode.SynMatchClause _ :: _
             | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
-            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynPat(SynPat.Tuple _) :: SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
+            | SynPat.Paren(SynPat.Typed _, _),
+              SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
             | SynPat.Paren(SynPat.Tuple(isStruct = false; elementPats = AnyTyped), _), SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
-            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynMatchClause _ :: _
-            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynPat(SynPat.Tuple _) :: SyntaxNode.SynMatchClause _ :: _
-            | SynPat.Paren(SynPat.Tuple(isStruct = false; elementPats = Last(SynPat.Typed _)), _), SyntaxNode.SynMatchClause _ :: _
-            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynPat(SynPat.Tuple _) :: SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynBinding _ :: _
             | SynPat.Paren(SynPat.Tuple(isStruct = false; elementPats = AnyTyped), _), SyntaxNode.SynBinding _ :: _
-            | SynPat.Paren(SynPat.LongIdent _, _), SyntaxNode.SynBinding _ :: _
-            | SynPat.Paren(SynPat.LongIdent _, _), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
+            | SynPat.Paren(SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), _), SyntaxNode.SynBinding _ :: _
+            | SynPat.Paren(SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), _), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
             | SynPat.Paren(SynPat.Tuple(isStruct = false), _), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
             | SynPat.Paren(SynPat.Typed _, _), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> ValueNone
 
-            // () is parsed as this in certain cases…
-            //
-            //     let () = …
-            //     for () in … do …
-            //     let! () = …
-            //     and! () = …
-            //     use! () = …
-            //     match … with () -> …
-            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), SyntaxNode.SynBinding _ :: _
-            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), SyntaxNode.SynExpr(SynExpr.ForEach _) :: _
-            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
-            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), SyntaxNode.SynMatchClause _ :: _ -> ValueNone
+            // () is parsed as this.
+            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), _ -> ValueNone
 
             // (()) is required when overriding a generic member
             // where unit is the generic type argument:
@@ -1490,17 +1527,34 @@ module UnnecessaryParentheses =
             //     type C<'T> = abstract M : 'T -> unit
             //     let _ = { new C<unit> with override _.M (()) = () }
             | SynPat.Paren(SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), _),
-              SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _
-            | SynPat.Paren(SynPat.Const(SynConst.Unit, _), _),
-              SyntaxNode.SynPat(SynPat.Paren _) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _ -> ValueNone
+              SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.ObjExpr(
+                  objType = SynType.App(typeArgs = _ :: _) | SynType.LongIdentApp(typeArgs = _ :: _))) :: _
+            | SynPat.Paren(SynPat.Paren(SynPat.Const(SynConst.Unit, _), _), _),
+              SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                  typeRepr = SynTypeDefnRepr.ObjectModel(members = AnyGenericInheritOrInterfaceImpl))) :: _ -> ValueNone
 
-            // Parens are required for the first of multiple additional constructors.
-            // We simply require them always.
+            // Parens are required around the atomic argument of
+            // any additional `new` constructor that is not the last.
             //
             //     type T … =
             //         new (x) = …
             //         new (x, y) = …
-            | SynPat.Paren _, SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: _ -> ValueNone
+            | SynPat.Paren(Atomic, range),
+              SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ]))) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                  typeRepr = SynTypeDefnRepr.ObjectModel(members = members))) :: _ ->
+                let lastNew =
+                    (ValueNone, members)
+                    ||> List.fold (fun lastNew ``member`` ->
+                        match ``member`` with
+                        | SynMemberDefn.Member(
+                            memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ Ident "new" ])))) ->
+                            ValueSome ``member``
+                        | _ -> lastNew)
+
+                match lastNew with
+                | ValueSome(SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats [ Is pat ])))) ->
+                    ValueSome range
+                | _ -> ValueNone
 
             // Parens are otherwise never needed in these cases:
             //
@@ -1517,8 +1571,7 @@ module UnnecessaryParentheses =
             | SynPat.Paren(_, range), SyntaxNode.SynExpr(SynExpr.ForEach _) :: _
             | SynPat.Paren(_, range), SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
             | SynPat.Paren(_, range), SyntaxNode.SynMatchClause _ :: _
-            | SynPat.Paren(_, range), SyntaxNode.SynExpr(SynExpr.Lambda(args = SynSimplePats.SimplePats(pats = [ SynSimplePat.Id _ ]))) :: _ ->
-                ValueSome range
+            | SynPat.Paren(Atomic, range), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> ValueSome range
 
             // Nested patterns.
             | SynPat.Paren(inner, range), SyntaxNode.SynPat outer :: _ ->
@@ -1540,7 +1593,10 @@ module UnnecessaryParentheses =
                 // (x as y) :: xs
                 | SynPat.ListCons _, SynPat.Or _
                 | SynPat.ListCons _, SynPat.Ands _
-                | SynPat.ListCons _, SynPat.As _
+                | SynPat.ListCons _, SynPat.As _ -> ValueNone
+
+                // Pattern (x = (…))
+                | SynPat.LongIdent(argPats = SynArgPats.NamePatPairs _), _ -> ValueSome range
 
                 // Pattern (x : int)
                 // Pattern ([<Attr>] x)
@@ -1576,17 +1632,12 @@ module UnnecessaryParentheses =
                 // A, (B | C)
                 // A & (B | C)
                 | SynPat.Tuple _, SynPat.Or _
-                | SynPat.Ands _, SynPat.Or _
+                | SynPat.Ands _, SynPat.Or _ -> ValueNone
 
-                // (x : int) | x
                 // (x : int) & y
-                | SynPat.Or _, SynPat.Typed _
-                | SynPat.Ands _, SynPat.Typed _
-
-                // let () = …
-                // member _.M() = …
-                | SynPat.Paren _, SynPat.Const(SynConst.Unit, _)
-                | SynPat.LongIdent _, SynPat.Const(SynConst.Unit, _) -> ValueNone
+                // x & (y : int) & z
+                | SynPat.Ands(Last(SynPat.Paren(pat = Is inner)), _), SynPat.Typed _ -> ValueSome range
+                | SynPat.Ands _, SynPat.Typed _ -> ValueNone
 
                 | _, SynPat.Const _
                 | _, SynPat.Wild _

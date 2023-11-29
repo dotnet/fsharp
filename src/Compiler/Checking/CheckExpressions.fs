@@ -5585,9 +5585,13 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
     | SynExpr.DotLambda (synExpr, m, trivia) ->
-        if env.NameEnv.eUnqualifiedItems |> Map.containsKey "_arg1"
-        then
+        match env.NameEnv.eUnqualifiedItems |> Map.tryFind "_arg1" with        
+        // Compiler-generated _arg items can have more forms, the real underscore will be 1-character wide
+        | Some (Item.Value(valRef)) when valRef.Range.StartColumn+1 = valRef.Range.EndColumn ->
             warning(Error(FSComp.SR.tcAmbiguousDiscardDotLambda(), trivia.UnderscoreRange))
+        | Some _ -> ()
+        | None -> ()
+            
         let unaryArg = mkSynId trivia.UnderscoreRange (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
         let pushedExpr = pushUnaryArg synExpr unaryArg
@@ -9438,7 +9442,8 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) env tpenv x =
         GetNewInferenceTypeForMethodArg cenv env tpenv a
     | SynExpr.AddressOf (true, a, _, m) ->
         mkByrefTyWithInference g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType g m)
-    | SynExpr.Lambda (body = a) ->
+    | SynExpr.Lambda (body = a) 
+    | SynExpr.DotLambda (expr = a) ->
         mkFunTy g (NewInferenceType g) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote (_, raw, a, _, _) ->
         if raw then mkRawQuotedExprTy g
