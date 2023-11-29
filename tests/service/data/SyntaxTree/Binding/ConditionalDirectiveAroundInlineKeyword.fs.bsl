@@ -14,7 +14,7 @@ ImplFile
                      SynValInfo
                        ([[SynArgInfo ([], false, Some f)];
                          [SynArgInfo ([], false, Some ar)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent ([map], [], [None]), None, None,
                      Pats

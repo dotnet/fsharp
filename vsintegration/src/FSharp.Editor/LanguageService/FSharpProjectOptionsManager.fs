@@ -286,7 +286,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                             match! tryComputeOptions referencedProject with
                             | ValueNone -> canBail <- true
-                            | ValueSome (_, projectOptions) ->
+                            | ValueSome(_, projectOptions) ->
                                 referencedProjects.Add(
                                     FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
@@ -387,7 +387,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptionsByDocument (document, reply, ct, userOpName) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName) ->
                     if ct.IsCancellationRequested then
                         reply.Reply ValueNone
                     else
@@ -423,7 +423,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         with _ ->
                             reply.Reply ValueNone
 
-                | FSharpProjectOptionsMessage.TryGetOptionsByProject (project, reply, ct) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct) ->
                     if ct.IsCancellationRequested then
                         reply.Reply ValueNone
                     else
@@ -450,7 +450,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         with _ ->
                             reply.Reply ValueNone
 
-                | FSharpProjectOptionsMessage.ClearOptions (projectId) ->
+                | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
                     | true, (_, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(projectId) |> ignore
@@ -458,7 +458,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | _ -> ()
 
                     legacyProjectSites.TryRemove(projectId) |> ignore
-                | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache (documentId) ->
+                | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true, (_, _, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
@@ -544,7 +544,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     member _.GetCompilationDefinesAndLangVersionForEditingDocument(document: Document) =
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
-            | Some (_, parsingOptions, _) -> parsingOptions
+            | Some(_, parsingOptions, _) -> parsingOptions
             | _ ->
                 { FSharpParsingOptions.Default with
                     ApplyLineDirectives = false
@@ -568,7 +568,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     /// Quicker it doesn't need to recompute the exact project options for a script.
     member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId: DocumentId, path: string) =
         match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
-        | Some (_, parsingOptions, _) -> parsingOptions
+        | Some(_, parsingOptions, _) -> parsingOptions
         | _ ->
             { FSharpParsingOptions.Default with
                 IsInteractive = CompilerEnvironment.IsScriptFile path

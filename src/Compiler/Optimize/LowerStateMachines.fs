@@ -39,7 +39,7 @@ type StateMachineConversionFirstPhaseResult =
    }
 
 #if DEBUG
-let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
+let sm_verbose = try not (isNull(System.Environment.GetEnvironmentVariable "FSharp_StateMachineVerbose")) with _ -> false
 #else
 let sm_verbose = false
 #endif

@@ -12,8 +12,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Wild (1,4--1,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (1,4--1,5), None,
                   App
                     (NonAtomic, false,
                      App

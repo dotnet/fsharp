@@ -123,8 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
-        <source>Static members are not allowed in object expressions.</source>
-        <target state="new">Static members are not allowed in object expressions.</target>
+        <source>Object expressions cannot implement interfaces with static abstract members or declare static members.</source>
+        <target state="new">Object expressions cannot implement interfaces with static abstract members or declare static members.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailCallAttrOnNonRec">
+        <source>The TailCall attribute should only be applied to recursive functions.</source>
+        <target state="new">The TailCall attribute should only be applied to recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -245,6 +250,11 @@
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Löst Warnungen aus, wenn ein Member oder eine Funktion das Attribut "TailCall" aufweist, aber nicht endrekursiv verwendet wird.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkTailCallAttrOnNonRec">
+        <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
+        <target state="new">Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -412,6 +422,11 @@
         <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
+        <source>prefer extension method over plain property</source>
+        <target state="new">prefer extension method over plain property</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferStringGetPinnableReference">
         <source>prefer String.GetPinnableReference in fixed bindings</source>
         <target state="translated">String.GetPinnableReference in festen Bindungen bevorzugen</target>
@@ -450,6 +465,11 @@
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">Fortsetzbarer Zustand-Maschinen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -1365,6 +1385,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">Statische Bindungen können extrinsischen Augmentationen nicht hinzugefügt werden. Verwenden Sie stattdessen "static member".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -5063,8 +5088,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static value definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version 'preview'.</source>
-        <target state="translated">Für F# 7 und früher dürfen statische Wertdefinitionen nur in Typen mit einem primären Konstruktor verwendet werden (type X(args) = ...). Um sie in anderen Typen zu aktivieren, verwenden Sie die Sprachversion "preview".</target>
+        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
+        <target state="needs-review-translation">Für F# 7 und früher dürfen statische Wertdefinitionen nur in Typen mit einem primären Konstruktor verwendet werden (type X(args) = ...). Um sie in anderen Typen zu aktivieren, verwenden Sie die Sprachversion "preview".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -8558,8 +8583,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
-        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
-        <target state="translated">Der Paket-Manager-Schlüssel "{0}" wurde nicht in "{1}" registriert. Zurzeit registriert: {2}. Weitere Informationen zu Erweiterungen finden Sie unter: https://aka.ms/dotnetdepmanager</target>
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}. You can provide extra path(s) by passing '--compilertool:&lt;extensionsfolder&gt;' to the command line. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager</source>
+        <target state="needs-review-translation">Der Paket-Manager-Schlüssel "{0}" wurde nicht in "{1}" registriert. Zurzeit registriert: {2}. Weitere Informationen zu Erweiterungen finden Sie unter: https://aka.ms/dotnetdepmanager</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
