@@ -89,7 +89,7 @@ let x = "a" |> _.ToString () """
     'string -> 'a'    
 but given a
     'unit -> string'    
-The type 'string' does not match the type 'unit'""" ]
+The type 'unit' does not match the type 'string'""" ]
 
 [<Fact>]
 let ``Underscore Dot Curried Function With Arguments - NonAtomic`` () =
