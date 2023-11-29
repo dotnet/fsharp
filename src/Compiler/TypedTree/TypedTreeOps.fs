@@ -7803,18 +7803,18 @@ let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
     match vref.TryDeref with
     | ValueSome v -> 
         let f = exprForValRef m vref
-        mkApps g ((f, v.Type), [tinst], argExprs, m) |> Some
+        mkApps g ((f, v.Type), [tinst], argExprs, m) |> ValueSome
     | ValueNone -> 
-        None
+        ValueNone
 
 let tryMkCallCoreFunctionAsBuiltInWitness (g: TcGlobals) info tyargs argExprs m =
     let vref = ValRefForIntrinsic info
     match vref.TryDeref with
     | ValueSome v -> 
         let f = exprForValRef m vref
-        mkApps g ((f, v.Type), [tyargs], argExprs, m) |> Some
+        mkApps g ((f, v.Type), [tyargs], argExprs, m) |> ValueSome
     | ValueNone -> 
-        None
+        ValueNone
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 

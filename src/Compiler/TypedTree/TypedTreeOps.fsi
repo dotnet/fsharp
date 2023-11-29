@@ -2210,11 +2210,11 @@ val mkStaticCall_String_Concat4: TcGlobals -> range -> Expr -> Expr -> Expr -> E
 val mkStaticCall_String_Concat_Array: TcGlobals -> range -> Expr -> Expr
 
 /// Use a witness in BuiltInWitnesses
-val tryMkCallBuiltInWitness: TcGlobals -> TraitConstraintInfo -> Expr list -> range -> Expr option
+val tryMkCallBuiltInWitness: TcGlobals -> TraitConstraintInfo -> Expr list -> range -> Expr voption
 
 /// Use an operator as a witness
 val tryMkCallCoreFunctionAsBuiltInWitness:
-    TcGlobals -> IntrinsicValRef -> TType list -> Expr list -> range -> Expr option
+    TcGlobals -> IntrinsicValRef -> TType list -> Expr list -> range -> Expr voption
 
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix

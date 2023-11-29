@@ -736,11 +736,11 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                     if g.generateWitnesses then 
                         ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
                     else
-                        None
+                        ValueNone
                 match minfoOpt with
-                | None ->
+                | ValueNone ->
                     wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
-                | Some expr ->
+                | ValueSome expr ->
                     ConvExpr cenv env expr             
 
         | _ ->
@@ -1364,4 +1364,3 @@ let ConvReflectedDefinition cenv methName v e =
 
     let mbaseR = ConvMethodBase cenv env (methName, v)
     mbaseR, astExprWithWitnessLambdas
-

@@ -495,7 +495,7 @@ val CheckRecdFieldMutation: m: range -> denv: TypedTreeOps.DisplayEnv -> rfinfo:
 /// None is returned in the cases where the trait has not been solved (e.g. is part of generic code)
 /// or there is an unexpected mismatch of some kind.
 val GenWitnessExpr:
-    amap: ImportMap -> g: TcGlobals -> m: range -> traitInfo: TraitConstraintInfo -> argExprs: Expr list -> Expr option
+    amap: ImportMap -> g: TcGlobals -> m: range -> traitInfo: TraitConstraintInfo -> argExprs: Expr list -> Expr voption
 
 /// Generate a lambda expression for the given solved trait.
 val GenWitnessExprLambda:

@@ -1894,52 +1894,52 @@ type TcGlobals(
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
         let tyargs = [aty]
-        Some (info, tyargs, [objExpr])
+        ValueSome (info, tyargs, [objExpr])
     | "Sqrt", [aty], Some bty, [_] ->
         // Call Operators.sqrt
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sqrt", None, Some "Sqrt", [vara; varb], ([[varaTy]], varbTy))
         let tyargs = [aty; bty]
-        Some (info, tyargs, argExprs)
+        ValueSome (info, tyargs, argExprs)
     | "Pow", [aty;bty], _, [_;_] ->
         // Call Operators.(**)
         let info = v_exponentiation_info
         let tyargs = [aty;bty]
-        Some (info, tyargs, argExprs)
+        ValueSome (info, tyargs, argExprs)
     | "Atan2", [aty;_], Some bty, [_;_] ->
         // Call Operators.atan2
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
-        Some (info, tyargs, argExprs)
+        ValueSome (info, tyargs, argExprs)
     | "get_Zero", _, Some aty, ([] | [_]) ->
         // Call LanguagePrimitives.GenericZero
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs, [])
+        ValueSome (info, tyargs, [])
     | "get_One", _, Some aty,  ([] | [_])  ->
         // Call LanguagePrimitives.GenericOne
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs, [])
+        ValueSome (info, tyargs, [])
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] ->
         // Call corresponding Operators.*
         let nm = t.MemberLogicalName
         let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs, argExprs)
+        ValueSome (info, tyargs, argExprs)
     | "get_Item", [arrTy; _], Some retTy, [_; _] when isArrayTy g arrTy ->
-        Some (g.array_get_info, [retTy], argExprs)
+        ValueSome (g.array_get_info, [retTy], argExprs)
     | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
-        Some (g.array_set_info, [elemTy], argExprs)
+        ValueSome (g.array_set_info, [elemTy], argExprs)
     | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
-        Some (g.getstring_info, [], argExprs)
+        ValueSome (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "id", None, None, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
-        Some (info, tyargs, argExprs)
+        ValueSome (info, tyargs, argExprs)
     | _ ->
-        None
+        ValueNone
 
 #if DEBUG
 // This global is only used during debug output

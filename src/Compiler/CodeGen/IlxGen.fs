@@ -1311,8 +1311,8 @@ let ComputeGenerateWitnesses (g: TcGlobals) eenv =
 
 let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) =
     match eenv.witnessesInScope.TryGetValue w with
-    | true, storage -> Some storage
-    | _ -> None
+    | true, storage -> ValueSome storage
+    | _ -> ValueNone
 
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
@@ -3977,7 +3977,7 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
     let storage = TryStorageForWitness g eenv witnessInfo
 
     match storage with
-    | None ->
+    | ValueNone ->
         let witnessExpr =
             ConstraintSolver.CodegenWitnessArgForTraitConstraint cenv.tcVal g cenv.amap m traitInfo
             |> CommitOperationResult
@@ -3989,7 +3989,7 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
         | Choice2Of2 arg ->
             let eenv = { eenv with suppressWitnesses = true }
             GenExpr cenv cgbuf eenv arg Continue
-    | Some storage ->
+    | ValueSome storage ->
         let witnessInfo = traitInfo.GetWitnessInfo()
         let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage None
@@ -3999,10 +3999,10 @@ and GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo =
     let storage = TryStorageForWitness g eenv witnessInfo
 
     match storage with
-    | None ->
+    | ValueNone ->
         System.Diagnostics.Debug.Assert(false, "expected storage for witness")
         failwith "unexpected non-generation of witness "
-    | Some storage ->
+    | ValueSome storage ->
         let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage None
 
@@ -5392,17 +5392,17 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             let witnessInfo = traitInfo.GetWitnessInfo()
             TryStorageForWitness g eenv witnessInfo
         else
-            None
+            ValueNone
 
     match witness with
-    | Some storage ->
+    | ValueSome storage ->
 
         let witnessInfo = traitInfo.GetWitnessInfo()
         let ty = GenWitnessTy g witnessInfo
         let argExprs = if argExprs.Length = 0 then [ mkUnit g m ] else argExprs
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage (Some([], argExprs, m, sequel))
 
-    | None ->
+    | ValueNone ->
 
         // If witnesses are available, we should now always find trait witnesses in scope
         assert not generateWitnesses
@@ -5411,14 +5411,14 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
 
         match exprOpt with
-        | None ->
+        | ValueNone ->
             let exnArg =
                 mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberLogicalName))
 
             let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
             let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
             GenExpr cenv cgbuf eenv replacementExpr sequel
-        | Some expr ->
+        | ValueSome expr ->
             let expr = cenv.optimizeDuringCodeGen false expr
             GenExpr cenv cgbuf eenv expr sequel
 

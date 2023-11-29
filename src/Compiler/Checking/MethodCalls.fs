@@ -170,7 +170,7 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 //     let f (x: 'T) : Nullable<'T> = x
 // is enough, whereas
 //     let f (x: 'T) : Nullable<_> = x
-//     let f x : Nullable<'T> = x
+//     let f x : Nullable<'T> = x 
 // are not enough to activate.
 
 let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualTy m =
@@ -179,11 +179,11 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
     if g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
 
         // shortcut
-        if typeEquiv g reqdTy actualTy then None else
+        if typeEquiv g reqdTy actualTy then ValueNone else
         let reqdTy2 = 
             if isTyparTy g reqdTy then
                 let tp = destTyparTy g reqdTy 
-                match tp.Constraints |> List.choose (function TyparConstraint.CoercesTo (tgtTy, _) -> Some tgtTy | _ -> None) with
+                match [ for typarConstraint in tp.Constraints do match typarConstraint with | TyparConstraint.CoercesTo (tgtTy, _) -> yield tgtTy | _ -> () ] with
                 | [reqdTy2] when tp.Rigidity = TyparRigidity.Flexible -> reqdTy2
                 | _ -> reqdTy
             else reqdTy
@@ -217,17 +217,17 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
 
             match implicits with
             | [(minfo, staticTy) ] ->
-                Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
+                ValueSome (minfo, staticTy, (reqdTy, reqdTy2, ignore))
             | (minfo, staticTy) :: _ -> 
-                Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv -> 
+                ValueSome (minfo, staticTy, (reqdTy, reqdTy2, fun denv -> 
                          let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy2 actualTy
                          let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv (List.map fst implicits)
                          errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
-            | _ -> None
+            | _ -> ValueNone
         else
-            None
+            ValueNone
     else
-        None
+        ValueNone
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversion =
@@ -312,8 +312,8 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
-         | None -> reqdTy, TypeDirectedConversionUsed.No, None
+         | ValueSome (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
+         | ValueNone -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
 
@@ -1352,13 +1352,13 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced] None
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-       | Some (minfo, staticTy, _) -> 
+       | ValueSome (minfo, staticTy, _) -> 
            MethInfoChecks g amap false None [] ad m minfo
            let staticTyOpt = if isTyparTy g staticTy then Some staticTy else None
            let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr] staticTyOpt
            assert (let resTy = tyOfExpr g callExpr in typeEquiv g reqdTy resTy)
            callExpr
-       | None -> mkCoerceIfNeeded g reqdTy actualTy expr 
+       | ValueNone -> mkCoerceIfNeeded g reqdTy actualTy expr 
 
 // Handle adhoc argument conversions
 let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
@@ -1815,7 +1815,7 @@ module ProvidedMethodCalls =
 
     let convertProvidedExpressionToExprAndWitness
             tcVal
-            (thisArg: Expr option,
+            (thisArg: Expr voption,
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
              g, amap, mut, isProp, isSuperInit, m,
@@ -1825,7 +1825,7 @@ module ProvidedMethodCalls =
             // note: Assuming the size based on paramVars
             // Doubling to decrease chance of collisions
             let dict = Dictionary.newWithSize (paramVars.Length*2)
-            for v, e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id, m))) (Option.toList thisArg @ allArgs) do
+            for v, e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id, m))) (ValueOption.toList thisArg @ allArgs) do
                 dict.Add(v, (None, e))
             dict
 
@@ -2060,8 +2060,8 @@ module ProvidedMethodCalls =
             | [objArg] -> 
                 let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ty.AsProvidedVar("this")), m)
-                Some objArg, Array.append [| thisVar |] paramVars
-            | [] -> None, paramVars
+                ValueSome objArg, Array.append [| thisVar |] paramVars
+            | [] -> ValueNone, paramVars
             | _ -> failwith "multiple objArgs?"
             
         let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
@@ -2161,9 +2161,9 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             let receiverArgOpt, argExprs = 
                 if minfo.IsInstance then
                     match argExprs with
-                    | h :: t -> Some h, t
-                    | argExprs -> None, argExprs
-                else None, argExprs
+                    | h :: t -> ValueSome h, t
+                    | argExprs -> ValueNone, argExprs
+                else ValueNone, argExprs
 
             // For methods taking no arguments, 'argExprs' will be a single unit expression here
             let argExprs = 
@@ -2173,8 +2173,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
             let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
             match receiverArgOpt with
-            | Some r -> r :: convertedArgs
-            | None -> convertedArgs
+            | ValueSome r -> r :: convertedArgs
+            | ValueNone -> convertedArgs
 
         // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
         // the address of the object then go do that 
@@ -2182,17 +2182,17 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             match argExprs with
             | h :: t when not (isByrefTy g (tyOfExpr g h)) ->
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
-                Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
+                ValueSome (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
             | _ ->
-                Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
+                ValueSome (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
         else        
-            Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
+            ValueSome (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
         // static setter
         | true, true, 1 -> 
-            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs[0], m))
+            ValueSome (mkStaticRecdFieldSet (rfref, tinst, argExprs[0], m))
 
         // instance setter
         | true, false, 2 -> 
@@ -2201,42 +2201,42 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs[0])) then 
                 let h = List.head argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
-                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs[1], m)))
+                ValueSome (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs[1], m)))
             else        
-                Some (mkRecdFieldSetViaExprAddr (argExprs[0], rfref, tinst, argExprs[1], m))
+                ValueSome (mkRecdFieldSetViaExprAddr (argExprs[0], rfref, tinst, argExprs[1], m))
 
         // static getter
         | false, true, 0 -> 
-            Some (mkStaticRecdFieldGet (rfref, tinst, m))
+            ValueSome (mkStaticRecdFieldGet (rfref, tinst, m))
 
         // instance getter
         | false, false, 1 -> 
             if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs[0]) then 
-                Some (mkRecdFieldGetViaExprAddr (argExprs[0], rfref, tinst, m))
+                ValueSome (mkRecdFieldGetViaExprAddr (argExprs[0], rfref, tinst, m))
             else 
-                Some (mkRecdFieldGet g (argExprs[0], rfref, tinst, m))
+                ValueSome (mkRecdFieldGet g (argExprs[0], rfref, tinst, m))
 
-        | _ -> None 
+        | _ -> ValueNone 
 
     | Choice3Of5 (anonInfo, tinst, i) -> 
         let tupInfo = anonInfo.TupInfo
         if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
-            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
+            ValueSome (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else 
-            Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
+            ValueSome (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
     | Choice4Of5 expr -> 
-        Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
+        ValueSome (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
     | Choice5Of5 () -> 
         match traitInfo.Solution with 
-        | None -> None // the trait has been generalized
+        | None -> ValueNone // the trait has been generalized
         | Some _-> 
         // For these operators, the witness is just a call to the coresponding FSharp.Core operator
         match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
-        | Some (info, tyargs, actualArgExprs) -> 
+        | ValueSome (info, tyargs, actualArgExprs) -> 
             tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
-        | None -> 
+        | ValueNone -> 
             // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
             // These are called as F# methods not F# functions
             tryMkCallBuiltInWitness g traitInfo argExprs m
@@ -2248,9 +2248,9 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let vse = argTysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
-    | Some expr -> 
+    | ValueSome expr -> 
         Choice2Of2 (mkMemberLambdas g m [] None None vsl (expr, tyOfExpr g expr))
-    | None -> 
+    | ValueNone -> 
         Choice1Of2 traitInfo
 
 /// Generate the arguments passed for a set of (solved) traits in non-generic code

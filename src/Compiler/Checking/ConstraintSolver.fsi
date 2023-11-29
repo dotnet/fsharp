@@ -323,7 +323,7 @@ val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 val CodegenWitnessExprForTraitConstraint:
-    TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+    TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr voption>
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:

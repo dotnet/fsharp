@@ -2590,9 +2590,9 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | _ -> None
     match knownValue with 
     | Some valu -> 
-        match TryOptimizeVal cenv env (None, false, false, valu, m) with 
-        | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
-        | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
+        match TryOptimizeVal cenv env (ValueNone, false, false, valu, m) with 
+        | ValueSome res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
+        | ValueNone -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
 
 and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
@@ -2677,8 +2677,8 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
 
     // Replace entire expression with known value? 
     match TryOptimizeValInfo cenv env m vinfo with 
-    | Some res -> res, vinfo
-    | None ->
+    | ValueSome res -> res, vinfo
+    | ValueNone ->
           Expr.Op (op, tyargs, argsR, m), 
           { TotalSize=argsTSize + cost
             FunctionSize=argsFSize + cost
@@ -2981,7 +2981,7 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
     match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfo args with
 
-    | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
+    | OkResult (_, ValueSome expr) -> OptimizeExpr cenv env expr
 
     // Resolution fails when optimizing generic code, ignore the failure
     | _ -> 
@@ -3001,14 +3001,14 @@ and CopyExprForInlining cenv isInlineIfLambda expr (m: range) =
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
-and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, valInfoForVal, m) = 
+and TryOptimizeVal cenv env (vOpt: ValRef voption, mustInline, inlineIfLambda, valInfoForVal, m) = 
 
     let g = cenv.g
 
     match valInfoForVal with 
     // Inline all constants immediately 
     | ConstValue (c, ty) -> 
-        Some (Expr.Const (c, m, ty))
+        ValueSome (Expr.Const (c, m, ty))
 
     | SizeValue (_, detail) ->
         TryOptimizeVal cenv env (vOpt, mustInline, inlineIfLambda, detail, m) 
@@ -3018,39 +3018,41 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, mustInline, inlineIfLambda, va
          // Prefer to inline using the more specific info if possible 
          // If the more specific info didn't reveal an inline then use the value 
          match TryOptimizeVal cenv env (vOpt, mustInline, inlineIfLambda, detail, m) with 
-          | Some e -> Some e
-          | None -> 
+          | ValueSome e -> ValueSome e
+          | ValueNone -> 
               // If we have proven 'v = compilerGeneratedValue'
               // and 'v' is being eliminated in favour of 'compilerGeneratedValue'
               // then replace the name of 'compilerGeneratedValue'
               // by 'v' and mark it not compiler generated so we preserve good debugging and names.
               // Don't do this for things represented statically as it may publish multiple values with the same name.
               match vOpt with 
-              | Some v when not v.IsCompilerGenerated && vR.IsCompilerGenerated && not vR.IsCompiledAsTopLevel  && not v.IsCompiledAsTopLevel -> 
+              | ValueSome v when not v.IsCompilerGenerated && vR.IsCompilerGenerated && not vR.IsCompiledAsTopLevel  && not v.IsCompiledAsTopLevel -> 
                   vR.Deref.SetIsCompilerGenerated(false)
                   vR.Deref.SetLogicalName(v.LogicalName)
               | _ -> ()
-              Some(exprForValRef m vR)
+              ValueSome(exprForValRef m vR)
 
     | ConstExprValue(_size, expr) ->
-        Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
+        ValueSome (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when mustInline || inlineIfLambda ->
         let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
-        Some exprCopy
+        ValueSome exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when mustInline ->
         failwith "tuple, union and record values cannot be marked 'inline'"
 
     | UnknownValue when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m)); None
+        warning(Error(FSComp.SR.optValueMarkedInlineHasUnexpectedValue(), m))
+        ValueNone
 
     | _ when mustInline ->
-        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m)); None
-    | _ -> None 
+        warning(Error(FSComp.SR.optValueMarkedInlineCouldNotBeInlined(), m))
+        ValueNone
+    | _ -> ValueNone 
   
 and TryOptimizeValInfo cenv env m vinfo = 
-    if vinfo.HasEffect then None else TryOptimizeVal cenv env (None, false, false, vinfo.Info, m)
+    if vinfo.HasEffect then ValueNone else TryOptimizeVal cenv env (ValueNone, false, false, vinfo.Info, m)
 
 /// Add 'v1 = v2' information into the information stored about a value
 and AddValEqualityInfo g m (v: ValRef) info =
@@ -3072,8 +3074,8 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     let valInfoForVal = GetInfoForVal cenv env m v 
 
-    match TryOptimizeVal cenv env (Some v, v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
-    | Some e -> 
+    match TryOptimizeVal cenv env (ValueSome v, v.MustInline, v.InlineIfLambda, valInfoForVal.ValExprInfo, m) with
+    | ValueSome e -> 
        // don't reoptimize inlined lambdas until they get applied to something
        match e with 
        | Expr.TyLambda _ 
@@ -3088,7 +3090,7 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
            let e, einfo = OptimizeExpr cenv env e 
            e, AddValEqualityInfo g m v einfo 
 
-    | None -> 
+    | ValueNone -> 
        if v.MustInline then
            error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
@@ -3163,8 +3165,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
          
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedCompareToValues with 
-        | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
-        | _ -> None
+        | Some (_, vref) -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs args m)
+        | _ -> ValueNone
         
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_comparison_withc_inner_vref ty args ->
          
@@ -3175,8 +3177,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
-            Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
-        | _ -> None
+            ValueSome (DevirtualizeApplication cenv env vref ty tyargs args2 m)
+        | _ -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic when type is known 
     // to be augmented with a visible equality-without-comparer value. 
@@ -3186,8 +3188,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
          
         let tcref, tyargs = StripToNominalTyconRef cenv ty 
         match tcref.GeneratedHashAndEqualsValues with 
-        | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
-        | _ -> None
+        | Some (_, vref) -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs args m)
+        | _ -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
@@ -3196,8 +3198,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, _, withcEqualsVal), [comp; x; y] -> 
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
-            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
-        | _ -> None 
+            ValueSome (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+        | _ -> ValueNone 
       
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_per_inner_vref ty args && not(isRefTupleTy g ty) ->
@@ -3205,8 +3207,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_, _, withcEqualsVal), [x; y] -> 
            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
-           Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
-       | _ -> None     
+           ValueSome (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+       | _ -> ValueNone     
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_inner_vref ty args ->
@@ -3214,8 +3216,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, withcGetHashCodeVal, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer g m]
-            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
-        | _ -> None 
+            ValueSome (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
+        | _ -> ValueNone 
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_withc_inner_vref ty args ->
@@ -3223,36 +3225,36 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, withcGetHashCodeVal, _), [comp; x] -> 
             let args2 = [x; comp]
-            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
-        | _ -> None 
+            ValueSome (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
+        | _ -> ValueNone 
 
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.generic_comparison_inner_vref && isRefTupleTy g ty ->
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_compare_withc_tuple2_vref 
-            | 3 -> Some g.generic_compare_withc_tuple3_vref 
-            | 4 -> Some g.generic_compare_withc_tuple4_vref 
-            | 5 -> Some g.generic_compare_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_compare_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_compare_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_compare_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_compare_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericComparer g m :: args) m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericComparer g m :: args) m)            
+        | ValueNone -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.generic_hash_inner_vref && isRefTupleTy g ty ->
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_hash_withc_tuple2_vref 
-            | 3 -> Some g.generic_hash_withc_tuple3_vref 
-            | 4 -> Some g.generic_hash_withc_tuple4_vref 
-            | 5 -> Some g.generic_hash_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_hash_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_hash_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_hash_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_hash_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericEREqualityComparer g m :: args) m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericEREqualityComparer g m :: args) m)            
+        | ValueNone -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic for tuple types
     //  REVIEW (5537): GenericEqualityIntrinsic implements PER semantics, and we are replacing it to something also
@@ -3261,56 +3263,56 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_equals_withc_tuple2_vref 
-            | 3 -> Some g.generic_equals_withc_tuple3_vref 
-            | 4 -> Some g.generic_equals_withc_tuple4_vref 
-            | 5 -> Some g.generic_equals_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_equals_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_equals_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_equals_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_equals_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer g m :: args) m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer g m :: args) m)            
+        | ValueNone -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.generic_comparison_withc_inner_vref && isRefTupleTy g ty ->
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_compare_withc_tuple2_vref 
-            | 3 -> Some g.generic_compare_withc_tuple3_vref 
-            | 4 -> Some g.generic_compare_withc_tuple4_vref 
-            | 5 -> Some g.generic_compare_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_compare_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_compare_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_compare_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_compare_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | ValueNone -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.generic_hash_withc_inner_vref && isRefTupleTy g ty ->
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_hash_withc_tuple2_vref 
-            | 3 -> Some g.generic_hash_withc_tuple3_vref 
-            | 4 -> Some g.generic_hash_withc_tuple4_vref 
-            | 5 -> Some g.generic_hash_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_hash_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_hash_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_hash_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_hash_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | ValueNone -> ValueNone
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic for tuple types
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.generic_equality_withc_inner_vref && isRefTupleTy g ty ->
         let tyargs = destRefTupleTy g ty 
         let vref = 
             match tyargs.Length with 
-            | 2 -> Some g.generic_equals_withc_tuple2_vref 
-            | 3 -> Some g.generic_equals_withc_tuple3_vref 
-            | 4 -> Some g.generic_equals_withc_tuple4_vref 
-            | 5 -> Some g.generic_equals_withc_tuple5_vref 
-            | _ -> None
+            | 2 -> ValueSome g.generic_equals_withc_tuple2_vref 
+            | 3 -> ValueSome g.generic_equals_withc_tuple3_vref 
+            | 4 -> ValueSome g.generic_equals_withc_tuple4_vref 
+            | 5 -> ValueSome g.generic_equals_withc_tuple5_vref 
+            | _ -> ValueNone
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
-        | None -> None
+        | ValueSome vref -> ValueSome (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | ValueNone -> ValueNone
         
     // Calls to LanguagePrimitives.IntrinsicFunctions.UnboxGeneric can be optimized to calls to UnboxFast when we know that the 
     // target type isn't 'NullNotLiked', i.e. that the target type is not an F# union, record etc. 
@@ -3318,7 +3320,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.unbox_vref && 
                                    canUseUnboxFast g m ty ->
 
-        Some(DevirtualizeApplication cenv env g.unbox_fast_vref ty tyargs args m)
+        ValueSome(DevirtualizeApplication cenv env g.unbox_fast_vref ty tyargs args m)
         
     // Calls to LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric can be optimized to calls to TypeTestFast when we know that the 
     // target type isn't 'NullNotTrueValue', i.e. that the target type is not an F# union, record etc. 
@@ -3326,18 +3328,18 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.istype_vref && 
                                    canUseTypeTestFast g ty ->
 
-        Some(DevirtualizeApplication cenv env g.istype_fast_vref ty tyargs args m)
+        ValueSome(DevirtualizeApplication cenv env g.istype_fast_vref ty tyargs args m)
         
     // Don't fiddle with 'methodhandleof' calls - just remake the application
     | Expr.Val (vref, _, _), _, _ when valRefEq g vref g.methodhandleof_vref ->
-        Some( MakeApplicationAndBetaReduce g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m), 
+        ValueSome( MakeApplicationAndBetaReduce g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m), 
               { TotalSize=1
                 FunctionSize=1
                 HasEffect=false
                 MightMakeCriticalTailcall = false
                 Info=UnknownValue})
 
-    | _ -> None
+    | _ -> ValueNone
 
 /// Attempt to inline an application of a known value at callsites
 and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m) =
@@ -3363,7 +3365,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                               | Expr.Val (vref, _, _) when vref.IsBaseVal -> true
                               | _ -> false
         
-        if isBaseCall then None else
+        if isBaseCall then ValueNone else
 
         // Since Lazy`1 moved from FSharp.Core to mscorlib on .NET 4.0, inlining Lazy values from 2.0 will
         // confuse the optimizer if the assembly is referenced on 4.0, since there will be no value to tie back
@@ -3385,7 +3387,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                     | _ -> false
                 | _ -> false                                          
         
-        if isValFromLazyExtensions then None else
+        if isValFromLazyExtensions then ValueNone else
 
         let isSecureMethod =
           match finfo.Info with
@@ -3393,14 +3395,14 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                 vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute g a))
           | _ -> false                              
 
-        if isSecureMethod then None else
+        if isSecureMethod then ValueNone else
 
         let isGetHashCode =
             match finfo.Info with
             | ValValue(vref, _) -> vref.DisplayName = "GetHashCode" && vref.IsCompilerGenerated
             | _ -> false
 
-        if isGetHashCode then None else
+        if isGetHashCode then ValueNone else
 
         // Inlining lambda 
         let f2R = CopyExprForInlining cenv false f2 m
@@ -3415,9 +3417,9 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
-        Some(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} exprR)
+        ValueSome(OptimizeExpr cenv {env with dontInline= Zset.add lambdaId env.dontInline} exprR)
           
-    | _ -> None
+    | _ -> ValueNone
 
 // Optimize the application of computed functions.
 // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
@@ -3522,10 +3524,10 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     let g = cenv.g
     // trying to devirtualize
     match TryDevirtualizeApplication cenv env (f0, tyargs, args, m) with 
-    | Some res -> 
+    | ValueSome res -> 
         // devirtualized
         res
-    | None -> 
+    | ValueNone -> 
     let optf0, finfo = OptimizeFuncInApplication cenv env f0 m
 
     match StripPreComputationsFromComputedFunction g optf0 args (fun f argsR -> MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [tyargs], argsR, f.Range)) with 
@@ -3534,10 +3536,10 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     | Choice2Of2 (newf0, remake) -> 
 
     match TryInlineApplication cenv env finfo (tyargs, args, m) with 
-    | Some (res, info) -> 
+    | ValueSome (res, info) -> 
         // inlined
         (res |> remake), info
-    | None -> 
+    | ValueNone -> 
 
     let shapes = 
         match newf0 with 
