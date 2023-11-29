@@ -18,16 +18,19 @@ open FSharp.Compiler.TypeRelations
 
 let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 50
 
+[<return: Struct>]
 let (|ValUseAtApp|_|) e =
     match e with
-    | InnerExprPat(Expr.App(funcExpr = InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags))) | Expr.Val(
-        valRef = vref; flags = valUseFlags)) -> Some(vref, valUseFlags)
-    | _ -> None
+    | InnerExprPat(Expr.App(funcExpr = InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags))) | Expr.Val(valRef = vref; flags = valUseFlags)) ->
+        ValueSome(vref, valUseFlags)
+    | _ -> ValueNone
 
+[<Struct>]
 type TailCallReturnType =
     | MustReturnVoid // indicates "has unit return type and must return void"
     | NonVoid
 
+[<Struct>]
 type TailCall =
     | Yes of TailCallReturnType
     | No

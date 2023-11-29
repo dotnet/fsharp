@@ -5275,16 +5275,20 @@ and TcMutRecDefsFinish cenv defs m =
                 yield! openDeclsRef.Value
             | _ -> () ]
 
-    let tycons = defs |> List.choose (function MutRecShape.Tycon (Some tycon, _) -> Some tycon | _ -> None)
+    let tycons = 
+        [ for def in defs do
+            match def with 
+            | MutRecShape.Tycon (Some tycon, _) -> yield tycon
+            | _ -> () ]
 
-    let binds = 
-        defs |> List.collect (function 
+    let binds =
+        defs |> List.collect (function
             | MutRecShape.Open _ -> []
             | MutRecShape.ModuleAbbrev _ -> []
-            | MutRecShape.Tycon (_, binds) 
-            | MutRecShape.Lets binds -> 
-                binds |> List.map ModuleOrNamespaceBinding.Binding 
-            | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleTyAcc, moduleEntity), _), moduleDefs) -> 
+            | MutRecShape.Tycon (_, binds)
+            | MutRecShape.Lets binds ->
+                binds |> List.map ModuleOrNamespaceBinding.Binding
+            | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleTyAcc, moduleEntity), _), moduleDefs) ->
                 let moduleContents = TcMutRecDefsFinish cenv moduleDefs m
                 moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
                 [ ModuleOrNamespaceBinding.Module(moduleEntity, moduleContents) ])
