@@ -10815,7 +10815,7 @@ and TcNonrecBindingTyparDecls cenv env tpenv bind =
     let (NormalizedBinding(_, _, _, _, _, _, synTyparDecls, _, _, _, _, _)) = bind
     TcBindingTyparDecls true cenv env tpenv synTyparDecls
 
-and TcNonRecursiveBinding (declKind: DeclKind) cenv env tpenv ty binding =
+and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
     // Check for unintended shadowing
     match binding with
     | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ident]); range = headPatRange)) ->
@@ -10824,7 +10824,7 @@ and TcNonRecursiveBinding (declKind: DeclKind) cenv env tpenv ty binding =
             warning(Error(FSComp.SR.tcInfoIfFunctionShadowsUnionCase(), headPatRange))
         | _ -> ()
     | _ -> ()
-        
+    
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
     TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
