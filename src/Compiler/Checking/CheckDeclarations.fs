@@ -462,14 +462,16 @@ module TcRecdUnionAndEnumDeclarations =
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
-        | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
+        | None ->
+            errorR (Error(FSComp.SR.tcFieldRequiresName(), m))
+            None
         | Some id ->
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-            TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis, m) 
+            Some(TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis, m)) 
 
     let TcNamedFieldDecls cenv env parent isIncrClass tpenv fields =
-        fields |> List.map (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
+        fields |> List.choose (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
 
     //-------------------------------------------------------------------------
     // Bind other elements of type definitions (constructors etc.)
@@ -518,14 +520,19 @@ module TcRecdUnionAndEnumDeclarations =
             match args with
             | SynUnionCaseKind.Fields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
-                    match idOpt, parent with
-                    | Some fieldId, Parent tcref ->
-                        let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
-                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                        TcNamedFieldDecl cenv env parent false tpenv fld
-                    | _ ->
-                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                let rfields =
+                    flds
+                    |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
+                        match idOpt, parent with
+                        | Some fieldId, Parent tcref ->
+                            let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
+                            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                            TcNamedFieldDecl cenv env parent false tpenv fld
+                        | _ ->
+                            Some(TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                    )
+                    |> List.choose (fun x -> x)
+                
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy

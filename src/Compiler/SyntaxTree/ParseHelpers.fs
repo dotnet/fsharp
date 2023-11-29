@@ -1140,20 +1140,46 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
         trivia
     )
 
-let mkValField mVal mRhs mut access ident (typ: SynType) xmlDoc rangeStart attribs mStaticOpt =
-    let isStatic = Option.isSome mStaticOpt
-    let mValDecl = unionRanges rangeStart typ.Range |> unionRangeWithXmlDoc xmlDoc
+let mkSynField parseState (idOpt: Ident option) (t: SynType option) (isMutable: range option) (vis: SynAccess option) (attributes: SynAttributes) (mStatic: range option) (rangeStart: range) (leadingKeyword: SynLeadingKeyword option) =
+    let t, mStart =
+        match t with
+        | Some value -> value, rangeStart
+        | None ->
+            let mType, mStart =
+                match idOpt with
+                | Some id -> id.idRange, rangeStart
+                | _ ->
 
+                match vis with
+                | Some vis -> vis.Range, rangeStart
+                | _ ->
+                    
+                match isMutable with
+                | Some m -> m, rangeStart
+                | _ -> 
+
+                match leadingKeyword with
+                | Some keyword -> keyword.Range, rangeStart
+                | None ->
+
+                attributes
+                |> Seq.tryLast
+                |> Option.map (fun l -> l.Range, rangeStart)
+                |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
+
+            SynType.FromParseError(mType.EndRange), mStart
+
+    let mWhole = unionRanges mStart t.Range
+    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
+    let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
+
+    SynField(attributes, Option.isSome mStatic, idOpt, t, Option.isSome isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
+
+let mkValField parseState mVal (isMutable: range option) access (idOpt: Ident option) (typ: SynType option) (rangeStart: range) attribs mStaticOpt =
     let leadingKeyword =
         match mStaticOpt with
         | None -> SynLeadingKeyword.Val mVal
         | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
 
-    let fld =
-        SynField(attribs, isStatic, Some ident, typ, mut, xmlDoc, access, mRhs, { LeadingKeyword = Some leadingKeyword })
-
-    SynMemberDefn.ValField(fld, mValDecl)
-
-let mkSynField parseState idOpt t isMutable vis attributes isStatic mWhole leadingKeyword =
-    let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
-    SynField(attributes, isStatic, idOpt, t, isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
+    let field = mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
+    SynMemberDefn.ValField(field, field.Range)
