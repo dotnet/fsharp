@@ -1988,6 +1988,9 @@ classDefnMember:
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let flags = $3
+       match flags with
+       | _, SynLeadingKeyword.Static(mStatic) -> errorR (Error (FSComp.SR.parsStaticMemberImcompleteSyntax (), mStatic))
+       | _ -> ()
        $4 $2 flags $1 rangeStart }
 
   | opt_attributes opt_access memberFlags recover
