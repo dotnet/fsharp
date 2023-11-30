@@ -1486,3 +1486,32 @@ namespace N
               Message =
                            "The TailCall attribute should only be applied to recursive functions." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn about alternative attribute on recursive let-bound value`` () =
+        """
+namespace N
+
+    open System
+    
+    module M =
+        
+        [<AttributeUsage(AttributeTargets.Method)>]
+        type TailCallAttribute() = inherit Attribute()
+
+        [<TailCall>]
+        let rec f x = 1 + f x
+        """
+        |> FSharp
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 12
+                        StartColumn = 27
+                        EndLine = 12
+                        EndColumn = 30 }
+              Message =
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]

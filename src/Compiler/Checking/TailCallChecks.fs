@@ -56,6 +56,9 @@ type TailCall =
         | TailCall.Yes _ -> TailCall.Yes TailCallReturnType.NonVoid
         | TailCall.No -> TailCall.No
 
+let hasTailCallAttrib (attribs: Attribs) =
+    attribs |> List.exists (fun a -> a.TyconRef.CompiledName = "TailCallAttribute")
+
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
 
@@ -738,10 +741,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
             | Some info -> info.HasNoArgs
             | _ -> false
 
-        if
-            (not isRec || isNotAFunction)
-            && HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute bind.Var.Attribs
-        then
+        if (not isRec || isNotAFunction) && hasTailCallAttrib bind.Var.Attribs then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
 
     // Check if a let binding to the result of a rec expression is not inside the rec expression
@@ -807,7 +807,7 @@ and CheckDefnInModule cenv mdef =
                 let mustTailCall =
                     Seq.fold
                         (fun mustTailCall (v: Val) ->
-                            if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+                            if hasTailCallAttrib v.Attribs then
                                 let newSet = Zset.add v mustTailCall
                                 newSet
                             else
