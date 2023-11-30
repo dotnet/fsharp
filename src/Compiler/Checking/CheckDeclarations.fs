@@ -4395,7 +4395,6 @@ module TcDeclarations =
                     | _ -> None)
                                 
             // Raise a new error if we try to have an interface implementation with auto properties on constructor-less types,
-            if not implementedAutoProperties.IsEmpty then
                 for mem in implementedAutoProperties do
                     match mem with
                     | SynMemberDefn.AutoProperty( isStatic = false; range = m) when implicitCtorSynPats.IsNone ->
