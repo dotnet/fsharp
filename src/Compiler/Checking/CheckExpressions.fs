@@ -10541,6 +10541,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 // TODO: Find out a better way to check for the identity function aka id or fun x -> x
                 | SynPat.Named _ , SynExpr.Ident(ident = ident) when ident.idText = "id" -> declKind.AllowedAttribTargets memberFlagsOpt
                 | SynPat.Named _ , SynExpr.Lambda _ -> declKind.AllowedAttribTargets memberFlagsOpt
+                | SynPat.Tuple _ , _
                 | SynPat.Named _, _ when isNil declaredTypars -> AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
                 | _ -> declKind.AllowedAttribTargets memberFlagsOpt
             else

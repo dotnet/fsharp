@@ -79,7 +79,8 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 11, Col 3, Line 11, Col 13, "This attribute is not valid for use on this language element");
+            (Error 842, Line 11, Col 3, Line 11, Col 13, "This attribute is not valid for use on this language element")
+            (Error 842, Line 14, Col 3, Line 14, Col 13, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=ConditionalAttribute.fs					# ConditionalAttribute.fs
