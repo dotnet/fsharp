@@ -969,6 +969,13 @@ module Display =
         && (ty.GetGenericTypeDefinition() = typedefof<Map<_, _>>
             || ty.GetGenericTypeDefinition() = typedefof<Set<_>>)
 
+    let messageRegexLookup =
+        @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
+        |> System.Text.RegularExpressions.Regex
+
+    let illFormedBracketPatternLookup =
+        @"(?<!\\){|(?<!\\)}" |> System.Text.RegularExpressions.Regex
+
     // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
     // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
     // Calls to layout proper sub-objects should pass showMode = ShowAll.
@@ -1054,12 +1061,6 @@ module Display =
             if isNull txt || txt.Length <= 1 then
                 None
             else
-                let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
-                let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
-                let messageRegexLookup = System.Text.RegularExpressions.Regex(messageRegexPattern)
-
-                let illFormedBracketPatternLookup =
-                    System.Text.RegularExpressions.Regex(illFormedBracketPattern)
 
                 let rec buildObjMessageL (txt: string) (layouts: Layout list) =
 
@@ -1111,8 +1112,8 @@ module Display =
 
                                 countNodes 0 // 0 means we do not count the preText and postText
 
-                                let postTextMatch =
-                                    System.Text.RegularExpressions.Regex.Match(postText, messageRegexPattern)
+                                let postTextMatch = messageRegexLookup.Match postText
+
                                 // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
                                 let currentPostText =
                                     match postTextMatch.Success with
