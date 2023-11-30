@@ -46,3 +46,6 @@ let __someTypedFunction5<'a> = false
 
 [<MethodOnly>]
 let __someTypedFunction6<'a> : bool  = false
+
+[<MethodOnly>]
+let ``someValue2`` = "someValue" // Should fail
