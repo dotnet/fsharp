@@ -7370,6 +7370,8 @@ FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Syntax.SynType fieldType
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Syntax.SynType get_fieldType()
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.SyntaxTrivia.SynFieldTrivia get_trivia()
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.SyntaxTrivia.SynFieldTrivia trivia
+FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynField: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
