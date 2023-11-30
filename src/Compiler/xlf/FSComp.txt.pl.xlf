@@ -462,6 +462,11 @@
         <target state="translated">automaty stanów z możliwością wznowienia</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReuseSameFieldsInStructUnions">
+        <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
+        <target state="new">Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">ograniczenia typu własnego</target>
@@ -942,6 +947,11 @@
         <target state="translated">Dostęp tego elementu członkowskiego jest niejednoznaczny. W celu utworzenia obiektu użyj nawiasów, na przykład „(nowy SomeType(args)).MemberName”</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
         <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „else” wyrażenia warunkowego. Oczekiwano konstrukcji „elif &lt;expr&gt; then &lt;expr&gt;” lub „else if &lt;expr&gt; then &lt;expr&gt;”.</target>
@@ -1375,6 +1385,11 @@
       <trans-unit id="tcStaticBindingInExtrinsicAugmentation">
         <source>Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead.</source>
         <target state="translated">Nie można dodać powiązań statycznych do rozszerzeń wewnętrznych. Zamiast tego rozważ użycie „statycznego elementu członkowskiego”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcStructUnionMultiCaseFieldsSameType">
+        <source>If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</source>
+        <target state="new">If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
