@@ -4398,7 +4398,7 @@ module TcDeclarations =
             if not implementedAutoProperties.IsEmpty then
                 for mem in implementedAutoProperties do
                     match mem with
-                    | SynMemberDefn.AutoProperty(range = m) when implicitCtorSynPats.IsNone ->
+                    | SynMemberDefn.AutoProperty( isStatic = false; range = m) when implicitCtorSynPats.IsNone ->
                         errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
                     | _ -> ()
 
