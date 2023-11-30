@@ -10538,8 +10538,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let attrTgt =
             if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargetsOnLetValues) then
                 match pat, rhsExpr with
+                | SynPat.Named _ , SynExpr.Lambda _
+                | SynPat.Named _ , SynExpr.MatchLambda _ -> declKind.AllowedAttribTargets memberFlagsOpt
                 | SynPat.Named _ , SynExpr.Ident(ident = ident) when ident.idText = "id" -> declKind.AllowedAttribTargets memberFlagsOpt
-                | SynPat.Named _ , SynExpr.Lambda _ -> declKind.AllowedAttribTargets memberFlagsOpt
                 | SynPat.Tuple _ , _
                 | SynPat.Named _, _ when isNil declaredTypars -> AttributeTargets.FieldDecl
                 | _ -> declKind.AllowedAttribTargets memberFlagsOpt

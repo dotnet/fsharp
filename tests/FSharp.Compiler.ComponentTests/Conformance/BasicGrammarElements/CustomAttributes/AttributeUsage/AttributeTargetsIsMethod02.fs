@@ -49,3 +49,37 @@ let __someTypedFunction6<'a> : bool  = false
 
 [<MethodOnly>]
 let ``someValue2`` = "someValue" // Should fail
+
+type TestConst =
+    | Bool of bool
+
+[<NoComparison>]
+type TestExpr =
+    | Const of TestConst * Type * int
+    | Var of string * Type * int
+
+[<MethodOnly>]
+let (|BoolExpr|_|) =
+    function
+    | TestExpr.Const (TestConst.Bool b, _, _) -> Some b
+    | _ -> None
+   
+[<MethodOnly>]
+[<return: Struct>]
+let (|BoolExpr2|_|) =
+    function
+    | TestExpr.Const(TestConst.Bool b1, _, _) -> ValueSome b1
+    | _ -> ValueNone
+
+[<MethodOnly>]
+let (|BoolExpr3|_|) x =
+    match x with
+    | TestExpr.Const (TestConst.Bool b, _, _) -> Some b
+    | _ -> None
+   
+[<MethodOnly>]
+[<return: Struct>]
+let (|BoolExpr4|_|) x =
+    match x with
+    | TestExpr.Const(TestConst.Bool b1, _, _) -> ValueSome b1
+    | _ -> ValueNone
