@@ -4395,11 +4395,11 @@ module TcDeclarations =
                     | _ -> None)
                                 
             // Raise a new error if we try to have an interface implementation with auto properties on constructor-less types,
-                for mem in implementedAutoProperties do
-                    match mem with
-                    | SynMemberDefn.AutoProperty( isStatic = false; range = m) when implicitCtorSynPats.IsNone ->
-                        errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
-                    | _ -> ()
+            for mem in implementedAutoProperties do
+                match mem with
+                | SynMemberDefn.AutoProperty( isStatic = false; range = m) when implicitCtorSynPats.IsNone ->
+                    errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+                | _ -> ()
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
