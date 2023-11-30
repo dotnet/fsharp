@@ -733,13 +733,8 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
         cenv.reportErrors
         && cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec
     then
-        let isNotAFunction =
-            match bind.Var.ValReprInfo with
-            | Some info -> info.HasNoArgs
-            | _ -> false
-
         if
-            (not isRec || isNotAFunction)
+            not isRec
             && HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute bind.Var.Attribs
         then
             warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
