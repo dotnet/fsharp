@@ -29,7 +29,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let results =
@@ -77,7 +77,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
@@ -1990,3 +1990,20 @@ match { A = 1; B = 2 } with
 """
 
         VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+
+    [<Fact>]
+    let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =
+        let fileContents =
+            """
+module Ops =
+let (|>>) a b = a + b
+module Foo =
+  let (|>>) a b = a + b
+Ops.Foo.()
+Ops.Foo.(
+Ops.(
+Ops.()
+"""
+
+        VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
+        VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])

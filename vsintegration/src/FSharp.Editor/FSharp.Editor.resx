@@ -227,7 +227,7 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</value>
+Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
@@ -351,5 +351,8 @@ Use live (unsaved) buffers for checking</value>
   </data>
   <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
     <value>Convert C# 'using' to F# 'open'</value>
+  </data>
+  <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
+    <value>Remove unnecessary parentheses</value>
   </data>
 </root>

@@ -939,7 +939,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "-" { MINUS }
 
- | "~" { RESERVED }
+ | "~"
+     { errorR (Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       RESERVED }
 
  | ignored_op_char* '*' '*'                    op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
 

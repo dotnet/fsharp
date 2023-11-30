@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Blok Yapısı Kılavuzları;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
 F# kodu için yapı yönergelerini göster;
 Anahat oluşturma;
 F# kodu için ana hattı ve daraltılabilir düğümleri göster;
@@ -214,6 +214,11 @@ Tire alt çizgisi;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' öğesini kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

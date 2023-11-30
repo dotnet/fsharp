@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Guide per strutture a blocchi;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Guide per strutture a blocchi;
 Mostra le linee guida per la struttura per il codice F#;
 Struttura;
 Mostra i nodi struttura e comprimibili per il codice F#;
@@ -214,6 +214,11 @@ Sottolineatura a trattini;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Rimuovi 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

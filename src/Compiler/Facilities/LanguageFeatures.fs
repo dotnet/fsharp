@@ -77,8 +77,12 @@ type LanguageFeature =
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | WhileBang
+    | ReuseSameFieldsInStructUnions
     | ExtendedFixedBindings
     | PreferStringGetPinnableReference
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -185,6 +189,10 @@ type LanguageVersion(versionText) =
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
+                LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
+                LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
+                LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
+                LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -319,8 +327,12 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
+        | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
         | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
         | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
+        | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
+        | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
+        | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

@@ -38,7 +38,8 @@ module internal UnusedCodeFixHelper =
 
                 return
                     lexerSymbol
-                    |> Option.bind (fun symbol -> checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
+                    |> Option.bind (fun symbol ->
+                        checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, symbol.FullIsland))
                     |> ValueOption.ofOption
                     |> ValueOption.bind (fun symbolUse ->
                         match symbolUse.Symbol with
@@ -142,11 +143,11 @@ module internal CodeFixExtensions =
 
 [<AutoOpen>]
 module IFSharpCodeFixProviderExtensions =
-    type IFSharpCodeFixProvider with
+    // Cache this no-op delegate.
+    let private registerCodeFix =
+        Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
 
-        // this is not used anywhere, it's just needed to create the context
-        static member private Action =
-            Action<CodeActions.CodeAction, ImmutableArray<Diagnostic>>(fun _ _ -> ())
+    type IFSharpCodeFixProvider with
 
         member private provider.FixAllAsync (fixAllCtx: FixAllContext) (doc: Document) (allDiagnostics: ImmutableArray<Diagnostic>) =
             cancellableTask {
@@ -163,7 +164,7 @@ module IFSharpCodeFixProviderExtensions =
                     // a proper fix is needed.
                     |> Seq.distinctBy (fun d -> d.Id, d.Location)
                     |> Seq.map (fun diag ->
-                        let context = CodeFixContext(doc, diag, IFSharpCodeFixProvider.Action, token)
+                        let context = CodeFixContext(doc, diag, registerCodeFix, token)
                         provider.GetCodeFixIfAppliesAsync context)
                     |> CancellableTask.whenAll
 
@@ -193,4 +194,11 @@ module IFSharpCodeFixProviderExtensions =
         member provider.RegisterFsharpFixAll() =
             FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
                 provider.FixAllAsync fixAllCtx doc allDiagnostics
+                |> CancellableTask.start fixAllCtx.CancellationToken)
+
+        member provider.RegisterFsharpFixAll filter =
+            FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+                let filteredDiagnostics = filter allDiagnostics
+
+                provider.FixAllAsync fixAllCtx doc filteredDiagnostics
                 |> CancellableTask.start fixAllCtx.CancellationToken)

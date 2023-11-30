@@ -277,8 +277,8 @@ open System
 let main argv = 0"""
 
         let private getNetCoreAppReferences =
-            let mutable output = ""
-            let mutable errors = ""
+            let mutable output = [||]
+            let mutable errors = [||]
             let mutable cleanUp = true
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
@@ -303,9 +303,11 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
                     let timeout = 30000
-                    let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
-
+                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
+                    
                     if exitCode <> 0 || errors.Length > 0 then
+                        errors <- dotneterrors
+                        output <- dotnetoutput
                         printfn "Output:\n=======\n"
                         output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
                         printfn "Errors:\n=======\n"
@@ -315,12 +317,18 @@ let main argv = 0"""
                     File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
                 with | e ->
                     cleanUp <- false
-                    printfn "Project directory: %s" projectDirectory
-                    printfn "STDOUT: %s" output
-                    File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
-                    printfn "STDERR: %s" errors
-                    File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
-                    raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
+                    let message =
+                        let output = output |> String.concat "\nSTDOUT: "
+                        let errors = errors |> String.concat "\nSTDERR: "
+                        File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
+                        File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
+                        $"""                        
+Project directory: %s{projectDirectory}
+STDOUT: %s{output}
+STDERR: %s{errors}
+An error occurred getting netcoreapp references: %A{e}
+"""
+                    raise (Exception (message, e))
             finally
                 if cleanUp then
                     try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
