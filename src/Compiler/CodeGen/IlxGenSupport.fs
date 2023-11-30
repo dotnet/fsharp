@@ -149,7 +149,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors
         emptyILTypeDefs,
         mkILProperties (ilElements |> List.collect (fun (_, _, props, _) -> props)),
         emptyILEvents,
-        emptyILCustomAttrs,
+        mkILCustomAttrsFromArray [| g.CompilerGeneratedAttribute |],
         ILTypeInit.BeforeField
     )
 
