@@ -1737,3 +1737,4 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3859,tcNoStaticPropertyFoundForOverride,"No static abstract property was found that corresponds to this override"
 3860,chkStaticMembersOnObjectExpressions,"Object expressions cannot implement interfaces with static abstract members or declare static members."
 3861,chkTailCallAttrOnNonRec,"The TailCall attribute should only be applied to recursive functions."
+3862,parsStaticMemberImcompleteSyntax,"Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration."
