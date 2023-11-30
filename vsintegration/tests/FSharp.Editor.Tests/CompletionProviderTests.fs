@@ -423,7 +423,7 @@ xVal**y
             Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
     [<Fact>]
-    let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let ShouldTriggerCompletionAtStartOfFileWithInsertion () =
         let fileContents =
             """
 l"""
