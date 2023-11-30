@@ -747,4 +747,20 @@ type FooImpl() =
             and set(value) = ()
             """
         |> typecheck
+        |> shouldSucceed        
+
+    [<Fact>]
+    let ``No error if we try to have static autoprop on a type without constructor`` () =
+         Fsx """
+#nowarn "3535" //We accept that static abstracts are an advanced feature
+[<Interface>]
+type Foo =
+    static abstract member X : string with get, set
+
+[<Class>]
+type FooImpl =
+    interface Foo with
+        static member val X = "" with get, set     
+            """
+        |> typecheck
         |> shouldSucceed
