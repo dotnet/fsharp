@@ -44,6 +44,8 @@ type FilePath = string
 type ProjectPath = string
 type FileVersion = int
 
+type FSharpProjectSnapshot = FSharp.Compiler.CodeAnalysis.ProjectSnapshot.FSharpProjectSnapshot
+
 type internal IBackgroundCompiler =
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
@@ -1524,7 +1526,7 @@ type internal BackgroundCompiler
 
         member _.GetAssemblyData
             (
-                projectSnapshot: FSharpProjectSnapshot,
+                projectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot.FSharpProjectSnapshot,
                 _fileName: string,
                 userOpName: string
             ) : NodeCode<ProjectAssemblyDataResult> =

@@ -44,6 +44,8 @@ open FSharp.Compiler.TypedTreeOps
 open System.Threading
 open Internal.Utilities.Hashing
 
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+
 type internal FSharpFile =
     {
         Range: range
@@ -152,7 +154,8 @@ type internal Extensions =
 
             member _.GetVersion() =
                 Md5Hasher.empty
-                |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.SourceHash))
+                |> Md5Hasher.addBytes' (fileSnapshots |> Seq.map (fun f -> f.SourceHash.ToBuilder().ToArray()))
+                |> Md5Hasher.toString
         }
 
 [<AutoOpen>]
@@ -615,7 +618,7 @@ type internal TransparentCompiler
     let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
 
         caches.BootstrapInfoStatic.Get(
-            projectSnapshot.WithoutFileVersions.Key,
+            projectSnapshot.NoFileVersionsKey,
             node {
                 use _ =
                     Activity.start
@@ -815,7 +818,7 @@ type internal TransparentCompiler
     let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
 
         caches.BootstrapInfo.Get(
-            projectSnapshot.Key,
+            projectSnapshot.FullKey,
             node {
                 use _ =
                     Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
@@ -865,9 +868,7 @@ type internal TransparentCompiler
                 {
                     FileName = file.Source.FileName
                     Source = source
-                    SourceHash =
-                        Md5Hasher.empty
-                        |> Md5Hasher.addBytes (source.GetChecksum().ToBuilder().ToArray())
+                    SourceHash = source.GetChecksum()
                     IsLastCompiland = file.IsLastCompiland
                     IsExe = file.IsExe
                 }
@@ -883,28 +884,23 @@ type internal TransparentCompiler
                 |> Seq.map (fun f ->
                     f.FileName
                     |> sourceFileMap.TryFind
-                    |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot.Key.GetLabel()}")
+                    |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot}")
                     |> LoadSource)
                 |> NodeCode.Parallel
 
-            return
-                {
-                    ProjectSnapshot = projectSnapshot
-                    SourceFiles = sources |> Array.toList
-                }
+            return FSharpProjectSnapshotWithSources (projectSnapshot, sources |> Array.toList)
+
         }
 
     let ComputeParseFile (projectSnapshot: FSharpProjectSnapshot) (file: FSharpFileSnapshotWithSource) =
 
-        let projectKey = projectSnapshot.WithoutSourceFiles.WithoutReferences.Key
-
         let key =
             { new ICacheKey<_, _> with
                 member _.GetLabel() = file.FileName |> shortPath
-                member _.GetKey() = projectKey.GetKey(), file.FileName
+                member _.GetKey() = projectSnapshot.ProjectCore.Key, file.FileName
 
                 member _.GetVersion() =
-                    projectKey.GetVersion(),
+                    projectSnapshot.ParsingVersion,
                     file.SourceHash,
                     // TODO: is there a situation where this is not enough and we need to have them separate?
                     file.IsLastCompiland && file.IsExe
@@ -918,7 +914,7 @@ type internal TransparentCompiler
                         "ComputeParseFile"
                         [|
                             Activity.Tags.fileName, file.FileName |> shortPath
-                            Activity.Tags.version, file.SourceHash
+                            Activity.Tags.version, file.SourceHash.ToBuilder().ToArray() |> Md5Hasher.toString
                         |]
 
                 // TODO: might need to deal with exceptions here:
@@ -1450,7 +1446,7 @@ type internal TransparentCompiler
 
     let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
         caches.ParseAndCheckAllFilesInProject.Get(
-            projectSnapshot.Key,
+            projectSnapshot.FullKey,
             node {
                 use _ =
                     Activity.start
@@ -1478,7 +1474,7 @@ type internal TransparentCompiler
 
     let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshotWithSources) =
         caches.ProjectExtras.Get(
-            projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
+            projectSnapshot.SignatureKey,
             node {
 
                 let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
@@ -1571,7 +1567,7 @@ type internal TransparentCompiler
 
     let ComputeAssemblyData (projectSnapshot: FSharpProjectSnapshot) fileName =
         caches.AssemblyData.Get(
-            projectSnapshot.WithoutImplFilesThatHaveSignatures.Key,
+            projectSnapshot.SignatureKey,
             node {
                 let availableOnDiskModifiedTime =
                     if FileSystem.FileExistsShim fileName then
@@ -1606,7 +1602,7 @@ type internal TransparentCompiler
 
     let ComputeParseAndCheckProject (projectSnapshot: FSharpProjectSnapshot) =
         caches.ParseAndCheckProject.Get(
-            projectSnapshot.Key,
+            projectSnapshot.FullKey,
             node {
 
                 match! ComputeBootstrapInfo projectSnapshot with

@@ -1,33 +1,33 @@
 module FSharpChecker.ProjectSnapshot
 
 open Xunit
-
-open FSharp.Compiler.CodeAnalysis
+open System
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 
 [<Fact>]
 let WithoutImplFilesThatHaveSignatures () =
 
-    let snapshot: FSharpProjectSnapshot = {
-        ProjectFileName = Unchecked.defaultof<_>
-        ProjectId = Unchecked.defaultof<_>
-        SourceFiles = [
+    let snapshot = FSharpProjectSnapshot.Create(
+        projectFileName = "Dummy.fsproj",
+        projectId = None,
+        sourceFiles = [
             { FileName = "A.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "C.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-        ]
-        ReferencesOnDisk = Unchecked.defaultof<_>
-        OtherOptions = Unchecked.defaultof<_>
-        ReferencedProjects = Unchecked.defaultof<_>
-        IsIncompleteTypeCheckEnvironment = Unchecked.defaultof<_>
-        UseScriptResolutionRules = Unchecked.defaultof<_>
-        LoadTime = Unchecked.defaultof<_>
-        UnresolvedReferences = Unchecked.defaultof<_>
-        OriginalLoadReferences = Unchecked.defaultof<_>
-        Stamp = Unchecked.defaultof<_>
-    }
+        ],
+        referencesOnDisk = [],
+        otherOptions = [],
+        referencedProjects = [],
+        isIncompleteTypeCheckEnvironment = true,
+        useScriptResolutionRules = false,
+        loadTime = DateTime(1234, 5, 6),
+        unresolvedReferences = None,
+        originalLoadReferences = [],
+        stamp = None
+    )
 
     let result = snapshot.WithoutImplFilesThatHaveSignatures
 
@@ -35,29 +35,31 @@ let WithoutImplFilesThatHaveSignatures () =
 
     Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
 
+    Assert.Equal<byte array>(result.FullVersion, snapshot.SignatureVersion)
+
 [<Fact>]
 let WithoutImplFilesThatHaveSignaturesExceptLastOne () =
 
-    let snapshot: FSharpProjectSnapshot = {
-        ProjectFileName = Unchecked.defaultof<_>
-        ProjectId = Unchecked.defaultof<_>
-        SourceFiles = [
+    let snapshot = FSharpProjectSnapshot.Create(
+        projectFileName = "Dummy.fsproj",
+        projectId = None,
+        sourceFiles = [
             { FileName = "A.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "C.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-        ]
-        ReferencesOnDisk = Unchecked.defaultof<_>
-        OtherOptions = Unchecked.defaultof<_>
-        ReferencedProjects = Unchecked.defaultof<_>
-        IsIncompleteTypeCheckEnvironment = Unchecked.defaultof<_>
-        UseScriptResolutionRules = Unchecked.defaultof<_>
-        LoadTime = Unchecked.defaultof<_>
-        UnresolvedReferences = Unchecked.defaultof<_>
-        OriginalLoadReferences = Unchecked.defaultof<_>
-        Stamp = Unchecked.defaultof<_>
-    }
+        ],
+        referencesOnDisk = [],
+        otherOptions = [],
+        referencedProjects = [],
+        isIncompleteTypeCheckEnvironment = true,
+        useScriptResolutionRules = false,
+        loadTime = DateTime(1234, 5, 6),
+        unresolvedReferences = None,
+        originalLoadReferences = [],
+        stamp = None
+    )
 
     let result = snapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne
 
@@ -65,31 +67,36 @@ let WithoutImplFilesThatHaveSignaturesExceptLastOne () =
 
     Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
 
+    Assert.Equal<byte array>(result.FullVersion, snapshot.LastFileVersion)
+
 
 [<Fact>]
 let WithoutImplFilesThatHaveSignaturesExceptLastOne_2 () =
 
-    let snapshot: FSharpProjectSnapshot = {
-        ProjectFileName = Unchecked.defaultof<_>
-        ProjectId = Unchecked.defaultof<_>
-        SourceFiles = [
+    let snapshot = FSharpProjectSnapshot.Create(
+        projectFileName = "Dummy.fsproj",
+        projectId = None,
+        sourceFiles = [
             { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
             { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-        ]
-        ReferencesOnDisk = Unchecked.defaultof<_>
-        OtherOptions = Unchecked.defaultof<_>
-        ReferencedProjects = Unchecked.defaultof<_>
-        IsIncompleteTypeCheckEnvironment = Unchecked.defaultof<_>
-        UseScriptResolutionRules = Unchecked.defaultof<_>
-        LoadTime = Unchecked.defaultof<_>
-        UnresolvedReferences = Unchecked.defaultof<_>
-        OriginalLoadReferences = Unchecked.defaultof<_>
-        Stamp = Unchecked.defaultof<_>
-    }
+        ],
+        referencesOnDisk = [],
+        otherOptions = [],
+        referencedProjects = [],
+        isIncompleteTypeCheckEnvironment = true,
+        useScriptResolutionRules = false,
+        loadTime = DateTime(1234, 5, 6),
+        unresolvedReferences = None,
+        originalLoadReferences = [],
+        stamp = None
+    )
 
     let result = snapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne
 
     let expected = [| "A.fs"; "B.fs"; "C.fs" |]
 
     Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
+
+    Assert.Equal<byte array>(result.FullVersion, snapshot.LastFileVersion)
+

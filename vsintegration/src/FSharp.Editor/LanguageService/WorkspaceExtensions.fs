@@ -9,6 +9,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.BuildGraph
 

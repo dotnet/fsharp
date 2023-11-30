@@ -11,6 +11,7 @@ open System.Reflection
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 #if NETCOREAPP

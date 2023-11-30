@@ -25,6 +25,7 @@ open System.Threading.Tasks
 open System.Xml
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
