@@ -1453,6 +1453,7 @@ type SynField =
         range: range *
         trivia: SynFieldTrivia
 
+    /// Gets the syntax range of this construct
     member Range: range
 
 /// Represents the syntax tree associated with the name of a type definition or module
