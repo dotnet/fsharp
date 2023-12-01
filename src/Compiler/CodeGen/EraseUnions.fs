@@ -1238,6 +1238,8 @@ let mkClassUnionDef
                 |> Array.tryFindIndex (fun t -> t.IsNullary)
                 |> Option.defaultValue -1
 
+            let fieldsEmitted = new HashSet<_>()
+
             for cidx, alt in Array.indexed cud.UnionCases do
                 if
                     repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)
@@ -1257,7 +1259,7 @@ let mkClassUnionDef
                     let ctor =
                         // Structs with fields are created using static makers methods
                         // Structs without fields can share constructor for the 'tag' value, we just create one
-                        if isStruct && cidx <> minNullaryIdx then
+                        if isStruct && not (cidx = minNullaryIdx) then
                             []
                         else
                             [
@@ -1274,6 +1276,12 @@ let mkClassUnionDef
                                 |> addMethodGeneratedAttrs
                             ]
 
+                    let fieldsToBeAddedIntoType =
+                        alt.FieldDefs
+                        |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
+
+                    let fields = fieldsToBeAddedIntoType |> Array.map mkUnionCaseFieldId |> Array.toList
+
                     let props, meths =
                         mkMethodsAndPropertiesForFields
                             (addMethodGeneratedAttrs, addPropertyGeneratedAttrs)
@@ -1282,7 +1290,7 @@ let mkClassUnionDef
                             cud.DebugImports
                             cud.HasHelpers
                             baseTy
-                            alt.FieldDefs
+                            fieldsToBeAddedIntoType
 
                     yield (fields, (ctor @ meths), props)
         ]
