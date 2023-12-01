@@ -9,7 +9,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text
 
 /// Detect a 'seq<int>' type
-val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType option
+val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType voption
 
 val callNonOverloadedILMethod:
     g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
@@ -26,4 +26,4 @@ val ConvertSequenceExprToObject:
     overallExpr: Expr ->
         (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 
-val IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool
+val inline IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool

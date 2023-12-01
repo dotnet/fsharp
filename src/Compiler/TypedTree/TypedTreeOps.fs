@@ -1265,7 +1265,7 @@ type MatchBuilder(spBind, inpRange: range) =
 
     member _.Close(dtree, m, ty) = primMkMatch (spBind, inpRange, dtree, targets.ToArray(), m, ty)
 
-let mkBoolSwitch m g t e =
+let inline mkBoolSwitch m g t e =
     TDSwitch(g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
 
 let primMkCond spBind m ty e1 e2 e3 = 
@@ -1280,8 +1280,8 @@ let mkCond spBind m ty e1 e2 e3 =
 // Primitive constructors
 //---------------------------------------------------------------------------
 
-let exprForValRef m vref = Expr.Val (vref, NormalValUse, m)
-let exprForVal m v = exprForValRef m (mkLocalValRef v)
+let inline exprForValRef m vref = Expr.Val (vref, NormalValUse, m)
+let inline exprForVal m v = exprForValRef m (mkLocalValRef v)
 let mkLocalAux m s ty mut compgen =
     let thisv = Construct.NewVal(s, m, None, ty, mut, compgen, None, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
     thisv, exprForVal m thisv

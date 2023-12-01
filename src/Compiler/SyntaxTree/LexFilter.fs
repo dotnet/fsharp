@@ -181,18 +181,20 @@ let infixTokenLength token =
 //
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
 // causes more offside warnings, while removing them doesn't add offside warnings in attributes.
+[<return: Struct>]
 let (|TokenLExprParen|_|) token =
     match token with
     | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Matches against a right-parenthesis-like token that is valid in expressions.
+[<return: Struct>]
 let (|TokenRExprParen|_|) token =
     match token with
     | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Determine the tokens that may align with the 'if' of an 'if/then/elif/else' without closing
 /// the construct
@@ -513,53 +515,54 @@ type TokenTupPool() =
 
 // Strip a bunch of leading '>' of a token, at the end of a typar application
 // Note: this is used in the 'service.fs' to do limited postprocessing
+[<return: Struct>]
 let (|TyparsCloseOp|_|) (txt: string) =
     let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
     let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
-    if List.isEmpty angles then None else
+    if List.isEmpty angles then ValueNone else
 
     let afterOp =
         match (System.String(Array.ofSeq afterAngles)) with
-         | "." -> Some DOT
-         | "]" -> Some RBRACK
-         | "-" -> Some MINUS
-         | ".." -> Some DOT_DOT
-         | "?" -> Some QMARK
-         | "??" -> Some QMARK_QMARK
-         | ":=" -> Some COLON_EQUALS
-         | "::" -> Some COLON_COLON
-         | "*" -> Some STAR
-         | "&" -> Some AMP
-         | "->" -> Some RARROW
-         | "<-" -> Some LARROW
-         | "=" -> Some EQUALS
-         | "<" -> Some (LESS false)
-         | "$" -> Some DOLLAR
-         | "%" -> Some (PERCENT_OP("%") )
-         | "%%" -> Some (PERCENT_OP("%%"))
-         | "" -> None
+         | "." -> ValueSome DOT
+         | "]" -> ValueSome RBRACK
+         | "-" -> ValueSome MINUS
+         | ".." -> ValueSome DOT_DOT
+         | "?" -> ValueSome QMARK
+         | "??" -> ValueSome QMARK_QMARK
+         | ":=" -> ValueSome COLON_EQUALS
+         | "::" -> ValueSome COLON_COLON
+         | "*" -> ValueSome STAR
+         | "&" -> ValueSome AMP
+         | "->" -> ValueSome RARROW
+         | "<-" -> ValueSome LARROW
+         | "=" -> ValueSome EQUALS
+         | "<" -> ValueSome (LESS false)
+         | "$" -> ValueSome DOLLAR
+         | "%" -> ValueSome (PERCENT_OP("%") )
+         | "%%" -> ValueSome (PERCENT_OP("%%"))
+         | "" -> ValueNone
          | s ->
              match List.ofSeq afterAngles with
               | '=' :: _
               | '!' :: '=' :: _
               | '<' :: _
               | '>' :: _
-              | '$' :: _ -> Some (INFIX_COMPARE_OP s)
-              | '&' :: _ -> Some (INFIX_AMP_OP s)
-              | '|' :: _ -> Some (INFIX_BAR_OP s)
+              | '$' :: _ -> ValueSome (INFIX_COMPARE_OP s)
+              | '&' :: _ -> ValueSome (INFIX_AMP_OP s)
+              | '|' :: _ -> ValueSome (INFIX_BAR_OP s)
               | '!' :: _
               | '?' :: _
-              | '~' :: _ -> Some (PREFIX_OP s)
+              | '~' :: _ -> ValueSome (PREFIX_OP s)
               | '@' :: _
-              | '^' :: _ -> Some (INFIX_AT_HAT_OP s)
+              | '^' :: _ -> ValueSome (INFIX_AT_HAT_OP s)
               | '+' :: _
-              | '-' :: _ -> Some (PLUS_MINUS_OP s)
-              | '*' :: '*' :: _ -> Some (INFIX_STAR_STAR_OP s)
+              | '-' :: _ -> ValueSome (PLUS_MINUS_OP s)
+              | '*' :: '*' :: _ -> ValueSome (INFIX_STAR_STAR_OP s)
               | '*' :: _
               | '/' :: _
-              | '%' :: _ -> Some (INFIX_STAR_DIV_MOD_OP s)
-              | _ -> None
-    Some([| for _c in angles do yield GREATER |], afterOp)
+              | '%' :: _ -> ValueSome (INFIX_STAR_DIV_MOD_OP s)
+              | _ -> ValueNone
+    ValueSome([| for _c in angles do yield GREATER |], afterOp)
 
 [<Struct>]
 type PositionWithColumn =
@@ -1172,7 +1175,6 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
-                            
                         | INFIX_COMPARE_OP ">:" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
@@ -1195,8 +1197,8 @@ type LexFilterImpl (
                             pool.Return tokenTup
                         | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr) ->
                             match afterOp with
-                            | None -> ()
-                            | Some tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
+                            | ValueNone -> ()
+                            | ValueSome tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
                             for i = greaters.Length - 1 downto 0 do
                                 delayToken (pool.UseShiftedLocation(tokenTup, greaters[i] res, i, -opstr.Length + i + 1))
                             pool.Return tokenTup

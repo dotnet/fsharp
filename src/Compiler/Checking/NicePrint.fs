@@ -2390,20 +2390,32 @@ module TastDefinitionPrinting =
 
 module InferredSigPrinting = 
     open PrintTypes
-    
+
+    [<return: Struct>]
+    let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
+        match currentContents with
+        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ->
+            ValueSome ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
+        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ] ->
+            ValueSome ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
+        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
+            ValueSome ([ mn.DisplayNameCore ], nestedModuleContents, mn.Attribs)
+        | _ ->
+            ValueNone
+
     /// Layout the inferred signature of a compilation unit
     let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m expr =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
 
-        let rec isConcreteNamespace x = 
-            match x with 
-            | TMDefRec(_, _opens, tycons, mbinds, _) -> 
+        let rec isConcreteNamespace x =
+            match x with
+            | TMDefRec(_, _opens, tycons, mbinds, _) ->
                 not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x, _) -> not x.IsNamespace))
             | TMDefLet _ -> true
             | TMDefDo _ -> true
             | TMDefOpens _ -> false
-            | TMDefs defs -> defs |> List.exists isConcreteNamespace 
+            | TMDefs defs -> defs |> List.exists isConcreteNamespace
 
         let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
@@ -2458,23 +2470,14 @@ module InferredSigPrinting =
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
                 let fullModuleName, def, denv, moduleAttribs =
-                    let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
-                        match currentContents with
-                        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ->
-                            Some ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
-                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ] ->
-                            Some ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
-                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
-                            Some ([ mn.DisplayNameCore ], nestedModuleContents, mn.Attribs)
-                        | _ ->
-                            None
+
 
                     match def with
                     | NestedModule(path, nestedModuleContents, moduleAttribs) ->
                         let fullPath = mspec.DisplayNameCore :: path
                         fullPath, nestedModuleContents, denv.AddOpenPath(fullPath), moduleAttribs
                     | _ -> [ mspec.DisplayNameCore ], def, denv, List.empty
-                
+
                 let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
                 let nmL = layoutAccessibility denv mspec.Accessibility nmL
                 let denv = denv.AddAccessibility mspec.Accessibility

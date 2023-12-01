@@ -2050,50 +2050,59 @@ let rec ExpandStructuralBinding cenv expr =
         ExpandStructuralBindingRaw cenv e
 
 /// Detect a query { ... }
+[<return: Struct>]
 let (|QueryRun|_|) g expr = 
     match expr with
     | Expr.App (Expr.Val (vref, _, _), _, _, [_builder; arg], _) when valRefEq g vref g.query_run_value_vref ->  
-        Some (arg, None)
+        ValueSome (arg, None)
     | Expr.App (Expr.Val (vref, _, _), _, [ elemTy ], [_builder; arg], _) when valRefEq g vref g.query_run_enumerable_vref ->  
-        Some (arg, Some elemTy)
-    | _ -> 
-        None
+        ValueSome (arg, Some elemTy)
+    | _ ->
+        ValueNone
 
 let (|MaybeRefTupled|) e = tryDestRefTupleExpr e 
 
+[<return: Struct>]
 let (|AnyInstanceMethodApp|_|) e = 
     match e with 
-    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> Some (vref, tyargs, obj, args)
-    | _ -> None
+    | Expr.App (Expr.Val (vref, _, _), _, tyargs, [obj; MaybeRefTupled args], _) -> ValueSome (vref, tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|InstanceMethodApp|_|) g (expectedValRef: ValRef) e = 
     match e with 
-    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> Some (tyargs, obj, args)
-    | _ -> None
+    | AnyInstanceMethodApp (vref, tyargs, obj, args) when valRefEq g vref expectedValRef -> ValueSome (tyargs, obj, args)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySourceEnumerable|_|) g = function
-    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> Some (resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_source_vref ([resTy], _builder, [res]) -> ValueSome (resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryFor|_|) g = function
-    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_for_vref ([srcTy;qTy;resTy;_qInnerTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYield|_|) g = function
-    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryYieldFrom|_|) g = function
-    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> Some (qTy, resTy, res)
-    | _ -> None
+    | InstanceMethodApp g g.query_yield_from_vref ([resTy;qTy], _builder, [res]) -> ValueSome (qTy, resTy, res)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QuerySelect|_|) g = function
-    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> Some (qTy, srcTy, resTy, src, selector)
-    | _ -> None
+    | InstanceMethodApp g g.query_select_vref ([srcTy;qTy;resTy], _builder, [src;selector]) -> ValueSome (qTy, srcTy, resTy, src, selector)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|QueryZero|_|) g = function
-    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> Some (qTy, resTy)
-    | _ -> None
+    | InstanceMethodApp g g.query_zero_vref ([resTy;qTy], _builder, _) -> ValueSome (qTy, resTy)
+    | _ -> ValueNone
 
 /// Look for a possible tuple and transform
 let (|AnyRefTupleTrans|) e = 
@@ -2102,11 +2111,12 @@ let (|AnyRefTupleTrans|) e =
     | _ -> [e], (function [e] -> e | _ -> assert false; failwith "unreachable")
 
 /// Look for any QueryBuilder.* operation and transform
+[<return: Struct>]
 let (|AnyQueryBuilderOpTrans|_|) g = function
-    | Expr.App (Expr.Val (vref, _, _) as v, vty, tyargs, [builder; AnyRefTupleTrans( src :: rest, replaceArgs) ], m) when 
+    | Expr.App (Expr.Val (vref, _, _) as v, vty, tyargs, [builder; AnyRefTupleTrans( src :: rest, replaceArgs) ], m) when
           (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
-         Some (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
-    | _ -> None
+         ValueSome (src, (fun newSource -> Expr.App (v, vty, tyargs, [builder; replaceArgs(newSource :: rest)], m)))
+    | _ ->ValueNone
 
 /// If this returns "Some" then the source is not IQueryable.
 //  <qexprInner> := 

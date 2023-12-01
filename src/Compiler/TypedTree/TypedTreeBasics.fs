@@ -258,24 +258,25 @@ let rec stripTyparEqnsAux canShortcut ty =
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> ty
 
-let stripTyparEqns ty = stripTyparEqnsAux false ty
+let inline stripTyparEqns ty = stripTyparEqnsAux false ty
 
-let stripUnitEqns unt = stripUnitEqnsAux false unt
+let inline stripUnitEqns unt = stripUnitEqnsAux false unt
 
 /// Detect a use of a nominal type, including type abbreviations.
+[<return: Struct>]
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, _, _) -> Some tcref
-    | _ -> None
+    | TType_app (tcref, _, _) -> ValueSome tcref
+    | _ -> ValueNone
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
 // the item is globally stable ("published") or not.
 //---------------------------------------------------------------------------
 
-let mkLocalValRef (v: Val) = VRefLocal v
-let mkLocalModuleRef (v: ModuleOrNamespace) = ERefLocal v
-let mkLocalEntityRef (v: Entity) = ERefLocal v
+let inline mkLocalValRef (v: Val) = VRefLocal v
+let inline mkLocalModuleRef (v: ModuleOrNamespace) = ERefLocal v
+let inline mkLocalEntityRef (v: Entity) = ERefLocal v
 
 let mkNonLocalCcuRootEntityRef ccu (x: Entity) = mkNonLocalTyconRefPreResolved x (mkNonLocalEntityRef ccu [| |]) x.LogicalName
 
@@ -287,16 +288,16 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
+let inline rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
+let inline rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
 
 //---------------------------------------------------------------------------
 // Equality between TAST items.
 //---------------------------------------------------------------------------
 
-let valRefInThisAssembly compilingFSharpCore (x: ValRef) = 
+let inline valRefInThisAssembly compilingFSharpCore (x: ValRef) = 
     match x with 
     | VRefLocal _ -> true
     | VRefNonLocal _ -> compilingFSharpCore
@@ -332,12 +333,12 @@ let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2)
 /// different entities. Two references with the same named paths may resolve to the same 
 /// entities even if they reference through different CCUs, because one reference
 /// may be forwarded to another via a .NET TypeForwarder.
-let nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
+let inline nonLocalRefDefinitelyNotEq (NonLocalEntityRef(_, y1)) (NonLocalEntityRef(_, y2)) = 
     not (arrayPathEq y1 y2)
 
-let pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
+let inline pubPathEq (PubPath path1) (PubPath path2) = arrayPathEq path1 path2
 
-let fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
+let inline fslibRefEq (nlr1: NonLocalEntityRef) (PubPath path2) =
     arrayPathEq nlr1.Path path2
 
 // Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
@@ -455,8 +456,8 @@ let canAccessFromOneOf cpaths cpathTest =
 let canAccessFrom (TAccess x) cpath = 
     x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
-let canAccessFromEverywhere (TAccess x) = x.IsEmpty
-let canAccessFromSomewhere (TAccess _) = true
+let inline canAccessFromEverywhere (TAccess x) = x.IsEmpty
+let inline canAccessFromSomewhere (TAccess _) = true
 let isLessAccessible (TAccess aa) (TAccess bb) = 
     not (aa |> List.forall(fun a -> bb |> List.exists (fun b -> canAccessCompPathFrom a b)))
 
@@ -465,13 +466,12 @@ let accessSubstPaths (newPath, oldPath) (TAccess paths) =
     let subst cpath = if cpath=oldPath then newPath else cpath
     TAccess (List.map subst paths)
 
-let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, []) 
+let inline compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, []) 
 let taccessPublic = TAccess []
-let taccessPrivate accessPath = TAccess [accessPath]
+let inline taccessPrivate accessPath = TAccess [accessPath]
 let compPathInternal = CompPath(ILScopeRef.Local, [])
 let taccessInternal = TAccess [compPathInternal]
-let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
+let inline combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 
 exception Duplicate of string * string * range
 exception NameClash of string * string * string * range * string * string * range
-

@@ -219,9 +219,9 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 mkSequential m
                     overallSeqExprR
                     (mkCallCollectorClose tcVal g infoReader m collExpr))
-        |> Some
+        |> ValueSome
     | Result.Error () -> 
-        None
+        ValueNone
 
 let (|OptionalCoerce|) expr = 
     match expr with
@@ -230,27 +230,30 @@ let (|OptionalCoerce|) expr =
 
 // Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListComputedExpression
 // which only adds a 'seq' call outside of FSharp.Core
+[<return: Struct>]
 let (|OptionalSeq|_|) g amap expr =
     match expr with
     // use 'seq { ... }' as an indicator
     | Seq g (e, elemTy) -> 
-        Some (e, elemTy)
+        ValueSome (e, elemTy)
     | _ -> 
-    // search for the relevant element type
-    match tyOfExpr g expr with
-    | SeqElemTy g amap expr.Range elemTy ->
-        Some (expr, elemTy)
-    | _ -> None
+        // search for the relevant element type
+        match tyOfExpr g expr with
+        | SeqElemTy g amap expr.Range elemTy ->
+            ValueSome (expr, elemTy)
+        | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqToList|_|) g expr =
     match expr with
-    | ValApp g g.seq_to_list_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
+    | ValApp g g.seq_to_list_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SeqToArray|_|) g expr =
     match expr with
-    | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
-    | _ -> None
+    | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> ValueSome (seqExpr, m)
+    | _ -> ValueNone
 
 let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
     // If ListCollector is in FSharp.Core then this optimization kicks in
@@ -260,11 +263,11 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
         | SeqToList g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ListCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
-        
+
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
 
-        | _ -> None
+        | _ -> ValueNone
     else
-        None
+        ValueNone

@@ -3111,22 +3111,23 @@ let BuildRecdFieldSet g m objExpr (rfinfo: RecdFieldInfo) argExpr =
 //-------------------------------------------------------------------------
 // Helpers dealing with named and optional args at callsites
 //-------------------------------------------------------------------------
-
+[<return: Struct>]
 let (|BinOpExpr|_|) expr =
     match expr with
-    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent opId, a, _), b, _) -> Some (opId, a, b)
-    | _ -> None
+    | SynExpr.App (_, _, SynExpr.App (_, _, SingleIdent opId, a, _), b, _) -> ValueSome (opId, a, b)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SimpleEqualsExpr|_|) expr =
     match expr with
-    | BinOpExpr(opId, a, b) when opId.idText = opNameEquals -> Some (a, b)
-    | _ -> None
+    | BinOpExpr(opId, a, b) when opId.idText = opNameEquals -> ValueSome (a, b)
+    | _ -> ValueNone
 
 /// Detect a named argument at a callsite
-let TryGetNamedArg expr =
+let inline TryGetNamedArg expr =
     match expr with
-    | SimpleEqualsExpr(LongOrSingleIdent(isOpt, SynLongIdent([a], _, _), None, _), b) -> Some(isOpt, a, b)
-    | _ -> None
+    | SimpleEqualsExpr(LongOrSingleIdent(isOpt, SynLongIdent([a], _, _), None, _), b) -> ValueSome(isOpt, a, b)
+    | _ -> ValueNone
 
 let inline IsNamedArg expr =
     match expr with
@@ -3146,19 +3147,17 @@ let GetMethodArgs arg =
         argExprs |> List.takeUntil IsNamedArg
 
     let namedCallerArgs =
-        namedCallerArgs
-        |> List.choose (fun argExpr ->
-              match TryGetNamedArg argExpr with
-              | None ->
+        [ for argExpr in namedCallerArgs do
+            match TryGetNamedArg argExpr with
+              | ValueNone ->
                   // ignore errors to avoid confusing error messages in cases like foo(a = 1, )
                   // do not abort overload resolution in case if named arguments are mixed with errors
                   match argExpr with
-                  | SynExpr.ArbitraryAfterError _ -> None
+                  | SynExpr.ArbitraryAfterError _ -> ()
                   | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), argExpr.Range))
-              | namedArg -> namedArg)
+              | ValueSome(namedArg) -> yield namedArg ]
 
     unnamedCallerArgs, namedCallerArgs
-
 
 //-------------------------------------------------------------------------
 // Helpers dealing with pattern match compilation
@@ -3974,6 +3973,15 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOKButWarnIfNotRigid
     | NewTyparsOK
     | NoNewTypars
+
+[<return: Struct>]
+let (|FittedArgs|_|) numArgTys arg =
+    match arg with
+    | SynExprParen(SynExpr.Tuple (false, args, _, _), _, _, _)
+    | SynExpr.Tuple (false, args, _, _) when numArgTys > 1 -> ValueSome args
+    | SynExprParen(arg, _, _, _)
+    | arg when numArgTys = 1 -> ValueSome [arg]
+    | _ -> ValueNone
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints
@@ -8445,17 +8453,9 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
     // Subsumption at data constructions if argument type is nominal prior to equations for any arguments or return types
     let flexes = argTys |> List.map (isTyparTy g >> not)
 
-    let (|FittedArgs|_|) arg =
-        match arg with
-        | SynExprParen(SynExpr.Tuple (false, args, _, _), _, _, _)
-        | SynExpr.Tuple (false, args, _, _) when numArgTys > 1 -> Some args
-        | SynExprParen(arg, _, _, _)
-        | arg when numArgTys = 1 -> Some [arg]
-        | _ -> None
-
     match delayed with
     // This is where the constructor is applied to an argument
-    | DelayedApp (atomicFlag, _, _, (FittedArgs args as origArg), mExprAndArg) :: otherDelayed ->
+    | DelayedApp (atomicFlag, _, _, (FittedArgs numArgTys args as origArg), mExprAndArg) :: otherDelayed ->
         // assert the overall result type if possible
         if isNil otherDelayed then
             UnifyOverallType cenv env mExprAndArg overallTy ucaseAppTy

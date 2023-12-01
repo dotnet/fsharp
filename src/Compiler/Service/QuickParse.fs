@@ -78,6 +78,21 @@ module QuickParse =
         | true, _, true when name.Length > 2 -> isValidStrippedName (name.AsSpan(1, name.Length - 2)) 0
         | _ -> false
 
+    [<return: Struct>]
+    let (|Char|_|) (lineStr: string) p =
+        if p >= 0 && p < lineStr.Length then
+            ValueSome(lineStr[p])
+        else
+            ValueNone
+
+    [<return: Struct>]
+    let (|IsLongIdentifierPartChar|_|) c =
+        if IsLongIdentifierPartCharacter c then ValueSome() else ValueNone
+
+    [<return: Struct>]
+    let (|IsIdentifierPartChar|_|) c =
+        if IsIdentifierPartCharacter c then ValueSome() else ValueNone
+
     let GetCompleteIdentifierIslandImplAux (lineStr: string) (index: int) : (string * int * bool) option =
         if index < 0 || isNull lineStr || index >= lineStr.Length then
             None
@@ -92,60 +107,48 @@ module QuickParse =
                     Some index
                 | _ -> None // not on a word or '.'
 
-            let (|Char|_|) p =
-                if p >= 0 && p < lineStr.Length then
-                    Some(lineStr[p])
-                else
-                    None
-
-            let (|IsLongIdentifierPartChar|_|) c =
-                if IsLongIdentifierPartCharacter c then Some() else None
-
-            let (|IsIdentifierPartChar|_|) c =
-                if IsIdentifierPartCharacter c then Some() else None
-
             let rec searchLeft p =
                 match (p - 1), (p - 2) with
-                | Char '|', Char '[' -> p // boundary of array declaration - stop
-                | Char '|', _
-                | Char IsLongIdentifierPartChar, _ -> searchLeft (p - 1) // allow normal chars and '.'s
+                | Char lineStr '|', Char lineStr '[' -> p // boundary of array declaration - stop
+                | Char lineStr '|', _
+                | Char lineStr IsLongIdentifierPartChar, _ -> searchLeft (p - 1) // allow normal chars and '.'s
                 | _ -> p
 
             let rec searchRight p =
                 match (p + 1), (p + 2) with
-                | Char '|', Char ']' -> p // boundary of array declaration - stop
-                | Char '|', _
-                | Char IsIdentifierPartChar, _ -> searchRight (p + 1) // allow only normal chars (stop at '.')
+                | Char lineStr '|', Char lineStr ']' -> p // boundary of array declaration - stop
+                | Char lineStr '|', _
+                | Char lineStr IsIdentifierPartChar, _ -> searchRight (p + 1) // allow only normal chars (stop at '.')
                 | _ -> p
 
             let tickColsOpt =
                 let rec walkOutsideBackticks i =
                     if i >= lineStr.Length then
-                        None
+                        ValueNone
                     else
                         match i, i + 1 with
-                        | Char '`', Char '`' ->
+                        | Char lineStr '`', Char lineStr '`' ->
                             // dive into backticked part
                             // if pos = i then it will be included in backticked range ($``identifier``)
                             walkInsideBackticks (i + 2) i
                         | _, _ ->
                             if i >= index then
-                                None
+                                ValueNone
                             else
                                 // we still not reached position p - continue walking
                                 walkOutsideBackticks (i + 1)
 
                 and walkInsideBackticks i start =
                     if i >= lineStr.Length then
-                        None // non-closed backticks
+                        ValueNone // non-closed backticks
                     else
                         match i, i + 1 with
-                        | Char '`', Char '`' ->
+                        | Char lineStr '`', Char lineStr '`' ->
                             // found closing pair of backticks
                             // if target position is between start and current pos + 1 (entire range of escaped identifier including backticks) - return success
                             // else climb outside and continue walking
                             if index >= start && index < (i + 2) then
-                                Some(start, i)
+                                ValueSome(start, i)
                             else
                                 walkOutsideBackticks (i + 2)
                         | _, _ -> walkInsideBackticks (i + 1) start
@@ -153,7 +156,7 @@ module QuickParse =
                 walkOutsideBackticks 0
 
             match tickColsOpt with
-            | Some(prevTickTick, idxTickTick) ->
+            | ValueSome(prevTickTick, idxTickTick) ->
                 // inside ``identifier`` (which can contain any characters!) so we try returning its location
                 let pos = idxTickTick + 1 + MagicalAdjustmentConstant
                 let ident = lineStr.Substring(prevTickTick, idxTickTick - prevTickTick + 2)

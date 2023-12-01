@@ -2863,13 +2863,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             if compileSequenceExpressions then
                 LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr
             else
-                None
+                ValueNone
 
         match lowering with
-        | Some altExpr ->
+        | ValueSome altExpr ->
             GenExpr cenv cgbuf eenv altExpr sequel
             true
-        | None ->
+        | ValueNone ->
 
             let lowering =
                 if compileSequenceExpressions then

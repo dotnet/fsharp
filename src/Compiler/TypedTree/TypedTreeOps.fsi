@@ -94,7 +94,7 @@ type MatchBuilder =
     member Close: DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val inline mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
 val primMkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -110,10 +110,10 @@ val mkIfThen: TcGlobals -> range -> Expr -> Expr -> Expr
 
 /// Build an expression corresponding to the use of a value
 /// Note: try to use exprForValRef or the expression returned from mkLocal instead of this.
-val exprForVal: range -> Val -> Expr
+val inline exprForVal: range -> Val -> Expr
 
 /// Build an expression corresponding to the use of a reference to a value
-val exprForValRef: range -> ValRef -> Expr
+val inline exprForValRef: range -> ValRef -> Expr
 
 /// Make a new local value and build an expression to reference it
 val mkLocal: range -> string -> TType -> Val * Expr

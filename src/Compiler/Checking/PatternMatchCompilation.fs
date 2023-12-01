@@ -753,6 +753,7 @@ let (|ListEmptyDiscrim|_|) g = function
      | _ -> None
 #endif
 
+[<return: Struct>]
 let (|ConstNeedsDefaultCase|_|) c =
     match c with
     | Const.Decimal _
@@ -767,8 +768,8 @@ let (|ConstNeedsDefaultCase|_|) c =
     | Const.UInt64 _
     | Const.IntPtr _
     | Const.UIntPtr _
-    | Const.Char _ -> Some ()
-    | _ -> None
+    | Const.Char _ -> ValueSome ()
+    | _ -> ValueNone
 
 /// Build a dtree, equivalent to: TDSwitch("expr", edges, default, m)
 ///

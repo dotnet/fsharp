@@ -7,4 +7,4 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
 val LowerComputedListOrArrayExpr:
-    tcVal: ConstraintSolver.TcValF -> g: TcGlobals -> amap: ImportMap -> Expr -> Expr option
+    tcVal: ConstraintSolver.TcValF -> g: TcGlobals -> amap: ImportMap -> Expr -> Expr voption

@@ -130,30 +130,30 @@ val stripUnitEqnsAux: canShortcut: bool -> unt: Measure -> Measure
 
 val stripTyparEqnsAux: canShortcut: bool -> ty: TType -> TType
 
-val stripTyparEqns: ty: TType -> TType
+val inline stripTyparEqns: ty: TType -> TType
 
-val stripUnitEqns: unt: Measure -> Measure
+val inline stripUnitEqns: unt: Measure -> Measure
 
 /// Detect a use of a nominal type, including type abbreviations.
-val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef option
+val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef voption
 
-val mkLocalValRef: v: Val -> ValRef
+val inline mkLocalValRef: v: Val -> ValRef
 
-val mkLocalModuleRef: v: ModuleOrNamespace -> EntityRef
+val inline mkLocalModuleRef: v: ModuleOrNamespace -> EntityRef
 
-val mkLocalEntityRef: v: Entity -> EntityRef
+val inline mkLocalEntityRef: v: Entity -> EntityRef
 
 val mkNonLocalCcuRootEntityRef: ccu: CcuThunk -> x: Entity -> EntityRef
 
 val mkNestedValRef: cref: EntityRef -> v: Val -> ValRef
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-val rescopePubPathToParent: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityRef
+val inline rescopePubPathToParent: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityRef
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-val rescopePubPath: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityRef
+val inline rescopePubPath: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityRef
 
-val valRefInThisAssembly: compilingFSharpCore: bool -> x: ValRef -> bool
+val inline valRefInThisAssembly: compilingFSharpCore: bool -> x: ValRef -> bool
 
 val tyconRefUsesLocalXmlDoc: compilingFSharpCore: bool -> x: TyconRef -> bool
 
@@ -168,11 +168,11 @@ val nonLocalRefEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
 /// different entities. Two references with the same named paths may resolve to the same
 /// entities even if they reference through different CCUs, because one reference
 /// may be forwarded to another via a .NET TypeForwarder.
-val nonLocalRefDefinitelyNotEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
+val inline nonLocalRefDefinitelyNotEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
 
-val pubPathEq: PublicPath -> PublicPath -> bool
+val inline pubPathEq: PublicPath -> PublicPath -> bool
 
-val fslibRefEq: nlr1: NonLocalEntityRef -> PublicPath -> bool
+val inline fslibRefEq: nlr1: NonLocalEntityRef -> PublicPath -> bool
 
 /// Compare two EntityRef's for equality when compiling fslib (FSharp.Core.dll)
 val fslibEntityRefEq: fslibCcu: CcuThunk -> eref1: EntityRef -> eref2: EntityRef -> bool
@@ -204,26 +204,26 @@ val canAccessFromOneOf: cpaths: CompilationPath list -> cpathTest: CompilationPa
 
 val canAccessFrom: Accessibility -> cpath: CompilationPath -> bool
 
-val canAccessFromEverywhere: Accessibility -> bool
+val inline canAccessFromEverywhere: Accessibility -> bool
 
-val canAccessFromSomewhere: Accessibility -> bool
+val inline canAccessFromSomewhere: Accessibility -> bool
 
 val isLessAccessible: Accessibility -> Accessibility -> bool
 
 /// Given (newPath, oldPath) replace oldPath by newPath in the TAccess.
 val accessSubstPaths: newPath: CompilationPath * oldPath: CompilationPath -> Accessibility -> Accessibility
 
-val compPathOfCcu: ccu: CcuThunk -> CompilationPath
+val inline compPathOfCcu: ccu: CcuThunk -> CompilationPath
 
 val taccessPublic: Accessibility
 
-val taccessPrivate: accessPath: CompilationPath -> Accessibility
+val inline taccessPrivate: accessPath: CompilationPath -> Accessibility
 
 val compPathInternal: CompilationPath
 
 val taccessInternal: Accessibility
 
-val combineAccess: Accessibility -> Accessibility -> Accessibility
+val inline combineAccess: Accessibility -> Accessibility -> Accessibility
 
 exception Duplicate of string * string * range
 

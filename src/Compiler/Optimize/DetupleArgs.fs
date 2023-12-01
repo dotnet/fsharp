@@ -150,14 +150,15 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 
 
 // Merge a tyapp node and and app node.
+[<return: Struct>]
 let (|TyappAndApp|_|) e =
     match e with
     | Expr.App(f, fty, tys, args, m) ->
         match stripDebugPoints (stripExpr f) with
-        | Expr.App(f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
-        | Expr.App _ -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
-        | f -> Some(f, fty, tys, args, m)
-    | _ -> None
+        | Expr.App(f2, fty2, tys2, [], m2) -> ValueSome(f2, fty2, tys2 @ tys, args, m2)
+        | Expr.App _ -> ValueSome(f, fty, tys, args, m) (* has args, so not combine ty args *)
+        | f -> ValueSome(f, fty, tys, args, m)
+    | _ -> ValueNone
 
 [<AutoOpen>]
 module GlobalUsageAnalysis =
@@ -234,16 +235,14 @@ module GlobalUsageAnalysis =
         z
 
     /// Log the definition of a non-recursive binding
-    let logNonRecBinding z (bind: Binding) =
+    let inline logNonRecBinding z (bind: Binding) =
         let v = bind.Var
-        let vs = [ v ]
-
         { z with
-            RecursiveBindings = Zmap.add v (false, vs) z.RecursiveBindings
+            RecursiveBindings = Zmap.add v (false, [ v ]) z.RecursiveBindings
             Defns = Zmap.add v bind.Expr z.Defns }
 
     /// Log the definition of a recursive binding
-    let logRecBindings z binds =
+    let inline logRecBindings z binds =
         let vs = valsOfBinds binds
 
         { z with
@@ -255,7 +254,7 @@ module GlobalUsageAnalysis =
                 ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns) }
 
     /// Work locally under a lambda of some kind
-    let foldUnderLambda f z x =
+    let inline foldUnderLambda ([<InlineIfLambda>] f) z x =
         let saved = z.IterationIsAtTopLevel
         let z = { z with IterationIsAtTopLevel = false }
         let z = f z x
