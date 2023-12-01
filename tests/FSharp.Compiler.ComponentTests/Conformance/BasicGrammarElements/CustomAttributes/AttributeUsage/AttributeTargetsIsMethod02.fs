@@ -83,3 +83,21 @@ let (|BoolExpr4|_|) x =
     match x with
     | TestExpr.Const(TestConst.Bool b1, _, _) -> ValueSome b1
     | _ -> ValueNone
+
+let private dangling (target: TestExpr -> TestExpr voption) =
+    function
+    | TestExpr.Const (TestConst.Bool _, _, _) as b -> ValueSome b
+    | _ -> ValueNone
+
+[<MethodOnly>]
+[<return: Struct>]
+let (|IfThen|_|) =
+    dangling (function
+        | TestExpr.Const(TestConst.Bool b1, _, _) as expr -> ValueSome expr
+        | _ -> ValueNone)
+
+[<MethodOnly>]
+let someRecLetBoundValue = nameof(MethodOnlyAttribute) // Should fail
+
+[<MethodOnly>]
+let rec someRecLetBoundValue2 = nameof(someRecLetBoundValue2) // Should fail
