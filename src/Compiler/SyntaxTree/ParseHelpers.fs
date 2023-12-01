@@ -1183,7 +1183,20 @@ let mkSynField
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
     let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
 
-    SynField(attributes, Option.isSome mStatic, idOpt, t, Option.isSome isMutable, xmlDoc, vis, mWhole, { LeadingKeyword = leadingKeyword })
+    SynField(
+        attributes,
+        Option.isSome mStatic,
+        idOpt,
+        t,
+        Option.isSome isMutable,
+        xmlDoc,
+        vis,
+        mWhole,
+        {
+            LeadingKeyword = leadingKeyword
+            MutableKeyword = isMutable
+        }
+    )
 
 let mkValField
     parseState

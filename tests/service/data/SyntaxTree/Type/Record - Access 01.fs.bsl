@@ -16,7 +16,8 @@ ImplFile
                         [SynField
                            ([], false, None, FromParseError (5,16--5,16), false,
                             PreXmlDoc ((5,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,8--5,16), { LeadingKeyword = None })],
+                            None, (5,8--5,16), { LeadingKeyword = None
+                                                 MutableKeyword = None })],
                         (4,4--6,5)), (4,4--6,5)), [], None, (3,5--6,5),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

@@ -17,16 +17,17 @@ ImplFile
                             false,
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (4,4--4,10),
-                            { LeadingKeyword = Some (Val (4,4--4,7)) }),
-                         (4,4--4,10));
+                            { LeadingKeyword = Some (Val (4,4--4,7))
+                              MutableKeyword = None }), (4,4--4,10));
                       ValField
                         (SynField
                            ([], false, Some F2,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (5,4--5,15),
-                            { LeadingKeyword = Some (Val (5,4--5,7)) }),
-                         (5,4--5,15))], (4,4--5,15)), [], None, (3,5--5,15),
+                            { LeadingKeyword = Some (Val (5,4--5,7))
+                              MutableKeyword = None }), (5,4--5,15))],
+                     (4,4--5,15)), [], None, (3,5--5,15),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
                     WithKeyword = None })], (3,0--5,15));

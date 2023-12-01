@@ -17,17 +17,21 @@ ImplFile
                            ([], false, Some F1,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
                             PreXmlDoc ((5,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,8--5,15), { LeadingKeyword = None });
+                            None, (5,8--5,15), { LeadingKeyword = None
+                                                 MutableKeyword = None });
                          SynField
                            ([], false, Some F2,
                             LongIdent (SynLongIdent ([int], [], [None])), true,
                             PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (6,8--6,23), { LeadingKeyword = None });
+                            None, (6,8--6,23),
+                            { LeadingKeyword = None
+                              MutableKeyword = Some (6,8--6,15) });
                          SynField
                            ([], false, Some F3,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
                             PreXmlDoc ((7,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (7,8--7,15), { LeadingKeyword = None })],
+                            None, (7,8--7,15), { LeadingKeyword = None
+                                                 MutableKeyword = None })],
                         (4,4--8,5)), (4,4--8,5)), [], None, (3,5--8,5),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

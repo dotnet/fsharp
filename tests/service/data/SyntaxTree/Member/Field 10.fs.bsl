@@ -17,8 +17,9 @@ ImplFile
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (4,4--4,22),
                             { LeadingKeyword =
-                               Some (StaticVal ((4,4--4,10), (4,11--4,14))) }),
-                         (4,4--4,22))], (4,4--4,22)), [], None, (3,5--4,22),
+                               Some (StaticVal ((4,4--4,10), (4,11--4,14)))
+                              MutableKeyword = Some (4,15--4,22) }), (4,4--4,22))],
+                     (4,4--4,22)), [], None, (3,5--4,22),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
                     WithKeyword = None })], (3,0--4,22));

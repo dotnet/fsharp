@@ -9757,8 +9757,10 @@ FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: FSharp.Compiler.SyntaxTrivia.SynFie
 FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: FSharp.Compiler.SyntaxTrivia.SynFieldTrivia get_Zero()
 FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword] LeadingKeyword
 FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword] get_LeadingKeyword()
+FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] MutableKeyword
+FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_MutableKeyword()
 FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword])
+FSharp.Compiler.SyntaxTrivia.SynFieldTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Abstract: FSharp.Compiler.Text.Range abstractRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Abstract: FSharp.Compiler.Text.Range get_abstractRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+AbstractMember: FSharp.Compiler.Text.Range abstractRange
