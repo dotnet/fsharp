@@ -115,3 +115,46 @@ module Main =
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* discriminated union properties are unavailable with DefaultAugmentation(false)`` () =
+        Fsx """
+[<DefaultAugmentation(false)>]
+type Foo = | Foo of string | Bar
+let foo = Foo.Foo "hi"
+let isFoo = foo.IsFoo
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
+   Foo"
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* discriminated union properties are unavailable on voption`` () =
+        Fsx """
+let x = (ValueSome 1).IsSome
+let y = ValueOption<int>.None.IsValueNone
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorMessage "The type 'ValueOption<_>' does not define the field, constructor or member 'IsValueNone'. Maybe you want one of the following:
+   ValueNone"
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Is* discriminated union properties work with UseNullAsTrueValue`` () =
+        Fsx """
+[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type T<'T> =
+  | Z
+  | X of 'T
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let giveMeZ () = Z
+
+if giveMeZ().IsX then failwith "Should not be X"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
