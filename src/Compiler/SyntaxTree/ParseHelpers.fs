@@ -1141,43 +1141,32 @@ let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDo
     )
 
 let mkSynField
-    parseState
-    (idOpt: Ident option)
-    (t: SynType option)
-    (isMutable: range option)
-    (vis: SynAccess option)
-    (attributes: SynAttributes)
-    (mStatic: range option)
-    (rangeStart: range)
-    (leadingKeyword: SynLeadingKeyword option)
-    =
+        parseState
+        (idOpt: Ident option)
+        (t: SynType option)
+        (isMutable: range option)
+        (vis: SynAccess option)
+        (attributes: SynAttributes)
+        (mStatic: range option)
+        (rangeStart: range)
+        (leadingKeyword: SynLeadingKeyword option) =
+
     let t, mStart =
         match t with
         | Some value -> value, rangeStart
         | None ->
-            let mType, mStart =
-                match idOpt with
-                | Some id -> id.idRange, rangeStart
-                | _ ->
 
-                    match vis with
-                    | Some vis -> vis.Range, rangeStart
-                    | _ ->
+        let mType, mStart =
+            idOpt
+            |> Option.map _.idRange
+            |> Option.orElseWith (fun _ -> vis |> Option.map (fun v -> v.Range))
+            |> Option.orElse isMutable
+            |> Option.orElseWith (fun _ -> leadingKeyword |> Option.map (fun k -> k.Range))
+            |> Option.orElseWith (fun _ -> attributes |> List.tryLast |> Option.map (fun l -> l.Range))
+            |> Option.map (fun m -> m, rangeStart)
+            |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
 
-                        match isMutable with
-                        | Some m -> m, rangeStart
-                        | _ ->
-
-                            match leadingKeyword with
-                            | Some keyword -> keyword.Range, rangeStart
-                            | None ->
-
-                                attributes
-                                |> Seq.tryLast
-                                |> Option.map (fun l -> l.Range, rangeStart)
-                                |> Option.defaultWith (fun _ -> rangeStart.StartRange, rangeStart.StartRange)
-
-            SynType.FromParseError(mType.EndRange), mStart
+        SynType.FromParseError(mType.EndRange), mStart
 
     let mWhole = unionRanges mStart t.Range
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attributes, mWhole)
