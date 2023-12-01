@@ -87,11 +87,17 @@ module QuickParse =
 
     [<return: Struct>]
     let (|IsLongIdentifierPartChar|_|) c =
-        if IsLongIdentifierPartCharacter c then ValueSome() else ValueNone
+        if IsLongIdentifierPartCharacter c then
+            ValueSome()
+        else
+            ValueNone
 
     [<return: Struct>]
     let (|IsIdentifierPartChar|_|) c =
-        if IsIdentifierPartCharacter c then ValueSome() else ValueNone
+        if IsIdentifierPartCharacter c then
+            ValueSome()
+        else
+            ValueNone
 
     let GetCompleteIdentifierIslandImplAux (lineStr: string) (index: int) : (string * int * bool) option =
         if index < 0 || isNull lineStr || index >= lineStr.Length then

@@ -699,7 +699,7 @@ type TrackErrorsBuilder() =
     member inline x.While(gd, k) = WhileD gd k
     member inline x.Zero() = CompleteD
     member inline x.Delay([<InlineIfLambda>] fn: unit -> _) = fn
-    member inline x.Run ([<InlineIfLambda>] fn) = fn ()
+    member inline x.Run([<InlineIfLambda>] fn) = fn ()
 
 let trackErrors = TrackErrorsBuilder()
 

@@ -746,8 +746,8 @@ and ComputeUnionHasHelpers g (tcref: TyconRef) =
         SpecialFSharpOptionHelpers
     else
         match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-        | ValueSome (Attrib (_, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
-        | ValueSome (Attrib (_, _, _, _, _, _, m)) ->
+        | ValueSome(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> if b then AllHelpers else NoHelpers
+        | ValueSome(Attrib(_, _, _, _, _, _, m)) ->
             errorR (Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded (), m))
             AllHelpers
         | _ -> AllHelpers (* not hiddenRepr *)
@@ -8873,7 +8873,7 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 
     let implflags =
         match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-        | ValueSome (Attrib (_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
+        | ValueSome(Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
         | _ -> 0x0
 
     let hasPreserveSigAttr =
@@ -9897,7 +9897,7 @@ and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
 
             let _, ilNamedArgs =
                 match TryDecodeILAttribute tref (mkILCustomAttrs [ ilattr ]) with
-                | ValueSome (ae, na) -> ae, na
+                | ValueSome(ae, na) -> ae, na
                 | _ -> [], []
 
             let setArgs = ilNamedArgs |> List.map (fun (n, ilt, _, ilae) -> (n, ilt, ilae))
@@ -10773,7 +10773,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                         let ilFieldOffset =
                             match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
-                            | ValueSome (Attrib (_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) -> Some fieldOffset
+                            | ValueSome(Attrib(_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) -> Some fieldOffset
                             | ValueSome attrib ->
                                 errorR (Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded (), attrib.Range))
                                 None
@@ -11185,7 +11185,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
-                        | ValueSome (Attrib (_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
+                        | ValueSome(Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                             let decoder = AttributeDecoder namedArgs
                             let ilPack = decoder.FindInt32 "Pack" 0x0
                             let ilSize = decoder.FindInt32 "Size" 0x0
@@ -11214,7 +11214,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 | _ -> ILTypeDefLayout.Auto
 
                             tdLayout, tdEncoding
-                        | ValueSome (Attrib (_, _, _, _, _, _, m)) ->
+                        | ValueSome(Attrib(_, _, _, _, _, _, m)) ->
                             errorR (Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded (), m))
                             ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 

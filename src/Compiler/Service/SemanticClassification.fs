@@ -220,7 +220,7 @@ module TcResolutionsExtensions =
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
-                        | Item.Value (KeywordIntrinsicValue g), ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
+                        | Item.Value(KeywordIntrinsicValue g), ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
                         | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
                             if isDiscard vref.DisplayName then

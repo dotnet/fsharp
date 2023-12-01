@@ -21,8 +21,8 @@ let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 5
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =
     match e with
-    | InnerExprPat(Expr.App(funcExpr = InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags))) | Expr.Val(valRef = vref; flags = valUseFlags)) ->
-        ValueSome(vref, valUseFlags)
+    | InnerExprPat(Expr.App(funcExpr = InnerExprPat(Expr.Val(valRef = vref; flags = valUseFlags))) | Expr.Val(
+        valRef = vref; flags = valUseFlags)) -> ValueSome(vref, valUseFlags)
     | _ -> ValueNone
 
 [<Struct>]
