@@ -23,7 +23,7 @@
                 "GitHub.vscode-github-actions",
                 "ms-dotnettools.vscode-dotnet-runtime",
                 "ms-dotnettools.csdevkit",
-                "ms-dotnetools.csharp",
+                "ms-dotnettools.csharp",
                 "Ionide.Ionide-fsharp",
                 "tintoy.msbuild-project-tools"
             ]
