@@ -37,14 +37,11 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             && not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
             && not typeAnnotationRange.IsNone
 
-        match (res,typeAnnotationRange) with
-        | (true,Some tr) -> Some (funcOrValue,tr)
-        | (_,_) -> None
+        match (res, typeAnnotationRange) with
+        | (true, Some tr) -> Some(funcOrValue, tr)
+        | (_, _) -> None
 
-    static member refactor
-        (context: CodeRefactoringContext)
-        (memberFunc: FSharpMemberOrFunctionOrValue,typeRange:Range)
-        =
+    static member refactor (context: CodeRefactoringContext) (memberFunc: FSharpMemberOrFunctionOrValue, typeRange: Range) =
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
@@ -85,8 +82,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let! lexerSymbol =
                 document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof (AddExplicitReturnType))
 
-            let! (parseFileResults, checkFileResults) = 
-                document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
+            let! (parseFileResults, checkFileResults) = document.GetFSharpParseAndCheckResultsAsync(nameof (AddExplicitReturnType))
 
             let symbolUseOpt =
                 lexerSymbol
@@ -109,9 +105,10 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
                     |> AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
                 match isValidMethod with
-                | Some (memberFunc,typeRange) -> do AddExplicitReturnType.refactor context (memberFunc,typeRange)
+                | Some(memberFunc, typeRange) -> do AddExplicitReturnType.refactor context (memberFunc, typeRange)
                 | None -> ()
             | _ -> ()
 
             return ()
-        } |> CancellableTask.startAsTaskWithoutCancellation
+        }
+        |> CancellableTask.startAsTaskWithoutCancellation

@@ -18,7 +18,7 @@ open FSharp.Compiler.Text
 let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
 
 type TestContext(Solution: Solution, CancellationToken) =
-    let mutable _solution = Solution 
+    let mutable _solution = Solution
     member this.CT = CancellationToken
 
     member this.Solution
@@ -82,6 +82,7 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
         context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
 
         let document = RoslynTestHelpers.GetLastDocument context.Solution
+
         let refactoringContext =
             CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CT)
 
