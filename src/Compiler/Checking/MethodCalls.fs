@@ -841,7 +841,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         match e with 
         | SynExpr.Lambda (body = rest) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
-        | SynExpr.DotLambda _ -> 1
+        | SynExpr.DotLambda (expr = body) -> 1 + loop body
         | _ -> 0
     loop origRhsExpr
 

@@ -35,10 +35,7 @@ type TailCall =
     static member private IsVoidRet (g: TcGlobals) (v: Val) =
         match v.ValReprInfo with
         | Some info ->
-            let _tps, tau = destTopForallTy g info v.Type
-
-            let _curriedArgInfos, returnTy =
-                GetTopTauTypeInFSharpForm g info.ArgInfos tau v.Range
+            let _, _, returnTy, _ = GetValReprTypeInFSharpForm g info v.Type v.Range
 
             if isUnitTy g returnTy then
                 TailCallReturnType.MustReturnVoid
@@ -168,16 +165,19 @@ and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
                             if vref.IsMemberOrModuleBinding && vref.ValReprInfo.IsSome then
                                 let topValInfo = vref.ValReprInfo.Value
 
-                                let (nowArgs, laterArgs), returnTy =
-                                    let _tps, tau = destTopForallTy g topValInfo _fty
-
-                                    let curriedArgInfos, returnTy =
-                                        GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau m
+                                let nowArgs, laterArgs =
+                                    let _, curriedArgInfos, _, _ =
+                                        GetValReprTypeInFSharpForm cenv.g topValInfo vref.Type m
 
                                     if argsl.Length >= curriedArgInfos.Length then
-                                        (List.splitAfter curriedArgInfos.Length argsl), returnTy
+                                        (List.splitAfter curriedArgInfos.Length argsl)
                                     else
-                                        ([], argsl), returnTy
+                                        ([], argsl)
+
+                                let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
+
+                                let _, _, _, returnTy, _ =
+                                    GetValReprTypeInCompiledForm g topValInfo numEnclosingTypars vref.Type m
 
                                 let _, _, isNewObj, isSuperInit, isSelfInit, _, _, _ =
                                     GetMemberCallInfo cenv.g (vref, valUseFlags)
@@ -190,7 +190,7 @@ and CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
                                 let hasByrefArg = nowArgs |> List.exists (tyOfExpr cenv.g >> isByrefTy cenv.g)
 
                                 let mustGenerateUnitAfterCall =
-                                    (isUnitTy g returnTy && returnType <> TailCallReturnType.MustReturnVoid)
+                                    (Option.isNone returnTy && returnType <> TailCallReturnType.MustReturnVoid)
 
                                 let noTailCallBlockers =
                                     not isNewObj
@@ -727,6 +727,23 @@ and CheckBindings cenv binds =
         CheckBinding cenv false PermitByRefExpr.Yes bind
 
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
+
+    // warn for non-rec functions which have the attribute
+    if
+        cenv.reportErrors
+        && cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailCallAttrOnNonRec
+    then
+        let isNotAFunction =
+            match bind.Var.ValReprInfo with
+            | Some info -> info.HasNoArgs
+            | _ -> false
+
+        if
+            (not isRec || isNotAFunction)
+            && HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute bind.Var.Attribs
+        then
+            warning (Error(FSComp.SR.chkTailCallAttrOnNonRec (), bind.Var.Range))
+
     // Check if a let binding to the result of a rec expression is not inside the rec expression
     // Check if a call of a rec expression is not inside a TryWith/TryFinally operation
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
