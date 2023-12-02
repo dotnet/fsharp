@@ -45,7 +45,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         (context: CodeRefactoringContext)
         (memberFunc: FSharpMemberOrFunctionOrValue, typeRange: Range, symbolUse: FSharpSymbolUse)
         =
-        let title = SR.AddExplicitReturnTypeAnnotation()
+        let title = SR.AddReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
             let returnType = memberFunc.ReturnParameter.Type

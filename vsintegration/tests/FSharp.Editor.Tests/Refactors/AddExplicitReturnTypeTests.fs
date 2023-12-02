@@ -5,7 +5,6 @@ open Xunit
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 open FSharp.Test.ProjectGeneration
 open FSharp.Editor.Tests.Helpers
-open System.Threading
 
 [<Theory>]
 [<InlineData(":int")>]
@@ -86,7 +85,7 @@ let sum a b = a + b
 let sum a b : int = a + b
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -111,7 +110,7 @@ let add (x:int) (y:int) = (float(x + y)) + 0.1
 let addThings : (int->int->float) = add
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -134,7 +133,7 @@ let sum (a:float) (b:float) = a + b
 let sum (a:float) (b:float) : float = a + b
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -161,7 +160,7 @@ let rec fib n : int =
     else fib (n - 1) + fib (n - 2)
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -184,7 +183,7 @@ let apply1 (transform: int -> int) y = transform y
 let apply1 (transform: int -> int) y : int = transform y
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -211,7 +210,7 @@ type SomeType(factor0: int) =
     member this.SomeMethod(a, b, c) : int = (a + b + c) * factor
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -236,7 +235,7 @@ type MyType = { Value: int }
 let sum a b : MyType = {Value=a+b}
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
@@ -271,8 +270,7 @@ let sum a b = {Value=a+b}
         }
 
     let solution, _ = RoslynTestHelpers.CreateSolution project
-    let ct = CancellationToken false
-    let context = new TestContext(solution, ct)
+    let context = new TestContext(solution)
 
     let spanStart = code.IndexOf symbolName
 
@@ -287,5 +285,5 @@ open ModuleFirst
 let sum a b : MyType = {Value=a+b}
         """
 
-    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode.Trim(' ', '\r', '\n'), resultText.ToString().Trim(' ', '\r', '\n'))
