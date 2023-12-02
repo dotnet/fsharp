@@ -41,26 +41,26 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         | (true, Some tr) -> Some(funcOrValue, tr)
         | (_, _) -> None
 
-    static member refactor (context: CodeRefactoringContext) (memberFunc: FSharpMemberOrFunctionOrValue, typeRange: Range) =
+    static member refactor
+        (context: CodeRefactoringContext)
+        (memberFunc: FSharpMemberOrFunctionOrValue, typeRange: Range, symbolUse: FSharpSymbolUse)
+        =
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
             let returnType = memberFunc.ReturnParameter.Type
 
             let inferredType =
-                if returnType.HasTypeDefinition then
-                    returnType.TypeDefinition.DisplayName
-                else if returnType.GenericArguments.Count > 0 then
-                    returnType.GenericArguments[0].TypeDefinition.DisplayName
-                else
-                    ""
+                let res = returnType.Format symbolUse.DisplayContext
 
-            if inferredType = "" then
-                sourceText
-            else
-                let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
-                let textChange = TextChange(textSpan, $": {inferredType} ")
-                sourceText.WithChanges(textChange)
+                if returnType.HasTypeDefinition then
+                    res
+                else
+                    $"({res})".Replace(" ", "")
+
+            let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
+            let textChange = TextChange(textSpan, $": {inferredType} ")
+            sourceText.WithChanges(textChange)
 
         let codeActionFunc: CancellationToken -> Task<Document> =
             fun (cancellationToken: CancellationToken) ->
@@ -116,7 +116,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
                     |> AddExplicitReturnType.isValidMethodWithoutTypeAnnotation symbolUse parseFileResults
 
                 match isValidMethod with
-                | Some(memberFunc, typeRange) -> do AddExplicitReturnType.refactor context (memberFunc, typeRange)
+                | Some(memberFunc, typeRange) -> do AddExplicitReturnType.refactor context (memberFunc, typeRange, symbolUse)
                 | None -> ()
             | _ -> ()
 

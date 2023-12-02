@@ -95,7 +95,7 @@ let ``Should not throw exception when binding another method`` () =
 
     let code =
         """
-let add x y = x + y
+let add (x:int) (y:int) = (float(x + y)) + 0.1
 let addThings = add
         """
 
@@ -107,8 +107,8 @@ let addThings = add
 
     let expectedCode =
         $"""
-let add x y = x + y
-let addThings : int = add
+let add (x:int) (y:int) = (float(x + y)) + 0.1
+let addThings : (int->int->float) = add
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
