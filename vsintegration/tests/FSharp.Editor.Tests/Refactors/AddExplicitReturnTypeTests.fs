@@ -90,6 +90,31 @@ let sum a b : int = a + b
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
+let ``Should not throw exception when binding another method`` () =
+    let symbolName = "addThings"
+
+    let code =
+        """
+let add x y = x + y
+let addThings = add
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+let add x y = x + y
+let addThings : int = add
+        """
+
+    let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
 let ``Handle Parantheses on the arguments`` () =
     let symbolName = "sum"
 

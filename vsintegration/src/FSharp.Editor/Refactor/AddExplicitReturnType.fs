@@ -45,11 +45,22 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
         let title = SR.AddExplicitReturnTypeAnnotation()
 
         let getChangedText (sourceText: SourceText) =
-            let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
+            let returnType = memberFunc.ReturnParameter.Type
 
-            let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
-            let textChange = TextChange(textSpan, $": {inferredType} ")
-            sourceText.WithChanges(textChange)
+            let inferredType =
+                if returnType.HasTypeDefinition then
+                    returnType.TypeDefinition.DisplayName
+                else if returnType.GenericArguments.Count > 0 then
+                    returnType.GenericArguments[0].TypeDefinition.DisplayName
+                else
+                    ""
+
+            if inferredType = "" then
+                sourceText
+            else
+                let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
+                let textChange = TextChange(textSpan, $": {inferredType} ")
+                sourceText.WithChanges(textChange)
 
         let codeActionFunc: CancellationToken -> Task<Document> =
             fun (cancellationToken: CancellationToken) ->
