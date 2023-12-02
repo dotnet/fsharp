@@ -48,7 +48,7 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let inferredType = memberFunc.ReturnParameter.Type.TypeDefinition.DisplayName
 
             let textSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, typeRange)
-            let textChange = TextChange(textSpan, $": {inferredType}")
+            let textChange = TextChange(textSpan, $": {inferredType} ")
             sourceText.WithChanges(textChange)
 
         let codeActionFunc: CancellationToken -> Task<Document> =

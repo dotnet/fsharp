@@ -83,7 +83,7 @@ let sum a b = a + b
 
     let expectedCode =
         $"""
-let sum a b : int= a + b
+let sum a b : int = a + b
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -106,7 +106,7 @@ let sum (a:float) (b:float) = a + b
 
     let expectedCode =
         """
-let sum (a:float) (b:float) : float= a + b
+let sum (a:float) (b:float) : float = a + b
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -131,7 +131,7 @@ let rec fib n =
 
     let expectedCode =
         $"""
-let rec fib n : int=
+let rec fib n : int =
     if n < 2 then 1
     else fib (n - 1) + fib (n - 2)
         """
@@ -156,7 +156,7 @@ let apply1 (transform: int -> int) y = transform y
 
     let expectedCode =
         $"""
-let apply1 (transform: int -> int) y : int= transform y
+let apply1 (transform: int -> int) y : int = transform y
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -183,7 +183,7 @@ type SomeType(factor0: int) =
         $"""
 type SomeType(factor0: int) =
     let factor = factor0
-    member this.SomeMethod(a, b, c) : int= (a + b + c) * factor
+    member this.SomeMethod(a, b, c) : int = (a + b + c) * factor
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -208,7 +208,7 @@ let sum a b = {Value=a+b}
     let expectedCode =
         """
 type MyType = { Value: int }
-let sum a b : MyType= {Value=a+b}
+let sum a b : MyType = {Value=a+b}
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
@@ -259,7 +259,7 @@ module ModuleSecond
 
 open ModuleFirst
 
-let sum a b : MyType= {Value=a+b}
+let sum a b : MyType = {Value=a+b}
         """
 
     let resultText = newDoc.GetTextAsync context.CT |> GetTaskResult
