@@ -1325,6 +1325,31 @@ module UnnecessaryParentheses =
                     ->
                     ValueNone
 
+                | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _
+                | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _ -> ValueNone
+
+                | SynExpr.Record(recordFields = recordFields), Dangling.Problematic _ ->
+                    let rec loop recordFields =
+                        match recordFields with
+                        | [] -> ValueSome range
+                        | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
+                            fieldName = SynLongIdent(id = id :: _), _) :: _ when problematic inner.Range id.idRange -> ValueNone
+                        | _ :: recordFields -> loop recordFields
+
+                    loop recordFields
+
+                | SynExpr.AnonRecd(recordFields = recordFields), Dangling.Problematic _ ->
+                    let rec loop recordFields =
+                        match recordFields with
+                        | [] -> ValueSome range
+                        | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ when
+                            problematic inner.Range id.idRange
+                            ->
+                            ValueNone
+                        | _ :: recordFields -> loop recordFields
+
+                    loop recordFields
+
                 | SynExpr.Paren _, SynExpr.Typed _
                 | SynExpr.Quote _, SynExpr.Typed _
                 | SynExpr.AnonRecd _, SynExpr.Typed _
