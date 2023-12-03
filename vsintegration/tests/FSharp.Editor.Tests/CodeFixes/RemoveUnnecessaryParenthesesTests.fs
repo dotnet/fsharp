@@ -993,7 +993,7 @@ in x
                 |> id
                 "
 
-                "x |> (id |> fun x -> x)", "x |> id |> fun x -> x"
+                "x |> (id |> fun x -> x)", "x |> (id |> fun x -> x)"
                 "x |> (id <| fun x -> x)", "x |> (id <| fun x -> x)"
                 "id <| (fun x -> x)", "id <| fun x -> x"
                 "id <| (fun x -> x) |> id", "id <| (fun x -> x) |> id"
@@ -1034,6 +1034,10 @@ in x
                 "id ~~~(-x)", "id ~~~(-x)" // We could actually remove here, but probably best not to.
                 "id (-(-x))", "id -(-x)"
                 "id -(-x)", "id -(-x)"
+
+                "f <| (g << h)", "f <| (g << h)"
+                "x <> (y <> z)", "x <> (y <> z)"
+                "x > (y > z)", "x > (y > z)"
 
                 "
                 let f x y = 0
@@ -1406,8 +1410,7 @@ let _ = (2 + 2) { return 5 }
                     | OuterLeft(_, ("^op" | "@op")) -> fixable pair
                     | OuterLeft(("^op" | "@op"), _) -> unfixable pair
                     | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"),
-                                ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) ->
-                        if pair.Identical then fixable pair else unfixable pair
+                                ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> unfixable pair
                     | OuterLeft(_, ("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op")) -> fixable pair
                     | OuterLeft(("=op" | "|op" | "&op" | "$" | ">op" | "<op" | "!=op"), _) -> unfixable pair
                     | OuterLeft(_, (":>" | ":?>")) -> fixable pair

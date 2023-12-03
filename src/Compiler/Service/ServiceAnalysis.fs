@@ -547,7 +547,7 @@ module UnnecessaryParentheses =
         /// :>, :?>
         | UpcastDowncast
 
-        /// =…, |…, &…, $…, >…, <…, !=…,
+        /// =…, |…, &…, $…, >…, <…, !=…
         | Relational of OriginalNotation
 
         /// ^…, @…
@@ -1286,10 +1286,11 @@ module UnnecessaryParentheses =
                             | Left, Left -> false
                             | Right, Left ->
                                 outerPrecedence <> innerPrecedence
-                                || match innerPrecedence with
-                                   | MulDivMod(Div, _)
-                                   | MulDivMod(Mod, _)
-                                   | AddSub(Sub, _) -> true
+                                || match outerPrecedence, innerPrecedence with
+                                   | _, MulDivMod(Div, _)
+                                   | _, MulDivMod(Mod, _)
+                                   | _, AddSub(Sub, _) -> true
+                                   | Relational _, Relational _ -> true
                                    | _ -> false
 
                         | c -> c > 0
