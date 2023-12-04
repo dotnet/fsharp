@@ -1333,7 +1333,11 @@ module UnnecessaryParentheses =
                         match recordFields with
                         | [] -> ValueSome range
                         | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
-                            fieldName = SynLongIdent(id = id :: _), _) :: _ when problematic inner.Range id.idRange -> ValueNone
+                            fieldName = SynLongIdent(id = id :: _), _) :: _ ->
+                            if problematic inner.Range id.idRange then
+                                ValueNone
+                            else
+                                ValueSome range
                         | _ :: recordFields -> loop recordFields
 
                     loop recordFields
@@ -1342,10 +1346,11 @@ module UnnecessaryParentheses =
                     let rec loop recordFields =
                         match recordFields with
                         | [] -> ValueSome range
-                        | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ when
-                            problematic inner.Range id.idRange
-                            ->
-                            ValueNone
+                        | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ ->
+                            if problematic inner.Range id.idRange then
+                                ValueNone
+                            else
+                                ValueSome range
                         | _ :: recordFields -> loop recordFields
 
                     loop recordFields
