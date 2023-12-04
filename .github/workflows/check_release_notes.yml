@@ -50,45 +50,11 @@ jobs:
 
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
 
-        # Parse version from eng/Versions.props
-        # For FSarp.Core:
-        # <FSMajorVersion>8</FSMajorVersion>
-        # <FSMinorVersion>0</FSMinorVersion>
-        # <FSBuildVersion>100</FSBuildVersion>
-        # For FCS:
-        # FCSMajorVersion>43</FCSMajorVersion>
-        # <FCSMinorVersion>8</FCSMinorVersion>
-        # <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
-        # For VS:
-        # <VSMajorVersion>17</VSMajorVersion>
-        # <VSMinorVersion>8</VSMinorVersion>
-
-        _fs_major_version=$(grep -oPm1 "(?<=<FSMajorVersion>)[^<]+" eng/Versions.props)
-        _fs_minor_version=$(grep -oPm1 "(?<=<FSMinorVersion>)[^<]+" eng/Versions.props)
-        _fs_build_version=$(grep -oPm1 "(?<=<FSBuildVersion>)[^<]+" eng/Versions.props)
-        _fcs_major_version=$(grep -oPm1 "(?<=<FCSMajorVersion>)[^<]+" eng/Versions.props)
-        _fcs_minor_version=$(grep -oPm1 "(?<=<FCSMinorVersion>)[^<]+" eng/Versions.props)
-        _fcs_build_version=$_fs_build_version
-        _vs_major_version=$(grep -oPm1 "(?<=<VSMajorVersion>)[^<]+" eng/Versions.props)
-        _vs_minor_version=$(grep -oPm1 "(?<=<VSMinorVersion>)[^<]+" eng/Versions.props)
-
-        FSHARP_CORE_VERSION="$_fs_major_version.$_fs_minor_version.$_fs_build_version"
-        FCS_VERSION="$_fcs_major_version.$_fcs_minor_version.$_fcs_build_version"
-        VISUAL_STUDIO_VERSION="$_vs_major_version.$_vs_minor_version"
-
-        echo "Found F# version: ${FSHARP_CORE_VERSION}"
-        echo "Found FCS version: ${FCS_VERSION}"
-        echo "Found Visual Studio version: ${VISUAL_STUDIO_VERSION}"
-
-        [[ "$FSHARP_CORE_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FSharp.Core Version parsed"; exit 1)
-        [[ "$FCS_VERSION" =~ ^[0-9]+\.[0-9]+.[0-9]+$ ]] || (echo "  Invalid FCS Version parsed"; exit 1)
-        [[ "$VISUAL_STUDIO_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || (echo "   Invalid Visual Studio Version parsed"; exit 1)
-
         _release_notes_base_path='docs/release-notes'
-        _fsharp_core_release_notes_path="${_release_notes_base_path}/FSharp.Core/${FSHARP_CORE_VERSION}.md"
-        _fsharp_compiler_release_notes_path="${_release_notes_base_path}/FSharp.Compiler.Service/${FSHARP_CORE_VERSION}.md"
-        _fsharp_language_release_notes_path="${_release_notes_base_path}/Language/preview.md"
-        _fsharp_vs_release_notes_path="${_release_notes_base_path}/VisualStudio/${VISUAL_STUDIO_VERSION}.md"
+        _fsharp_core_release_notes_path="${_release_notes_base_path}/FSharp.Core.md"
+        _fsharp_compiler_release_notes_path="${_release_notes_base_path}/FSharp.Compiler.Service.md"
+        _fsharp_language_release_notes_path="${_release_notes_base_path}/Language.md"
+        _fsharp_vs_release_notes_path="${_release_notes_base_path}/VisualStudio.md"
 
         readonly paths=(
             "src/FSharp.Core|${_fsharp_core_release_notes_path}"
