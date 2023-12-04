@@ -30,7 +30,8 @@ ImplFile
                                   Var (SynTypar (T1, None, false), (4,16--4,19)),
                                   false,
                                   PreXmlDoc ((4,16), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (4,16--4,19), { LeadingKeyword = None })],
+                                  None, (4,16--4,19), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((4,2), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (3,2--4,19), { BarRange = Some (4,2--4,3) });
                          SynUnionCase
@@ -41,7 +42,8 @@ ImplFile
                                   Var (SynTypar (T2, None, false), (7,16--7,19)),
                                   false,
                                   PreXmlDoc ((7,16), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (7,16--7,19), { LeadingKeyword = None })],
+                                  None, (7,16--7,19), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((7,2), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (6,2--7,19), { BarRange = Some (7,2--7,3) })],
                         (3,2--7,19)), (3,2--7,19)), [], None, (1,5--7,19),

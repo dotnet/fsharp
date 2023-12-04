@@ -41,7 +41,8 @@ ImplFile
                                   Var (SynTypar (T, None, false), (3,23--3,25)),
                                   false,
                                   PreXmlDoc ((3,17), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (3,17--3,25), { LeadingKeyword = None });
+                                  None, (3,17--3,25), { LeadingKeyword = None
+                                                        MutableKeyword = None });
                                SynField
                                  ([], false, Some Tail,
                                   App
@@ -51,7 +52,8 @@ ImplFile
                                         (SynTypar (T, None, false), (3,34--3,36))],
                                      [], None, true, (3,34--3,41)), false,
                                   PreXmlDoc ((3,28), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (3,28--3,41), { LeadingKeyword = None })],
+                                  None, (3,28--3,41), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (3,6--3,41), { BarRange = Some (3,4--3,5) })],
                         (2,4--3,41)), (2,4--3,41)), [], None, (1,5--3,41),

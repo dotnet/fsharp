@@ -19,9 +19,10 @@ ImplFile
                               (LongIdent (SynLongIdent ([string], [], [None])),
                                false, (3,31--3,44)), true,
                             PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,20--3,44),
-                            { LeadingKeyword = Some (Val (3,8--3,11)) }),
-                         (3,8--3,44))], (2,4--4,7)), [], None, (1,5--4,7),
+                            None, (3,8--3,44),
+                            { LeadingKeyword = Some (Val (3,8--3,11))
+                              MutableKeyword = Some (3,12--3,19) }), (3,8--3,44))],
+                     (2,4--4,7)), [], None, (1,5--4,7),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,14--1,15)
                     WithKeyword = None })], (1,0--4,7))], PreXmlDocEmpty, [],
