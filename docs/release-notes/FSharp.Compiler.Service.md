@@ -1,14 +1,11 @@
 ---
 category: Release Notes
 categoryindex: 600
-index: 1
+index: 4
 title: FSharp.Compiler.Service
 ---
 
 # FSharp.Compiler.Service
-
-These release notes aim to follow the principles of [KeepAChangelog](https://keepachangelog.com/).  
-Each entry takes an end-user centric perspective.
 
 ## Unreleased
 
