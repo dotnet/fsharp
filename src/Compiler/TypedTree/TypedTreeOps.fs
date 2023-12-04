@@ -165,8 +165,9 @@ let generalizeTypars tps = List.map generalizeTypar tps
 let rec remapTypeAux (tyenv: Remap) (ty: TType) =
   let ty = stripTyparEqns ty
   match ty with
-  | TType_var (tp, _) as ty ->
-      instTyparRef tyenv.tpinst ty tp
+  | TType_var (tp, nullness) as ty -> 
+      let res = instTyparRef tyenv.tpinst ty tp
+      addNullnessToTy nullness res
 
   | TType_app (tcref, tinst, flags) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
@@ -256,6 +257,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.SupportsComparison _ 
          | TyparConstraint.SupportsEquality _ 
          | TyparConstraint.SupportsNull _ 
+         | TyparConstraint.NotSupportsNull _ 
          | TyparConstraint.IsUnmanaged _ 
          | TyparConstraint.IsNonNullableStruct _ 
          | TyparConstraint.IsReferenceType _ 
@@ -621,12 +623,12 @@ let mkByrefTyWithInference (g: TcGlobals) ty1 ty2 =
     else 
         TType_app (g.byref_tcr, [ty1], g.knownWithoutNull) 
 
-let mkArrayTy (g: TcGlobals) rank ty m =
+let mkArrayTy (g: TcGlobals) rank nullness ty m =
     if rank < 1 || rank > 32 then
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo rank, m))
-        TType_app (g.il_arr_tcr_map[3], [ty], g.knownWithoutNull)
+        TType_app (g.il_arr_tcr_map[3], [ty], nullness)
     else
-        TType_app (g.il_arr_tcr_map[rank - 1], [ty], g.knownWithoutNull)
+        TType_app (g.il_arr_tcr_map[rank - 1], [ty], nullness)
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -725,13 +727,15 @@ let reduceTyconRefMeasureableOrProvided (g: TcGlobals) (tcref: TyconRef) tyargs 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
 let rec stripTyEqnsA g canShortcut ty = 
-    let ty = stripTyparEqnsAux canShortcut ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull canShortcut ty 
     match ty with 
-    | TType_app (tcref, tinst, _) -> 
+    | TType_app (tcref, tinst, nullness) ->
         let tycon = tcref.Deref
         match tycon.TypeAbbrev with 
         | Some abbrevTy -> 
-            stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
+            let reducedTy = applyTyconAbbrev abbrevTy tycon tinst
+            let reducedTy2 = addNullnessToTy nullness reducedTy
+            stripTyEqnsA g canShortcut reducedTy2
         | None -> 
             // This is the point where we get to add additional conditional normalizing equations 
             // into the type system. Such power!
@@ -743,7 +747,9 @@ let rec stripTyEqnsA g canShortcut ty =
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
-                stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
+                let reducedTy = reduceTyconMeasureableOrProvided g tycon tinst
+                let reducedTy2 = addNullnessToTy nullness reducedTy
+                stripTyEqnsA g canShortcut reducedTy2
             else 
                 ty
     | ty -> ty
@@ -764,17 +770,19 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
-    | TType_app (tcref, args, _) -> 
+    | TType_app (tcref, args, nullness) ->
         let tycon = tcref.Deref
-        if tycon.IsErased then
-            stripTyEqnsAndErase eraseFuncAndTuple g (reduceTyconMeasureableOrProvided g tycon args)
+        if tycon.IsErased  then
+            let reducedTy = reduceTyconMeasureableOrProvided g tycon args
+            let reducedTy2 = addNullnessToTy nullness reducedTy
+            stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
         else
             ty
 
-    | TType_fun(domainTy, rangeTy, flags) when eraseFuncAndTuple ->
-        TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], flags) 
+    | TType_fun(domainTy, rangeTy, nullness) when eraseFuncAndTuple ->
+        TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], nullness) 
 
     | TType_tuple(tupInfo, l) when eraseFuncAndTuple ->
         mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
@@ -854,7 +862,7 @@ let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true 
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs, 0uy)
+let mkAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull) // TODO NULLNESS - check various callers
 
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 
@@ -887,14 +895,14 @@ let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(domainTy, rangeTy, _) -> Some (domainTy, rangeTy) | _ -> None)
 
 let tryNiceEntityRefOfTy ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> ValueSome tcref
     | TType_measure (Measure.Const tcref) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> Some tcref
     | TType_measure (Measure.Const tcref) -> Some tcref
@@ -923,9 +931,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTy g ty = 
     match ty with
-    | TType_app(tcref, tinst, flags) ->
+    | TType_app(tcref, tinst, nullness) ->
         let tinstR = tinst |> List.filter (isMeasureTy g >> not)
-        TType_app(tcref, tinstR, flags)
+        TType_app(tcref, tinstR, nullness)
     | _ -> ty
 
 //---------------------------------------------------------------------------
@@ -1010,6 +1018,7 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
@@ -1036,7 +1045,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_forall(tps1, rty1), TType_forall(tps2, retTy2) -> 
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 retTy2
 
-    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> 
+    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> // NOTE: nullness annotations are ignored for type equivalence
         true
 
     | TType_var (tp1, _), _ ->
@@ -1044,7 +1053,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | Some tpTy1 -> typeEquivAux erasureFlag g tpTy1 ty2
         | None -> false
 
-    | TType_app (tcref1, tinst1, _), TType_app (tcref2, tinst2, _) -> 
+    // NOTE: nullness annotations are ignored for type equivalence
+    | TType_app (tcref1, tinst1, _), TType_app (tcref2, tinst2, _) ->
         tcrefAEquiv g aenv tcref1 tcref2 &&
         typesAEquivAux erasureFlag g aenv tinst1 tinst2
 
@@ -1056,12 +1066,13 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         structnessAEquiv tupInfo1 tupInfo2 && typesAEquivAux erasureFlag g aenv l1 l2
 
+    // NOTE: nullness annotations are ignored for type equivalence
+    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
+        typeAEquivAux erasureFlag g aenv domainTy1 domainTy2 && typeAEquivAux erasureFlag g aenv rangeTy1 rangeTy2
+
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
         anonInfoEquiv anonInfo1 anonInfo2 &&
         typesAEquivAux erasureFlag g aenv l1 l2
-
-    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) -> 
-        typeAEquivAux erasureFlag g aenv domainTy1 domainTy2 && typeAEquivAux erasureFlag g aenv rangeTy1 rangeTy2
 
     | TType_measure m1, TType_measure m2 -> 
         match erasureFlag with 
@@ -1135,12 +1146,24 @@ let rec getErasedTypes g ty =
     match ty with
     | TType_forall(_, bodyTy) -> 
         getErasedTypes g bodyTy
-    | TType_var (tp, _) -> 
-        if tp.IsErased then [ty] else []
-    | TType_app (_, b, _) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
+
+    | TType_var (tp, nullness) -> 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
+        | _ -> if tp.IsErased then [ty] else []
+
+    | TType_app (_, b, nullness) ->
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> [ty]
+        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+
+    | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
-    | TType_fun (domainTy, rangeTy, _) -> 
-        getErasedTypes g domainTy @ getErasedTypes g rangeTy
+
+    | TType_fun (domainTy, rangeTy, nullness) -> 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> [ty]
+        | _ -> getErasedTypes g domainTy @ getErasedTypes g rangeTy
     | TType_measure _ -> 
         [ty]
 
@@ -1819,6 +1842,7 @@ let isInByrefTy g ty =
         | _ -> false) 
 
 let isOutByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_Out_tcr tcref | _ -> false) 
+
 let isOutByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
         | TType_app(tcref, [_; tagTy], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tagTy         
@@ -2285,6 +2309,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.SupportsComparison _
     | TyparConstraint.SupportsEquality _
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _
@@ -2420,6 +2445,7 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.IsReferenceType _ 
@@ -2468,7 +2494,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
         let racc = accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r
         unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps racc) acc
 
-    | TType_measure unt -> 
+    | TType_measure unt ->
         let mvars = ListMeasureVarOccsWithNonZeroExponents unt
         List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
@@ -2806,7 +2832,10 @@ let generalizedTyconRef (g: TcGlobals) tcref =
     let tinst = generalTyconRefInst tcref
     TType_app(tcref, tinst, g.knownWithoutNull)
 
-let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
+let isTTyparCoercesToType tpc = 
+    match tpc with 
+    | TyparConstraint.CoercesTo _  -> true
+    | _ -> false
 
 //--------------------------------------------------------------------------
 // Print Signatures/Types - prelude
@@ -3099,6 +3128,7 @@ type DisplayEnv =
       showAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
+      showNullnessAnnotations: bool option
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       showDocumentation: bool
@@ -3133,6 +3163,7 @@ type DisplayEnv =
         showAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
+        showNullnessAnnotations = None
         showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
@@ -3460,6 +3491,9 @@ let TryFindILAttributeOpt attr attrs =
     match attr with
     | Some (AttribInfo (atref, _)) -> HasILAttribute atref attrs
     | _ -> false
+
+let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
+    
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
@@ -3937,32 +3971,44 @@ module DebugPrint =
          else
              tupleL tinstL ^^ tcL
             
+    and auxAddNullness coreL (nullness: Nullness) = 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
+        | NullnessInfo.WithoutNull -> coreL
+        | NullnessInfo.AmbivalentToNull -> coreL //^^ wordL (tagText "%")
+
     and auxTypeWrapL env isAtomic ty = 
         let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
         match stripTyparEqns ty with
         | TType_forall (typars, bodyTy) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env bodyTy) |> wrap
 
-        | TType_ucase (UnionCaseRef(tcref, _), tinst)
-
-        | TType_app (tcref, tinst, _) -> 
+        | TType_ucase (UnionCaseRef(tcref, _), tinst) ->
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
+        | TType_app (tcref, tinst, nullness) ->
+           let prefix = tcref.IsPrefixDisplay
+           let tcL = layoutTyconRef tcref
+           let coreL = auxTyparsL env tcL prefix tinst
+           auxAddNullness coreL nullness
+
         | TType_tuple (_tupInfo, tys) ->
             sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        | TType_fun (domainTy, rangeTy, _) ->
-            ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy) |> wrap
+        | TType_fun (domainTy, rangeTy, nullness) ->
+           let coreL = ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy)  |> wrap
+           auxAddNullness coreL nullness
 
-        | TType_var (typar, _) ->
-            auxTyparWrapL env isAtomic typar 
+        | TType_var (typar, nullness) ->
+           let coreL = auxTyparWrapL env isAtomic typar
+           auxAddNullness coreL nullness
 
         | TType_anon (anonInfo, tys) ->
-            braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
+           braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
 
-        | TType_measure unt -> 
+        | TType_measure unt ->
 #if DEBUG
           leftL (tagText "{") ^^
           (match global_g with
@@ -4062,6 +4108,8 @@ module DebugPrint =
             wordL (tagText "struct") |> constraintPrefix
         | TyparConstraint.IsReferenceType _ ->
             wordL (tagText "not struct") |> constraintPrefix
+        | TyparConstraint.NotSupportsNull _ ->
+            wordL (tagText "not null") |> constraintPrefix
         | TyparConstraint.IsUnmanaged _ ->
             wordL (tagText "unmanaged") |> constraintPrefix
         | TyparConstraint.SimpleChoice(tys, _) ->
@@ -8890,13 +8938,22 @@ let isNonNullableStructTyparTy g ty =
     | ValueNone ->
         false
 
-// Note, isRefTy does not include type parameters with the ': not struct' constraint
+// Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
 let isReferenceTyparTy g ty = 
     match tryDestTyparTy g ty with 
     | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | _ -> false)
+        tp.Constraints |> List.exists (function
+            | TyparConstraint.IsReferenceType _ -> true
+            | TyparConstraint.SupportsNull _ -> true
+            | _ -> false)
     | ValueNone ->
+        false
+
+let isSupportsNullTyparTy g ty = 
+    if isReferenceTyparTy g ty then
+        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
+    else
         false
 
 let TypeNullNever g ty = 
@@ -8905,49 +8962,88 @@ let TypeNullNever g ty =
     isByrefTy g underlyingTy ||
     isNonNullableStructTyparTy g ty
 
-/// Indicates if the type admits the use of 'null' as a value
+/// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
-        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (match tryTcrefOfAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
+        match tryTcrefOfAppTy g ty with 
+        | ValueSome tcref -> 
+            // Putting AllowNullLiteralAttribute(false) on an IL or provided 
+            // type means 'null' can't be used with that type, otherwise it can
+            TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false 
+        | _ -> 
+            // In pre-nullness, other IL reference types (e.g. arrays) always support null
+            true
     elif TypeNullNever g ty then 
         false
     else 
-        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
+        // In F# 4.x, putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true
         | ValueNone -> 
 
         // Consider type parameters
-        if isReferenceTyparTy g ty then
-            (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
-        else
-            false
+        isSupportsNullTyparTy g ty
 
+// Any mention of a type with AllowNullLiteral(true) is considered to be with-null
+let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
+    match TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref with
+    | Some true -> g.knownWithNull
+    | _ -> g.knownWithoutNull
+
+let nullnessOfTy g ty =
+    ty
+    |> stripTyEqns g
+    |> function
+        | TType_app(tcref, _, nullness) ->
+            let nullness2 = intrinsicNullnessOfTyconRef g tcref
+            combineNullness nullness nullness2
+        | TType_fun (_, _, nullness) | TType_var (_, nullness) ->
+            nullness
+        | _ -> g.knownWithoutNull
+
+/// The new logic about whether a type admits the use of 'null' as a value.
+let TypeNullIsExtraValueNew g m ty = 
+    let sty = stripTyparEqns ty
+
+    // Check if the type is 'obj'
+    isObjTy g sty
+    ||
+    // Check if the type has AllowNullLiteral
+    (match tryTcrefOfAppTy g sty with 
+     | ValueSome tcref -> 
+        not tcref.IsStructOrEnumTycon &&
+        not (isByrefLikeTyconRef g m tcref) && 
+        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+     | _ -> false) 
+    ||
+    // Check if the type has a nullness annotation
+    (match (nullnessOfTy g sty).Evaluate() with 
+     | NullnessInfo.AmbivalentToNull -> false
+     | NullnessInfo.WithoutNull -> false
+     | NullnessInfo.WithNull -> true)
+    ||
+    // Check if the type has a ': null' constraint
+    isSupportsNullTyparTy g ty
+
+/// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
     (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) 
     || isUnitTy g ty
 
+/// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
+/// as a valid runtime representation under old compatiblity rules.
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-// The non-inferring counter-part to SolveTypeUseSupportsNull
-let TypeSatisfiesNullConstraint g m ty = 
-    TypeNullIsExtraValue g m ty  
-
-// The non-inferring counter-part to SolveTypeRequiresDefaultValue (and SolveTypeRequiresDefaultConstructor for struct types)
-let rec TypeHasDefaultValue g m ty = 
+let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    // Check reference types - precisely the ones satisfying the ': null' constraint have default values
-    TypeSatisfiesNullConstraint g m ty  
-    || 
-      // Check nominal struct types
-      (isStructTy g ty &&
-        // F# struct types have a DefaultValue if all their field types have a default value excluding those with DefaultValue(false)
+    (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
+    || (isStructTy g ty &&
+        // Is it an F# struct type?
         (if isFSharpStructTy g ty then 
             let tcref, tinst = destAppTy g ty 
             let flds = 
@@ -8956,17 +9052,17 @@ let rec TypeHasDefaultValue g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs <> Some false)
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 
          // Struct tuple types have a DefaultValue if all their element types have a default value
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+            destStructTupleTy g ty |> List.forall (TypeHasDefaultValueAux isNew g m)
          
          // Struct anonymous record types have a DefaultValue if all their element types have a default value
          elif isStructAnonRecdTy g ty then 
             match tryDestAnonRecdTy g ty with
             | ValueNone -> true
-            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValueAux isNew g m)
          else
             // All nominal struct types defined in other .NET languages have a DefaultValue regardless of their instantiation
             true))
@@ -8974,6 +9070,10 @@ let rec TypeHasDefaultValue g m ty =
       // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
       (isNonNullableStructTyparTy g ty &&
         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
+
+let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
+
+let TypeHasDefaultValueNew g m ty = TypeHasDefaultValueAux true g m ty  
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
