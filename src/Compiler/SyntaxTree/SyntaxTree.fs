@@ -1297,6 +1297,10 @@ type SynField =
         range: range *
         trivia: SynFieldTrivia
 
+    member this.Range =
+        match this with
+        | SynField(range = range) -> range
+
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
     | SynComponentInfo of
