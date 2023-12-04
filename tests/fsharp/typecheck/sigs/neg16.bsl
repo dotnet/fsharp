@@ -83,7 +83,7 @@ neg16.fs(102,3,103,9): typecheck error FS0823: The 'VolatileField' attribute may
 
 neg16.fs(102,3,103,9): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 
-neg16.fs(119,17,119,24): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+neg16.fs(119,17,119,18): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
 neg16.fs(106,5,107,19): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 

@@ -600,3 +600,57 @@ type internal SomeType() =
             findAllReferences (expectToFind <| method1Locations())
         }
 
+[<Fact>]
+let ``Module with the same name as type`` () =
+        let source = """
+module Foo
+
+type MyType =
+    static member Two = 1
+
+let x = MyType.Two
+
+module MyType = do () // <-- Extra module with the same name as the type
+
+let y = MyType.Two
+"""
+
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            fileName, 4, 5, 11
+            fileName, 7, 8, 14
+            fileName, 11, 8, 14
+        ]
+
+[<Fact>]
+let ``Module with the same name as type part 2`` () =
+        let source = """
+module Foo
+
+module MyType =
+
+    let Three = 7
+
+type MyType =
+    static member Two = 1
+
+let x = MyType.Two
+
+let y = MyType.Three
+"""
+
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            fileName, 4, 7, 13
+            fileName, 13, 8, 14
+        ]

@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">Vodítka struktury bloků;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Vodítka struktury bloků;
 Zobrazit pokyny ke struktuře pro kód F#;
 Osnova;
 Zobrazit osnovu a sbalitelné uzly kódu F#;
@@ -214,6 +214,11 @@ Přerušované podtržení;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">Odebrat return!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

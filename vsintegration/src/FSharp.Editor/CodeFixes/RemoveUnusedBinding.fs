@@ -43,7 +43,7 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
                         |> fun r -> parseResults.TryRangeOfBindingWithHeadPatternWithPos(r.Start)
 
                     match bindingRangeOpt with
-                    | Some (Expression range) ->
+                    | Some(Expression range) ->
                         let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
 
                         let keywordEndColumn =
@@ -60,7 +60,7 @@ type internal RemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
 
                         ValueSome(TextChange(fullSpan, ""))
 
-                    | Some (SelfId range) ->
+                    | Some(SelfId range) ->
                         let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
 
                         let rec findAs index (str: SourceText) =

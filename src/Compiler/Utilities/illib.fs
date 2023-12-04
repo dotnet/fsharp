@@ -11,13 +11,62 @@ open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
+[<Class>]
+type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
+    let syncObj = obj ()
+    let mutable valueFactory = valueFactory
+    let mutable value = value
+
+    new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)
+
+    member this.IsValueCreated =
+        match box valueFactory with
+        | null -> true
+        | _ -> false
+
+    member this.Value =
+        match box valueFactory with
+        | null -> value
+        | _ ->
+
+            Monitor.Enter(syncObj)
+
+            try
+                match box valueFactory with
+                | null -> ()
+                | _ ->
+
+                    value <- valueFactory ()
+                    valueFactory <- Unchecked.defaultof<_>
+            finally
+                Monitor.Exit(syncObj)
+
+            value
+
+    member this.Force() = this.Value
+
+    static member FromValue(value) =
+        InterruptibleLazy(value, Unchecked.defaultof<_>)
+
+module InterruptibleLazy =
+    let force (x: InterruptibleLazy<'T>) = x.Value
+
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
-    let notlazy v = Lazy<_>.CreateFromValue v
+    let notlazy v = InterruptibleLazy.FromValue v
+
+    let (|InterruptibleLazy|) (l: InterruptibleLazy<_>) = l.Force()
+
+    [<return: Struct>]
+    let (|RecoverableException|_|) (exn: Exception) =
+        if exn :? OperationCanceledException then
+            ValueNone
+        else
+            ValueSome exn
 
     let inline isNil l = List.isEmpty l
 
@@ -105,35 +154,55 @@ module internal PervasiveAutoOpens =
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
 
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken
-            )
+            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
             task.Result
 
-/// An efficient lazy for inline storage in a class type. Results in fewer thunks.
-[<Struct>]
-type InlineDelayInit<'T when 'T: not struct> =
-    new(f: unit -> 'T) =
-        {
-            store = Unchecked.defaultof<'T>
-            func = Func<_>(f)
-        }
+[<AbstractClass>]
+type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
+    let syncObj = obj ()
 
-    val mutable store: 'T
-    val mutable func: Func<'T> MaybeNull
+    let mutable arrayStore = null
+    let mutable dictStore = null
 
-    member x.Value =
-        match x.func with
-        | null -> x.store
+    let mutable func = f
+
+    member this.GetArray() =
+        match arrayStore with
+        | NonNull value -> value
         | _ ->
-            let res = LazyInitializer.EnsureInitialized(&x.store, x.func)
-            x.func <- null
-            res
+            Monitor.Enter(syncObj)
+
+            try
+                match arrayStore with
+                | NonNull value -> value
+                | _ ->
+
+                    arrayStore <- func ()
+
+                    func <- Unchecked.defaultof<_>
+                    arrayStore
+            finally
+                Monitor.Exit(syncObj)
+
+    member this.GetDictionary() =
+        match dictStore with
+        | NonNull value -> value
+        | _ ->
+            let array = this.GetArray()
+            Monitor.Enter(syncObj)
+
+            try
+                match dictStore with
+                | NonNull value -> value
+                | _ ->
+
+                    dictStore <- this.CreateDictionary(array)
+                    dictStore
+            finally
+                Monitor.Exit(syncObj)
+
+    abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -203,7 +272,7 @@ module Array =
         let rec loop p l n =
             (n < Array.length l)
             && (if p l[n] then
-                    forallFrom (fun x -> not (p x)) l (n + 1)
+                    forallFrom (p >> not) l (n + 1)
                 else
                     loop p l (n + 1))
 
@@ -553,7 +622,7 @@ module List =
         xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
 
     let existsSquared f xss =
-        xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+        xss |> List.exists (fun xs -> xs |> List.exists f)
 
     let mapiFoldSquared f z xss =
         mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
@@ -998,7 +1067,7 @@ type LazyWithContext<'T, 'Ctxt> =
                 x.value <- res
                 x.funcOrException <- null
                 res
-            with exn ->
+            with RecoverableException exn ->
                 x.funcOrException <- box (LazyWithContextFailure(exn))
                 reraise ()
         | _ -> failwith "unreachable"
@@ -1106,8 +1175,8 @@ module NameMap =
             for m in ms do
                 yield! m
         }
-        |> Seq.groupBy (fun (KeyValue (k, _v)) -> k)
-        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue (_k, v)) -> v) es)))
+        |> Seq.groupBy (fun (KeyValue(k, _v)) -> k)
+        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es)))
         |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold
@@ -1234,11 +1303,11 @@ module MapAutoOpens =
         static member Empty: Map<'Key, 'Value> = Map.empty
 
 #if FSHARPCORE_USE_PACKAGE
-        member x.Values = [ for KeyValue (_, v) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
         member x.AddMany(kvs: _[]) =
-            (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+            (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.AddOrModify(key, f: 'Value option -> 'Value) = x.Add(key, f (x.TryFind key))
 
@@ -1256,7 +1325,7 @@ type LayeredMultiMap<'Key, 'Value when 'Key: equality and 'Key: comparison>(cont
             | _ -> []
 
     member x.AddMany(kvs: _[]) =
-        (x, kvs) ||> Array.fold (fun x (KeyValue (k, v)) -> x.Add(k, v))
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 

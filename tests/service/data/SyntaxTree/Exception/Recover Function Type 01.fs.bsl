@@ -19,7 +19,8 @@ ImplFile
                                 (3,17--3,27), { ArrowRange = (3,21--3,23) }),
                              false,
                              PreXmlDoc ((3,17), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, (3,17--3,27), { LeadingKeyword = None })],
+                             None, (3,17--3,27), { LeadingKeyword = None
+                                                   MutableKeyword = None })],
                        PreXmlDocEmpty, None, (3,10--3,27), { BarRange = None }),
                     None, PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                     None, (3,0--3,27)), None, [], (3,0--3,27)), (3,0--3,27));
@@ -34,7 +35,8 @@ ImplFile
                             ([], false, None,
                              LongIdent (SynLongIdent ([int], [], [None])), false,
                              PreXmlDoc ((4,19), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, (4,19--4,22), { LeadingKeyword = None })],
+                             None, (4,19--4,22), { LeadingKeyword = None
+                                                   MutableKeyword = None })],
                        PreXmlDocEmpty, None, (4,10--4,22), { BarRange = None }),
                     None, PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                     None, (4,0--4,22)), None, [], (4,0--4,22)), (4,0--4,22))],

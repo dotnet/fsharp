@@ -403,7 +403,7 @@ type internal FxResolver
             | ".NET", "Core" when arr.Length >= 3 -> Some("netcoreapp" + (getTfmNumber arr[2]))
 
             | ".NET", "Framework" when arr.Length >= 3 ->
-                if arr[ 2 ].StartsWith("4.8") then
+                if arr[2].StartsWith("4.8") then
                     Some "net48"
                 else
                     Some "net472"
@@ -936,7 +936,7 @@ type internal FxResolver
                                     if useFsiAuxLib then
                                         getFsiLibraryImplementationReference ()
                                 ]
-                                |> List.filter (fun f -> systemAssemblies.Contains(Path.GetFileNameWithoutExtension(f)))
+                                |> List.filter (Path.GetFileNameWithoutExtension >> systemAssemblies.Contains)
 
                             sdkReferences, false
                         with e ->

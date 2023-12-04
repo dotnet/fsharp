@@ -204,7 +204,11 @@ module private SourceText =
 type SourceText with
 
     member this.ToFSharpSourceText() =
-        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create))
+        SourceText.weakTable.GetValue(
+            this,
+            Runtime.CompilerServices.ConditionalWeakTable<_, _>
+                .CreateValueCallback(SourceText.create)
+        )
 
 type NavigationItem with
 
@@ -215,68 +219,68 @@ type NavigationItem with
         | FSharpGlyph.Type
         | FSharpGlyph.Exception ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.ClassPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.ClassInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.ClassPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.ClassInternal
             | _ -> FSharpRoslynGlyph.ClassPublic
         | FSharpGlyph.Constant ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.ConstantPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.ConstantInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.ConstantPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.ConstantInternal
             | _ -> FSharpRoslynGlyph.ConstantPublic
         | FSharpGlyph.Delegate ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.DelegatePrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.DelegateInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.DelegatePrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.DelegateInternal
             | _ -> FSharpRoslynGlyph.DelegatePublic
         | FSharpGlyph.Union
         | FSharpGlyph.Enum ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.EnumPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.EnumInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.EnumPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.EnumInternal
             | _ -> FSharpRoslynGlyph.EnumPublic
         | FSharpGlyph.EnumMember
         | FSharpGlyph.Variable
         | FSharpGlyph.Field ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.FieldPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.FieldInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.FieldPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.FieldInternal
             | _ -> FSharpRoslynGlyph.FieldPublic
         | FSharpGlyph.Event ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.EventPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.EventInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.EventPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.EventInternal
             | _ -> FSharpRoslynGlyph.EventPublic
         | FSharpGlyph.Interface ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.InterfacePrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.InterfaceInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.InterfacePrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.InterfaceInternal
             | _ -> FSharpRoslynGlyph.InterfacePublic
         | FSharpGlyph.Method
         | FSharpGlyph.OverridenMethod ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.MethodPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.MethodInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.MethodPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.MethodInternal
             | _ -> FSharpRoslynGlyph.MethodPublic
         | FSharpGlyph.Module ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.ModulePrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.ModuleInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.ModulePrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.ModuleInternal
             | _ -> FSharpRoslynGlyph.ModulePublic
         | FSharpGlyph.NameSpace -> FSharpRoslynGlyph.Namespace
         | FSharpGlyph.Property ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.PropertyPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.PropertyInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.PropertyPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.PropertyInternal
             | _ -> FSharpRoslynGlyph.PropertyPublic
         | FSharpGlyph.Struct ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.StructurePrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.StructureInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.StructurePrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.StructureInternal
             | _ -> FSharpRoslynGlyph.StructurePublic
         | FSharpGlyph.ExtensionMethod ->
             match x.Access with
-            | Some (SynAccess.Private _) -> FSharpRoslynGlyph.ExtensionMethodPrivate
-            | Some (SynAccess.Internal _) -> FSharpRoslynGlyph.ExtensionMethodInternal
+            | Some(SynAccess.Private _) -> FSharpRoslynGlyph.ExtensionMethodPrivate
+            | Some(SynAccess.Internal _) -> FSharpRoslynGlyph.ExtensionMethodInternal
             | _ -> FSharpRoslynGlyph.ExtensionMethodPublic
         | FSharpGlyph.Error -> FSharpRoslynGlyph.Error
         | FSharpGlyph.TypeParameter -> FSharpRoslynGlyph.TypeParameter
@@ -572,3 +576,62 @@ type Async with
 
             task.Result
         | _ -> Async.RunSynchronously(computation, ?cancellationToken = cancellationToken)
+
+#if !NET7_0_OR_GREATER
+open System.Runtime.CompilerServices
+
+[<Sealed; AbstractClass; Extension>]
+type ReadOnlySpanExtensions =
+    [<Extension>]
+    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value: char) =
+        let mutable i = 0
+        let mutable found = false
+
+        while not found && i < span.Length do
+            if span[i] <> value then found <- true else i <- i + 1
+
+        if found then i else -1
+
+    [<Extension>]
+    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
+        let mutable i = 0
+        let mutable found = false
+
+        while not found && i < span.Length do
+            let c = span[i]
+
+            if c <> value0 && c <> value1 then
+                found <- true
+            else
+                i <- i + 1
+
+        if found then i else -1
+
+    [<Extension>]
+    static member IndexOfAnyExcept(span: ReadOnlySpan<char>, values: ReadOnlySpan<char>) =
+        let mutable i = 0
+        let mutable found = false
+
+        while not found && i < span.Length do
+            if values.IndexOf span[i] < 0 then
+                found <- true
+            else
+                i <- i + 1
+
+        if found then i else -1
+
+    [<Extension>]
+    static member LastIndexOfAnyExcept(span: ReadOnlySpan<char>, value0: char, value1: char) =
+        let mutable i = span.Length - 1
+        let mutable found = false
+
+        while not found && i >= 0 do
+            let c = span[i]
+
+            if c <> value0 && c <> value1 then
+                found <- true
+            else
+                i <- i - 1
+
+        if found then i else -1
+#endif

@@ -29,12 +29,7 @@ type internal InlineRenameReplacementInfo(newSolution: Solution, replacementText
     override _.GetReplacements _ = Seq.empty
 
 type internal InlineRenameLocationSet
-    (
-        locations: FSharpInlineRenameLocation[],
-        originalSolution: Solution,
-        symbolKind: LexerSymbolKind,
-        symbol: FSharpSymbol
-    ) =
+    (locations: FSharpInlineRenameLocation[], originalSolution: Solution, symbolKind: LexerSymbolKind, symbol: FSharpSymbol) =
 
     inherit FSharpInlineRenameLocationSet()
 
@@ -156,7 +151,7 @@ type internal InlineRenameInfo
 
             let! results =
                 seq {
-                    for (KeyValue (documentId, symbolUses)) in symbolUsesByDocumentId do
+                    for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
 
                         cancellableTask {
                             let! cancellationToken = CancellableTask.getCancellationToken ()
