@@ -907,6 +907,11 @@
         <target state="translated">Se espera una expresión</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Se espera un patrón</target>

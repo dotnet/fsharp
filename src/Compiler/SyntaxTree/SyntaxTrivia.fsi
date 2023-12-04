@@ -486,6 +486,8 @@ type SynFieldTrivia =
     {
         /// Used leading keyword of SynField
         LeadingKeyword: SynLeadingKeyword option
+        /// The syntax range of the `mutable` keyword
+        MutableKeyword: range option
     }
 
     static member Zero: SynFieldTrivia
