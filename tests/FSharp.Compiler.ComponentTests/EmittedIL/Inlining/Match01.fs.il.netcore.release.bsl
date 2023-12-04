@@ -1110,42 +1110,6 @@
     } 
   } 
 
-  .method public static int32  select1(class assembly/Test1 x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance int32 assembly/Test1::get_Tag()
-    IL_0007:  switch     ( 
-                          IL_001c,
-                          IL_0028,
-                          IL_002a,
-                          IL_002c)
-    IL_001c:  ldarg.0
-    IL_001d:  castclass  assembly/Test1/X11
-    IL_0022:  ldfld      int32 assembly/Test1/X11::item
-    IL_0027:  ret
-
-    IL_0028:  ldc.i4.2
-    IL_0029:  ret
-
-    IL_002a:  ldc.i4.3
-    IL_002b:  ret
-
-    IL_002c:  ldc.i4.4
-    IL_002d:  ret
-  } 
-
-  .method public static int32  fm(class assembly/Test1 y) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       int32 assembly::select1(class assembly/Test1)
-    IL_0006:  ret
-  } 
-
   .method assembly static int32  CompareTo$cont@4(class assembly/Test1 this,
                                                   class assembly/Test1 obj,
                                                   class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -1413,6 +1377,42 @@
 
     IL_00fb:  ldc.i4.1
     IL_00fc:  ret
+  } 
+
+  .method public static int32  select1(class assembly/Test1 x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 assembly/Test1::get_Tag()
+    IL_0007:  switch     ( 
+                          IL_001c,
+                          IL_0028,
+                          IL_002a,
+                          IL_002c)
+    IL_001c:  ldarg.0
+    IL_001d:  castclass  assembly/Test1/X11
+    IL_0022:  ldfld      int32 assembly/Test1/X11::item
+    IL_0027:  ret
+
+    IL_0028:  ldc.i4.2
+    IL_0029:  ret
+
+    IL_002a:  ldc.i4.3
+    IL_002b:  ret
+
+    IL_002c:  ldc.i4.4
+    IL_002d:  ret
+  } 
+
+  .method public static int32  fm(class assembly/Test1 y) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       int32 assembly::select1(class assembly/Test1)
+    IL_0006:  ret
   } 
 
 } 
