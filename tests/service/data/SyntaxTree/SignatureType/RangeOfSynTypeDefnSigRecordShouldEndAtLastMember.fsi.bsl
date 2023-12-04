@@ -18,7 +18,8 @@ SigFile
                            ([], false, Some Level,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
                             PreXmlDoc ((4,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (4,6--4,16), { LeadingKeyword = None })],
+                            None, (4,6--4,16), { LeadingKeyword = None
+                                                 MutableKeyword = None })],
                         (4,4--4,18)), (4,4--4,18)),
                   [Member
                      (SynValSig

@@ -178,7 +178,6 @@ module MutRecShapes =
 
    let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
-
 /// Indicates a declaration is contained in the given module 
 let ModuleOrNamespaceContainerInfo modref =
     ContainerInfo(Parent modref, Some(MemberOrValContainerInfo(modref, None, None, NoSafeInitInfo, [])))
@@ -364,7 +363,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true ShouldNotifySink.Yes with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -424,8 +423,9 @@ module TcRecdUnionAndEnumDeclarations =
         let vis = CombineReprAccess parent vis
         Construct.NewRecdField isStatic konst id nameGenerated tyR isMutable vol attrsForProperty attrsForField xmldoc vis false
 
-    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id, nameGenerated, ty, isMutable, xmldoc, vis, m) =
+    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
+        let m = id.idRange
         let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
@@ -459,18 +459,20 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
+        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis)
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
-        | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
+        | None ->
+            errorR (Error(FSComp.SR.tcFieldRequiresName(), m))
+            None
         | Some id ->
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-            TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis, m) 
+            Some(TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis)) 
 
     let TcNamedFieldDecls cenv env parent isIncrClass tpenv fields =
-        fields |> List.map (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
+        fields |> List.choose (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
 
     //-------------------------------------------------------------------------
     // Bind other elements of type definitions (constructors etc.)
@@ -519,14 +521,19 @@ module TcRecdUnionAndEnumDeclarations =
             match args with
             | SynUnionCaseKind.Fields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
-                    match idOpt, parent with
-                    | Some fieldId, Parent tcref ->
-                        let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
-                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                        TcNamedFieldDecl cenv env parent false tpenv fld
-                    | _ ->
-                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                let rfields =
+                    flds
+                    |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
+                        match idOpt, parent with
+                        | Some fieldId, Parent tcref ->
+                            let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
+                            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                            TcNamedFieldDecl cenv env parent false tpenv fld
+                        | _ ->
+                            Some(TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                    )
+                    |> List.choose (fun x -> x)
+                
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -640,7 +647,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true ShouldNotifySink.Yes with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -998,25 +1005,30 @@ module MutRecBindingChecking =
                     for b1, b2 in List.pairwise defnAs do
                         match b1, b2 with
                         | TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some getPropertyIdent; memberFlags = Some mf))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = getIdent)); valSynData = SynValData(memberFlags = Some mf))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vGet)
                           },
                           TyconBindingPhase2A.Phase2AMember {
-                            SyntacticBinding = NormalizedBinding(valSynData = SynValData(transformedFromProperty = Some setPropertyIdent))
+                            SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getPropertyIdent.idRange setPropertyIdent.idRange ->
+                          } when Range.equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
-                            let apparentEnclosingType =  generalizedTyconRef g parentRef
-                            let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
-                            let item =
-                                Item.Property(
-                                    getPropertyIdent.idText,
-                                    [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
-                                    Some getPropertyIdent.idRange
-                                )
-                            CallNameResolutionSink cenv.tcSink (getPropertyIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
+                                let apparentEnclosingType =  generalizedTyconRef g parentRef
+                                let vGet, vSet = if mf.MemberKind = SynMemberKind.PropertyGet then vGet, vSet else vSet, vGet
+                                let propertyName =
+                                    if vGet.Id.idText.StartsWith("get_", StringComparison.Ordinal) then
+                                        vGet.Id.idText.Replace("get_", "")
+                                    else
+                                        vGet.Id.idText
+                                let item =
+                                    Item.Property(
+                                        propertyName,
+                                        [ PropInfo.FSProp(g, apparentEnclosingType, Some (mkLocalValRef vGet), Some (mkLocalValRef vSet)) ],
+                                        Some getIdent.idRange
+                                    )
+                                CallNameResolutionSink cenv.tcSink (getIdent.idRange, envForTycon.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, envForTycon.eAccessRights)
                         | _ -> ()
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
@@ -1191,7 +1203,7 @@ module MutRecBindingChecking =
                             let inheritsExpr, tpenv =
                                 try 
                                    TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
-                                with e ->
+                                with RecoverableException e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
@@ -1532,7 +1544,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
 
         let mvvs = ForceRaise resolved
 
@@ -1724,7 +1736,7 @@ module MutRecBindingChecking =
                      // Check it is not one of the generalized variables...
                      not (genSet.Contains tp) && 
                      // Check it involves a generalized variable in one of its constraints...
-                     freeInTypar.Exists(fun otherTypar -> genSet.Contains otherTypar))
+                     freeInTypar.Exists(genSet.Contains))
              //printfn "unsolvedTyparsInvolvingGeneralizedVariables.Length = %d" unsolvedTyparsInvolvingGeneralizedVariables.Length
              //for x in unsolvedTypars do 
              //    printfn "unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
@@ -1928,7 +1940,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
       
       MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv mBinds scopem mutRecNSInfo envMutRec binds
 
-    with exn -> errorRecovery exn scopem; [], envMutRec
+    with RecoverableException exn -> errorRecovery exn scopem; [], envMutRec
 
 //-------------------------------------------------------------------------
 // Build augmentation declarations
@@ -2383,7 +2395,7 @@ module TcExceptionDeclarations =
           match reprIdOpt with 
           | Some longId ->
               let resolution =
-                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId 
+                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId None
                   |> ForceRaise
               match resolution with
               | _, Item.ExnCase exnc, [] -> 
@@ -2532,6 +2544,7 @@ module EstablishTypeDefinitionCores =
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(), m))
             k
 
+    [<return: Struct>]
     let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner: TcEnv, id: Ident) synTyconRepr =
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(SynLongIdent([unionCaseName], _, _))), m) 
@@ -2539,9 +2552,9 @@ module EstablishTypeDefinitionCores =
                                 (not hasMeasureAttr && 
                                  (isNil (LookupTypeNameInEnvNoArity OpenQualified unionCaseName.idText envinner.NameEnv) || 
                                   id.idText = unionCaseName.idText)) -> 
-            Some(unionCaseName, m)
+            ValueSome(unionCaseName, m)
         | _ -> 
-            None
+            ValueNone
 
     /// Get the component types that make a record, union or struct type.
     ///
@@ -3051,7 +3064,7 @@ module EstablishTypeDefinitionCores =
                 if not inSig then 
                     cenv.amap.assemblyLoader.RecordGeneratedTypeRoot (ProviderGeneratedType(ilOrigRootTypeRef, ilTgtRootTyRef, nested))
 
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn rhsType.Range 
 #endif
 
@@ -3146,7 +3159,7 @@ module EstablishTypeDefinitionCores =
 
             | _ -> ()
         
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn m
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
@@ -3258,7 +3271,7 @@ module EstablishTypeDefinitionCores =
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
               
-           with exn -> errorRecovery exn m))
+           with RecoverableException exn -> errorRecovery exn m))
 
     /// Establish the fields, dispatch slots and union cases of a type
     let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
@@ -3352,12 +3365,26 @@ module EstablishTypeDefinitionCores =
 
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
                 if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
-                    let distFieldNames = fieldNames |> List.distinctBy fst
-                    if distFieldNames.Length <> fieldNames.Length then
-                        let fieldRanges = distFieldNames |> List.map snd
-                        for m in fieldRanges do
-                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
+                    let allTypesEqual listOfNamesAndTypes =
+                        match listOfNamesAndTypes with
+                        | [] | [_] -> true
+                        | (_,headField : RecdField) :: tail -> 
+                            let headType = headField.FormalType
+                            tail |> List.forall (fun (_,elemType) -> typeEquivAux EraseAll g elemType.FormalType headType)
+
+                    let diagnostics,duplicateCriteria =
+                        if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReuseSameFieldsInStructUnions) then
+                            FSComp.SR.tcStructUnionMultiCaseFieldsSameType, allTypesEqual >> not
+                        else
+                            FSComp.SR.tcStructUnionMultiCaseDistinctFields, (fun group -> group.Length > 1)
+
+                    [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield(ft.LogicalName,ft) ]
+                    |> List.groupBy fst
+                    |> List.filter (fun (_name,group) -> duplicateCriteria group)                    
+                    |> List.iter (fun (_,dups) ->
+                        for _,ft in dups do
+                            errorR(Error(diagnostics(), ft.Range)))
+
 
             // Notify the Language Service about field names in record/class declaration
             let ad = envinner.AccessRights
@@ -3644,7 +3671,7 @@ module EstablishTypeDefinitionCores =
             | _ -> ()         
                    
             (baseValOpt, safeInitInfo)
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn m 
             None, NoSafeInitInfo
 
@@ -3865,7 +3892,7 @@ module EstablishTypeDefinitionCores =
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
                 try
                     TcTyparConstraints cenv NoNewTypars checkConstraints ItemOccurence.UseInType envForTycon tpenv synTyconConstraints |> ignore
-                with exn ->
+                with RecoverableException exn ->
                     errorRecovery exn m
             | _ -> ())
 
@@ -4070,6 +4097,10 @@ module TcDeclarations =
             tcref.Deref.IsFSharpDelegateTycon ||
             tcref.Deref.IsFSharpEnumTycon
 
+        let isDelegateOrEnum = 
+            tcref.Deref.IsFSharpDelegateTycon ||
+            tcref.Deref.IsFSharpEnumTycon
+
         let reqTypars = tcref.Typars m
 
         // Member definitions are intrinsic (added directly to the type) if:
@@ -4105,7 +4136,7 @@ module TcDeclarations =
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, reqTypars
             else 
-                if isInSameModuleOrNamespace && isInterfaceOrDelegateOrEnum then 
+                if isInSameModuleOrNamespace && isDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
                 if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
@@ -4184,7 +4215,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
-             | SynMemberDefn.AutoProperty(range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+             | SynMemberDefn.AutoProperty(isStatic=false;range=m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (isStatic=false; range=m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.AbstractSlot (range=m) :: _ 
              | SynMemberDefn.Interface (range=m) :: _ 
@@ -4260,6 +4291,8 @@ module TcDeclarations =
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                 let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
+                let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
                 let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
 
@@ -4276,20 +4309,7 @@ module TcDeclarations =
                             let rhsExpr = SynExpr.Ident fldId
                             let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                             let attribs = mkAttributeList attribs mMemberPortion
-                            let headPatIds =
-                                let id =
-                                    match mGetSetOpt with
-                                    | Some (GetSetKeywords.GetSet(get = mGet)) -> Ident(id.idText, mGet)
-                                    | _ -> id
-                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
-                            let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
-                            let binding =
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet _) ->
-                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
-                                    updatePropertyIdentInSynBinding id binding
-                                | _ -> binding
                             SynMemberDefn.Member (binding, mMemberPortion) 
                         yield getter
                     | _ -> ()
@@ -4298,25 +4318,10 @@ module TcDeclarations =
                     | SynMemberKind.PropertySet 
                     | SynMemberKind.PropertyGetSet -> 
                         let setter = 
-                            let vId = 
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet(set = mSet)) -> ident("v", mSet)
-                                | _ -> ident("v", mMemberPortion)
-                            let headPatIds =
-                                let id =
-                                    match mGetSetOpt with
-                                    | Some (GetSetKeywords.GetSet(set = mSet)) -> Ident(id.idText, mSet)
-                                    | _ -> id
-                                if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                            let vId = ident("v", mMemberPortion)
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                             let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
-                            let binding =
-                                match mGetSetOpt with
-                                | Some (GetSetKeywords.GetSet _) ->
-                                    // Only add the additional meta data to the SynBinding (SynValData) is both get and set are present.
-                                    updatePropertyIdentInSynBinding id binding
-                                | _ -> binding
                             SynMemberDefn.Member (binding, mMemberPortion)
                         yield setter 
                     | _ -> ()]
@@ -4415,7 +4420,7 @@ module TcDeclarations =
             let isAtOriginalTyconDefn = true
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extra_vals_Inherits_Abstractslots @ extraMembers
-
+            
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -4735,7 +4740,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false ShouldNotifySink.Yes
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -4815,7 +4820,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
             return env
             
-    with exn -> 
+    with RecoverableException exn -> 
         errorRecovery exn endm 
         return env
   }
@@ -5183,7 +5188,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return 
               (defns, [], topAttrs), env, envAtEnd
 
-    with exn -> 
+    with RecoverableException exn -> 
         errorRecovery exn synDecl.Range 
         return ([], [], []), env, env
  }
@@ -5339,7 +5344,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         let moduleContents = TMDefs moduleDefs 
 
         // Collect up the attributes that are global to the file 
-        let topAttrsNew = compiledDefs |> List.map p33 |> List.concat
+        let topAttrsNew = compiledDefs |> List.collect p33
         return (moduleContents, topAttrsNew, envAtEnd)
   }  
     
@@ -5405,7 +5410,7 @@ let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
         try 
             AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible)
-        with exn -> 
+        with RecoverableException exn -> 
             errorRecovery exn scopem 
             [], env) 
 
@@ -5430,7 +5435,7 @@ let CombineTopAttrs topAttrs1 topAttrs2 =
       assemblyAttrs = topAttrs1.assemblyAttrs @ topAttrs2.assemblyAttrs } 
 
 let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) = 
-    mty.AllEntities |> QueueList.iter (fun tycon -> f tycon)
+    mty.AllEntities |> QueueList.iter f
     mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> 
         IterTyconsOfModuleOrNamespaceType f v.ModuleOrNamespaceType)
 
@@ -5456,7 +5461,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
             if not tp.IsSolved then 
                 if (tp.StaticReq <> TyparStaticReq.None) then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
 
 let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
@@ -5476,7 +5481,7 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
                 | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, false, v, tp, v.Range))
                 | _ -> ()
           mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> check v.ModuleOrNamespaceType) 
-      try check implFileTypePriorToSig with e -> errorRecovery e m
+      try check implFileTypePriorToSig with RecoverableException e -> errorRecovery e m
 
 
 let SolveInternalUnknowns g (cenv: cenv) denvAtEnd moduleContents extraAttribs =
@@ -5514,7 +5519,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
             if not (SignatureConformance.Checker(g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModuleRef implFileSpecPriorToSig) sigFileType) then
                 // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
                 raise (ReportedError None)
-        with exn ->
+        with RecoverableException exn ->
             errorRecovery exn m
             
         (sigFileType, moduleContents)
@@ -5592,7 +5597,7 @@ let CheckOneImplFile
           for check in cenv.css.GetPostInferenceChecksPreDefaults() do
             try  
                 check()
-            with exn -> 
+            with RecoverableException exn -> 
                 errorRecovery exn m
 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
@@ -5606,7 +5611,7 @@ let CheckOneImplFile
                 implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                     FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd, tycon))
 
-            with exn ->
+            with RecoverableException exn ->
                 errorRecovery exn m)
 
         // Check the value restriction. Only checked if there is no signature.
@@ -5627,7 +5632,7 @@ let CheckOneImplFile
              for check in cenv.css.GetPostInferenceChecksFinal() do
                 try  
                     check()
-                with exn -> 
+                with RecoverableException exn -> 
                     errorRecovery exn m)
 
         // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
@@ -5646,7 +5651,7 @@ let CheckOneImplFile
                         implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                         isInternalTestSpanStackReferring)
 
-                with exn -> 
+                with RecoverableException exn -> 
                     errorRecovery exn m
                     false, StampMap.Empty)
 
@@ -5708,7 +5713,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
-        with exn -> errorRecovery exn sigFile.QualifiedName.Range
+        with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
 
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
     

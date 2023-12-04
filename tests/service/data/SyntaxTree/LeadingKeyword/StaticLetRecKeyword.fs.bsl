@@ -19,7 +19,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([[]], SynArgInfo ([], false, None)),
-                                None, None),
+                                None),
                              LongIdent
                                (SynLongIdent ([forever], [], [None]), None, None,
                                 Pats

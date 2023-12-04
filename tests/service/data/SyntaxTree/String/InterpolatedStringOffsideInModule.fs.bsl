@@ -16,7 +16,7 @@ ImplFile
                       PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
                       SynValData
                         (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                         None, None),
+                         None),
                       Named (SynIdent (b, None), false, None, (2,8--2,9)), None,
                       InterpolatedString
                         ([String ("

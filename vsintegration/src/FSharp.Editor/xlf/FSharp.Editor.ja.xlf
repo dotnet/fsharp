@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">ブロック構造ガイド;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">ブロック構造ガイド;
 F# コードの構造ガイドラインを表示する;
 アウトラインを表示する;
 アウトラインと折りたたみ可能なノードを F# コードに表示する;
@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# プロジェクトとキャッシュのパフォーマンス オプション;
+        <target state="needs-review-translation">F# プロジェクトとキャッシュのパフォーマンス オプション;
 メモリ内のプロジェクト間参照を有効にする。
 Enable_partial_type_checking;
 IntelliSense パフォーマンス オプション;
@@ -214,6 +214,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' の削除</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">

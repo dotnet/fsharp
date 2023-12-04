@@ -44,7 +44,7 @@ val internal p_int: int -> WriterState -> unit
 val internal p_string: string -> WriterState -> unit
 
 /// Serialize a lazy value (eagerly)
-val internal p_lazy: pickler<'T> -> Lazy<'T> pickler
+val internal p_lazy: pickler<'T> -> InterruptibleLazy<'T> pickler
 
 /// Serialize a tuple of data
 val inline internal p_tup2: pickler<'T1> -> pickler<'T2> -> pickler<'T1 * 'T2>
@@ -106,7 +106,7 @@ val internal u_int: ReaderState -> int
 val internal u_string: ReaderState -> string
 
 /// Deserialize a lazy value (eagerly)
-val internal u_lazy: unpickler<'T> -> unpickler<Lazy<'T>>
+val internal u_lazy: unpickler<'T> -> unpickler<InterruptibleLazy<'T>>
 
 /// Deserialize a tuple
 val inline internal u_tup2: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T2 * 'T3>

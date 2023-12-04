@@ -37,8 +37,8 @@ Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="translated">區塊結構輔助線;
+Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">區塊結構輔助線;
 顯示 F# 程式碼的結構輔助線;
 大綱;
 顯示 F# 程式碼的大綱與可折疊的節點;
@@ -167,9 +167,9 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F# 專案和快取效能選項；
+        <target state="needs-review-translation">F# 專案和快取效能選項；
 啟用記憶體內跨專案參考；
 Enable_partial_type_checking；
 IntelliSense 效能選項；
@@ -214,6 +214,11 @@ Dash underline;</source>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">移除 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="new">Remove unnecessary parentheses</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
