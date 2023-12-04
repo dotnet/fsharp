@@ -1488,19 +1488,17 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about alternative attribute on recursive let-bound value`` () =
+    let ``Warn about self-defined attribute`` () = // is the analysis available for uers of older FSharp.Core versions
         """
-namespace N
+module Microsoft.FSharp.Core
 
     open System
     
-    module M =
-        
-        [<AttributeUsage(AttributeTargets.Method)>]
-        type TailCallAttribute() = inherit Attribute()
+    [<AttributeUsage(AttributeTargets.Method)>]
+    type TailCallAttribute() = inherit Attribute()
 
-        [<TailCall>]
-        let rec f x = 1 + f x
+    [<TailCall>]
+    let rec f x = 1 + f x
         """
         |> FSharp
         |> withLangVersionPreview
@@ -1508,10 +1506,10 @@ namespace N
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 12
-                        StartColumn = 27
-                        EndLine = 12
-                        EndColumn = 30 }
+              Range = { StartLine = 10
+                        StartColumn = 23
+                        EndLine = 10
+                        EndColumn = 26 }
               Message =
                 "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]

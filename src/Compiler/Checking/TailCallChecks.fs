@@ -57,7 +57,8 @@ type TailCall =
         | TailCall.No -> TailCall.No
 
 let hasTailCallAttrib (attribs: Attribs) =
-    attribs |> List.exists (fun a -> a.TyconRef.CompiledName = "TailCallAttribute")
+    attribs
+    |> List.exists (fun a -> a.TyconRef.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.TailCallAttribute")
 
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
