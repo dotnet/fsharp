@@ -383,9 +383,14 @@ type SynMemberDefnAbstractSlotTrivia =
 type SynFieldTrivia =
     {
         LeadingKeyword: SynLeadingKeyword option
+        MutableKeyword: range option
     }
 
-    static member Zero: SynFieldTrivia = { LeadingKeyword = None }
+    static member Zero: SynFieldTrivia =
+        {
+            LeadingKeyword = None
+            MutableKeyword = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynTypeOrTrivia = { OrKeyword: range }

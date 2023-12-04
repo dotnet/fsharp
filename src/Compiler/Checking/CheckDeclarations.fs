@@ -423,8 +423,9 @@ module TcRecdUnionAndEnumDeclarations =
         let vis = CombineReprAccess parent vis
         Construct.NewRecdField isStatic konst id nameGenerated tyR isMutable vol attrsForProperty attrsForField xmldoc vis false
 
-    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id, nameGenerated, ty, isMutable, xmldoc, vis, m) =
+    let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
+        let m = id.idRange
         let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
@@ -458,18 +459,20 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
+        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis)
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
-        | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
+        | None ->
+            errorR (Error(FSComp.SR.tcFieldRequiresName(), m))
+            None
         | Some id ->
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
             let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-            TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis, m) 
+            Some(TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis)) 
 
     let TcNamedFieldDecls cenv env parent isIncrClass tpenv fields =
-        fields |> List.map (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
+        fields |> List.choose (TcNamedFieldDecl cenv env parent isIncrClass tpenv) 
 
     //-------------------------------------------------------------------------
     // Bind other elements of type definitions (constructors etc.)
@@ -518,14 +521,19 @@ module TcRecdUnionAndEnumDeclarations =
             match args with
             | SynUnionCaseKind.Fields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
-                    match idOpt, parent with
-                    | Some fieldId, Parent tcref ->
-                        let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
-                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                        TcNamedFieldDecl cenv env parent false tpenv fld
-                    | _ ->
-                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                let rfields =
+                    flds
+                    |> List.mapi (fun i (SynField (idOpt = idOpt) as fld) ->
+                        match idOpt, parent with
+                        | Some fieldId, Parent tcref ->
+                            let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
+                            CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                            TcNamedFieldDecl cenv env parent false tpenv fld
+                        | _ ->
+                            Some(TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                    )
+                    |> List.choose (fun x -> x)
+                
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
