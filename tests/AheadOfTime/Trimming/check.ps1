@@ -1,7 +1,6 @@
 function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     Write-Host "Publish and Execute: ${tfm} - ${root}"
     Write-Host "Expecting ${expected_len}"
-    Write-Host "CompressAllMetadata value: ${compressAllMetadata}"
 
     $cwd = Get-Location
     Set-Location (Join-Path $PSScriptRoot "${root}")
@@ -39,11 +38,9 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 
 # NOTE: Trimming now errors out on desktop TFMs, as shown below:
 # error NETSDK1124: Trimming assemblies requires .NET Core 3.0 or higher.
-$compressAllMetadata = $env:_kind -eq "-compressAllMetadata"
-$expectedForSelfContained = if ($compressAllMetadata) {300032} else {288256}
 
 # Check net7.0 trimmed assemblies
-CheckTrim -root "SelfContained_Trimming_Test" -tfm "net8.0" -outputfile "FSharp.Core.dll" -expected_len $expectedForSelfContained
+CheckTrim -root "SelfContained_Trimming_Test" -tfm "net8.0" -outputfile "FSharp.Core.dll" -expected_len 288256
 
 # Check net7.0 trimmed assemblies
 CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net8.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8821760 

@@ -4,5 +4,10 @@
     <resource name="FSharpOptimizationInfo.FSharp.Core" action="remove" />
     <resource name="FSharpSignatureCompressedData.FSharp.Core" action="remove" />
     <resource name="FSharpSignatureInfo.FSharp.Core" action="remove" />
+
+    <resource name="FSharpOptimizationCompressedDataB.FSharp.Core" action="remove" />
+    <resource name="FSharpOptimizationDataB.FSharp.Core" action="remove" />
+    <resource name="FSharpSignatureCompressedDataB.FSharp.Core" action="remove" />
+    <resource name="FSharpSignatureDataB.FSharp.Core" action="remove" />
   </assembly>
 </linker>
