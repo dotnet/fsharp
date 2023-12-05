@@ -490,7 +490,12 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
             let constraints = 
-                [ if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
+                [ (*
+                    let nullness = gp.CustomAttrs Nullable |> orElse ('nullable context from parent in metadata hierarchy')
+                    if nullness = 1 -> without null -> TyparConstraint.NotSupportsNull
+                    if nullness = 2 -> with null -> TyparConstraint.SupportsNull
+                   *)                
+                  if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
                     TyparConstraint.IsUnmanaged(m)
                   if gp.HasDefaultConstructorConstraint then
                     TyparConstraint.RequiresDefaultConstructor(m)

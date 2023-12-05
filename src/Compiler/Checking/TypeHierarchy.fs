@@ -375,11 +375,13 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCat
 
 /// Get the parameter type of an IL method.
 let ImportParameterTypeFromMetadata amap m ilTy getCattrs scoref tinst mist =
+    // TODO nullness import + fallback + generics
     ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilTy getCattrs
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
 let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
+    // TODO nullness import + fallback + generics
     match ilTy with
     | ILType.Void -> None
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
