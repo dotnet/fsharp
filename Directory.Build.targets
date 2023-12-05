@@ -1,7 +1,7 @@
 <Project>
   <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
-  <Import Project="CoordinateXlif.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
+  <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
