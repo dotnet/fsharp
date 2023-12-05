@@ -1,4 +1,4 @@
-﻿---
+﻿(** ---
 category: Release Notes
 categoryindex: 600
 index: 2
@@ -6,16 +6,30 @@ title: F# Language
 ---
 
 # F\# Language
+*)
+(*** hide ***)
+#load "./.aux/Common.fsx"
 
-## Unreleased
+open System.IO
+open Markdig
+open Common
 
-### Added
+let path = Path.Combine(__SOURCE_DIRECTORY__, ".Language")
 
-* Better generic unmanaged structs handling. ([Language suggestion #692](https://github.com/fsharp/fslang-suggestions/issues/692), [PR #12154](https://github.com/dotnet/fsharp/pull/12154))
-* Bidirectional F#/C# interop for 'unmanaged' constraint. ([PR #12154](https://github.com/dotnet/fsharp/pull/12154))
+Directory.EnumerateFiles(path, "*.md")
+|> Seq.sortWith (fun a b ->
+    let a = Path.GetFileNameWithoutExtension a
+    let b = Path.GetFileNameWithoutExtension b
 
-## 8.0.0 - 2023-11-14
-
-### Added
-
-* `while!` ([Language suggestion #1038](https://github.com/fsharp/fslang-suggestions/issues/1038), [PR #14238](https://github.com/dotnet/fsharp/pull/14238))
+    match a, b with
+    | "preview", "preview" -> 0
+    | "preview", _ -> -1
+    | _, "preview" -> 1
+    | _, _ -> compare (int b) (int a))
+|> Seq.map (fun file ->
+    let version = Path.GetFileNameWithoutExtension(file)
+    let version = if version = "preview" then "Preview" else version
+    let content = File.ReadAllText file |> Markdown.ToHtml |> transformH3 version
+    $"""<h2><a name="%s{version}" class="anchor" href="#%s{version}">%s{version}</a></h2>%s{content}""")
+|> String.concat "\n"
+(*** include-it-raw ***)
