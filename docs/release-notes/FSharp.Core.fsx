@@ -1,4 +1,4 @@
-﻿---
+﻿(** ---
 category: Release Notes
 categoryindex: 600
 index: 3
@@ -6,14 +6,37 @@ title: FSharp.Core
 ---
 
 # FSharp.Core
+*)
+(*** hide ***)
+#load "./.aux/Common.fsx"
 
-## Unreleased
+open System.IO
+open Markdig
+open Common
 
-### Added
+let path = Path.Combine(__SOURCE_DIRECTORY__, ".FSharp.Compiler.Service")
+let nugetPackage = "FSharp.Core"
+let availableNuGetVersions = getAvailableNuGetVersions nugetPackage
 
-* More inlines for Result module. ([PR #16106](https://github.com/dotnet/fsharp/pull/16106))
+processFolder path (fun file ->
+    let version = Path.GetFileNameWithoutExtension(file)
 
-## 8.0.100 - 2023-11-14
+    // TODO: Can we determine if the current version is in code freeze based on the Version.props info?
+    let title =
+        if not (availableNuGetVersions.Contains version) then
+            $"%s{version} - Unreleased"
+        else
+            match tryGetReleaseDate nugetPackage version with
+            | None -> $"%s{version} - Unreleased"
+            | Some d -> $"%s{version} - %s{d}"
 
-### Added
-* `TailCallAttribute` ([Language suggestion #721](https://github.com/fsharp/fslang-suggestions/issues/721), [PR #15503](https://github.com/dotnet/fsharp/pull/15503))
+    let nugetBadge =
+        if not (availableNuGetVersions.Contains version) then
+            System.String.Empty
+        else
+            $"<a href=\"https://www.nuget.org/packages/%s{nugetPackage}/%s{version}\" target=\"_blank\"><img alt=\"Nuget\" src=\"https://img.shields.io/badge/NuGet-%s{version}-blue\"></a>"
+
+    let content = File.ReadAllText file |> Markdown.ToHtml |> transformH3 version
+
+    $"""<h2><a name="%s{version}" class="anchor" href="#%s{version}">%s{title}</a></h2>%s{nugetBadge}%s{content}""")
+(*** include-it-raw ***)
