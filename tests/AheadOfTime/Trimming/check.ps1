@@ -40,7 +40,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 # NOTE: Trimming now errors out on desktop TFMs, as shown below:
 # error NETSDK1124: Trimming assemblies requires .NET Core 3.0 or higher.
 $compressAllMetadata = $env:_kind -eq "-compressAllMetadata"
-$expectedForSelfContained = if ($compressAllMetadata) {300032} else {288256}
+$expectedForSelfContained = if ($compressAllMetadata) {288256} else {288256}
 
 # Check net7.0 trimmed assemblies
 CheckTrim -root "SelfContained_Trimming_Test" -tfm "net8.0" -outputfile "FSharp.Core.dll" -expected_len $expectedForSelfContained
