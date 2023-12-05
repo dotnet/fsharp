@@ -24,8 +24,22 @@ Some tips:
 * Use `*` as bullet point symbol. We don't want to mix `*` and `-`.
 * Start your description with a capital and end the sentence with a dot.
 * **Always** include a link to your pull request before the closing `)`, `([PR #16106](https://github.com/dotnet/fsharp/pull/16106))`.
-* If possible, include a link to an issue on `dotnet/fsharp` use `[Issue #16359](https://github.com/dotnet/fsharp/issues/16359)` before the link to the pull request.
-* If possible, include a link to a language suggestion from  `dotnet/fsharp` use `[Language suggestion #721](https://github.com/fsharp/fslang-suggestions/issues/721)` before the link to the pull request.
+* If possible, include a link to an issue on `dotnet/fsharp` use `Issue #number` before the link to the pull request.  
+
+Example:
+
+```md
+* Correctly handle assembly imports with public key token of 0 length. ([Issue #16359](https://github.com/dotnet/fsharp/issues/16359), [PR #16363](https://github.com/dotnet/fsharp/pull/16363))
+```
+
+* If possible, include a link to a language suggestion from  `dotnet/fsharp` use `Language suggestion #number` before the link to the pull request.
+
+Example:
+
+```md
+* `while!` ([Language suggestion #1038](https://github.com/fsharp/fslang-suggestions/issues/1038), [PR #14238](https://github.com/dotnet/fsharp/pull/14238))
+```
+
 * Choose the right section for your type of change. (`## Added`, `## Changed`, `## Deprecated`, `## Removed`, `## Fixed` or `## Security`).
 * Ensure you description makes it clear what the change is about. The reader should be informed on a high level without needing to click through the pull request link and find out in the code what actually changed.
 
