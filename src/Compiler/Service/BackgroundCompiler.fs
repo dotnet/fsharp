@@ -36,6 +36,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 type SourceTextHash = int64
 type CacheStamp = int64

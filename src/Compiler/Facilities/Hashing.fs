@@ -46,7 +46,7 @@ module internal Md5Hasher =
     let private md5 =
         new ThreadLocal<_>(fun () -> System.Security.Cryptography.MD5.Create())
 
-    let private computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
+    let computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
 
     let empty = Array.empty
 

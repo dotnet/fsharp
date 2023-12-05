@@ -173,11 +173,11 @@ module private CheckerExtensions =
                             async.Return(version.ToString(), getSource)
 
                     return
-                        {
-                            FileName = path
-                            Version = version
+                        FSharpFileSnapshot(
+                            FileName = path,
+                            Version = version,
                             GetSource = getSource
-                        }
+                        )
                 }
 
             let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)

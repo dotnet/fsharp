@@ -559,12 +559,12 @@ module ProjectOperations =
             use md5 = System.Security.Cryptography.MD5.Create()
             let inputBytes = Encoding.UTF8.GetBytes(source.ToString())
             let hash = md5.ComputeHash(inputBytes) |> Array.map (fun b -> b.ToString("X2")) |> String.concat ""
-            
-            return {
-                FileName = filePath
-                Version = hash
+
+            return FSharpFileSnapshot(
+                FileName = filePath,
+                Version = hash,
                 GetSource = fun () -> source |> Task.FromResult
-            }
+            )
         }
 
     let checkFileWithTransparentCompiler fileId (project: SyntheticProject) (checker: FSharpChecker) =
@@ -747,9 +747,10 @@ module Helpers =
         let fileName = "test.fs"
 
         let getSource _ fileName =
-            { FileName = fileName
-              Version = "1"
-              GetSource = fun () -> source |> SourceText.ofString |> Task.FromResult }
+            FSharpFileSnapshot(
+              FileName = fileName,
+              Version = "1",
+              GetSource = fun () -> source |> SourceText.ofString |> Task.FromResult )
             |> async.Return
 
         let checker = FSharpChecker.Create(

@@ -896,15 +896,15 @@ Updated automatically, please check diffs in your pull request, changes must be 
         if useTransparentCompiler then
             let getFileSnapshot _ fileName =
                 async.Return
-                    {
-                        FileName = fileName
-                        Version = "1"
+                    (FSharpFileSnapshot(
+                        FileName = fileName,
+                        Version = "1",
                         GetSource = fun () -> task {
                             match! getSourceText fileName with
                             | Some source -> return source
                             | None -> return failwith $"couldn't get source for {fileName}"
                         }
-                    }
+                    ))
 
             let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronously
 

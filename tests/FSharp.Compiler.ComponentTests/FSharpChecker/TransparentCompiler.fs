@@ -12,6 +12,7 @@ open FSharp.Compiler.Diagnostics
 open Xunit
 
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.ProjectGeneration.Helpers
 open System.IO
 open Microsoft.CodeAnalysis
 open System
@@ -861,3 +862,34 @@ let GiraffeFuzzing signatureFiles =
 
     fuzzingTest seed testsProject
 
+
+module ParsedInputHashing =
+
+    let source = """
+
+type T = { A: int; B: string }
+
+module Stuff =
+
+    // Some comment
+    let f x = x + 75
+"""
+
+    let getParseResult source =
+        let fileName, snapshot, checker = singleFileChecker source
+        checker.ParseFile(fileName, snapshot) |> Async.RunSynchronously
+
+    //[<Fact>]
+    let ``Hash stays the same when whitespace changes`` () =
+
+        //let parseResult = getParseResult source
+
+        //let hash = parseResult.ParseTree |> parsedInputHash |> BitConverter.ToString
+
+        //let parseResult2 = getParseResult (source + "\n \n")
+
+        //let hash2 = parseResult2.ParseTree |> parsedInputHash |> BitConverter.ToString
+
+        //Assert.Equal<string>(hash, hash2)
+
+        ()

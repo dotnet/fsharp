@@ -497,7 +497,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         let stats =
             [|
                 if errors + failed > 0 then
-                    " /_!_\ "
+                    " (_!_) "
                 if errors > 0 then $"| ERRORS: {errors} " else ""
                 if failed > 0 then $"| FAILED: {failed} " else ""
                 $"| hits: {hits}{hitRatio} "
