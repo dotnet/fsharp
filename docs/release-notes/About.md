@@ -8,7 +8,7 @@ title: About
 # About
 
 The release notes for the [F\# language](./Language.md), [FSharp.Core](./FSharp.Core.md) and [FSharp.Compiler.Service](./FSharp.Compiler.Service.md) are based on the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.  
-The target audience these release notes are the respective end-users.
+The target audience of these release notes are the respective end-users.
 
 ## Writing a changelog entry
 
@@ -41,7 +41,8 @@ Example:
 ```
 
 * Choose the right section for your type of change. (`## Added`, `## Changed`, `## Deprecated`, `## Removed`, `## Fixed` or `## Security`).
-* Ensure you description makes it clear what the change is about. The reader should be informed on a high level without needing to click through the pull request link and find out in the code what actually changed.
+* Ensure your description makes it clear what the change is about. The reader should be informed on a high level without needing to click through the pull request link and find out in the code what actually changed.
+* Maintainers or other contributors might rewrite your changelog entry in the future. This might be done when multiple pull requests can be consolidated under the same umbrella.
 
 ## The release process
 
