@@ -1627,7 +1627,10 @@ module UnnecessaryParentheses =
                 | SynPat.Tuple _, SynPat.As _
 
                 // x, (y, z)
+                // x & (y, z)
+                // (x, y) & z
                 | SynPat.Tuple _, SynPat.Tuple(isStruct = false)
+                | SynPat.Ands _, SynPat.Tuple(isStruct = false)
 
                 // A, (B | C)
                 // A & (B | C)
