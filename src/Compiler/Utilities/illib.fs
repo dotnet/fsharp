@@ -83,9 +83,10 @@ module internal PervasiveAutoOpens =
         | [ _ ] -> true
         | _ -> false
 
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
-
     let inline isNotNull (x: 'T) = not (isNull x)
+
+#if NO_CHECKNULLS
+    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
     let inline (|NonNullQuick|) (x: 'T MaybeNull) =
         match x with
@@ -106,6 +107,10 @@ module internal PervasiveAutoOpens =
         match x with
         | null -> raise (ArgumentNullException(paramName))
         | v -> v
+#else
+    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
+
+#endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
@@ -131,17 +136,15 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tPrev: IDisposable = null
+        let mutable tPrev: IDisposable MaybeNull = null
 
         fun descr ->
             if isNotNull tPrev then
                 tPrev.Dispose()
+                tPrev <- null
 
-            tPrev <-
-                if descr <> "Finish" then
-                    FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
-                else
-                    null
+            if descr <> "Finish" then
+                tPrev <- FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
 
     let foldOn p f z x = f z (p x)
 
@@ -345,10 +348,7 @@ module Array =
     /// ~0.8x slower for ints
     let inline areEqual (xs: 'T[]) (ys: 'T[]) =
         match xs, ys with
-        | null, null -> true
         | [||], [||] -> true
-        | null, _
-        | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
             let mutable break' = false
