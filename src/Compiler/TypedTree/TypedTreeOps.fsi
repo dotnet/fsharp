@@ -1048,7 +1048,7 @@ type GenericParameterStyle =
 type DisplayEnv =
     {
         includeStaticParametersInTypeNames: bool
-        openTopPathsSorted: Lazy<string list list>
+        openTopPathsSorted: InterruptibleLazy<string list list>
         openTopPathsRaw: string list list
         shortTypeNames: bool
         suppressNestedTypes: bool

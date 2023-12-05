@@ -598,6 +598,12 @@ type AfterResolution =
         (MethInfo * PropInfo option * TyparInstantiation -> unit) *
         (unit -> unit)
 
+/// Indicates whether we want to report found items to the name resolution sink
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
@@ -684,6 +690,7 @@ val internal ResolveLongIdentAsModuleOrNamespace:
     id: Ident ->
     rest: Ident list ->
     isOpenDecl: bool ->
+    notifySink: ShouldNotifySink ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
 /// Resolve a long identifier to an object constructor.
@@ -774,6 +781,7 @@ val internal ResolveExprLongIdent:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
@@ -794,6 +802,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
@@ -808,6 +817,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
+    maybeAppliedArgExpr: SynExpr option ->
         Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.

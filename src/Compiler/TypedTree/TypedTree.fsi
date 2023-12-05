@@ -3512,7 +3512,9 @@ type Expr =
     ///
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) * (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
+        quotationInfo:
+            ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) *
+            (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
         isFromQueryExpression: bool *
         range: Text.range *
         quotedType: TType

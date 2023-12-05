@@ -21,12 +21,7 @@ open FSharp.Compiler.EditorServices
 open CancellableTasks
 
 type internal FSharpAsyncQuickInfoSource
-    (
-        xmlMemberIndexService,
-        metadataAsSource: FSharpMetadataAsSourceService,
-        textBuffer: ITextBuffer,
-        editorOptions: EditorOptions
-    ) =
+    (xmlMemberIndexService, metadataAsSource: FSharpMetadataAsSourceService, textBuffer: ITextBuffer, editorOptions: EditorOptions) =
 
     let getQuickInfoItem (sourceText, (document: Document), (lexerSymbol: LexerSymbol), (ToolTipText elements)) =
         cancellableTask {
@@ -64,8 +59,8 @@ type internal FSharpAsyncQuickInfoSource
                 let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
 
                 match textSpan with
-                | None -> return None
-                | Some textSpan ->
+                | ValueNone -> return None
+                | ValueSome textSpan ->
                     let trackingSpan =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
 
@@ -144,7 +139,8 @@ type internal FSharpAsyncQuickInfoSource
 [<Name("F# Quick Info Provider")>]
 [<ContentType(FSharpConstants.FSharpLanguageName)>]
 [<Order>]
-type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
+type internal FSharpAsyncQuickInfoSourceProvider
+    [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
         metadataAsSource: FSharpMetadataAsSourceService,
