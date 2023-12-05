@@ -28,3 +28,13 @@ Some tips:
 * If possible, include a link to a language suggestion from  `dotnet/fsharp` use `[Language suggestion #721](https://github.com/fsharp/fslang-suggestions/issues/721)` before the link to the pull request.
 * Choose the right section for your type of change. (`## Added`, `## Changed`, `## Deprecated`, `## Removed`, `## Fixed` or `## Security`).
 * Ensure you description makes it clear what the change is about. The reader should be informed on a high level without needing to click through the pull request link and find out in the code what actually changed.
+
+## The release process
+
+### General
+
+How does it work? Different stages/phases?
+
+#### FSharp.Compiler.Service
+
+Perhaps add some specific info if available?
