@@ -912,6 +912,11 @@
         <target state="translated">Prevista espressione.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Criterio previsto</target>

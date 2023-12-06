@@ -578,8 +578,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     let pri = NextExtensionMethodPriority()
     
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-        let csharpStyleExtensionMembers = 
-            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
+        let csharpStyleExtensionMembers =
+            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || (tcrefOfStaticClass.IsLocalRef && not tcrefOfStaticClass.IsTypeAbbrev) then
                 protectAssemblyExploration [] (fun () ->
                     let ty = generalizedTyconRef g tcrefOfStaticClass
                     GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
