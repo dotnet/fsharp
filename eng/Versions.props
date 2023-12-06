@@ -207,7 +207,7 @@
     <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
-    <MicrosoftDotNetXliffTasksVersion>1.0.0-beta.23426.1</MicrosoftDotNetXliffTasksVersion>
+    <MicrosoftDotNetXliffTasksVersion>1.0.0-beta.23475.1</MicrosoftDotNetXliffTasksVersion>
     <!-- MIBC profile packages -->
     <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.23602.3</optimizationwindows_ntx64MIBCRuntimeVersion>
     <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.23602.3</optimizationwindows_ntx86MIBCRuntimeVersion>
