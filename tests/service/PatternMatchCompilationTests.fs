@@ -188,6 +188,30 @@ match None with
     ]
 
 [<Test>]
+let ``Union case 10 - Wrong type`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Some 1 with
+| Some(Some "") as a -> a |> ignore
+"""
+    assertHasSymbolUsages ["a"] checkResults
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(3,7--3,14): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    ''a option'"
+        "(2,6--2,12): Incomplete pattern matches on this expression."
+    ]
+
+[<Test>]
+let ``Union case 11 - Wrong type`` () =
+    let _, checkResults = getParseAndCheckResults """
+match Some 1 with
+| Some(Some("", i)) as a -> a, i |> ignore
+"""
+    assertHasSymbolUsages ["a"; "i"] checkResults
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(3,7--3,18): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    ''a option'";
+        "(2,6--2,12): Incomplete pattern matches on this expression."
+    ]
+
+[<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
