@@ -10,6 +10,7 @@ open System.Threading.Tasks
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module internal Utils =
@@ -31,7 +32,7 @@ module internal Utils =
 type internal StateUpdate<'TValue> =
     | CancelRequest
     | OriginatorCanceled
-    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
     | JobFailed of exn * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
 type internal MemoizeReply<'TValue> =
@@ -46,6 +47,8 @@ type internal MemoizeRequest<'TValue> =
 type internal Job<'TValue> =
     | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * NodeCode<'TValue> * DateTime * ResizeArray<DiagnosticsLogger>
     | Completed of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    | Canceled of DateTime
+    | Failed of DateTime * exn // TODO: probably we don't need to keep this
 
     member this.DebuggerDisplay =
         match this with
@@ -58,6 +61,8 @@ type internal Job<'TValue> =
 
             $"Running since {ts.ToShortTimeString()}{cancellation}"
         | Completed(value, diags) -> $"Completed {value}" + (if diags.Length > 0 then $" ({diags.Length})" else "")
+        | Canceled _ -> "Canceled"
+        | Failed(_, ex) -> $"Failed {ex}"
 
 type internal JobEvent =
     | Started
@@ -73,6 +78,17 @@ type internal ICacheKey<'TKey, 'TVersion> =
     abstract member GetKey: unit -> 'TKey
     abstract member GetVersion: unit -> 'TVersion
     abstract member GetLabel: unit -> string
+
+[<Extension>]
+type Extensions =
+
+    [<Extension>]
+    static member internal WithExtraVersion(cacheKey: ICacheKey<_, _>, extraVersion) =
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = cacheKey.GetLabel()
+            member _.GetKey() = cacheKey.GetKey()
+            member _.GetVersion() = cacheKey.GetVersion(), extraVersion
+        }
 
 type private KeyData<'TKey, 'TVersion> =
     {
@@ -146,6 +162,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             requiredToKeep =
                 (function
                 | Running _ -> true
+                | Job.Canceled at when at > DateTime.Now.AddMinutes -5.0 -> true
+                | Job.Failed(at, _) when at > DateTime.Now.AddMinutes -5.0 -> true
                 | _ -> false),
             event =
                 (function
@@ -225,7 +243,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         Existing tcs.Task
 
-                    | GetOrCompute(computation, ct), None ->
+                    | GetOrCompute(computation, ct), None
+                    | GetOrCompute(computation, ct), Some(Job.Canceled _)
+                    | GetOrCompute(computation, ct), Some(Job.Failed _) ->
                         Interlocked.Increment &started |> ignore
                         incrRequestCount key
 
@@ -283,7 +303,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cancelRegistration key
                                 cts.Cancel()
                                 tcs.TrySetCanceled() |> ignore
-                                cache.Remove(key.Key, key.Version)
+                                // Remember the job in case it completes after cancellation
+                                cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
                                 Interlocked.Increment &canceled |> ignore
@@ -330,7 +351,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 cancelRegistration key
                                 cts.Cancel()
                                 tcs.TrySetCanceled() |> ignore
-                                cache.Remove(key.Key, key.Version)
+                                // Remember the job in case it completes after cancellation
+                                cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
                                 requestCounts.Remove key |> ignore
                                 log (Canceled, key)
                                 Interlocked.Increment &canceled |> ignore
@@ -340,12 +362,16 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                         // Probably in some cases cancellation can be fired off even after we just unregistered it
                         | CancelRequest, None
                         | CancelRequest, Some(Completed _)
+                        | CancelRequest, Some(Job.Canceled _)
+                        | CancelRequest, Some(Job.Failed _)
                         | OriginatorCanceled, None
-                        | OriginatorCanceled, Some(Completed _) -> ()
+                        | OriginatorCanceled, Some(Completed _)
+                        | OriginatorCanceled, Some(Job.Canceled _)
+                        | OriginatorCanceled, Some(Job.Failed _) -> ()
 
                         | JobFailed(ex, diags), Some(Running(tcs, _cts, _c, _ts, loggers)) ->
                             cancelRegistration key
-                            cache.Remove(key.Key, key.Version)
+                            cache.Set(key.Key, key.Version, key.Label, Job.Failed(DateTime.Now, ex))
                             requestCounts.Remove key |> ignore
                             log (Failed, key)
                             Interlocked.Increment &failed |> ignore
@@ -376,6 +402,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             if tcs.TrySetResult result = false then
                                 internalError key.Label "Invalid state: Completed job already completed"
 
+                        // Sometimes job can be canceled but it still manages to complete (or fail)
+                        | JobFailed _, Some (Job.Canceled _)
+                        | JobCompleted _, Some (Job.Canceled _) -> ()
+
                         // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
                         | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
 
@@ -386,6 +416,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
                         | JobCompleted(_result, _diags), Some(Completed(_job, _diags2)) ->
                             internalError key.Label "Invalid state: Double-Completed job"
+
+                        | JobFailed(ex, _diags), Some(Job.Failed(_, ex2)) ->
+                            internalError key.Label $"Invalid state: Double-Failed job \n%A{ex} \n%A{ex2}"
+
+                        | JobCompleted(_result, _diags), Some(Job.Failed(_, ex2)) ->
+                            internalError key.Label $"Invalid state: Completed Failed job \n%A{ex2}"
                     })
         }
 
@@ -478,7 +514,10 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             cache.GetValues()
             |> Seq.countBy (function
                 | _, _, Running _ -> "Running"
-                | _, _, Completed _ -> "Completed")
+                | _, _, Completed _ -> "Completed"
+                | _, _, Job.Canceled _ -> "Canceled"
+                | _, _, Job.Failed _ -> "Failed"
+                )
             |> Map
 
         let running =

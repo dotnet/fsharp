@@ -1074,8 +1074,8 @@ type internal TransparentCompiler
 
         ignore dependencyGraph
 
+        let key = projectSnapshot.FileKey(index)
 
-        let key = projectSnapshot.FileKey index
         let _label, _k, _version = key.GetLabel(), key.GetKey(), key.GetVersion()
 
         caches.TcIntermediate.Get(
@@ -1193,12 +1193,14 @@ type internal TransparentCompiler
                             if tcInfo.stateContainsNodes |> Set.contains fileNode then
                                 failwith $"Oops!"
 
-                            if
-                                tcInfo.stateContainsNodes
-                                |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
-                            then
+                            //if
+                            //    tcInfo.stateContainsNodes
+                            // Signature files don't have to be right above the impl file... if we need this check then
+                            // we need to do it differently
+                            //    |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
+                            //then
                                 // TODO: this can actually happen, probably related to adding new files or moving files around
-                                failwith $"Oops???"
+                                //failwith $"Oops???"
 
                             let partialResult, tcState = finisher tcInfo.tcState
 

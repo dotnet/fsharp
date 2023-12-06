@@ -527,3 +527,4 @@ let ``We get diagnostics from the job that failed`` () =
 [<Fact>]
 let ``What if requestor cancels and their diagnosticsLogger gets disposed?``() =
     failwith "TODO"
+    ()

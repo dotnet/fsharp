@@ -822,6 +822,8 @@ let SaveAndCheckProject project checker =
               Cursor = None }
     }
 
+type MoveFileDirection = Up | Down 
+
 type ProjectWorkflowBuilder
     (
         initialProject: SyntheticProject,
@@ -1045,6 +1047,30 @@ type ProjectWorkflowBuilder
 
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
+
+    [<CustomOperation "moveFile">]
+    member this.MoveFile(workflow: Async<WorkflowContext>, fileId: string, count, direction: MoveFileDirection) =
+
+       workflow
+        |> mapProject (fun project ->
+            let index =
+                project.SourceFiles
+                |> List.tryFindIndex (fun f -> f.Id = fileId)
+                |> Option.defaultWith (fun () -> failwith $"File {fileId} not found")
+
+            let dir = if direction = Up then -1 else 1
+            let newIndex = index + count * dir
+
+            if newIndex < 0 || newIndex > project.SourceFiles.Length - 1 then
+                failwith $"Cannot move file {fileId} {count} times {direction} as it would be out of bounds"
+
+            let file = project.SourceFiles.[index]
+            let newFiles =
+                project.SourceFiles
+                |> List.filter (fun f -> f.Id <> fileId)
+                |> List.insertAt newIndex file
+
+            { project with SourceFiles = newFiles })
 
     /// Find a symbol using the provided range, mimicking placing a cursor on it in IDE scenarios
     [<CustomOperation "placeCursor">]

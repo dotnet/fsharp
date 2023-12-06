@@ -147,7 +147,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot> (projectCore: Projec
 
     let noFileVersionsKey = lazy (
         { new ICacheKey<_, _> with
-            member this.GetLabel() = this.ToString()
+            member this.GetLabel() = projectCore.Label
             member this.GetKey() = projectCore.Key
             member this.GetVersion() = noFileVersionsHash.Value |> Md5Hasher.toString
         })
@@ -158,7 +158,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot> (projectCore: Projec
 
     let fullKey = lazy (
         { new ICacheKey<_, _> with
-            member this.GetLabel() = this.ToString()
+            member this.GetLabel() = projectCore.Label
             member this.GetKey() = projectCore.Key
             member this.GetVersion() = fullHash.Value |> Md5Hasher.toString
         })
@@ -184,7 +184,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot> (projectCore: Projec
     let lastFileKey = lazy (
         let hash, f = lastFileHash.Value
         { new ICacheKey<_, _> with
-            member _.GetLabel() = $"{projectCore.Label} (last file)"
+            member _.GetLabel() = $"{f.FileName} ({projectCore.Label})"
             member _.GetKey() = f.FileName, projectCore.Key
             member _.GetVersion() = hash |> Md5Hasher.toString
         })

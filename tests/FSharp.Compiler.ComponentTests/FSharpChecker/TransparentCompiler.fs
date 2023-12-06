@@ -863,6 +863,22 @@ let GiraffeFuzzing signatureFiles =
     fuzzingTest seed testsProject
 
 
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``File moving test`` signatureFiles =
+    let giraffe = if signatureFiles then "giraffe-signatures" else "Giraffe"
+    let giraffeDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ giraffe ++ "src" ++ "Giraffe"
+    let giraffeProject = SyntheticProject.CreateFromRealProject giraffeDir
+    let giraffeProject = { giraffeProject with OtherOptions = "--nowarn:FS3520"::giraffeProject.OtherOptions }
+
+    giraffeProject.Workflow {
+        checkFile "Json" expectOk
+        moveFile "Json" 1 Down
+        checkFile "Json" expectOk
+    }
+
+
 module ParsedInputHashing =
 
     let source = """
