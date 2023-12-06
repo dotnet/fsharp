@@ -41,7 +41,7 @@ type TestContext(Solution: Solution) =
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
     cancellableTask {
-        let refactoringActions = new List<CodeAction>()
+        let mutable action: CodeAction = null
         let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
 
         context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
@@ -51,18 +51,17 @@ let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactor
         let mutable workspace = context.Solution.Workspace
 
         let refactoringContext =
-            CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> refactoringActions.Add a), context.CancellationToken)
+            CodeRefactoringContext(document, TextSpan(cursorPosition, 1), (fun a -> action <- a), context.CancellationToken)
 
         do! refactorProvider.ComputeRefactoringsAsync refactoringContext
 
-        for action in refactoringActions do
-            let! operations = action.GetOperationsAsync context.CancellationToken
+        let! operations = action.GetOperationsAsync context.CancellationToken
 
-            for operation in operations do
-                let codeChangeOperation = operation :?> ApplyChangesOperation
-                codeChangeOperation.Apply(workspace, context.CancellationToken)
-                context.Solution <- codeChangeOperation.ChangedSolution
-                ()
+        for operation in operations do
+            let codeChangeOperation = operation :?> ApplyChangesOperation
+            codeChangeOperation.Apply(workspace, context.CancellationToken)
+            context.Solution <- codeChangeOperation.ChangedSolution
+            ()
 
         let newDocument = context.Solution.GetDocument(document.Id)
         return newDocument
