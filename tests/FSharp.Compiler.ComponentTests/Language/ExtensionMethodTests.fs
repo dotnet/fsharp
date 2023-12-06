@@ -611,6 +611,45 @@ type Bar =
         csharp |> compile |> shouldSucceed
 
     [<Fact>]
+    let ``Abbreviated CSharp type with extensions`` () =
+        let csharp =
+            CSharp """
+namespace CSharpLib {
+
+    public interface I
+    {
+        public int P { get; }
+    }
+
+    public static class Ext
+    {
+        public static void M(this I i)
+        {
+        }
+    }
+}
+    """
+            |> withName "CSLib"
+        
+        let fsharp =
+            FSharp """
+module Module
+
+open CSharpLib
+
+module M =
+    type Ext2 = CSharpLib.Ext
+ 
+    let f (i: I) =
+        i.M()
+"""
+           |> withLangVersion80
+           |> withName "FSLib"
+           |> withReferences [ csharp ]
+        
+        fsharp |> compile |> shouldSucceed
+        
+    [<Fact>]
     let ``F# CSharpStyleExtensionMethod consumed in F#`` () =
         let producer =
             FSharp
