@@ -48,13 +48,13 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open System.Runtime.Serialization.Formatters.Binary
 
 
-type internal FSharpFile =
-    {
-        Range: range
-        Source: FSharpFileSnapshot
-        IsLastCompiland: bool
-        IsExe: bool
-    }
+//type internal FSharpFile =
+//    {
+//        Range: range
+//        Source: FSharpFileSnapshot
+//        IsLastCompiland: bool
+//        IsExe: bool
+//    }
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -112,18 +112,25 @@ type internal BootstrapInfo =
         TcImports: TcImports
         TcGlobals: TcGlobals
         InitialTcInfo: TcInfo
-        SourceFiles: FSharpFile list
+
+        // TODO: Figure out how these work and if they need to be added to the snapshot...
+        LoadedSources: (range * FSharpFileSnapshot) list
+
+        // TODO: Might be a bit more complicated if we want to support adding files to the project via OtherOptions
+        // ExtraSourceFilesAfter: FSharpFileSnapshot list
+        
         LoadClosure: LoadClosure option
+        LastFileName: string
     }
 
-    member this.GetFile fileName =
-        this.SourceFiles
-        |> List.tryFind (fun f -> f.Source.FileName = fileName)
-        |> Option.defaultWith (fun _ ->
-            failwith (
-                $"File {fileName} not found in project snapshot. Files in project: \n\n"
-                + (this.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")
-            ))
+    //member this.GetFile fileName =
+    //    this.SourceFiles
+    //    |> List.tryFind (fun f -> f.Source.FileName = fileName)
+    //    |> Option.defaultWith (fun _ ->
+    //        failwith (
+    //            $"File {fileName} not found in project snapshot. Files in project: \n\n"
+    //            + (this.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")
+    //        ))
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
@@ -616,11 +623,11 @@ type internal TransparentCompiler
 
         tcConfigB, sourceFilesNew, loadClosureOpt
 
-    /// Bootstrap info that does not depend on contents of the files
-    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
+    /// Bootstrap info that does not depend source files
+    let ComputeBootstrapInfoStatic (projectSnapshot: ProjectCore, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
 
         caches.BootstrapInfoStatic.Get(
-            projectSnapshot.NoFileVersionsKey,
+            projectSnapshot.CacheKeyWith("BootstrapInfoStatic", assemblyName),
             node {
                 use _ =
                     Activity.start
@@ -630,47 +637,7 @@ type internal TransparentCompiler
                             "references", projectSnapshot.ReferencedProjects.Length.ToString()
                         |]
 
-                let tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
 
-                // If this is a builder for a script, re-apply the settings inferred from the
-                // script and its load closure to the configuration.
-                //
-                // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
-                let setupConfigFromLoadClosure () =
-                    match loadClosureOpt with
-                    | Some loadClosure ->
-                        let dllReferences =
-                            [
-                                for reference in tcConfigB.referencedDLLs do
-                                    // If there's (one or more) resolutions of closure references then yield them all
-                                    match
-                                        loadClosure.References
-                                        |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
-                                    with
-                                    | Some(resolved, closureReferences) ->
-                                        for closureReference in closureReferences do
-                                            yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
-                                    | None -> yield reference
-                            ]
-
-                        tcConfigB.referencedDLLs <- []
-
-                        tcConfigB.primaryAssembly <-
-                            (if loadClosure.UseDesktopFramework then
-                                 PrimaryAssembly.Mscorlib
-                             else
-                                 PrimaryAssembly.System_Runtime)
-                        // Add one by one to remove duplicates
-                        dllReferences
-                        |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
-
-                        tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
-                    | None -> ()
-
-                setupConfigFromLoadClosure ()
-
-                let tcConfig = TcConfig.Create(tcConfigB, validate = true)
-                let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
                 // Resolve assemblies and create the framework TcImports. This caches a level of "system" references. No type providers are
                 // included in these references.
@@ -691,16 +658,6 @@ type internal TransparentCompiler
                 let tcConfigP = TcConfigProvider.Constant tcConfig
 
                 let importsInvalidatedByTypeProvider = Event<unit>()
-
-                // Check for the existence of loaded sources and prepend them to the sources list if present.
-                let sourceFiles =
-                    tcConfig.GetAvailableLoadedSources()
-                    @ (sourceFiles |> List.map (fun s -> rangeStartup, s))
-
-                // Mark up the source files with an indicator flag indicating if they are the last source file in the project
-                let sourceFiles =
-                    let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-                    ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
                 let basicDependencies =
                     [
@@ -743,62 +700,105 @@ type internal TransparentCompiler
                     )
 
                 return
-                    assemblyName,
-                    outfile,
-                    sourceFiles,
-                    tcConfig,
                     tcImports,
                     tcGlobals,
                     initialTcInfo,
-                    loadClosureOpt,
                     importsInvalidatedByTypeProvider
             }
         )
 
     let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
         node {
-            let! assemblyName,
-                 outFile,
-                 sourceFiles,
-                 tcConfig,
-                 tcImports,
+
+            let tcConfigB, sourceFiles, loadClosureOpt = ComputeTcConfigBuilder projectSnapshot
+
+            // If this is a builder for a script, re-apply the settings inferred from the
+            // script and its load closure to the configuration.
+            //
+            // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
+            let setupConfigFromLoadClosure () =
+                match loadClosureOpt with
+                | Some loadClosure ->
+                    let dllReferences =
+                        [
+                            for reference in tcConfigB.referencedDLLs do
+                                // If there's (one or more) resolutions of closure references then yield them all
+                                match
+                                    loadClosure.References
+                                    |> List.tryFind (fun (resolved, _) -> resolved = reference.Text)
+                                with
+                                | Some(resolved, closureReferences) ->
+                                    for closureReference in closureReferences do
+                                        yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                                | None -> yield reference
+                        ]
+
+                    tcConfigB.referencedDLLs <- []
+
+                    tcConfigB.primaryAssembly <-
+                        (if loadClosure.UseDesktopFramework then
+                                PrimaryAssembly.Mscorlib
+                            else
+                                PrimaryAssembly.System_Runtime)
+                    // Add one by one to remove duplicates
+                    dllReferences
+                    |> List.iter (fun dllReference -> tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+
+                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                | None -> ()
+
+            setupConfigFromLoadClosure ()
+
+            let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+            let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
+
+            let! tcImports,
                  tcGlobals,
                  initialTcInfo,
-                 loadClosureOpt,
-                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot
+                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic (projectSnapshot.ProjectCore, tcConfig, assemblyName, loadClosureOpt)
 
-            let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
+            // Check for the existence of loaded sources and prepend them to the sources list if present.
+            let loadedSources =
+                tcConfig.GetAvailableLoadedSources()
+                |> List.map (fun (m, fileName) -> m, FSharpFileSnapshot.CreateFromFileSystem(fileName))
 
-            let sourceFiles =
-                sourceFiles
-                |> List.map (fun (m, fileName, (isLastCompiland, isExe)) ->
-                    let source =
-                        fileSnapshots.TryFind fileName
-                        |> Option.defaultWith (fun () ->
-                            // TODO: does this commonly happen?
 
-                            // It can happen when source files are inferred from command line options and are not part of FSharpProjectOptions.SourceFiles - which we use to create the Snapshot
+            //// Mark up the source files with an indicator flag indicating if they are the last source file in the project
+            //let sourceFiles =
+            //    let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
+            //    ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
-                            let snapshotFileSummary =
-                                match projectSnapshot.SourceFiles with
-                                | [] -> "The project snapshot has no source files."
-                                | files ->
-                                    "The project snapshot contains the following files:\n"
-                                    + (files |> Seq.map (fun x -> x.FileName |> shortPath) |> String.concat "\n")
 
-                            failwith
-                                $"Trying to check a file ({shortPath fileName}) which is not part of the project snapshot. {snapshotFileSummary}"
+            //let sourceFiles =
+            //    sourceFiles
+            //    |> List.map (fun (m, fileName, (isLastCompiland, isExe)) ->
+            //        let source =
+            //            fileSnapshots.TryFind fileName
+            //            |> Option.defaultWith (fun () ->
+            //                // TODO: does this commonly happen?
 
-                            FSharpFileSnapshot.Create(
-                                fileName,
-                                (FileSystem.GetLastWriteTimeShim fileName).Ticks.ToString(),
-                                (fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult)))
-                    {
-                        Range = m // TODO: is this used for anything?
-                        Source = source
-                        IsLastCompiland = isLastCompiland
-                        IsExe = isExe
-                    })
+            //                // It can happen when source files are inferred from command line options and are not part of FSharpProjectOptions.SourceFiles - which we use to create the Snapshot
+
+            //                let snapshotFileSummary =
+            //                    match projectSnapshot.SourceFiles with
+            //                    | [] -> "The project snapshot has no source files."
+            //                    | files ->
+            //                        "The project snapshot contains the following files:\n"
+            //                        + (files |> Seq.map (fun x -> x.FileName |> shortPath) |> String.concat "\n")
+
+            //                failwith
+            //                    $"Trying to check a file ({shortPath fileName}) which is not part of the project snapshot. {snapshotFileSummary}"
+
+            //                FSharpFileSnapshot.Create(
+            //                    fileName,
+            //                    (FileSystem.GetLastWriteTimeShim fileName).Ticks.ToString(),
+            //                    (fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult)))
+            //        {
+            //            Range = m // TODO: is this used for anything?
+            //            Source = source
+            //            IsLastCompiland = isLastCompiland
+            //            IsExe = isExe
+            //        })
 
             return
                 Some
@@ -809,8 +809,9 @@ type internal TransparentCompiler
                         TcImports = tcImports
                         TcGlobals = tcGlobals
                         InitialTcInfo = initialTcInfo
-                        SourceFiles = sourceFiles
+                        LoadedSources = loadedSources
                         LoadClosure = loadClosureOpt
+                        LastFileName = sourceFiles |> List.last
                     //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
                     }
         }
@@ -818,7 +819,7 @@ type internal TransparentCompiler
     let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
 
         caches.BootstrapInfo.Get(
-            projectSnapshot.FullKey,
+            projectSnapshot.NoFileVersionsKey,
             node {
                 use _ =
                     Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
@@ -860,32 +861,28 @@ type internal TransparentCompiler
         )
 
     // TODO: Not sure if we should cache this. For VS probably not. Maybe it can be configurable by FCS user.
-    let LoadSource (file: FSharpFile) =
+    let LoadSource (file: FSharpFileSnapshot) isExe isLastCompiland =
         node {
-            let! source = file.Source.GetSource() |> NodeCode.AwaitTask
+            let! source = file.GetSource() |> NodeCode.AwaitTask
 
             return
                 FSharpFileSnapshotWithSource(
-                    FileName = file.Source.FileName,
+                    FileName = file.FileName,
                     Source = source,
                     SourceHash = source.GetChecksum(),
-                    IsLastCompiland = file.IsLastCompiland,
-                    IsExe = file.IsExe
+                    IsLastCompiland = isLastCompiland,
+                    IsExe = isExe
                 )
         }
 
     let LoadSources (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
         node {
-            let sourceFileMap =
-                bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName, f) |> Map
+            let isExe = bootstrapInfo.TcConfig.target.IsExe
 
             let! sources =
                 projectSnapshot.SourceFiles
                 |> Seq.map (fun f ->
-                    f.FileName
-                    |> sourceFileMap.TryFind
-                    |> Option.defaultWith (fun _ -> failwith $"File {f.FileName} not found in {projectSnapshot}")
-                    |> LoadSource)
+                    LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
                 |> NodeCode.Parallel
 
             return FSharpProjectSnapshotWithSources (projectSnapshot.ProjectCore, sources |> Array.toList)
@@ -1763,25 +1760,20 @@ type internal TransparentCompiler
             //    Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             // TODO: might need to deal with exceptions here:
-            let tcConfigB, _, _ = ComputeTcConfigBuilder projectSnapshot
+            let tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
             let tcConfig = TcConfig.Create(tcConfigB, validate = true)
 
-            let index, fileSnapshot =
+            let _index, fileSnapshot =
                 projectSnapshot.SourceFiles
                 |> Seq.mapi pair
                 |> Seq.tryFind (fun (_, f) -> f.FileName = fileName)
                 |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
 
-            let file =
-                {
-                    Range = rangeStartup
-                    Source = fileSnapshot
-                    IsLastCompiland = index = projectSnapshot.SourceFiles.Length - 1
-                    IsExe = tcConfig.target.IsExe
-                }
+            let isExe = tcConfig.target.IsExe
+            let isLastCompiland = fileName = (sourceFileNames |> List.last)
 
-            let! file = file |> LoadSource
+            let! file = LoadSource fileSnapshot isExe isLastCompiland
             let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
             return parseResult
         }

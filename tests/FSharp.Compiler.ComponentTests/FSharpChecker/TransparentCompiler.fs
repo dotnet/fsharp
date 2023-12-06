@@ -873,6 +873,7 @@ let ``File moving test`` signatureFiles =
     let giraffeProject = { giraffeProject with OtherOptions = "--nowarn:FS3520"::giraffeProject.OtherOptions }
 
     giraffeProject.Workflow {
+        clearCache
         checkFile "Json" expectOk
         moveFile "Json" 1 Down
         checkFile "Json" expectOk

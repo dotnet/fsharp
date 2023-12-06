@@ -68,6 +68,12 @@ type FSharpFileSnapshot(
     static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceText>) =
         FSharpFileSnapshot(fileName, version, getSource)
 
+    static member CreateFromFileSystem(fileName: string) =
+        FSharpFileSnapshot(
+            fileName, 
+            FileSystem.GetLastWriteTimeShim(fileName).Ticks.ToString(), 
+            fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult)
+
     member public _.FileName = FileName
     member _.Version = Version
     member _.GetSource() = GetSource()
@@ -410,6 +416,8 @@ and ProjectCore(
             |> Seq.map (fun (FSharpReference (_name, p)) -> p.SignatureVersion)
         ))
 
+    let fullHashString = lazy (fullHash.Value |> Md5Hasher.toString)
+
     let commandLineOptions = lazy (
         seq {
             for r in ReferencesOnDisk do
@@ -425,6 +433,10 @@ and ProjectCore(
         |> Option.map (fun x -> x.Substring(3)))
 
     let key = lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
+    let cacheKey = lazy ({ new ICacheKey<_, _> with
+        member _.GetLabel() = self.Label
+        member _.GetKey() = self.Key
+        member _.GetVersion() = fullHashString.Value })
 
     member val ProjectDirectory = Path.GetDirectoryName(ProjectFileName)
     member _.OutputFileName = outputFileName.Value
@@ -450,14 +462,16 @@ and ProjectCore(
     member _.CacheKeyWith(label, version) = { new ICacheKey<_, _> with
         member _.GetLabel() = $"{label} ({self.Label})"
         member _.GetKey() = self.Key
-        member _.GetVersion() = version
+        member _.GetVersion() = fullHashString.Value, version
     }
 
     member _.CacheKeyWith(label, key, version) = { new ICacheKey<_, _> with
         member _.GetLabel() = $"{label} ({self.Label})"
         member _.GetKey() = key, self.Key
-        member _.GetVersion() = version
+        member _.GetVersion() = fullHashString.Value, version
     }
+
+    member _.CacheKey = cacheKey.Value
 
 and [<NoComparison; CustomEquality>] internal FSharpReferencedProjectSnapshot =
     internal
