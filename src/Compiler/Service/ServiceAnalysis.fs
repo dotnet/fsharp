@@ -1211,7 +1211,8 @@ module UnnecessaryParentheses =
             //     (f x)[z]
             //     (f(x))[z]
             //     x.M(y)[z]
-            | SynExpr.Paren _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.DotLambda _) :: _
+            | SynExpr.Paren _,
+              SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.DotLambda _) :: _
             | SynExpr.Paren(expr = SynExpr.App _),
               SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _
             | SynExpr.Paren _,
