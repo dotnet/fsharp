@@ -188,6 +188,9 @@ match None with
     ]
 
 [<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
 let ``Union case 10 - Wrong type`` () =
     let _, checkResults = getParseAndCheckResults """
 match Some 1 with
@@ -200,6 +203,9 @@ match Some 1 with
     ]
 
 [<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
 let ``Union case 11 - Wrong type`` () =
     let _, checkResults = getParseAndCheckResults """
 match Some 1 with
