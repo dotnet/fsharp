@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Pattern/As 07.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Pattern/As 09.fs", false, QualifiedNameOfFile Module, [], [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let
@@ -15,11 +15,22 @@ ImplFile
                   Yes (3,0--3,8), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
                                     EqualsRange = None })], (3,0--3,8));
-           Expr (Const (Unit, (5,0--5,2)), (5,0--5,2))],
+           Let
+             (false,
+              [SynBinding
+                 (None, Normal, false, false, [],
+                  PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  SynValData
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (5,4--5,5), None, Const (Unit, (5,8--5,10)), (5,4--5,5),
+                  Yes (5,0--5,10), { LeadingKeyword = Let (5,0--5,3)
+                                     InlineKeyword = None
+                                     EqualsRange = Some (5,6--5,7) })],
+              (5,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--5,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
 (3,6)-(3,8) parse error Expecting pattern
-(5,0)-(5,1) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+(5,0)-(5,3) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.

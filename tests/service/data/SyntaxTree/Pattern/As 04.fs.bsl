@@ -20,4 +20,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,9)-(3,10) parse error Unexpected symbol '=' in binding
+(3,6)-(3,8) parse error Expecting pattern
