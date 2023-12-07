@@ -254,10 +254,18 @@ module Nullness =
                 | n when n > this.Idx -> this.Data[this.Idx] |> mapping
                 // This is an errornous case, we need more nullnessinfo then the metadata contains
                 | _ -> 
-                    failwithf "Length of Nullable metadata and needs of its processing do not match:  %A" this // TODO nullness - once being confident, remove failwith and replace with dprintfn
+                    failwithf "Length of Nullable metadata and needs of its processing do not match:  %A" this // TODO nullness - once being confident that our bugs are solved and what remains are incoming metadata bugs, remove failwith and replace with dprintfn
                     knownAmbivalent
 
             member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
+
+    let inline evaluateFirstOrderNullnessAndAdvance (ilt:ILType) (flags:NullableFlags) = 
+        match ilt with
+        | ILType.Value tspec when tspec.GenericArgs.IsEmpty -> KnownWithoutNull, flags
+        // TODO nullness - System.Nullable might bite us, since you CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
+        | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
+        | ILType.Value _  -> KnownWithoutNull, flags.Advance()
+        | _ -> flags.GetNullness(), flags.Advance()
 
 (* Support full cascade trough the metadata hierarchy, as neeeded by the following existing calls:
 ">" in the below logic means a fallback in case of attribute missing
@@ -296,21 +304,23 @@ For value types, a value is passed even though it is always 0
         KnownAmbivalentToNull
 
 /// Import an IL type as an F# type.
-let rec ImportILType (env: ImportMap) m tinst ty =  
+let rec ImportILType (env: ImportMap) m tinst (nullableFlags:Nullness.NullableFlags) ty =  
     match ty with
     | ILType.Void -> 
         env.g.unit_ty
 
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
-        let elemTy = ImportILType env m tinst ty
-        let nullness = Nullness.ImportNullness env.g
-        mkArrayTy env.g n nullness elemTy m
+        let (arrayNullness,flagsForElem) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nullableFlags
+        let elemTy = ImportILType env m tinst flagsForElem ty
+        mkArrayTy env.g n arrayNullness elemTy m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
+        let (nullness,flagsForTypars) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nullableFlags
+        List.mapFold
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        let nullness = Nullness.ImportNullnessForTyconRef env.g m tcref
+
         ImportTyconRefApp env tcref inst nullness
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
