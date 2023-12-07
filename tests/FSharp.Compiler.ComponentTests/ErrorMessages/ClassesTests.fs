@@ -747,7 +747,26 @@ type FooImpl() =
             and set(value) = ()
             """
         |> typecheck
-        |> shouldSucceed        
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``No error if we try to have auto properties on types with primary constructor with args`` () =
+         Fsx """
+type Foo =
+    abstract member X : string with get, set
+    abstract member Y : string with get, set
+    abstract member Z : string with get, set
+
+type FooImpl(x) =
+    interface Foo with
+        member val X = "" with get, set
+        member val Y = "" with get, set
+        member this.Z
+            with get() = ""
+            and set(value) = ()
+            """
+        |> typecheck
+        |> shouldSucceed   
 
     [<Fact>]
     let ``No error if we try to have static autoprop on a type without constructor`` () =

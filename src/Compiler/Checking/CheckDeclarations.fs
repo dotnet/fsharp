@@ -4202,12 +4202,24 @@ module TcDeclarations =
              | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
+             // Check for an interface implementation with auto properties on constructor-less types
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
+
+                if isInterface slot then
+                    match slot with
+                    | SynMemberDefn.Interface (members= Some defs) when not defs.IsEmpty ->
+                        let autoProps = defs |> List.filter(isAutoProperty)
+                        for au in autoProps do
+                            match au with
+                            | SynMemberDefn.AutoProperty(isStatic = false; range = m) ->
+                                errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+                            | _ -> ()
+                    | _ -> ()                
                     
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
@@ -4350,16 +4362,6 @@ module TcDeclarations =
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, members, m) ->
             let members = desugarGetSetMembers members
-            let implementedAutoProperties =
-                members
-                |> List.choose (
-                    fun mem ->
-                        match mem with
-                        | SynMemberDefn.Interface (members= Some defs) ->
-                            let autoProps = defs |> List.filter(isAutoProperty)
-                            Some autoProps
-                        | _ -> None)
-                |> List.concat
 
             CheckMembersForm members
 
@@ -4401,13 +4403,6 @@ module TcDeclarations =
                 members |> List.tryPick (function 
                     | SynMemberDefn.ImplicitCtor (ctorArgs = SynSimplePats.SimplePats _ as spats) -> Some spats
                     | _ -> None)
-                                
-            // Raise a new error if we try to have an interface implementation with auto properties on constructor-less types,
-            for mem in implementedAutoProperties do
-                match mem with
-                | SynMemberDefn.AutoProperty( isStatic = false; range = m) when implicitCtorSynPats.IsNone ->
-                    errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
-                | _ -> ()
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
