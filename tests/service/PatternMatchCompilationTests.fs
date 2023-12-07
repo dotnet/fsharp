@@ -611,18 +611,15 @@ let x as () = y
 let z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,9--10,10): Unexpected symbol ',' in binding";
-        "(11,9--11,10): Unexpected symbol ':' in binding";
-        "(12,9--12,11): Unexpected symbol '::' in binding";
-        "(13,9--13,10): Unexpected symbol '&' in binding";
-        "(14,9--14,10): Unexpected symbol '|' in binding";
+        "(10,6--10,8): Expecting pattern"; "(11,6--11,8): Expecting pattern";
+        "(12,6--12,8): Expecting pattern"; "(13,6--13,8): Expecting pattern";
+        "(14,6--14,8): Expecting pattern";
         "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token.";
         "(15,9--15,10): Unmatched '('";
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token.";
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding";
-        "(20,0--20,0): Unexpected end of input in value, function or member definition";
-        "(19,0--19,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
+        "(19,6--19,8): Expecting pattern";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected '=' or other token.";
         "(3,13--3,17): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'bool'";
         "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
         "(4,16--4,17): This expression was expected to have type\u001d    'bool'    \u001dbut here has type\u001d    'int'";
@@ -950,18 +947,15 @@ let :? x as () = y
 let :? z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,12--10,13): Unexpected symbol ',' in binding";
-        "(11,12--11,13): Unexpected symbol ':' in binding";
-        "(12,12--12,14): Unexpected symbol '::' in binding";
-        "(13,12--13,13): Unexpected symbol '&' in binding";
-        "(14,12--14,13): Unexpected symbol '|' in binding";
+        "(10,9--10,11): Expecting pattern"; "(11,9--11,11): Expecting pattern";
+        "(12,9--12,11): Expecting pattern"; "(13,9--13,11): Expecting pattern";
+        "(14,9--14,11): Expecting pattern";
         "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token.";
         "(15,12--15,13): Unmatched '('";
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token.";
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding";
-        "(20,0--20,0): Unexpected end of input in value, function or member definition";
-        "(19,0--19,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
+        "(19,9--19,11): Expecting pattern";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected '=' or other token.";
         "(3,7--3,8): The type 'a' is not defined.";
         "(3,4--3,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(4,7--4,8): The type 'b' is not defined.";
@@ -990,8 +984,6 @@ let :? z as
         "(14,4--14,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(15,7--15,8): The type 'r' is not defined.";
         "(15,4--15,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
-        "(17,7--17,8): The type 'v' is not defined.";
-        "(17,4--17,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(18,7--18,8): The type 'x' is not defined.";
         "(18,4--18,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(19,7--19,8): The type 'z' is not defined.";
