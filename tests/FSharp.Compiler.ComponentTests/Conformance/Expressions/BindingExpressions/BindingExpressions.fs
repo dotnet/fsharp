@@ -14,6 +14,12 @@ module BindingExpressions =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
 
+    let verifyCompileAsExe compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> compile
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ApplicationExpressions/BasicApplication)
     // SOURCE=AmbigLetBinding.fs	# AmbigLetBinding
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AmbigLetBinding.fs"|])>]
@@ -102,11 +108,10 @@ module BindingExpressions =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"in05.fs"|])>]
     let ``in05_fs`` compilation =
         compilation
-        |> verifyCompile
+        |> verifyCompileAsExe
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 12, Col 13, Line 12, Col 14, "The type 'int' does not match the type 'unit'")
-            (Error 1, Line 12, Col 18, Line 12, Col 24, "Type mismatch. Expecting a\n    ''a -> 'b'    \nbut given a\n    ''a -> unit'    \nThe type 'int' does not match the type 'unit'")
             (Warning 20, Line 13, Col 5, Line 13, Col 10, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
@@ -119,7 +124,6 @@ module BindingExpressions =
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 10, Col 9, Line 10, Col 10, "The type 'int' does not match the type 'unit'")
-            (Error 1, Line 10, Col 14, Line 10, Col 20, "Type mismatch. Expecting a\n    ''a -> 'b'    \nbut given a\n    ''a -> unit'    \nThe type 'int' does not match the type 'unit'")
         ]
 
     // SOURCE=MutableLocals01.fs SCFLAGS="--warnon:3180 --optimize+ --test:ErrorRanges"

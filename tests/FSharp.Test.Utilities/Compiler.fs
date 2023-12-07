@@ -1582,6 +1582,7 @@ Actual:
                 | null -> ()
                 | _ when expectedContent = actualErrors -> ()
                 | _ -> File.WriteAllText(path, actualErrors)
+                //File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()

@@ -79,7 +79,7 @@ module QuickParse =
         | _ -> false
 
     let GetCompleteIdentifierIslandImplAux (lineStr: string) (index: int) : (string * int * bool) option =
-        if index < 0 || isNull lineStr || index >= lineStr.Length then
+        if index < 0 || index >= lineStr.Length then
             None
         else
             let fixup =
