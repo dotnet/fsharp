@@ -502,6 +502,11 @@
         <target state="translated">representación de struct para modelos activos</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>Union case test properties</source>
+        <target state="new">Union case test properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="translated">Compatibilidad con try-with en expresiones secuenciales</target>
