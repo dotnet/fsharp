@@ -194,10 +194,11 @@ module Nullness =
         | Some ([ILAttribElem.Byte 0uy],_) -> ValueSome arrayWithByte0
         | Some ([ILAttribElem.Byte 1uy],_) -> ValueSome arrayWithByte1
         | Some ([ILAttribElem.Byte 2uy],_) -> ValueSome arrayWithByte2
-        | Some ([ILAttribElem.Array(g.ilg.typ_Byte, listOfBytes)],_) -> 
+        | Some ([ILAttribElem.Array(byteType,listOfBytes)],_) when byteType = g.ilg.typ_Byte -> 
             listOfBytes
             |> Array.ofList
             |> Array.choose(function | ILAttribElem.Byte b -> Some b | _ -> None)
+            |> ValueSome
             
         | _ -> ValueNone
 
@@ -230,9 +231,10 @@ module Nullness =
           Fallback : NullableContextSource}
           with
             member this.GetFlags(g:TcGlobals) = 
+                let fallback = this.Fallback
                 this.DirectAttributes.GetNullable(g)
                 |> ValueOption.orElseWith(fun () -> 
-                    match this.Fallback with
+                    match fallback with
                     | FromClass attrs -> attrs.GetNullableContext(g)
                     | FromMethodAndClass(methodCtx,classCtx) -> 
                         methodCtx.GetNullableContext(g)
@@ -252,7 +254,7 @@ module Nullness =
                 | n when n > this.Idx -> this.Data[this.Idx] |> mapping
                 // This is an errornous case, we need more nullnessinfo then the metadata contains
                 | _ -> 
-                    failwithf "This is wrong %A" this // TODO nullness - once being confident, remove failwith and replace with dprintfn
+                    failwithf "Length of Nullable metadata and needs of its processing do not match:  %A" this // TODO nullness - once being confident, remove failwith and replace with dprintfn
                     knownAmbivalent
 
             member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
