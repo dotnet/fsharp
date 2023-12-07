@@ -4212,14 +4212,13 @@ module TcDeclarations =
 
                 if isInterface slot then
                     match slot with
-                    | SynMemberDefn.Interface (members= Some defs) when not defs.IsEmpty ->
-                        let autoProps = defs |> List.filter(isAutoProperty)
-                        for au in autoProps do
+                    | SynMemberDefn.Interface (members= Some defs) ->
+                        for au in defs do
                             match au with
                             | SynMemberDefn.AutoProperty(isStatic = false; range = m) ->
                                 errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
                             | _ -> ()
-                    | _ -> ()                
+                    | _ -> ()         
                     
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
