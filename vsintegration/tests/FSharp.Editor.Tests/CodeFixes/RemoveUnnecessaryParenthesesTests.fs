@@ -1768,7 +1768,7 @@ module Patterns =
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i inner)
                             else
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
-                    | Ands pats, (Or _ | As _) ->
+                    | Ands pats, (Or _ | As _ | Tuple _) ->
                         for i, _ in Seq.indexed pats do
                             Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
                     | Ands pats, _ ->
