@@ -1452,6 +1452,8 @@ type TcGlobals(
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
   member val attrib_IsUnmanagedAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsUnmanagedAttribute"
   member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val attrib_NullableAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableAttribute"
+  member val attrib_NullableContextAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_NullableAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableAttribute"
   member val attrib_NullableContextAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.NullableContextAttribute"
   member val attrib_MemberNotNullWhenAttribute  = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute"

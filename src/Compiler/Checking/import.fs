@@ -167,7 +167,73 @@ let ImportTyconRefApp (env: ImportMap) tcref tyargs nullness =
     env.g.improveType tcref tyargs nullness
 
 
-module Nullness = 
+module Nullness =
+
+    open FSharp.Compiler.AbstractIL.Diagnostics
+
+    let arrayWithByte0 = [|0uy|]
+    let arrayWithByte1 = [|1uy|]
+    let arrayWithByte2 = [|2uy|]
+
+    let mapping byteValue = 
+        match byteValue with
+        | 0uy -> NullnessInfo.AmbivalentToNull
+        | 1uy -> NullnessInfo.WithoutNull
+        | 2uy -> NullnessInfo.WithNull
+        | _ ->
+            dprintfn "%i was passed to Nullness mapping, this is not a valid value" byteValue
+            NullnessInfo.AmbivalentToNull            
+
+    let tryParseAttributeDataToNullableByteFlags (g:TcGlobals) attrData = 
+        match attrData with
+        | None -> ValueNone
+        | Some ([ILAttribElem.Byte 0uy],_) -> ValueSome arrayWithByte0
+        | Some ([ILAttribElem.Byte 1uy],_) -> ValueSome arrayWithByte1
+        | Some ([ILAttribElem.Byte 2uy],_) -> ValueSome arrayWithByte2
+        | Some ([ILAttribElem.Array(g.ilg.typ_Byte, listOfBytes)],_) -> 
+            listOfBytes
+            |> Array.ofList
+            |> Array.choose(function | ILAttribElem.Byte b -> Some b | _ -> None)
+            
+        | _ -> ValueNone
+
+    [<Struct;NoEquality;NoComparison>]
+    type AttributesFromIL = AttributesFromIL of metadataIndex:int * attrs:ILAttributesStored
+        with 
+            member this.Read() =  match this with| AttributesFromIL(idx,attrs) -> attrs.GetCustomAttrs(idx)
+            member this.GetNullable(g:TcGlobals) = 
+                match g.attrib_NullableAttribute_opt with
+                | None -> ValueNone
+                | Some n ->
+                    TryDecodeILAttribute n.TypeRef (this.Read())
+                    |> tryParseAttributeDataToNullableByteFlags g
+
+            member this.GetNullableContext(g:TcGlobals) = 
+                match g.attrib_NullableContextAttribute_opt with
+                | None -> ValueNone
+                | Some n ->
+                    TryDecodeILAttribute n.TypeRef (this.Read())
+                    |> tryParseAttributeDataToNullableByteFlags g
+
+    [<Struct;NoEquality;NoComparison>]
+    type NullableContextSource = 
+        | FromClass of AttributesFromIL
+        | FromMethodAndClass of methodAttrs:AttributesFromIL * classAttrs:AttributesFromIL
+
+    [<Struct;NoEquality;NoComparison>]
+    type NullableInfoContainer =
+        { DirectAttributes: AttributesFromIL
+          Fallback : NullableContextSource}
+          with
+            member this.GetFlags(g:TcGlobals) = 
+                this.DirectAttributes.GetNullable(g)
+                |> ValueOption.orElseWith(fun () -> 
+                    match this.Fallback with
+                    | FromClass attrs -> attrs.GetNullableContext(g)
+                    | FromMethodAndClass(methodCtx,classCtx) -> 
+                        methodCtx.GetNullableContext(g)
+                        |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
+                |> ValueOption.defaultValue arrayWithByte0
 
 (* Support full cascade trough the metadata hierarchy, as neeeded by the following existing calls:
 ">" in the below logic means a fallback in case of attribute missing
