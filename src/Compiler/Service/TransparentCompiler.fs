@@ -331,8 +331,8 @@ type internal TransparentCompiler
     let mutable caches = CompilerCaches(100)
 
     // TODO: do we need this?
-    let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
-    let maxParallelismSemaphore = new SemaphoreSlim(maxTypeCheckingParallelism)
+    //let maxTypeCheckingParallelism = max 1 (Environment.ProcessorCount / 2)
+    //let maxParallelismSemaphore = new SemaphoreSlim(maxTypeCheckingParallelism)
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -1123,10 +1123,10 @@ type internal TransparentCompiler
                 let input, moduleNamesDict =
                     DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-                let! ct = NodeCode.CancellationToken
+                //let! ct = NodeCode.CancellationToken
 
                 try
-                    do! maxParallelismSemaphore.WaitAsync(ct) |> NodeCode.AwaitTask
+                    //do! maxParallelismSemaphore.WaitAsync(ct) |> NodeCode.AwaitTask
 
                     let! finisher =
                         CheckOneInputWithCallback
@@ -1159,7 +1159,8 @@ type internal TransparentCompiler
                             sink = sink
                         }
                 finally
-                    maxParallelismSemaphore.Release() |> ignore
+                    ()
+                    //maxParallelismSemaphore.Release() |> ignore
             }
         )
 
