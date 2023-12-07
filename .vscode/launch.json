@@ -17,17 +17,17 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 7.0)",
+            "name": "Launch FSI",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            "preLaunchTask": "Build (Debug)",
+            "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program p
             "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
             "args": [
                 "${input:fsiArgsPrompt}"
             ],
-            "cwd": "${workspaceFolder}/src",
+            "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
             "internalConsoleOptions": "neverOpen",
             "suppressJITOptimizations": true,
@@ -46,14 +46,16 @@
             },
         },
         {
-            "name": "Launch FSC (Debug, .NET 7.0)",
+            "name": "Launch FSC",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
-            "preLaunchTask": "Build (Debug)",
+            "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
             "args": [
+                "--targetprofile:netstandard",
+                "--simpleresolution",
                 "${input:fscArgsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
@@ -75,7 +77,7 @@
             },
         },
         {
-            "name": "Attach to a .NET process",
+            "name": "Attach to a .NET process with debugger",
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickProcess}",
