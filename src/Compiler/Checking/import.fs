@@ -175,14 +175,18 @@ module Nullness =
     let arrayWithByte1 = [|1uy|]
     let arrayWithByte2 = [|2uy|]
 
+    let knownAmbivalent = NullnessInfo.AmbivalentToNull |> Nullness.Known
+    let knownWithoutNull = NullnessInfo.WithoutNull |> Nullness.Known
+    let knownNullable = NullnessInfo.WithNull |> Nullness.Known
+
     let mapping byteValue = 
         match byteValue with
-        | 0uy -> NullnessInfo.AmbivalentToNull
-        | 1uy -> NullnessInfo.WithoutNull
-        | 2uy -> NullnessInfo.WithNull
+        | 0uy -> knownAmbivalent
+        | 1uy -> knownWithoutNull
+        | 2uy -> knownNullable
         | _ ->
             dprintfn "%i was passed to Nullness mapping, this is not a valid value" byteValue
-            NullnessInfo.AmbivalentToNull            
+            knownAmbivalent         
 
     let tryParseAttributeDataToNullableByteFlags (g:TcGlobals) attrData = 
         match attrData with
@@ -221,7 +225,7 @@ module Nullness =
         | FromMethodAndClass of methodAttrs:AttributesFromIL * classAttrs:AttributesFromIL
 
     [<Struct;NoEquality;NoComparison>]
-    type NullableInfoContainer =
+    type NullableAttributesSource =
         { DirectAttributes: AttributesFromIL
           Fallback : NullableContextSource}
           with
@@ -234,6 +238,24 @@ module Nullness =
                         methodCtx.GetNullableContext(g)
                         |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
                 |> ValueOption.defaultValue arrayWithByte0
+
+    [<Struct;NoEquality;NoComparison>]
+    type NullableFlags = {Data : byte[]; Idx : int }
+        with
+            member this.GetNullness() = 
+                match this.Data.Length with
+                // No nullable data nor parent context -> we cannot tell
+                | 0 -> knownAmbivalent 
+                // A scalar value from attributes, cover type and all it's potential typars
+                | 1 -> this.Data[0] |> mapping
+                // We have a bigger array, indexes map to typars in a depth-first fashion
+                | n when n > this.Idx -> this.Data[this.Idx] |> mapping
+                // This is an errornous case, we need more nullnessinfo then the metadata contains
+                | _ -> 
+                    failwithf "This is wrong %A" this // TODO nullness - once being confident, remove failwith and replace with dprintfn
+                    knownAmbivalent
+
+            member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
 
 (* Support full cascade trough the metadata hierarchy, as neeeded by the following existing calls:
 ">" in the below logic means a fallback in case of attribute missing
