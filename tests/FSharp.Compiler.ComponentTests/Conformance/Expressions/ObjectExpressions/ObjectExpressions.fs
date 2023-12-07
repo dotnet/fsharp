@@ -116,12 +116,20 @@ let implSomeDU =
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-            (Error 1, Line 31, Col 15, Line 31, Col 18, "This expression was expected to have type
+            Error 1, Line 31, Col 15, Line 31, Col 18, "This expression was expected to have type
     'AsString'    
 but here has type
-    'SomeDu'    ")
-         ]
-         
+    'SomeDu'    "
+            Error 1, Line 32, Col 15, Line 32, Col 18, "This expression was expected to have type
+    'AsString'    
+but here has type
+    'SomeDu'    "
+            Error 1, Line 33, Col 15, Line 33, Col 18, "This expression was expected to have type
+    'AsString'    
+but here has type
+    'SomeDu'    "
+            Warning 25, Line 30, Col 19, Line 30, Col 23, "Incomplete pattern matches on this expression."]
+
     [<Fact>]
     let ``Object expression implementing multiple interfaces`` () =
         Fsx """
