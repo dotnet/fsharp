@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Pattern/Typed - Missing type 01.fs", false,
-      QualifiedNameOfFile Module, [], [],
+     ("/root/Pattern/As 07.fs", false, QualifiedNameOfFile Module, [], [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let
@@ -11,19 +10,13 @@ ImplFile
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (i, None), false, None, (3,4--3,5)),
-                  Some
-                    (SynBindingReturnInfo
-                       (FromParseError (3,6--3,6), (3,6--3,6), [],
-                        { ColonRange = Some (3,5--3,6) })),
-                  Typed
-                    (ArbitraryAfterError ("localBinding2", (3,6--3,6)),
-                     FromParseError (3,6--3,6), (3,6--3,6)), (3,4--3,5),
-                  Yes (3,0--3,6), { LeadingKeyword = Let (3,0--3,3)
+                  As (Wild (3,4--3,5), Wild (3,8--3,8), (3,4--3,8)), None,
+                  ArbitraryAfterError ("localBinding2", (3,8--3,8)), (3,4--3,8),
+                  Yes (3,0--3,8), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
-                                    EqualsRange = None })], (3,0--3,6))],
+                                    EqualsRange = None })], (3,0--3,8))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--3,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--3,8), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
