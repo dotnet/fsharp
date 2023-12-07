@@ -32,7 +32,7 @@ module internal Utils =
 type internal StateUpdate<'TValue> =
     | CancelRequest
     | OriginatorCanceled
-    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
+    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
     | JobFailed of exn * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
 type internal MemoizeReply<'TValue> =
@@ -403,8 +403,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                                 internalError key.Label "Invalid state: Completed job already completed"
 
                         // Sometimes job can be canceled but it still manages to complete (or fail)
-                        | JobFailed _, Some (Job.Canceled _)
-                        | JobCompleted _, Some (Job.Canceled _) -> ()
+                        | JobFailed _, Some(Job.Canceled _)
+                        | JobCompleted _, Some(Job.Canceled _) -> ()
 
                         // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
                         | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
@@ -516,8 +516,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 | _, _, Running _ -> "Running"
                 | _, _, Completed _ -> "Completed"
                 | _, _, Job.Canceled _ -> "Canceled"
-                | _, _, Job.Failed _ -> "Failed"
-                )
+                | _, _, Job.Failed _ -> "Failed")
             |> Map
 
         let running =

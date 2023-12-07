@@ -50,13 +50,12 @@ module internal Md5Hasher =
 
     let empty = Array.empty
 
-    let hashString (s: string)=
+    let hashString (s: string) =
         s |> System.Text.Encoding.UTF8.GetBytes |> computeHash
 
     let addBytes (bytes: byte array) (s: byte array) =
 
-        Array.append s bytes
-        |> computeHash
+        Array.append s bytes |> computeHash
 
     let addString (s: string) (s2: byte array) =
         s |> System.Text.Encoding.UTF8.GetBytes |> addBytes <| s2
@@ -74,7 +73,7 @@ module internal Md5Hasher =
     let addBool (b: bool) (s: byte array) =
         b |> BitConverter.GetBytes |> addBytes <| s
 
-    let addDateTime (dt: System.DateTime) (s: byte array) = dt.Ticks |> BitConverter.GetBytes |> addBytes <| s
+    let addDateTime (dt: System.DateTime) (s: byte array) =
+        dt.Ticks |> BitConverter.GetBytes |> addBytes <| s
 
-    let toString (bytes: byte array) =
-        bytes |> System.BitConverter.ToString
+    let toString (bytes: byte array) = bytes |> System.BitConverter.ToString

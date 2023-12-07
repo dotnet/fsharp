@@ -348,6 +348,9 @@ type FSharpChecker
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
         async {
+            let! ct = Async.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             let ctok = CompilationThreadToken()
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
@@ -478,6 +481,9 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
+            let! ct = NodeCode.CancellationToken
+            use _ = Cancellable.UsingToken(ct)
+
             if fastCheck <> Some true || not captureIdentifiersWhenParsing then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else

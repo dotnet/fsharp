@@ -919,6 +919,48 @@ in x
 
                 // AnonRecd
                 "id ({||})", "id {||}"
+                "{| A = (fun () -> ()) |}", "{| A = fun () -> () |}"
+                "{| A = (fun () -> ()); B = 3 |}", "{| A = (fun () -> ()); B = 3 |}"
+                "{| A = (let x = 3 in x); B = 3 |}", "{| A = (let x = 3 in x); B = 3 |}"
+                "{| (try {||} with _ -> reraise ()) with A = 4 |}", "{| (try {||} with _ -> reraise ()) with A = 4 |}"
+
+                "
+                {| A = (fun () -> ())
+                   B = 3 |}
+                ",
+                "
+                {| A = fun () -> ()
+                   B = 3 |}
+                "
+
+                "
+                {| A = (fun () -> ()); B = (fun () -> ())
+                   C = 3 |}
+                ",
+                "
+                {| A = (fun () -> ()); B = fun () -> ()
+                   C = 3 |}
+                "
+
+                "
+                {| A = (let x = 3 in x)
+                   B = 3 |}
+                ",
+                "
+                {| A = let x = 3 in x
+                   B = 3 |}
+                "
+
+                "
+                {| (try {||} with _ -> reraise ())
+                    with
+                    A = 4 |}
+                ",
+                "
+                {| (try {||} with _ -> reraise ())
+                    with
+                    A = 4 |}
+                "
 
                 // ArrayOrList
                 "id ([])", "id []"
@@ -928,6 +970,49 @@ in x
 
                 // Record
                 "id ({ A = x })", "id { A = x }"
+                "{ A = (fun () -> ()) }", "{ A = fun () -> () }"
+                "{ A = (fun () -> ()); B = 3 }", "{ A = (fun () -> ()); B = 3 }"
+                "{ A = (let x = 3 in x); B = 3 }", "{ A = (let x = 3 in x); B = 3 }"
+                "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }", "{ A.B.C.D.X = (match () with () -> ()); A.B.C.D.Y = 3 }"
+                "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }", "{ (try { A = 3 } with _ -> reraise ()) with A = 4 }"
+
+                "
+                { A = (fun () -> ())
+                  B = 3 }
+                ",
+                "
+                { A = fun () -> ()
+                  B = 3 }
+                "
+
+                "
+                { A = (let x = 3 in x)
+                  B = 3 }
+                ",
+                "
+                { A = let x = 3 in x
+                  B = 3 }
+                "
+
+                "
+                { A.B.C.D.X = (match () with () -> ())
+                  A.B.C.D.Y = 3 }
+                ",
+                "
+                { A.B.C.D.X = match () with () -> ()
+                  A.B.C.D.Y = 3 }
+                "
+
+                "
+                { (try { A = 3 } with _ -> reraise ())
+                  with
+                    A = 4 }
+                ",
+                "
+                { (try { A = 3 } with _ -> reraise ())
+                  with
+                    A = 4 }
+                "
 
                 // New
                 "id (new obj())", "id (new obj())"
@@ -1680,7 +1765,7 @@ module Patterns =
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i inner)
                             else
                                 Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
-                    | Ands pats, (Or _ | As _) ->
+                    | Ands pats, (Or _ | As _ | Tuple _) ->
                         for i, _ in Seq.indexed pats do
                             Ands(pats |> List.updateAt i (Paren inner)), Ands(pats |> List.updateAt i (Paren inner))
                     | Ands pats, _ ->

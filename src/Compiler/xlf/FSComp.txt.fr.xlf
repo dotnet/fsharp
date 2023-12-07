@@ -907,6 +907,11 @@
         <target state="translated"> Expression attendue</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Modèle attendu</target>
@@ -945,6 +950,11 @@
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">L’accès à ce membre est ambigu. Utilisez des parenthèses autour de la création de l’objet, par exemple' (New SomeType (args)). MemberName</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsStaticMemberImcompleteSyntax">
+        <source>Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</source>
+        <target state="new">Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
@@ -6204,7 +6214,7 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</source>
-        <target state="new">Unexpected syntax or possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.</target>
+        <target state="translated">Syntaxe inattendue ou mise en retrait incorrecte possible : ce jeton est hors du contexte démarré à la position {0}. Essayez de mettre cela en retrait.\nPour continuer à utiliser une mise en retrait non conforme, passez l’indicateur '--strict-indentation-' au compilateur ou définissez la version de langage sur F# 7.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
