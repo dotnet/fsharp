@@ -3456,11 +3456,6 @@ headBindingPattern:
   | headBindingPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
-  | headBindingPattern AS recover
-      { let mAs = rhs parseState 2
-        let pat2 = SynPat.Wild(mAs.EndRange)
-        SynPat.As($1, pat2, rhs2 parseState 1 2) }
-
   | headBindingPattern AS
       { let mAs = rhs parseState 2
         reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
