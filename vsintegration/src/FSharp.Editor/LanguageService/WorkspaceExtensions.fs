@@ -91,11 +91,16 @@ module internal FSharpProjectSnapshotSerialization =
     
 
 open FSharpProjectSnapshotSerialization
+open System.Collections.Concurrent
 
 [<AutoOpen>]
 module private CheckerExtensions =
 
     let snapshotCache = AsyncMemoize(5000, 500, "SnapshotCache")
+
+    let latestSnapshots = ConcurrentDictionary<ProjectId, Project * FSharpProjectOptions * FSharpProjectSnapshot>()
+
+    let exist xs = xs |> Seq.isEmpty |> not
 
     let getFSharpOptionsForProject (this: Project) =
         if not this.IsFSharp then
@@ -120,91 +125,164 @@ module private CheckerExtensions =
                         return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> result))
                 }
 
-    let getProjectSnapshot (snapshotAccumulatorOpt) (project: Project) =
+    let documentToSnapshot (document: Document) = 
         cancellableTask {
+            let! version = document.GetTextVersionAsync()
 
-            let! _, _, _, options = getFSharpOptionsForProject project
-
-            let solution = project.Solution
-
-            let projects =
-                solution.Projects
-                |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                |> Map
-
-            let getFileSnapshot (options: FSharpProjectOptions) path =
-                async {
-                    let project = projects.TryFind options.ProjectFileName
-
-                    if project.IsNone then
-                        System.Diagnostics.Trace.TraceError(
-                            "Could not find project {0} in solution {1}",
-                            options.ProjectFileName,
-                            solution.FilePath
-                        )
-
-                    let documentOpt = project |> Option.bind (Map.tryFind path)
-
-                    let! version, getSource =
-                        match documentOpt with
-                        | Some document ->
-                            async {
-
-                                let! version = document.GetTextVersionAsync() |> Async.AwaitTask
-
-                                let getSource () =
-                                    task {
-                                        let! sourceText = document.GetTextAsync()
-                                        return sourceText.ToFSharpSourceText()
-                                    }
-
-                                return version.ToString(), getSource
-
-                            }
-                        | None ->
-                            // This happens with files that are read from /obj
-
-                            // Fall back to file system
-                            let version = System.IO.File.GetLastWriteTimeUtc(path)
-
-                            let getSource () =
-                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
-
-                            async.Return(version.ToString(), getSource)
-
-                    return
-                        FSharpFileSnapshot(
-                            FileName = path,
-                            Version = version,
-                            GetSource = getSource
-                        )
+            let getSource () =
+                task {
+                    let! sourceText = document.GetTextAsync()
+                    return sourceText.ToFSharpSourceText()
                 }
 
-            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
-
-            let _json = dumpToJson snapshot
-
-            return snapshot
+            return
+                FSharpFileSnapshot(
+                    FileName = document.FilePath,
+                    Version = version.ToString(),
+                    GetSource = getSource
+                )
         }
 
-    let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
+    let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
+        cancellableTask {
+
+            let! options = 
+                match options with
+                | Some options -> CancellableTask.singleton options
+                | None -> 
+                    cancellableTask {
+                        let! _, _, _, options = getFSharpOptionsForProject project
+                        return options
+                    }
+
+            let updatedSnapshot = 
+                match latestSnapshots.TryGetValue project.Id with
+                | true, (oldProject, oldOptions, oldSnapshot) when FSharpProjectOptions.AreSameForChecking(options, oldOptions) ->
+                    let changes = project.GetChanges(oldProject)
+                    if changes.GetAddedDocuments() |> exist ||
+                       changes.GetRemovedDocuments() |> exist ||
+                       changes.GetAddedMetadataReferences() |> exist ||
+                       changes.GetRemovedMetadataReferences() |> exist ||
+                       changes.GetAddedProjectReferences() |> exist ||
+                       changes.GetRemovedProjectReferences() |> exist then
+                       // if any of that happened, we create it from scratch
+                       System.Diagnostics.Trace.TraceWarning "Project change not covered by options - suspicious"
+                       None
+                    
+                    else 
+                        // we build it from the previous one    
+
+                        let changedDocuments = changes.GetChangedDocuments() |> Seq.toList
+                        
+                        System.Diagnostics.Trace.TraceInformation $"Incremental update of FSharpProjectSnapshot ({oldSnapshot.ProjectCore.Label}) - {changedDocuments.Length} changed documents"
+
+                        changedDocuments
+                        |> Seq.map (project.GetDocument >> documentToSnapshot)
+                        |> CancellableTask.whenAll
+                        |> CancellableTask.map (Array.toList >> oldSnapshot.Replace)
+                        |> Some
+                    
+                | _ -> None
+
+            let! newSnapshot = 
+
+                match updatedSnapshot with
+                | Some snapshot -> snapshot
+                | _ -> 
+                    cancellableTask {            
+
+
+                    let solution = project.Solution
+
+                    let projects =
+                        solution.Projects
+                        |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                        |> Map
+
+                    let getFileSnapshot (options: FSharpProjectOptions) path =
+                        async {
+                            let project = projects.TryFind options.ProjectFileName
+
+                            if project.IsNone then
+                                System.Diagnostics.Trace.TraceError(
+                                    "Could not find project {0} in solution {1}",
+                                    options.ProjectFileName,
+                                    solution.FilePath
+                                )
+
+                            let documentOpt = project |> Option.bind (Map.tryFind path)
+
+                            let! version, getSource =
+                                match documentOpt with
+                                | Some document ->
+                                    async {
+
+                                        let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                                        let getSource () =
+                                            task {
+                                                let! sourceText = document.GetTextAsync()
+                                                return sourceText.ToFSharpSourceText()
+                                            }
+
+                                        return version.ToString(), getSource
+
+                                    }
+                                | None ->
+                                    // This happens with files that are read from /obj
+
+                                    // Fall back to file system
+                                    let version = System.IO.File.GetLastWriteTimeUtc(path)
+
+                                    let getSource () =
+                                        task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
+
+                                    async.Return(version.ToString(), getSource)
+
+                            return
+                                FSharpFileSnapshot(
+                                    FileName = path,
+                                    Version = version,
+                                    GetSource = getSource
+                                )
+                        }
+
+                    let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
+
+                    //let _json = dumpToJson snapshot
+
+                    System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.ProjectCore.Label})"
+
+                    return snapshot
+                    }
+
+            latestSnapshots.AddOrUpdate(project.Id, (project, options, newSnapshot), (fun _ _ -> (project, options, newSnapshot))) |> ignore
+
+            return newSnapshot
+        }
+
+    let getOrCreateSnapshotForProject (project: Project) options snapshotAccumulatorOpt =
 
         let key =
             { new ICacheKey<_, _> with
-                member _.GetKey() = document.Project.Id
-                member _.GetVersion() = document.Project
-                member _.GetLabel() = options.ProjectFileName
+                member _.GetKey() = project.Id
+                member _.GetVersion() = project
+                member _.GetLabel() = project.FilePath
             }
 
         snapshotCache.Get(
             key,
             node {
                 let! ct = NodeCode.CancellationToken
-                return! getProjectSnapshot None document.Project ct |> NodeCode.AwaitTask
+                return! createProjectSnapshot snapshotAccumulatorOpt project options ct |> NodeCode.AwaitTask
             }
         )
         |> Async.AwaitNodeCode
+        
+    let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
+        getOrCreateSnapshotForProject document.Project (Some options) None 
 
+    
     type FSharpChecker with
 
         /// Parse the source text from the Roslyn document.
@@ -540,4 +618,4 @@ type Project with
     member this.GetFSharpCompilationOptionsAsync() = this |> getFSharpOptionsForProject
 
     member this.GetFSharpProjectSnapshot(?snapshotAccumulator) =
-        this |> getProjectSnapshot snapshotAccumulator
+        cancellableTask { return! getOrCreateSnapshotForProject this None snapshotAccumulator }

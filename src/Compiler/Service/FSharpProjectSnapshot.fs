@@ -266,6 +266,18 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
     member private _.With(sourceFiles: 'T list) =
         FSharpProjectSnapshotBase(projectCore, sourceFiles)
 
+    member this.Replace(changedSourceFiles: 'T list) =
+        // TODO: validate if changed files are not present in the original list?
+        
+        let sourceFiles =
+            sourceFiles
+            |> List.map (fun x ->
+                match changedSourceFiles |> List.tryFind (fun y -> y.FileName = x.FileName) with
+                | Some y -> y
+                | None -> x)
+
+        this.With(sourceFiles)
+
     member this.UpTo fileIndex = this.With sourceFiles[..fileIndex]
 
     member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
