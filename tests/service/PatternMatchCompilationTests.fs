@@ -621,6 +621,8 @@ let z as
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token.";
         "(20,0--20,0): Incomplete structured construct at or before this point in binding";
+        "(20,0--20,0): Unexpected end of input in value, function or member definition";
+        "(19,0--19,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(3,13--3,17): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'bool'";
         "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
         "(4,16--4,17): This expression was expected to have type\u001d    'bool'    \u001dbut here has type\u001d    'int'";
@@ -629,6 +631,11 @@ let z as
         "(6,9--6,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
         "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(10,15--10,16): This expression was expected to have type\u001d    ''a * 'b'    \u001dbut here has type\u001d    'int'";
+        "(11,11--11,12): The type 'k' is not defined.";
+        "(12,16--12,18): This expression was expected to have type\u001d    ''a list'    \u001dbut here has type\u001d    'int'";
+        "(12,4--12,13): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s).";
+        "(14,4--14,12): The two sides of this 'or' pattern bind different sets of variables";
         "(18,14--18,15): The value or constructor 'y' is not defined."
     ]
 
@@ -953,6 +960,8 @@ let :? z as
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token.";
         "(20,0--20,0): Incomplete structured construct at or before this point in binding";
+        "(20,0--20,0): Unexpected end of input in value, function or member definition";
+        "(19,0--19,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(3,7--3,8): The type 'a' is not defined.";
         "(3,4--3,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(4,7--4,8): The type 'b' is not defined.";
@@ -967,10 +976,26 @@ let :? z as
         "(8,4--8,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(9,7--9,8): The type 'g' is not defined.";
         "(9,4--9,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(10,7--10,8): The type 'h' is not defined.";
+        "(10,4--10,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(10,7--10,8): The type 'h' is not defined.";
+        "(10,4--10,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(11,7--11,8): The type 'j' is not defined.";
+        "(11,4--11,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(12,7--12,8): The type 'l' is not defined.";
+        "(12,4--12,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(13,7--13,8): The type 'n' is not defined.";
+        "(13,4--13,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(14,7--14,8): The type 'p' is not defined.";
+        "(14,4--14,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(15,7--15,8): The type 'r' is not defined.";
         "(15,4--15,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(17,7--17,8): The type 'v' is not defined.";
+        "(17,4--17,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(18,7--18,8): The type 'x' is not defined.";
-        "(18,4--18,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(18,4--18,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(19,7--19,8): The type 'z' is not defined.";
+        "(19,4--19,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
     ]
 
 [<Test>]
