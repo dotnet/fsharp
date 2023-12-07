@@ -984,6 +984,8 @@ let :? z as
         "(14,4--14,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(15,7--15,8): The type 'r' is not defined.";
         "(15,4--15,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(17,7--17,8): The type 'v' is not defined.";
+        "(17,4--17,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(18,7--18,8): The type 'x' is not defined.";
         "(18,4--18,8): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(19,7--19,8): The type 'z' is not defined.";
