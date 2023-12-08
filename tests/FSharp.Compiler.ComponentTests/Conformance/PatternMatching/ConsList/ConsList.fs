@@ -25,10 +25,14 @@ module ConsList =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 4, Col 21, Line 4, Col 28, "This expression was expected to have type
+            Error 1, Line 4, Col 21, Line 4, Col 28, "This expression was expected to have type
     'int'    
 but here has type
-    ''a list'    ")
+    ''a list'    "
+            Error 1, Line 5, Col 21, Line 5, Col 33, "This expression was expected to have type
+    'int'    
+but here has type
+    ''a list'    "
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
