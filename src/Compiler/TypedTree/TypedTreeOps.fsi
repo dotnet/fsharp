@@ -2722,14 +2722,18 @@ type TraitConstraintInfo with
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
 
-val tryFindExtensionAttribute: attribs: Attrib list -> Attrib option
+val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
 
 /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
 val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
-    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> moduleEntity: Entity -> Entity
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleEntity: Entity ->
+        Entity
 
 /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
 val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+    g: TcGlobals ->
     tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
     moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
     typeEntity: Entity ->

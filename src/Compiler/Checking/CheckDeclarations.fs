@@ -1070,6 +1070,7 @@ module MutRecBindingChecking =
                         tyconOpt
                         |> Option.map (fun tycon ->
                             tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     tycon.MembersOfFSharpTyconSorted
                                     |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
@@ -1314,6 +1315,7 @@ module MutRecBindingChecking =
                         tyconOpt
                         |> Option.map (fun tycon ->
                             tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     tycon.MembersOfFSharpTyconSorted
                                     |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
@@ -4521,6 +4523,7 @@ module TcDeclarations =
                     | MutRecShape.Tycon (Some tycon, bindings) ->
                         let tycon =
                             tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     tycon.MembersOfFSharpTyconSorted
                                     |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
@@ -4532,6 +4535,7 @@ module TcDeclarations =
                     | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
                         let entity =
                             tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     moduleOrNamespaceType.Value.AllValsAndMembers
                                     |> Seq.filter(fun v -> v.IsModuleBinding)
@@ -4651,14 +4655,14 @@ module TcDeclarations =
                     // If this is the case, add it to the type in the env.
                     let extensionAttributeOnVals =
                         vals
-                        |> List.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
+                        |> List.tryPick (fun v -> tryFindExtensionAttribute g v.Attribs)
                     
                     let typeEntity =
                         envForTycon.eModuleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(tcref.LogicalName)
 
                     match extensionAttributeOnVals, typeEntity with
                     | Some extensionAttribute, Some typeEntity ->
-                        if Option.isNone (tryFindExtensionAttribute typeEntity.Attribs) then
+                        if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
                             typeEntity.entity_attribs <- extensionAttribute :: typeEntity.Attribs
                     | _ -> ()
 
@@ -5125,6 +5129,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                     //[<System.Runtime.CompilerServices.Extension>]
                     //let PlusOne (a:int) = a + 1
                     tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                        g
                         (fun tryFindExtensionAttribute ->
                             match moduleContents with
                             | ModuleOrNamespaceContents.TMDefs(defs) ->

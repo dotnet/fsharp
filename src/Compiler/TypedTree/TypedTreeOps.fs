@@ -10571,35 +10571,35 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
             None
     | _ -> None
 
-let tryFindExtensionAttribute (attribs: Attrib list): Attrib option =
-     List.tryFind
-         (fun (a: Attrib) ->
-            a.TyconRef.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Runtime.CompilerServices.ExtensionAttribute")
-         attribs
+let tryFindExtensionAttribute (g: TcGlobals) (attribs: Attrib list): Attrib option =
+    attribs
+    |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ExtensionAttribute)
 
 let tryAddExtensionAttributeIfNotAlreadyPresentForModule
+    (g: TcGlobals)
     (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
     (moduleEntity: Entity)
     : Entity
     =
-    if Option.isSome (tryFindExtensionAttribute moduleEntity.Attribs) then
+    if Option.isSome (tryFindExtensionAttribute g moduleEntity.Attribs) then
         moduleEntity
     else
-        match tryFindExtensionAttributeIn tryFindExtensionAttribute with
+        match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
         | None -> moduleEntity
         | Some extensionAttrib ->
             { moduleEntity with entity_attribs = extensionAttrib :: moduleEntity.Attribs }
 
 let tryAddExtensionAttributeIfNotAlreadyPresentForType
+    (g: TcGlobals)
     (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
     (moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref)
     (typeEntity: Entity)
     : Entity
     =
-    if Option.isSome (tryFindExtensionAttribute typeEntity.Attribs) then
+    if Option.isSome (tryFindExtensionAttribute g typeEntity.Attribs) then
         typeEntity
     else
-        match tryFindExtensionAttributeIn tryFindExtensionAttribute with
+        match tryFindExtensionAttributeIn (tryFindExtensionAttribute g) with
         | None -> typeEntity
         | Some extensionAttrib ->
             moduleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(typeEntity.LogicalName)
