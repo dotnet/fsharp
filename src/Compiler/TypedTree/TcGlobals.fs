@@ -891,11 +891,15 @@ type TcGlobals(
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
+  let tref_DebuggerNonUserCodeAttribute = findSysILTypeRef tname_DebuggerNonUserCodeAttribute
+  let v_DebuggerNonUserCodeAttribute_tcr = splitILTypeName tname_DebuggerNonUserCodeAttribute ||> findSysTyconRef
+
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
-  let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let v_CompilerGeneratedAttribute_tcr = splitILTypeName tname_CompilerGeneratedAttribute ||> findSysTyconRef
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
-  let debuggerNonUserCodeAttribute = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let debuggerNonUserCodeAttribute = mkILCustomAttribute (tref_DebuggerNonUserCodeAttribute, [], [], [])
   let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
   let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
@@ -908,6 +912,18 @@ type TcGlobals(
           match attrs.AsArray() with
           | [||] -> mkILCustomAttrsFromArray generatedAttributes
           | attrs -> mkILCustomAttrsFromArray (Array.append attrs generatedAttributes)
+
+  let addValGeneratedAttrs (v: Val) m =
+      if not noDebugAttributes then
+          let attrs = [
+              Attrib(v_CompilerGeneratedAttribute_tcr, ILAttrib compilerGeneratedAttribute.Method.MethodRef, [], [], false, None, m)
+              Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib debuggerNonUserCodeAttribute.Method.MethodRef, [], [], false, None, m)
+              Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib debuggerNonUserCodeAttribute.Method.MethodRef, [], [], true, None, m)
+          ]
+
+          match v.Attribs with
+          | [] -> v.SetAttribs attrs
+          | _ -> v.SetAttribs (attrs @ v.Attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
@@ -1843,6 +1859,8 @@ type TcGlobals(
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
 
   member _.AddGeneratedAttributes attrs = addGeneratedAttrs attrs
+
+  member _.AddValGeneratedAttributes v = addValGeneratedAttrs v
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 

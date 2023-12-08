@@ -1964,6 +1964,9 @@ module TastDefinitionPrinting =
         let props =
             GetImmediateIntrinsicPropInfosOfType (None, ad) g amap m ty
             |> List.filter (fun pinfo -> shouldShow pinfo.ArbitraryValRef)
+            // Filter out 'IsA' properties which are implied by the union cases since they don't need to be displayed
+            // in any printed outputs
+            |> List.filter (fun prop -> not prop.IsUnionCaseTester)
 
         let events = 
             infoReader.GetEventInfosOfType(None, ad, m, ty)
@@ -1991,6 +1994,7 @@ module TastDefinitionPrinting =
                 IsMethInfoAccessible amap m ad minfo &&
                 // Discard method impls such as System.IConvertible.ToBoolean
                 not (minfo.IsILMethod && minfo.DisplayName.Contains(".")) &&
+                not minfo.IsUnionCaseTester &&
                 not (minfo.DisplayName.Split('.') |> Array.exists isDiscard))
 
         let ilFields =
@@ -2048,7 +2052,7 @@ module TastDefinitionPrinting =
         let instanceValLs =
             instanceVals
             |> List.map (fun f -> layoutRecdField (fun l -> WordL.keywordVal ^^ l) true denv infoReader tcref f)
-    
+
         let propLs =
             props
             |> List.collect (fun x ->

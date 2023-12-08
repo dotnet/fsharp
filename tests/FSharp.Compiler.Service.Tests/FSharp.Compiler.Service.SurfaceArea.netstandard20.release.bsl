@@ -5080,6 +5080,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsPropertySetterM
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsRefCell
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsReferencedValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsTypeFunction
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsUnionCaseTester
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsUnresolved
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsValCompiledAsMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsValue
@@ -5114,6 +5115,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertySet
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsRefCell()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsReferencedValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsTypeFunction()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsUnionCaseTester()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsValCompiledAsMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsValue()

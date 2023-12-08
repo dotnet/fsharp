@@ -109,6 +109,8 @@ type ValFlags =
 
     member InlineInfo: ValInline
 
+    member IsImplied: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -141,6 +143,8 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+
+    member WithIsImplied: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -1924,6 +1928,8 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    member SetIsImplied: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -2035,6 +2041,9 @@ type Val =
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
@@ -2770,6 +2779,9 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
