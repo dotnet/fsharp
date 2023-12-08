@@ -27,7 +27,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
                 cancellableTask {
 
-                    do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
+                    // do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
 
                     let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (UnusedDeclarationsAnalyzer))
 

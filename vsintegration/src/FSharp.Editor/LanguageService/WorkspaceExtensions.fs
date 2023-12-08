@@ -35,7 +35,6 @@ type Solution with
     member internal this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
-
 module internal FSharpProjectSnapshotSerialization =
 
     let serializeFileSnapshot (snapshot: FSharpFileSnapshot) =
@@ -52,32 +51,36 @@ module internal FSharpProjectSnapshotSerialization =
 
     let rec serializeReferencedProject (reference: FSharpReferencedProjectSnapshot) =
         let output = JObject()
+
         match reference with
-        | FSharpReference (projectOutputFile, snapshot) ->
+        | FSharpReference(projectOutputFile, snapshot) ->
             output.Add("projectOutputFile", projectOutputFile)
             output.Add("snapshot", serializeSnapshot snapshot)
+
         output
 
     and serializeSnapshot (snapshot: FSharpProjectSnapshot) =
-        
+
         let output = JObject()
 
         output.Add("ProjectFileName", snapshot.ProjectFileName)
         output.Add("ProjectId", (snapshot.ProjectId |> Option.defaultValue null |> JToken.FromObject))
-        output.Add("SourceFiles", snapshot.SourceFiles |> Seq.map serializeFileSnapshot |> JArray )
-        output.Add("ReferencesOnDisk", snapshot.ReferencesOnDisk |> Seq.map serializeReferenceOnDisk |> JArray )
+        output.Add("SourceFiles", snapshot.SourceFiles |> Seq.map serializeFileSnapshot |> JArray)
+        output.Add("ReferencesOnDisk", snapshot.ReferencesOnDisk |> Seq.map serializeReferenceOnDisk |> JArray)
         output.Add("OtherOptions", JArray(snapshot.OtherOptions))
-        output.Add("ReferencedProjects", snapshot.ReferencedProjects |> Seq.map serializeReferencedProject |> JArray )
+        output.Add("ReferencedProjects", snapshot.ReferencedProjects |> Seq.map serializeReferencedProject |> JArray)
         output.Add("IsIncompleteTypeCheckEnvironment", snapshot.IsIncompleteTypeCheckEnvironment)
         output.Add("UseScriptResolutionRules", snapshot.UseScriptResolutionRules)
         output.Add("LoadTime", snapshot.LoadTime)
         // output.Add("UnresolvedReferences", snapshot.UnresolvedReferences)
-        output.Add("OriginalLoadReferences",
+        output.Add(
+            "OriginalLoadReferences",
             snapshot.OriginalLoadReferences
-            |> Seq.map (fun (r:Text.range, a, b) ->
-                 JArray(r.FileName, r.Start, r.End, a, b)) |> JArray)
+            |> Seq.map (fun (r: Text.range, a, b) -> JArray(r.FileName, r.Start, r.End, a, b))
+            |> JArray
+        )
 
-        output.Add("Stamp", (snapshot.Stamp |> (Option.defaultValue 0) |> JToken.FromObject ))
+        output.Add("Stamp", (snapshot.Stamp |> (Option.defaultValue 0) |> JToken.FromObject))
 
         output
 
@@ -88,7 +91,6 @@ module internal FSharpProjectSnapshotSerialization =
         let json = jObject.ToString(Formatting.Indented)
 
         json
-    
 
 open FSharpProjectSnapshotSerialization
 open System.Collections.Concurrent
@@ -96,9 +98,9 @@ open System.Collections.Concurrent
 [<AutoOpen>]
 module private CheckerExtensions =
 
-    let snapshotCache = AsyncMemoize(5000, 500, "SnapshotCache")
+    let snapshotCache = AsyncMemoize(1000, 500, "SnapshotCache")
 
-    let latestSnapshots = ConcurrentDictionary<ProjectId, Project * FSharpProjectOptions * FSharpProjectSnapshot>()
+    let latestSnapshots = ConcurrentDictionary<_, _>()
 
     let exist xs = xs |> Seq.isEmpty |> not
 
@@ -125,7 +127,7 @@ module private CheckerExtensions =
                         return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> result))
                 }
 
-    let documentToSnapshot (document: Document) = 
+    let documentToSnapshot (document: Document) =
         cancellableTask {
             let! version = document.GetTextVersionAsync()
 
@@ -135,128 +137,150 @@ module private CheckerExtensions =
                     return sourceText.ToFSharpSourceText()
                 }
 
-            return
-                FSharpFileSnapshot(
-                    FileName = document.FilePath,
-                    Version = version.ToString(),
-                    GetSource = getSource
-                )
+            return FSharpFileSnapshot(FileName = document.FilePath, Version = version.ToString(), GetSource = getSource)
         }
+
+    let getReferencedProjectVersions (project: Project) =
+        project.GetAllProjectsThisProjectDependsOn()
+        |> Seq.map (fun r ct -> r.GetDependentSemanticVersionAsync(ct))
+        |> CancellableTask.whenAll
+        |> CancellableTask.map (Seq.map (fun x -> x.ToString()) >> Set)
 
     let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
 
-            let! options = 
+            let! options =
                 match options with
                 | Some options -> CancellableTask.singleton options
-                | None -> 
+                | None ->
                     cancellableTask {
                         let! _, _, _, options = getFSharpOptionsForProject project
                         return options
                     }
 
-            let updatedSnapshot = 
+            let! projectVersion = project.GetDependentSemanticVersionAsync()
+
+            let! referenceVersions = getReferencedProjectVersions project
+
+            let updatedSnapshot =
                 match latestSnapshots.TryGetValue project.Id with
-                | true, (oldProject, oldOptions, oldSnapshot) when FSharpProjectOptions.AreSameForChecking(options, oldOptions) ->
+                | true, (_, oldProjectVersion, _, _, oldSnapshot) when projectVersion = oldProjectVersion ->
+                    Some(CancellableTask.singleton oldSnapshot)
+                | true, (_, _, oldReferenceVersions, _, _) when referenceVersions <> oldReferenceVersions ->
+                    System.Diagnostics.Trace.TraceWarning "Reference versions changed"
+                    None
+
+                | true, (oldProject, _, _oldProjectVersion, oldOptions, oldSnapshot: FSharpProjectSnapshot) when
+                    FSharpProjectOptions.AreSameForChecking(options, oldOptions)
+                    ->
+
                     let changes = project.GetChanges(oldProject)
-                    if changes.GetAddedDocuments() |> exist ||
-                       changes.GetRemovedDocuments() |> exist ||
-                       changes.GetAddedMetadataReferences() |> exist ||
-                       changes.GetRemovedMetadataReferences() |> exist ||
-                       changes.GetAddedProjectReferences() |> exist ||
-                       changes.GetRemovedProjectReferences() |> exist then
-                       // if any of that happened, we create it from scratch
-                       System.Diagnostics.Trace.TraceWarning "Project change not covered by options - suspicious"
-                       None
-                    
-                    else 
-                        // we build it from the previous one    
+
+                    if
+                        changes.GetAddedDocuments() |> exist
+                        || changes.GetRemovedDocuments() |> exist
+                        || changes.GetAddedMetadataReferences() |> exist
+                        || changes.GetRemovedMetadataReferences() |> exist
+                        || changes.GetAddedProjectReferences() |> exist
+                        || changes.GetRemovedProjectReferences() |> exist
+                    then
+                        // if any of that happened, we create it from scratch
+                        System.Diagnostics.Trace.TraceWarning "Project change not covered by options - suspicious"
+                        None
+
+                    else
+                        // we build it from the previous one
 
                         let changedDocuments = changes.GetChangedDocuments() |> Seq.toList
-                        
-                        System.Diagnostics.Trace.TraceInformation $"Incremental update of FSharpProjectSnapshot ({oldSnapshot.ProjectCore.Label}) - {changedDocuments.Length} changed documents"
+
+                        System.Diagnostics.Trace.TraceInformation
+                            $"Incremental update of FSharpProjectSnapshot ({oldSnapshot.ProjectCore.Label}) - {changedDocuments.Length} changed documents"
+
+                        if changedDocuments.Length = 0 then
+                            // this is suspicious
+                            let _breakpoint = "here"
+                            ()
 
                         changedDocuments
                         |> Seq.map (project.GetDocument >> documentToSnapshot)
                         |> CancellableTask.whenAll
                         |> CancellableTask.map (Array.toList >> oldSnapshot.Replace)
                         |> Some
-                    
+
                 | _ -> None
 
-            let! newSnapshot = 
+            let! newSnapshot =
 
                 match updatedSnapshot with
                 | Some snapshot -> snapshot
-                | _ -> 
-                    cancellableTask {            
+                | _ ->
+                    cancellableTask {
 
+                        let solution = project.Solution
 
-                    let solution = project.Solution
+                        let projects =
+                            solution.Projects
+                            |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                            |> Map
 
-                    let projects =
-                        solution.Projects
-                        |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                        |> Map
+                        let getFileSnapshot (options: FSharpProjectOptions) path =
+                            async {
+                                let project = projects.TryFind options.ProjectFileName
 
-                    let getFileSnapshot (options: FSharpProjectOptions) path =
-                        async {
-                            let project = projects.TryFind options.ProjectFileName
+                                if project.IsNone then
+                                    System.Diagnostics.Trace.TraceError(
+                                        "Could not find project {0} in solution {1}",
+                                        options.ProjectFileName,
+                                        solution.FilePath
+                                    )
 
-                            if project.IsNone then
-                                System.Diagnostics.Trace.TraceError(
-                                    "Could not find project {0} in solution {1}",
-                                    options.ProjectFileName,
-                                    solution.FilePath
-                                )
+                                let documentOpt = project |> Option.bind (Map.tryFind path)
 
-                            let documentOpt = project |> Option.bind (Map.tryFind path)
+                                let! version, getSource =
+                                    match documentOpt with
+                                    | Some document ->
+                                        async {
 
-                            let! version, getSource =
-                                match documentOpt with
-                                | Some document ->
-                                    async {
+                                            let! version = document.GetTextVersionAsync() |> Async.AwaitTask
 
-                                        let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+                                            let getSource () =
+                                                task {
+                                                    let! sourceText = document.GetTextAsync()
+                                                    return sourceText.ToFSharpSourceText()
+                                                }
+
+                                            return version.ToString(), getSource
+
+                                        }
+                                    | None ->
+                                        // This happens with files that are read from /obj
+
+                                        // Fall back to file system
+                                        let version = System.IO.File.GetLastWriteTimeUtc(path)
 
                                         let getSource () =
-                                            task {
-                                                let! sourceText = document.GetTextAsync()
-                                                return sourceText.ToFSharpSourceText()
-                                            }
+                                            task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
 
-                                        return version.ToString(), getSource
+                                        async.Return(version.ToString(), getSource)
 
-                                    }
-                                | None ->
-                                    // This happens with files that are read from /obj
+                                return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
+                            }
 
-                                    // Fall back to file system
-                                    let version = System.IO.File.GetLastWriteTimeUtc(path)
+                        let! snapshot =
+                            FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
 
-                                    let getSource () =
-                                        task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
+                        //let _json = dumpToJson snapshot
 
-                                    async.Return(version.ToString(), getSource)
+                        System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.ProjectCore.Label})"
 
-                            return
-                                FSharpFileSnapshot(
-                                    FileName = path,
-                                    Version = version,
-                                    GetSource = getSource
-                                )
-                        }
-
-                    let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, ?snapshotAccumulator = snapshotAccumulatorOpt)
-
-                    //let _json = dumpToJson snapshot
-
-                    System.Diagnostics.Trace.TraceInformation $"Created new FSharpProjectSnapshot ({snapshot.ProjectCore.Label})"
-
-                    return snapshot
+                        return snapshot
                     }
 
-            latestSnapshots.AddOrUpdate(project.Id, (project, options, newSnapshot), (fun _ _ -> (project, options, newSnapshot))) |> ignore
+            let latestSnapshotData =
+                project, projectVersion, referenceVersions, options, newSnapshot
+
+            latestSnapshots.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
+            |> ignore
 
             return newSnapshot
         }
@@ -274,15 +298,17 @@ module private CheckerExtensions =
             key,
             node {
                 let! ct = NodeCode.CancellationToken
-                return! createProjectSnapshot snapshotAccumulatorOpt project options ct |> NodeCode.AwaitTask
+
+                return!
+                    createProjectSnapshot snapshotAccumulatorOpt project options ct
+                    |> NodeCode.AwaitTask
             }
         )
         |> Async.AwaitNodeCode
-        
-    let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
-        getOrCreateSnapshotForProject document.Project (Some options) None 
 
-    
+    let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
+        getOrCreateSnapshotForProject document.Project (Some options) None
+
     type FSharpChecker with
 
         /// Parse the source text from the Roslyn document.
