@@ -1203,11 +1203,13 @@ module MutRecBindingChecking =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
                         tyconOpt
                         |> Option.map (fun tycon ->
-                            tryAddExtensionAttributeIfNotAlreadyPresent
+                            tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     tycon.MembersOfFSharpTyconSorted
                                     |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
                                 )
+                                envForTycon.eModuleOrNamespaceTypeAccumulator
                                 tycon
                         )
                     else
@@ -1437,7 +1439,25 @@ module MutRecBindingChecking =
                              
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BMember rbind.RecBindingInfo.Index, innerState)
-                
+
+                let tyconOpt =
+                    if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
+                        tyconOpt
+                    else
+                        // We need to redo this check, which already happened in TcMutRecBindings_Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns
+                        // Because the environment is being reset in the case of recursive modules.
+                        tyconOpt
+                        |> Option.map (fun tycon ->
+                            tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
+                                (fun tryFindExtensionAttribute ->
+                                    tycon.MembersOfFSharpTyconSorted
+                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                                )
+                                envForTycon.eModuleOrNamespaceTypeAccumulator
+                                tycon
+                        )
+
                 let defnBs = MutRecShape.Tycon (TyconBindingsPhase2B(tyconOpt, tcref, defnBs))
                 let outerState = (tpenv, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable, envNonRec)
                 defnBs, outerState)
@@ -4223,12 +4243,23 @@ module TcDeclarations =
              | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
+             // Check for an interface implementation with auto properties on constructor-less types
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
+
+                if isInterface slot then
+                    match slot with
+                    | SynMemberDefn.Interface (members= Some defs) ->
+                        for au in defs do
+                            match au with
+                            | SynMemberDefn.AutoProperty(isStatic = false; range = m) ->
+                                errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+                            | _ -> ()
+                    | _ -> ()         
                     
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
@@ -4252,9 +4283,6 @@ module TcDeclarations =
             match ds2 with
             | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
             | _ -> ()
-
-
-
 
     /// Split auto-properties into 'let' and 'member' bindings
     let private SplitAutoProps members =
@@ -4528,16 +4556,20 @@ module TcDeclarations =
                 |> List.map (function
                     | MutRecShape.Tycon (Some tycon, bindings) ->
                         let tycon =
-                            tryAddExtensionAttributeIfNotAlreadyPresent
+                            tryAddExtensionAttributeIfNotAlreadyPresentForType
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     tycon.MembersOfFSharpTyconSorted
                                     |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
                                 )
+                                envFinal.eModuleOrNamespaceTypeAccumulator
                                 tycon
+
                         MutRecShape.Tycon (Some tycon, bindings)
                     | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
                         let entity =
-                            tryAddExtensionAttributeIfNotAlreadyPresent
+                            tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                                g
                                 (fun tryFindExtensionAttribute ->
                                     moduleOrNamespaceType.Value.AllValsAndMembers
                                     |> Seq.filter(fun v -> v.IsModuleBinding)
@@ -4659,8 +4691,28 @@ module TcDeclarations =
                 let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForDecls
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
 
-                TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members)
+                let vals, env = TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members
+                if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
+                    vals, env
+                else
+                    // Check if any of the vals has the `[<Extension>]` attribute
+                    // If this is the case, add it to the type in the env.
+                    let extensionAttributeOnVals =
+                        vals
+                        |> List.tryPick (fun v -> tryFindExtensionAttribute g v.Attribs)
+                    
+                    let typeEntity =
+                        envForTycon.eModuleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(tcref.LogicalName)
 
+                    match extensionAttributeOnVals, typeEntity with
+                    | Some extensionAttribute, Some typeEntity ->
+                        if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
+                            typeEntity.entity_attribs <- extensionAttribute :: typeEntity.Attribs
+                    | _ -> ()
+
+                    vals, env
+                    
+            )
             // Do this for each 'val' declaration in a module
             (fun envForDecls (containerInfo, valSpec) -> 
                 let tpenv = emptyUnscopedTyparEnv
@@ -5130,7 +5182,8 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                     //
                     //[<System.Runtime.CompilerServices.Extension>]
                     //let PlusOne (a:int) = a + 1
-                    tryAddExtensionAttributeIfNotAlreadyPresent
+                    tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                        g
                         (fun tryFindExtensionAttribute ->
                             match moduleContents with
                             | ModuleOrNamespaceContents.TMDefs(defs) ->

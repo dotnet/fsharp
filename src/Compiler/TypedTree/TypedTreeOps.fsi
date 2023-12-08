@@ -2727,9 +2727,22 @@ type TraitConstraintInfo with
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
 
-/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
-val tryAddExtensionAttributeIfNotAlreadyPresent:
-    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
+val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the module Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForModule:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleEntity: Entity ->
+        Entity
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the type Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresentForType:
+    g: TcGlobals ->
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) ->
+    moduleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref ->
+    typeEntity: Entity ->
+        Entity
 
 /// Serialize an entity to a very basic json structure.
 val serializeEntity: path: string -> entity: Entity -> unit

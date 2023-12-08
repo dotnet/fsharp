@@ -6,7 +6,7 @@
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
             "default": "",
-            "type": "promptString",
+            "type": "promptString"
         },
         {
             "id": "fsiArgsPrompt",
@@ -17,7 +17,7 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI",
+            "name": "Launch FSI (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
@@ -44,9 +44,10 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
-            "name": "Launch FSC",
+            "name": "Launch FSC (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
@@ -75,6 +76,7 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
             "name": "Attach to a .NET process with debugger",
@@ -88,7 +90,8 @@
             },
             "justMyCode": true,
             "enableStepFiltering": false,
-            "requireExactSource": false
+            "requireExactSource": false,
+            "allowFastEvaluate": true
         }
     ]
 }
