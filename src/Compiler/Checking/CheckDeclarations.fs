@@ -4223,12 +4223,23 @@ module TcDeclarations =
              | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
+             // Check for an interface implementation with auto properties on constructor-less types
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
+
+                if isInterface slot then
+                    match slot with
+                    | SynMemberDefn.Interface (members= Some defs) ->
+                        for au in defs do
+                            match au with
+                            | SynMemberDefn.AutoProperty(isStatic = false; range = m) ->
+                                errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+                            | _ -> ()
+                    | _ -> ()         
                     
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
@@ -4252,9 +4263,6 @@ module TcDeclarations =
             match ds2 with
             | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
             | _ -> ()
-
-
-
 
     /// Split auto-properties into 'let' and 'member' bindings
     let private SplitAutoProps members =
