@@ -6,7 +6,7 @@
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
             "default": "",
-            "type": "promptString",
+            "type": "promptString"
         },
         {
             "id": "fsiArgsPrompt",
@@ -17,7 +17,7 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 7.0)",
+            "name": "Launch FSI (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
@@ -27,7 +27,7 @@
             "args": [
                 "${input:fsiArgsPrompt}"
             ],
-            "cwd": "${workspaceFolder}/src",
+            "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
             "internalConsoleOptions": "neverOpen",
             "suppressJITOptimizations": true,
@@ -44,9 +44,10 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
-            "name": "Launch FSC (Debug, .NET 7.0)",
+            "name": "Launch FSC (Debug)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
@@ -73,6 +74,7 @@
                     "enabled": true
                 }
             },
+            "allowFastEvaluate": true
         },
         {
             "name": "Attach to a .NET process",
@@ -86,7 +88,8 @@
             },
             "justMyCode": true,
             "enableStepFiltering": false,
-            "requireExactSource": false
+            "requireExactSource": false,
+            "allowFastEvaluate": true
         }
     ]
 }
