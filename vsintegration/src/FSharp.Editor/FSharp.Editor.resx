@@ -355,4 +355,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
   </data>
+  <data name="RemarksHeader" xml:space="preserve">
+    <value>Remarks:</value>
+  </data>
+  <data name="ReturnsHeader" xml:space="preserve">
+    <value>Returns:</value>
+  </data>
 </root>

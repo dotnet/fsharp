@@ -165,6 +165,7 @@ module internal XmlDocumentation =
             | "typeref" ->
                 for attr in el.Attributes() do
                     WriteAttribute collector attr "name" (tagParameter >> collector.Add)
+            | "br" -> AppendHardLine collector
             | _ -> WriteNodes collector (el.Nodes())
         | _ -> ()
 
@@ -215,6 +216,23 @@ module internal XmlDocumentation =
             | None -> ()
             | Some el ->
                 EnsureHardLine collector
+                WriteElement collector el
+
+            match Seq.tryHead (doc.Descendants(XName.op_Implicit "remarks")) with
+            | None -> ()
+            | Some el ->
+                AppendHardLine collector
+                AppendOnNewLine collector (SR.RemarksHeader())
+                AppendHardLine collector
+                WriteElement collector el
+
+            match Seq.tryHead (doc.Descendants(XName.op_Implicit "returns")) with
+            | None -> ()
+            | Some el ->
+                AppendHardLine collector
+                AppendOnNewLine collector (SR.ReturnsHeader())
+                AppendHardLine collector
+                collector.Add(tagSpace "    ")
                 WriteElement collector el
 
         member this.CollectParameter(collector: ITaggedTextCollector, paramName: string) =
@@ -338,9 +356,9 @@ module internal XmlDocumentation =
                 try
                     match GetMemberIndexOfAssembly(fileName) with
                     | Some(index) ->
-                        let _, idx = index.ParseMemberSignature(signature)
+                        let ok, idx = index.ParseMemberSignature(signature)
 
-                        if idx <> 0u then
+                        if Com.Succeeded(ok) then
                             let ok, xml = index.GetMemberXML(idx)
 
                             if Com.Succeeded(ok) then
