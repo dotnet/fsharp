@@ -103,7 +103,7 @@ module SignatureHelpProvider =
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
-        
+
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
             |> CancellableTask.runSynchronouslyWithoutCancellation
