@@ -1226,7 +1226,8 @@ let y as ?z = 8
 ()
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,9--7,11): Unexpected symbol '[<' in binding"
+        "(7,6--7,8): Expecting pattern";
+        "(7,9--7,11): Unexpected symbol '[<' in binding. Expected '=' or other token."
         "(8,4--8,11): This is not a valid pattern"
         "(8,4--8,16): Incomplete pattern matches on this expression."
         "(9,9--9,16): This is not a valid pattern"
