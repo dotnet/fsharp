@@ -187,6 +187,16 @@
         <target state="translated">El argumento "{0}" no coincide.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csTypeDoesNotSupportOperatorW">
+        <source>The type '{0}' does not support the operator '{1}' as required by '{2}'</source>
+        <target state="new">The type '{0}' does not support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypesDoNotSupportOperatorW">
+        <source>None of the types '{0}' support the operator '{1}' as required by '{2}'</source>
+        <target state="new">None of the types '{0}' support the operator '{1}' as required by '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
         <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
         <target state="translated">Las restricciones “no administrado” y "no estructurado" son incoherentes</target>

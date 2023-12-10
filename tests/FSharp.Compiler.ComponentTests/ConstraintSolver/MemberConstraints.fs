@@ -74,3 +74,13 @@ type DataItem< ^input> with
 """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Explain why type needs to support operator`` () =
+        FSharp """
+List.average [42] |> ignore
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 15, Line 2, Col 17, "The type 'int' does not support the operator 'DivideByInt' as required by 'average'")
