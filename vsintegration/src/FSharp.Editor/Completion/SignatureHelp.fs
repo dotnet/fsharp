@@ -611,7 +611,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
-            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option, 
+            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option,
             editorOptions: EditorOptions
         ) =
         asyncMaybe {

@@ -448,7 +448,13 @@ module internal XmlDocumentation =
             OverLoadsLimit = 5
         }
 
-    let BuildSingleTipText (documentationProvider: IDocumentationBuilder, dataTipElement: ToolTipElement, limits: LineLimits, showRemarks: bool) =
+    let BuildSingleTipText
+        (
+            documentationProvider: IDocumentationBuilder,
+            dataTipElement: ToolTipElement,
+            limits: LineLimits,
+            showRemarks: bool
+        ) =
 
         let {
                 LineLimit = lineLimit
