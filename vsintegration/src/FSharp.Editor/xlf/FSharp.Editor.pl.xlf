@@ -195,8 +195,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formatowanie;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formatowanie;
 Preferowana szerokość opisu w znakach;
 Sformatuj sygnaturę na daną szerokość, dodając podziały wierszy zgodne z regułami składni języka F#;
 Linki nawigacji;

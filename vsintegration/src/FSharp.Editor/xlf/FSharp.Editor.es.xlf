@@ -197,8 +197,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formato;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formato;
 Ancho de descripción preferido en caracteres;
 Dar formato a la firma con el ancho dado agregando saltos de línea que cumplan las reglas de sintaxis de F#;
 Vínculos de navegación;

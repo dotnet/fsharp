@@ -195,8 +195,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Formatação;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Formatação;
 Largura da descrição preferida em caracteres;
 Formate a assinatura para a largura especificada adicionando quebras de linha em conformidade com as regras de sintaxe do F#;
 Links de navegação;

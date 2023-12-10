@@ -195,8 +195,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">格式设置；
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">格式设置；
 首选描述宽度 (以字符为单位)；
 通过添加符合 F# 语法规则的换行符，将签名格式设置为指定宽度；
 导航链接；

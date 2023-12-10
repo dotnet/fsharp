@@ -195,8 +195,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Biçimlendirme; 
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">Biçimlendirme; 
 Karakter olarak tercih edilen açıklama genişliği;
 F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
 Gezinti bağlantıları;

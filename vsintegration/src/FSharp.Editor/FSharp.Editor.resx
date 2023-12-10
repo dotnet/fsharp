@@ -180,7 +180,8 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</value>
+Dash underline;
+Show remarks in Quick Info</value>
   </data>
   <data name="AddAssemblyReference" xml:space="preserve">
     <value>Add an assembly reference to '{0}'</value>

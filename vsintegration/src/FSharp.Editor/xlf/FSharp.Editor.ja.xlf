@@ -195,8 +195,9 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">書式 設定;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="needs-review-translation">書式 設定;
 希望の説明の幅 (文字数);
 F# 構文規則に準拠するよう、改行を追加して指定された幅に署名を書式設定します;
 ナビゲーション リンク;
