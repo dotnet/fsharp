@@ -262,7 +262,7 @@ module Nullness =
     let inline evaluateFirstOrderNullnessAndAdvance (ilt:ILType) (flags:NullableFlags) = 
         match ilt with
         | ILType.Value tspec when tspec.GenericArgs.IsEmpty -> KnownWithoutNull, flags
-        // TODO nullness - System.Nullable might bite us, since you CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
+        // TODO nullness - System.Nullable might be tricky, since you CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
         | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
         | ILType.Value _  -> KnownWithoutNull, flags.Advance()
         | _ -> flags.GetNullness(), flags.Advance()
@@ -287,53 +287,28 @@ The array is passed trough all generic typars depth first , e.g.  List<Tuple<Map
 For value types, a value is passed even though it is always 0
 *)
 
-    let ImportNullness (g: TcGlobals) =
-        ignore g
-        // if g.langFeatureNullness && g.assumeNullOnImport then
-        //     KnownWithNull
-        // else
-        // TODO NULLNESS
-        KnownAmbivalentToNull
-
-    let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
-        ignore (g, tcref, m)
-        // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValue g m tcref then
-        //     KnownWithNull
-        // else
-        // TODO NULLNESS
-        KnownAmbivalentToNull
-
 /// Import an IL type as an F# type.
-let rec ImportILType (env: ImportMap) m tinst (nullableFlags:Nullness.NullableFlags) ty =  
+let rec ImportILType (env: ImportMap) m tinst ty =  
     match ty with
     | ILType.Void -> 
         env.g.unit_ty
 
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
-        let (arrayNullness,flagsForElem) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nullableFlags
-        let elemTy = ImportILType env m tinst flagsForElem ty
-        mkArrayTy env.g n arrayNullness elemTy m
+        let elemTy = ImportILType env m tinst ty     
+        mkArrayTy env.g n Nullness.knownAmbivalent elemTy m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
-        let (nullness,flagsForTypars) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nullableFlags
-        List.mapFold
-        let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-
-        ImportTyconRefApp env tcref inst nullness
+        let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst)        
+        ImportTyconRefApp env tcref inst Nullness.knownAmbivalent
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
-
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
-
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
-
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
-
     | ILType.Modified(_, _, ty) -> 
-         // All custom modifiers are ignored
-         // NULLNESS TODO: pick up the optional attributes at this point and fold the array of nullness information into the conversion
+         // All custom modifiers are ignored       
          ImportILType env m tinst ty
 
     | ILType.TypeVar u16 -> 
@@ -342,30 +317,69 @@ let rec ImportILType (env: ImportMap) m tinst (nullableFlags:Nullness.NullableFl
                 List.item (int u16) tinst
             with _ -> 
                 error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
-        let nullness = Nullness.ImportNullness env.g
-        let tyWithNullness = addNullnessToTy nullness ty
+
+        let tyWithNullness = addNullnessToTy Nullness.knownAmbivalent ty
         tyWithNullness
+
+/// Import an IL type as an F# type.
+let rec ImportILTypeWithNullness (env: ImportMap) m tinst (nf:Nullness.NullableFlags) ty : struct(TType*Nullness.NullableFlags) =  
+    match ty with
+    | ILType.Void -> 
+        env.g.unit_ty,nf
+
+    | ILType.Array(bounds, ty) -> 
+        let n = bounds.Rank
+        let (arrayNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        let struct(elemTy,nf) = ImportILTypeWithNullness env m tinst nf ty
+        mkArrayTy env.g n arrayNullness elemTy m, nf
+
+    | ILType.Boxed  tspec | ILType.Value tspec ->
+        let tcref = ImportILTypeRef env m tspec.TypeRef 
+        let (typeRefNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        let struct(inst,nullableFlagsLeft) = (nf,tspec.GenericArgs) ||> List.vMapFold (fun nf current -> ImportILTypeWithNullness env m tinst nf current )
+
+        ImportTyconRefApp env tcref inst typeRefNullness, nullableFlagsLeft
+
+    | ILType.Byref ty -> 
+        let struct(ttype,nf) = ImportILTypeWithNullness env m tinst nf ty 
+        mkByrefTy env.g ttype, nf
+
+    | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g, nf
+
+    | ILType.Ptr ty  -> 
+        let struct(ttype,nf) = ImportILTypeWithNullness env m tinst nf ty 
+        mkNativePtrTy env.g ttype, nf
+
+    | ILType.FunctionPointer _ -> env.g.nativeint_ty, nf (* failwith "cannot import this kind of type (ptr, fptr)" *)
+
+    | ILType.Modified(_, _, ty) -> 
+         // All custom modifiers are ignored       
+         ImportILTypeWithNullness env m tinst nf ty 
+
+    | ILType.TypeVar u16 -> 
+        let ttype = 
+            try 
+                List.item (int u16) tinst
+            with _ -> 
+                error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+
+        let (typeVarNullness,nf) = Nullness.evaluateFirstOrderNullnessAndAdvance ty nf
+        addNullnessToTy typeVarNullness ttype, nf
 
 /// Determines if an IL type can be imported as an F# type
 let rec CanImportILType (env: ImportMap) m ty =  
     match ty with
     | ILType.Void -> true
-
     | ILType.Array(_bounds, ety) -> CanImportILType env m ety
-
     | ILType.Boxed  tspec
     | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
         && tspec.GenericArgs |> List.forall (CanImportILType env m) 
 
     | ILType.Byref ety -> CanImportILType env m ety
-
     | ILType.Ptr ety  -> CanImportILType env m ety
-
     | ILType.FunctionPointer _ -> true
-
     | ILType.Modified(_, _, ety) -> CanImportILType env m ety
-
     | ILType.TypeVar _u16 -> true
 
 #if !NO_TYPEPROVIDERS
@@ -430,7 +444,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
-        let nullness = Nullness.ImportNullness env.g
+        let nullness = Nullness.knownAmbivalent // TODO nullness type providers  Nullness.ImportNullness env.g
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
@@ -503,7 +517,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 else
                     genericArg)
 
-        let nullness = Nullness.ImportNullnessForTyconRef env.g m tcref
+        let nullness = Nullness.knownAmbivalent // TODO nullness type providers Nullness.ImportNullnessForTyconRef env.g m tcref
 
         ImportTyconRefApp env tcref genericArgs nullness
 
@@ -556,6 +570,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                        let formalParamTysAfterInst = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m))
+                                // TODO import of Nullness in type providers
                                 yield ImportILType env m actualGenericArgs ilFormalTy ]
 
                        (formalParamTysAfterInst, actualParamTys) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
@@ -859,6 +874,8 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
 let RescopeAndImportILType scoref amap m importInst ilTy =
     ilTy |> rescopeILType scoref |>  ImportILType amap m importInst
+    //let g = amap.g
+    //g.checkNullness && g.langFeatureNullness
 
 let CanRescopeAndImportILType scoref amap m ilTy =
     ilTy |> rescopeILType scoref |>  CanImportILType amap m

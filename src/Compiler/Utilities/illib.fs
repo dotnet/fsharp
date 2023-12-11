@@ -648,6 +648,19 @@ module List =
         | Some x -> x :: l
         | _ -> l
 
+    let rec vMapFold<'T, 'State, 'Result> (mapping: 'State -> 'T -> struct('Result * 'State)) state list : struct('Result list * 'State) =
+        match list with
+        | [] -> [], state
+        | [h] ->
+            let struct(x', s') = mapping state h
+            [x'], s'
+        | h :: t ->
+            let struct(mappedHead, stateHead) = mapping state h
+            let struct(mappedTail,stateTail) = vMapFold mapping stateHead t
+            (mappedHead :: mappedTail), stateTail
+
+         
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
