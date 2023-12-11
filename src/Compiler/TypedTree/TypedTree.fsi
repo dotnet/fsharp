@@ -1335,7 +1335,7 @@ type ExceptionInfo =
 
 /// Represents the contents of of a module of namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceType =
+type    ModuleOrNamespaceType =
 
     new: kind: ModuleOrNamespaceKind * vals: QueueList<Val> * entities: QueueList<Entity> -> ModuleOrNamespaceType
 

@@ -147,6 +147,11 @@
         <target state="translated">Surcharges disponibles :\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter does not have a (real or built-in) member '{2}'</source>
+        <target state="new">'{0}' does not support the type '{1}', because the latter does not have a (real or built-in) member '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">L'utilisation d'une construction générique est possible uniquement si un paramètre de type générique est connu en tant que type struct ou type référence. Ajoutez une annotation de type.</target>
@@ -185,16 +190,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">L'argument '{0}' ne correspond pas</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypeDoesNotSupportOperatorW">
-        <source>The type '{0}' does not support the operator '{1}' as required by '{2}'</source>
-        <target state="new">The type '{0}' does not support the operator '{1}' as required by '{2}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperatorW">
-        <source>None of the types '{0}' support the operator '{1}' as required by '{2}'</source>
-        <target state="new">None of the types '{0}' support the operator '{1}' as required by '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">

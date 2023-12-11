@@ -1755,10 +1755,16 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ ->
                              match supportTys, source.Value with
-                                | [_], Some s when s <> nm -> FSComp.SR.csTypeDoesNotSupportOperatorW(tyString, opName, s)
-                                | [_], _ -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                                | _, Some s when s <> nm -> FSComp.SR.csTypesDoNotSupportOperatorW(tyString, opName, s)
-                                | _, _ -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
+                                | [_], Some s when s.StartsWith("Operators.") ->
+                                    let opSource = s[10..]
+                                    if opSource = nm then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                    else FSComp.SR.csTypeDoesNotSupportOperator(tyString, opSource)
+                                | [_], Some s ->
+                                    FSComp.SR.csFunctionDoesNotSupportType(s, tyString, nm)
+                                | [_], _
+                                    -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                                | _, _ 
+                                    -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       return! ErrorD(ConstraintSolverError(err, m, m2))
 
           | _ -> 

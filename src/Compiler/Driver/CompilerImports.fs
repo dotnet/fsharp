@@ -379,18 +379,23 @@ let IsExe fileName =
 
 let addConstraintSources(ia: ImportedAssembly) =
     let contents = ia.FSharpViewOfMetadata.Contents
-    let addCxsToMember (v: Val) =
+    let addCxsToMember name (v: Val) =
         for typar in fst v.GeneralizedType do
             for cx in typar.Constraints do
                 match cx with
                 | TyparConstraint.MayResolveMember(TTrait(source=source), _) ->
-                    source.Value <- Some v.LogicalName
+                    source.Value <- Some name
                 | _ -> ()
-    let rec addCxsToModule (m: ModuleOrNamespaceType) =
+    let rec addCxsToModule name (m: ModuleOrNamespaceType) =
         for e in m.ModuleAndNamespaceDefinitions do
-            if e.IsModuleOrNamespace then addCxsToModule e.ModuleOrNamespaceType
-        for memb in m.AllValsAndMembers do addCxsToMember memb
-    addCxsToModule contents.ModuleOrNamespaceType
+            if e.IsModuleOrNamespace then
+                let mname =
+                    if String.length name > 0 then name + "." + e.DisplayName
+                    elif e.IsModule then e.DisplayName
+                    else ""
+                addCxsToModule mname e.ModuleOrNamespaceType
+        for memb in m.AllValsAndMembers do addCxsToMember (name + "." + memb.LogicalName) memb
+    addCxsToModule "" contents.ModuleOrNamespaceType
 
 type TcConfig with
 
