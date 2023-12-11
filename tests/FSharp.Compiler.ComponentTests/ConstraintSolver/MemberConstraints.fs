@@ -104,3 +104,13 @@ abs -1u |> ignore
         |> shouldFail
         |> withSingleDiagnostic
             (Error 1, Line 2, Col 1, Line 2, Col 3, "The type 'string' does not support the operator '>>>'")
+
+    [<Fact>]
+    let ``Direct constraint by pseudo operator`` () =
+        FSharp """
+ignore ["1" .. "42"]
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 1, Line 2, Col 9, Line 2, Col 12, "The type 'string' does not support the operator 'op_Range'")
