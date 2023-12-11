@@ -483,7 +483,7 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR (_, ItemOccurence.WrongUse, _, _, _, _) :: _, _ -> NameResResult.Empty
+        | CNR(_, ItemOccurence.WrongUse, _, _, _, _) :: _, _ -> NameResResult.Empty
 
         | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
@@ -1803,7 +1803,7 @@ type internal TypeCheckInfo
                                 match d.Item with
                                 | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.DelegateCtor(AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup(_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
                                 | _ -> 0
@@ -1822,8 +1822,8 @@ type internal TypeCheckInfo
                             | Item.Types(_, AbbrevOrAppTy tcref :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType(tcref :: _)
-                            | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.CompiledName
-                            | Item.CtorGroup (_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
+                            | Item.DelegateCtor(AbbrevOrAppTy tcref) -> tcref.CompiledName
+                            | Item.CtorGroup(_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
