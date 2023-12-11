@@ -147,6 +147,11 @@
         <target state="translated">可用的多載:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csFunctionDoesNotSupportType">
+        <source>'{0}' does not support the type '{1}', because the latter does not have a (real or built-in) member '{2}'</source>
+        <target state="new">'{0}' does not support the type '{1}', because the latter does not have a (real or built-in) member '{2}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">泛型建構要求泛型型別參數必須指定為結構或參考型別。請考慮新增型別註解。</target>
@@ -185,16 +190,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">引數 '{0}' 不相符</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypeDoesNotSupportOperatorW">
-        <source>The type '{0}' does not support the operator '{1}' as required by '{2}'</source>
-        <target state="new">The type '{0}' does not support the operator '{1}' as required by '{2}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperatorW">
-        <source>None of the types '{0}' support the operator '{1}' as required by '{2}'</source>
-        <target state="new">None of the types '{0}' support the operator '{1}' as required by '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
