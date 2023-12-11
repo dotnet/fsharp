@@ -83,7 +83,7 @@ List.average [42] |> ignore
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic
-            (Error 1, Line 2, Col 15, Line 2, Col 17, "'List.average' does not support the type 'int', because the latter does not have a (real or built-in) member 'DivideByInt'")
+            (Error 1, Line 2, Col 15, Line 2, Col 17, "'List.average' does not support the type 'int', because the latter lacks the required (real or built-in) member 'DivideByInt'")
 
     [<Fact>]
     let ``Direct constraint by named (pseudo) operator`` () =
