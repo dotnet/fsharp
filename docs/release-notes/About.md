@@ -24,7 +24,7 @@ Some tips:
 * Use `*` as bullet point symbol. We don't want to mix `*` and `-`.
 * Start your description with a capital and end the sentence with a dot.
 * **Always** include a link to your pull request before the closing `)`, `([PR #16106](https://github.com/dotnet/fsharp/pull/16106))`.
-* If possible, include a link to an issue on `dotnet/fsharp` use `Issue #number` before the link to the pull request.  
+* Optionally, include a link to an issue on `dotnet/fsharp` use `Issue #number` before the link to the pull request.  
 
 Example:
 
@@ -32,7 +32,7 @@ Example:
 * Correctly handle assembly imports with public key token of 0 length. ([Issue #16359](https://github.com/dotnet/fsharp/issues/16359), [PR #16363](https://github.com/dotnet/fsharp/pull/16363))
 ```
 
-* If possible, include a link to a language suggestion from  `dotnet/fsharp` use `Language suggestion #number` before the link to the pull request.
+* Optionally, include a link to a language suggestion from  `dotnet/fsharp` use `Language suggestion #number` before the link to the pull request.
 
 Example:
 
