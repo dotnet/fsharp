@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #Enums 
-//<Expects id="FS0896" status="error" span="(7,9)">Enumerations cannot have members$</Expects>
+//<Expects id="FS0896" status="error" span="(6,9)">Enumerations cannot have members$</Expects>
 
 type Season = Spring=0 | Summer=1 | Autumn=2 | Winter=3
     with
