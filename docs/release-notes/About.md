@@ -43,6 +43,13 @@ Example:
 * Choose the right section for your type of change. (`## Added`, `## Changed`, `## Deprecated`, `## Removed`, `## Fixed` or `## Security`).
 * Ensure your description makes it clear what the change is about. The reader should be informed on a high level without needing to click through the pull request link and find out in the code what actually changed.
 * Maintainers or other contributors might rewrite your changelog entry in the future. This might be done when multiple pull requests can be consolidated under the same umbrella.
+* Related pull requests can be listed in the same entry when it makes sense.
+
+Example:
+
+```md
+* Miscellaneous fixes to parentheses analysis. ([PR #16262](https://github.com/dotnet/fsharp/pull/16262), [PR #16391](https://github.com/dotnet/fsharp/pull/16391), [PR #16370](https://github.com/dotnet/fsharp/pull/16370))
+```
 
 ## The release process
 
