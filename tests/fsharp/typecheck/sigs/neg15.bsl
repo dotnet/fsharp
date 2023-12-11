@@ -15,10 +15,6 @@ neg15.fs(110,17,110,45): typecheck error FS0491: The member or object constructo
 
 neg15.fs(111,17,111,52): typecheck error FS1092: The type 'PrivateRecordType' is not accessible from this code location
 
-neg15.fs(111,17,111,52): typecheck error FS1092: The type 'PrivateRecordType' is not accessible from this code location
-
-neg15.fs(112,18,112,78): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
-
 neg15.fs(112,18,112,78): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
 
 neg15.fs(113,17,113,76): typecheck error FS1093: The union cases or fields of the type 'RecordTypeWithPrivateRepresentation' are not accessible from this code location
