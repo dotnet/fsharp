@@ -177,6 +177,11 @@
         <target state="translated">Affic_her les liens de navigation en tant que</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="new">Show remarks in Quick Info</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles)</target>
