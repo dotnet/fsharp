@@ -44,6 +44,7 @@ type LanguageFeature =
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
@@ -195,6 +196,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
                 LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
+                LanguageFeature.UnionIsPropertiesVisible, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -292,6 +294,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
+        | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions ()
