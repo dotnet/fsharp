@@ -5,7 +5,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 [<Fact>]
-let ``Consumption of nullable C# - no generics, just strings`` () =
+let ``Consumption of nullable C# - no generics, just strings in methods and fields`` () =
     let csharpLib =
         CSharp """
     #nullable enable
