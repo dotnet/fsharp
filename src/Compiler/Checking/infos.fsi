@@ -183,7 +183,7 @@ type ILTypeInfo =
 type ILMethInfo =
     | ILMethInfo of
         g: TcGlobals *
-        ilApparentType: TType *
+        ilApparentType: ILTypeInfo *
         ilDeclaringTyconRefOpt: TyconRef option *
         ilMethodDef: ILMethodDef *
         ilGenericMethodTyArgs: Typars

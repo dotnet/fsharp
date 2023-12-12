@@ -114,6 +114,8 @@ module Nullness =
     type NullableAttributesSource =
         { DirectAttributes: AttributesFromIL
           Fallback : NullableContextSource}
+          with
+            static member Empty : NullableAttributesSource
 
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.

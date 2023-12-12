@@ -132,7 +132,6 @@ val ImportILTypeFromMetadataWithAttributes:
     minst: TType list ->
     nullnessSource:Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
         TType
 
 /// Get the parameter type of an IL method.
@@ -141,7 +140,6 @@ val ImportParameterTypeFromMetadata:
     m: range ->
     nullnessSource:Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
     mist: TType list ->
@@ -154,7 +152,6 @@ val ImportReturnTypeFromMetadata:
     m: range ->
     nullnessSource:Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
     minst: TType list ->

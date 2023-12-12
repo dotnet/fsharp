@@ -12,9 +12,9 @@ let ``Consumption of nullable C# - no generics, just strings`` () =
     namespace Nullables {
         public class NullableClass {
             // Fields with nullable type
-            public static string NullableField;
+            public static string NotNullField;
             // Fields with non-nullable type
-            public static string? NonNullableField;
+            public static string? MaybeNullField;
             // Methods which return nullable string
             public static string? ReturnsNullableStringNoParams() { return null; }
             public static string? ReturnsNullableString1NullableParam(string? _) { return null; }
@@ -37,12 +37,34 @@ let ``Consumption of nullable C# - no generics, just strings`` () =
     module FSNullable
     open Nullables
     
-    let nullablestrNoParams : string = NullableClass.ReturnsNullableStringNoParams()
-    let nonNullableStrNoParams : string | null = NullableClass.ReturnsNonNullableStringNoParams() // Here we don't expect any warning.
+    let nullablestrNoParams : string = NullableClass.ReturnsNullableStringNoParams() // Error here, line 5
+    let nonNullableStrNoParams : string | null = NullableClass.ReturnsNonNullableStringNoParams()
     let nullablestrNoParamsCorrectlyAnnotated : string | null = NullableClass.ReturnsNullableStringNoParams()
     let nonNullableStrNoParamsCorrectlyAnnotated : string = NullableClass.ReturnsNonNullableStringNoParams()
-    let nullableField : string = NullableClass.NullableField
-    let nonNullableField : string | null = NullableClass.NonNullableField
+    let notNullField : string = NullableClass.NotNullField
+    let maybeNullField : string | null = NullableClass.MaybeNullField
+    let maybeNullField2 : string | null = NullableClass.NotNullField
+
+
+    let notNullField2 : string = NullableClass.MaybeNullField  // Error here, line 14
+    NullableClass.MaybeNullField <- null
+    NullableClass.NotNullField <- null  // Error here, line 16
+
+    let notNullArg : string = "hello"
+    let maybeNullArg : string | null = "there"
+
+    let nullableParamOk1 = NullableClass.ReturnsNullableString1NullableParam(notNullArg)
+    let nullableParamOk2 = NullableClass.ReturnsNullableString1NullableParam(maybeNullArg) 
+
+    let nonNullParamCallPass = NullableClass.ReturnsNullableString1NonNullableParam(notNullArg)
+    let nonNullParamCallFail = NullableClass.ReturnsNullableString1NonNullableParam(maybeNullArg) // Error here, 25
+
+    let mixedParams1 = NullableClass.ReturnsNullableString1Nullable1NonNullableParam(notNullArg,notNullArg)
+    let mixedParams2 = NullableClass.ReturnsNullableString1Nullable1NonNullableParam(maybeNullArg,maybeNullArg) // Error here, 28
+    let mixedParams3 = NullableClass.ReturnsNullableString1Nullable1NonNullableParam(maybeNullArg,notNullArg)
+    let mixedParams4 = NullableClass.ReturnsNullableString1Nullable1NonNullableParam(notNullArg,maybeNullArg) // Error here, 30
+
+
     """
     |> asLibrary
     |> withLangVersionPreview
@@ -51,7 +73,11 @@ let ``Consumption of nullable C# - no generics, just strings`` () =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        // TODO NULLNESS: makes sure that both of these are expected.
-        Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have compatible nullability.";
-        Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string __withnull' do not have equivalent nullability."
-    ]
+            Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+            Warning 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
+            Warning 3261, Line 14, Col 34, Line 14, Col 62, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
+            Warning 3261, Line 16, Col 35, Line 16, Col 39, "Nullness warning: The type 'string' does not support 'null'."
+            Warning 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
+            Warning 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
+            Warning 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+            

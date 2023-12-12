@@ -1142,7 +1142,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
         | None -> None
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-            let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
+            let filminfo = ILMethInfo(g, formalTypeInfo, None, ilminfo.RawMetadata, fmtps) 
             let args = 
                 if ilminfo.IsILExtensionMethod then
                     filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)

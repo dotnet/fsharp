@@ -240,6 +240,9 @@ module Nullness =
                         methodCtx.GetNullableContext(g)
                         |> ValueOption.orElseWith (fun () -> classCtx.GetNullableContext(g)))
                 |> ValueOption.defaultValue arrayWithByte0
+            static member Empty = 
+                let emptyFromIL = AttributesFromIL(0,Given(ILAttributes.Empty))
+                {DirectAttributes = emptyFromIL; Fallback = FromClass(emptyFromIL)}
 
     [<Struct;NoEquality;NoComparison>]
     type NullableFlags = {Data : byte[]; Idx : int }

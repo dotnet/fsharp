@@ -243,7 +243,7 @@ let IsILEventInfoAccessible g amap m ad einfo =
 
 let private IsILMethInfoAccessible g amap m adType ad ilminfo = 
     match ilminfo with 
-    | ILMethInfo (_, ty, None, mdef, _) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g ty) mdef.Access 
+    | ILMethInfo (_, ty, None, mdef, _) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g ty.ToType) mdef.Access 
     | ILMethInfo (_, _, Some declaringTyconRef, mdef, _) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
 
 let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
