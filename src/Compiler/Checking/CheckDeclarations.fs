@@ -1928,8 +1928,8 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
         match mem with
         | SynMemberDefn.ImplicitCtor(ctorArgs = pat) ->
             match pat with
-            | SynPat.Const(SynConst.Unit, _) -> ()
-            | _ -> warning(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
+            | SynPat.Paren(innerPat, _) -> warning(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), innerPat.Range))
+            | _ -> ()
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
             warning(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.IsInstance ->
