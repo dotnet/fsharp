@@ -168,7 +168,7 @@ module private CheckerExtensions =
                             let version = System.IO.File.GetLastWriteTimeUtc(path)
 
                             let getSource () =
-                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceText.ofString }
+                                task { return System.IO.File.ReadAllText(path) |> FSharp.Compiler.Text.SourceTextNew.ofString }
 
                             async.Return(version.ToString(), getSource)
 

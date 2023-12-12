@@ -901,7 +901,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                         Version = "1",
                         GetSource = fun () -> task {
                             match! getSourceText fileName with
-                            | Some source -> return source
+                            | Some source -> return SourceTextNew.ofISourceText source
                             | None -> return failwith $"couldn't get source for {fileName}"
                         }
                     ))

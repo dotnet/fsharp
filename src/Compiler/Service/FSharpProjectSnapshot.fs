@@ -59,16 +59,16 @@ module internal Helpers =
         |> fst,
         lastFile
 
-type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Task<ISourceText>) =
+type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Task<ISourceTextNew>) =
 
-    static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceText>) =
+    static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceTextNew>) =
         FSharpFileSnapshot(fileName, version, getSource)
 
     static member CreateFromFileSystem(fileName: string) =
         FSharpFileSnapshot(
             fileName,
             FileSystem.GetLastWriteTimeShim(fileName).Ticks.ToString(),
-            fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult
+            fun () -> fileName |> File.ReadAllText |> SourceTextNew.ofString |> Task.FromResult
         )
 
     member public _.FileName = FileName
@@ -378,7 +378,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
             let contents = FileSystem.OpenFileForReadShim(fileName).ReadAllText()
 
             return
-                FSharpFileSnapshot.Create(fileName, timeStamp.Ticks.ToString(), (fun () -> Task.FromResult(SourceText.ofString contents)))
+                FSharpFileSnapshot.Create(fileName, timeStamp.Ticks.ToString(), (fun () -> Task.FromResult(SourceTextNew.ofString contents)))
         }
 
     static member FromOptions(options: FSharpProjectOptions) =
@@ -392,7 +392,7 @@ type FSharpProjectSnapshotBase<'T when 'T :> IFileSnapshot>(projectCore: Project
                     FSharpFileSnapshot.Create(
                         fileName,
                         $"{fileVersion}{sourceText.GetHashCode().ToString()}",
-                        fun () -> Task.FromResult sourceText
+                        fun () -> Task.FromResult (SourceTextNew.ofISourceText sourceText)
                     )
                 )
             else

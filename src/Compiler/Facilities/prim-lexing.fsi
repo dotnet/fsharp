@@ -39,6 +39,9 @@ type ISourceText =
     /// <exception cref="System.ArgumentException">Throws an exception when the input range is outside the file boundaries.</exception>
     abstract GetSubTextFromRange: range: range -> string
 
+type ISourceTextNew =
+    inherit ISourceText
+
     abstract GetChecksum: unit -> System.Collections.Immutable.ImmutableArray<byte>
 
 /// Functions related to ISourceText objects
@@ -46,6 +49,11 @@ module SourceText =
 
     /// Creates an ISourceText object from the given string
     val ofString: string -> ISourceText
+
+module SourceTextNew =
+
+    val ofString: string -> ISourceTextNew
+    val ofISourceText: ISourceText -> ISourceTextNew
 
 //
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fsi from the FsLexYacc repository
