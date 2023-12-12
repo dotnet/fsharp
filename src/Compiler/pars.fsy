@@ -2721,6 +2721,16 @@ attrUnionCaseDecl:
             let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
             Choice1Of2 (SynEnumCase ($1, $3, fst $5, xmlDoc, mDecl, trivia))) }
 
+  | opt_attributes opt_access unionCaseName EQUALS recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mEquals = rhs parseState 4
+        let expr = arbExpr ("attrUnionCaseDecl", mEquals.EndRange)
+        let mDecl = rhs2 parseState 1 4
+        fun (xmlDoc, mBar) ->
+            let trivia: SynEnumCaseTrivia = { BarRange = Some mBar; EqualsRange = mEquals }
+            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+            Choice1Of2 (SynEnumCase ($1, $3, expr, xmlDoc, mDecl, trivia)) }
+
 /* The name of a union case */
 unionCaseName:
   | nameop
@@ -2749,6 +2759,14 @@ firstUnionCaseDeclOfMany:
         let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs2 parseState 1 3) |> unionRangeWithXmlDoc xmlDoc
         Choice1Of2 (SynEnumCase ([], SynIdent($1, None), fst $3, xmlDoc, mDecl, trivia)) }
+
+  | ident EQUALS recover opt_OBLOCKSEP
+      { let mEquals = rhs parseState 2
+        let expr = arbExpr ("firstUnionCaseDeclOfMany1", mEquals.EndRange)
+        let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        let xmlDoc = grabXmlDoc(parseState, [], 1)
+        let mDecl = (rhs2 parseState 1 2) |> unionRangeWithXmlDoc xmlDoc
+        Choice1Of2 (SynEnumCase ([], SynIdent($1, None), expr, xmlDoc, mDecl, trivia)) }
 
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
@@ -2782,6 +2800,15 @@ firstUnionCaseDecl:
         let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
         Choice1Of2(SynEnumCase([], SynIdent($1, None), fst $3, xmlDoc, mDecl, trivia)) }
+
+  | ident EQUALS recover opt_OBLOCKSEP
+      { let mEquals = rhs parseState 2
+        let expr = arbExpr ("firstUnionCaseDecl", mEquals.EndRange)
+        let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mDecl = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
+        Choice1Of2(SynEnumCase([], SynIdent($1, None), expr, xmlDoc, mDecl, trivia)) }
+
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements
@@ -3214,10 +3241,16 @@ localBinding:
 
   | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints recover
       { if not $5 then reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsUnexpectedEndOfFileDefinition())
-        let optReturnType = $4
-        let mWhole = rhs2 parseState 1 (match optReturnType with None -> 3 | _ -> 4)
-        let mRhs = mWhole.EndRange // zero-width range at end of last good token
         let bindingPat, mBindLhs = $3
+        let optReturnType = $4
+        let mWhole =
+            let mStart = rhs parseState 1
+            let mEnd =
+                match optReturnType with
+                | None -> bindingPat.Range
+                | Some (_, returnInfo) -> returnInfo.Range
+            unionRanges mStart mEnd
+        let mRhs = mWhole.EndRange // zero-width range at end of last good token
         let localBindingBuilder =
           (fun xmlDoc attrs vis (leadingKeyword: SynLeadingKeyword) ->
             let spBind = DebugPointAtBinding.Yes(unionRanges leadingKeyword.Range mRhs)
@@ -3377,7 +3410,7 @@ constant:
 
 bindingPattern:
   | headBindingPattern
-    { $1, rhs parseState 1 }
+    { $1, $1.Range }
 
 // Subset of patterns allowed to be used in implicit ctors.
 // For a better error recovery we could replace these rules with the actual SynPat parsing
@@ -3449,6 +3482,17 @@ simplePatterns:
 headBindingPattern:
   | headBindingPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
+
+  | headBindingPattern AS recover
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
+
+  | headBindingPattern AS
+      { let mAs = rhs parseState 2
+        reportParseErrorAt mAs (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
   | headBindingPattern BAR headBindingPattern
       { let mBar = rhs parseState 2
@@ -3723,6 +3767,11 @@ parenPatternBody:
 parenPattern:
   | parenPattern AS constrPattern
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
+
+  | parenPattern AS recover
+      { let mAs = rhs parseState 2
+        let pat2 = SynPat.Wild(mAs.EndRange)
+        SynPat.As($1, pat2, rhs2 parseState 1 2) }
 
   | parenPattern BAR parenPattern
       { let mBar = rhs parseState 2
