@@ -58,7 +58,7 @@ type SignatureHelpData =
 
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
-type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
+type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider, editorOptions: EditorOptions) =
 
     let documentationBuilder =
         XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
@@ -79,7 +79,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
-            triggerIsTypedChar: char option
+            triggerIsTypedChar: char option,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
             let textLines = sourceText.Lines
@@ -206,7 +207,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 RoslynHelpers.CollectTaggedText mainDescription,
                                 RoslynHelpers.CollectTaggedText documentation,
                                 method.Description,
-                                false
+                                false,
+                                editorOptions.QuickInfo.ShowRemarks
                             )
 
                             let parameters =
@@ -225,7 +227,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                             documentationBuilder,
                                             RoslynHelpers.CollectTaggedText doc,
                                             method.XmlDoc,
-                                            p.ParameterName
+                                            p.ParameterName,
+                                            editorOptions.QuickInfo.ShowRemarks
                                         )
 
                                         p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
@@ -292,7 +295,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             sourceText: SourceText,
             caretPosition: int,
             adjustedColumnInSource: int,
-            filePath: string
+            filePath: string,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
@@ -430,7 +434,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         typeParameterMap.Add,
                         usage.Add,
                         exceptions.Add,
-                        tooltip
+                        tooltip,
+                        editorOptions.QuickInfo.ShowRemarks
                     )
 
                     let fsharpDocs =
@@ -606,7 +611,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
-            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
+            possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option,
+            editorOptions: EditorOptions
         ) =
         asyncMaybe {
 
@@ -655,7 +661,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        document.FilePath
+                        document.FilePath,
+                        editorOptions
                     )
             | _, Some FunctionApplication when
                 adjustedColumnChar <> ','
@@ -674,7 +681,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        document.FilePath
+                        document.FilePath,
+                        editorOptions
                     )
             | _ ->
                 let! paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
@@ -688,7 +696,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         documentationBuilder,
                         sourceText,
                         caretPosition,
-                        triggerTypedChar
+                        triggerTypedChar,
+                        editorOptions
                     )
         }
 
@@ -722,7 +731,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 documentationBuilder,
                                 position,
                                 triggerTypedChar,
-                                possibleCurrentSignatureHelpSessionKind
+                                possibleCurrentSignatureHelpSessionKind,
+                                editorOptions
                             )
 
                         match signatureHelpDataOpt with

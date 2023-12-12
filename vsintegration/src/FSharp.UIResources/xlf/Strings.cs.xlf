@@ -177,6 +177,11 @@
         <target state="translated">Zo_brazit navigační odkazy jako</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="new">Show remarks in Quick Info</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Zjednodušit názvy (odebrat nepotřebné kvalifikátory)</target>
