@@ -611,8 +611,10 @@ let x as () = y
 let z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,6--10,8): Expecting pattern"; "(11,6--11,8): Expecting pattern";
-        "(12,6--12,8): Expecting pattern"; "(13,6--13,8): Expecting pattern";
+        "(10,6--10,8): Expecting pattern";
+        "(11,6--11,8): Expecting pattern";
+        "(12,6--12,8): Expecting pattern";
+        "(13,6--13,8): Expecting pattern";
         "(14,6--14,8): Expecting pattern";
         "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token.";
         "(15,9--15,10): Unmatched '('";
@@ -947,8 +949,10 @@ let :? x as () = y
 let :? z as
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(10,9--10,11): Expecting pattern"; "(11,9--11,11): Expecting pattern";
-        "(12,9--12,11): Expecting pattern"; "(13,9--13,11): Expecting pattern";
+        "(10,9--10,11): Expecting pattern";
+        "(11,9--11,11): Expecting pattern";
+        "(12,9--12,11): Expecting pattern";
+        "(13,9--13,11): Expecting pattern";
         "(14,9--14,11): Expecting pattern";
         "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token.";
         "(15,12--15,13): Unmatched '('";
