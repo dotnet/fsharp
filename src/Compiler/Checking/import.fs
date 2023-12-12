@@ -868,14 +868,24 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     CcuThunk.Create(nm, ccuData)
 
 //-------------------------------------------------------------------------
-// From IL types to F# types
+// From IL types to F# typess
 //-------------------------------------------------------------------------
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
-let RescopeAndImportILType scoref amap m importInst ilTy =
+let RescopeAndImportILTypeSkipNullness scoref amap m importInst ilTy =
     ilTy |> rescopeILType scoref |>  ImportILType amap m importInst
-    //let g = amap.g
-    //g.checkNullness && g.langFeatureNullness
+
+let RescopeAndImportILType scoref (amap:ImportMap) m importInst (nullnessSource:Nullness.NullableAttributesSource) ilTy =
+    let g = amap.g
+    if g.langFeatureNullness && g.checkNullness then
+        let flags = nullnessSource.GetFlags(g)
+        let flags = {Nullness.NullableFlags.Data = flags; Nullness.NullableFlags.Idx = 0}
+        let struct(ty,_) = ilTy |> rescopeILType scoref |>  ImportILTypeWithNullness amap m importInst flags
+        ty
+    else
+        RescopeAndImportILTypeSkipNullness scoref amap m importInst ilTy
+
+
 
 let CanRescopeAndImportILType scoref amap m ilTy =
     ilTy |> rescopeILType scoref |>  CanImportILType amap m

@@ -55,7 +55,7 @@ let GetSuperTypeOfType g amap m ty =
             let tinst = argsOfAppTy g ty
             match tdef.Extends with
             | None -> None
-            | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
+            | Some ilTy -> Some (RescopeAndImportILTypeSkipNullness scoref amap m tinst ilTy)
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
@@ -115,7 +115,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // assume those are present.
             for intfTy in tdef.Implements do
                 if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
-                    RescopeAndImportILType scoref amap m tinst intfTy
+                    RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
                instType (mkInstForAppTy g ty) intfTy ]
@@ -356,35 +356,40 @@ let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
     ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-let ImportILTypeFromMetadata amap m scoref tinst minst ilTy =
-    RescopeAndImportILType scoref amap m (tinst@minst) ilTy
+let ImportILTypeFromMetadata amap m scoref tinst minst nullnessSource ilTy =
+    RescopeAndImportILType scoref amap m (tinst@minst) nullnessSource ilTy
+
+/// Read an Abstract IL type from metadata and convert to an F# type, ignoring nullness checking.
+let ImportILTypeFromMetadataSkipNullness amap m scoref tinst minst ilTy =
+    RescopeAndImportILTypeSkipNullness scoref amap m (tinst@minst) ilTy
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs =
-    let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSource ilTy (_getCattrs: unit -> ILAttributes) =
+    let ty = RescopeAndImportILType scoref amap m (tinst@minst) nullnessSource ilTy
+
     // If the type is a byref and one of attributes from a return or parameter has
     // - a `IsReadOnlyAttribute` - it's an inref
     // - a `RequiresLocationAttribute` (in which case it's a `ref readonly`) which we treat as inref,
     // latter is an ad-hoc fix for https://github.com/dotnet/runtime/issues/94317.
     if isByrefTy amap.g ty
-       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ())
-           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (getCattrs ())) then
+       && (TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (nullnessSource.DirectAttributes.Read())
+           || TryFindILAttribute amap.g.attrib_RequiresLocationAttribute (nullnessSource.DirectAttributes.Read())) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
 
 /// Get the parameter type of an IL method.
-let ImportParameterTypeFromMetadata amap m ilTy getCattrs scoref tinst mist =
+let ImportParameterTypeFromMetadata amap m nullnessSource ilTy getCattrs scoref tinst mist =
     // TODO nullness import + fallback + generics
-    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilTy getCattrs
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist nullnessSource ilTy getCattrs
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
+let ImportReturnTypeFromMetadata amap m nullnessSource ilTy getCattrs scoref tinst minst =
     // TODO nullness import + fallback + generics
     match ilTy with
     | ILType.Void -> None
-    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
+    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSource retTy getCattrs )
 
 
 /// Copy constraints.  If the constraint comes from a type parameter associated

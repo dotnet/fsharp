@@ -216,7 +216,7 @@ type OptionalArgInfo =
                             else MissingValue
                     else
                         DefaultValue
-                CallerSide (analyze (ImportILTypeFromMetadata amap m ilScope ilTypeInst [] ilParam.Type))
+                CallerSide (analyze (ImportILTypeFromMetadataSkipNullness amap m ilScope ilTypeInst [] ilParam.Type))
             | Some v ->
                 CallerSide (Constant v)
         else
