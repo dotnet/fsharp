@@ -4455,10 +4455,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some memberFlags); headPat = SynPatForConstructorDecl SynPatForNullaryArgs)) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (ctorArgs = pat) ->
-                        match pat with
-                        | SynPat.Const(SynConst.Unit, _) -> false
-                        | _ -> true
+                    | SynMemberDefn.ImplicitCtor (ctorArgs = SynPat.Const(SynConst.Unit, _)) -> true
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
