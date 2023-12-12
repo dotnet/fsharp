@@ -749,17 +749,6 @@ module SyntaxTraversal =
 
             visitor.VisitPat(origPath, defaultTraverse, pat)
 
-        and traverseSynSimplePats origPath (pats: SynSimplePat list) =
-            match visitor.VisitSimplePats(origPath, pats) with
-            | None ->
-                pats
-                |> List.tryPick (fun pat ->
-                    match pat with
-                    | SynSimplePat.Attrib(attributes = attributes; range = m) ->
-                        attributeApplicationDives origPath attributes |> pick m attributes
-                    | _ -> None)
-            | x -> x
-
         and traverseSynType origPath (StripParenTypes ty) =
             let defaultTraverse ty =
                 let path = SyntaxNode.SynType ty :: origPath
@@ -886,9 +875,9 @@ module SyntaxTraversal =
                     traverseSynBinding path getBinding
                     |> Option.orElseWith (fun () -> traverseSynBinding path setBinding)
 
-            | SynMemberDefn.ImplicitCtor(ctorArgs = simplePats) ->
-                match simplePats with
-                | SynSimplePats.SimplePats(pats = simplePats) -> traverseSynSimplePats path simplePats
+            | SynMemberDefn.ImplicitCtor(ctorArgs = pat) ->
+                traversePat path pat
+
             | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
                 [
                     dive () synType.Range (fun () ->
