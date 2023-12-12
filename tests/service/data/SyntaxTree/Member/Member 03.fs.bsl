@@ -66,7 +66,7 @@ ImplFile
                               (SynIdent (this, None), false, None, (5,17--5,21)),
                             None,
                             ArbitraryAfterError ("memberCore1", (5,21--5,21)),
-                            (5,4--6,4), NoneAtInvisible,
+                            (5,4--5,21), NoneAtInvisible,
                             { LeadingKeyword = Member (5,10--5,16)
                               InlineKeyword = None
                               EqualsRange = None }), (5,4--5,21));
