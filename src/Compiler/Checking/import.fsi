@@ -98,24 +98,25 @@ val internal ImportILAssembly:
 val internal ImportILAssemblyTypeForwarders:
     (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> CcuTypeForwarderTable
 
-module Nullness = 
+module Nullness =
 
-    [<Struct;NoEquality;NoComparison>]
-    type AttributesFromIL = AttributesFromIL of metadataIndex:int * attrs:ILAttributesStored
-        with
-            member Read: unit -> ILAttributes
+    [<Struct; NoEquality; NoComparison>]
+    type AttributesFromIL =
+        | AttributesFromIL of metadataIndex: int * attrs: ILAttributesStored
 
-    [<Struct;NoEquality;NoComparison>]
-    type NullableContextSource = 
+        member Read: unit -> ILAttributes
+
+    [<Struct; NoEquality; NoComparison>]
+    type NullableContextSource =
         | FromClass of AttributesFromIL
-        | FromMethodAndClass of methodAttrs:AttributesFromIL * classAttrs:AttributesFromIL
+        | FromMethodAndClass of methodAttrs: AttributesFromIL * classAttrs: AttributesFromIL
 
-    [<Struct;NoEquality;NoComparison>]
+    [<Struct; NoEquality; NoComparison>]
     type NullableAttributesSource =
         { DirectAttributes: AttributesFromIL
-          Fallback : NullableContextSource}
-          with
-            static member Empty : NullableAttributesSource
+          Fallback: NullableContextSource }
+
+        static member Empty: NullableAttributesSource
 
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
@@ -123,10 +124,15 @@ module Nullness =
 val RescopeAndImportILTypeSkipNullness:
     scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilTy: ILType -> TType
 
-
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
 val RescopeAndImportILType:
-    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> nullnessSource:Nullness.NullableAttributesSource -> ilTy: ILType -> TType
+    scoref: ILScopeRef ->
+    amap: ImportMap ->
+    m: range ->
+    importInst: TType list ->
+    nullnessSource: Nullness.NullableAttributesSource ->
+    ilTy: ILType ->
+        TType
 
 val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilTy: ILType -> bool
