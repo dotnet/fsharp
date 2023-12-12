@@ -875,8 +875,7 @@ module SyntaxTraversal =
                     traverseSynBinding path getBinding
                     |> Option.orElseWith (fun () -> traverseSynBinding path setBinding)
 
-            | SynMemberDefn.ImplicitCtor(ctorArgs = pat) ->
-                traversePat path pat
+            | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traversePat path pat
 
             | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
                 [
