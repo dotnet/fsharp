@@ -1501,7 +1501,6 @@ module Microsoft.FSharp.Core
     let rec f x = 1 + f x
         """
         |> FSharp
-        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withResults [
