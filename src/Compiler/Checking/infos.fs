@@ -471,9 +471,14 @@ type ILTypeInfo =
             failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
 
 [<NoComparison; NoEquality>]
-type ILMethodType =
+type ILMethodsType =
     | IlType of ILTypeInfo
-    | CsExtension of declaring:TyconRef * apparent:TType
+    | CSharpStyleExtension of declaring:TyconRef * apparent:TType
+    
+    member x.ToType =
+        match x with
+        | IlType x -> x.ToType
+        | CSharpStyleExtension(apparent=x) -> x
 
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
@@ -482,32 +487,38 @@ type ILMethInfo =
     ///
     /// If ilDeclaringTyconRefOpt is 'Some' then this is an F# use of an C#-style extension method.
     /// If ilDeclaringTyconRefOpt is 'None' then ilApparentType is an IL type definition.
-    | ILMethInfo of g: TcGlobals * ilApparentType: ILTypeInfo * ilDeclaringTyconRefOpt: TyconRef option  * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
+    | ILMethInfo of g: TcGlobals * ilType:ILMethodsType * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
 
-    member x.TcGlobals = match x with ILMethInfo(g, _, _, _, _) -> g
+    member x.TcGlobals = match x with ILMethInfo(g, _, _, _) -> g
 
     /// Get the apparent declaring type of the method as an F# type.
     /// If this is a C#-style extension method then this is the type which the method
     /// appears to extend. This may be a variable type.
-    member x.ApparentEnclosingType = match x with ILMethInfo(_, ty, _, _, _) -> ty.ToType
+    member x.ApparentEnclosingType = match x with ILMethInfo(_, ty, _, _) -> ty.ToType
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
     member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the declaring type associated with an extension member, if any.
-    member x.ILExtensionMethodDeclaringTyconRef = match x with ILMethInfo(_, _, tcrefOpt, _, _) -> tcrefOpt
+    member x.ILExtensionMethodDeclaringTyconRef = 
+        match x with
+        | ILMethInfo(ilType=CSharpStyleExtension(declaring= x)) -> Some x
+        | _ -> None
 
     /// Get the Abstract IL metadata associated with the method.
-    member x.RawMetadata = match x with ILMethInfo(_, _, _, md, _) -> md
+    member x.RawMetadata = match x with ILMethInfo(_, _, md, _) -> md
 
     /// Get the formal method type parameters associated with a method.
-    member x.FormalMethodTypars = match x with ILMethInfo(_, _, _, _, fmtps) -> fmtps
+    member x.FormalMethodTypars = match x with ILMethInfo(_, _, _, fmtps) -> fmtps
 
     /// Get the IL name of the method
     member x.ILName       = x.RawMetadata.Name
 
     /// Indicates if the method is an extension method
-    member x.IsILExtensionMethod = x.ILExtensionMethodDeclaringTyconRef.IsSome
+    member x.IsILExtensionMethod = 
+        match x with
+        | ILMethInfo(ilType=CSharpStyleExtension _) -> true
+        | _ -> false
 
     /// Get the declaring type of the method. If this is an C#-style extension method then this is the IL type
     /// holding the static member that is the extension method.
@@ -571,9 +582,11 @@ type ILMethInfo =
     member x.NullableFallback = 
         let raw = x.RawMetadata
         let classAttrs = 
-            match x.ILExtensionMethodDeclaringTyconRef with
-            | Some t when t.IsILTycon -> AttributesFromIL(t.ILTyconRawMetadata.MetadataIndex,t.ILTyconRawMetadata.CustomAttrsStored)
-            | _ -> match x with ILMethInfo(ilApparentType=ilType) -> ilType.NullableAttributes
+            match x with
+            | ILMethInfo(ilType=CSharpStyleExtension(declaring= t)) when t.IsILTycon -> AttributesFromIL(t.ILTyconRawMetadata.MetadataIndex,t.ILTyconRawMetadata.CustomAttrsStored)
+            // C#-style extension defined in F# -> we do not support manually adding NullableContextAttribute by F# users.
+            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,Given(ILAttributes.Empty))
+            | ILMethInfo(ilType=IlType(t)) -> t.NullableAttributes
 
         FromMethodAndClass(AttributesFromIL(raw.MetadataIndex,raw.CustomAttrsStored),classAttrs)
 
@@ -1065,14 +1078,14 @@ type MethInfo =
     static member CreateILMeth (amap: ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty
         let mtps = ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
-        ILMeth (amap.g, ILMethInfo(amap.g, tinfo, None, md, mtps), None)
+        ILMeth (amap.g, ILMethInfo(amap.g, IlType tinfo, md, mtps), None)
 
     /// Build IL method infos for a C#-style extension method
     static member CreateILExtensionMeth (amap:ImportMap, m, apparentTy: TType, declaringTyconRef: TyconRef, extMethPri, md: ILMethodDef) =
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
-        let apparentTinfo = ILTypeInfo.FromType amap.g apparentTy
+        let typeInfo = CSharpStyleExtension(declaringTyconRef,apparentTy)
         let mtps = ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
-        ILMeth (amap.g, ILMethInfo(amap.g, apparentTinfo, Some declaringTyconRef, md, mtps), extMethPri)
+        ILMeth (amap.g, ILMethInfo(amap.g, typeInfo, md, mtps), extMethPri)
 
     /// Tests whether two method infos have the same underlying definition.
     /// Used to merge operator overloads collected from left and right of an operator constraint.
@@ -1103,8 +1116,8 @@ type MethInfo =
         match x with
         | ILMeth(_g, ilminfo, pri) ->
             match ilminfo with
-            | ILMethInfo(_, ty, None, md, _) -> MethInfo.CreateILMeth(amap, m, instType inst ty.ToType, md)
-            | ILMethInfo(_, ty, Some declaringTyconRef, md, _) -> MethInfo.CreateILExtensionMeth(amap, m, instType inst ty.ToType, declaringTyconRef, pri, md)
+            | ILMethInfo(_, IlType ty, md, _) -> MethInfo.CreateILMeth(amap, m, instType inst ty.ToType, md)
+            | ILMethInfo(_, CSharpStyleExtension(declaringTyconRef,ty), md, _) -> MethInfo.CreateILExtensionMeth(amap, m, instType inst ty, declaringTyconRef, pri, md)
         | FSMeth(g, ty, vref, pri) -> FSMeth(g, instType inst ty, vref, pri)
         | DefaultStructCtor(g, ty) -> DefaultStructCtor(g, instType inst ty)
 #if !NO_TYPEPROVIDERS
@@ -1640,13 +1653,13 @@ type ILPropInfo =
     member x.GetterMethod =
         assert x.HasGetter
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.GetMethod.Value
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Gets the ILMethInfo of the 'set' method for the IL property
     member x.SetterMethod =
         assert x.HasSetter
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.SetMethod.Value
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Indicates if the IL property has a 'get' method
     member x.HasGetter = Option.isSome x.RawMetadata.GetMethod
@@ -2116,12 +2129,12 @@ type ILEventInfo =
     /// Get the ILMethInfo describing the 'add' method associated with the event
     member x.AddMethod =
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.AddMethod
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Get the ILMethInfo describing the 'remove' method associated with the event
     member x.RemoveMethod =
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.RemoveMethod
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Get the declaring type of the event as an ILTypeRef
     member x.TypeRef = x.ILTypeInfo.ILTypeRef

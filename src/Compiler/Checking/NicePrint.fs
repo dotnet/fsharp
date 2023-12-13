@@ -1646,14 +1646,14 @@ module InfoMemberPrinting =
 
     // Prettify an ILMethInfo
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
-        let (ILMethInfo(_, apparentTy, dty, mdef, _)) = ilMethInfo
-        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (apparentTy.ToType :: minfo.FormalMethodInst))
+        let (ILMethInfo(_, methodsType, mdef, _)) = ilMethInfo
+        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (methodsType.ToType :: minfo.FormalMethodInst))
         match prettyTys with
         | prettyApparentTy :: prettyFormalMethInst ->
             let prettyMethInfo = 
-                match dty with 
-                | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
-                | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
+                match methodsType with 
+                | IlType _ -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
+                | CSharpStyleExtension(declaring=declaringTyconRef) -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
             prettyTyparInst, prettyMethInfo, prettyFormalMethInst
         | _ -> failwith "prettifyILMethInfo - prettyTys empty"
 
