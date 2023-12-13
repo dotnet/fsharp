@@ -214,6 +214,56 @@ type SomeType(factor0: int) =
     Assert.Equal(expectedCode, resultText.ToString())
 
 [<Fact>]
+let ``Binding another function doesnt crash`` () =
+    let symbolName = "getNow"
+
+    let code =
+        $"""
+let getNow() = 
+    System.DateTime.Now
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+let getNow() : System.DateTime = 
+    System.DateTime.Now
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
+let ``Binding linq function doesnt crash`` () =
+    let symbolName = "skip1"
+
+    let code =
+        $"""
+let skip1 elements = 
+    System.Linq.Enumerable.Skip(elements, 1)
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddExplicitReturnType())
+
+    let expectedCode =
+        $"""
+let skip1 elements : System.Collections.Generic.IEnumerable<'a> = 
+    System.Linq.Enumerable.Skip(elements, 1)
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
 let ``Correctly infer custom type that is declared earlier in file`` () =
     let symbolName = "sum"
 

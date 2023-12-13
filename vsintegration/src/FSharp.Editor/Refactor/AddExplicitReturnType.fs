@@ -62,15 +62,15 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
             let textChange = TextChange(textSpan, $": {inferredType} ")
             sourceText.WithChanges(textChange)
 
-        let codeActionFunc: CancellationToken -> Task<Document> =
-            fun (cancellationToken: CancellationToken) ->
-                task {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
-                    let changedText = getChangedText sourceText
+        let codeActionFunc =
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+                let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                let changedText = getChangedText sourceText
 
-                    let newDocument = context.Document.WithText(changedText)
-                    return newDocument
-                }
+                let newDocument = context.Document.WithText(changedText)
+                return newDocument
+            }
 
         let codeAction = CodeAction.Create(title, codeActionFunc, title)
 
@@ -122,4 +122,4 @@ type internal AddExplicitReturnType [<ImportingConstructor>] () =
 
             return ()
         }
-        |> CancellableTask.startAsTaskWithoutCancellation
+        |> CancellableTask.startAsTask context.CancellationToken
