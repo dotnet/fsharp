@@ -1488,7 +1488,7 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn about self-defined attribute`` () = // is the analysis available for uers of older FSharp.Core versions
+    let ``Warn about self-defined attribute`` () = // is the analysis available for users of older FSharp.Core versions
         """
 module Microsoft.FSharp.Core
 
