@@ -470,6 +470,11 @@ type ILTypeInfo =
         else
             failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
 
+[<NoComparison; NoEquality>]
+type ILMethodType =
+    | IlType of ILTypeInfo
+    | CsExtension of declaring:TyconRef * apparent:TType
+
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
