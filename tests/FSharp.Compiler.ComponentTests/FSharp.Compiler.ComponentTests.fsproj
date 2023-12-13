@@ -246,6 +246,7 @@
     <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="TypeChecks\CheckTypeTests.fs" />
     <Compile Include="TypeChecks\TypeExtensions\PropertyShadowingTests.fs" />
+    <Compile Include="TypeChecks\PatternMatchTests.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
