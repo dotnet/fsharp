@@ -64,7 +64,7 @@ ImplFile
                                   SynArgInfo ([], false, None)), None),
                             Named
                               (SynIdent (this, None), false, None, (5,17--5,21)),
-                            None, Const (Int32 2, (5,25--5,26)), (5,4--5,24),
+                            None, Const (Int32 2, (5,25--5,26)), (5,4--5,21),
                             NoneAtInvisible,
                             { LeadingKeyword = Member (5,10--5,16)
                               InlineKeyword = None

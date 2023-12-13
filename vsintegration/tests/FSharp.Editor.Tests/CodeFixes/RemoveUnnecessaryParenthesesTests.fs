@@ -616,7 +616,8 @@ in x
             "([] : int list).Length", "([] : int list).Length"
 
             // DotLambda
-            "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+            """_.ToString("x")""", """_.ToString("x")"""
+            """_.ToString(("x"))""", """_.ToString("x")"""
 
             // DotSet
             "(ref 3).Value <- (3)", "(ref 3).Value <- 3"
@@ -1191,6 +1192,8 @@ in x
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"
+                """[1..10] |> List.map _.ToString("x")""", """[1..10] |> List.map _.ToString("x")"""
+                """[1..10] |> List.map _.ToString(("x"))""", """[1..10] |> List.map _.ToString("x")"""
 
                 // DotSet
                 "id ((ref x).Value <- y)", "id ((ref x).Value <- y)"
