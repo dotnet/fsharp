@@ -1090,14 +1090,14 @@ let PublishValueDefnPrim (cenv: cenv) env (vspec: Val) =
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty ->
         mty.AddVal vspec)
 
-let PublishValueDefn (cenv: cenv) env declKind (vspec: Val) =
+let PublishValueDefnMaybeInclCompilerGenerated (cenv: cenv) env inclCompilerGenerated declKind (vspec: Val) =
     let g = cenv.g
     let isNamespace =
         let kind = (GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind
         match kind with
         | Namespace _ -> true
         | _ -> false
-    
+
     if (declKind = ModuleOrMemberBinding) &&
        isNamespace &&
        (Option.isNone vspec.MemberInfo) then
@@ -1116,7 +1116,7 @@ let PublishValueDefn (cenv: cenv) env declKind (vspec: Val) =
 
     match vspec.MemberInfo with
     | Some _ when
-        (not vspec.IsCompilerGenerated &&
+        ((not vspec.IsCompilerGenerated || inclCompilerGenerated) &&
          // Extrinsic extensions don't get added to the tcaug
          declKind <> ExtrinsicExtensionBinding) ->
          // // Static initializers don't get published to the tcaug
@@ -1127,6 +1127,9 @@ let PublishValueDefn (cenv: cenv) env declKind (vspec: Val) =
         tcaug.tcaug_adhoc <- NameMultiMap.add vspec.LogicalName vref tcaug.tcaug_adhoc
         tcaug.tcaug_adhoc_list.Add (ValRefIsExplicitImpl g vref, vref)
     | _ -> ()
+
+let PublishValueDefn cenv env declKind vspec =
+    PublishValueDefnMaybeInclCompilerGenerated cenv env false declKind vspec
 
 let CombineVisibilityAttribs vis1 vis2 m =
     match vis1 with

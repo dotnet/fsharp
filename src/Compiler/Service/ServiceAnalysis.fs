@@ -1207,10 +1207,12 @@ module UnnecessaryParentheses =
             //
             //     x.M(y).N z
             //     x.M(y).[z]
+            //     _.M(x)
             //     (f x)[z]
             //     (f(x))[z]
             //     x.M(y)[z]
-            | SynExpr.Paren _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.DotGet _ | SynExpr.DotIndexedGet _) :: _
+            | SynExpr.Paren _,
+              SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.DotLambda _) :: _
             | SynExpr.Paren(expr = SynExpr.App _),
               SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.ArrayOrListComputed(isArray = false))) :: _
             | SynExpr.Paren _,
@@ -1324,6 +1326,36 @@ module UnnecessaryParentheses =
                     problematic inner.Range expr2.Range
                     ->
                     ValueNone
+
+                | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _
+                | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), Dangling.Problematic _ -> ValueNone
+
+                | SynExpr.Record(recordFields = recordFields), Dangling.Problematic _ ->
+                    let rec loop recordFields =
+                        match recordFields with
+                        | [] -> ValueSome range
+                        | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
+                            fieldName = SynLongIdent(id = id :: _), _) :: _ ->
+                            if problematic inner.Range id.idRange then
+                                ValueNone
+                            else
+                                ValueSome range
+                        | _ :: recordFields -> loop recordFields
+
+                    loop recordFields
+
+                | SynExpr.AnonRecd(recordFields = recordFields), Dangling.Problematic _ ->
+                    let rec loop recordFields =
+                        match recordFields with
+                        | [] -> ValueSome range
+                        | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ ->
+                            if problematic inner.Range id.idRange then
+                                ValueNone
+                            else
+                                ValueSome range
+                        | _ :: recordFields -> loop recordFields
+
+                    loop recordFields
 
                 | SynExpr.Paren _, SynExpr.Typed _
                 | SynExpr.Quote _, SynExpr.Typed _
@@ -1627,7 +1659,10 @@ module UnnecessaryParentheses =
                 | SynPat.Tuple _, SynPat.As _
 
                 // x, (y, z)
+                // x & (y, z)
+                // (x, y) & z
                 | SynPat.Tuple _, SynPat.Tuple(isStruct = false)
+                | SynPat.Ands _, SynPat.Tuple(isStruct = false)
 
                 // A, (B | C)
                 // A & (B | C)

@@ -180,7 +180,8 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</value>
+Dash underline;
+Show remarks in Quick Info</value>
   </data>
   <data name="AddAssemblyReference" xml:space="preserve">
     <value>Add an assembly reference to '{0}'</value>
@@ -357,5 +358,11 @@ Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
+  </data>
+  <data name="RemarksHeader" xml:space="preserve">
+    <value>Remarks:</value>
+  </data>
+  <data name="ReturnsHeader" xml:space="preserve">
+    <value>Returns:</value>
   </data>
 </root>
