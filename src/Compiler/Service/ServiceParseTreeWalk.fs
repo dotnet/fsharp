@@ -163,10 +163,10 @@ type SyntaxVisitorBase<'T>() =
         None
 
     /// VisitSimplePats allows overriding behavior when visiting simple pats
-    abstract VisitSimplePats: path: SyntaxVisitorPath * synPats: SynSimplePat list -> 'T option
+    abstract VisitSimplePats: path: SyntaxVisitorPath * pat: SynPat -> 'T option
 
-    default _.VisitSimplePats(path, synPats) =
-        ignore (path, synPats)
+    default _.VisitSimplePats(path, pat) =
+        ignore (path, pat)
         None
 
     /// VisitPat allows overriding behavior when visiting patterns
@@ -749,6 +749,22 @@ module SyntaxTraversal =
 
             visitor.VisitPat(origPath, defaultTraverse, pat)
 
+        and traverseSynSimplePats origPath (pat: SynPat) =
+            match visitor.VisitSimplePats(origPath, pat) with
+            | None ->
+                let rec loop (pat: SynPat) =
+                    match pat with
+                    | SynPat.Paren(pat = pat)
+                    | SynPat.Typed(pat = pat) ->
+                        loop pat
+                    | SynPat.Tuple(elementPats = pats) ->
+                        List.tryPick loop pats
+                    | SynPat.Attrib(_, attributes, m) ->
+                        attributeApplicationDives origPath attributes |> pick m attributes
+                    | _ -> None
+                loop pat
+            | x -> x
+
         and traverseSynType origPath (StripParenTypes ty) =
             let defaultTraverse ty =
                 let path = SyntaxNode.SynType ty :: origPath
@@ -875,7 +891,7 @@ module SyntaxTraversal =
                     traverseSynBinding path getBinding
                     |> Option.orElseWith (fun () -> traverseSynBinding path setBinding)
 
-            | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traversePat path pat
+            | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traverseSynSimplePats path pat
 
             | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
                 [
