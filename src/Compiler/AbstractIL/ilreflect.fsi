@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 val mkDynamicAssemblyAndModule:
     assemblyName: string * optimize: bool * collectible: bool -> AssemblyBuilder * ModuleBuilder
 
+[<NoComparison; NoEquality>]
 type cenv =
     { ilg: ILGlobals
       emitTailcalls: bool

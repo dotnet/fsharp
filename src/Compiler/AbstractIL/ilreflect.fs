@@ -458,6 +458,7 @@ let convAssemblyRef (aref: ILAssemblyRef) =
     asmName
 
 /// The global environment.
+[<NoComparison; NoEquality>]
 type cenv =
     {
         ilg: ILGlobals
@@ -512,7 +513,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
-[<AutoSerializable(false)>]
+[<AutoSerializable(false); NoComparison; NoEquality>]
 type ILDynamicAssemblyEmitEnv =
     {
         emTypMap: Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option>

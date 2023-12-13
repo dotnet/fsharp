@@ -27,7 +27,7 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TcGlobals 
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FSharpXmlDoc =
     | None
     | FromXmlText of XmlDoc

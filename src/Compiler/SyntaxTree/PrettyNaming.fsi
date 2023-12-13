@@ -223,6 +223,7 @@ val internal MangledGlobalName: string = "`global`"
 
 val internal IllegalCharactersInTypeAndNamespaceNames: char[]
 
+[<NoComparison>]
 type internal ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
 

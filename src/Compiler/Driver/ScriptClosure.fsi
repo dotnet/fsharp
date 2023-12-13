@@ -20,7 +20,7 @@ type CodeContext =
     | Compilation
     | Editing
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LoadClosureInput =
     { FileName: string
 
@@ -30,7 +30,7 @@ type LoadClosureInput =
 
       MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LoadClosure =
     {
         /// The source files along with the ranges of the #load positions in each file.

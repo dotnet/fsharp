@@ -50,6 +50,7 @@ open FSharp.Compiler.TypeProviders
 /// an adhoc conversion. 
 ///
 /// The bool indicates if named using a '?', making the caller argument explicit-optional
+[<NoComparison; NoEquality>]
 type CallerArg<'T> = 
     /// CallerArg(ty, range, isOpt, exprInfo)
     | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T  
@@ -63,6 +64,7 @@ type CallerArg<'T> =
     member x.Expr = (let (CallerArg(_, _, _, expr)) = x in expr)
     
 /// Represents the information about an argument in the method being called
+[<NoComparison; NoEquality>]
 type CalledArg = 
     { Position: struct (int * int)
       IsParamArray : bool
@@ -87,6 +89,7 @@ let CalledArg (pos, isParamArray, optArgInfo, callerInfo, isInArg, isOutArg, nam
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
+[<NoComparison; NoEquality>]
 type AssignedCalledArg<'T> = 
 
     { /// The identifier for a named argument, if any
@@ -101,6 +104,7 @@ type AssignedCalledArg<'T> =
     member x.Position = x.CalledArg.Position
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
+[<NoComparison; NoEquality>]
 type AssignedItemSetterTarget = 
     // the MethInfo is a non-indexer setter property
     | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
@@ -108,8 +112,10 @@ type AssignedItemSetterTarget =
     | AssignedRecdFieldSetter of RecdFieldInfo 
 
 /// Represents the resolution of a caller argument as a named-setter argument
+[<NoComparison; NoEquality>]
 type AssignedItemSetter<'T> = AssignedItemSetter of Ident * AssignedItemSetterTarget * CallerArg<'T> 
 
+[<NoComparison; NoEquality>]
 type CallerNamedArg<'T> = 
     | CallerNamedArg of Ident * CallerArg<'T>  
 
@@ -122,7 +128,7 @@ type CallerNamedArg<'T> =
 /// Represents the list of unnamed / named arguments at method call site
 /// remark: The usage of list list is due to tupling and currying of arguments,
 /// stemming from SynValInfo in the AST.
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type CallerArgs<'T> = 
     { 
         Unnamed: CallerArg<'T> list list
@@ -229,12 +235,12 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
     else
         None
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type TypeDirectedConversion =
     | BuiltIn
     | Implicit of MethInfo
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type TypeDirectedConversionUsed =
     | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool * isNullable: bool
     | No
@@ -452,7 +458,7 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
 //-------------------------------------------------------------------------
 // CalledMeth
 //------------------------------------------------------------------------- 
-
+[<NoComparison; NoEquality>]
 type CalledMethArgSet<'T> = 
     { /// The called arguments corresponding to "unnamed" arguments
       UnnamedCalledArgs : CalledArg list
@@ -829,7 +835,7 @@ let NamesOfCalledArgs (calledArgs: CalledArg list) =
 //-------------------------------------------------------------------------
 // Helpers dealing with propagating type information in method overload resolution
 //------------------------------------------------------------------------- 
-
+[<NoComparison; NoEquality>]
 type ArgumentAnalysis = 
     | NoInfo
     | ArgDoesNotMatch 
@@ -2088,6 +2094,7 @@ let RecdFieldInstanceChecks g amap ad m (rfinfo: RecdFieldInfo) =
     CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult        
     CheckRecdFieldInfoAccessible amap m ad rfinfo
 
+[<NoComparison; NoEquality>]
 exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 

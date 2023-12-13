@@ -14,7 +14,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.AccessibilityLogic
 
 /// A single data tip display element
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public ToolTipElementData = 
     {
       Symbol: FSharpSymbol option
@@ -38,7 +38,7 @@ type public ToolTipElementData =
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public ToolTipElement = 
     | None
 
@@ -53,6 +53,7 @@ type public ToolTipElement =
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
+[<NoComparison>]
 type public ToolTipText = 
 
     /// A list of data tip elements to display.
@@ -78,6 +79,7 @@ type public UnresolvedSymbol =
       Namespace: string[]
     }
 
+[<NoComparison; NoEquality>]
 type internal CompletionItem =
     {
       ItemWithInst: ItemWithInst

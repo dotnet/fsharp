@@ -167,6 +167,7 @@ type ExtensionMethodPriority = uint64
 // OptionalArgCallerSideValue, OptionalArgInfo
 
 /// The caller-side value for the optional arg, if any
+[<NoComparison; NoEquality>]
 type OptionalArgCallerSideValue =
     | Constant of ILFieldInit
     | DefaultValue
@@ -176,6 +177,7 @@ type OptionalArgCallerSideValue =
     | PassByRef of TType * OptionalArgCallerSideValue
 
 /// Represents information about a parameter indicating if it is optional.
+[<NoComparison; NoEquality>]
 type OptionalArgInfo =
     /// The argument is not optional
     | NotOptional
@@ -273,6 +275,7 @@ type ParamData =
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 
+[<NoComparison; NoEquality>]
 type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
 
 let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
@@ -2324,6 +2327,7 @@ let stripByrefTy g ty =
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
+[<NoComparison; NoEquality>]
 type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInstantiation
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation

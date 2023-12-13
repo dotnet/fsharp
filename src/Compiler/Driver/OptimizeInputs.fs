@@ -51,6 +51,7 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
     optEnv
 
 /// Result of the 'FirstLoop' phase
+[<NoComparison; NoEquality>]
 type FirstLoopRes =
     {
         OptEnv: Optimizer.IncrementalOptimizationEnv
@@ -60,6 +61,7 @@ type FirstLoopRes =
     }
 
 /// All the state optimization phases can produce (except 'CheckedImplFile') and most of what they require as input.
+[<NoComparison; NoEquality>]
 type PhaseContext =
     {
         FirstLoopRes: FirstLoopRes
@@ -74,6 +76,7 @@ type PhaseRes = CheckedImplFile * PhaseContext
 type PhaseIdx = int
 
 /// All inputs required to evaluate each Optimization Phase.
+[<NoComparison; NoEquality>]
 type PhaseInputs =
     {
         File: CheckedImplFile
@@ -96,6 +99,7 @@ type Phase =
 
     override this.ToString() = $"{this.Idx}-{this.Name}"
 
+[<NoComparison; NoEquality>]
 type PhaseInfo = { Phase: Phase; Func: PhaseFunc }
 
 [<RequireQualifiedAccess>]

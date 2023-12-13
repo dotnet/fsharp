@@ -22,6 +22,7 @@ type OverrideCanImplement =
     | CanImplementNoSlots
 
 /// The overall information about a method implementation in a class or object expression
+[<NoComparison; NoEquality>]
 type OverrideInfo =
     | Override of
         canImplement: OverrideCanImplement *
@@ -53,6 +54,7 @@ type OverrideInfo =
 
     member ReturnType: TType option
 
+[<NoComparison; NoEquality>]
 type RequiredSlot =
     | RequiredSlot of methodInfo: MethInfo * isOptional: bool
     | DefaultInterfaceImplementationSlot of methodInfo: MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
@@ -70,6 +72,7 @@ type RequiredSlot =
     /// A slot that *might* have ambiguity due to multiple inheritance; happens with default interface implementations.
     member PossiblyNoMostSpecificImplementation: bool
 
+[<NoComparison; NoEquality>]
 type SlotImplSet =
     | SlotImplSet of
         dispatchSlots: RequiredSlot list *
@@ -79,6 +82,7 @@ type SlotImplSet =
 
 exception TypeIsImplicitlyAbstract of range
 
+[<NoComparison; NoEquality>]
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * ImportMap * range
 
 module DispatchSlotChecking =

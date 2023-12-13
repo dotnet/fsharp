@@ -57,6 +57,7 @@ val MakeSlotSig:
 type ExtensionMethodPriority = uint64
 
 /// The caller-side value for the optional arg, if any
+[<NoComparison; NoEquality>]
 type OptionalArgCallerSideValue =
     | Constant of ILFieldInit
     | DefaultValue
@@ -66,6 +67,7 @@ type OptionalArgCallerSideValue =
     | PassByRef of TType * OptionalArgCallerSideValue
 
 /// Represents information about a parameter indicating if it is optional.
+[<NoComparison; NoEquality>]
 type OptionalArgInfo =
     /// The argument is not optional
     | NotOptional
@@ -137,6 +139,7 @@ type ParamData =
         ttype: TType
 
 // Adhoc information - could be unified with ParamData
+[<NoComparison; NoEquality>]
 type ParamAttribs =
     | ParamAttribs of
         isParamArrayArg: bool *
@@ -1044,6 +1047,7 @@ val stripByrefTy: g: TcGlobals -> ty: TType -> TType
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
+[<NoComparison; NoEquality>]
 type CompiledSig =
     | CompiledSig of
         argTys: TType list list *

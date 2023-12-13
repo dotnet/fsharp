@@ -17,6 +17,7 @@ type IlxUnionCaseField =
     member ILField: ILFieldDef
 
 /// Union alternative
+[<NoComparison; NoEquality>]
 type IlxUnionCase =
     { altName: string
       altFields: IlxUnionCaseField[]
@@ -35,6 +36,7 @@ type IlxUnionHasHelpers =
     | SpecialFSharpOptionHelpers
 
 /// Union references
+[<NoComparison; NoEquality>]
 type IlxUnionRef =
     | IlxUnionRef of
         boxity: ILBoxity *
@@ -43,6 +45,7 @@ type IlxUnionRef =
         bool (* IsNullPermitted *) *
         IlxUnionHasHelpers (* HasHelpers *)
 
+[<NoComparison; NoEquality>]
 type IlxUnionSpec =
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
 
@@ -69,7 +72,7 @@ type IlxUnionSpec =
 // --------------------------------------------------------------------
 // Closure references
 // --------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type IlxClosureLambdas =
     | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
     | Lambdas_lambda of ILParameter * IlxClosureLambdas
@@ -80,9 +83,11 @@ type IlxClosureFreeVar =
       fvCompilerGenerated: bool
       fvType: ILType }
 
+[<NoComparison; NoEquality>]
 type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
 /// Represents a usage of a closure
+[<NoComparison; NoEquality>]
 type IlxClosureSpec =
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
 
@@ -116,6 +121,7 @@ type IlxClosureApps =
     | Apps_done of ILType
 
 /// Represents a closure prior to erasure
+[<NoComparison; NoEquality>]
 type IlxClosureInfo =
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]
@@ -123,6 +129,7 @@ type IlxClosureInfo =
       cloUseStaticField: bool }
 
 /// Represents a discriminated union type prior to erasure
+[<NoComparison; NoEquality>]
 type IlxUnionInfo =
     {
         /// Is the representation public?

@@ -66,7 +66,7 @@ type internal ParseErrorContext<'Token>
 
 //-------------------------------------------------------------------------
 // This is the data structure emitted as code by FSYACC.
-
+[<NoComparison; NoEquality>]
 type internal Tables<'Token> =
     {
         reductions: (IParseState -> obj)[]

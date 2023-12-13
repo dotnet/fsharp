@@ -114,6 +114,7 @@ let mkFuncTypeRef fsharpCoreAssemblyScopeRef n =
     else
         mkILNestedTyRef (fsharpCoreAssemblyScopeRef, [ fsharpCoreNamespace + ".OptimizedClosures" ], "FSharpFunc`" + string (n + 1))
 
+[<NoComparison; NoEquality>]
 type cenv =
     {
         ilg: ILGlobals

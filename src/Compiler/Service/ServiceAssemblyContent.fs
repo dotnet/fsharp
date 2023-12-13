@@ -38,6 +38,7 @@ type AssemblySymbol =
 type AssemblyPath = string
 type AssemblyContentType = Public | Full
 
+[<NoComparison; NoEquality>]
 type Parent = 
     { Namespace: ShortIdents option
       ThisRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
@@ -96,6 +97,7 @@ type Parent =
                 |> removeGenericParamsCount 
                 |> removeModuleSuffix))
 
+[<NoComparison; NoEquality>]
 type AssemblyContentCacheEntry =
     { FileWriteTime: DateTime 
       ContentType: AssemblyContentType 

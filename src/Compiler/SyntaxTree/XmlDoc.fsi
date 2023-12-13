@@ -62,7 +62,7 @@ type internal XmlDocCollector =
     member CheckInvalidXmlDocPositions: unit -> range list
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
-[<Sealed>]
+[<Sealed; NoComparison>]
 type public PreXmlDoc =
 
     static member internal CreateFromGrabPoint: collector: XmlDocCollector * grabPointPos: pos -> PreXmlDoc

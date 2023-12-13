@@ -785,6 +785,7 @@ type ILDebugImport =
 /// Defines a set of opened namespace, type relevant to a code location.
 ///
 /// Emitted to the PortablePDB format.
+[<NoComparison; NoEquality>]
 type ILDebugImports =
     { Parent: ILDebugImports option
       Imports: ILDebugImport[] }
@@ -984,7 +985,7 @@ type internal ILOverridesSpec =
     member MethodRef: ILMethodRef
     member DeclaringType: ILType
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type MethodBody =
     | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod>
@@ -993,6 +994,7 @@ type MethodBody =
     | NotAvailable
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
+[<NoComparison; NoEquality>]
 type ILGenericParameterDef =
     {
         Name: string
@@ -1642,6 +1644,7 @@ type ILNestedExportedTypes =
 /// this table, suitably nested inside another "ILExportedTypeOrForwarder"
 /// definition.
 /// these are only found in the "Nested" field of ILExportedTypeOrForwarder objects
+[<NoComparison; NoEquality>]
 type ILNestedExportedType =
     { Name: string
       Access: ILMemberAccess
@@ -1697,6 +1700,7 @@ type internal ILResourceLocation =
 ///   - the data section of the current module (byte[] of resource given directly).
 ///   - in an external file in this assembly (offset given in the ILResourceLocation field).
 ///   - as a resources in another assembly of the same name.
+[<NoComparison; NoEquality>]
 type internal ILResource =
     { Name: string
       Location: ILResourceLocation
@@ -1727,6 +1731,7 @@ type ILAssemblyLongevity =
     static member Default: ILAssemblyLongevity
 
 /// The main module of an assembly is a module plus some manifest information.
+[<NoComparison; NoEquality>]
 type ILAssemblyManifest =
     {
         Name: string
@@ -1788,6 +1793,7 @@ type ILNativeResource =
 ///
 /// An assembly is built by joining together a "main" module plus
 /// several auxiliary modules.
+[<NoComparison; NoEquality>]
 type ILModuleDef =
     {
         Manifest: ILAssemblyManifest option

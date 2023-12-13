@@ -237,6 +237,7 @@ val mkLetRecBinds: range -> Bindings -> Expr -> Expr
 ///
 ///    generalizedTypars -- the truly generalized type parameters
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
+[<NoComparison; NoEquality>]
 type GeneralizedType = GeneralizedType of Typars * TType
 
 /// Make the right-hand side of a generalized binding, incorporating the generalized generic parameters from the type
@@ -806,7 +807,7 @@ val emptyFreeLocals: FreeLocals
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
 /// Represents the options to activate when collecting free variables
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type FreeVarOptions =
     /// During backend code generation of state machines, register a template replacement for struct types.
     /// This may introduce new free variables related to the instantiation of the struct type.
@@ -1135,6 +1136,7 @@ val prefixOfInferenceTypar: Typar -> string
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes =
 
+    [<NoComparison; NoEquality>]
     type TypeSimplificationInfo =
         { singletons: Typar Zset
           inplaceConstraints: Zmap<Typar, TType>
@@ -1259,6 +1261,7 @@ val instExpr: TcGlobals -> TyparInstantiation -> Expr -> Expr
 
 /// The remapping that corresponds to a module meeting its signature
 /// and also report the set of tycons, tycon representations and values hidden in the process.
+[<NoComparison; NoEquality>]
 type SignatureRepackageInfo =
     {
         /// The list of corresponding values
@@ -1496,6 +1499,7 @@ module DebugPrint =
     val recdFieldRefL: RecdFieldRef -> Layout
 
 /// A set of function parameters (visitor) for folding over expressions
+[<NoComparison; NoEquality>]
 type ExprFolder<'State> =
     { exprIntercept: ('State -> Expr -> 'State) -> ('State -> Expr -> 'State) -> 'State -> Expr -> 'State
       valBindingSiteIntercept: 'State -> bool * Val -> 'State
@@ -1587,6 +1591,7 @@ val mkPrintfFormatTy: TcGlobals -> TType -> TType -> TType -> TType -> TType -> 
 //-------------------------------------------------------------------------
 
 /// Represents metadata extracted from a nominal type
+[<NoComparison; NoEquality>]
 type TypeDefMetadata =
     | ILTypeMetadata of TILObjectReprData
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata

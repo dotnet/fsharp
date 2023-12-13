@@ -714,6 +714,7 @@ type NavigableContainer =
         | Container(nameParts = []) -> ""
         | Container(nameParts = ns) -> ns |> List.last
 
+[<NoComparison>]
 type NavigableItem =
     {
         Name: string

@@ -6,7 +6,7 @@ open System
 open System.IO
 open FSharp.Compiler.Text
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type internal TextContainer =
     | OnDisk
     | Stream of Stream

@@ -42,7 +42,7 @@ type InheritanceContext =
     | Interface
     | Unknown
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
@@ -50,7 +50,7 @@ type RecordContext =
     | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type PatternContext =
     /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
     /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
@@ -70,7 +70,7 @@ type PatternContext =
     /// Any other position in a pattern that does not need special handling
     | Other
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type CompletionContext =
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -150,8 +150,10 @@ type ScopeKind =
 
     override x.ToString() = sprintf "%A" x
 
+[<NoComparison>]
 type InsertionContext = { ScopeKind: ScopeKind; Pos: pos }
 
+[<NoComparison>]
 type FSharpModule = { Idents: ShortIdents; Range: range }
 
 type OpenStatementInsertionPoint =

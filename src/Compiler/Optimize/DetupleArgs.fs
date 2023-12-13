@@ -172,6 +172,7 @@ module GlobalUsageAnalysis =
         let z = FoldExpr folder z0 expr
         z
 
+    [<NoComparison; NoEquality>]
     type accessor = TupleGet of int * TType list
 
     /// Expr information.
@@ -473,7 +474,7 @@ let sitesCPs sites = List.map siteCP sites
 //-------------------------------------------------------------------------
 // transform
 //-------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type TransformedFormal =
     // Indicates that
     //    - the actual arg in this position is unchanged
@@ -488,6 +489,7 @@ type TransformedFormal =
 /// Info needed to convert f to curried form.
 /// - yb1..ybp - replacement formal choices for x1...xp.
 /// - transformedVal       - replaces f.
+[<NoComparison; NoEquality>]
 type Transform =
     { transformCallPattern: CallPattern
       transformedFormals: TransformedFormal list
@@ -714,6 +716,7 @@ let determineTransforms g (z: GlobalUsageAnalysis.Results) =
 // pass - penv - env of pass
 //-------------------------------------------------------------------------
 
+[<NoComparison; NoEquality>]
 type penv =
     { // The planned transforms
       transforms: Zmap<Val, Transform>
@@ -731,7 +734,7 @@ let hasTransfrom penv f = Zmap.tryFind f penv.transforms
    - need to factor any side-effecting args out into a let binding sequence.
    - also factor buildProjections, so they share common tmps.
 *)
-
+[<NoComparison>]
 type env =
     { eg: TcGlobals
 

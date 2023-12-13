@@ -912,7 +912,7 @@ module Map =
         | Some res -> res
         | None -> []
 
-[<Struct>]
+[<Struct; NoComparison>]
 type ResultOrException<'TResult> =
     | Result of result: 'TResult
     | Exception of ``exception``: Exception

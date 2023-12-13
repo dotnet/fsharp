@@ -214,6 +214,7 @@ let CountStaticFieldDef = NewCounter "IL field definitions corresponding to valu
 let CountCallFuncInstructions = NewCounter "callfunc instructions (indirect calls)"
 
 /// Non-local information related to internals of code generation within an assembly
+[<NoComparison>]
 type IlxGenIntraAssemblyInfo =
     {
         /// A table recording the generated name of the static backing fields for each mutable top level value where
@@ -1048,21 +1049,21 @@ type ValStorage =
     | Local of index: int * realloc: bool * localCloInfo: (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
 /// Indicates if there is a shadow local storage for a local, to make sure it gets a good name in debugging
-and OptionalShadowLocal =
+and [<NoComparison; NoEquality>] OptionalShadowLocal =
     | NoShadowLocal
     | ShadowLocal of startMark: Mark * storage: ValStorage
 
 /// The representation of a NamedLocalClosure is based on a cloinfo. However we can't generate a cloinfo until we've
 /// decided the representations of other items in the recursive set. Hence we use two phases to decide representations in
 /// a recursive set. Yuck.
-and NamedLocalIlxClosureInfo =
+and [<NoComparison; NoEquality>] NamedLocalIlxClosureInfo =
     | NamedLocalIlxClosureInfoGenerator of (IlxGenEnv -> IlxClosureInfo)
     | NamedLocalIlxClosureInfoGenerated of IlxClosureInfo
 
     override _.ToString() = "<NamedLocalIlxClosureInfo>"
 
 /// Indicates the overall representation decisions for all the elements of a namespace of module
-and ModuleStorage =
+and [<NoComparison>] ModuleStorage =
     {
         Vals: Lazy<NameMap<ValStorage>>
 
@@ -1075,7 +1076,7 @@ and ModuleStorage =
 /// a branch. At the moment these are only used for generating branch calls back to
 /// the entry label of the method currently being generated when a direct tailcall is
 /// made in the method itself.
-and BranchCallItem =
+and [<NoComparison; NoEquality>] BranchCallItem =
 
     | BranchCallClosure of ArityInfo
 
@@ -1102,7 +1103,7 @@ and Mark =
     member x.CodeLabel = (let (Mark lab) = x in lab)
 
 /// Represents "what to do next after we generate this expression"
-and sequel =
+and [<NoComparison>] sequel =
     | EndFilter
 
     /// Exit a 'handler' block. The integer says which local to save result in
@@ -1135,7 +1136,7 @@ and Pushes = ILType list
 and Pops = int
 
 /// The overall environment at a particular point in the declaration/expression tree.
-and IlxGenEnv =
+and [<NoComparison; NoEquality>] IlxGenEnv =
     {
         /// The representation decisions for the (non-erased) type parameters that are in scope
         tyenv: TypeReprEnv
@@ -11643,6 +11644,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         delayedFileGenReverse = []
     }
 
+[<NoComparison; NoEquality>]
 type IlxGenResults =
     {
         ilTypeDefs: ILTypeDef list
@@ -11753,6 +11755,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
 open System
 
 /// The lookup* functions are the conversions available from ilreflect.
+[<NoComparison; NoEquality>]
 type ExecutionContext =
     {
         LookupTypeRef: ILTypeRef -> Type

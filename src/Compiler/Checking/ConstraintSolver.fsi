@@ -71,7 +71,7 @@ val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
 val FreshenMethInfo: range -> MethInfo -> TType list
 
 /// Information about the context of a type equation.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ContextInfo =
 
     /// No context was given.
@@ -117,12 +117,14 @@ type ContextInfo =
     | SequenceExpression of TType
 
 /// Captures relevant information for a particular failed overload resolution.
+[<NoComparisonAttribute>]
 type OverloadInformation =
     { methodSlot: CalledMeth<Expr>
       infoReader: InfoReader
       error: exn }
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
+[<NoComparison; NoEquality>]
 type OverloadResolutionFailure =
     | NoOverloadsFound of methodName: string * candidates: OverloadInformation list * cx: TraitConstraintInfo option
     | PossibleCandidates of
@@ -131,6 +133,7 @@ type OverloadResolutionFailure =
         cx: TraitConstraintInfo option
 
 /// Represents known information prior to checking an expression or pattern, e.g. it's expected type
+[<NoComparison; NoEquality>]
 type OverallTy =
     /// Each branch of the expression must have the type indicated
     | MustEqual of TType
@@ -141,6 +144,7 @@ type OverallTy =
     /// Represents a point where no subsumption/widening is possible
     member Commit: TType
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTupleDiffLengths of
     displayEnv: DisplayEnv *
     contextInfo: ContextInfo *
@@ -149,6 +153,7 @@ exception ConstraintSolverTupleDiffLengths of
     range *
     range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverInfiniteTypes of
     displayEnv: DisplayEnv *
     contextInfo: ContextInfo *
@@ -157,6 +162,7 @@ exception ConstraintSolverInfiniteTypes of
     range *
     range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTypesNotInEqualityRelation of
     displayEnv: DisplayEnv *
     TType *
@@ -165,6 +171,7 @@ exception ConstraintSolverTypesNotInEqualityRelation of
     range *
     ContextInfo
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTypesNotInSubsumptionRelation of
     displayEnv: DisplayEnv *
     argTy: TType *
@@ -172,10 +179,12 @@ exception ConstraintSolverTypesNotInSubsumptionRelation of
     callRange: range *
     parameterRange: range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 
 exception ConstraintSolverError of string * range * range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromApplyingDefault of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
@@ -184,6 +193,7 @@ exception ErrorFromApplyingDefault of
     error: exn *
     range: range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromAddingTypeEquation of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
@@ -192,6 +202,7 @@ exception ErrorFromAddingTypeEquation of
     error: exn *
     range: range
 
+[<NoComparison; NoEquality>]
 exception ErrorsFromAddingSubsumptionConstraint of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
@@ -201,17 +212,23 @@ exception ErrorsFromAddingSubsumptionConstraint of
     ctxtInfo: ContextInfo *
     parameterRange: range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
+
+[<NoComparison; NoEquality>]
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception UnresolvedOverloading of
     displayEnv: DisplayEnv *
     callerArgs: CallerArgs<Expr> *
     failure: OverloadResolutionFailure *
     range: range
 
+[<NoComparison; NoEquality>]
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception ArgDoesNotMatchError of
     error: ErrorsFromAddingSubsumptionConstraint *
     calledMeth: CalledMeth<Expr> *
@@ -221,7 +238,7 @@ exception ArgDoesNotMatchError of
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type ConstraintSolverState =
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
@@ -239,6 +256,7 @@ val BakedInTraitConstraintNames: Set<string>
 [<Sealed; NoEquality; NoComparison>]
 type Trace
 
+[<NoComparison; NoEquality>]
 type OptionalTrace =
     | NoTrace
     | WithTrace of Trace

@@ -65,6 +65,7 @@ type internal IlxGenOptions =
     }
 
 /// The results of the ILX compilation of one fragment of an assembly
+[<NoComparison; NoEquality>]
 type public IlxGenResults =
     {
         /// The generated IL/ILX type definitions
@@ -87,6 +88,7 @@ type public IlxGenResults =
     }
 
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
+[<NoComparison; NoEquality>]
 type ExecutionContext =
     { LookupTypeRef: ILTypeRef -> Type
       LookupType: ILType -> Type }

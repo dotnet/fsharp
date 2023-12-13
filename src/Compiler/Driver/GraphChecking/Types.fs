@@ -18,6 +18,7 @@ type internal Identifier = string
 type internal LongIdentifier = string list
 
 /// Combines the file name, index and parsed syntax tree of a file in a project.
+[<NoComparison; NoEquality>]
 type internal FileInProject =
     {
         Idx: FileIndex
@@ -29,6 +30,7 @@ type internal FileInProject =
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.
 /// Children of a namespace don't automatically depend on each other for that reason
+[<NoComparison>]
 type internal TrieNodeInfo =
     | Root of files: ImmutableHashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
@@ -43,6 +45,7 @@ type internal TrieNodeInfo =
         | Module(file = file) -> Set.singleton file
         | Namespace(filesThatExposeTypes = files) -> set files
 
+[<NoComparison>]
 type internal TrieNode =
     {
         Current: TrieNodeInfo
@@ -172,4 +175,5 @@ type internal FilePairMap(files: FileInProject array) =
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
+[<NoComparison; NoEquality>]
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)

@@ -15,6 +15,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
+[<NoComparison; NoEquality>]
 type FormatItem = Simple of TType | FuncAndVal
 
 let copyAndFixupFormatTypar g m tp =

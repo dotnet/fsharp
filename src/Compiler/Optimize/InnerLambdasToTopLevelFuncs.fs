@@ -313,6 +313,7 @@ let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.
 /// For gv a generator,
 ///   An arity-met gv occurrence contributes the env required for that gv call.
 ///   Other occurrences contribute the value gv.
+[<NoComparison; NoEquality>]
 type ReqdItem =
     | ReqdSubEnv of Val
     | ReqdVal    of Val
@@ -332,6 +333,7 @@ let reqdItemOrder =
 /// An env says what is needed to close the corresponding defn(s).
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
+[<NoComparison>]
 type ReqdItemsForDefn =
     { 
         reqdTypars: Zset<Typar>
@@ -416,6 +418,7 @@ module Pass2_DetermineReqdItems =
     /// If occurrences in body are relevant (for a generator) then it's contribution is logged.
     ///
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
+    [<NoComparison>]
     type state =
         {
             stack: (BindingGroupSharingSameReqdItems * Generators * ReqdItemsForDefn) list
@@ -652,7 +655,7 @@ module Pass2_DetermineReqdItems =
 ///   all these ids (Typar/Val) will need to be freshened up.
 /// It is OK to break the uniqueness-of-bound-ids rule during the rw,
 /// provided it is fixed up via a copyExpr call on the final expr.
-
+[<NoComparison; NoEquality>]
 type PackedReqdItems =
     {
         /// The actual typars
@@ -884,6 +887,7 @@ module Pass4_RewriteAssembly =
     ///   [and should not be, since they may lift over unmoved defns on which they depend].
     /// Any TLR repr bindings under lambdas can be filtered out (and collected),
     /// giving pre-declarations to insert before the outermost lambda expr.
+    [<NoComparison; NoEquality>]
     type RewriteState =
         { rws_mustinline: bool
           /// counts level of enclosing "lambdas"

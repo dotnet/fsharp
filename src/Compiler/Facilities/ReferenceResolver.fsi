@@ -14,6 +14,7 @@ type LegacyResolutionEnvironment =
     /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
     | CompilationAndEvaluation
 
+[<NoComparison; NoEquality>]
 type LegacyResolvedFile =
     {
         /// Item specification.

@@ -14,7 +14,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 /// used to track route during traversal AST
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SyntaxNode =
     | SynPat of SynPat
     | SynType of SynType

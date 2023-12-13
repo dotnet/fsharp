@@ -39,9 +39,9 @@ type Pattern =
 
     member Range: range
 
-and PatternValBinding = PatternValBinding of Val * GeneralizedType
+and [<NoComparison; NoEquality>] PatternValBinding = PatternValBinding of Val * GeneralizedType
 
-and MatchClause = MatchClause of Pattern * Expr option * DecisionTreeTarget * range
+and [<NoComparison; NoEquality>] MatchClause = MatchClause of Pattern * Expr option * DecisionTreeTarget * range
 
 val ilFieldToTastConst: ILFieldInit -> Const
 

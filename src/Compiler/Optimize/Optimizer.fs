@@ -63,6 +63,7 @@ type TypeValueInfo =
 ///
 /// We store one of these for each value in the environment, including values 
 /// which we know little or nothing about. 
+[<NoComparison; NoEquality>]
 type ExprValueInfo =
   | UnknownValue
 
@@ -99,6 +100,7 @@ type ExprValueInfo =
   /// ConstExprValue(size, value)
   | ConstExprValue of size: int * value: Expr
 
+[<NoComparison; NoEquality>]
 type ValInfo =
     { ValMakesNoCriticalTailcalls: bool
 
@@ -168,6 +170,7 @@ type ValInfos(entries) =
     member x.TryFindForFslib (g, vref: ValRef) =
         valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))
 
+[<NoComparison>]
 type ModuleInfo = 
     { ValInfos: ValInfos
       ModuleOrNamespaceInfos: NameMap<LazyModuleInfo> }
@@ -410,6 +413,7 @@ type OptimizationSettings =
     /// Determines how to process optimization of multiple files and individual optimization phases
     member x.ProcessingMode() = x.processingMode
 
+[<NoComparison; NoEquality>]
 type cenv =
     { g: TcGlobals
       
@@ -442,6 +446,7 @@ type MethodEnv =
 
     override x.ToString() = "<MethodEnv>"
 
+[<NoComparison; NoEquality>]
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option

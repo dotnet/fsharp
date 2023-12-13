@@ -247,7 +247,7 @@ val inline cacheOptRef: cache: 'a option ref -> f: (unit -> 'a) -> 'a
 
 val inline tryGetCacheValue: cache: cache<'a> -> NonNullSlot<'a> voption
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of InterruptibleLazy<'T>

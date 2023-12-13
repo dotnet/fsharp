@@ -1377,6 +1377,7 @@ let NormalizeDeclaredTyparsForEquiRecursiveInference g tps =
           | ValueSome anyParTy -> anyParTy 
           | ValueNone -> tp)
  
+[<NoComparison; NoEquality>]
 type GeneralizedType = GeneralizedType of Typars * TType    
   
 let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr = 
@@ -1828,6 +1829,7 @@ let isOutByrefTy g ty =
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.TypeReprInfo | _ -> TNoRepr) 
 #endif
 
+[<NoComparison; NoEquality>]
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
@@ -2150,6 +2152,7 @@ let unionFreeTyvars fvs1 fvs2 =
       FreeTraitSolutions = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
       FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
 
+[<NoComparison; NoEquality>]
 type FreeVarOptions = 
     { canCache: bool
       collectInTypes: bool
@@ -3035,6 +3038,7 @@ module SimplifyTypes =
     // print multiple fragments of the same type using consistent naming and formatting 
     let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
 
+    [<NoComparison; NoEquality>]
     type TypeSimplificationInfo =
         { singletons: Typar Zset
           inplaceConstraints: Zmap<Typar, TType>
@@ -4658,7 +4662,7 @@ let wrapModuleOrNamespaceContentsInNamespace isModule (id: Ident) (cpath: Compil
 // Data structures representing what gets hidden and what gets remapped
 // when a module signature is applied to a module.
 //--------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type SignatureRepackageInfo = 
     { RepackagedVals: (ValRef * ValRef) list
       RepackagedEntities: (TyconRef * TyconRef) list }
@@ -5684,6 +5688,7 @@ let tmenvCopyRemapAndBindTypars remapAttrib tmenv tps =
     let tmenvinner = tyenvinner 
     tps', tmenvinner
 
+[<NoComparison>]
 type RemapContext =
     { g: TcGlobals
       stackGuard: StackGuard }
@@ -7178,7 +7183,7 @@ let JoinTyparStaticReq r1 r2 =
 //-------------------------------------------------------------------------
 // ExprFolder - fold steps
 //-------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type ExprFolder<'State> = 
     { exprIntercept : (* recurseF *) ('State -> Expr -> 'State) -> (* noInterceptF *) ('State -> Expr -> 'State) -> 'State -> Expr -> 'State
       // the bool is 'bound in dtree' 

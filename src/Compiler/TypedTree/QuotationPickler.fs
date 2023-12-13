@@ -249,6 +249,7 @@ let PickleBufferCapacity = 100000
 
 module SimplePickle =
 
+    [<NoComparison>]
     type Table<'T> =
         { tbl: HashMultiMap<'T, int> // This should be "Dictionary"
           mutable rows: 'T list
@@ -278,6 +279,7 @@ module SimplePickle =
 
         member tbl.ContainsKey x = tbl.tbl.ContainsKey x
 
+    [<NoComparison>]
     type QuotationPickleOutState =
         { os: ByteBuffer
           ostrings: Table<string> }

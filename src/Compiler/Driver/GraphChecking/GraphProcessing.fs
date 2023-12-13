@@ -17,6 +17,7 @@ type IncrementableInt(value: int) =
     // Increment the value in a thread-safe manner and return the new value.
     member this.Increment() = Interlocked.Increment(&value)
 
+[<NoComparison>]
 type GraphNode<'Item, 'Result> =
     {
         Info: NodeInfo<'Item>

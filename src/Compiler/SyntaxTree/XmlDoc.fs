@@ -244,6 +244,7 @@ type XmlDocCollector() =
         List.ofSeq comments
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
+[<NoComparison>]
 type PreXmlDoc =
     | PreXmlDirect of unprocessedLines: string[] * range: range
     | PreXmlMerge of PreXmlDoc * PreXmlDoc

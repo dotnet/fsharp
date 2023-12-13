@@ -52,68 +52,95 @@ open FSharp.Compiler.TypeProviders
 
 exception BakedInMemberConstraintName of string * range
 
+[<NoComparison; NoEquality>]
 exception FunctionExpected of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception NotAFunction of DisplayEnv * TType * range * range
 
+[<NoComparison; NoEquality>]
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 
+[<NoComparison; NoEquality>]
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 
+[<NoComparison; NoEquality>]
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 
 exception LetRecCheckedAtRuntime of range
 
+[<NoComparison; NoEquality>]
 exception LetRecUnsound of DisplayEnv * ValRef list * range
 
+[<NoComparison; NoEquality>]
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
 
+[<NoComparison; NoEquality>]
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
 
+[<NoComparison; NoEquality>]
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
 
+[<NoComparison; NoEquality>]
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
 
+[<NoComparison; NoEquality>]
 exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
 
 exception MissingFields of string list * range
 
+[<NoComparison; NoEquality>]
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception UnitTypeExpected of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
 
+[<NoComparison; NoEquality>]
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
 
 exception UnionPatternsBindDifferentNames of range
 
+[<NoComparison; NoEquality>]
 exception VarBoundTwice of Ident
 
+[<NoComparison; NoEquality>]
 exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 
+[<NoComparison; NoEquality>]
 exception ValNotMutable of DisplayEnv * ValRef * range
 
+[<NoComparison; NoEquality>]
 exception ValNotLocal of DisplayEnv * ValRef * range
 
+[<NoComparison; NoEquality>]
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
 
+[<NoComparison; NoEquality>]
 exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception CoercionTargetSealed of DisplayEnv * TType * range
 
 exception UpcastUnnecessary of range
 
 exception TypeTestUnnecessary of range
 
+[<NoComparison; NoEquality>]
 exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
 
 exception SelfRefObjCtor of bool * range
@@ -134,6 +161,7 @@ exception OverrideInIntrinsicAugmentation of range
 
 exception OverrideInExtrinsicAugmentation of range
 
+[<NoComparison; NoEquality>]
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
 
 exception StandardOperatorRedefinitionWarning of string * range
@@ -365,6 +393,7 @@ type DeclKind =
 
 /// The results of applying let-style generalization after type checking.
 // We should make this a record for cleaner code
+[<NoComparison; NoEquality>]
 type PrelimVal2 =
     PrelimVal2 of
         id: Ident *
@@ -380,6 +409,7 @@ type PrelimVal2 =
         hasDeclaredTypars: bool
 
 /// The results of applying arity inference to PrelimVal2
+[<NoComparison; NoEquality>]
 type ValScheme =
     | ValScheme of
         id: Ident *
@@ -405,6 +435,7 @@ type ValScheme =
 /// The first phase of checking and elaborating a binding leaves a goop of information.
 /// This is a bit of a mess: much of this information is also carried on a per-value basis by the
 /// "NameMap<PrelimVal1>".
+[<NoComparison; NoEquality>]
 type CheckedBindingInfo =
     | CheckedBindingInfo of
        inlineFlag: ValInline *
@@ -1461,6 +1492,7 @@ let RecordUseOfRecValue (cenv: cenv) valRecInfo (vrefTgt: ValRef) vExpr m =
     | ValNotInRecScope ->
         vExpr
 
+[<NoComparison; NoEquality>]
 type RecursiveUseFixupPoints = RecursiveUseFixupPoints of (Expr ref * range) list
 
 /// Get all recursive references, for fixing up delayed recursion using laziness
@@ -2308,6 +2340,7 @@ let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable
 // below is of the second form. However, to extract relevant information
 // we keep a record of the pats and optional explicit return type already pushed
 // into expression so we can use any user-given type information from these
+[<NoComparison; NoEquality>]
 type NormalizedBindingRhs =
     | NormalizedBindingRhs of
         simplePats: SynSimplePats list *
@@ -2318,11 +2351,13 @@ let PushOnePatternToRhs (cenv: cenv) isMember synPat (NormalizedBindingRhs(simpl
     let simplePats, rhsExpr = PushPatternToExpr cenv.synArgNameGenerator isMember synPat rhsExpr
     NormalizedBindingRhs(simplePats :: simplePatsList, retTyOpt, rhsExpr)
 
+[<NoComparison; NoEquality>]
 type NormalizedBindingPatternInfo =
     NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData * SynValTyparDecls
 
 /// Represents a syntactic, unchecked binding after the resolution of the name resolution status of pattern
 /// constructors and after "pushing" all complex patterns to the right hand side.
+[<NoComparison; NoEquality>]
 type NormalizedBinding =
   | NormalizedBinding of
       visibility: SynAccess option *
@@ -2787,6 +2822,7 @@ let LightweightTcValForUsingInBuildMethodCall g (vref: ValRef) vrefFlags (vrefTy
 
 /// Mark points where we decide whether an expression will support automatic
 /// decondensation or not.
+[<NoComparison; NoEquality>]
 type ApplicableExpr =
     | ApplicableExpr of
            // context
@@ -3380,6 +3416,7 @@ type InitializationGraphAnalysisState =
     | MaybeLazy
     | DefinitelyLazy
 
+[<NoComparison; NoEquality>]
 type PreInitializationGraphEliminationBinding =
     { FixupPoints: RecursiveUseFixupPoints
       Binding: Binding }
@@ -3788,7 +3825,7 @@ let buildApp (cenv: cenv) expr resultTy arg m =
 //-------------------------------------------------------------------------
 // Additional data structures used by type checking
 //-------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type DelayedItem =
   /// Represents the <tyargs> in "item<tyargs>"
   | DelayedTypeApp of 
@@ -3840,6 +3877,7 @@ type WarnOnIWSAM =
     | No
 
 /// Represents information about the module or type in which a member or value is declared.
+[<NoComparison; NoEquality>]
 type MemberOrValContainerInfo =
     | MemberOrValContainerInfo of
         tcref: TyconRef *
@@ -3849,6 +3887,7 @@ type MemberOrValContainerInfo =
         declaredTyconTypars: Typars
 
 /// Provides information about the context for a value or member definition
+[<NoComparison; NoEquality>]
 type ContainerInfo =
     | ContainerInfo of
           // The nearest containing module. Used as the 'actual' parent for extension members and values
@@ -3862,6 +3901,7 @@ type ContainerInfo =
 /// Indicates a declaration is contained in an expression
 let ExprContainerInfo = ContainerInfo(ParentNone, None)
 
+[<NoComparison; NoEquality>]
 type NormalizedRecBindingDefn =
     | NormalizedRecBindingDefn of
         containerInfo: ContainerInfo *
@@ -3869,6 +3909,7 @@ type NormalizedRecBindingDefn =
         declKind: DeclKind *
         binding: NormalizedBinding
 
+[<NoComparison; NoEquality>]
 type ValSpecResult =
     | ValSpecResult of
         altActualParent: ParentRef *
@@ -3880,13 +3921,15 @@ type ValSpecResult =
         prelimValReprInfo: PrelimValReprInfo *
         declKind: DeclKind
 
+[<NoComparison; NoEquality>]
 type DecodedIndexArg =
     | IndexArgRange of (SynExpr * bool) option * (SynExpr * bool) option * range * range
     | IndexArgItem of SynExpr * bool * range
+
 //-------------------------------------------------------------------------
 // Additional data structures used by checking recursive bindings
 //-------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type RecDefnBindingInfo =
     | RecDefnBindingInfo of
         containerInfo: ContainerInfo *
@@ -3895,6 +3938,7 @@ type RecDefnBindingInfo =
         synBinding: SynBinding
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrecBindings
+[<NoComparison; NoEquality>]
 type RecursiveBindingInfo =
     | RecursiveBindingInfo of
           recBindIndex: int * // index of the binding in the recursive group
@@ -3920,21 +3964,25 @@ type RecursiveBindingInfo =
     member x.ContainerInfo = let (RecursiveBindingInfo(_, c, _, _, _, _, _, _, _, _, _, _, _, _)) = x in c
     member x.DeclKind = let (RecursiveBindingInfo(_, _, _, _, _, _, _, _, _, _, _, _, _, declKind)) = x in declKind
 
+[<NoComparison; NoEquality>]
 type PreCheckingRecursiveBinding =
     { SyntacticBinding: NormalizedBinding
       RecBindingInfo: RecursiveBindingInfo }
 
+[<NoComparison; NoEquality>]
 type PreGeneralizationRecursiveBinding =
     { ExtraGeneralizableTypars: Typars
       CheckedBinding: CheckedBindingInfo
       RecBindingInfo: RecursiveBindingInfo }
 
+[<NoComparison; NoEquality>]
 type PostGeneralizationRecursiveBinding =
     { ValScheme: ValScheme
       CheckedBinding: CheckedBindingInfo
       RecBindingInfo: RecursiveBindingInfo }
     member x.GeneralizedTypars = x.ValScheme.GeneralizedTypars
 
+[<NoComparison; NoEquality>]
 type PostSpecialValsRecursiveBinding =
     { ValScheme: ValScheme
       Binding: Binding }

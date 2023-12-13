@@ -17,6 +17,7 @@ exception ObsoleteWarning of string * range
 
 exception ObsoleteError of string * range
 
+[<NoComparison; NoEquality>]
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range

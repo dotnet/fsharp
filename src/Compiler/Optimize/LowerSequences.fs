@@ -35,7 +35,7 @@ let callNonOverloadedILMethod g amap m methName ty args =
 
 //----------------------------------------------------------------------------
 // State machine compilation for sequence expressions
-
+[<NoComparison; NoEquality>]
 type LoweredSeqFirstPhaseResult =
    {
      /// The second phase of the transformation.  This rebuilds the 'generate', 'dispose' and 'checkDispose' expressions for the

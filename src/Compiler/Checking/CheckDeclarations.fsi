@@ -31,6 +31,7 @@ val AddCcuToTcEnv:
     internalsVisibleToAttributes: string list ->
         OpenDeclaration list * TcEnv
 
+[<NoComparison; NoEquality>]
 type TopAttribs =
     { mainMethodAttrs: Attribs
       netModuleAttrs: Attribs

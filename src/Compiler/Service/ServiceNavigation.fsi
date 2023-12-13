@@ -110,6 +110,7 @@ type NavigableContainer =
     /// The name of the container or file
     member Name: string
 
+[<NoComparison>]
 type NavigableItem =
     { Name: string
       NeedsBackticks: bool

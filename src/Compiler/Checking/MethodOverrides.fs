@@ -34,6 +34,7 @@ type OverrideCanImplement =
     | CanImplementNoSlots
     
 /// The overall information about a method implementation in a class or object expression 
+[<NoComparison; NoEquality>]
 type OverrideInfo = 
     | Override of
         canImplement: OverrideCanImplement *
@@ -65,8 +66,8 @@ type OverrideInfo =
     member x.IsCompilerGenerated = let (Override(isCompilerGenerated=b)) = x in b
     
     member x.IsInstance = let (Override(isInstance=b)) = x in b
-    
 
+[<NoComparison; NoEquality>]
 type RequiredSlot = 
     | RequiredSlot of methodInfo: MethInfo * isOptional: bool
     | DefaultInterfaceImplementationSlot of methodInfo: MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
@@ -96,6 +97,7 @@ type RequiredSlot =
         | RequiredSlot(methInfo, _)
         | DefaultInterfaceImplementationSlot(methInfo, _, _) -> methInfo
 
+[<NoComparison; NoEquality>]
 type SlotImplSet =
     | SlotImplSet of
         dispatchSlots: RequiredSlot list *
@@ -104,6 +106,8 @@ type SlotImplSet =
         requiredProperties: PropInfo list
 
 exception TypeIsImplicitlyAbstract of range
+
+[<NoComparison; NoEquality>]
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
 
 module DispatchSlotChecking =

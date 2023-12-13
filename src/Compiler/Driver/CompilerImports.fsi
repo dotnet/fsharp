@@ -69,6 +69,7 @@ type ResolveAssemblyReferenceMode =
     | Speculative
     | ReportErrors
 
+[<NoComparison; NoEquality>]
 type AssemblyResolution =
     {
         /// The original reference to the assembly.
@@ -88,12 +89,13 @@ type AssemblyResolution =
     }
 
 #if !NO_TYPEPROVIDERS
+[<NoComparison; NoEquality>]
 type ResolvedExtensionReference =
     | ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
 /// Represents a resolved imported binary
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type ImportedBinary =
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData
@@ -106,7 +108,7 @@ type ImportedBinary =
       ILScopeRef: ILScopeRef }
 
 /// Represents a resolved imported assembly
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ImportedAssembly =
     { ILScopeRef: ILScopeRef
       FSharpViewOfMetadata: CcuThunk

@@ -77,9 +77,10 @@ type internal TypeProviderError
             for msg in errors do
                 f (TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
+[<NoComparison>]
 type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
 
-[<NoEquality>][<NoComparison>] 
+[<NoEquality; NoComparison>] 
 type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     do
         match box context.TypeProvider with 

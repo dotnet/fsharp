@@ -56,6 +56,7 @@ type public AssemblySymbol =
     }
 
 /// `RawEntity` list retrieved from an assembly.
+[<NoComparison; NoEquality>]
 type internal AssemblyContentCacheEntry =
     {
         /// Assembly file last write time.

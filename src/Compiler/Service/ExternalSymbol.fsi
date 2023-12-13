@@ -44,7 +44,7 @@ module internal FindDeclExternalParam =
     val internal tryOfILTypes: string array -> ILType list -> FindDeclExternalParam list option
 
 /// Represents a symbol in an external (non F#) assembly
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public FindDeclExternalSymbol =
     | Type of fullName: string
 
@@ -79,7 +79,7 @@ type public FindDeclFailureReason =
     | ProvidedMember of memberName: string
 
 /// Represents the result of the GetDeclarationLocation operation.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public FindDeclResult =
 
     /// Indicates a declaration location was not found, with an additional reason

@@ -326,7 +326,7 @@ let valRefHash (vref: ValRef) =
 
 /// Pairs an Item with a TyparInstantiation showing how generic type variables of the item are instantiated at
 /// a particular usage point.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ItemWithInst =
     { Item: Item
       TyparInstantiation: TyparInstantiation }
@@ -336,9 +336,11 @@ let ItemWithNoInst item = ({ Item = item; TyparInstantiation = emptyTyparInst } 
 let (|ItemWithInst|) (x: ItemWithInst) = (x.Item, x.TyparInstantiation)
 
 /// Represents a record field resolution and the information if the usage is deprecated.
+[<NoComparison; NoEquality>]
 type FieldResolution = FieldResolution of RecdFieldInfo * bool
 
 /// Information about an extension member held in the name resolution environment
+[<NoComparison; NoEquality>]
 type ExtensionMember =
 
    /// F#-style Extrinsic extension member, defined in F# code
@@ -1714,6 +1716,7 @@ type ItemOccurence =
     /// This is a usage of a module or namespace name in open statement
     | Open
 
+[<NoComparison>]
 type FormatStringCheckContext =
     { SourceText: ISourceText
       LineStartPositions: int[] }
@@ -1986,7 +1989,7 @@ type TcResolutions
 
     static member Empty = empty
 
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type TcSymbolUseData =
    { ItemWithInst: ItemWithInst
      ItemOccurence: ItemOccurence
@@ -2143,6 +2146,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
+[<NoComparison>]
 type TcResultsSink =
     { mutable CurrentSink: ITypecheckResultsSink option }
     static member NoSink =  { CurrentSink = None }
@@ -2201,6 +2205,7 @@ let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclarat
 /// Checks if the type variables associated with the result of a resolution are inferable,
 /// i.e. occur in the arguments or return type of the resolution. If not give a warning
 /// about a type instantiation being needed.
+[<NoComparison; NoEquality>]
 type ResultTyparChecker = ResultTyparChecker of (unit -> bool)
 
 let CheckAllTyparsInferrable amap m item =
@@ -2266,6 +2271,7 @@ let CheckAllTyparsInferrable amap m item =
 /// Each of the resolution routines keeps track of the entity path and
 /// ultimately calls ResolutionInfo.Method to record it for
 /// later use by Visual Studio.
+[<NoComparison; NoEquality>]
 type ResolutionInfo =
     | ResolutionInfo of revEntityPath: (range * EntityRef) list * reportResult: (ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
 
@@ -3998,7 +4004,7 @@ let NeedsWorkAfterResolution namedItem =
     | _ -> false
 
 /// Specifies additional work to do after an item has been processed further in type checking.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type AfterResolution =
 
     /// Notification is not needed
@@ -4215,7 +4221,7 @@ let ResolveRecordOrClassFieldsOfType (ncenv: NameResolver) m ad ty statics =
     |> List.filter (fun rfref -> rfref.IsStatic = statics && IsFieldInfoAccessible ad rfref)
     |> List.map Item.RecdField
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ResolveCompletionTargets =
     | All of (MethInfo -> TType -> bool)
     | SettablePropertiesAndFields

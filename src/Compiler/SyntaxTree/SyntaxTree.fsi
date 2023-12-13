@@ -16,6 +16,7 @@ type Ident =
     member idRange: range
 
 /// Represents an identifier with potentially additional trivia information.
+[<NoComparison; NoEquality>]
 type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
 
 /// Represents a long identifier e.g. 'A.B.C'
@@ -28,6 +29,7 @@ type LongIdent = Ident list
 /// if dotRanges.Length = lid.Length, then the parser must have reported an error, so the typechecker is allowed
 /// more freedom about typechecking these expressions.
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
+[<NoComparison; NoEquality>]
 type SynLongIdent =
     | SynLongIdent of id: LongIdent * dotRanges: range list * trivia: IdentTrivia option list
 
@@ -229,7 +231,7 @@ type SynRationalConst =
     | Paren of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynAccess =
     /// A construct marked or assumed 'public'
     | Public of range: range
@@ -251,7 +253,7 @@ type DebugPointAtTarget =
     | No
 
 /// Represents a debug point at a leaf expression (e.g. an application or constant).
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type DebugPointAtLeafExpr = Yes of range
 
 /// Represents whether a debug point should be suppressed for either the
@@ -273,49 +275,49 @@ type DebugPointAtSequential =
 
 /// Represents whether a debug point should be present for a 'try', that is whether
 /// the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtTry =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'with' in a 'try .. with',
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtWith =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'finally' in a 'try .. finally',
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtFinally =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtFor =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'in' or 'to' of a 'for...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'while' in a 'while...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtWhile =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for a 'let' binding,
 /// that is whether the construct corresponds to a debug point in the original source.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtBinding =
     // Indicates emit of a debug point prior to the 'let'
     | Yes of range: range
@@ -433,7 +435,7 @@ type SynTypeConstraint =
 
 /// List of type parameter declarations with optional type constraints,
 /// enclosed in `< ... >` (postfix) or `( ... )` (prefix), or a single prefix parameter.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynTyparDecls =
     | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
     | PrefixList of decls: SynTyparDecl list * range: range
@@ -1016,7 +1018,7 @@ type SynSimplePat =
     member Range: range
 
 /// Represents the alternative identifier for a simple pattern
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynSimplePatAlternativeIdInfo =
 
     /// We have not decided to use an alternative name in the pattern and related expression
@@ -1046,7 +1048,7 @@ type SynSimplePats =
     member Range: range
 
 /// Represents a syntax tree for arguments patterns
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
@@ -1180,7 +1182,7 @@ type SynAttribute =
     }
 
 /// List of attributes enclosed in [< ... >].
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynAttributeList =
     {
         /// The list of attributes
@@ -1888,7 +1890,7 @@ type ParsedImplFile =
 type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list * fragments: ParsedSigFileFragment list
 
 /// Represents a scoped pragma
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type ScopedPragma =
     /// A pragma to turn a warning off
     | WarningOff of range: range * warningNumber: int

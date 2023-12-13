@@ -1042,6 +1042,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     override x.ToString() = x.CompiledName
 
+[<NoComparison; NoEquality>]
 type FSharpFieldData = 
     | AnonField of AnonRecdTypeInfo * TTypes * int * range
     | ILField of ILFieldInfo
@@ -1591,6 +1592,7 @@ type FSharpInlineAnnotation =
    | NeverInline 
    | AggressiveInline 
 
+[<NoComparison; NoEquality>]
 type FSharpMemberOrValData = 
     | E of EventInfo
     | P of PropInfo

@@ -13,8 +13,10 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
+[<NoComparison; NoEquality>]
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
+[<NoComparison; NoEquality>]
 exception ValueNotContained of
     DisplayEnv *
     InfoReader *
@@ -23,10 +25,13 @@ exception ValueNotContained of
     Val *
     (string * string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception FieldNotContained of
     DisplayEnv *
     InfoReader *
@@ -36,8 +41,10 @@ exception FieldNotContained of
     RecdField *
     (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
 type Checker =

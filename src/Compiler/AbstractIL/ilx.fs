@@ -26,6 +26,7 @@ type IlxUnionCaseField(fd: ILFieldDef) =
 
     override x.ToString() = x.Name
 
+[<NoComparison; NoEquality>]
 type IlxUnionCase =
     {
         altName: string
@@ -51,8 +52,10 @@ type IlxUnionHasHelpers =
     | SpecialFSharpListHelpers
     | SpecialFSharpOptionHelpers
 
+[<NoComparison; NoEquality>]
 type IlxUnionRef = IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* hasHelpers: *) * IlxUnionHasHelpers
 
+[<NoComparison; NoEquality>]
 type IlxUnionSpec =
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
 
@@ -80,6 +83,7 @@ type IlxUnionSpec =
 
     override x.ToString() = x.TypeRef.Name
 
+[<NoComparison; NoEquality>]
 type IlxClosureLambdas =
     | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
     | Lambdas_lambda of ILParameter * IlxClosureLambdas
@@ -124,8 +128,10 @@ let mkILFreeVar (name, compgen, ty) =
         fvType = ty
     }
 
+[<NoComparison; NoEquality>]
 type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
+[<NoComparison; NoEquality>]
 type IlxClosureSpec =
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
 
@@ -161,7 +167,8 @@ type IlxClosureSpec =
 
     override x.ToString() = x.TypeRef.ToString()
 
-// Define an extension of the IL algebra of type definitions
+/// Define an extension of the IL algebra of type definitions
+[<NoComparison; NoEquality>]
 type IlxClosureInfo =
     {
         cloStructure: IlxClosureLambdas
@@ -170,6 +177,7 @@ type IlxClosureInfo =
         cloUseStaticField: bool
     }
 
+[<NoComparison; NoEquality>]
 type IlxUnionInfo =
     {
         UnionCasesAccessibility: ILMemberAccess

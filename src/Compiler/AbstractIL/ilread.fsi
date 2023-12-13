@@ -39,6 +39,7 @@ type MetadataOnlyFlag = Yes | No
 [<RequireQualifiedAccess>]
 type ReduceMemoryFlag = Yes | No
 
+[<NoComparison; NoEquality>]
 type ILReaderOptions =
    { pdbDirPath: string option
 

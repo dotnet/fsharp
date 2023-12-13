@@ -20,7 +20,7 @@ open FSharp.Compiler.TypedTreeOps
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public FSharpXmlDoc =
     /// No documentation is available
     | None

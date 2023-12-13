@@ -154,7 +154,7 @@ let FreshenMethInfo m (minfo: MethInfo) =
 //------------------------------------------------------------------------- 
 
 /// Information about the context of a type equation.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ContextInfo =
 
     /// No context was given.
@@ -201,6 +201,7 @@ type ContextInfo =
     | SequenceExpression of TType
 
 /// Captures relevant information for a particular failed overload resolution.
+[<NoComparison>]
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
@@ -209,6 +210,7 @@ type OverloadInformation =
     }
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
+[<NoComparison; NoEquality>]
 type OverloadResolutionFailure =
   | NoOverloadsFound  of
       methodName: string *
@@ -219,6 +221,7 @@ type OverloadResolutionFailure =
       candidates: OverloadInformation list *
       cx: TraitConstraintInfo option
 
+[<NoComparison; NoEquality>]
 type OverallTy = 
     /// Each branch of the expression must have the type indicated
     | MustEqual of TType
@@ -232,32 +235,44 @@ type OverallTy =
         | MustEqual ty -> ty
         | MustConvertTo (_, ty) -> ty
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType list * TType list * range * range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 
+[<NoComparison; NoEquality>]
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range  * range 
 
 exception ConstraintSolverError of string * range * range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * range: range
 
+[<NoComparison; NoEquality>]
 exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
 
+[<NoComparison; NoEquality>]
 exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 
+[<NoComparison; NoEquality>]
 exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range: range
 
+[<NoComparison; NoEquality>]
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
+[<NoComparison; NoEquality>]
 type ConstraintSolverState = 
     { 
       g: TcGlobals
@@ -310,6 +325,7 @@ type ConstraintSolverState =
     member this.GetPostInferenceChecksFinal() =
         this.PostInferenceChecksFinal.ToArray() :> seq<_>
 
+[<NoComparison; NoEquality>]
 type ConstraintSolverEnv = 
     { 
       SolverState: ConstraintSolverState
@@ -436,6 +452,7 @@ let IsBinaryOpOtherArgType g permitWeakResolution ty =
 let IsSignType g ty =
     isSignedIntegerTy g ty || isFpTy g ty || isDecimalTy g ty
 
+[<NoComparison; NoEquality>]
 type TraitConstraintSolution = 
     | TTraitUnsolved
     | TTraitBuiltIn
@@ -459,7 +476,7 @@ let BakedInTraitConstraintNames =
     
 //-------------------------------------------------------------------------
 // Run the constraint solver with undo (used during method overload resolution)
-
+[<NoComparison; NoEquality>]
 type Trace = 
     { mutable actions: ((unit -> unit) * (unit -> unit)) list }
     
@@ -468,6 +485,7 @@ type Trace =
     member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
     member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
+[<NoComparison; NoEquality>]
 type OptionalTrace = 
     | NoTrace
     | WithTrace of Trace
@@ -519,7 +537,7 @@ let ShowAccessDomain ad =
 
 //-------------------------------------------------------------------------
 // Solve
-
+[<NoComparison; NoEquality>]
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 /// Signal that there is still an unresolved overload in the constraint problem. The
@@ -594,6 +612,7 @@ let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) (tra
          | exn -> f2 exn)
 
 /// used to provide detail about non matched argument in overload resolution error message
+[<NoComparison; NoEquality>]
 exception ArgDoesNotMatchError of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 
 /// Represents a very local condition where we prefer to report errors before stripping type abbreviations.

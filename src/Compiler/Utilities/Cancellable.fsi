@@ -15,7 +15,7 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 
-[<RequireQualifiedAccess; Struct>]
+[<RequireQualifiedAccess; Struct; NoComparison>]
 type internal ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
@@ -24,7 +24,7 @@ type internal ValueOrCancelled<'TResult> =
 ///
 /// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
 
 module internal Cancellable =

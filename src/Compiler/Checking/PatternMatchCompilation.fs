@@ -70,9 +70,9 @@ type Pattern =
         | TPat_isinst(_, _, _, m) -> m
         | TPat_error m -> m
 
-and PatternValBinding = PatternValBinding of Val * GeneralizedType
+and [<NoComparison; NoEquality>] PatternValBinding = PatternValBinding of Val * GeneralizedType
 
-and MatchClause =
+and [<NoComparison; NoEquality>] MatchClause =
     | MatchClause of Pattern * Expr option * DecisionTreeTarget * range
     member c.GuardExpr = let (MatchClause(_, whenOpt, _, _)) = c in whenOpt
     member c.Pattern = let (MatchClause(p, _, _, _)) = c in p
@@ -99,7 +99,7 @@ and MatchClause =
 // test, we apply the r.h.s. to a dummy type - it doesn't matter
 // which (unless the r.h.s. actually looks at it's type argument...)
 //---------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type SubExprOfInput =
     | SubExpr of (TyparInstantiation -> Expr -> Expr) * (Expr * Val)
 
@@ -138,6 +138,7 @@ let GetSubExprOfInput g (gtps, tyargs, tinst) (SubExpr(accessf, (ve2, v2))) =
 
 // A path reaches into a pattern.
 // The ints record which choices taken, e.g. tuple/record fields.
+[<NoComparison; NoEquality>]
 type Path =
     | PathQuery of Path * Unique
     | PathTuple of Path * TypeInst * int
@@ -162,7 +163,7 @@ let rec pathEq p1 p2 =
 //---------------------------------------------------------------------------
 // Counter example generation
 //---------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type RefutedSet =
     /// A value RefutedInvestigation(path, discrim) indicates that the value at the given path is known
     /// to NOT be matched by the given discriminator
@@ -384,13 +385,16 @@ let ShowCounterExample g denv m refuted =
 type ClauseNumber = int
 
 /// Represents an unresolved portion of pattern matching
+[<NoComparison; NoEquality>]
 type Active = Active of Path * SubExprOfInput * Pattern
 
 type Actives = Active list
 
 /// Represents an unresolved portion of pattern matching within a clause
+[<NoComparison; NoEquality>]
 type Frontier = Frontier of ClauseNumber * Actives * ValMap<Expr>
 
+[<NoComparison; NoEquality>]
 type InvestigationPoint = Investigation of ClauseNumber * DecisionTreeTest * Path
 
 // Note: actives must be a SortedDictionary
@@ -662,6 +666,7 @@ let isDiscrimSubsumedBy g amap m discrim taken =
     | _ ->
         false
 
+[<NoComparison; NoEquality>]
 type EdgeDiscrim = EdgeDiscrim of int * DecisionTreeTest * range
 
 /// Choose a set of investigations that can be performed simultaneously

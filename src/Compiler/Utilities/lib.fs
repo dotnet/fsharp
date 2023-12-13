@@ -380,7 +380,7 @@ type Dumper(x:obj) =
      member self.Dump = sprintf "%A" x
 #endif
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of InterruptibleLazy<'T>

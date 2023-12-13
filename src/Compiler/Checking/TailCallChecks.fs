@@ -59,6 +59,7 @@ type TailCall =
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
 
+[<NoComparison; NoEquality>]
 type cenv =
     {
         stackGuard: StackGuard

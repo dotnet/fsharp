@@ -23,11 +23,13 @@ open FSharp.Compiler.TypedTreeOps
 
 /// Represents information about the initialization field used to check that object constructors
 /// have completed before fields are accessed.
+[<NoComparison; NoEquality>]
 type SafeInitData =
     | SafeInitField of RecdFieldRef * RecdField
     | NoSafeInitInfo
 
 /// Represents information about object constructors
+[<NoComparison; NoEquality>]
 type CtorInfo =
     {
         /// Object model constructors have a very specific form to satisfy .NET limitations.
@@ -138,6 +140,7 @@ type TcEnv =
 
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
+[<NoComparison; NoEquality>]
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
 /// A type to represent information associated with values to indicate what explicit (declared) type parameters
@@ -145,8 +148,10 @@ type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
+[<NoComparison; NoEquality>]
 type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
 
+[<NoComparison; NoEquality>]
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
 /// Indicates whether constraints should be checked when checking syntactic types
@@ -155,12 +160,15 @@ type CheckConstraints =
     | NoCheckCxs
 
 /// Represents the ValReprInfo for a value, before the typars are fully inferred
+[<NoComparison; NoEquality>]
 type PrelimValReprInfo = PrelimValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
 
 /// Holds the initial ValMemberInfo and other information before it is fully completed
+[<NoComparison; NoEquality>]
 type PrelimMemberInfo = PrelimMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
 
 /// Represents the results of the first phase of preparing simple values from a pattern
+[<NoComparison; NoEquality>]
 type PrelimVal1 =
     | PrelimVal1 of
         id: Ident *
@@ -184,15 +192,18 @@ type PrelimVal1 =
 /// has been resolved. The second phase is run by applying a function returned by the
 /// first phase. The input to the second phase is a List.map that gives the Val and type scheme
 /// for each value bound by the pattern.
+[<NoComparison; NoEquality>]
 type TcPatPhase2Input =
     | TcPatPhase2Input of NameMap<Val * GeneralizedType> * bool
 
     member WithRightPath: unit -> TcPatPhase2Input
 
 /// Represents the context flowed left-to-right through pattern checking
+[<NoComparison; NoEquality>]
 type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
 
-/// Represents the flags passsed to TcPat regarding the binding location
+/// Represents the flags passed to TcPat regarding the binding location
+[<NoComparison; NoEquality>]
 type TcPatValFlags =
     | TcPatValFlags of
         inlineFlag: ValInline *

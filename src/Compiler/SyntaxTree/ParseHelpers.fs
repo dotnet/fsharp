@@ -161,6 +161,7 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
+[<NoComparison; NoEquality>]
 type LexerEndlineContinuation =
     | Token
     | Skip of int * range: range
@@ -975,6 +976,7 @@ let checkEndOfFileError t =
         | [] -> ()
         | (_, _, _, m) :: _ -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill ())
 
+[<NoComparison; NoEquality>]
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
 let mkClassMemberLocalBindings

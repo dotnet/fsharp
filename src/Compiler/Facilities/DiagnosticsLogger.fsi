@@ -76,6 +76,7 @@ exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
+[<NoEquality; NoComparison>]
 exception DiagnosticWithSuggestions of
     number: int *
     message: string *
@@ -165,6 +166,7 @@ module BuildPhaseSubcategory =
     [<Literal>]
     val Internal: string = "internal"
 
+[<NoComparison>]
 type PhasedDiagnostic =
     { Exception: exn
       Phase: BuildPhase }

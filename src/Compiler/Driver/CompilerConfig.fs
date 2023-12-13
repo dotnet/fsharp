@@ -243,7 +243,7 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
             projects[projectReference] <- v
             v
 
-and [<RequireQualifiedAccess>] ProjectAssemblyDataResult =
+and [<RequireQualifiedAccess; NoComparison>] ProjectAssemblyDataResult =
     | Available of IRawFSharpAssemblyData
     | Unavailable of useOnDiskInstead: bool
 
@@ -264,6 +264,7 @@ and IProjectReference =
     /// are fatal errors in the options for the project.
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
+[<NoComparison>]
 type AssemblyReference =
     | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
@@ -286,11 +287,14 @@ type AssemblyReference =
 
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
+[<NoComparison>]
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 #if !NO_TYPEPROVIDERS
+[<NoComparison; NoEquality>]
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+[<NoComparison; NoEquality>]
 type ImportedAssembly =
     {
         ILScopeRef: ILScopeRef
@@ -304,6 +308,7 @@ type ImportedAssembly =
         FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
     }
 
+[<NoComparison; NoEquality>]
 type AvailableImportedAssembly =
     | ResolvedImportedAssembly of ImportedAssembly
     | UnresolvedImportedAssembly of string
@@ -326,6 +331,7 @@ type TokenizeOption =
     | Debug
     | Unfiltered
 
+[<NoComparison>]
 type PackageManagerLine =
     {
         Directive: Directive
@@ -1466,6 +1472,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
+[<NoComparison; NoEquality>]
 type TcConfigProvider =
     | TcConfigProvider of (CompilationThreadToken -> TcConfig)
 

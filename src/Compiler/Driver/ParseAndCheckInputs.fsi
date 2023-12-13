@@ -112,7 +112,7 @@ val ParseInputFiles:
 val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
 
 /// Represents the incremental type checking state for a set of inputs
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type TcState =
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk

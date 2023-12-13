@@ -1968,7 +1968,7 @@ let SanitizeFileName fileName implicitIncludeDir =
     with _ ->
         fileName
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnosticLocation =
     {
         Range: range
@@ -1985,7 +1985,7 @@ type FormattedDiagnosticCanonicalInformation =
         TextRepresentation: string
     }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnosticDetailedInfo =
     {
         Location: FormattedDiagnosticLocation option
@@ -1993,7 +1993,7 @@ type FormattedDiagnosticDetailedInfo =
         Message: string
     }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo

@@ -49,7 +49,9 @@ module EnvMisc =
 // BackgroundCompiler
 //
 
+[<Experimental "This type is experimental and likely to be removed in the future.">]
 [<RequireQualifiedAccess>]
+[<NoComparison; NoEquality>]
 type DocumentSource =
     | FileSystem
     | Custom of (string -> Async<ISourceText option>)

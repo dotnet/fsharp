@@ -17,6 +17,7 @@ open FSharp.Compiler.TypeRelations
 
 let AutoboxRewriteStackGuardDepth = StackGuard.GetDepthOption "AutoboxRewrite"
 
+[<NoComparison>]
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }

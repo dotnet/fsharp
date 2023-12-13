@@ -55,6 +55,7 @@ type LexResourceManager(?capacity: int) =
             res
 
 /// Lexer parameters
+[<NoComparison>]
 type LexArgs =
     {
         conditionalDefines: string list
@@ -161,6 +162,7 @@ type LexerStringFinisherContext =
     | Verbatim = 2
     | TripleQuote = 4
 
+[<NoComparison; NoEquality>]
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
 

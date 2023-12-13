@@ -40,13 +40,13 @@ type InheritanceContext =
     | Interface
     | Unknown
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type CompletionContext =
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -447,7 +447,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.IsPositionContainedInACurriedParameter pos =
         let visitor =
             { new SyntaxVisitorBase<_>() with
-                member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) = defaultTraverse (expr)
+                member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) = defaultTraverse expr
 
                 override _.VisitBinding(_path, _, binding) =
                     match binding with

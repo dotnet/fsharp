@@ -14,7 +14,7 @@ type public InheritanceContext =
     | Interface
     | Unknown
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
@@ -22,7 +22,7 @@ type public RecordContext =
     | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public PatternContext =
     /// <summary>Completing union case field pattern (e.g. fun (Some v| ) -> ) or fun (Some (v| )) -> ). In theory, this could also be parameterized active pattern usage.</summary>
     /// <param name="fieldIndex">Position in the tuple. <see cref="None">None</see> if there is no tuple, with only one field outside of parentheses - `Some v|`</param>
@@ -42,7 +42,7 @@ type public PatternContext =
     /// Any other position in a pattern that does not need special handling
     | Other
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public CompletionContext =
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -102,7 +102,7 @@ type public ScopeKind =
     | HashDirective
 
 /// Insert open namespace context.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public InsertionContext =
     {
         /// Current scope kind.

@@ -4874,6 +4874,7 @@ type ReduceMemoryFlag =
     | Yes
     | No
 
+[<NoComparison; NoEquality>]
 type ILReaderOptions =
     {
         pdbDirPath: string option

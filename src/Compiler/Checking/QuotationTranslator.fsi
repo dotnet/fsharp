@@ -28,7 +28,7 @@ type QuotationSerializationFormat =
         SupportsDeserializeEx: bool
     }
 
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type QuotationGenerationScope =
     static member Create:
         TcGlobals * ImportMap * CcuThunk * ConstraintSolver.TcValF * IsReflectedDefinition -> QuotationGenerationScope

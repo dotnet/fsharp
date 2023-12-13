@@ -156,7 +156,7 @@ type Item =
 
 /// Pairs an Item with a TyparInstantiation showing how generic type variables of the item are instantiated at
 /// a particular usage point.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ItemWithInst =
     { Item: Item
       TyparInstantiation: TyparInstantiation }
@@ -165,9 +165,11 @@ val (|ItemWithInst|): ItemWithInst -> Item * TyparInstantiation
 val ItemWithNoInst: Item -> ItemWithInst
 
 /// Represents a record field resolution and the information if the usage is deprecated.
+[<NoComparison; NoEquality>]
 type FieldResolution = FieldResolution of RecdFieldInfo * bool
 
 /// Information about an extension member held in the name resolution environment
+[<NoComparison; NoEquality>]
 type ExtensionMember =
     /// F#-style Extrinsic extension member, defined in F# code
     | FSExtMem of ValRef * ExtensionMethodPriority
@@ -440,7 +442,7 @@ type internal TcResolutions =
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
 
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type TcSymbolUseData =
     { ItemWithInst: ItemWithInst
       ItemOccurence: ItemOccurence
@@ -464,6 +466,7 @@ type internal TcSymbolUses =
     static member Empty: TcSymbolUses
 
 /// Source text and an array of line end positions, used for format string parsing
+[<NoComparison>]
 type FormatStringCheckContext =
     {
         /// Source text
@@ -525,6 +528,7 @@ type internal TcResultsSinkImpl =
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
+[<NoComparison>]
 type TcResultsSink =
     { mutable CurrentSink: ITypecheckResultsSink option }
 
@@ -578,7 +582,7 @@ type PermitDirectReferenceToGeneratedType =
     | No
 
 /// Specifies extra work to do after overload resolution
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type AfterResolution =
     /// Notification is not needed
     | DoNothing
@@ -837,7 +841,7 @@ val ResolvePartialLongIdent:
     allowObsolete: bool ->
         Item list
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ResolveCompletionTargets =
     | All of (MethInfo -> TType -> bool)
     | SettablePropertiesAndFields

@@ -29,7 +29,8 @@ exception ProvidedTypeResolutionNoRange of exn
 
 let toolingCompatiblePaths() = Internal.Utilities.FSharpEnvironment.toolingCompatiblePaths ()
 
-/// Represents some of the configuration parameters passed to type provider components 
+/// Represents some of the configuration parameters passed to type provider components
+[<NoComparison; NoEquality>]
 type ResolutionEnvironment =
     { ResolutionFolder: string
       OutputFile: string option
@@ -297,6 +298,7 @@ type ProvidedTypeComparer() =
 ///
 /// Laziness is used "to prevent needless computation for every type during remapping". However it
 /// appears that the laziness likely serves no purpose and could be safely removed.
+[<NoComparison>]
 type ProvidedTypeContext = 
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
@@ -852,6 +854,7 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
+[<NoComparison>]
 type ProvidedExprType =
     | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 #if PROVIDED_ADDRESS_OF
@@ -1379,6 +1382,7 @@ type ProviderGeneratedType = ProviderGeneratedType of ilOrigTyRef: ILTypeRef * i
 
 /// The table of information recording remappings from type names in the provided assembly to type
 /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
+[<NoComparison>]
 type ProvidedAssemblyStaticLinkingMap = 
     { ILTypeMap: Dictionary<ILTypeRef, ILTypeRef> }
 

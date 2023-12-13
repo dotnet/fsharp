@@ -50,11 +50,14 @@ type cenv = TcFileState
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
 
+[<NoComparison; NoEquality>]
 type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range * OpenDeclaration list ref
+
+[<NoComparison; NoEquality>]
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type MutRecShape<'TypeData, 'LetsData, 'ModuleData> = 
     | Tycon of 'TypeData
     | Lets of 'LetsData
@@ -186,18 +189,22 @@ let ModuleOrNamespaceContainerInfo modref =
 let TyconContainerInfo (parent, tcref, declaredTyconTypars, safeInitInfo) =
     ContainerInfo(parent, Some(MemberOrValContainerInfo(tcref, None, None, safeInitInfo, declaredTyconTypars)))
 
+[<NoComparison; NoEquality>]
 type TyconBindingDefn = TyconBindingDefn of ContainerInfo * NewSlotsOK * DeclKind * SynMemberDefn option * range
 
 type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo> list
 type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo> list
 
+[<NoComparison; NoEquality>]
 type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
 type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo> list
 
+[<NoComparison; NoEquality>]
 type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
+[<NoComparison; NoEquality>]
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
 type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
-
+[<NoComparison; NoEquality>]
 type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list * fixupFinalAttrs: (unit -> unit)
 type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
@@ -885,6 +892,7 @@ module AddAugmentationDeclarations =
 module MutRecBindingChecking = 
 
     /// Represents one element in a type definition, after the first phase    
+    [<NoComparison; NoEquality>]
     type TyconBindingPhase2A =
       /// An entry corresponding to the definition of the static constructor of a class and optional of the incremental constructor (if one exists)
       | Phase2AIncrClassCtor of StaticCtorInfo * IncrClassCtorInfo option
@@ -914,6 +922,7 @@ module MutRecBindingChecking =
       | Phase2AIncrClassCtorJustAfterLastLet
 
     /// The collected syntactic input definitions for a single type or type-extension definition
+    [<NoComparison; NoEquality>]
     type TyconBindingsPhase2A = 
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
@@ -921,6 +930,7 @@ module MutRecBindingChecking =
     type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the second phase
+    [<NoComparison; NoEquality>]
     type TyconBindingPhase2B =
       | Phase2BIncrClassCtor of staticCtorInfo: StaticCtorInfo * incrCtorInfoOpt: IncrClassCtorInfo option * safeThisValBindOpt: Binding option 
 
@@ -941,11 +951,13 @@ module MutRecBindingChecking =
       /// this point.
       | Phase2BIncrClassCtorJustAfterLastLet
 
+    [<NoComparison; NoEquality>]
     type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
     type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the third phase
+    [<NoComparison; NoEquality>]
     type TyconBindingPhase2C =
       | Phase2CIncrClassCtor of StaticCtorInfo * IncrClassCtorInfo option * Binding option 
 
@@ -960,6 +972,7 @@ module MutRecBindingChecking =
 
       | Phase2CIncrClassCtorJustAfterLastLet     
 
+    [<NoComparison; NoEquality>]
     type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
     type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
@@ -5518,6 +5531,7 @@ type ConditionalDefines =
 
 
 /// The attributes that don't get attached to any declaration
+[<NoComparison; NoEquality>]
 type TopAttribs =
     { mainMethodAttrs: Attribs
       netModuleAttrs: Attribs

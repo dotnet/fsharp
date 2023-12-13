@@ -25,6 +25,7 @@ exception ProvidedTypeResolutionNoRange of exn
 val toolingCompatiblePaths: unit -> string list
 
 /// Carries information about the type provider resolution environment.
+[<NoComparison; NoEquality>]
 type ResolutionEnvironment =
     {
         /// The folder from which an extension provider is resolving from. This is typically the project folder.
@@ -71,7 +72,7 @@ val DisplayNameOfTypeProvider: Tainted<ITypeProvider> * range -> string
 ///
 /// The 'obj' values are all TyconRef, but obj is used due to a forward reference being required. Not particularly
 /// pleasant, but better than intertwining the whole "ProvidedType" with the TAST structure.
-[<Sealed>]
+[<Sealed; NoComparison>]
 type ProvidedTypeContext =
 
     member TryGetILTypeRef: ProvidedType -> ILTypeRef option
@@ -370,6 +371,7 @@ type ProvidedEventInfo =
 type ProvidedConstructorInfo =
     inherit ProvidedMethodBase
 
+[<NoComparison>]
 type ProvidedExprType =
 
     | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
@@ -487,6 +489,7 @@ type ProviderGeneratedType =
 
 /// The table of information recording remappings from type names in the provided assembly to type
 /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
+[<NoComparisonAttribute>]
 type ProvidedAssemblyStaticLinkingMap =
     {
         /// The table of remappings from type names in the provided assembly to type

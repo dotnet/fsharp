@@ -98,7 +98,7 @@ module FindDeclExternalParam =
     let tryOfILTypes typeVarNames ilTypes =
         ilTypes |> List.map (tryOfILType typeVarNames) |> Option.ofOptionList
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 [<DebuggerDisplay "{ToDebuggerDisplay(),nq}">]
 type FindDeclExternalSymbol =
     | Type of fullName: string
@@ -146,7 +146,7 @@ type FindDeclFailureReason =
     // trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
     | ProvidedMember of memberName: string
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FindDeclResult =
 
     /// declaration not found + reason

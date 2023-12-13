@@ -16,10 +16,12 @@ type Ident(text: string, range: range) =
     member _.idRange = range
     override _.ToString() = text
 
+[<NoComparison; NoEquality>]
 type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
 
 type LongIdent = Ident list
 
+[<NoComparison; NoEquality>]
 type SynLongIdent =
     | SynLongIdent of id: LongIdent * dotRanges: range list * trivia: IdentTrivia option list
 
@@ -201,7 +203,7 @@ type SynRationalConst =
 
     | Paren of rationalConst: SynRationalConst * range: range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynAccess =
     | Public of range: range
 
@@ -233,40 +235,40 @@ type DebugPointAtSequential =
     | SuppressBoth
     | SuppressExpr
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtTry =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtLeafExpr = Yes of range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtWith =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtFinally =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtFor =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtWhile =
     | Yes of range: range
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type DebugPointAtBinding =
     | Yes of range: range
 
@@ -355,7 +357,7 @@ type SynTypeConstraint =
         | WhereTyparIsDelegate(range = range) -> range
         | WhereSelfConstrained(range = range) -> range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynTyparDecls =
     | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
     | PrefixList of decls: SynTyparDecl list * range: range
@@ -880,7 +882,7 @@ type SynSimplePat =
         | SynSimplePat.Typed(range = range)
         | SynSimplePat.Attrib(range = range) -> range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynSimplePatAlternativeIdInfo =
 
     | Undecided of Ident
@@ -902,7 +904,7 @@ type SynSimplePats =
         match x with
         | SynSimplePats.SimplePats(range = range) -> range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
@@ -1034,7 +1036,7 @@ type SynAttribute =
         Range: range
     }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SynAttributeList =
     {
         Attributes: SynAttribute list
@@ -1683,7 +1685,7 @@ type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list
 [<NoEquality; NoComparison>]
 type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list * fragments: ParsedSigFileFragment list
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type ScopedPragma = WarningOff of range: range * warningNumber: int
 
 [<NoEquality; NoComparison>]

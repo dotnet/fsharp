@@ -94,7 +94,7 @@ val GetDiagnosticsLoggerFilteringByScopedPragmas:
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
 /// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnosticLocation =
     { Range: range
       File: string
@@ -109,14 +109,14 @@ type FormattedDiagnosticCanonicalInformation =
       TextRepresentation: string }
 
 /// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnosticDetailedInfo =
     { Location: FormattedDiagnosticLocation option
       Canonical: FormattedDiagnosticCanonicalInformation
       Message: string }
 
 /// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo

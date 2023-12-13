@@ -8,6 +8,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.StrongNameSign
 
+[<NoComparison; NoEquality>]
 type options =
     { ilg: ILGlobals
       outfile: string

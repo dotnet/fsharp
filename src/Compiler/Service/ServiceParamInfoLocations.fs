@@ -8,6 +8,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
+[<NoComparison>]
 type TupledArgumentLocation =
     {
         IsNamedArgument: bool
@@ -79,6 +80,7 @@ module internal ParameterLocationsImpl =
         | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr
         | _ -> None
 
+    [<NoComparison>]
     type FindResult =
         | Found of
             openParen: pos *

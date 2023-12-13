@@ -463,11 +463,6 @@ FSharp.Compiler.AbstractIL.IL+ILFieldDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILFieldDef: Void .ctor(System.String, ILType, System.Reflection.FieldAttributes, Microsoft.FSharp.Core.FSharpOption`1[System.Byte[]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILNativeType], ILAttributes)
-FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Boolean Equals(ILFieldDefs)
-FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Boolean Equals(System.Object)
-FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Int32 GetHashCode()
-FSharp.Compiler.AbstractIL.IL+ILFieldDefs: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILFieldDefs: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldInit+Bool: Boolean Item
 FSharp.Compiler.AbstractIL.IL+ILFieldInit+Bool: Boolean get_Item()
@@ -814,11 +809,6 @@ FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Void .ctor(ILOverridesSpec, ILMethodSpec)
-FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: Boolean Equals(ILMethodImplDefs)
-FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: Boolean Equals(System.Object)
-FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: Int32 GetHashCode()
-FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: Boolean Equals(ILMethodRef)
 FSharp.Compiler.AbstractIL.IL+ILMethodRef: Boolean Equals(System.Object)
@@ -3061,9 +3051,6 @@ FSharp.Compiler.EditorServices.FindDeclExternalSymbol: FSharp.Compiler.EditorSer
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Property
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Tags
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: FSharp.Compiler.EditorServices.FindDeclExternalSymbol+Type
-FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 CompareTo(FSharp.Compiler.EditorServices.FindDeclExternalSymbol)
-FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 CompareTo(System.Object)
-FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.FindDeclExternalSymbol: Int32 Tag
@@ -5974,9 +5961,6 @@ FSharp.Compiler.Syntax.SynAccess+Public: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Internal
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Private
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Public
-FSharp.Compiler.Syntax.SynAccess: Boolean Equals(FSharp.Compiler.Syntax.SynAccess)
-FSharp.Compiler.Syntax.SynAccess: Boolean Equals(System.Object)
-FSharp.Compiler.Syntax.SynAccess: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynAccess: Boolean IsInternal
 FSharp.Compiler.Syntax.SynAccess: Boolean IsPrivate
 FSharp.Compiler.Syntax.SynAccess: Boolean IsPublic
@@ -5992,8 +5976,6 @@ FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Public
 FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Tags
 FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode()
-FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynAccess: Int32 Tag
 FSharp.Compiler.Syntax.SynAccess: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynAccess: System.String ToString()

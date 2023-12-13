@@ -59,6 +59,7 @@ module UnusedOpens =
         member _.IsNestedAutoOpen = isNestedAutoOpen
         member _.RevealedSymbolsContains(symbol) = revealedSymbols.Force().Contains symbol
 
+    [<NoComparison>]
     type OpenedModuleGroup =
         {
             OpenedModules: OpenedModule[]
@@ -78,6 +79,7 @@ module UnusedOpens =
             }
 
     /// Represents a single open statement
+    [<NoComparison>]
     type OpenStatement =
         {
             /// All namespaces, modules and types which this open declaration effectively opens, including the AutoOpen ones
@@ -305,6 +307,7 @@ module UnusedOpens =
         }
 
 module SimplifyNames =
+    [<NoComparison>]
     type SimplifiableRange = { Range: range; RelativeName: string }
 
     let getPlidLength (plid: string list) =

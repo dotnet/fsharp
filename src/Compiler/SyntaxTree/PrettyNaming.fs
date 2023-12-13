@@ -950,6 +950,7 @@ let MangledGlobalName = "`global`"
 let IllegalCharactersInTypeAndNamespaceNames =
     [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`' |]
 
+[<NoComparison>]
 type ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
 

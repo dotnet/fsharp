@@ -258,12 +258,14 @@ type ResolveAssemblyReferenceMode =
     | ReportErrors
 
 #if !NO_TYPEPROVIDERS
+[<NoComparison; NoEquality>]
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
 #if DEBUG
 [<DebuggerDisplay("AssemblyResolution({resolvedPath})")>]
 #endif
+[<NoComparison; NoEquality>]
 type AssemblyResolution =
     {
         /// The original reference to the assembly.
@@ -314,6 +316,7 @@ type AssemblyResolution =
             this.ilAssemblyRef <- Some assemblyRef
             assemblyRef
 
+[<NoComparison>]
 type ImportedBinary =
     {
         FileName: string
@@ -327,6 +330,7 @@ type ImportedBinary =
         ILScopeRef: ILScopeRef
     }
 
+[<NoComparison; NoEquality>]
 type ImportedAssembly =
     {
         ILScopeRef: ILScopeRef
@@ -340,6 +344,7 @@ type ImportedAssembly =
         FSharpOptimizationData: InterruptibleLazy<Optimizer.LazyModuleInfo option>
     }
 
+[<NoComparison; NoEquality>]
 type AvailableImportedAssembly =
     | ResolvedImportedAssembly of ImportedAssembly * range
     | UnresolvedImportedAssembly of string * range

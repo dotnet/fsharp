@@ -521,6 +521,7 @@ type PublicPath =
 
 
 /// The information ILXGEN needs about the location of an item
+[<NoComparison>]
 type CompilationPath = 
     | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
 
@@ -1334,6 +1335,7 @@ type Entity =
 type EntityData = Entity
 
 /// Represents the parent entity of a type definition, if any
+[<NoComparison; NoEquality>]
 type ParentRef = 
     | Parent of parent: EntityRef
     | ParentNone
@@ -1566,6 +1568,7 @@ type TProvidedTypeInfo =
 
 #endif
 
+[<NoComparison; NoEquality>]
 type FSharpTyconKind = 
     /// Indicates the type is an F#-declared record
     | TFSharpRecord
@@ -4284,7 +4287,7 @@ type TypeInst = TType list
 type TTypes = TType list 
 
 /// Represents the information identifying an anonymous record 
-[<RequireQualifiedAccess>] 
+[<RequireQualifiedAccess; NoComparison; NoEquality>] 
 type AnonRecdTypeInfo = 
     {
       // Mutability for pickling/unpickling only
@@ -4364,7 +4367,7 @@ type TupInfo =
     | Const of bool
 
 /// Represents a unit of measure in the typed AST
-[<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
+[<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) ; NoComparison; NoEquality>]
 type Measure = 
 
     /// A variable unit-of-measure
@@ -4754,6 +4757,7 @@ type ArgReprInfo =
 /// compiled as "real" IL type parameters, specifically for values with 
 /// ValReprInfo. Any information here is propagated from signature through
 /// to the compiled code.
+[<NoComparison; NoEquality>]
 type TyparReprInfo = TyparReprInfo of Ident * TyparKind
 
 type Typars = Typar list
@@ -5182,6 +5186,7 @@ type SequentialOpKind =
     | ThenDoSeq     
 
 /// Indicates how a value, function or member is being used at a particular usage point.
+[<NoComparison; NoEquality>]
 type ValUseFlag =
 
     /// Indicates a use of a value represents a call to a method that may require
@@ -5203,6 +5208,7 @@ type ValUseFlag =
     | VSlotDirectCall
   
 /// Represents the kind of an F# core library static optimization construct
+[<NoComparison; NoEquality>]
 type StaticOptimization = 
 
     /// Indicates the static optimization applies when a type equality holds
@@ -5289,6 +5295,7 @@ type SlotParam =
     override x.ToString() = "TSlotParam(...)"
 
 /// Represents open declaration statement.
+[<NoComparison; NoEquality>]
 type OpenDeclaration =
     { /// Syntax after 'open' as it's presented in source code.
       Target: SynOpenDeclTarget
@@ -5495,6 +5502,7 @@ type CcuData =
 
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
+[<NoComparison>]
 type CcuTypeForwarderTree =
     {
         Value : Lazy<EntityRef> option
@@ -5520,6 +5528,7 @@ module CcuTypeForwarderTable =
         | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
+[<NoComparison>]
 type CcuTypeForwarderTable =
     {
         Root : CcuTypeForwarderTree

@@ -16,6 +16,7 @@ open FSharp.Compiler.TypedTreeOps
 
 let LowerStateMachineStackGuardDepth = StackGuard.GetDepthOption "LowerStateMachines"
 
+[<NoComparison; NoEquality>]
 type StateMachineConversionFirstPhaseResult =
    {
      /// Represents the expanded expression prior to decisions about labels
@@ -117,6 +118,7 @@ let isStateMachineBindingVar g (v: Val) =
      (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
+[<NoComparison; NoEquality>]
 type env = 
     { 
       ResumableCodeDefns: ValMap<Expr>
@@ -148,6 +150,7 @@ let rec IsStateMachineExpr g overallExpr =
     | StructStateMachineExpr g _ -> Some None
     | _ -> None
 
+[<NoComparison; NoEquality>]
 type LoweredStateMachine =
     LoweredStateMachine of 
          templateStructTy: TType *
@@ -158,6 +161,7 @@ type LoweredStateMachine =
          setStateMachine: (Val * Val * Expr) *
          afterCode: (Val * Expr)
 
+[<NoComparison; NoEquality>]
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
     | Lowered of LoweredStateMachine

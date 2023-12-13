@@ -77,6 +77,7 @@ let rec private evalFSharpAttribArg g attribExpr =
     // TODO: | TypeDefOfExpr g ty
     | _ -> fail()
 
+[<NoComparison; NoEquality>]
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range

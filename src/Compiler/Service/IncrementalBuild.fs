@@ -93,6 +93,7 @@ module IncrementalBuilderEventTesting =
 
 module Tc = CheckExpressions
 
+[<NoComparison>]
 type internal FSharpFile = {
         Range: range
         Source: FSharpSource
@@ -909,6 +910,7 @@ type IncrementalBuilderInitialState =
 // Stamp represent the real stamp of the file.
 // Notified indicates that there is pending file change.
 // LogicalStamp represent the stamp of the file that is used to calculate the project's logical timestamp.
+[<NoComparison>]
 type Slot =
     {
         HasSignature: bool

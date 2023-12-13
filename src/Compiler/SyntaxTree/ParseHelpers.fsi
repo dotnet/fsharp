@@ -65,6 +65,7 @@ type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
 
 type LexerIfdefStack = LexerIfdefStackEntries
 
+[<NoComparison; NoEquality>]
 type LexerEndlineContinuation =
     | Token
     | Skip of int * range: range
@@ -231,6 +232,7 @@ val unionRangeWithPos: r: range -> p: pos -> range
 
 val checkEndOfFileError: t: LexerContinuation -> unit
 
+[<NoComparison; NoEquality>]
 type BindingSet =
     | BindingSetPreAttrs of
         range *

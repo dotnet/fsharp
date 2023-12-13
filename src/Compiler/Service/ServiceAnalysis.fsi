@@ -15,6 +15,7 @@ module public UnusedOpens =
 module public SimplifyNames =
 
     /// Data for use in finding unnecessarily-qualified names and generating diagnostics to simplify them
+    [<NoComparison>]
     type SimplifiableRange =
         {
             /// The range of a name that can be simplified

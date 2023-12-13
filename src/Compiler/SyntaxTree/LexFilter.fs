@@ -27,6 +27,7 @@ let outputPos os (pos: Position) = Printf.fprintf os "(%d:%d)" pos.OriginalLine 
 /// p.OriginalLine)
 let warningStringOfPosition (pos: Position) = warningStringOfCoords pos.Line pos.Column
 
+[<NoComparison; NoEquality>]
 type Context =
     // Position is position of keyword.
     // bool indicates 'LET' is an offside let that's part of a CtxtSeqBlock where the 'in' is optional

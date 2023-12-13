@@ -49,6 +49,7 @@ type OptionSwitch =
     | On
     | Off
 
+[<NoComparison; NoEquality>]
 type OptionSpec =
     | OptionClear of bool ref
     | OptionFloat of (float -> unit)
@@ -65,7 +66,7 @@ type OptionSpec =
     | OptionConsoleOnly of (CompilerOptionBlock list -> unit)
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
-and CompilerOption =
+and [<NoComparison; NoEquality>] CompilerOption =
     | CompilerOption of
         name: string *
         argumentDescriptionString: string *
@@ -73,7 +74,7 @@ and CompilerOption =
         deprecationError: exn option *
         helpText: string option
 
-and CompilerOptionBlock =
+and [<NoComparison; NoEquality>] CompilerOptionBlock =
     | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 

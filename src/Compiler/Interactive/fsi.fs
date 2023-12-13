@@ -481,6 +481,7 @@ type ILMultiInMemoryAssemblyEmitEnv
     member _.IsLocalInternalField(fref: ILFieldRef) =
         fref.DeclaringTypeRef.Scope.IsLocalRef && internalFields.Contains(fref)
 
+[<NoComparison; NoEquality>]
 type ILAssemblyEmitEnv =
     | SingleRefEmitAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
     | MultipleInMemoryAssemblies of ILMultiInMemoryAssemblyEmitEnv
@@ -1482,7 +1483,7 @@ type internal FsiConsoleInput
 //----------------------------------------------------------------------------
 // FsiDynamicCompilerState
 //----------------------------------------------------------------------------
-
+[<NoComparison>]
 type FsiInteractionStepStatus =
     | CtrlC
     | EndOfFile
@@ -3613,7 +3614,7 @@ type FsiStdinLexerProvider
     member _.CreateBufferLexer(sourceFileName, lexbuf, diagnosticsLogger) =
         CreateLexerForLexBuffer(sourceFileName, lexbuf, diagnosticsLogger)
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type InteractionGroup =
     | Definitions of defns: SynModuleDecl list * range: range
 

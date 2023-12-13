@@ -71,6 +71,7 @@ type Resumable =
       ///      for a ResumableCode delegate.
       | ResumableExpr of allowed: bool
 
+[<NoComparison; NoEquality>]
 type env =
     {
       /// The bound type parameter names in scope
@@ -189,6 +190,7 @@ module Limit =
         (NoLimit, limits)
         ||> List.fold CombineTwoLimits
 
+[<NoComparison; NoEquality>]
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
 

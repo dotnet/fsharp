@@ -1582,6 +1582,7 @@ let CodeBufferCapacity = 200
 ///   - possible branch destinations
 ///   - locations of embedded handles into the string table
 ///   - the exception table
+[<NoComparison>]
 type CodeBuffer =
     {
       code: ByteBuffer
@@ -3790,6 +3791,7 @@ let writePdb (
     reportTime "Finish"
     pdbBytes
 
+[<NoComparison; NoEquality>]
 type options =
    { ilg: ILGlobals
      outfile: string

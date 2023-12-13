@@ -30,6 +30,7 @@ type LexResourceManager =
     new: ?capacity: int -> LexResourceManager
 
 /// The context applicable to all lexing functions (tokens, strings etc.)
+[<NoComparison>]
 type LexArgs =
     { conditionalDefines: string list
       resourceManager: LexResourceManager
@@ -67,6 +68,7 @@ type LexerStringFinisherContext =
     | Verbatim = 2
     | TripleQuote = 4
 
+[<NoComparison; NoEquality>]
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
 

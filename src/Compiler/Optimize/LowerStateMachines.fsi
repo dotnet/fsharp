@@ -5,6 +5,7 @@ module internal FSharp.Compiler.LowerStateMachines
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
+[<NoComparison; NoEquality>]
 type LoweredStateMachine =
     | LoweredStateMachine of
         templateStructTy: TType *
@@ -15,6 +16,7 @@ type LoweredStateMachine =
         setStateMachine: (Val * Val * Expr) *
         afterCode: (Val * Expr)
 
+[<NoComparison; NoEquality>]
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
     | Lowered of LoweredStateMachine

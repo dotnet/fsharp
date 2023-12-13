@@ -39,9 +39,11 @@ type DelayedILModuleReader =
     member internal TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
 
 /// <summary>Unused in this API</summary>
+[<NoComparison>]
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
+[<NoComparison>]
 type public FSharpProjectOptions =
     {
         // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
@@ -486,7 +488,7 @@ type public FSharpCheckFileResults =
             Cancellable<FSharpCheckFileResults>
 
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
-and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
+and [<RequireQualifiedAccess; NoComparison>] public FSharpCheckFileAnswer =
     /// Aborted because cancellation caused an abandonment of the operation
     | Aborted
 

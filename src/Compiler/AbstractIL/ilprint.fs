@@ -26,6 +26,7 @@ let tyvar_generator =
 
 // Carry an environment because the way we print method variables
 // depends on the gparams of the current scope.
+[<NoComparison; NoEquality>]
 type ppenv =
     {
         ilGlobals: ILGlobals

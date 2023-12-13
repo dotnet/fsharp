@@ -15,6 +15,8 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
+    <!-- 1178: does not support structural equality -->
+    <OtherFlags>$(OtherFlags) --warnon:1178</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->

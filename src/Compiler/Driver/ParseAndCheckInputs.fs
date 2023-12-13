@@ -1076,6 +1076,7 @@ type RootImpls = Zset<QualifiedNameOfFile>
 
 let qnameOrder = Order.orderBy (fun (q: QualifiedNameOfFile) -> q.Text)
 
+[<NoComparison; NoEquality>]
 type TcState =
     {
         /// The assembly thunk for the assembly being compiled.

@@ -24,7 +24,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LoadClosureInput =
     {
         FileName: string
@@ -33,7 +33,7 @@ type LoadClosureInput =
         MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
     }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LoadClosure =
     {
         /// The source files along with the ranges of the #load positions in each file.
@@ -82,9 +82,11 @@ type CodeContext =
 module ScriptPreprocessClosure =
 
     /// Represents an input to the closure finding process
+    [<NoComparison>]
     type ClosureSource = ClosureSource of fileName: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool
 
     /// Represents an output of the closure finding process
+    [<NoComparison; NoEquality>]
     type ClosureFile =
         | ClosureFile of
             fileName: string *

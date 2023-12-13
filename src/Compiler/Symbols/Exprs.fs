@@ -22,6 +22,7 @@ module ExprTranslationImpl =
 
     let nonNil x = not (List.isEmpty x)
 
+    [<NoComparison; NoEquality>]
     type ExprTranslationEnv = 
         { 
           /// Map from Val to binding index
@@ -85,6 +86,7 @@ module ExprTranslationImpl =
 
 /// The core tree of data produced by converting F# compiler TAST expressions into the form which we make available through the compiler API
 /// through active patterns.
+[<NoComparison; NoEquality>]
 type E =
     | Value  of FSharpMemberOrFunctionOrValue
     | ThisValue  of FSharpType 
@@ -1342,7 +1344,7 @@ type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: CheckedImplFile list) =
     member _.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
 
-and FSharpImplementationFileDeclaration = 
+and [<NoComparison>] FSharpImplementationFileDeclaration = 
     | Entity of entity: FSharpEntity * declarations: FSharpImplementationFileDeclaration list
     | MemberOrFunctionOrValue of value: FSharpMemberOrFunctionOrValue * curriedArgs: FSharpMemberOrFunctionOrValue list list * body: FSharpExpr
     | InitAction of action: FSharpExpr

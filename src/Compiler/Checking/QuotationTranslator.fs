@@ -39,6 +39,7 @@ type QuotationSerializationFormat =
       SupportsDeserializeEx: bool 
     }
 
+[<NoComparison; NoEquality>]
 type QuotationGenerationScope =
     {
       g: TcGlobals
@@ -89,6 +90,7 @@ type QuotationGenerationScope =
         { SupportsDeserializeEx = (ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info).TryDeref.IsSome
           SupportsWitnesses = (ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome }
 
+[<NoComparison; NoEquality>]
 type QuotationTranslationEnv =
     { 
       /// Map from Val to binding index

@@ -6,7 +6,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 /// Used to track route during traversal of syntax using SyntaxTraversal.Traverse
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type SyntaxNode =
     | SynPat of SynPat
     | SynType of SynType

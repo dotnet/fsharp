@@ -32,7 +32,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
 /// A single data tip display element
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type ToolTipElementData = 
     {
       Symbol: FSharpSymbol option
@@ -46,7 +46,7 @@ type ToolTipElementData =
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks; Symbol = symbol }
 
 /// A single data tip display element
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type ToolTipElement = 
     | None
 
@@ -60,6 +60,7 @@ type ToolTipElement =
         Group [ ToolTipElementData.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks, ?symbol = symbol) ]
 
 /// Information for building a data tip box.
+[<NoComparison>]
 type ToolTipText = 
     /// A list of data tip elements to display.
     | ToolTipText of ToolTipElement list
@@ -80,6 +81,7 @@ type UnresolvedSymbol =
       DisplayName: string
       Namespace: string[] }
 
+[<NoComparison; NoEquality>]
 type CompletionItem =
     { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind

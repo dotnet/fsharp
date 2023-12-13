@@ -119,6 +119,7 @@ exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string 
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
+[<NoEquality; NoComparison>]
 exception DiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
@@ -255,7 +256,7 @@ module BuildPhaseSubcategory =
     [<Literal>]
     let Internal = "internal" // Compiler ICE
 
-[<DebuggerDisplay("{DebugDisplay()}")>]
+[<DebuggerDisplay("{DebugDisplay()}"); NoComparison>]
 type PhasedDiagnostic =
     {
         Exception: exn

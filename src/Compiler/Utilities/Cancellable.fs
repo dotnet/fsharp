@@ -33,12 +33,12 @@ open System.Threading
 open FSharp.Core.CompilerServices.StateMachineHelpers
 #endif
 
-[<RequireQualifiedAccess; Struct>]
+[<RequireQualifiedAccess; Struct; NoComparison>]
 type ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
 
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
 
 module Cancellable =

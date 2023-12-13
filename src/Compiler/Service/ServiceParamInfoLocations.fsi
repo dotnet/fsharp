@@ -11,6 +11,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 /// Represents the location of a tupled argument, which can optionally be a named argument.
+[<NoComparison>]
 type TupledArgumentLocation =
     { IsNamedArgument: bool
       ArgumentRange: range }

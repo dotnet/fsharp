@@ -6,6 +6,7 @@
 
 open Internal.Utilities.Library
 
+[<NoComparison; NoEquality>]
 type ResolvedAtMethodSpecScope<'T> = 
     ResolvedAtMethodSpecScope of (ILGenericParameterDefs -> 'T)
 

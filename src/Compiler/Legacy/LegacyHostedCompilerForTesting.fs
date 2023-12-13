@@ -84,7 +84,7 @@ type internal CompilationResult =
     | Success of CompilationIssue list
     | Failure of FailureDetails
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type internal CompilationOutput =
     {
         Errors: FormattedDiagnostic[]

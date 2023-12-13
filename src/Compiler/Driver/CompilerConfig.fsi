@@ -72,7 +72,7 @@ type TimeStampCache =
 
     member GetProjectReferenceTimeStamp: projectReference: IProjectReference -> DateTime
 
-and [<RequireQualifiedAccess>] ProjectAssemblyDataResult =
+and [<RequireQualifiedAccess; NoComparison>] ProjectAssemblyDataResult =
 
     | Available of IRawFSharpAssemblyData
 
@@ -98,6 +98,7 @@ and IProjectReference =
     /// are fatal errors in the options for the project.
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
+[<NoComparison>]
 type AssemblyReference =
     | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
@@ -109,6 +110,7 @@ type AssemblyReference =
 
     member SimpleAssemblyNameIs: string -> bool
 
+[<NoComparison>]
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 
 [<RequireQualifiedAccess>]
@@ -162,6 +164,7 @@ type TokenizeOption =
 
     | Unfiltered
 
+[<NoComparison>]
 type PackageManagerLine =
     { Directive: Directive
       LineStatus: LStatus

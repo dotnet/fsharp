@@ -291,7 +291,8 @@ let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameM
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.
 /// Used to collect sets of virtual methods, protected methods, protected
-/// properties etc. 
+/// properties etc.
+[<NoComparison; NoEquality>]
 type HierarchyItem = 
     | TraitItem of TraitConstraintInfo list
     | MethodItem of MethInfo list list

@@ -8,7 +8,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type TextContainer =
     | OnDisk
     | Stream of Stream

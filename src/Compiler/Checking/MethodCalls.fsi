@@ -31,6 +31,7 @@ open FSharp.Compiler.TypeProviders
 /// an adhoc conversion.
 ///
 /// The bool indicates if named using a '?', making the caller argument explicit-optional
+[<NoComparison; NoEquality>]
 type CallerArg<'T> =
     | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T
 
@@ -42,6 +43,7 @@ type CallerArg<'T> =
 
     member Range: range
 
+[<NoComparison; NoEquality>]
 type CalledArg =
     { Position: struct (int * int)
       IsParamArray: bool
@@ -67,6 +69,7 @@ val CalledArg:
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
+[<NoComparison; NoEquality>]
 type AssignedCalledArg<'T> =
     {
         /// The identifier for a named argument, if any
@@ -82,14 +85,17 @@ type AssignedCalledArg<'T> =
     member Position: struct (int * int)
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
+[<NoComparison; NoEquality>]
 type AssignedItemSetterTarget =
     | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo
     | AssignedRecdFieldSetter of RecdFieldInfo
 
 /// Represents the resolution of a caller argument as a named-setter argument
+[<NoComparison; NoEquality>]
 type AssignedItemSetter<'T> = AssignedItemSetter of Ident * AssignedItemSetterTarget * CallerArg<'T>
 
+[<NoComparison; NoEquality>]
 type CallerNamedArg<'T> =
     | CallerNamedArg of Ident * CallerArg<'T>
 
@@ -102,7 +108,7 @@ type CallerNamedArg<'T> =
 /// Represents the list of unnamed / named arguments at method call site
 /// remark: The usage of list list is due to tupling and currying of arguments,
 /// stemming from SynValInfo in the AST.
-[<Struct>]
+[<Struct; NoComparison; NoEquality>]
 type CallerArgs<'T> =
     { Unnamed: CallerArg<'T> list list
       Named: CallerNamedArg<'T> list list }
@@ -117,7 +123,7 @@ type CallerArgs<'T> =
 
 /// Indicates whether a type directed conversion (e.g. int32 to int64, or op_Implicit)
 /// has been used in F# code
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type TypeDirectedConversionUsed =
     | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool * isNullable: bool
     | No
@@ -160,6 +166,7 @@ val AdjustCalledArgType:
     callerArg: CallerArg<'a> ->
         TType * TypeDirectedConversionUsed * (TType * TType * (DisplayEnv -> unit)) option
 
+[<NoComparison; NoEquality>]
 type CalledMethArgSet<'T> =
     {
         /// The called arguments corresponding to "unnamed" arguments
@@ -311,6 +318,7 @@ type CalledMeth<'T> =
 
 val NamesOfCalledArgs: calledArgs: CalledArg list -> Ident list
 
+[<NoComparison; NoEquality>]
 type ArgumentAnalysis =
     | NoInfo
     | ArgDoesNotMatch
@@ -477,6 +485,7 @@ val MethInfoChecks:
     minfo: MethInfo ->
         unit
 
+[<NoComparison; NoEquality>]
 exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
 
 val CheckRecdFieldMutation: m: range -> denv: TypedTreeOps.DisplayEnv -> rfinfo: RecdFieldInfo -> unit

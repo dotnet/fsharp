@@ -34,6 +34,7 @@ let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
 #endif
 
 /// The ValReprInfo for a value, except the number of typars is not yet inferred
+[<NoComparison; NoEquality>]
 type PrelimValReprInfo =
     | PrelimValReprInfo of
         curriedArgInfos: ArgReprInfo list list *
@@ -43,7 +44,7 @@ type PrelimValReprInfo =
 // Data structures that track the gradual accumulation of information
 // about values and members during inference.
 //-------------------------------------------------------------------------
-
+[<NoComparison; NoEquality>]
 type PrelimMemberInfo =
     | PrelimMemberInfo of
         memberInfo: ValMemberInfo *
@@ -60,16 +61,19 @@ type CheckConstraints =
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
+[<NoComparison; NoEquality>]
 type ExplicitTyparInfo =
     | ExplicitTyparInfo of
         rigidCopyOfDeclaredTypars: Typars *
         declaredTypars: Typars *
         infer: bool
 
+[<NoComparison; NoEquality>]
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
 /// The results of preliminary pass over patterns to extract variables being declared.
 // We should make this a record for cleaner code
+[<NoComparison; NoEquality>]
 type PrelimVal1 =
     | PrelimVal1 of
         id: Ident *
@@ -88,8 +92,10 @@ type PrelimVal1 =
 
     member x.Ident = let (PrelimVal1(id=id)) = x in id
 
+[<NoComparison; NoEquality>]
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
+[<NoComparison; NoEquality>]
 type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
 
 /// Translation of patterns is split into three phases. The first collects names.
@@ -97,6 +103,7 @@ type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap
 /// has been resolved. The second phase is run by applying a function returned by the
 /// first phase. The input to the second phase is a List.map that gives the Val and type scheme
 /// for each value bound by the pattern.
+[<NoComparison; NoEquality>]
 type TcPatPhase2Input =
     | TcPatPhase2Input of NameMap<Val * GeneralizedType> * bool
 
@@ -105,10 +112,12 @@ type TcPatPhase2Input =
 
 /// Represents information about the initialization field used to check that object constructors
 /// have completed before fields are accessed.
+[<NoComparison; NoEquality>]
 type SafeInitData =
     | SafeInitField of RecdFieldRef * RecdField
     | NoSafeInitInfo
 
+[<NoComparison; NoEquality>]
 type TcPatValFlags = 
     | TcPatValFlags of 
         inlineFlag: ValInline * 
@@ -119,6 +128,7 @@ type TcPatValFlags =
         isCompilerGenerated: bool
 
 /// Represents information about object constructors
+[<NoComparison; NoEquality>]
 type CtorInfo =
     { /// Object model constructors have a very specific form to satisfy .NET limitations.
       /// For "new = \arg. { new C with ... }"

@@ -14,6 +14,7 @@ open FSharp.Compiler.Xml
 exception ParameterlessStructCtor of range: range
 
 /// Typechecked info for implicit static constructor
+[<NoComparison; NoEquality>]
 type StaticCtorInfo =
     {
         /// The TyconRef for the type being defined
@@ -31,6 +32,7 @@ type StaticCtorInfo =
     }
 
 /// Typechecked info for implicit instance constructor and it's arguments
+[<NoComparison; NoEquality>]
 type IncrClassCtorInfo =
     {
         /// The value representing the implicit constructor.
@@ -58,6 +60,7 @@ type IncrClassCtorInfo =
 
 /// Indicates how is a 'let' bound value in a class with implicit construction is represented in
 /// the TAST ultimately produced by type checking.
+[<NoComparison; NoEquality>]
 type IncrClassValRepr =
 
     // e.g representation for 'let v = 3' if it is not used in anything given a method representation
@@ -71,6 +74,7 @@ type IncrClassValRepr =
 
 /// IncrClassReprInfo represents the decisions we make about the representation of 'let' and 'do' bindings in a
 /// type defined with implicit class construction.
+[<NoComparison>]
 type IncrClassReprInfo =
     {
         /// Indicates the set of field names taken within one incremental class
@@ -107,10 +111,12 @@ type IncrClassReprInfo =
             Expr
 
 /// Represents a single group of bindings in a class with an implicit constructor
+[<NoComparison; NoEquality>]
 type IncrClassBindingGroup =
     | IncrClassBindingGroup of bindings: Binding list * isStatic: bool * isRecursive: bool
     | IncrClassDo of expr: Expr * isStatic: bool * range: Range
 
+[<NoComparison; NoEquality>]
 type IncrClassConstructionBindingsPhase2C =
     | Phase2CBindings of IncrClassBindingGroup list
     | Phase2CCtorJustAfterSuperInit

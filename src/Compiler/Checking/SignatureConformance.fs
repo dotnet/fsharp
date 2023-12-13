@@ -25,18 +25,25 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeProviders
 #endif
 
+[<NoComparison; NoEquality>]
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
+[<NoComparison; NoEquality>]
 exception ValueNotContained of DisplayEnv * InfoReader * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception FieldNotContained of DisplayEnv * InfoReader * Tycon * Tycon * RecdField * RecdField * (string * string -> string)
 
+[<NoComparison; NoEquality>]
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 
+[<NoComparison; NoEquality>]
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
 // Use a type to capture the constant, common parameters 

@@ -338,7 +338,7 @@ type internal ByteMemory with
     /// Gets a ByteMemory object that is empty
     static member Empty: ByteMemory
 
-[<Sealed>]
+[<Sealed; NoComparison; NoEquality>]
 type internal ByteStream =
 
     member IsEOF: bool

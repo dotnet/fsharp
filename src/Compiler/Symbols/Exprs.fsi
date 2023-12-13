@@ -42,7 +42,7 @@ type public FSharpImplementationFileContents =
     member HasExplicitEntryPoint: bool
 
 /// Represents a declaration in an implementation file, as seen by the F# language
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public FSharpImplementationFileDeclaration =
 
     /// Represents the declaration of a type

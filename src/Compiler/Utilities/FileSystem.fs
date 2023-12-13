@@ -879,6 +879,7 @@ type ByteMemory with
         else
             ByteArrayMemory.FromArray(bytes, 0, bytes.Length)
 
+[<NoComparison; NoEquality>]
 type internal ByteStream =
     {
         bytes: ReadOnlyByteMemory

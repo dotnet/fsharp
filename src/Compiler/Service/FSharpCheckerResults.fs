@@ -54,6 +54,7 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
+[<NoComparison>]
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 [<Sealed>]
@@ -139,7 +140,7 @@ type FSharpReferencedProject =
     override this.GetHashCode() = this.OutputFile.GetHashCode()
 
 // NOTE: may be better just to move to optional arguments here
-and FSharpProjectOptions =
+and [<NoComparison>] FSharpProjectOptions =
     {
         ProjectFileName: string
         ProjectId: string option
@@ -311,7 +312,7 @@ type ResolveOverloads =
     | Yes
     | No
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
@@ -3674,7 +3675,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
         }
 
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type public FSharpCheckFileAnswer =
     /// Aborted because cancellation caused an abandonment of the operation
     | Aborted

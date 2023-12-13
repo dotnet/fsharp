@@ -371,7 +371,7 @@ module internal LockAutoOpens =
 module internal Map =
     val tryFindMulti: k: 'a -> map: Map<'a, 'b list> -> 'b list when 'a: comparison
 
-[<Struct>]
+[<Struct; NoComparison>]
 type internal ResultOrException<'TResult> =
     | Result of result: 'TResult
     | Exception of ``exception``: Exception

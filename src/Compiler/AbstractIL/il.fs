@@ -1497,6 +1497,7 @@ type ILDebugImport =
 //| ReferenceAlias of string
 //| OpenXmlNamespace of prefix: string * xmlNamespace: string
 
+[<NoComparison; NoEquality>]
 type ILDebugImports =
     {
         Parent: ILDebugImports option
@@ -1819,7 +1820,7 @@ type ILMethodVirtualInfo =
         IsAbstract: bool
     }
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison>]
 type MethodBody =
     | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod> (* platform invoke to native *)
@@ -2450,6 +2451,7 @@ type ILFieldDef
     override x.ToString() = "field " + x.Name
 
 // Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
+[<NoComparison; NoEquality>]
 type ILFieldDefs =
     | ILFields of LazyOrderedMultiMap<string, ILFieldDef>
 
@@ -2466,6 +2468,7 @@ type ILMethodImplDef =
     }
 
 // Index table by name and arity.
+[<NoComparison; NoEquality>]
 type ILMethodImplDefs =
     | ILMethodImpls of InterruptibleLazy<MethodImplsMap>
 
@@ -2897,13 +2900,14 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
                     Monitor.Exit(syncObj)
             | _ -> store
 
-and ILTypeDefStored =
+and [<NoComparison; NoEquality>] ILTypeDefStored =
     | Given of ILTypeDef
     | Reader of (int32 -> ILTypeDef)
     | Computed of (unit -> ILTypeDef)
 
 let mkILTypeDefReader f = ILTypeDefStored.Reader f
 
+[<NoComparison; NoEquality>]
 type ILNestedExportedType =
     {
         Name: string
@@ -2917,7 +2921,7 @@ type ILNestedExportedType =
 
     override x.ToString() = "exported type " + x.Name
 
-and ILNestedExportedTypes =
+and [<NoComparison>] ILNestedExportedTypes =
     | ILNestedExportedTypes of InterruptibleLazy<Map<string, ILNestedExportedType>>
 
     member x.AsList() =
@@ -2941,7 +2945,7 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
 
     override x.ToString() = "exported type " + x.Name
 
-and ILExportedTypesAndForwarders =
+and [<NoComparison>] ILExportedTypesAndForwarders =
     | ILExportedTypesAndForwarders of InterruptibleLazy<Map<string, ILExportedTypeOrForwarder>>
 
     member x.AsList() =
@@ -2962,6 +2966,7 @@ type ILResourceLocation =
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
+[<NoComparison; NoEquality>]
 type ILResource =
     {
         Name: string
@@ -2981,6 +2986,7 @@ type ILResource =
 
     override x.ToString() = "resource " + x.Name
 
+[<NoComparison; NoEquality>]
 type ILResources =
     | ILResources of ILResource list
 
@@ -3000,6 +3006,7 @@ type ILAssemblyLongevity =
 
     static member Default = Unspecified
 
+[<NoComparison; NoEquality>]
 type ILAssemblyManifest =
     {
         Name: string
@@ -3035,6 +3042,7 @@ type ILNativeResource =
     | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
     | Out of unlinkedResource: byte[]
 
+[<NoComparison; NoEquality>]
 type ILModuleDef =
     {
         Manifest: ILAssemblyManifest option
@@ -5225,6 +5233,7 @@ type ILReferences =
         FieldReferences: ILFieldRef[]
     }
 
+[<NoComparison; NoEquality>]
 type ILReferencesAccumulator =
     {
         ilg: ILGlobals

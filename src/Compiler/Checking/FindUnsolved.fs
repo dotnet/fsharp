@@ -20,6 +20,7 @@ type env = | NoEnv
 let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
 
 /// The environment and collector
+[<NoComparison; NoEquality>]
 type cenv =
     { g: TcGlobals
       amap: Import.ImportMap
