@@ -755,13 +755,11 @@ module SyntaxTraversal =
                 let rec loop (pat: SynPat) =
                     match pat with
                     | SynPat.Paren(pat = pat)
-                    | SynPat.Typed(pat = pat) ->
-                        loop pat
-                    | SynPat.Tuple(elementPats = pats) ->
-                        List.tryPick loop pats
-                    | SynPat.Attrib(_, attributes, m) ->
-                        attributeApplicationDives origPath attributes |> pick m attributes
+                    | SynPat.Typed(pat = pat) -> loop pat
+                    | SynPat.Tuple(elementPats = pats) -> List.tryPick loop pats
+                    | SynPat.Attrib(_, attributes, m) -> attributeApplicationDives origPath attributes |> pick m attributes
                     | _ -> None
+
                 loop pat
             | x -> x
 

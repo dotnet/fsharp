@@ -1581,28 +1581,29 @@ module ParsedInput =
                     // so VisitSimplePats is only called for primary constructors
 
                     let rec loop (pat: SynPat) =
-                        if not (rangeContainsPos pat.Range pos) then None else
+                        if not (rangeContainsPos pat.Range pos) then
+                            None
+                        else
 
-                        match pat with
-                        // type C (x{caret} )
-                        | SynPat.Named _
-                        | SynPat.Const(SynConst.Unit, _) -> Some CompletionContext.Invalid
+                            match pat with
+                            // type C (x{caret} )
+                            | SynPat.Named _
+                            | SynPat.Const(SynConst.Unit, _) -> Some CompletionContext.Invalid
 
-                        | SynPat.Attrib(pat, _, _)
-                        | SynPat.Paren(pat, _) -> loop pat
+                            | SynPat.Attrib(pat, _, _)
+                            | SynPat.Paren(pat, _) -> loop pat
 
-                        | SynPat.Tuple(_, pats, _, _) ->
-                            List.tryPick loop pats
-                        
-                        | SynPat.Typed(pat, synType, _) ->
-                            // type C (x: int{caret}) ->
-                            if rangeContainsPos synType.Range pos then
-                                Some CompletionContext.Type
-                            else
-                                // type C (x{caret}: int) ->
-                                loop pat
+                            | SynPat.Tuple(_, pats, _, _) -> List.tryPick loop pats
 
-                        | _ -> None
+                            | SynPat.Typed(pat, synType, _) ->
+                                // type C (x: int{caret}) ->
+                                if rangeContainsPos synType.Range pos then
+                                    Some CompletionContext.Type
+                                else
+                                    // type C (x{caret}: int) ->
+                                    loop pat
+
+                            | _ -> None
 
                     loop pat
 

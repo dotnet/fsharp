@@ -478,19 +478,19 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                 override _.VisitSimplePats(_path, pat) =
                     let rec loop (pat: SynPat) =
-                        if not (rangeContainsPos pat.Range pos) then None else
+                        if not (rangeContainsPos pat.Range pos) then
+                            None
+                        else
 
-                        match pat with
-                        | SynPat.Attrib(pat = pat)
-                        | SynPat.Paren(pat = pat) -> loop pat
+                            match pat with
+                            | SynPat.Attrib(pat = pat)
+                            | SynPat.Paren(pat = pat) -> loop pat
 
-                        | SynPat.Tuple(elementPats = pats) ->
-                            List.tryPick loop pats
-                        
-                        | SynPat.Typed(range = range) when Position.posEq range.Start pos ->
-                            Some pat.Range
+                            | SynPat.Tuple(elementPats = pats) -> List.tryPick loop pats
 
-                        | _ -> None
+                            | SynPat.Typed(range = range) when Position.posEq range.Start pos -> Some pat.Range
+
+                            | _ -> None
 
                     loop pat
 
