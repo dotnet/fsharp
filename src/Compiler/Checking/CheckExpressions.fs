@@ -10327,26 +10327,26 @@ and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynE
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
-    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
+    (tpenv, clauses)
+    ||> List.mapFold (fun tpenv synMatchClause ->
+        let isFirst = isFirst()
+        let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+        let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
 
-and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
-    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
-    let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
+        let resultEnv =
+            if isFirst then envinner
+            else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause synResultExpr.Range }
 
-    let resultEnv =
-        if isFirst then envinner
-        else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause synResultExpr.Range }
+        let resultEnv =
+            match spTgt with
+            | DebugPointAtTarget.Yes -> { resultEnv with eIsControlFlow = true }
+            | DebugPointAtTarget.No -> resultEnv
 
-    let resultEnv =
-        match spTgt with
-        | DebugPointAtTarget.Yes -> { resultEnv with eIsControlFlow = true }
-        | DebugPointAtTarget.No -> resultEnv
+        let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
 
-    let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
-
-    let target = TTarget(vspecs, resultExpr, None)
-    
-    MatchClause(pat, whenExprOpt, target, patm), tpenv
+        let target = TTarget(vspecs, resultExpr, None)
+        
+        MatchClause(pat, whenExprOpt, target, patm), tpenv)
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     let g = cenv.g
