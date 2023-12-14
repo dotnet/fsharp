@@ -6,4 +6,4 @@
 
 ### Fixed
 
-* Allow extension methods without type attribute works for types from imported assemblies. ([PR #16368](https://github.com/dotnet/fsharp/pull/16368))
+* Allow extension methods without type attribute work for types from imported assemblies. ([PR #16368](https://github.com/dotnet/fsharp/pull/16368))
