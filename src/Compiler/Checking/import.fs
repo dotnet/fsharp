@@ -447,7 +447,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
-        let nullness = Nullness.knownAmbivalent // TODO nullness type providers  Nullness.ImportNullness env.g
+        let nullness = Nullness.knownAmbivalent // TODO nullness import :: type providers  Nullness.ImportNullness env.g
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
@@ -520,7 +520,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 else
                     genericArg)
 
-        let nullness = Nullness.knownAmbivalent // TODO nullness type providers Nullness.ImportNullnessForTyconRef env.g m tcref
+        let nullness = Nullness.knownAmbivalent // TODO nullness import ::  type providers Nullness.ImportNullnessForTyconRef env.g m tcref
 
         ImportTyconRefApp env tcref genericArgs nullness
 
