@@ -1077,14 +1077,18 @@ type MethInfo =
     /// Build IL method infos.
     static member CreateILMeth (amap: ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty
-        let mtps = ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
+        let nullableFallback = FromMethodAndClass(AttributesFromIL(md.MetadataIndex,md.CustomAttrsStored),tinfo.NullableAttributes)
+        let mtps = ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata nullableFallback md.GenericParams
         ILMeth (amap.g, ILMethInfo(amap.g, IlType tinfo, md, mtps), None)
 
     /// Build IL method infos for a C#-style extension method
     static member CreateILExtensionMeth (amap:ImportMap, m, apparentTy: TType, declaringTyconRef: TyconRef, extMethPri, md: ILMethodDef) =
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
         let typeInfo = CSharpStyleExtension(declaringTyconRef,apparentTy)
-        let mtps = ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
+        let declaringMetadata = declaringTyconRef.ILTyconRawMetadata
+        let declaringAttributes = AttributesFromIL(declaringMetadata.MetadataIndex,declaringMetadata.CustomAttrsStored)
+        let nullableFallback = FromMethodAndClass(AttributesFromIL(md.MetadataIndex,md.CustomAttrsStored),declaringAttributes)
+        let mtps = ImportILGenericParameters (fun () -> amap) m scoref [] nullableFallback md.GenericParams
         ILMeth (amap.g, ILMethInfo(amap.g, typeInfo, md, mtps), extMethPri)
 
     /// Tests whether two method infos have the same underlying definition.

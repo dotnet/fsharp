@@ -246,6 +246,12 @@ module Nullness =
 
     [<Struct;NoEquality;NoComparison>]
     type NullableFlags = {Data : byte[]; Idx : int }
+(* Nullness logic for generic arguments:
+The data which comes from NullableAttribute back might be a flat array, or a scalar (which represents a virtual array of unknown size)
+The array is passed trough all generic typars depth first , e.g.  List<Tuple<Map<int,string>,Uri>>
+        -- see here how the array indexes map to types above:   [| 0    1     2   3    4      5 |]
+For value types, a value is passed even though it is always 0
+*)
         with
             member this.GetNullness() = 
                 match this.Data.Length with
@@ -269,26 +275,6 @@ module Nullness =
         | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
         | ILType.Value _  -> KnownWithoutNull, flags.Advance()
         | _ -> flags.GetNullness(), flags.Advance()
-
-(* Support full cascade trough the metadata hierarchy, as neeeded by the following existing calls:
-">" in the below logic means a fallback in case of attribute missing
-ImportParameterTypeFromMetadata  : Parameter>Method>Class  (+ extension method 'this')
-ImportReturnTypeFromMetadata  : Return>Method>Class  
-ImportILTypeFromMetadata : Field>Class
-ImportILTypeFromMetadata : Property>Class  (property return type)
-ImportILTypeFromMetadata : Property arg> Property >Class  (property indexer param)
-
-
-ImportILTypeFromMetadata : Event > Class (DelegateType of an event)
-
-ImportReturnTypeFromMetadata : SlotSlig  Param,Method,Class
-
-
-The data which falls back might be a flat array, or a scalar (which represents an array of previously unknown size)
-The array is passed trough all generic typars depth first , e.g.  List<Tuple<Map<int,string>,Uri>>
-        -- see here how the array indexes map to types above:   [| 0    1     2   3    4      5 |]
-For value types, a value is passed even though it is always 0
-*)
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env: ImportMap) m tinst ty =  
@@ -573,7 +559,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                        let formalParamTysAfterInst = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m))
-                                // TODO import of Nullness in type providers
+                                // TODO nullness import ::  of Nullness in type providers
                                 yield ImportILType env m actualGenericArgs ilFormalTy ]
 
                        (formalParamTysAfterInst, actualParamTys) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
@@ -620,7 +606,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
 /// 
 /// Fixup the constraints so that any references to the generic parameters
 /// in the constraints now refer to the new generic parameters.
-let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) = 
+let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.NullableContextSource) (gps: ILGenericParameterDefs) = 
     match gps with 
     | [] -> []
     | _ -> 
@@ -631,11 +617,17 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
             let constraints = 
-                [ (*
-                    let nullness = gp.CustomAttrs Nullable |> orElse ('nullable context from parent in metadata hierarchy')
-                    if nullness = 1 -> without null -> TyparConstraint.NotSupportsNull
-                    if nullness = 2 -> with null -> TyparConstraint.SupportsNull
-                   *)                
+                [  
+                  if amap.g.langFeatureNullness && amap.g.checkNullness then
+                    let nullness = 
+                        {   Nullness.DirectAttributes = Nullness.AttributesFromIL(gp.MetadataIndex,gp.CustomAttrsStored)
+                            Nullness.Fallback = nullableFallback }
+               
+                    match nullness.GetFlags(amap.g) with
+                    |  [|1uy|] -> TyparConstraint.NotSupportsNull(m)
+                    |  [|2uy|] -> TyparConstraint.SupportsNull(m)
+                    | _ -> ()           
+               
                   if gp.CustomAttrs |> TryFindILAttribute amap.g.attrib_IsUnmanagedAttribute then
                     TyparConstraint.IsUnmanaged(m)
                   if gp.HasDefaultConstructorConstraint then
@@ -687,13 +679,15 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
         )
 
+    let nullableFallback = Nullness.FromClass(Nullness.AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored))
+
     // Add the type itself. 
     Construct.NewILTycon 
         (Some cpath) 
         (nm, m) 
         // The read of the type parameters may fail to resolve types. We pick up a new range from the point where that read is forced
         // Make sure we reraise the original exception one occurs - see findOriginalException.
-        (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] tdef.GenericParams), findOriginalException))
+        (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] nullableFallback tdef.GenericParams), findOriginalException))
         (scoref, enc, tdef) 
         (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
        
