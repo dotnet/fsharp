@@ -69,6 +69,11 @@ let ``Nullable attr for Option clones`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericStructDu.fs"|])>]
+let ``Generic struct DU`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
 
 module Interop  =
     open System.IO
