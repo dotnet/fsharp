@@ -224,7 +224,7 @@ module internal PrintUtilities =
                         else s)
 
             let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
+            if String.IsNullOrEmpty(pathText) then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
@@ -2793,7 +2793,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> fun name -> if String.IsNullOrEmpty(name) then "" else sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)

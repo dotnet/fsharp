@@ -652,7 +652,7 @@ let GetBytesAsBlobIdx cenv (bytes: byte[]) =
     else cenv.blobs.FindOrAddSharedEntry bytes
 
 let GetStringHeapIdx cenv s =
-    if s = "" then 0
+    if String.IsNullOrEmpty(s) then 0
     else cenv.strings.FindOrAddSharedEntry s
 
 let GetGuidIdx cenv info = cenv.guids.FindOrAddSharedEntry info

@@ -132,7 +132,7 @@ module internal DiagnosticMessage =
             // strip any escaped % characters - yes, this will fail if given %%%...
             let s = s.Replace("%%", "")
 
-            if s = "" then
+            if s.Length = 0 then
                 0
             else
                 let len = s.Length - 1
