@@ -124,6 +124,15 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
+        member inline x.IndexOfOrdinal value =
+            x.IndexOf(value, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex) =
+            x.IndexOf(value, startIndex, StringComparison.Ordinal)
+
+        member inline x.IndexOfOrdinal(value, startIndex, count) =
+            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with

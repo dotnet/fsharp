@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.EditorServices
 
-open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Internal.Utilities.Library
@@ -436,7 +435,7 @@ module UnusedDeclarations =
                 su.IsFromDefinition
                 && su.Symbol.DeclarationLocation.IsSome
                 && (isScript || su.IsPrivateToFile)
-                && not (su.Symbol.DisplayName.StartsWith("_", StringComparison.Ordinal))
+                && not (su.Symbol.DisplayName.StartsWithOrdinal "_")
                 && isPotentiallyUnusedDeclaration su.Symbol
             then
                 Some(su, usages.Contains su.Symbol.DeclarationLocation.Value)

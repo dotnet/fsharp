@@ -55,7 +55,7 @@ module internal PrintUtilities =
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
-    let isDiscard (name: string) = name.StartsWith("_", StringComparison.Ordinal)
+    let isDiscard (name: string) = name.StartsWithOrdinal("_")
 
     let ensureFloat (s: string) =
         if String.forall (fun c -> Char.IsDigit c || c = '-') s then

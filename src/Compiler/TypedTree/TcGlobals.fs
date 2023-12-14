@@ -8,7 +8,6 @@
 /// comparison and hashing functions.
 module internal FSharp.Compiler.TcGlobals
 
-open System
 open System.Collections.Concurrent
 open System.Linq
 open System.Diagnostics
@@ -1883,7 +1882,7 @@ type TcGlobals(
       let memberName =
           let nm = t.MemberLogicalName
           let coreName =
-              if nm.StartsWith("op_", StringComparison.Ordinal) then nm[3..]
+              if nm.StartsWithOrdinal "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm

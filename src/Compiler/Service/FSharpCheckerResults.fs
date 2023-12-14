@@ -1909,9 +1909,7 @@ type internal TypeCheckInfo
                 | Some(_, lines) ->
                     let lines =
                         lines
-                        |> List.filter (fun line ->
-                            not (line.StartsWith("//", StringComparison.Ordinal))
-                            && not (String.IsNullOrEmpty line))
+                        |> List.filter (fun line -> not (line.StartsWithOrdinal("//")) && not (String.IsNullOrEmpty line))
 
                     ToolTipText.ToolTipText
                         [

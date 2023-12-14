@@ -1526,7 +1526,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let scoref = ILScopeRef.Assembly aref
 
     let fullName = reflectionTy.FullName
-    let index = fullName.IndexOf("[", StringComparison.Ordinal)
+    let index = fullName.IndexOfOrdinal("[")
 
     let fullName =
         if index = -1 then
