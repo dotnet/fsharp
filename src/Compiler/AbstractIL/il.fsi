@@ -318,6 +318,9 @@ type ILType =
 
     member QualifiedName: string
 
+    static member Parse: assemblyQualifiedName: string -> ILType
+
+
 [<StructuralEquality; StructuralComparison>]
 type ILCallingSignature =
     { CallingConv: ILCallingConv
@@ -987,7 +990,7 @@ type internal ILOverridesSpec =
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of InterruptibleLazy<ILMethodBody>
-    | PInvoke of Lazy<PInvokeMethod>
+    | PInvoke of InterruptibleLazy<PInvokeMethod>
     | Abstract
     | Native
     | NotAvailable
@@ -2213,6 +2216,7 @@ val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
 val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
+val emptyILCustomAttrsStored: ILAttributesStored
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
@@ -2371,6 +2375,7 @@ val internal stripILModifiedFromTy: ILType -> ILType
 /// Discriminating different important built-in types.
 val internal isILObjectTy: ILGlobals -> ILType -> bool
 val internal isILStringTy: ILGlobals -> ILType -> bool
+val internal isILTypeTy: ILGlobals -> ILType -> bool
 val internal isILSByteTy: ILGlobals -> ILType -> bool
 val internal isILByteTy: ILGlobals -> ILType -> bool
 val internal isILInt16Ty: ILGlobals -> ILType -> bool
