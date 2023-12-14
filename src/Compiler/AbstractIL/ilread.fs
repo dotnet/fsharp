@@ -2860,7 +2860,7 @@ let OpenILModuleReaderFromFile fileName (opts: ILReaderOptions) metadataSnapshot
             opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
             && opts.metadataOnly = MetadataOnlyFlag.Yes
         then
-            let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+            let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true, shouldShadowCopy = true)
             new PEReader(stream, PEStreamOptions.Default)
         else
             new PEReader(new MemoryStream(File.ReadAllBytes(fileName)), PEStreamOptions.PrefetchEntireImage)

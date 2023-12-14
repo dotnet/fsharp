@@ -522,18 +522,18 @@ type DefaultFileSystem() as this =
     default _.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : Stream =
         let fileMode = FileMode.Open
         let fileAccess = FileAccess.Read
-        let fileShare = FileShare.Delete ||| FileShare.ReadWrite
+        let fileShare = FileShare.Read ||| FileShare.Write ||| FileShare.Delete ||| FileShare.Inheritable
         let shouldShadowCopy = defaultArg shouldShadowCopy false
         let useMemoryMappedFile = defaultArg useMemoryMappedFile false
-        let fileStream = new FileStream(filePath, fileMode, fileAccess, fileShare)
-        let length = fileStream.Length
 
         // We want to use mmaped files only when:
         //   -  Opening large binary files (no need to use for source or resource files really)
 
         if not useMemoryMappedFile then
-            fileStream :> Stream
+            new FileStream(filePath, fileMode, fileAccess, fileShare) :> Stream
         else
+            let fileStream = new FileStream(filePath, fileMode, fileAccess, fileShare)
+            let length = fileStream.Length
             let mmf =
                 if shouldShadowCopy then
                     let mmf =
@@ -551,13 +551,11 @@ type DefaultFileSystem() as this =
                     mmf
                 else
                     MemoryMappedFile.CreateFromFile(
-                        fileStream,
+                        filePath,
+                        FileMode.Open,
                         null,
                         length,
-                        MemoryMappedFileAccess.Read,
-                        HandleInheritability.None,
-                        leaveOpen = false
-                    )
+                        MemoryMappedFileAccess.Read)
 
             let stream = new MemoryMappedStream(mmf, length)
 
