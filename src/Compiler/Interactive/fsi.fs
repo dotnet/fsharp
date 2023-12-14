@@ -933,12 +933,12 @@ type DiagnosticsLogger with
 
 /// Get the directory name from a string, with some defaults if it doesn't have one
 let internal directoryName (s: string) =
-    if s = "" then
+    if String.IsNullOrEmpty(s) then
         "."
     else
         match Path.GetDirectoryName s with
         | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if res = "" then "." else res
+        | res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options

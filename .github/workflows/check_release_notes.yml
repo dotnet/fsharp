@@ -85,10 +85,10 @@ jobs:
         [[ "$VISUAL_STUDIO_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || (echo "   Invalid Visual Studio Version parsed"; exit 1)
 
         _release_notes_base_path='docs/release-notes'
-        _fsharp_core_release_notes_path="${_release_notes_base_path}/FSharp.Core/${FSHARP_CORE_VERSION}.md"
-        _fsharp_compiler_release_notes_path="${_release_notes_base_path}/FSharp.Compiler.Service/${FSHARP_CORE_VERSION}.md"
-        _fsharp_language_release_notes_path="${_release_notes_base_path}/Language/preview.md"
-        _fsharp_vs_release_notes_path="${_release_notes_base_path}/VisualStudio/${VISUAL_STUDIO_VERSION}.md"
+        _fsharp_core_release_notes_path="${_release_notes_base_path}/.FSharp.Core/${FSHARP_CORE_VERSION}.md"
+        _fsharp_compiler_release_notes_path="${_release_notes_base_path}/.FSharp.Compiler.Service/${FSHARP_CORE_VERSION}.md"
+        _fsharp_language_release_notes_path="${_release_notes_base_path}/.Language/preview.md"
+        _fsharp_vs_release_notes_path="${_release_notes_base_path}/.VisualStudio/${VISUAL_STUDIO_VERSION}.md"
 
         readonly paths=(
             "src/FSharp.Core|${_fsharp_core_release_notes_path}"
